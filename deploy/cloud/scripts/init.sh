@@ -135,32 +135,33 @@ function gen_cockroachdbUri() {
 }
 
 function gen_saltKey() {
-    password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null || true)
+    password_salt=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "salt:" | awk '{print $2}' 2>/dev/null || true)
     if [[ -z "$password_salt" ]]; then
-        saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0)
+        saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64)
     else
         saltKey=$password_salt
     fi
 }
 
 function gen_regionUID(){
-    uid=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.region_uid}" 2>/dev/null || true)
+    uid=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "regionUID:" | awk '{print $2}' 2>/dev/null || true)
     if [[ -z "$uid" ]]; then
         localRegionUID=$(uuidgen)
     else
-        localRegionUID=$(echo -n "$uid" | base64 -d)
+        localRegionUID=$(echo -n "$uid")``
     fi
 }
 
 function mutate_desktop_config() {
-    # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
-    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-jwt-secret-region-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-local-region-uid-base64>;$(echo -n "${localRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random string
+    sed -i -e "s;<your-mongodb-uri>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin");" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-internal-jwt-secret>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-regional-jwt-secret>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-global-jwt-secret>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-password-salt>;$saltKey;" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-regional-database-url>;$(echo -n "${cockroachdbLocalUri}");" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-global-database-url>;$(echo -n "${cockroachdbGlobalUri}");" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-local-region-uid>;$(echo -n "${localRegionUID}");" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -223,7 +224,7 @@ function sealos_run_controller {
 
 
 function sealos_authorize {
-  sealos run tars/job-init.tar --env PASSWORD_SALT="$(echo -n "$saltKey" | base64 -d)"
+  sealos run tars/job-init.tar --env PASSWORD_SALT="$(echo -n "$saltKey")"
   sealos run tars/job-heartbeat.tar
 
   # wait for admin user create

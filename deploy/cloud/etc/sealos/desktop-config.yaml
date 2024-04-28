@@ -3,16 +3,54 @@ kind: Config
 metadata:
   name: secret
 spec:
-  path: manifests/secret.yaml
-  # do not modify this image, it's used by ci.
-  match: ghcr.io/labring/sealos-cloud-desktop-frontend:latest
-  strategy: merge
+  path: manifests/configmap.yaml
+  strategy: override
   data: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: desktop-frontend-config
+      namespace: sealos
     data:
-      mongodb_uri: <your-mongodb-uri-base64>
-      jwt_secret: <your-jwt-secret-base64>
-      password_salt: <your-password-salt-base64>
-      jwt_secret_region: <your-jwt-secret-region-base64>
-      region_database_url: <your-region-database-url-base64>
-      global_database_url: <your-global-database-url-base64>
-      region_uid: <your-local-region-uid-base64>
+      config.yaml : |
+        cloud:
+          domain: "{{ .cloudDomain }}"
+          port: "{{ .cloudPort }}"
+          regionUID: "<your-local-region-uid>"
+          certSecretName: "{{ .certSecretName }}"
+        common:
+          guideEnabled: "false"
+          apiEnabled: "false"
+          rechargeEnabled: "false"
+          cfSiteKey: ""
+        database:
+          mongodbURI: "<your-mongodb-uri>"
+          globalCockroachdbURI: "<your-global-database-url>"
+          regionalCockroachdbURI: "<your-regional-database-url>"
+        desktop:
+          layout:
+            title: "Sealos Cloud"
+            logo: "/logo.png"
+            backgroundImage: "/images/bg-blue.svg"
+            meta:
+              title: "Sealos Cloud"
+              description: "Sealos Cloud"
+              keywords: "Sealos Cloud"
+              scripts: []
+            common:
+              githubStarEnabled: "true"
+          auth:
+            proxyAddress: ""
+            callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
+            signUpEnabled: "true"
+            baiduToken: ""
+            invite:
+              enabled: "false"
+            jwt:
+              internal: "<your-internal-jwt-secret>"
+              regional: "<your-regional-jwt-secret>"
+              global: "<your-global-jwt-secret>"
+            idp:
+              password:
+                enabled: "true"
+                salt: "<your-password-salt>"
