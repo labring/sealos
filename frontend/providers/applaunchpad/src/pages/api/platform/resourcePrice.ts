@@ -45,6 +45,7 @@ const gpuCrName = 'node-gpu-info';
 const gpuCrNS = 'node-system';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const reqNamespace = 'default';
   try {
     // source price
     const { applyYamlList, k8sCustomObjects, k8sCore, namespace } = await getK8s({
@@ -57,21 +58,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kind: 'PriceQuery',
       metadata: {
         name: 'prices',
-        namespace
+        reqNamespace
       },
       spec: {}
     };
     const crdYaml = yaml.dump(crdJson);
 
     try {
-      await applyYamlList([crdYaml], 'replace');
+      await applyYamlList([crdYaml], 'replace', reqNamespace);
       await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
     } catch (error) {}
 
     const [priceResponse, gpuNodes] = await Promise.all([
       getPriceCr({
         name: crdJson.metadata.name,
-        namespace,
+        namespace: reqNamespace,
         k8sCustomObjects
       }),
       getGpuNode({ k8sCore })

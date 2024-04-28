@@ -6,6 +6,7 @@ import { jsonRes } from '@/services/backend/response';
 import dayjs from 'dayjs';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { appName } = req.query as { appName: string };
     if (!appName) {
@@ -15,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const app = await getDeployApp(appName);
+    const app = await getDeployApp(appName, reqNamespace);
 
     if (!app.spec?.template.metadata?.labels) {
       throw new Error('app data error');

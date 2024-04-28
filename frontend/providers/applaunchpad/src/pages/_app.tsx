@@ -66,12 +66,12 @@ const App = ({ Component, pageProps }: AppProps) => {
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          localStorage.removeItem('session');
-          openConfirm(() => {
-            window.open(`https://${SEALOS_DOMAIN}`, '_self');
-          })();
-        }
+        // if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+        //   localStorage.removeItem('session');
+        //   openConfirm(() => {
+        //     window.open(`https://${SEALOS_DOMAIN}`, '_self');
+        //   })();
+        // }
       }
     })();
     return response;

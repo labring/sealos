@@ -33,12 +33,14 @@ import { useTranslation } from 'next-i18next';
 import { SHOW_EVENT_ANALYZE } from '@/store/static';
 
 const Logs = ({
+  namespace,
   pod = MOCK_PODS[0],
   pods = [],
   podAlias,
   setPodDetail,
   closeFn
 }: {
+  namespace: string;
   pod: PodDetailType;
   pods: { alias: string; podName: string }[];
   podAlias: string;
@@ -100,7 +102,7 @@ const Logs = ({
     );
   }, []);
 
-  const { isLoading } = useQuery(['initPodEvents'], () => getPodEvents(pod.podName), {
+  const { isLoading } = useQuery(['initPodEvents'], () => getPodEvents(namespace, pod.podName), {
     refetchInterval: 3000,
     onSuccess(res) {
       setEvents(res);
@@ -126,7 +128,7 @@ const Logs = ({
       onOpenAnalyses();
       onStartAnalyses();
       await streamFetch({
-        url: '/api/getPodEventsAnalyses',
+        url: `/api/getPodEventsAnalyses?namespace=${namespace}`,
         data: events.map((item) => ({
           reason: item.reason,
           message: item.message,

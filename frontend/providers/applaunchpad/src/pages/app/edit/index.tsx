@@ -88,7 +88,7 @@ export const formData2Yamls = (
     : [])
 ];
 
-const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
+const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?: string; tabType: string}) => {
   const { t } = useTranslation();
   const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
@@ -162,16 +162,17 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             newYamlList: yamls,
             crYamlList: crOldYamls.current
           });
-          await putApp({
+          console.log('patch:', namespace, appName, patch);
+          await putApp(namespace, {
             patch,
             appName,
-            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value,
           });
         } else {
-          await postDeployApp(yamls);
+          await postDeployApp(namespace, yamls);
         }
 
-        router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
+        router.replace(`/app/detail?namespace=${namespace}&&name=${formHook.getValues('appName')}`);
         if (!isGuided) {
           updateDesktopGuide({
             activityType: 'beginner-guide',
@@ -252,7 +253,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
       setIsLoading(true);
       refetchPrice();
-      return setAppDetail(appName);
+      return setAppDetail(namespace, appName);
     },
     {
       onSuccess(res) {
@@ -305,6 +306,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             closeGuide();
             formHook.handleSubmit((data) => {
               const parseYamls = formData2Yamls(data);
+
+              console.log('parseYamls:', parseYamls);
               setYamlList(parseYamls);
               // balance check
               // if (balance <= 0) {
@@ -315,6 +318,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               // }
 
               // gpu inventory check
+              console.log('gpu:', data.gpu);
               if (data.gpu?.type) {
                 const inventory = countGpuInventory(data.gpu?.type);
                 if (data.gpu?.amount > inventory) {
@@ -327,6 +331,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
               // quote check
+              console.log('oldAppEditData.current:', oldAppEditData.current);
               const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
               if (quoteCheckRes) {
                 return toast({
@@ -337,6 +342,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 });
               }
               // check network port
+              console.log('data.networks:', data.networks);
               if (!checkNetworkPorts(data.networks)) {
                 return toast({
                   status: 'warning',
@@ -344,6 +350,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 });
               }
 
+              console.log('submitSuccess');
               openConfirm(() => submitSuccess(parseYamls))();
             }, submitError)();
           }}
@@ -352,6 +359,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
             <Form
+              namespace={namespace}
               formHook={formHook}
               already={already}
               defaultStorePathList={defaultStorePathList}
@@ -360,7 +368,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               refresh={forceUpdate}
             />
           ) : (
-            <Yaml yamlList={yamlList} pxVal={pxVal} />
+            <Yaml namespace={namespace} yamlList={yamlList} pxVal={pxVal} />
           )}
         </Box>
       </Flex>
@@ -375,10 +383,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
 export async function getServerSideProps(content: any) {
   const appName = content?.query?.name || '';
+  const namespace = content?.query?.namespace || 'default';
   const tabType = content?.query?.type || 'form';
 
   return {
     props: {
+      namespace,
       appName,
       tabType,
       ...(await serviceSideProps(content))

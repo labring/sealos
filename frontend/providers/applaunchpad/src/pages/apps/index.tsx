@@ -10,16 +10,19 @@ import { RequestController, isElementInViewport } from '@/utils/tools';
 import AppList from './components/appList';
 import Empty from './components/empty';
 
-const Home = () => {
+const Home = ({ namespace }: { namespace: string }) => {
   const router = useRouter();
-  const { appList, setAppList, intervalLoadPods, loadAvgMonitorData } = useAppStore();
+  const { appList, namespaces, setAppList, intervalLoadPods, loadAvgMonitorData } = useAppStore();
   const { Loading } = useLoading();
   const [refresh, setFresh] = useState(false);
   const list = useRef<AppListItemType[]>(appList);
+  const currentNamespace = useRef<string>(namespace);
+  const namespacesRef = useRef<string[]>(namespaces);
 
   const refreshList = useCallback(
     (res = appList) => {
       list.current = res;
+      namespacesRef.current = namespaces;
       setFresh((state) => !state);
       return null;
     },
@@ -27,8 +30,8 @@ const Home = () => {
   );
 
   const { isLoading, refetch: refetchAppList } = useQuery(
-    ['appListQuery'],
-    () => setAppList(false),
+    ['appListQuery', currentNamespace.current],
+    () => setAppList(currentNamespace.current, false),
     {
       onSettled(res) {
         if (!res) return;
@@ -56,7 +59,7 @@ const Home = () => {
         tasks: viewportApps
           .filter((app) => !app.isPause)
           .map((app) => {
-            return () => intervalLoadPods(app.name, false);
+            return () => intervalLoadPods(currentNamespace.current, app.name, false);
           }),
         limit: 3
       });
@@ -98,7 +101,7 @@ const Home = () => {
         tasks: viewportApps
           .filter((app) => !app.isPause)
           .map((app) => {
-            return () => loadAvgMonitorData(app.name);
+            return () => loadAvgMonitorData(currentNamespace.current, app.name);
           }),
         limit: 3
       });
@@ -126,12 +129,13 @@ const Home = () => {
 
   return (
     <>
-      {appList.length === 0 && !isLoading ? (
-        <Empty />
-      ) : (
+      {(
         <AppList
+          namespaces = {namespacesRef.current}
+          currentNamespace = {currentNamespace.current}
           apps={list.current}
-          refetchApps={() => {
+          refetchApps={(namespace: string) => {
+            currentNamespace.current = namespace;
             refetchAppList();
             refetchAvgMonitorData();
           }}
@@ -143,8 +147,10 @@ const Home = () => {
 };
 
 export async function getServerSideProps(content: any) {
+  const namespace = content?.query?.namespace || 'default';
   return {
     props: {
+      namespace,
       ...(await serviceSideProps(content))
     }
   };

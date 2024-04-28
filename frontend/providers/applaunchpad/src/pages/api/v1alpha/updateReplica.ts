@@ -42,11 +42,12 @@ export async function PauseApp({
   replica,
   req
 }: UpdateReplicaParams & { req: NextApiRequest }) {
+  const reqNamespace = req.query.namespace as string;
   const { apiClient, k8sAutoscaling, getDeployApp, namespace } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
-  const app = await getDeployApp(appName);
+  const app = await getDeployApp(appName, reqNamespace);
   if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
     throw new Error('app data error');
   }
@@ -90,11 +91,12 @@ export async function StartApp({
   replica,
   req
 }: UpdateReplicaParams & { req: NextApiRequest }) {
+  const reqNamespace = req.query.namespace as string;
   const { apiClient, getDeployApp, applyYamlList } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
-  const app = await getDeployApp(appName);
+  const app = await getDeployApp(appName, reqNamespace);
 
   if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
     throw new Error('app data error');
@@ -129,7 +131,7 @@ export async function StartApp({
         }
       } as unknown as AppEditType);
 
-      requestQueue.push(applyYamlList([hpaYaml], 'create'));
+      requestQueue.push(applyYamlList([hpaYaml], 'create', reqNamespace));
     }
   }
 

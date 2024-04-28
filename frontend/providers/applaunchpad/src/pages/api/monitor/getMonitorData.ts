@@ -79,6 +79,7 @@ const AdapterChartData: Record<
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const reqNamespace = req.query.namespace as string;
     const kubeconfig = await authSession(req.headers);
     const { namespace, kc } = await getK8s({
       kubeconfig: kubeconfig
@@ -93,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const params = {
       type: queryKey,
       launchPadName: queryName,
-      namespace: namespace,
+      namespace: reqNamespace,
       start: startTime / 1000,
       end: endTime / 1000,
       step: step

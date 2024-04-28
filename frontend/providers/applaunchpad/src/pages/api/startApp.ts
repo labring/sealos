@@ -9,6 +9,7 @@ import { AppEditType } from '@/types/app';
 
 /* start app. */
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { appName } = req.query as { appName: string };
     if (!appName) {
@@ -18,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const app = await getDeployApp(appName);
+    const app = await getDeployApp(appName, reqNamespace);
 
     if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
       throw new Error('app data error');
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
       } as unknown as AppEditType);
 
-      requestQueue.push(applyYamlList([hpaYaml], 'create'));
+      requestQueue.push(applyYamlList([hpaYaml], 'create', reqNamespace));
     }
 
     await Promise.all(requestQueue);

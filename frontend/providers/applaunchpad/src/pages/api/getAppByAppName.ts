@@ -38,18 +38,19 @@ export async function GetAppByAppName({
   appName,
   req
 }: { appName: string } & { req: NextApiRequest }) {
+  const reqNamespace = req.query.namespace as string;
   const { k8sApp, k8sCore, k8sNetworkingApp, k8sAutoscaling, namespace } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
   const response = await Promise.allSettled([
-    k8sApp.readNamespacedDeployment(appName, namespace),
-    k8sApp.readNamespacedStatefulSet(appName, namespace),
-    k8sCore.readNamespacedService(appName, namespace),
-    k8sCore.readNamespacedConfigMap(appName, namespace),
+    k8sApp.readNamespacedDeployment(appName, reqNamespace),
+    k8sApp.readNamespacedStatefulSet(appName, reqNamespace),
+    k8sCore.readNamespacedService(appName, reqNamespace),
+    k8sCore.readNamespacedConfigMap(appName, reqNamespace),
     k8sNetworkingApp
       .listNamespacedIngress(
-        namespace,
+        reqNamespace,
         undefined,
         undefined,
         undefined,
@@ -63,8 +64,8 @@ export async function GetAppByAppName({
           kind: 'Ingress'
         }))
       })),
-    k8sCore.readNamespacedSecret(appName, namespace),
-    k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace)
+    k8sCore.readNamespacedSecret(appName, reqNamespace),
+    k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, reqNamespace)
   ]);
 
   return response;

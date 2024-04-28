@@ -22,6 +22,7 @@ import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 
 const LogsModal = ({
+  namespace,
   appName,
   podName,
   pods = [],
@@ -29,6 +30,7 @@ const LogsModal = ({
   setLogsPodName,
   closeFn
 }: {
+  namespace: string;
   appName: string;
   podName: string;
   pods: { alias: string; podName: string }[];
@@ -50,7 +52,7 @@ const LogsModal = ({
 
     const controller = new AbortController();
     streamFetch({
-      url: '/api/getPodLogs',
+      url: `/api/getPodLogs?namespace=${namespace}`,
       data: {
         appName,
         podName,
@@ -98,7 +100,7 @@ const LogsModal = ({
   }, []);
 
   const exportLogs = useCallback(async () => {
-    const allLogs = await getPodLogs({
+    const allLogs = await getPodLogs(namespace, {
       appName,
       podName,
       stream: false

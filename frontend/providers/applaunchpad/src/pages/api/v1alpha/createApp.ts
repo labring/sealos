@@ -8,6 +8,7 @@ import { AppEditType } from '@/types/app';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { appForm } = req.body as { appForm: AppEditType };
     // important load env
@@ -21,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const yamls = parseYamls.map((item) => item.value);
 
-    const result = await applyYamlList(yamls, 'create');
+    const result = await applyYamlList(yamls, 'create', reqNamespace);
 
     jsonRes(res, { data: result });
   } catch (err: any) {

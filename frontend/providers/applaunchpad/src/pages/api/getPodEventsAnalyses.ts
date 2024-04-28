@@ -4,6 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   res.on('error', (err) => {
     console.log('error: ', err);
     res.end();

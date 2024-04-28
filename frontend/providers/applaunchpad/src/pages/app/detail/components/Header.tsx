@@ -15,6 +15,7 @@ import { useTranslation } from 'next-i18next';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
+  namespace,
   appName = 'app-name',
   appStatus = appStatusMap[AppStatusEnum.waiting],
   isPause = false,
@@ -22,6 +23,7 @@ const Header = ({
   setShowSlider,
   refetch
 }: {
+  namespace: string;
   appName?: string;
   appStatus?: AppStatusMapType;
   isPause?: boolean;
@@ -49,7 +51,7 @@ const Header = ({
   const handleRestartApp = useCallback(async () => {
     try {
       setLoading(true);
-      await restartAppByName(appName);
+      await restartAppByName(namespace, appName);
       toast({
         title: `${t('Restart Success')}`,
         status: 'success'
@@ -67,7 +69,7 @@ const Header = ({
   const handlePauseApp = useCallback(async () => {
     try {
       setLoading(true);
-      await pauseAppByName(appName);
+      await pauseAppByName(namespace, appName);
       toast({
         title: '应用已暂停',
         status: 'success'
@@ -86,7 +88,7 @@ const Header = ({
   const handleStartApp = useCallback(async () => {
     try {
       setLoading(true);
-      await startAppByName(appName);
+      await startAppByName(namespace, appName);
       toast({
         title: '应用已启动',
         status: 'success'
@@ -108,7 +110,7 @@ const Header = ({
         width={'36px'}
         height={'36px'}
         variant={'unstyled'}
-        onClick={() => router.replace('/apps')}
+        onClick={() => router.replace(`/apps?namespace=${namespace}`)}
         lineHeight={1}
       >
         <MyIcon name="arrowLeft" />
@@ -169,7 +171,7 @@ const Header = ({
           leftIcon={<MyIcon name={'change'} w={'20px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={() => {
-            router.push(`/app/edit?name=${appName}`);
+            router.push(`/app/edit?namespace=${namespace}&&name=${appName}`);
           }}
         >
           {t('Update')}
@@ -206,9 +208,10 @@ const Header = ({
       <PauseChild />
       {isOpenDelModal && (
         <DelModal
+          namespace={namespace}
           appName={appName}
           onClose={onCloseDelModal}
-          onSuccess={() => router.replace('/apps')}
+          onSuccess={() => router.replace(`/apps?namespace=${namespace}`)}
         />
       )}
     </Flex>

@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { podName } = req.query as { podName: string };
     if (!podName) {
@@ -14,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    await k8sCore.deleteNamespacedPod(podName, namespace);
+    await k8sCore.deleteNamespacedPod(podName, reqNamespace);
 
     jsonRes(res);
   } catch (err: any) {

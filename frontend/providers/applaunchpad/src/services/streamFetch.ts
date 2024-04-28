@@ -1,4 +1,3 @@
-import { getUserKubeConfig } from '@/utils/user';
 
 interface StreamFetchProps {
   url: string;
@@ -20,7 +19,6 @@ export const streamFetch = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: encodeURIComponent(getUserKubeConfig())
         },
         body: JSON.stringify(data),
         signal: abortSignal.signal

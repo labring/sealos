@@ -8,6 +8,8 @@ import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
+import { getK8s } from '@/services/backend/kubernetes';
+import { authSession } from '@/services/backend/auth';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -16,6 +18,7 @@ export type Props = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   const { patch, stateFulSetYaml, appName }: Props = req.body;
   if (!patch || patch.length === 0 || !appName) {
     jsonRes(res, {
@@ -25,6 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
   try {
+    req.headers.namespace = reqNamespace;
     const {
       applyYamlList,
       k8sApp,
@@ -32,8 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       k8sNetworkingApp,
       k8sAutoscaling,
       k8sCustomObjects,
-      namespace
-    } = await initK8s({ req });
+    } = await getK8s({
+      kubeconfig: await authSession(req.headers)
+    });
 
     const crMap: Record<
       `${YamlKindEnum}`,
@@ -46,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         patch: (jsonPatch: Object) =>
           k8sApp.patchNamespacedDeployment(
             appName,
-            namespace,
+            reqNamespace,
             jsonPatch,
             undefined,
             undefined,
@@ -55,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
           ),
-        delete: (name) => k8sApp.deleteNamespacedDeployment(name, namespace)
+        delete: (name) => k8sApp.deleteNamespacedDeployment(name, reqNamespace)
       },
       [YamlKindEnum.StatefulSet]: {
         patch: async (jsonPatch: Object) => {
@@ -63,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           try {
             await k8sApp.patchNamespacedStatefulSet(
               appName,
-              namespace,
+              reqNamespace,
               jsonPatch,
               undefined,
               undefined,
@@ -74,31 +79,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             );
           } catch (error) {
             try {
-              await k8sApp.replaceNamespacedStatefulSet(appName, namespace, jsonPatch);
+              await k8sApp.replaceNamespacedStatefulSet(appName, reqNamespace, jsonPatch);
             } catch (error) {
               warnLog('delete and create statefulSet', { yaml: yaml.dump(jsonPatch) });
-              await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
-              await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+              await k8sApp.deleteNamespacedStatefulSet(appName, reqNamespace);
+              await k8sApp.createNamespacedStatefulSet(reqNamespace, jsonPatch);
             }
           }
         },
-        delete: (name) => k8sApp.deleteNamespacedStatefulSet(name, namespace)
+        delete: (name) => k8sApp.deleteNamespacedStatefulSet(name, reqNamespace)
       },
       [YamlKindEnum.Service]: {
         patch: (jsonPatch: Object) =>
-          k8sCore.replaceNamespacedService(appName, namespace, jsonPatch),
-        delete: (name) => k8sCore.deleteNamespacedService(name, namespace)
+          k8sCore.replaceNamespacedService(appName, reqNamespace, jsonPatch),
+        delete: (name) => k8sCore.deleteNamespacedService(name, reqNamespace)
       },
       [YamlKindEnum.ConfigMap]: {
         patch: (jsonPatch: any) =>
-          k8sCore.replaceNamespacedConfigMap(jsonPatch?.metadata?.name, namespace, jsonPatch),
-        delete: (name) => k8sCore.deleteNamespacedConfigMap(name, namespace)
+          k8sCore.replaceNamespacedConfigMap(jsonPatch?.metadata?.name, reqNamespace, jsonPatch),
+        delete: (name) => k8sCore.deleteNamespacedConfigMap(name, reqNamespace)
       },
       [YamlKindEnum.Ingress]: {
         patch: (jsonPatch: any) =>
           k8sNetworkingApp.patchNamespacedIngress(
             jsonPatch?.metadata?.name,
-            namespace,
+            reqNamespace,
             jsonPatch,
             undefined,
             undefined,
@@ -107,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
           ),
-        delete: (name) => k8sNetworkingApp.deleteNamespacedIngress(name, namespace)
+        delete: (name) => k8sNetworkingApp.deleteNamespacedIngress(name, reqNamespace)
       },
       [YamlKindEnum.Issuer]: {
         patch: (jsonPatch: Object) => {
@@ -116,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return k8sCustomObjects.patchNamespacedCustomObject(
             'cert-manager.io',
             'v1',
-            namespace,
+            reqNamespace,
             'issuers',
             name,
             jsonPatch,
@@ -130,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           k8sCustomObjects.deleteNamespacedCustomObject(
             'cert-manager.io',
             'v1',
-            namespace,
+            reqNamespace,
             'issuers',
             name
           )
@@ -142,7 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return k8sCustomObjects.patchNamespacedCustomObject(
             'cert-manager.io',
             'v1',
-            namespace,
+            reqNamespace,
             'certificates',
             name,
             jsonPatch,
@@ -156,7 +161,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           k8sCustomObjects.deleteNamespacedCustomObject(
             'cert-manager.io',
             'v1',
-            namespace,
+            reqNamespace,
             'certificates',
             name
           )
@@ -165,7 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         patch: (jsonPatch: Object) =>
           k8sAutoscaling.patchNamespacedHorizontalPodAutoscaler(
             appName,
-            namespace,
+            reqNamespace,
             jsonPatch,
             undefined,
             undefined,
@@ -174,13 +179,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
           ),
-        delete: (name) => k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(name, namespace)
+        delete: (name) => k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(name, reqNamespace)
       },
       [YamlKindEnum.Secret]: {
         patch: (jsonPatch: Object) =>
           k8sCore.patchNamespacedSecret(
             appName,
-            namespace,
+            reqNamespace,
             jsonPatch,
             undefined,
             undefined,
@@ -189,7 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
           ),
-        delete: (name) => k8sCore.deleteNamespacedSecret(name, namespace)
+        delete: (name) => k8sCore.deleteNamespacedSecret(name, reqNamespace)
       },
       [YamlKindEnum.PersistentVolumeClaim]: {
         patch: (jsonPatch: Object) => Promise.resolve(''),
@@ -203,7 +208,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const {
       body: { items: allPvc }
     } = await k8sCore.listNamespacedPersistentVolumeClaim(
-      namespace,
+      reqNamespace,
       undefined,
       undefined,
       undefined,
@@ -221,7 +226,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         // check whether delete
         if (!volume) {
           infoLog(`delete pvc: ${pvc.metadata?.name}`);
-          return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
+          return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', reqNamespace);
         }
         // check storage change
         if (
@@ -247,7 +252,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return k8sCore
             .patchNamespacedPersistentVolumeClaim(
               pvcName,
-              namespace,
+              reqNamespace,
               jsonPatch,
               undefined,
               undefined,
@@ -288,7 +293,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return item.value;
       })
       .filter((item) => item);
-    await applyYamlList(createYamlList as string[], 'create');
+    await applyYamlList(createYamlList as string[], 'create', reqNamespace);
 
     // delete
     await Promise.all(

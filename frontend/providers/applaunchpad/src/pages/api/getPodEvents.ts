@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { podName } = req.query as { podName: string };
 
@@ -18,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     // get pods event list
     const { body: data } = await k8sCore.listNamespacedEvent(
-      namespace,
+      reqNamespace,
       undefined,
       undefined,
       undefined,

@@ -11,21 +11,27 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import { Box, Button, Center, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, MenuButton, Select, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
+
+
 const AppList = ({
+  namespaces = [],
+  currentNamespace,
   apps = [],
   refetchApps
 }: {
   apps: AppListItemType[];
-  refetchApps: () => void;
+  namespaces: string[];
+  currentNamespace: string;
+  refetchApps: (namespace: string) => void;
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
@@ -33,6 +39,7 @@ const AppList = ({
   const { toast } = useToast();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
+  const currentNamespaceRef = useRef<string>(currentNamespace);
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -43,7 +50,7 @@ const AppList = ({
     async (appName: string) => {
       try {
         setLoading(true);
-        await restartAppByName(appName);
+        await restartAppByName(currentNamespaceRef.current, appName);
         toast({
           title: `${t('Restart Success')}`,
           status: 'success'
@@ -64,7 +71,7 @@ const AppList = ({
     async (appName: string) => {
       try {
         setLoading(true);
-        await pauseAppByName(appName);
+        await pauseAppByName(currentNamespaceRef.current, appName);
         toast({
           title: t('Application paused'),
           status: 'success'
@@ -77,7 +84,7 @@ const AppList = ({
         console.error(error);
       }
       setLoading(false);
-      refetchApps();
+      refetchApps(currentNamespaceRef.current);
     },
     [refetchApps, setLoading, t, toast]
   );
@@ -86,7 +93,7 @@ const AppList = ({
     async (appName: string) => {
       try {
         setLoading(true);
-        await startAppByName(appName);
+        await startAppByName(currentNamespaceRef.current, appName);
         toast({
           title: t('Start Successful'),
           status: 'success'
@@ -99,7 +106,16 @@ const AppList = ({
         console.error(error);
       }
       setLoading(false);
-      refetchApps();
+      refetchApps(currentNamespaceRef.current);
+    },
+    [refetchApps, setLoading, t, toast]
+  );
+
+  const setCurrentNamespace = useCallback(
+      (namespace: string) => {
+      currentNamespaceRef.current = namespace;
+      router.push(`/apps?namespace=${namespace}`);
+      refetchApps(currentNamespaceRef.current);
     },
     [refetchApps, setLoading, t, toast]
   );
@@ -206,7 +222,7 @@ const AppList = ({
                 color: 'brightBlue.600'
               }}
               leftIcon={<MyIcon name={'detail'} w={'16px'} h="16px" />}
-              onClick={() => router.push(`/app/detail?name=${item.name}`)}
+              onClick={() => router.push(`/app/detail?namespace=${currentNamespaceRef.current}&&name=${item.name}`)}
             >
               {t('Details')}
             </Button>
@@ -253,7 +269,7 @@ const AppList = ({
                             </Box>
                           </>
                         ),
-                        onClick: () => router.push(`/app/edit?name=${item.name}`)
+                        onClick: () => router.push(`/app/edit?namespace=${currentNamespaceRef.current}&&name=${item.name}`)
                       },
                       {
                         child: (
@@ -294,6 +310,8 @@ const AppList = ({
     [handlePauseApp, handleRestartApp, handleStartApp, onOpenPause, router, t, userSourcePrice?.gpu]
   );
 
+  //console.log("namespaces: ****************", namespaces, "***********************")
+
   return (
     <Box backgroundColor={'grayModern.100'} px={'32px'} pb={5} minH={'100%'}>
       <Flex h={'88px'} alignItems={'center'}>
@@ -315,12 +333,26 @@ const AppList = ({
           ( {apps.length} )
         </Box>
         <Box flex={1}></Box>
+
+        <Select
+          w={'auto'}
+          mr={4}
+          value={currentNamespaceRef.current}
+          onChange={(e) => setCurrentNamespace(e.target.value)}
+        >
+          {namespaces.map((namespace: string) => (
+            <option key={namespace} value={namespace}>
+              {namespace}
+            </option>
+          ))}
+        </Select>
+
         <Button
           h={'40px'}
           w={'156px'}
           flex={'0 0 auto'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
-          onClick={() => router.push('/app/edit')}
+          onClick={() => router.push(`/app/edit?namespace=${currentNamespaceRef.current}`)}
         >
           {t('Create Application')}
         </Button>
@@ -330,7 +362,7 @@ const AppList = ({
 
       <PauseChild />
       {!!delAppName && (
-        <DelModal appName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
+        <DelModal namespace={currentNamespaceRef.current} appName={delAppName} onClose={() => setDelAppName('')} onSuccess={() => refetchApps(currentNamespaceRef.current)} />
       )}
     </Box>
   );

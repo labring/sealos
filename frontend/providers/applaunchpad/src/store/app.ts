@@ -1,4 +1,4 @@
-import { getAppByName, getAppMonitorData, getAppPodsByAppName, getMyApps } from '@/api/app';
+import { getAppByName, getAppMonitorData, getAppPodsByAppName, getMyApps, getNamespaces } from '@/api/app';
 import { PodStatusEnum, appStatusMap } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import type { AppDetailType, AppListItemType, PodDetailType } from '@/types/app';
@@ -7,14 +7,15 @@ import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
+  namespaces: string[];
   appList: AppListItemType[];
-  setAppList: (init?: boolean) => Promise<AppListItemType[]>;
+  setAppList: (namespace: string, init?: boolean) => Promise<AppListItemType[]>;
   appDetail?: AppDetailType;
   appDetailPods: PodDetailType[];
-  setAppDetail: (appName: string) => Promise<AppDetailType>;
-  intervalLoadPods: (appName: string, updateDetail: boolean) => Promise<any>;
-  loadAvgMonitorData: (appName: string) => Promise<any>;
-  loadDetailMonitorData: (appName: string) => Promise<any>;
+  setAppDetail: (namespace: string, appName: string) => Promise<AppDetailType>;
+  intervalLoadPods: (namespace: string, appName: string, updateDetail: boolean) => Promise<any>;
+  loadAvgMonitorData: (namespace: string, appName: string) => Promise<any>;
+  loadDetailMonitorData: (namespace: string, appName: string) => Promise<any>;
 };
 
 export const useAppStore = create<State>()(
@@ -23,14 +24,19 @@ export const useAppStore = create<State>()(
       appList: [] as AppListItemType[],
       appDetail: MOCK_APP_DETAIL,
       appDetailPods: [] as PodDetailType[],
-      setAppList: async (init = false) => {
-        const res = await getMyApps();
+      namespaces: ["default"] as string[],
+      setAppList: async (namespace, init = false) => {
+        const namespaces = await getNamespaces();
+        set((state) => {
+          state.namespaces = namespaces;
+        });
+        const res = await getMyApps(namespace);
         set((state) => {
           state.appList = res;
         });
         return res;
       },
-      setAppDetail: async (appName: string) => {
+      setAppDetail: async (namespace, appName: string) => {
         set((state) => {
           state.appDetail = {
             ...MOCK_APP_DETAIL,
@@ -38,16 +44,16 @@ export const useAppStore = create<State>()(
           };
           state.appDetailPods = [];
         });
-        const res = await getAppByName(appName);
+        const res = await getAppByName(namespace, appName);
         set((state) => {
           state.appDetail = res;
         });
         return res;
       },
       // updata applist appdetail status
-      intervalLoadPods: async (appName, updateDetail) => {
+      intervalLoadPods: async (namespace, appName, updateDetail) => {
         if (!appName) return Promise.reject('app name is empty');
-        const pods = await getAppPodsByAppName(appName);
+        const pods = await getAppPodsByAppName(namespace, appName);
 
         // one pod running, app is running
         const appStatus =
@@ -74,16 +80,16 @@ export const useAppStore = create<State>()(
         });
         return 'success';
       },
-      loadAvgMonitorData: async (appName) => {
-        const pods = await getAppPodsByAppName(appName);
+      loadAvgMonitorData: async (namespace, appName) => {
+        const pods = await getAppPodsByAppName(namespace, appName);
         const queryName = pods[0].podName || appName;
         const [averageCpu, averageMemory] = await Promise.all([
-          getAppMonitorData({
+          getAppMonitorData(namespace, {
             queryKey: 'average_cpu',
             queryName: queryName,
             step: '2m'
           }),
-          getAppMonitorData({
+          getAppMonitorData(namespace, {
             queryKey: 'average_memory',
             queryName: queryName,
             step: '2m'
@@ -98,8 +104,8 @@ export const useAppStore = create<State>()(
           }));
         });
       },
-      loadDetailMonitorData: async (appName) => {
-        const pods = await getAppPodsByAppName(appName);
+      loadDetailMonitorData: async (namespace, appName) => {
+        const pods = await getAppPodsByAppName(namespace, appName);
         const queryName = pods[0].podName || appName;
 
         set((state) => {
@@ -114,10 +120,10 @@ export const useAppStore = create<State>()(
         });
 
         const [cpuData, memoryData, averageCpuData, averageMemoryData] = await Promise.all([
-          getAppMonitorData({ queryKey: 'cpu', queryName: queryName, step: '2m' }),
-          getAppMonitorData({ queryKey: 'memory', queryName: queryName, step: '2m' }),
-          getAppMonitorData({ queryKey: 'average_cpu', queryName: queryName, step: '2m' }),
-          getAppMonitorData({ queryKey: 'average_memory', queryName: queryName, step: '2m' })
+          getAppMonitorData(namespace, { queryKey: 'cpu', queryName: queryName, step: '2m' }),
+          getAppMonitorData(namespace, { queryKey: 'memory', queryName: queryName, step: '2m' }),
+          getAppMonitorData(namespace, { queryKey: 'average_cpu', queryName: queryName, step: '2m' }),
+          getAppMonitorData(namespace, { queryKey: 'average_memory', queryName: queryName, step: '2m' })
         ]);
 
         set((state) => {

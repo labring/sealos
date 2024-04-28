@@ -8,6 +8,7 @@ import { PassThrough } from 'stream';
 
 // get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   let streamResponse: any;
   const logStream = new PassThrough();
 
@@ -54,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // get pods
       const { body: data } = await k8sCore.readNamespacedPodLog(
         podName,
-        namespace,
+        reqNamespace,
         appName,
         undefined,
         undefined,
@@ -78,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     logStream.pipe(res);
 
     streamResponse = await logs.log(
-      namespace,
+      reqNamespace,
       podName,
       appName,
       logStream,

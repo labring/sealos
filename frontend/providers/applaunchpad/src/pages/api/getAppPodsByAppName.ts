@@ -6,6 +6,7 @@ import { jsonRes } from '@/services/backend/response';
 
 // get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { name } = req.query;
 
@@ -21,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const {
       body: { items: pods }
     } = await k8sCore.listNamespacedPod(
-      namespace,
+      reqNamespace,
       undefined,
       undefined,
       undefined,

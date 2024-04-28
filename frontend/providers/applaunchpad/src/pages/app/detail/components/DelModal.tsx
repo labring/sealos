@@ -18,10 +18,12 @@ import { useTranslation } from 'next-i18next';
 import { useMessage } from '@sealos/ui';
 
 const DelModal = ({
+  namespace,
   appName,
   onClose,
   onSuccess
 }: {
+  namespace: string;
   appName: string;
   onClose: () => void;
   onSuccess: () => void;
@@ -35,7 +37,7 @@ const DelModal = ({
   const handleDelApp = useCallback(async () => {
     try {
       setLoading(true);
-      await delAppByName(appName);
+      await delAppByName(namespace, appName);
       toast({
         title: `${t('success')}`,
         status: 'success'

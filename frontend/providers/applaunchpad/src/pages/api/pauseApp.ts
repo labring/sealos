@@ -6,6 +6,7 @@ import { jsonRes } from '@/services/backend/response';
 import { pauseKey } from '@/constants/app';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const reqNamespace = req.query.namespace as string;
   try {
     const { appName } = req.query as { appName: string };
     if (!appName) {
@@ -15,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const app = await getDeployApp(appName);
+    const app = await getDeployApp(appName, reqNamespace);
     if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
       throw new Error('app data error');
     }
@@ -32,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     try {
       const { body: hpa } = await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(
         appName,
-        namespace
+        reqNamespace
       );
 
       restartAnnotations.target = hpa?.spec?.metrics?.[0]?.resource?.name || 'cpu';
@@ -40,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
       }`;
 
-      requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)); // delete HorizontalPodAutoscaler
+      requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, reqNamespace)); // delete HorizontalPodAutoscaler
     } catch (error: any) {
       if (error?.statusCode !== 404) {
         return Promise.reject('无法读取到hpa');

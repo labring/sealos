@@ -28,6 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 }
 
 export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: NextApiRequest }) {
+  const reqNamespace = req.query.namespace as string;
   const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } =
     await getK8s({
       kubeconfig: await authSession(req.headers)
@@ -37,7 +38,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   const certificatesList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',
     'v1',
-    namespace,
+    reqNamespace,
     'certificates',
     undefined,
     undefined,
@@ -49,7 +50,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
     k8sCustomObjects.deleteNamespacedCustomObject(
       'cert-manager.io',
       'v1',
-      namespace,
+      reqNamespace,
       'certificates',
       item.metadata.name
     )
@@ -59,7 +60,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   const issuersList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',
     'v1',
-    namespace,
+    reqNamespace,
     'issuers',
     undefined,
     undefined,
@@ -71,7 +72,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
     k8sCustomObjects.deleteNamespacedCustomObject(
       'cert-manager.io',
       'v1',
-      namespace,
+      reqNamespace,
       'issuers',
       item.metadata.name
     )
@@ -88,12 +89,12 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
 
   /* delete all sources */
   const delDependent = await Promise.allSettled([
-    k8sCore.deleteNamespacedService(name, namespace), // delete service
-    k8sCore.deleteNamespacedConfigMap(name, namespace), // delete configMap
-    k8sCore.deleteNamespacedSecret(name, namespace), // delete secret
+    k8sCore.deleteNamespacedService(name, reqNamespace), // delete service
+    k8sCore.deleteNamespacedConfigMap(name, reqNamespace), // delete configMap
+    k8sCore.deleteNamespacedSecret(name, reqNamespace), // delete secret
     // delete Ingress
     k8sNetworkingApp.deleteCollectionNamespacedIngress(
-      namespace,
+      reqNamespace,
       undefined,
       undefined,
       undefined,
@@ -103,7 +104,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
     ),
     // delete pvc
     k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
-      namespace,
+      reqNamespace,
       undefined,
       undefined,
       undefined,
@@ -111,7 +112,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
       undefined,
       `app=${name}`
     ),
-    k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(name, namespace) // delete HorizontalPodAutoscaler
+    k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(name, reqNamespace) // delete HorizontalPodAutoscaler
   ]);
 
   /* find not 404 error */
@@ -124,8 +125,8 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
 
   // delete deploy and statefulSet
   const delApp = await Promise.allSettled([
-    k8sApp.deleteNamespacedDeployment(name, namespace), // delete deploy
-    k8sApp.deleteNamespacedStatefulSet(name, namespace) // delete stateFuleSet
+    k8sApp.deleteNamespacedDeployment(name, reqNamespace), // delete deploy
+    k8sApp.deleteNamespacedStatefulSet(name, reqNamespace) // delete stateFuleSet
   ]);
 
   /* find not 404 error */

@@ -58,6 +58,7 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 const labelWidth = 120;
 
 const Form = ({
+  namespace,
   formHook,
   already,
   defaultStorePathList,
@@ -65,6 +66,7 @@ const Form = ({
   pxVal,
   refresh
 }: {
+  namespace: string;
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
   defaultStorePathList: string[];
@@ -309,7 +311,7 @@ const Form = ({
             activeId={'form'}
             onChange={() =>
               router.replace(
-                `/app/edit?${obj2Query({
+                `/app/edit?namespace=${namespace}&&${obj2Query({
                   name,
                   type: 'yaml'
                 })}`

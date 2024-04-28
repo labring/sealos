@@ -7,14 +7,13 @@ import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
-import { getUserNamespace } from '@/utils/user';
 import { Box, Button, Center, Flex, Grid, useDisclosure } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import MonitorModal from './MonitorModal';
 
-const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
+const AppMainInfo = ({ namespace, app = MOCK_APP_DETAIL }: { namespace: string, app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -22,7 +21,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const networks = useMemo(
     () =>
       app.networks.map((network) => ({
-        inline: `http://${app.appName}.${getUserNamespace()}.svc.cluster.local:${network.port}`,
+        inline: `http://${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
         public: network.openPublicDomain
           ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
               network.customDomain

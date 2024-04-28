@@ -31,10 +31,12 @@ const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
 
 const Pods = ({
+  namespace,
   pods = [],
   loading,
   appName
 }: {
+  namespace: string;
   pods: PodDetailType[];
   loading: boolean;
   appName: string;
@@ -51,7 +53,7 @@ const Pods = ({
   const handleRestartPod = useCallback(
     async (podName: string) => {
       try {
-        await restartPodByName(podName);
+        await restartPodByName(namespace, podName);
         toast({
           title: `${t('Restart')}  ${podName} ${t('success')}`,
           status: 'success'
@@ -242,6 +244,7 @@ const Pods = ({
       <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal
+          namespace={namespace}
           appName={appName}
           podName={pods[logsPodIndex]?.podName || ''}
           pods={pods
@@ -259,6 +262,7 @@ const Pods = ({
       )}
       {detailPodIndex !== undefined && (
         <DetailModel
+          namespace={namespace}
           pod={pods[detailPodIndex]}
           podAlias={`${appName}-${detailPodIndex + 1}`}
           pods={pods.map((item, i) => ({

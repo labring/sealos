@@ -104,6 +104,7 @@ async function replaceYaml(
       const { body } = await client.read(spec);
       infoLog('replace yaml: ', { kind: spec.kind });
       // update resource
+      console.log('replace yaml: ', { kind: spec.kind });
       const response = await client.replace({
         ...spec,
         metadata: {
@@ -111,6 +112,7 @@ async function replaceYaml(
           resourceVersion: body.metadata?.resourceVersion
         }
       });
+      console.log('success replace yaml: ', { kind: spec.kind });
       succeed.push(response.body);
     } catch (e: any) {
       errLog('replace yaml error: ', e);
@@ -266,7 +268,9 @@ export async function initK8s({ req }: { req: { headers: IncomingHttpHeaders } }
     return Promise.reject('User is null');
   }
 
-  const namespace = kc.contexts[0].namespace || `ns-${kube_user.name}`;
+  console.log('namespace:', req.headers.namespace)
+  const namespace = req.headers.namespace as string;
+  //const namespace = kc.contexts[0].namespace || `ns-${kube_user.name}`;
 
   return Promise.resolve({
     kc,

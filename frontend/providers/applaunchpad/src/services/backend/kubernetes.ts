@@ -197,14 +197,14 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
 
   const namespace = kc.contexts[0].namespace || `ns-${kube_user.name}`;
 
-  const applyYamlList = async (yamlList: string[], type: 'create' | 'replace') => {
+  const applyYamlList = async (yamlList: string[], type: 'create' | 'replace', reqNamespace: string) => {
     // insert namespace
     const formatYaml: k8s.KubernetesObject[] = yamlList
       .map((item) => yaml.loadAll(item))
       .flat()
       .map((item: any) => {
         if (item.metadata) {
-          item.metadata.namespace = namespace;
+          item.metadata.namespace = reqNamespace;
         }
         return item;
       });
@@ -217,19 +217,19 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     return CreateYaml(kc, formatYaml);
   };
 
-  const getDeployApp = async (appName: string) => {
+  const getDeployApp = async (appName: string, reqNamespace: string) => {
     let app: V1Deployment | V1StatefulSet | null = null;
     const k8sApp = kc.makeApiClient(k8s.AppsV1Api);
     const k8sCore = kc.makeApiClient(k8s.CoreV1Api);
 
     try {
-      app = (await k8sApp.readNamespacedDeployment(appName, namespace)).body;
+      app = (await k8sApp.readNamespacedDeployment(appName, reqNamespace)).body;
     } catch (error: any) {
       error;
     }
 
     try {
-      app = (await k8sApp.readNamespacedStatefulSet(appName, namespace)).body;
+      app = (await k8sApp.readNamespacedStatefulSet(appName, reqNamespace)).body;
     } catch (error: any) {
       error;
     }

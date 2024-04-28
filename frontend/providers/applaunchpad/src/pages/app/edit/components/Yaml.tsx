@@ -10,7 +10,7 @@ import { useRouter } from 'next/router';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 
-const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
+const Yaml = ({ namespace, yamlList = [], pxVal }: { namespace: string, yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
   const router = useRouter();
   const { name } = router.query as QueryType;
@@ -35,7 +35,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           activeId={'yaml'}
           onChange={() =>
             router.replace(
-              `/app/edit?${obj2Query({
+              `/app/edit?namespace=${namespace}&&${obj2Query({
                 name,
                 type: 'form'
               })}`
