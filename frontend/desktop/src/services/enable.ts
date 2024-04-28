@@ -1,47 +1,22 @@
 // for service
 import process from 'process';
+import { AppConfigType } from '@/types';
 
-export const enablePassword = () =>
-  process.env.PASSWORD_ENABLED === 'true' && !!process.env.PASSWORD_SALT;
-export const enableGithub = () =>
-  process.env.GITHUB_ENABLED === 'true' &&
-  !!process.env.GITHUB_CLIENT_ID &&
-  !!process.env.GITHUB_CLIENT_SECRET;
-export const enableSms = () =>
-  process.env.SMS_ENABLED === 'true' &&
-  !!process.env.ALI_ACCESS_KEY_ID &&
-  !!process.env.ALI_ACCESS_KEY_SECRET &&
-  !!process.env.ALI_SIGN_NAME &&
-  !!process.env.ALI_TEMPLATE_CODE;
-export const enableWechat = () =>
-  process.env.WECHAT_ENABLED === 'true' &&
-  !!process.env.WECHAT_CLIENT_ID &&
-  !!process.env.WECHAT_CLIENT_SECRET;
-export const enableGoogle = () =>
-  process.env.GOOGLE_ENABLED === 'true' &&
-  !!process.env.GOOGLE_CLIENT_ID &&
-  !!process.env.GOOGLE_CLIENT_SECRET;
-export const enableOpenWechat = () =>
-  !!process.env.PBULIC_WECHAT_APP_ID && !!process.env.PBULIC_WECHAT_APP_SECRET;
-export const enableSignUp = () => process.env.SIGN_UP_ENABLED === 'true';
-export const enableApi = () => process.env.API_ENABLED === 'true';
-// costcenter
-export const enableRecharge = () => {
-  return process.env.RECHARGE_ENABLED === 'true';
-};
-export const enableStripe = () =>
-  process.env['STRIPE_ENABLED'] === 'true' && !!process.env['STRIPE_PUB'];
-export const enableWechatRecharge = () => process.env['WECHAT_ENABLED'] === 'true';
-// license
-export const enableLicense = () => {
-  return process.env.LICENSE_ENABLED === 'true';
-};
+const config = global.AppConfig as AppConfigType;
 
-export const getTeamLimit = () => parseInt(process.env['TEAM_LIMIT'] || '') || 50;
+export const enablePassword = () => config.desktop.auth.idp.password?.enabled || false;
+export const enableGithub = () => config.desktop.auth.idp.github?.enabled || false;
+export const enableSms = () => config.desktop.auth.idp.sms?.ali?.enabled || false;
+export const enableWechat = () => config.desktop.auth.idp.wechat?.enabled || false;
+export const enableGoogle = () => config.desktop.auth.idp.google?.enabled || false;
+export const enableSignUp = () => config.desktop.auth.signUpEnabled || false;
+export const enableApi = () => config.common.apiEnabled || false;
+export const enableOAuth2 = () => config.desktop.auth.idp.oauth2?.enabled || false;
 
-export const getTeamInviteLimit = () => parseInt(process.env['TEAM_INVITE_LIMIT'] || '') || 50;
+export const getTeamLimit = () => config.desktop.teamManagement?.maxTeamCount || 50;
+export const getTeamInviteLimit = () => config.desktop.teamManagement?.maxTeamMemberCount || 50;
 
-export const getRegionUid = () => process.env['REGION_UID'] || '';
+export const getRegionUid = () => config.cloud.regionUID;
 
 export const enablePersistImage = () =>
   !!process.env.OS_URL &&
@@ -50,10 +25,3 @@ export const enablePersistImage = () =>
   !!process.env.OS_ACCESS_KEY &&
   !!process.env.OS_SECRET_KEY &&
   process.env.PERSIST_AVATAR_ENABLED === 'true';
-
-export const enableOAuth2 = () =>
-  !!process.env.OAUTH2_CLIENT_ID &&
-  !!process.env.OAUTH2_CLIENT_SECRET &&
-  !!process.env.OAUTH2_AUTH_URL &&
-  !!process.env.OAUTH2_TOKEN_URL &&
-  !!process.env.OAUTH2_USERINFO_URL;

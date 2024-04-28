@@ -13,7 +13,7 @@ export * from './region';
 
 declare global {
   var mongodb: MongoClient | null;
-  var AppConfig: AppConfigType | undefined;
+  var AppConfig: AppConfigType;
   var WechatAccessToken: string | undefined;
   var WechatExpiresIn: number | undefined;
 }

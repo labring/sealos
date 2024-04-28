@@ -22,7 +22,7 @@ export type MetaConfigType = {
   title: string;
   description: string;
   keywords: string;
-  scripts: MetaScriptType[];
+  scripts?: MetaScriptType[];
 };
 
 export type MetaScriptType = {
@@ -56,7 +56,14 @@ export type LayoutConfigType = {
 export type AuthConfigType = {
   proxyAddress?: string;
   callbackURL: string;
+  signUpEnabled?: boolean;
+  baiduToken?: string;
   jwt: JwtConfigType;
+  invite?: {
+    enabled: boolean;
+    lafSecretKey: string;
+    lafBaseURL: string;
+  };
   idp: {
     password?: {
       enabled: boolean;
@@ -109,10 +116,9 @@ export type JwtConfigType = {
 export type DesktopConfigType = {
   layout: LayoutConfigType;
   auth: AuthConfigType;
-  components: {
-    billingService: {
-      uri: string;
-    };
+  teamManagement?: {
+    maxTeamCount: number;
+    maxTeamMemberCount: number;
   };
 };
 

@@ -12,9 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 }
 
+// genResAuthConfig Return AuthConfigType with only necessary fields for response to client, to avoid exposing sensitive data
 function genResAuthConfig(conf: AuthConfigType): AuthConfigType {
   return {
     callbackURL: conf.callbackURL,
+    signUpEnabled: conf.signUpEnabled,
+    invite: {
+      enabled: conf.invite?.enabled
+    },
     idp: {
       password: {
         enabled: conf.idp.password?.enabled

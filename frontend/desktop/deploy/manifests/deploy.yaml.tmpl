@@ -249,11 +249,6 @@ spec:
                 secretKeyRef:
                   key: region_database_url
                   name: desktop-frontend-secret
-            - name: BILLING_URI
-              valueFrom:
-                secretKeyRef:
-                  key: billing_uri
-                  name: desktop-frontend-secret
             - name: JWT_SECRET_REGION
               valueFrom:
                 secretKeyRef:
