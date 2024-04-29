@@ -1,8 +1,8 @@
-import {create} from 'zustand';
-import {devtools} from 'zustand/middleware';
-import {immer} from 'zustand/middleware/immer';
-import {FormSliderListType} from '@/types';
-import {defaultSliderKey} from '@/constants/app';
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { FormSliderListType } from '@/types';
+import { defaultSliderKey } from '@/constants/app';
 
 type State = {
   screenWidth: number;
