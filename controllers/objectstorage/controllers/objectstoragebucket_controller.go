@@ -19,7 +19,7 @@ package controllers
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
@@ -380,7 +380,7 @@ func (r *ObjectStorageBucketReconciler) initObjectStorageKeySecret(secret *corev
 }
 
 func buildSAName(input string) string {
-	hashBytes := md5.Sum([]byte(input))
+	hashBytes := sha256.Sum256([]byte(input))
 	hashHex := hex.EncodeToString(hashBytes[:])
 	return hashHex[:16]
 }
