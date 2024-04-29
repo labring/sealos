@@ -1,4 +1,4 @@
-import { ServiceStore} from '@/types/state';
+import { ServiceStore } from '@/types/state';
 import { create } from 'zustand';
 import { createKubeStoreSlice } from './kube.store';
 import { Service } from '@/k8slens/kube-object';

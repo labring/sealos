@@ -1,5 +1,5 @@
 import { jsonRes } from '@/services/backend/response';
-import { modifyTeamRole, unbindingRole } from '@/services/backend/team';
+import { modifyWorkspaceRole, unbindingRole } from '@/services/backend/team';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { roleToUserRole, vaildManage } from '@/utils/tools';
 import { validate } from 'uuid';
@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else if (JoinStatus.IN_WORKSPACE === tItem.status) {
       // modify role
-      await modifyTeamRole({
+      await modifyWorkspaceRole({
         k8s_username: tItem.userCr.crName,
         role: roleToUserRole(tItem.role),
         action: 'Deprive',

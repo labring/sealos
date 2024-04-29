@@ -30,16 +30,12 @@ type CRD = {
     role: RoleType;
   };
 };
-export enum watchEventType {
-  ADDED = 'ADDED',
-  MODIFIED = 'MODIFIED',
-  DELETED = 'DELETED',
-  BOOKMARK = 'BOOKMARK'
-}
 export const generateRequestCrd = (props: CRD['spec'] & { namespace: string }) => {
   const hash = createHash('sha256');
-  hash.update(JSON.stringify(props) + new Date().getTime());
+  // hash.update(JSON.stringify(props) + new Date().getTime());
+  hash.update(JSON.stringify(props));
   const name = hash.digest('hex');
+
   const requestCrd: CRD = {
     apiVersion: 'user.sealos.io/v1',
     kind: 'Operationrequest',

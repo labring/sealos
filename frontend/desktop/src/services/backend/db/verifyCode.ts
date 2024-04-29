@@ -1,29 +1,44 @@
+import { v4 } from 'uuid';
 import { connectToDatabase } from './mongodb';
-
-type TVerification_Codes = {
-  phone: string;
+export type SmsType = 'phone' | 'email';
+export type TVerification_Codes = {
+  id: string;
+  smsType: SmsType;
   code: string;
+  uid: string;
   createdAt: Date;
 };
 
-async function connectToUserCollection() {
+async function connectToCollection() {
   const client = await connectToDatabase();
-  const collection = client.db().collection<TVerification_Codes>('verification_codes');
+  const collection = client.db().collection<TVerification_Codes>('sms_verification_codes');
   await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 });
+  await collection.createIndex({ uid: 1 }, { unique: true });
+  await collection.createIndex({ id: 1, smsType: 1 }, { unique: true });
   return collection;
 }
 
 // addOrUpdateCode
-export async function addOrUpdateCode({ phone, code }: { phone: string; code: string }) {
-  const codes = await connectToUserCollection();
+export async function addOrUpdateCode({
+  id,
+  smsType,
+  code
+}: {
+  id: string;
+  code: string;
+  smsType: SmsType;
+}) {
+  const codes = await connectToCollection();
   const result = await codes.updateOne(
     {
-      phone
+      id,
+      smsType
     },
     {
       $set: {
         code,
-        createdAt: new Date()
+        createdAt: new Date(),
+        uid: v4()
       }
     },
     {
@@ -33,27 +48,49 @@ export async function addOrUpdateCode({ phone, code }: { phone: string; code: st
   return result;
 }
 // checkCode
-export async function checkSendable({ phone }: { phone: string }) {
-  const codes = await connectToUserCollection();
+export async function checkSendable({ id, smsType }: { id: string; smsType: SmsType }) {
+  const codes = await connectToCollection();
   const result = await codes.findOne({
-    phone,
+    id,
+    smsType,
     createdAt: {
-      // 在区间范围内找到就是已经发送过了，不能再发了
       $gt: new Date(new Date().getTime() - 60 * 1000)
     }
   });
   return !result;
 }
 // checkCode
-export async function checkCode({ phone, code }: { phone: string; code: string }) {
-  const codes = await connectToUserCollection();
+export async function checkCode({
+  id,
+  smsType,
+  code
+}: {
+  id: string;
+  code: string;
+  smsType: SmsType;
+}) {
+  const codes = await connectToCollection();
   const result = await codes.findOne({
-    phone,
+    id,
+    smsType,
     code,
     createdAt: {
-      // 5分钟内有效
       $gt: new Date(new Date().getTime() - 5 * 60 * 1000)
     }
   });
-  return !!result;
+  return result;
+}
+export async function getInfoByUid({ uid }: { uid: string }) {
+  const codes = await connectToCollection();
+  const result = await codes.findOne({
+    uid
+  });
+  return result;
+}
+export async function deleteByUid({ uid }: { uid: string }) {
+  const codes = await connectToCollection();
+  const result = await codes.deleteOne({
+    uid
+  });
+  return result;
 }

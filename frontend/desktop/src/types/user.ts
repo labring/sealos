@@ -1,5 +1,6 @@
+import { RESPONSE_MESSAGE } from './response/utils';
 import { InvitedStatus, UserRole } from './team';
-
+import { ProviderType } from 'prisma/global/generated/client';
 export type TgithubToken = {
   access_token: string;
   expires_in: number;
@@ -63,19 +64,32 @@ export type TgithubUser = {
   created_at: string;
   updated_at: string;
 };
+export type TgoogleUser = {
+  iss: string;
+  azp: string;
+  aud: string;
+  sub: string;
+  at_hash: string;
+  name: string;
+  picture: string;
+  given_name: string;
+  family_name: string;
+  locale: string;
+  iat: number;
+  exp: number;
+};
 // if default, uid
 export const PROVIDERS = [
-  'github',
-  'wechat',
-  'phone',
-  'uid',
-  'password_user',
-  'google',
-  'wechat_open',
-  'oauth2'
+  'GITHUB',
+  'WECHAT',
+  'PHONE',
+  'PASSWORD',
+  'GOOGLE',
+  'WECHAT_OPEN',
+  'OAUTH2',
+  'EMAIL'
 ] as const;
-export type Provider = (typeof PROVIDERS)[number];
-export type OauthProvider = Exclude<Provider, 'uid' | 'password_user' | 'phone'>;
+export type OauthProvider = Exclude<ProviderType, 'PASSWORD' | 'PHONE' | 'EMAIL'>;
 export type TUserExist = { user: string; exist: boolean };
 
 export type K8s_user = {
@@ -150,3 +164,87 @@ export type OAuth2UserInfoType = {
   website: string | null;
   zoneinfo: string | null;
 };
+enum _ACCOUNT_STATUS {
+  INSUFFICENT_BALANCE = 'INSUFFICENT_BALANCE'
+}
+enum _RESOURCE_STATUS {
+  USER_CR_NOT_FOUND = 'USER_CR_NOT_FOUND',
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  OAUTHPROVIDER_NOT_FOUND = 'OAUTHPROVIDER_NOT_FOUND',
+  PRIVATE_WORKSPACE_NOT_FOUND = 'PRIVATE_WORKSPACE_NOT_FOUND',
+  GET_RESOURCE_ERROR = 'GET_RESOURCE_ERROR',
+  REMAIN_OTHER_REGION_RESOURCE = 'REMAIN_OTHER_REGION_RESOURCE',
+  REMAIN_WORKSACE_OWNER = 'REMAIN_WORKSACE_OWNER',
+  REMAIN_CVM = 'REMAIN_CVM',
+  REMAIN_APP = 'REMAIN_APP',
+  REMAIN_TEMPLATE = 'REMAIN_TEMPLATE',
+  REMAIN_OBJECT_STORAGE = 'REMAIN_OBJECT_STORAGE',
+  REMAIN_DATABASE = 'REMAIN_DATABASE',
+  KUBECONFIG_NOT_FOUND = 'KUBECONFIG_NOT_FOUND'
+}
+export enum PROVIDER_STATUS {
+  PROVIDER_NOT_FOUND = 'PROVIDER_NOT_FOUND',
+  PROVIDER_EXIST = 'PROVIDER_EXIST'
+}
+export const RESOURCE_STATUS = Object.assign(
+  {},
+  _RESOURCE_STATUS,
+  RESPONSE_MESSAGE,
+  _ACCOUNT_STATUS
+);
+export enum MERGE_USER_READY {
+  MERGE_USER_CONTINUE = 'USER_MERGE',
+  MERGE_USER_PROVIDER_CONFLICT = 'PROVIDER_CONFLICT'
+}
+enum _BIND_STATUS {
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  NOT_SUPPORT = 'NOT_SUPPORT',
+  RESOURCE_CONFLICT = 'RESOURCE_CONFLICT',
+  DB_ERROR = 'DB_ERROR'
+}
+export const BIND_STATUS = Object.assign(
+  {},
+  MERGE_USER_READY,
+  _BIND_STATUS,
+  RESPONSE_MESSAGE,
+  PROVIDER_STATUS
+);
+enum _UNBIND_STATUS {
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  NOT_SUPPORT = 'NOT_SUPPORT',
+  RESOURCE_CONFLICT = 'RESOURCE_CONFLICT',
+  DB_ERROR = 'DB_ERROR'
+}
+export const UNBIND_STATUS = Object.assign({}, _UNBIND_STATUS, RESPONSE_MESSAGE, PROVIDER_STATUS);
+enum _CHANGE_BIND_STATUS {
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  NOT_SUPPORT = 'NOT_SUPPORT',
+  // OLD_PROVIDER_NOT_EXIST = 'PROVIDER_NOT_EXIST',
+  // NEW_PROVIDER_USED_CONFLICT = 'NEW_PROVIDER_USED_CONFLICT',
+  // NEW_PROVIDER_USED_MERGE = 'NEW_PROVIDER_USED_MERGE',
+  RESOURCE_CONFLICT = 'RESOURCE_CONFLICT',
+  DB_ERROR = 'DB_ERROR'
+}
+export const CHANGE_BIND_STATUS = Object.assign(
+  Object.assign(
+    {},
+    _CHANGE_BIND_STATUS,
+    MERGE_USER_READY,
+    RESPONSE_MESSAGE
+    // PROVIDER_STATUSD
+  ),
+  PROVIDER_STATUS
+);
+
+enum _USER_MERGE_STATUS {
+  NOT_SUPPORT = 'NOT_SUPPORT',
+  OAUTH_PROVIDER_NOT_FOUND = 'OAUTH_PROVIDER_NOT_FOUND',
+  EXIST_SAME_OAUTH_PROVIDER = 'EXIST_SAME_OAUTH_PROVIDER',
+  USER_NOT_FOUND = 'USER_NOT_FOUND'
+}
+export const USER_MERGE_STATUS = Object.assign(
+  {},
+  _USER_MERGE_STATUS,
+  RESPONSE_MESSAGE,
+  _ACCOUNT_STATUS
+);

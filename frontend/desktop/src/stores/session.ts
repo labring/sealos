@@ -2,8 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { Session, sessionKey } from '@/types';
-import { OauthProvider, Provider } from '@/types/user';
-
+import { OauthProvider } from '@/types/user';
+type StatePayload = {
+  rad: string;
+  action: OauthAction;
+};
+export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 type SessionState = {
   session?: Session;
   token: string;
@@ -14,13 +18,15 @@ type SessionState = {
   delSession: () => void;
   isUserLogin: () => boolean;
   /*
-      when proxy oauth2.0 ,the domainState need to be used 
-  */
-  generateState: (domainState?: string) => string;
-  compareState: (state: string) => boolean;
+			when proxy oauth2.0 ,the domainState need to be used 
+	*/
+  generateState: (action?: OauthAction, domainState?: string) => string;
+  compareState: (state: string) => {
+    isSuccess: boolean;
+    statePayload: StatePayload;
+  };
   setProvider: (provider?: OauthProvider) => void;
   setToken: (token: string) => void;
-  setState: (state: string) => void;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
 };
@@ -45,21 +51,24 @@ const useSessionStore = create<SessionState>()(
         set({ session: undefined });
       },
       isUserLogin: () => !!get().session?.user,
-      generateState: (domainState) => {
-        let state = new Date().getTime().toString();
-        console.log(domainState);
-        if (!!domainState) state = domainState;
+      generateState: (action = 'LOGIN', domainState) => {
+        const stateObj = { rad: new Date().getTime().toString(), action } satisfies StatePayload;
+        if (!!domainState && action === 'PROXY') {
+          stateObj.rad = domainState;
+        }
+        const state = JSON.stringify(stateObj);
         set({ oauth_state: state });
         return state;
       },
-      setState: (state) => {
-        set({ oauth_state: state });
-      },
       compareState: (state: string) => {
-        let result = state === get().oauth_state;
-        console.log(result, get().oauth_state, state, 'compareState');
+        let isSuccess = state === get().oauth_state;
+        const statePayload = JSON.parse(state) as StatePayload;
+        console.log(isSuccess, statePayload, state, get().oauth_state);
         set({ oauth_state: undefined });
-        return result;
+        return {
+          isSuccess,
+          statePayload
+        };
       },
       setProvider: (provider?: OauthProvider) => {
         set({ provider });

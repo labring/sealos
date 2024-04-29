@@ -1,21 +1,20 @@
 import {
-  RoleAction,
+  deleteRequestCrd,
   generateRequestCrd,
   ROLE_LIST,
-  UserRole,
-  watchEventType,
-  deleteRequestCrd
+  RoleAction,
+  UserRole
 } from '@/types/team';
 import { KubeConfig } from '@kubernetes/client-node';
 import { K8sApiDefault } from './kubernetes/admin';
 import { ApplyYaml } from './kubernetes/user';
 import { prisma } from '@/services/backend/db/init';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
-import { UserRoleToRole } from '@/utils/tools';
+import { roleToUserRole, UserRoleToRole, vaildManage } from '@/utils/tools';
 
 const _applyRoleRequest =
   (kc: KubeConfig, nsid: string) =>
-  (action: 'Grant' | 'Deprive' | 'Update', types: watchEventType[]) =>
+  (action: 'Grant' | 'Deprive' | 'Update') =>
   (k8s_username: string, role: UserRole) => {
     const createCR = () =>
       ApplyYaml(
@@ -70,7 +69,7 @@ export const applyDeleteRequest = (user: string) => {
   });
 };
 
-type ModifyTeamBaseParam = {
+type ModifyWorkspaceBaseParam = {
   k8s_username: string; // 目标
   // ns_uid: string; // 目标
   workspaceId: string;
@@ -78,61 +77,100 @@ type ModifyTeamBaseParam = {
   action: RoleAction;
 };
 // 只修改，不包含邀请的业务逻辑，应该是确保数据库已经有记录,只修改记录，并且修改k8s的rolebinding
-export const modifyTeamRole = async ({
+export const modifyWorkspaceRole = async ({
   k8s_username,
   // ns_uid,
   workspaceId,
   ...props
-}:
-  | (ModifyTeamBaseParam & {
-      action: 'Grant' | 'Create';
-    })
-  | (ModifyTeamBaseParam & {
-      action: 'Deprive' | 'Modify';
-      pre_role: UserRole;
-    })
-  | (ModifyTeamBaseParam & {
-      action: 'Change';
-      pre_k8s_username: string;
-    })) => {
+}: ModifyWorkspaceBaseParam &
+  (
+    | {
+        action: 'Grant' | 'Create';
+      }
+    | {
+        action: 'Deprive' | 'Modify';
+        pre_role: UserRole;
+      }
+    | {
+        action: 'Change';
+        pre_k8s_username: string;
+      }
+    | {
+        action: 'Merge';
+        pre_role: UserRole;
+      }
+  )) => {
   const kc = K8sApiDefault();
   const applyRoleRequest = _applyRoleRequest(kc, workspaceId);
-  const grantApply = applyRoleRequest('Grant', [watchEventType.ADDED]);
-  const depriveApply = applyRoleRequest('Deprive', [watchEventType.DELETED]);
-  const updateApply = applyRoleRequest('Update', []);
-  // let result: TeamRolebinding | null = null;
+  const grantApply = applyRoleRequest('Grant');
+  const depriveApply = applyRoleRequest('Deprive');
+  const updateApply = applyRoleRequest('Update');
 
   if (props.action === 'Grant') {
-    // result =
     await grantApply(k8s_username, props.role);
-    // console.log(result)
   } else if (props.action === 'Deprive') {
-    // 保证存在
     if (props.pre_role !== props.role) return null;
-    // result =
     await depriveApply(k8s_username, props.role);
   } else if (props.action === 'Change') {
-    // 移交自己的权限
+    // abdicate role
     if (props.role === UserRole.Owner && props.pre_k8s_username) {
-      // 先把自己的权限去掉
-      // result =
+      // remove owner
       await updateApply(props.pre_k8s_username, UserRole.Developer);
-      // 再补充新的权限上来
-      // result =
+      // add owner
       await updateApply(k8s_username, UserRole.Owner);
     }
   } else if (props.action === 'Create') {
-    //  创建新的团队
+    // create new workspace
     if (props.role === UserRole.Owner) {
       await grantApply(k8s_username, UserRole.Owner);
     }
   } else if (props.action === 'Modify') {
-    // 修改他人权限
-    // 相同权限，不管
+    // modify other role
+    // same role
     if (props.pre_role === props.role) return null;
-    updateApply(k8s_username, props.role);
-  } // if (!result) return null;
-  // return result;
+    await updateApply(k8s_username, props.role);
+  }
+};
+// 4 conditions
+/**
+ * | same role          | user role >= user merge role | merge user role > user role                    | target user out of workspace                 |
+ * | deprive merge user | deprive merge user           | deprive merge user & update to merge user role | deprive merge user & grant merge user role   |
+ *
+ * */
+export const mergeUserWorkspaceRole = async ({
+  workspaceId,
+  mergeUserCrName,
+  userCrName,
+  userRole,
+  mergeUserRole
+}: {
+  workspaceId: string;
+  mergeUserCrName: string;
+  userCrName: string;
+  userRole?: Role;
+  mergeUserRole: Role;
+}) => {
+  const kc = K8sApiDefault();
+  const applyRoleRequest = _applyRoleRequest(kc, workspaceId);
+  const grantApply = applyRoleRequest('Grant');
+  const depriveApply = applyRoleRequest('Deprive');
+  const updateApply = applyRoleRequest('Update');
+  // handle pre user
+  await depriveApply(mergeUserCrName, roleToUserRole(mergeUserRole));
+  // handle new user
+  const targetUserExist = !(userRole === undefined || userRole === null);
+  if (targetUserExist) {
+    const targetUserRoleisHigher = vaildManage(roleToUserRole(userRole))(
+      roleToUserRole(mergeUserRole),
+      true
+    );
+    if (!targetUserRoleisHigher) {
+      await updateApply(userCrName, roleToUserRole(mergeUserRole));
+    }
+  } else {
+    await grantApply(userCrName, roleToUserRole(mergeUserRole));
+  }
+  // handle new user
 };
 // ==================================
 // 以下是邀请的业务逻辑,只负责改数据库
@@ -229,4 +267,132 @@ export const acceptInvite = async ({
       joinAt: new Date()
     }
   });
+};
+
+export const mergeUserModifyBinding = async ({
+  mergeUserCrUid,
+  workspaceUid,
+  userCrUid,
+  userRole,
+  mergeUserRole
+}: {
+  mergeUserCrUid: string;
+  workspaceUid: string;
+  userCrUid: string;
+  userRole?: Role;
+  mergeUserRole: Role;
+}) => {
+  let role;
+  if (undefined === userRole || userRole === null) {
+    const role = mergeUserRole;
+    // user is not in workspace
+    await prisma.$transaction([
+      prisma.userWorkspace.create({
+        data: {
+          role,
+          userCrUid: userCrUid,
+          workspaceUid,
+          status: JoinStatus.IN_WORKSPACE,
+          isPrivate: false
+        }
+      }),
+      prisma.userWorkspace.delete({
+        where: {
+          workspaceUid_userCrUid: {
+            userCrUid: mergeUserCrUid,
+            workspaceUid
+          }
+        }
+      })
+    ]);
+  } else {
+    const userRoleisHigher = vaildManage(roleToUserRole(userRole))(
+      roleToUserRole(mergeUserRole),
+      true
+    );
+    if (userRoleisHigher) {
+      role = userRole;
+    } else {
+      role = mergeUserRole;
+    }
+    await prisma.$transaction([
+      prisma.userWorkspace.update({
+        where: {
+          workspaceUid_userCrUid: {
+            userCrUid: userCrUid,
+            workspaceUid
+          }
+        },
+        data: {
+          role
+        }
+      }),
+      prisma.userWorkspace.delete({
+        where: {
+          workspaceUid_userCrUid: {
+            userCrUid: mergeUserCrUid,
+            workspaceUid
+          }
+        }
+      })
+    ]);
+  }
+};
+
+export const mergeUserModifyBindingCommit = async ({
+  preUserCrUid,
+  workspaceUid,
+  targetUserCrUid,
+  targetUserRole,
+  preUserRole
+}: {
+  preUserCrUid: string;
+  workspaceUid: string;
+  targetUserCrUid: string;
+  targetUserRole?: Role;
+  preUserRole: Role;
+}) => {
+  let role;
+  if (undefined === targetUserRole || targetUserRole === null) {
+    role = preUserRole;
+  } else {
+    const targetUserRoleisHigher = vaildManage(roleToUserRole(targetUserRole))(
+      roleToUserRole(preUserRole),
+      true
+    );
+    if (targetUserRoleisHigher) {
+      role = targetUserRole;
+    } else {
+      role = preUserRole;
+    }
+  }
+
+  return prisma.$transaction([
+    prisma.userWorkspace.upsert({
+      where: {
+        workspaceUid_userCrUid: {
+          userCrUid: targetUserCrUid,
+          workspaceUid
+        }
+      },
+      create: {
+        role,
+        userCrUid: targetUserCrUid,
+        workspaceUid,
+        status: JoinStatus.IN_WORKSPACE,
+        isPrivate: false
+      },
+      update: {
+        role
+      }
+    }),
+    prisma.userWorkspace.delete({
+      where: {
+        workspaceUid_userCrUid: {
+          userCrUid: preUserCrUid,
+          workspaceUid
+        }
+      }
+    })
+  ]);
 };

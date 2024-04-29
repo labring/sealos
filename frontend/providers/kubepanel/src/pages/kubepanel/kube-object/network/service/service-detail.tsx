@@ -72,16 +72,22 @@ const ServiceDetail = ({ obj: service, open, onClose }: DetailDrawerProps<Servic
   if (!service || !(service instanceof Service)) return null;
   return (
     <Drawer open={open} title={`Service: ${service.getName()}`} onClose={onClose}>
-    <DrawerPanel>
-      <KubeObjectInfoList obj={service} />
-      <DrawerItem name="Cluster IP" value={service.getClusterIp()} />
-      <DrawerItem name="External IPs" value={service.getExternalIps().join(", ")} />
-      <DrawerItem name="Type" value={service.getType()} />
-      <DrawerItem name="Ports" value={service.getPorts().map(port => port.toString()).join(", ")} />
-      {/* Add other relevant details here */}
-    </DrawerPanel>
-  </Drawer>
-)
+      <DrawerPanel>
+        <KubeObjectInfoList obj={service} />
+        <DrawerItem name="Cluster IP" value={service.getClusterIp()} />
+        <DrawerItem name="External IPs" value={service.getExternalIps().join(', ')} />
+        <DrawerItem name="Type" value={service.getType()} />
+        <DrawerItem
+          name="Ports"
+          value={service
+            .getPorts()
+            .map((port) => port.toString())
+            .join(', ')}
+        />
+        {/* Add other relevant details here */}
+      </DrawerPanel>
+    </Drawer>
+  );
 };
 
 export default ServiceDetail;

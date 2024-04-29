@@ -1,6 +1,6 @@
 import { reciveAction } from '@/api/namespace';
 import { jsonRes } from '@/services/backend/response';
-import { modifyTeamRole } from '@/services/backend/team';
+import { modifyWorkspaceRole } from '@/services/backend/team';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/services/backend/db/init';
 import { UserRoleToRole } from '@/utils/tools';
@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!inviterStatus)
         return jsonRes(res, { code: 404, message: 'the inviter or the namespace is not found' });
 
-      await modifyTeamRole({
+      await modifyWorkspaceRole({
         k8s_username: payload.userCrName,
         role: linkResults.role,
         workspaceId: inviterStatus.workspace.id,

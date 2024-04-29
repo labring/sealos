@@ -1,4 +1,3 @@
-import { KubeConfig } from '@kubernetes/client-node';
 import { APPTYPE, displayType } from './app';
 
 export type CRDMeta = {

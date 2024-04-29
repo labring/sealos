@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const _data = await getGlobalToken({
       provider: ProviderType.WECHAT,
-      id: userInfo.openid,
+      providerId: userInfo.openid,
       avatar_url,
       name: userInfo?.nickname
     });

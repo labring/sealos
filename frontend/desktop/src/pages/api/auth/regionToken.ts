@@ -1,27 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { getRegionToken } from '@/services/backend/regionAuth';
-import { verifyAuthenticationToken } from '@/services/backend/auth';
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const realUser = await verifyAuthenticationToken(req.headers);
-
-    if (!realUser)
-      return jsonRes(res, {
-        code: 401,
-        message: 'invalid token'
-      });
-    const regionData = await getRegionToken(realUser);
+import { ErrorHandler } from '@/services/backend/middleware/error';
+import { filterAuthenticationToken } from '@/services/backend/middleware/access';
+export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
+  await filterAuthenticationToken(req, res, async ({ userId, userUid }) => {
+    const regionData = await getRegionToken({ userId, userUid });
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',
       data: regionData
     });
-  } catch (err) {
-    console.log(err);
-    return jsonRes(res, {
-      message: 'Failed to authenticate with globalToken',
-      code: 500
-    });
-  }
-}
+  });
+}, 'Failed to authenticate with globalToken');

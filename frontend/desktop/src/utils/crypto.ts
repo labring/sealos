@@ -11,3 +11,5 @@ export const verifyPassword = (password: string, hash: string): boolean =>
   hashPassword(password) === hash;
 export const strongPassword = (password: string): boolean => /^(?=.*\S).{8,}$/.test(password);
 export const strongUsername = (username: string): boolean => /^[a-zA-Z0-9_-]{3,16}$/.test(username);
+export const isEmail = (email: string) =>
+  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
