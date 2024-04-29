@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     };
 
     let form: any;
-    let task = new Promise<string>((resolve) => {
+    let task = new Promise<string>((resolve, reject) => {
       form = formidable({
         fileWriteStreamHandler: () => {
           const pass = new PassThrough();
@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               resolve(res);
             })
             .catch((err) => {
-              console.log(err, 111);
+              reject('upload api is err');
             });
           return pass;
         }
@@ -45,9 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     await form.parse(req);
-    await task;
+    const data = await task;
 
-    jsonRes(res, { data: null });
+    jsonRes(res, { data: data });
   } catch (err: any) {
     console.log(err, 'err');
     jsonRes(res, {

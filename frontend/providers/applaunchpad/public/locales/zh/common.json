@@ -244,5 +244,6 @@
   "Folder Name": "文件夹名",
   "File Management": "文件管理",
   "No events yet": "暂无 events",
-  "please enter app name": "请输入：{{appName}}"
+  "please enter app name": "请输入：{{appName}}",
+  "File is too large tip": "文件 {{name}} 太大，无法上传。"
 }

@@ -244,5 +244,6 @@
   },
   "vm": "vm",
   "websocket": "websocket",
-  "please enter app name": "please enter: {{appName}}"
+  "please enter app name": "please enter: {{appName}}",
+  "File is too large tip": "File {{name}} is too large and won't be uploaded."
 }

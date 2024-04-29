@@ -48,6 +48,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useEffect, useMemo, useState } from 'react';
 import styles from '../index.module.scss';
+import { useGlobalStore } from '@/store/global';
 
 type HandleType = 'delete' | 'rename' | 'mkdir-file' | 'mkdir' | 'download';
 
@@ -66,6 +67,7 @@ const PodFile = ({
   podAlias: string;
   setPodDetail: (name: string) => void;
 }) => {
+  const { formSliderListConfig } = useGlobalStore();
   const { t } = useTranslation();
   const theme = useTheme();
   const { message } = useMessage();
@@ -255,7 +257,17 @@ const PodFile = ({
   const uploadFile = async (files: File[]) => {
     try {
       setIsUploadLoading(true);
-      const uploadPromises = files.map(async (file) => {
+      const filteredFiles = files.filter((file) => {
+        if (file.size > formSliderListConfig.uploadLimit) {
+          message({
+            status: 'info',
+            title: t('File is too large tip', { name: file.name })
+          });
+          return false;
+        }
+        return true;
+      });
+      const uploadPromises = filteredFiles.map(async (file) => {
         const name = file.name;
         const form = new FormData();
         form.append('file', file, encodeURIComponent(file.name));
