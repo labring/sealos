@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
-const { i18n } = require('./next-i18next.config')
-const path = require('path')
+const { i18n } = require('./next-i18next.config');
+const path = require('path');
 const nextConfig = {
   i18n,
   output: 'standalone',
@@ -13,14 +13,14 @@ const nextConfig = {
         issuer: /\.[jt]sx?$/,
         use: ['@svgr/webpack']
       }
-    ])
-    config.plugins = [...config.plugins]
-    return config
+    ]);
+    config.plugins = [...config.plugins];
+    return config;
   },
   transpilePackages: ['@sealos/driver', '@sealos/ui'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../')
   }
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

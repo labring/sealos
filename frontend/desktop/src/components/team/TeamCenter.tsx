@@ -2,7 +2,6 @@ import {
   Box,
   Flex,
   Text,
-  Image,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -15,9 +14,10 @@ import {
   ButtonProps,
   Center,
   VStack,
-  Circle
+  Circle,
+  HStack,
+  StackProps
 } from '@chakra-ui/react';
-import NsList from './NsList';
 import { useEffect, useState } from 'react';
 import CreateTeam from './CreateTeam';
 import DissolveTeam from './DissolveTeam';
@@ -34,8 +34,9 @@ import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/n
 import { useTranslation } from 'react-i18next';
 import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
+import NsListItem from '@/components/team/NsListItem';
 
-export default function TeamCenter(props: ButtonProps) {
+export default function TeamCenter(props: StackProps) {
   const session = useSessionStore((s) => s.session);
   const { t } = useTranslation();
   const user = session?.user;
@@ -102,19 +103,26 @@ export default function TeamCenter(props: ButtonProps) {
   }, [_namespaces, ns_uid]);
   return (
     <>
-      <IconButton
+      <HStack
+        gap={'8px'}
+        alignItems={'center'}
+        // borderBottom={'1px solid #0000001A'}
+        p={'6px 4px'}
+        cursor={'pointer'}
+        borderRadius={'4px'}
         onClick={() => {
-          // 清理消息过滤
           setMessageFilter([]);
           onOpen();
         }}
-        variant={'white-bg-icon'}
-        p="4px"
-        ml="auto"
-        icon={<SettingIcon boxSize={'20px'} color={'#219BF4'} />}
-        aria-label={'open team center'}
         {...props}
-      />
+        _hover={{
+          bgColor: 'rgba(0, 0, 0, 0.03)'
+        }}
+      >
+        <SettingIcon boxSize={'16px'} color={'grayModern.600'} />
+        <Text>{t('Manage Team')}</Text>
+      </HStack>
+
       <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent
@@ -134,7 +142,6 @@ export default function TeamCenter(props: ButtonProps) {
                     message={message}
                     key={message.ns_uid}
                     CloseTipHandler={(ns_uid) => {
-                      // 纳入被过滤的消息
                       setMessageFilter([...messageFilter, ns_uid]);
                     }}
                   />
@@ -157,15 +164,25 @@ export default function TeamCenter(props: ButtonProps) {
               </Flex>
               <Box overflow={'scroll'} h="0" flex="1" px="16px">
                 {namespaces && namespaces.length > 0 ? (
-                  <NsList
-                    displayPoint={false}
-                    selected_ns_uid={ns_uid}
-                    click={(ns) => {
-                      setNs_uid(ns.uid);
-                      setNsid(ns.id);
-                    }}
-                    namespaces={namespaces || []}
-                  />
+                  namespaces.map((ns) => {
+                    return (
+                      <NsListItem
+                        key={ns.uid}
+                        width={'full'}
+                        onClick={() => {
+                          setNs_uid(ns.uid);
+                          setNsid(ns.id);
+                        }}
+                        p={'7.5px 9px'}
+                        fontSize={'14px'}
+                        displayPoint={false}
+                        id={ns.uid}
+                        isPrivate={ns.nstype === NSType.Private}
+                        isSelected={ns.uid === ns_uid}
+                        teamName={ns.teamName}
+                      />
+                    );
+                  })
                 ) : (
                   <Center w="full" h="full">
                     <Text color={'grayModern.600'} fontSize={'12px'}>
@@ -258,6 +275,7 @@ export default function TeamCenter(props: ButtonProps) {
                           <InviteMember
                             ownRole={curTeamUser?.role ?? UserRole.Developer}
                             ns_uid={ns_uid}
+                            workspaceName={namespace.teamName}
                             ml="auto"
                           />
                         )}
@@ -267,7 +285,7 @@ export default function TeamCenter(props: ButtonProps) {
                     </Box>
                   </Stack>
                 </>
-              ) : (
+              ) : namespaces.length === 0 ? (
                 <Center w="full" flex={'1'}>
                   <VStack gap={'20px'}>
                     <Circle size={'48px'} border={'0.5px dashed'} borderColor={'grayModern.400'}>
@@ -279,7 +297,7 @@ export default function TeamCenter(props: ButtonProps) {
                     <CreateTeam textButton />
                   </VStack>
                 </Center>
-              )}
+              ) : null}
             </VStack>
           </ModalBody>
         </ModalContent>
