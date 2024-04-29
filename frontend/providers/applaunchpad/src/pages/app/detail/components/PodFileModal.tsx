@@ -9,6 +9,7 @@ import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
 import { MOCK_APP_DETAIL, MOCK_PODS } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
+import { UPLOAD_LIMIT } from '@/store/static';
 import type { PodDetailType } from '@/types/app';
 import { TFile } from '@/utils/kubeFileSystem';
 import { formatSize, formatTime } from '@/utils/tools';
@@ -46,9 +47,8 @@ import {
 import { MyTooltip, SealosMenu, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { MouseEvent, useEffect, useMemo, useState } from 'react';
+import { MouseEvent, useMemo, useState } from 'react';
 import styles from '../index.module.scss';
-import { useGlobalStore } from '@/store/global';
 
 type HandleType = 'delete' | 'rename' | 'mkdir-file' | 'mkdir' | 'download';
 
@@ -67,7 +67,6 @@ const PodFile = ({
   podAlias: string;
   setPodDetail: (name: string) => void;
 }) => {
-  const { formSliderListConfig } = useGlobalStore();
   const { t } = useTranslation();
   const theme = useTheme();
   const { message } = useMessage();
@@ -255,10 +254,10 @@ const PodFile = ({
   };
 
   const uploadFile = async (files: File[]) => {
+    setIsUploadLoading(true);
     try {
-      setIsUploadLoading(true);
       const filteredFiles = files.filter((file) => {
-        if (file.size > formSliderListConfig.uploadLimit) {
+        if (file.size > UPLOAD_LIMIT * 1024 * 1024) {
           message({
             status: 'info',
             title: t('File is too large tip', { name: file.name })
@@ -281,9 +280,11 @@ const PodFile = ({
         );
       });
       await Promise.all(uploadPromises);
-      setIsUploadLoading(false);
       refetch();
-    } catch (error) {}
+    } catch (error) {
+      refetch();
+    }
+    setIsUploadLoading(false);
   };
 
   const createFolder = async () => {

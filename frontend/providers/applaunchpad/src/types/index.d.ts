@@ -10,11 +10,15 @@ export interface YamlItemType {
   value: string;
 }
 
-export type FormSliderListType = {
-  [defaultSliderKey]: {
+export type FormSliderListType = Record<
+  string,
+  {
     cpu: number[];
     memory: number[];
-  };
+  }
+>;
+
+export type FileMangerType = {
   uploadLimit: number;
   downloadLimit: number;
 };
@@ -40,6 +44,7 @@ export type AppConfigType = {
       };
     };
     appResourceFormSliderConfig: FormSliderListType;
+    fileManger: FileMangerType;
     // todo: add gpu appResourceFormSliderConfig config.yaml and codes here
     // gpu?: {
     //   cpu: number[];

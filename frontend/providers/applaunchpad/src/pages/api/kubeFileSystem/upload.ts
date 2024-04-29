@@ -47,9 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await form.parse(req);
     const data = await task;
 
-    jsonRes(res, { data: data });
+    jsonRes(res, { data });
   } catch (err: any) {
-    console.log(err, 'err');
     jsonRes(res, {
       code: 500,
       error: err

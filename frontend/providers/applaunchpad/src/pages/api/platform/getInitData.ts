@@ -1,9 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '@/services/backend/response';
-import type { AppConfigType, FormSliderListType } from '@/types';
-import { readFileSync } from 'fs';
 import { Coin } from '@/constants/app';
+import { jsonRes } from '@/services/backend/response';
+import type { AppConfigType, FileMangerType, FormSliderListType } from '@/types';
+import { readFileSync } from 'fs';
 import * as yaml from 'js-yaml';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 // todo make response type to be more specific and clear.
 export type Response = {
@@ -13,6 +13,7 @@ export type Response = {
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;
+  fileMangerConfig: FileMangerType;
 };
 
 export const defaultAppConfig: AppConfigType = {
@@ -39,9 +40,11 @@ export const defaultAppConfig: AppConfigType = {
       default: {
         cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
         memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-      },
-      uploadLimit: 200,
-      downloadLimit: 500
+      }
+    },
+    fileManger: {
+      uploadLimit: 50,
+      downloadLimit: 100
     }
   }
 };
@@ -66,6 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
       SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
       FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
+      fileMangerConfig: global.AppConfig.launchpad.fileManger,
       CURRENCY: Coin.shellCoin
     }
   });

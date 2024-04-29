@@ -310,74 +310,46 @@ export class KubeFileSystem {
     path: string;
     file: Readable;
   }) {
-    return new Promise<string>((res, rej) => {
-      let localFileSize = 0;
-      const base64Encoder = new Base64Encode({ lineLength: 76 });
-      file.on('data', (chunk) => {
-        localFileSize += chunk.length;
-      });
-      this.execCommand(
+    let localFileSize = 0;
+    const base64Encoder = new Base64Encode({ lineLength: 76 });
+    file.on('data', (chunk) => {
+      localFileSize += chunk.length;
+    });
+
+    try {
+      await this.execCommand(
         namespace,
         podName,
         containerName,
         ['sh', '-c', `dd of=${path}.tmp status=none bs=32767 `],
         file.pipe(base64Encoder)
-      )
-        .then((e) => {
-          let attempts = 0;
-          const maxAttempts = 10;
-          const intervalTime = 3000;
-          return new Promise<string>((resolve, reject) => {
-            const interval = setInterval(() => {
-              this.execCommand(namespace, podName, containerName, [
-                'sh',
-                '-c',
-                `stat -c %s ${path}.tmp`
-              ])
-                .then((v) => {
-                  const sizeIncreaseThreshold = localFileSize * 1.3;
-                  if (parseInt(v.trim()) > sizeIncreaseThreshold) {
-                    clearInterval(interval);
-                    clearTimeout(timeout);
-                    resolve('success');
-                  } else {
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                      clearInterval(interval);
-                      clearTimeout(timeout);
-                      reject(
-                        'File integrity check failed after maximum attempts. Please retry the upload.'
-                      );
-                    }
-                  }
-                })
-                .catch(() => {
-                  clearInterval(interval);
-                  clearTimeout(timeout);
-                  reject('Error during file size check. Please retry the upload.');
-                });
-            }, intervalTime);
+      );
+      let attempts = 0;
+      const maxAttempts = 10;
+      const intervalTime = 3000;
 
-            const timeout = setTimeout(() => {
-              clearInterval(interval);
-              reject('File integrity check timed out. Please retry the upload.');
-            }, intervalTime * maxAttempts);
-          });
-        })
-        .then((data) => {
-          if (data === 'success') {
-            return this.execCommand(namespace, podName, containerName, [
-              'sh',
-              '-c',
-              `base64 -d ${path}.tmp > ${path} && rm -rf ${path}.tmp`
-            ]);
-          } else {
-            rej('upload err');
-          }
-        })
-        .then((data) => res('success'))
-        .catch((e) => rej('upload err'));
-    });
+      while (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, intervalTime));
+        const v = await this.execCommand(namespace, podName, containerName, [
+          'sh',
+          '-c',
+          `stat -c %s ${path}.tmp`
+        ]);
+        const sizeIncreaseThreshold = localFileSize * 1.3;
+        if (parseInt(v.trim()) > sizeIncreaseThreshold) {
+          await this.execCommand(namespace, podName, containerName, [
+            'sh',
+            '-c',
+            `base64 -d ${path}.tmp > ${path} && rm -rf ${path}.tmp`
+          ]);
+          return 'success';
+        }
+        attempts++;
+      }
+      throw new Error('File integrity check failed after maximum attempts.');
+    } catch (error) {
+      throw new Error(`Upload error`);
+    }
   }
 
   async md5sum({

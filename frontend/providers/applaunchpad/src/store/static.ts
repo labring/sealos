@@ -6,6 +6,8 @@ export let DOMAIN_PORT = '';
 export let INGRESS_SECRET = 'wildcard-cert';
 export let SHOW_EVENT_ANALYZE = false;
 export let CURRENCY = Coin.shellCoin;
+export let UPLOAD_LIMIT = 50;
+export let DOWNLOAD_LIMIT = 100;
 
 export const loadInitData = async () => {
   try {
@@ -15,6 +17,8 @@ export const loadInitData = async () => {
     INGRESS_SECRET = res.INGRESS_SECRET;
     SHOW_EVENT_ANALYZE = res.SHOW_EVENT_ANALYZE;
     CURRENCY = res.CURRENCY;
+    UPLOAD_LIMIT = res.fileMangerConfig.uploadLimit;
+    DOWNLOAD_LIMIT = res.fileMangerConfig.downloadLimit;
 
     return {
       SEALOS_DOMAIN,

@@ -40,9 +40,7 @@ export const useGlobalStore = create<State>()(
         [defaultSliderKey]: {
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
           memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-        },
-        uploadLimit: 200,
-        downloadLimit: 500
+        }
       },
       initFormSliderList(res) {
         if (!res) return;
