@@ -13,6 +13,7 @@ export type Response = {
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;
+  guideEnabled: boolean;
   fileMangerConfig: FileMangerType;
 };
 
@@ -22,13 +23,13 @@ export const defaultAppConfig: AppConfigType = {
     port: ''
   },
   common: {
-    guideEnabled: false,
-    apiEnabled: false
+    guideEnabled: 'false',
+    apiEnabled: 'false'
   },
   launchpad: {
     ingressTlsSecretName: 'wildcard-cert',
     eventAnalyze: {
-      enabled: false,
+      enabled: 'false',
       fastGPTKey: ''
     },
     components: {
@@ -43,7 +44,7 @@ export const defaultAppConfig: AppConfigType = {
       }
     },
     fileManger: {
-      uploadLimit: 50,
+      uploadLimit: 5,
       downloadLimit: 100
     }
   }
@@ -51,26 +52,30 @@ export const defaultAppConfig: AppConfigType = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.AppConfig) {
+    if (!global.AppConfig || process.env.NODE_ENV !== 'production') {
       const filename =
         process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));
       console.log(res);
       global.AppConfig = res;
     }
+    jsonRes<Response>(res, {
+      data: {
+        SEALOS_DOMAIN: global.AppConfig.cloud.domain,
+        DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
+        INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
+        SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled === 'true',
+        FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
+        guideEnabled: global.AppConfig.common.guideEnabled === 'true',
+        fileMangerConfig: global.AppConfig.launchpad.fileManger,
+        CURRENCY: Coin.shellCoin
+      }
+    });
   } catch (error) {
     console.log('error: /api/platform/getInitData', error);
-    global.AppConfig = defaultAppConfig;
+    jsonRes(res, {
+      code: 500,
+      error: 'Missing necessary configuration files'
+    });
   }
-  jsonRes<Response>(res, {
-    data: {
-      SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-      DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
-      INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
-      SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
-      FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
-      fileMangerConfig: global.AppConfig.launchpad.fileManger,
-      CURRENCY: Coin.shellCoin
-    }
-  });
 }

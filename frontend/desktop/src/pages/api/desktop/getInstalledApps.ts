@@ -1,9 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { K8sApi, ListCRD, switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
+import { K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken } from '@/services/backend/auth';
+
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

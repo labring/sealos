@@ -29,13 +29,13 @@ export type AppConfigType = {
     port?: string;
   };
   common: {
-    guideEnabled: boolean;
-    apiEnabled: boolean;
+    guideEnabled: string;
+    apiEnabled: string;
   };
   launchpad: {
     ingressTlsSecretName: string;
     eventAnalyze: {
-      enabled: boolean;
+      enabled: string;
       fastGPTKey?: string;
     };
     components: {

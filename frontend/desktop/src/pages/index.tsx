@@ -13,6 +13,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
+import useCallbackStore from '@/stores/callback';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -27,12 +28,13 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const { systemConfig } = useSystemConfigStore();
-
+  const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
   }, [colorMode, toggleColorMode]);
   const [showMoreApps, setShowMoreApps] = useState(false);
 
+  // openApp by query
   useEffect(() => {
     const { query } = router;
     const is_login = isUserLogin();
@@ -87,6 +89,13 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     }
   }, []);
 
+  // handle workspaceInvite
+  useEffect(() => {
+    if (workspaceInviteCode) {
+      router.replace('/WorkspaceInvite?code=' + workspaceInviteCode);
+      return;
+    }
+  }, [workspaceInviteCode]);
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>

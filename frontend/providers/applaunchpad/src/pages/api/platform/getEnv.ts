@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   jsonRes<EnvResponse>(res, {
     data: {
       domain: global.AppConfig.cloud.domain || 'cloud.sealos.io',
-      guideEnabled: global.AppConfig.common.guideEnabled
+      guideEnabled: global.AppConfig.common.guideEnabled === 'true'
     }
   });
 }

@@ -29,8 +29,6 @@ export default function Callback() {
     const oauthProvider = router.query.oauthProxyProvider;
     // nextjs auto decode
     let oauthClientId = router.query.oauthProxyClientID;
-    // const abortController = new AbortController()
-    console.log(oauthProvider, oauthProxyState, oauthClientId);
     if (!isString(oauthProxyState) || !isString(oauthProvider) || !isString(oauthClientId)) return;
 
     console.log(oauthProvider, oauthProxyState, oauthClientId, callback_url);
@@ -42,9 +40,7 @@ export default function Callback() {
         ).json()) as ApiResp<{ containDomain: boolean }>;
         console.log(result);
         if (!result.data?.containDomain) return;
-        console.log('generate');
         const state = generateState(oauthProxyState);
-        console.log(callback_url, 'callback');
 
         if (oauthProvider === 'github') {
           await oauthLogin({

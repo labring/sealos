@@ -6,8 +6,9 @@ import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 import GithubComponent from './github';
 import { ImageFallBackUrl, useSystemConfigStore } from '@/stores/config';
-import { ReactElement, useState } from 'react';
+import { ReactElement, useCallback, useState } from 'react';
 import RegionToggle from '@/components/region/RegionToggle';
+import WorkspaceToggle from '@/components/team/WorkspaceToggle';
 
 enum UserMenuKeys {
   LangSelect,
@@ -23,6 +24,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
 
   const { systemConfig } = useSystemConfigStore();
   const userInfo = useSessionStore((state) => state.session);
+  const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const {
     userMenuStyleProps = {
       alignItems: 'center',
@@ -37,7 +39,8 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const baseItemStyle = {
     w: '36px',
     h: '36px',
-    background: 'rgba(244, 246, 248, 0.7)',
+    background: 'rgba(244, 246, 248, 0.6)',
+
     boxShadow: '0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'
   };
 
@@ -49,17 +52,9 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   }[] = [
     {
       key: UserMenuKeys.Notification,
-      button: (
-        <Iconfont iconName="icon-notifications" width={20} height={20} color="#24282C"></Iconfont>
-      ),
+      button: <Iconfont iconName="icon-notifications" width={20} height={20}></Iconfont>,
       click: () => showDisclosure.onOpen(),
-      content: (
-        <Notification
-          key={'notification'}
-          disclosure={showDisclosure}
-          onAmount={(amount) => setNotificationAmount(amount)}
-        />
-      )
+      content: <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
     },
     {
       key: UserMenuKeys.Account,
@@ -80,6 +75,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   return (
     <Flex {...userMenuStyleProps}>
       <RegionToggle />
+      <WorkspaceToggle />
       <LangSelectSimple {...baseItemStyle} />
       {systemConfig?.showGithubStar && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (
@@ -91,7 +87,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
           position={'relative'}
           {...baseItemStyle}
         >
-          <Center w="100%" h="100%" onClick={item.click} cursor={'pointer'}>
+          <Center w="100%" h="100%" onClick={item.click} cursor={'pointer'} borderRadius={'50%'}>
             {item.button}
           </Center>
           {item.content}
