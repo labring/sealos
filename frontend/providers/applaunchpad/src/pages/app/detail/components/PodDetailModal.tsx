@@ -304,7 +304,7 @@ const Logs = ({
                 >
                   <MyIcon name="noEvents" w={'48px'} h={'48px'} color={'transparent'} />
                   <Box mt={4} color={'myGray.600'}>
-                    {t('暂无')} Events
+                    {t('No events yet')}
                   </Box>
                 </Flex>
               )}
