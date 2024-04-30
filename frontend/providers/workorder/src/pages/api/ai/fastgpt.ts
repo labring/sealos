@@ -4,7 +4,7 @@ import { getOrderByOrderIdAndUserId } from '@/services/db/workorder';
 import type { NextApiRequest, NextApiResponse } from 'next';
 const fastgpt_url = process.env.FASTGPT_API_URL;
 const fastgpt_key = process.env.FASTGPT_API_KEY;
-const fastgpt_limit = parseInt(process.env.FASTGPT_API_LIMIT || '10');
+const fastgpt_limit = parseInt(process.env.FASTGPT_API_LIMIT || '50');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

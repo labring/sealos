@@ -1,5 +1,4 @@
-import React from 'react';
-import { Box, BoxProps, Grid, Flex, FlexProps } from '@chakra-ui/react';
+import { BoxProps, Flex, FlexProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
 interface Props extends BoxProps {

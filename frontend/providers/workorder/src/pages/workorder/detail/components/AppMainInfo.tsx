@@ -236,6 +236,10 @@ const AppMainInfo = ({
               handleTransferToHuman();
               return;
             }
+            if (event === 'error') {
+              toast({ status: 'error', title: t('api is error') });
+              return;
+            }
 
             const json = JSON.parse(data);
 
@@ -412,8 +416,7 @@ const AppMainInfo = ({
                         </Box>
                       )}
                     </Box>
-                    {item.isAIBot &&
-                      index === dialogs?.length - 1 &&
+                    {index === dialogs?.length - 1 &&
                       !item.isAdmin &&
                       !app?.manualHandling?.isManuallyHandled && (
                         <Button

@@ -3,6 +3,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { Box, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useCopyData } from '@/utils/tools';
+import MyIcon from '../Icon';
 
 const codeLight: { [key: string]: React.CSSProperties } = {
   'code[class*=language-]': {
@@ -327,9 +328,8 @@ const CodeLight = ({
         >
           <Box flex={1}>{codeBoxName}</Box>
           <Flex cursor={'pointer'} onClick={() => copyData(String(children))} alignItems={'center'}>
-            {/* <Icon name={'copy'} width={15} height={15}></Icon> */}
-            Copy
-            <Box ml={1}>{t('common.Copy')}</Box>
+            <MyIcon name={'copy'} width={15} height={15} />
+            <Box ml={1}>{t('Copy')}</Box>
           </Flex>
         </Flex>
         <SyntaxHighlighter style={codeLight as any} language={match?.[1]} PreTag="pre">

@@ -56,5 +56,7 @@
   "objectstorage": "对象存储",
   "functionserver": "云开发",
   "send": "发送",
-  "newline": "换行"
+  "newline": "换行",
+  "Copy": "复制",
+  "api is error": "api is error"
 }

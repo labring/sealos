@@ -56,5 +56,7 @@
   "template": "App Store",
   "user info": "User Info",
   "send": "Send",
-  "newline": "newline"
+  "newline": "newline",
+  "Copy": "Copy",
+  "api is error": "api is error"
 }
