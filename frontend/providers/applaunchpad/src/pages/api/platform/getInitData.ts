@@ -23,13 +23,13 @@ export const defaultAppConfig: AppConfigType = {
     port: ''
   },
   common: {
-    guideEnabled: 'false',
-    apiEnabled: 'false'
+    guideEnabled: false,
+    apiEnabled: false
   },
   launchpad: {
     ingressTlsSecretName: 'wildcard-cert',
     eventAnalyze: {
-      enabled: 'false',
+      enabled: false,
       fastGPTKey: ''
     },
     components: {
@@ -64,9 +64,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SEALOS_DOMAIN: global.AppConfig.cloud.domain,
         DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
         INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
-        SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled === 'true',
+        SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
         FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
-        guideEnabled: global.AppConfig.common.guideEnabled === 'true',
+        guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
         CURRENCY: Coin.shellCoin
       }

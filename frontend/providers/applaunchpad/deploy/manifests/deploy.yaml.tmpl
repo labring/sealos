@@ -16,12 +16,12 @@ data:
       domain: {{ .cloudDomain }}
       port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
     common:
-      guideEnabled: "{{ .guideEnabled }}"
-      apiEnabled: "{{ .apiEnabled }}"
+      guideEnabled: {{ .guideEnabled }}
+      apiEnabled: {{ .apiEnabled }}
     launchpad:
       ingressTlsSecretName: {{ .ingressTlsSecretName }}
       eventAnalyze:
-        enabled: "false"
+        enabled: false
         fastGPTKey: ""
       components:
         monitor:
@@ -30,6 +30,9 @@ data:
         default:
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
           memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+      fileManger:
+        uploadLimit: 50 # MB
+        downloadLimit: 100 # MB
 ---
 apiVersion: apps/v1
 kind: Deployment

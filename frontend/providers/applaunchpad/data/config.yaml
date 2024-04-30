@@ -2,12 +2,12 @@ cloud:
   domain: 127.0.0.1.nip.io
   port: ''
 common:
-  guideEnabled: 'false'
-  apiEnabled: 'false'
+  guideEnabled: false
+  apiEnabled: false
 launchpad:
   ingressTlsSecretName: wildcard-cert
   eventAnalyze:
-    enabled: 'false'
+    enabled: false
     fastGPTKey: ''
   components:
     monitor:
