@@ -1,27 +1,40 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
+import { getRegionById } from '@/services/db/region';
 import { getUserById } from '@/services/db/user';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { userId: adminId } = await verifyAccessToken(req);
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
+
     const { userId } = req.query as {
       userId: string;
     };
 
-    const admin = await getUserById(adminId);
-    if (!admin?.isAdmin) {
+    const user = await getUserById(payload.userId);
+
+    if (!user?.isAdmin) {
       return jsonRes(res, {
         code: 401,
         message: 'unauthorized'
       });
     }
 
-    const reuslt = await getUserById(userId);
+    const userInfo = await getUserById(userId);
+    const regionInfo = await getRegionById(userInfo?.regionUid || '');
 
-    return jsonRes(res, {
-      data: reuslt
+    jsonRes(res, {
+      data: {
+        user: userInfo,
+        regionInfo: regionInfo
+      }
     });
   } catch (error) {
     jsonRes(res, { code: 500, data: error });

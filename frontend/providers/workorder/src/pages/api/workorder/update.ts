@@ -6,8 +6,13 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { userId } = await verifyAccessToken(req);
-
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
     const { orderId, updates } = req.body as {
       updates: Partial<WorkOrderDB>;
       orderId: string;
@@ -15,11 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const result = await updateOrder({
       orderId,
-      userId: userId,
+      userId: payload.userId,
       updates
     });
 
-    return jsonRes(res, {
+    jsonRes(res, {
       data: result
     });
   } catch (error) {

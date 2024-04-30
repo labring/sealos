@@ -15,10 +15,16 @@ export type CreateWorkOrderParams = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { type, description, appendix } = req.body as CreateWorkOrderParams;
-    const { userId } = await verifyAccessToken(req);
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
 
-    const payload: WorkOrderDB = {
-      userId: userId,
+    const workorder: WorkOrderDB = {
+      userId: payload.userId,
       orderId: nanoid(),
       type,
       updateTime: new Date(),
@@ -31,11 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     };
 
-    await createOrder({ order: payload });
+    await createOrder({ order: workorder });
 
-    return jsonRes(res, {
+    jsonRes(res, {
       data: {
-        orderId: payload.orderId
+        orderId: workorder.orderId
       }
     });
   } catch (error) {

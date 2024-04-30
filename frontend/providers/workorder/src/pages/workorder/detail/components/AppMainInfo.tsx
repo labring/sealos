@@ -198,7 +198,7 @@ const AppMainInfo = ({
 
       setDialogs((v) => [...v, ...temps]);
       await Promise.all(promises);
-      if (text !== '') {
+      if (text !== '' && !session?.user?.isAdmin) {
         await triggerRobotReply();
       }
     } catch (error) {
@@ -213,8 +213,6 @@ const AppMainInfo = ({
 
   const triggerRobotReply = async () => {
     let temp = '';
-    let count = 0;
-
     try {
       if (!app.manualHandling.isManuallyHandled && !session?.user?.isAdmin) {
         await fetchEventSource('/api/ai/fastgpt', {
@@ -417,7 +415,7 @@ const AppMainInfo = ({
                       )}
                     </Box>
                     {index === dialogs?.length - 1 &&
-                      !item.isAdmin &&
+                      !session?.user.isAdmin &&
                       !app?.manualHandling?.isManuallyHandled && (
                         <Button
                           h="28px"

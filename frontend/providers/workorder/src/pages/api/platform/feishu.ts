@@ -1,8 +1,7 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import { updateOrder } from '@/services/db/workorder';
 import { ApiResp } from '@/services/kubernet';
-import { WorkOrderStatus, WorkOrderType } from '@/types/workorder';
+import { WorkOrderType } from '@/types/workorder';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type FeishuNotificationParams = {
@@ -21,29 +20,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       switchToManual = false
     } = req.body as FeishuNotificationParams;
 
-    const { userId, regionUid } = await verifyAccessToken(req);
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
     const feishuUrl = process.env.ADMIN_FEISHU_URL;
     const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
     const title = switchToManual ? `工单：${orderId}，请求人工处理` : '有新的工单，请立即查看';
 
-    if (switchToManual) {
-      await updateOrder({
-        orderId,
-        userId: userId,
-        updates: {
-          status: WorkOrderStatus.Processing,
-          manualHandling: { isManuallyHandled: true }
-        }
-      });
-    }
-
-    const payload = {
+    const form = {
       msg_type: 'interactive',
       card: {
         elements: [
           {
             tag: 'markdown',
-            content: `**用户ID:** ${userId}\n**可用区ID:** ${regionUid}\n所属分类: ${type}\n描述信息: ${description}`
+            content: `**用户ID:** ${payload.userId}\n**可用区ID:** ${payload.regionUid}\n所属分类: ${type}\n描述信息: ${description}`
           },
           {
             tag: 'action',
@@ -86,10 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(form)
     });
     const result = await data.json();
-    return jsonRes(res, {
+    jsonRes(res, {
       data: result
     });
   } catch (error) {

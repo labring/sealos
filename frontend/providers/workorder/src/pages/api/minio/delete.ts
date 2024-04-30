@@ -1,6 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { BucketName, minioClient } from './upload';
+import { verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -8,6 +9,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, {
         code: 500,
         data: 'Missing minio service'
+      });
+    }
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
       });
     }
 

@@ -58,5 +58,7 @@
   "send": "发送",
   "newline": "换行",
   "Copy": "复制",
-  "api is error": "api is error"
+  "api is error": "api is error",
+  "region": "可用区",
+  "userId": "用户ID"
 }

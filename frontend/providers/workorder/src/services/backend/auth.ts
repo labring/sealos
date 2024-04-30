@@ -14,28 +14,32 @@ export const verifyAccessToken = async (req: NextApiRequest) => {
   return verifyAppToken(authorization);
 };
 
-export const verifyDesktopToken: (token: string) => Promise<DesktopTokenPayload> = (token) =>
-  new Promise((resolve) => {
+export const verifyDesktopToken = <T extends Object = DesktopTokenPayload>(token: string) =>
+  new Promise<T | null>((resolve) => {
     verify(token, desktopJwtSecret, (err, payload) => {
       if (err) {
-        reject(err);
+        console.log(err);
+        resolve(null);
       } else if (!payload) {
-        reject('payload is null');
+        console.log('payload is null');
+        resolve(null);
       } else {
-        resolve(payload as DesktopTokenPayload);
+        resolve(payload as T);
       }
     });
   });
 
-export const verifyAppToken: (token: string) => Promise<AppTokenPayload> = (token) =>
-  new Promise((resolve, reject) => {
+export const verifyAppToken = <T extends Object = AppTokenPayload>(token: string) =>
+  new Promise<T | null>((resolve, reject) => {
     verify(token, appJwtSecret, (err, payload) => {
       if (err) {
-        reject(err);
+        console.log(err);
+        resolve(null);
       } else if (!payload) {
-        reject('payload is null');
+        console.log('payload is null');
+        resolve(null);
       } else {
-        resolve(payload as AppTokenPayload);
+        resolve(payload as T);
       }
     });
   });

@@ -80,15 +80,20 @@ export default async function handler(req: any, res: NextApiResponse) {
         data: 'Missing minio service'
       });
     }
-    const { userId } = await verifyAccessToken(req);
-
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
     const { files, overwrite = 'true' } = await upload.doUpload(req, res);
 
     const startTime = performance.now();
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
         let fileName = JSON.parse(overwrite)
-          ? `${userId}-${Date.now()}-${file.filename}`
+          ? `${payload.userId}-${Date.now()}-${file.filename}`
           : file.originalname;
         const originalFileName = file.originalname;
 

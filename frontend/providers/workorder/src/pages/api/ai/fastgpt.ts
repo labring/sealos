@@ -11,11 +11,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!fastgpt_url || !fastgpt_key) {
       return jsonRes(res, { code: 500, data: 'miss fastgppt key' });
     }
-    const { userId } = await verifyAccessToken(req);
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
     const { orderId } = req.body as { orderId: string };
     const result = await getOrderByOrderIdAndUserId({
       orderId,
-      userId: userId
+      userId: payload.userId
     });
     if (!result || result?.manualHandling.isManuallyHandled) return;
 
@@ -23,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       result?.dialogs?.filter((dialog) => !dialog.isAdmin && dialog.userId === 'robot') || [];
 
     const userMessages = result?.dialogs
-      ?.filter((dialog) => !dialog.isAdmin && dialog.userId === userId)
+      ?.filter((dialog) => !dialog.isAdmin && dialog.userId === payload.userId)
       .map((item) => {
         return {
           content: item.content,

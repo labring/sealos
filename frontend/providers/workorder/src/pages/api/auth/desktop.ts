@@ -9,6 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { token } = req.body;
     const payload = await verifyDesktopToken(token);
+
     if (!payload) {
       return jsonRes(res, {
         code: 401,
@@ -40,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isAdmin: false
     });
 
-    return jsonRes<AppSession>(res, {
+    jsonRes<AppSession>(res, {
       code: 200,
       data: {
         token: accessToken,

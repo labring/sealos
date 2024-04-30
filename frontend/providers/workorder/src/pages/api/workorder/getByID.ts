@@ -5,15 +5,20 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { userId } = await verifyAccessToken(req);
-
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
     const { orderId } = req.query as {
       orderId: string;
     };
 
     const result = await getOrderByOrderIdAndUserId({
       orderId,
-      userId: userId
+      userId: payload.userId
     });
 
     if (!result) {
@@ -22,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Not Found'
       });
     }
-    return jsonRes(res, {
+    jsonRes(res, {
       data: result
     });
   } catch (error) {

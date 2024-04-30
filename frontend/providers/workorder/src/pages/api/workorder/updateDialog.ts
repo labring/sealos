@@ -6,8 +6,13 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { userId, isAdmin } = await verifyAccessToken(req);
-
+    const payload = await verifyAccessToken(req);
+    if (!payload) {
+      return jsonRes(res, {
+        code: 401,
+        message: "'token is invaild'"
+      });
+    }
     const {
       orderId,
       content,
@@ -19,10 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // If the admin replies, it is being processed.
-    if (isAdmin) {
+    if (payload.isAdmin) {
       await updateOrder({
         orderId,
-        userId: userId,
+        userId: payload.userId,
         updates: {
           status: WorkOrderStatus.Processing,
           manualHandling: { isManuallyHandled: true, handlingTime: new Date() }
@@ -32,17 +37,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const result = await addDialogToOrder({
       orderId,
-      userId: userId,
+      userId: payload.userId,
       dialog: {
-        userId: isRobot ? 'robot' : userId,
+        userId: isRobot ? 'robot' : payload.userId,
         time: new Date(),
         content: content,
-        isAdmin: isAdmin,
+        isAdmin: payload.isAdmin,
         isAIBot: isRobot
       }
     });
 
-    return jsonRes(res, {
+    jsonRes(res, {
       data: result
     });
   } catch (error) {

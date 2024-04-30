@@ -58,13 +58,13 @@ function App({ Component, pageProps }: AppProps) {
         if (!res?.token) return;
         authUser(res.token);
       } catch (err) {
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+        if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_MOCK_USER) {
+          authUser(process.env.NEXT_PUBLIC_MOCK_USER);
+        } else {
           delAppSession();
           openConfirm(() => {
             window.open(`https://${domain}`, '_self');
           })();
-        } else {
-          authUser(process.env.NEXT_PUBLIC_MOCK_USER);
         }
       }
     })();
