@@ -33,21 +33,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               path,
               file: pass
             })
-            .then((res) => {
-              resolve(res);
-            })
+            .then(resolve)
             .catch((err) => {
-              reject('upload api is err');
+              console.log(err);
+              reject(`Upload API error: ${err.message}`);
             });
           return pass;
         }
       });
     });
 
-    await form.parse(req);
-    const data = await task;
+    form.parse(req, (err: any) => {
+      if (err) {
+        throw new Error('Error parsing the form');
+      }
+    });
+    await task;
 
-    jsonRes(res, { data });
+    jsonRes(res, { data: 'success' });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
