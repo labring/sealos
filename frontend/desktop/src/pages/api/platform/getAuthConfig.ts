@@ -65,7 +65,7 @@ export async function getAuthConfig(): Promise<AuthConfigType> {
     }
     return genResAuthConfig(global.AppConfig.desktop.auth);
   } catch (error) {
-    console.log('-getLayoutConfig-', error);
+    console.log('-getAuthConfig-', error);
     return DefaultAuthConfig;
   }
 }

@@ -3,6 +3,7 @@ import { AppConfigType, CloudConfigType, DefaultCloudConfig } from '@/types/syst
 import { readFileSync } from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import yaml from 'js-yaml';
+import process from 'process';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const config = await getCloudConfig();
@@ -23,7 +24,9 @@ export async function getCloudConfig(): Promise<CloudConfigType> {
   try {
     if (!global.AppConfig) {
       const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
+        process.env.NODE_ENV === 'development'
+          ? process.env.CONFIG_PATH || 'data/config.yaml.local'
+          : '/app/data/config.yaml';
       global.AppConfig = yaml.load(readFileSync(filename, 'utf-8')) as AppConfigType;
     }
     console.log('global.AppConfig', global.AppConfig);
