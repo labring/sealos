@@ -54,5 +54,7 @@
   "cronjob": "定时任务",
   "cloudserver": "云主机",
   "objectstorage": "对象存储",
-  "functionserver": "云开发"
+  "functionserver": "云开发",
+  "send": "发送",
+  "newline": "换行"
 }

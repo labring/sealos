@@ -28,6 +28,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
     {
       refetchInterval: isHandled ? interval : false,
       onSuccess(data) {
+        console.log(data);
         setIsHandled(data?.manualHandling?.isManuallyHandled || false);
         if (isHandled) {
           const currDialogsLen = data?.dialogs?.length;

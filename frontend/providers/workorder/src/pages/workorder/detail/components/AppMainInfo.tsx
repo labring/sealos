@@ -1,6 +1,7 @@
 import { FeishuNotification, deleteFileByName, getFileUrl, uploadFile } from '@/api/platform';
 import { updateWorkOrderDialogById } from '@/api/workorder';
 import MyIcon from '@/components/Icon';
+import Markdown from '@/components/Markdown';
 import { useSelectFile } from '@/hooks/useSelectFile';
 import { useToast } from '@/hooks/useToast';
 import useSessionStore from '@/store/session';
@@ -35,6 +36,8 @@ const statusAnimation = keyframes`
 `;
 
 const CommandTip = () => {
+  const { t } = useTranslation();
+
   return (
     <Flex alignItems={'center'} gap={'4px'} color={'rgb(153, 153, 153)'} fontSize={'12px'}>
       <Icon
@@ -51,7 +54,7 @@ const CommandTip = () => {
         <polyline points="9 10 4 15 9 20"></polyline>
         <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
       </Icon>
-      <Text>发送</Text>
+      <Text>{t('send')}</Text>
       <Text>/</Text>
       <Flex alignItems={'center'}>
         <Icon
@@ -79,7 +82,7 @@ const CommandTip = () => {
           <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
         </Icon>
       </Flex>
-      <Text>换行</Text>
+      <Text>{t('newline')}</Text>
     </Flex>
   );
 };
@@ -237,7 +240,7 @@ const AppMainInfo = ({
             const json = JSON.parse(data);
 
             const text = json?.choices?.[0]?.delta?.content || '';
-            temp += count === 0 ? text.trim() : text;
+            temp += text;
 
             if (temp && temp !== '') {
               const updatedLastDialog = {
@@ -405,7 +408,7 @@ const AppMainInfo = ({
                         <Image alt="img" src={item.content} onLoad={() => scrollToBottom()}></Image>
                       ) : (
                         <Box whiteSpace={'pre-line'} fontWeight={400}>
-                          {item.content}
+                          <Markdown source={item.content} />
                         </Box>
                       )}
                     </Box>
