@@ -13,58 +13,63 @@ export type Response = {
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;
+  guideEnabled: boolean;
 };
 
-export const defaultAppConfig: AppConfigType = {
-  cloud: {
-    domain: 'cloud.sealos.io',
-    port: ''
-  },
-  common: {
-    guideEnabled: false,
-    apiEnabled: false
-  },
-  launchpad: {
-    ingressTlsSecretName: 'wildcard-cert',
-    eventAnalyze: {
-      enabled: false,
-      fastGPTKey: ''
-    },
-    components: {
-      monitor: {
-        url: 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
-      }
-    },
-    appResourceFormSliderConfig: {
-      default: {
-        cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
-        memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-      }
-    }
-  }
-};
+// export const defaultAppConfig: AppConfigType = {
+//   cloud: {
+//     domain: 'cloud.sealos.io',
+//     port: ''
+//   },
+//   common: {
+//     guideEnabled: false,
+//     apiEnabled: false
+//   },
+//   launchpad: {
+//     ingressTlsSecretName: 'wildcard-cert',
+//     eventAnalyze: {
+//       enabled: false,
+//       fastGPTKey: ''
+//     },
+//     components: {
+//       monitor: {
+//         url: 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
+//       }
+//     },
+//     appResourceFormSliderConfig: {
+//       default: {
+//         cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
+//         memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+//       }
+//     }
+//   }
+// };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.AppConfig) {
+    if (!global.AppConfig || process.env.NODE_ENV !== 'production') {
       const filename =
         process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));
       console.log(res);
       global.AppConfig = res;
     }
+    jsonRes<Response>(res, {
+      data: {
+        SEALOS_DOMAIN: global.AppConfig.cloud.domain,
+        DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
+        INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
+        SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled === 'true',
+        FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
+        guideEnabled: global.AppConfig.common.guideEnabled === 'true',
+        CURRENCY: Coin.shellCoin
+      }
+    });
   } catch (error) {
     console.log('error: /api/platform/getInitData', error);
-    global.AppConfig = defaultAppConfig;
+    jsonRes(res, {
+      code: 500,
+      error: 'Missing necessary configuration files'
+    });
   }
-  jsonRes<Response>(res, {
-    data: {
-      SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-      DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
-      INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
-      SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
-      FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
-      CURRENCY: Coin.shellCoin
-    }
-  });
 }
