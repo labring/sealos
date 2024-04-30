@@ -31,6 +31,7 @@ import (
 	"github.com/minio/minio-go/v7"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -115,6 +116,10 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 
 		// remove service account of bucket
 		serviceAccounts, err := r.OSAdminClient.ListServiceAccounts(ctx, username)
+		if err != nil {
+			r.Logger.Error(err, "failed to list service accounts", "user", username)
+			return ctrl.Result{}, err
+		}
 		for _, serviceAccount := range serviceAccounts.Accounts {
 			if serviceAccount.AccessKey == serviceAccountName {
 				err := r.OSAdminClient.DeleteServiceAccount(ctx, serviceAccountName)
@@ -228,6 +233,10 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	serviceAccounts, err := r.OSAdminClient.ListServiceAccounts(ctx, username)
+	if err != nil {
+		r.Logger.Error(err, "failed to list service accounts", "user", username)
+		return ctrl.Result{}, err
+	}
 	for _, serviceAccount := range serviceAccounts.Accounts {
 		if serviceAccount.AccessKey == serviceAccountName {
 			sa.AccessKey = serviceAccount.AccessKey
