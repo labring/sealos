@@ -34,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       appendix,
       manualHandling: {
         isManuallyHandled: false
-      }
+      },
+      userInfo: payload
     };
 
     await createOrder({ order: workorder });

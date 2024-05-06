@@ -1,9 +1,10 @@
 import { ObjectId } from 'mongodb';
+import { UserDB } from './user';
 
 export type WorkOrderDB = {
-  _id?: ObjectId; //
-  userId: string; //
-  orderId: string; //
+  _id?: ObjectId; // only
+  userId: string; // only
+  orderId: string; // only
   type: WorkOrderType;
   createTime: Date;
   updateTime: Date;
@@ -16,6 +17,7 @@ export type WorkOrderDB = {
     isManuallyHandled: boolean;
     handlingTime?: Date;
   };
+  userInfo: UserDB;
 };
 
 export type WorkOrderDialog = {

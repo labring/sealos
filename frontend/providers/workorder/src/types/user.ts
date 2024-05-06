@@ -5,7 +5,7 @@ export type DesktopTokenPayload = {
   workspaceUid: string;
   workspaceId: string;
   userUid: string;
-  userId: string;
+  userId: string; // only
   iat: number;
   exp: number;
 };

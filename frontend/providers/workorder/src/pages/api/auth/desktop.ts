@@ -1,6 +1,6 @@
 import { generateAccessToken, verifyDesktopToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import { createUser, getUserById } from '@/services/db/user';
+import { createUser, getUserById, updateUser } from '@/services/db/user';
 import { AppSession } from '@/types/user';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { omit } from 'lodash';
@@ -21,12 +21,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const existingUser = await getUserById(newPayload.userId);
 
     if (existingUser) {
+      const temp = {
+        workspaceId: payload.workspaceId,
+        workspaceUid: payload.workspaceUid,
+        regionUid: payload.regionUid,
+        userCrUid: payload.userCrUid,
+        userCrName: payload.userCrName
+      };
+      await updateUser(payload.userId, temp);
+
       const token = generateAccessToken(existingUser);
       return jsonRes<AppSession>(res, {
         code: 200,
         data: {
           token: token,
-          user: existingUser
+          user: { ...existingUser, ...temp }
         }
       });
     }

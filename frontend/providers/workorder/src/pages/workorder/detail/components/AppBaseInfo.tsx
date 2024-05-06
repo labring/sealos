@@ -33,9 +33,9 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
 
   const { data: userInfo } = useQuery(
     ['findUserById'],
-    () => findUserById({ userId: app?.userId || '' }),
+    () => findUserById({ orderId: app?.orderId || '' }),
     {
-      enabled: !!app?.userId && session?.user?.isAdmin
+      enabled: !!app?.orderId && session?.user?.isAdmin
     }
   );
 
