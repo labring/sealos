@@ -10,6 +10,7 @@ import AppBaseInfo from './components/AppBaseInfo';
 import AppMainInfo from './components/AppMainInfo';
 import Header from './components/Header';
 import { WorkOrderDB } from '@/types/workorder';
+import { useRouter } from 'next/router';
 
 export default function OrderDetail({ orderId }: { orderId: string }) {
   const { t } = useTranslation();
@@ -17,7 +18,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const { screenWidth } = useGlobalStore();
   const { Loading } = useLoading();
   const isLargeScreen = useMemo(() => screenWidth > 1100, [screenWidth]);
-
+  const router = useRouter();
   const [isHandled, setIsHandled] = useState(false);
   const [interval, setInterval] = useState(5 * 1000);
   const prevDataRef = useRef<WorkOrderDB | null>(null);
@@ -40,6 +41,11 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
             setInterval(newInterval);
           }
           prevDataRef.current = data;
+        }
+      },
+      onError(err: any) {
+        if (err?.code === 404) {
+          router.push('/');
         }
       }
     }
