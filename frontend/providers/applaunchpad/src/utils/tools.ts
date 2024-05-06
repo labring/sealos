@@ -4,7 +4,7 @@ import { AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import yaml from 'js-yaml';
 import { DeployKindsType } from '@/types/app';
-import type { AppPatchPropsType } from '@/types/app';
+import type { AppEditContainerType, AppPatchPropsType } from '@/types/app';
 import { YamlKindEnum } from './adapt';
 import { useTranslation } from 'next-i18next';
 import * as jsonpatch from 'fast-json-patch';
@@ -94,8 +94,8 @@ export const strToBase64 = (str: string) => {
 /**
  * atob secret yaml
  */
-export const atobSecretYaml = (secret?: string): AppEditType['secret'] => {
-  if (!secret) return defaultEditVal.secret;
+export const atobSecretYaml = (secret?: string): AppEditContainerType['secret'] => {
+  if (!secret) return defaultEditVal.containers[0].secret;
   try {
     const secretData = JSON.parse(window.atob(secret)).auths;
     const serverAddress = Object.keys(secretData)[0];
@@ -109,7 +109,7 @@ export const atobSecretYaml = (secret?: string): AppEditType['secret'] => {
   } catch (error) {
     console.log(error);
   }
-  return defaultEditVal.secret;
+  return defaultEditVal.containers[0].secret;
 };
 
 /**

@@ -8,7 +8,7 @@ import {
   publicDomainKey
 } from '@/constants/app';
 import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/store/static';
-import type { AppEditType } from '@/types/app';
+import type { AppEditContainerType, AppEditType } from '@/types/app';
 import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
@@ -19,7 +19,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   const metadata = {
     name: data.appName,
     annotations: {
-      originImageName: data.imageName,
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
       [deployPVCResizeKey]: `${totalStorage}Gi`
@@ -44,58 +43,17 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
     }
   };
-  const imagePullSecrets = data.secret.use
-    ? [
-        {
-          name: data.appName
-        }
-      ]
-    : undefined;
-  const commonContainer = {
-    name: data.appName,
-    image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
-    env:
-      data.envs.length > 0
-        ? data.envs.map((env) => ({
-            name: env.key,
-            value: env.valueFrom ? undefined : env.value,
-            valueFrom: env.valueFrom
-          }))
-        : [],
-    resources: {
-      requests: {
-        cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
-        memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
-      },
-      limits: {
-        cpu: `${str2Num(data.cpu)}m`,
-        memory: `${str2Num(data.memory)}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
-      }
-    },
-    command: (() => {
-      if (!data.runCMD) return undefined;
-      try {
-        return JSON.parse(data.runCMD);
-      } catch (error) {
-        return data.runCMD.split(' ').filter((item) => item);
-      }
-    })(),
-    args: (() => {
-      if (!data.cmdParam) return undefined;
-      try {
-        return JSON.parse(data.cmdParam) as string[];
-      } catch (error) {
-        return [data.cmdParam];
-      }
-    })(),
-    ports: data.networks.map((item, i) => ({
-      containerPort: item.port,
-      name: item.portName
-    })),
-    imagePullPolicy: 'Always'
-  };
+
+  const imagePullSecrets = data.containers
+    .map((item) => {
+      return item.secret.use
+        ? {
+            name: item.name
+          }
+        : undefined;
+    })
+    .filter(Boolean);
+
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: pathToNameFormat(item.mountPath),
     mountPath: item.mountPath,
@@ -133,6 +91,72 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     }
   }));
 
+  const containers = data.containers.map((container) => {
+    const commonContainer = {
+      name: container.name,
+      image: `${container.secret.use ? `${container.secret.serverAddress}/` : ''}${
+        container.imageName
+      }`,
+      env:
+        container.envs.length > 0
+          ? container.envs.map((env) => ({
+              name: env.key,
+              value: env.valueFrom ? undefined : env.value,
+              valueFrom: env.valueFrom
+            }))
+          : [],
+      resources: {
+        requests: {
+          cpu: `${str2Num(Math.floor(container.cpu * 0.1))}m`,
+          memory: `${str2Num(Math.floor(container.memory * 0.1))}Mi`
+          // ...(!!container.gpu?.type ? { [gpuResourceKey]: container.gpu.amount } : {})
+        },
+        limits: {
+          cpu: `${str2Num(container.cpu)}m`,
+          memory: `${str2Num(container.memory)}Mi`
+          // ...(!!container.gpu?.type ? { [gpuResourceKey]: container.gpu.amount } : {})
+        }
+      },
+      command: (() => {
+        if (!container.runCMD) return undefined;
+        try {
+          return JSON.parse(container.runCMD);
+        } catch (error) {
+          return container.runCMD.split(' ').filter((item) => item);
+        }
+      })(),
+      args: (() => {
+        if (!container.cmdParam) return undefined;
+        try {
+          return JSON.parse(container.cmdParam) as string[];
+        } catch (error) {
+          return [container.cmdParam];
+        }
+      })(),
+      ports: container.networks.map((item, i) => ({
+        containerPort: item.port,
+        name: item.portName
+      })),
+      imagePullPolicy: 'Always'
+    };
+
+    return type === 'deployment'
+      ? {
+          ...commonContainer,
+          volumeMounts: [...configMapVolumeMounts]
+        }
+      : {
+          ...commonContainer,
+          volumeMounts: [
+            ...configMapVolumeMounts,
+            ...data.storeList.map((item) => ({
+              name: item.name,
+              mountPath: item.path
+            }))
+          ]
+        };
+  });
+
   // gpu node selector
   const gpuMap = !!data.gpu?.type
     ? {
@@ -163,12 +187,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
           spec: {
             automountServiceAccountToken: false,
             imagePullSecrets,
-            containers: [
-              {
-                ...commonContainer,
-                volumeMounts: [...configMapVolumeMounts]
-              }
-            ],
+            containers: containers,
             ...gpuMap,
             volumes: [...configMapVolumes]
           }
@@ -195,18 +214,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
             automountServiceAccountToken: false,
             imagePullSecrets,
             terminationGracePeriodSeconds: 10,
-            containers: [
-              {
-                ...commonContainer,
-                volumeMounts: [
-                  ...configMapVolumeMounts,
-                  ...data.storeList.map((item) => ({
-                    name: item.name,
-                    mountPath: item.path
-                  }))
-                ]
-              }
-            ],
+            containers: containers,
             ...gpuMap,
             volumes: [...configMapVolumes]
           }
@@ -220,6 +228,15 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 };
 
 export const json2Service = (data: AppEditType) => {
+  const ports = data.containers.flatMap((item) =>
+    item.networks.map((item, i) => ({
+      port: str2Num(item.port),
+      targetPort: str2Num(item.port),
+      name: item.portName,
+      protocol: 'UDP'
+    }))
+  );
+
   const template = {
     apiVersion: 'v1',
     kind: 'Service',
@@ -230,11 +247,8 @@ export const json2Service = (data: AppEditType) => {
       }
     },
     spec: {
-      ports: data.networks.map((item, i) => ({
-        port: str2Num(item.port),
-        targetPort: str2Num(item.port),
-        name: item.portName
-      })),
+      type: 'NodePort',
+      ports: ports,
       selector: {
         app: data.appName
       }
@@ -267,7 +281,9 @@ export const json2NetWorkByType = (type: 'ingress' | 'gateway', data: AppEditTyp
     }
   };
 
-  const result = data.networks
+  const networks = data.containers.flatMap((item) => item.networks);
+
+  const result = networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
       const host = network.customDomain
@@ -402,8 +418,9 @@ export const json2Ingress = (data: AppEditType) => {
       'nginx.ingress.kubernetes.io/backend-protocol': 'WS'
     }
   };
+  const networks = data.containers.flatMap((item) => item.networks);
 
-  const result = data.networks
+  const result = networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
       const host = network.customDomain
@@ -535,7 +552,7 @@ export const json2ConfigMap = (data: AppEditType) => {
   return yaml.dump(template);
 };
 
-export const json2Secret = (data: AppEditType) => {
+export const json2Secret = (data: AppEditContainerType) => {
   const auth = strToBase64(`${data.secret.username}:${data.secret.password}`);
   const dockerconfigjson = strToBase64(
     JSON.stringify({
@@ -553,15 +570,17 @@ export const json2Secret = (data: AppEditType) => {
     apiVersion: 'v1',
     kind: 'Secret',
     metadata: {
-      name: data.appName
+      name: data.name
     },
     data: {
       '.dockerconfigjson': dockerconfigjson
     },
     type: 'kubernetes.io/dockerconfigjson'
   };
+
   return yaml.dump(template);
 };
+
 export const json2HPA = (data: AppEditType) => {
   const template = {
     apiVersion: 'autoscaling/v2',

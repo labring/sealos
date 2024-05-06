@@ -11,16 +11,32 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import { Box, Button, Center, Flex, MenuButton, Select, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Input,
+  MenuButton,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  useDisclosure,
+  useTheme
+} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
+import { createNamespace } from '@/api/platform';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
-
-
 
 const AppList = ({
   namespaces = [],
@@ -40,6 +56,8 @@ const AppList = ({
   const theme = useTheme<ThemeType>();
   const router = useRouter();
   const currentNamespaceRef = useRef<string>(currentNamespace);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [ns, setNs] = useState('');
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -112,7 +130,7 @@ const AppList = ({
   );
 
   const setCurrentNamespace = useCallback(
-      (namespace: string) => {
+    (namespace: string) => {
       currentNamespaceRef.current = namespace;
       router.push(`/apps?namespace=${namespace}`);
       refetchApps(currentNamespaceRef.current);
@@ -222,7 +240,11 @@ const AppList = ({
                 color: 'brightBlue.600'
               }}
               leftIcon={<MyIcon name={'detail'} w={'16px'} h="16px" />}
-              onClick={() => router.push(`/app/detail?namespace=${currentNamespaceRef.current}&&name=${item.name}`)}
+              onClick={() =>
+                router.push(
+                  `/app/detail?namespace=${currentNamespaceRef.current}&&name=${item.name}`
+                )
+              }
             >
               {t('Details')}
             </Button>
@@ -269,7 +291,10 @@ const AppList = ({
                             </Box>
                           </>
                         ),
-                        onClick: () => router.push(`/app/edit?namespace=${currentNamespaceRef.current}&&name=${item.name}`)
+                        onClick: () =>
+                          router.push(
+                            `/app/edit?namespace=${currentNamespaceRef.current}&&name=${item.name}`
+                          )
                       },
                       {
                         child: (
@@ -333,7 +358,6 @@ const AppList = ({
           ( {apps.length} )
         </Box>
         <Box flex={1}></Box>
-
         <Select
           w={'auto'}
           mr={4}
@@ -346,7 +370,9 @@ const AppList = ({
             </option>
           ))}
         </Select>
-
+        <Button mr={'12px'} h={'40px'} w={'156px'} flex={'0 0 auto'} onClick={onOpen}>
+          {t('New Namaspace')}
+        </Button>
         <Button
           h={'40px'}
           w={'156px'}
@@ -361,8 +387,54 @@ const AppList = ({
       <MyTable itemClass="appItem" columns={columns} data={apps} />
 
       <PauseChild />
+
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          onClose();
+          setNs('');
+        }}
+        closeOnOverlayClick={false}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t('New Namaspace')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Input value={ns} onChange={(e) => setNs(e.target.value)} />
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              width={'64px'}
+              onClick={() => {
+                onClose();
+                setNs('');
+              }}
+              variant={'outline'}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              width={'64px'}
+              ml={3}
+              variant={'solid'}
+              onClick={() => {
+                createNamespace({ ns });
+              }}
+            >
+              {t('Confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {!!delAppName && (
-        <DelModal namespace={currentNamespaceRef.current} appName={delAppName} onClose={() => setDelAppName('')} onSuccess={() => refetchApps(currentNamespaceRef.current)} />
+        <DelModal
+          namespace={currentNamespaceRef.current}
+          appName={delAppName}
+          onClose={() => setDelAppName('')}
+          onSuccess={() => refetchApps(currentNamespaceRef.current)}
+        />
       )}
     </Box>
   );

@@ -395,11 +395,36 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   isPause: false,
   appName: 'appName',
   imageName: 'nginx',
-  runCMD: '',
-  cmdParam: '',
+  currentContainerName: 'container1',
+  containers: [
+    {
+      name: 'container1',
+      imageName: 'nginx',
+      runCMD: '',
+      cmdParam: '',
+      cpu: 100,
+      memory: 64,
+      secret: {
+        use: false,
+        username: '',
+        password: '',
+        serverAddress: 'docker.io'
+      },
+      networks: [
+        {
+          networkName: '',
+          portName: nanoid(),
+          port: 80,
+          protocol: 'HTTP',
+          openPublicDomain: false,
+          publicDomain: '',
+          customDomain: ''
+        }
+      ],
+      envs: []
+    }
+  ],
   replicas: 5,
-  cpu: 0,
-  memory: 0,
   usedCpu: {
     name: '',
     xData: new Array(30).fill(0),
@@ -410,18 +435,6 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     xData: new Array(30).fill(0),
     yData: new Array(30).fill('0')
   },
-  networks: [
-    {
-      networkName: '',
-      portName: nanoid(),
-      port: 80,
-      protocol: 'HTTP',
-      openPublicDomain: false,
-      publicDomain: '',
-      customDomain: ''
-    }
-  ],
-  envs: [],
   hpa: {
     use: false,
     target: 'cpu',
@@ -430,11 +443,5 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     maxReplicas: 1
   },
   configMapList: [],
-  secret: {
-    use: false,
-    username: '',
-    password: '',
-    serverAddress: ''
-  },
   storeList: []
 };

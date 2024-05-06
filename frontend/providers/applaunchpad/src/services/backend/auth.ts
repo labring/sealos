@@ -1,15 +1,16 @@
 import { IncomingHttpHeaders } from 'http';
-import { KubeConfig, CoreV1Api } from "@kubernetes/client-node";
+import { KubeConfig, CoreV1Api } from '@kubernetes/client-node';
 
 export const getUserKubeConfig = () => {
   const kc = new KubeConfig();
   kc.loadFromCluster();
   const config = kc.exportConfig();
   return config;
-}
+};
 
 export const getUserKubeConfigMock = () => {
-  const temp = `apiVersion: v1
+  const temp = `
+apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM2VENDQWRHZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQ0FYRFRJME1ETXhPREEyTXpneU9Gb1lEekl4TWpRd01qSXpNRFl6T0RJNFdqQVZNUk13RVFZRApWUVFERXdwcmRXSmxjbTVsZEdWek1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBCm9hcHppWmFCVGRSQlZIamlJMW9yY2d3S2FZMU9xbVFWRDNJN1pmR2E3TFJIeUhyblc0SHVFRjV4bUR3QXk5RU4KU245d05RV1hiS213MFBqb3AzbnpMVm1tOVdHUS9lRGNtTU1ELzB0NHVJbFBuNE9mRnphbk92UWl2S1V0Y0krNwptdjY1THNFemRFVUZ3NWJINHlvT2JBbEl3U0V5KzduT1lyRy9seCswdlJHWUJURFRZek0vV1NrMURNcmtnTlhFClZuWjJYNHNpWUZiaHU1U0ZrMWJ0ZmZWYXJIeDcxMENLWFhHdXdvaElGeXR6NTZJMkZCcDVKcmJNd3ZJUitpcTcKVytMVHJYeHp0YUhsZGo1aXdMKzBZbjhwb2kySTV5UHhjSnE0ZzgwYXBaWWlUSGNGWDRYeTdtZDhiUkxhUXhHTQo5eE9OVkozbXdxMkt3dHF1ek0rNHV3SURBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQXFRd0R3WURWUjBUCkFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVKVjJpbkpseTZuTDdsSlJlWC8rV01aVjFQbm93RFFZSktvWkkKaHZjTkFRRUxCUUFEZ2dFQkFHSERwQzFqdEwvNVVnckZsRExwMmh1bXhCRk5wNkJPUkIxdkUyK1Q4Zmx4bnA5NgpSQW1Ha1VNYUR2YmhsOHU4Y3ZuNVFoanVLVWRlNU1weVdUMlNaK2ZmMFk0eDhNcUk4a2plSVJWczkxQzdYQ0tnCjkxS09maTExT1orRGVQTVYycWFXVk5FMjlUaHdUcVV2bjZ1VW1TYkhJc1N2Yml5blU3T1BHVWlUNHFQcllJZ3QKUEtGRVR0UzhCcC9pelNIdUxURGZsTStraGhNaXRPRjZYdmRscTJZVmp3N2hwd2xvNzdBbEhZa3VZSVZZaUpzLwpmMWhBM0d2bi9EUzczemZNcW50WjIzY1E5SzRSTTJaUUNrbEw1bENYTFdpWjdUaUdSOHhEdzdBMmxETHRQKzVpCmxveVBKN2g3VGRCSlI4b3FncnBBRzdiclh0RGF5ajBNUXUyQ2p3az0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
@@ -31,11 +32,12 @@ users:
 `;
 
   return temp;
-}
+};
 
 export const authSession = async (header: IncomingHttpHeaders) => {
   if (!header) return Promise.reject('unAuthorization');
-  const authorization = getUserKubeConfig();
+  const authorization =
+    process.env.NODE_ENV === 'development' ? getUserKubeConfigMock() : getUserKubeConfig();
   if (!authorization) return Promise.reject('unAuthorization');
 
   try {

@@ -12,14 +12,14 @@ import {
   Box
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { AppEditType } from '@/types/app';
+import { AppEditContainerType } from '@/types/app';
 
 const EditEnvs = ({
   defaultEnv = [],
   successCb,
   onClose
 }: {
-  defaultEnv: AppEditType['envs'];
+  defaultEnv: AppEditContainerType['envs'];
   successCb: (e: { key: string; value: string }[]) => void;
   onClose: () => void;
 }) => {

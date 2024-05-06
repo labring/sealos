@@ -1,6 +1,5 @@
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
-
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
@@ -13,25 +12,31 @@ import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import MonitorModal from './MonitorModal';
 
-const AppMainInfo = ({ namespace, app = MOCK_APP_DETAIL }: { namespace: string, app: AppDetailType }) => {
+const AppMainInfo = ({
+  namespace,
+  app = MOCK_APP_DETAIL
+}: {
+  namespace: string;
+  app: AppDetailType;
+}) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const networks = useMemo(
-    () =>
-      app.networks.map((network) => ({
-        inline: `http://${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
-        public: network.openPublicDomain
-          ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
-              network.customDomain
-                ? network.customDomain
-                : `${network.publicDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
-            }`
-          : ''
-      })),
-    [app]
-  );
+  const networks = useMemo(() => {
+    const networks = app.containers?.flatMap((container) => container.networks);
+
+    return networks?.map((network) => ({
+      inline: `http://${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
+      public: network.openPublicDomain
+        ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
+            network.customDomain
+              ? network.customDomain
+              : `${network.publicDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
+          }`
+        : ''
+    }));
+  }, [app]);
 
   return (
     <Box px={6} py={6} position={'relative'}>
