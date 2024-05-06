@@ -1,5 +1,6 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
+import { updateOrder } from '@/services/db/workorder';
 import { ApiResp } from '@/services/kubernet';
 import { WorkOrderType } from '@/types/workorder';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -30,6 +31,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const feishuUrl = process.env.ADMIN_FEISHU_URL;
     const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
     const title = switchToManual ? `工单：${orderId}，请求人工处理` : '有新的工单，请立即查看';
+
+    if (switchToManual) {
+      await updateOrder({
+        orderId,
+        userId: payload.userId,
+        updates: {
+          manualHandling: { isManuallyHandled: true }
+        }
+      });
+    }
 
     const form = {
       msg_type: 'interactive',
