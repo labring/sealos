@@ -38,7 +38,7 @@ spec:
       serviceAccountName: admin-service-account
       containers:
       - name: sealos-applaunchpad
-        image: luanshaotong/sealos-applaunchpad:dev
+        image: luanshaotong/sealos-applaunchpad:v0.1
         env:
         - name: SEALOS_DOMAIN
           value: FLAG_SEALOS_DOMAIN
