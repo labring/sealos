@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await verifyAccessToken(req);
 
     const { data, error } = await POST(
-      '/action/get-virtual-machine-package',
+      '/action/get-region-details',
       {},
       {
         headers: {

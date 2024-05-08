@@ -4,6 +4,8 @@ import adaptCloudServerListItem from '@/types/adapt';
 import { CloudServerPrice, CloudServerType, EditForm, OperatingSystems } from '@/types/cloudserver';
 import { CVMInstanceType } from '@/types/cloudserver';
 
+export const getCloudServerRegion = () => POST<CloudServerType[]>('/api/cloudserver/getRegion');
+
 export const getCloudServerType = () => POST<CloudServerType[]>('/api/cloudserver/listType');
 
 export const getCloudServerImage = () => POST<OperatingSystems>('/api/cloudserver/listImage');

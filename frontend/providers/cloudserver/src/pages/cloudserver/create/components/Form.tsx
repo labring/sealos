@@ -1,4 +1,4 @@
-import { getCloudServerImage, getCloudServerType } from '@/api/cloudserver';
+import { getCloudServerImage, getCloudServerRegion, getCloudServerType } from '@/api/cloudserver';
 import MyIcon from '@/components/Icon';
 import { MyTable, TableColumnsType } from '@/components/MyTable';
 import { CloudServerType, EditForm, StorageType } from '@/types/cloudserver';
@@ -65,6 +65,12 @@ export default function Form({
   useEffect(() => {
     setClientRender(true);
   }, []);
+
+  const { data: SystemRegion } = useQuery(['getCloudServerRegion'], getCloudServerRegion, {
+    staleTime: 5 * 60 * 1000
+  });
+
+  console.log(SystemRegion);
 
   const { data: SystemImage } = useQuery(['getCloudServerImage'], getCloudServerImage, {
     staleTime: 5 * 60 * 1000
