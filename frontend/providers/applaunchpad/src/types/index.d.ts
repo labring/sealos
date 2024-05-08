@@ -1,4 +1,5 @@
 import { WstLogger } from 'sealos-desktop-sdk/service';
+import { defaultSliderKey } from '@/constants/app';
 
 export type QueryType = {
   name: string;
@@ -16,6 +17,11 @@ export type FormSliderListType = Record<
     memory: number[];
   }
 >;
+
+export type FileMangerType = {
+  uploadLimit: number;
+  downloadLimit: number;
+};
 
 export type AppConfigType = {
   cloud: {
@@ -37,17 +43,13 @@ export type AppConfigType = {
         url: string;
       };
     };
-    appResourceFormSliderConfig: {
-      default: {
-        cpu: number[];
-        memory: number[];
-      };
-      // todo: add gpu appResourceFormSliderConfig config.yaml and codes here
-      // gpu?: {
-      //   cpu: number[];
-      //   memory: number[];
-      // };
-    };
+    appResourceFormSliderConfig: FormSliderListType;
+    fileManger: FileMangerType;
+    // todo: add gpu appResourceFormSliderConfig config.yaml and codes here
+    // gpu?: {
+    //   cpu: number[];
+    //   memory: number[];
+    // };
   };
 };
 

@@ -6,6 +6,7 @@ import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { formatUrl } from '@/utils/format';
 import { minBy, cloneDeep } from 'lodash';
+
 export class AppInfo {
   pid: number;
   isShow: boolean;
@@ -33,6 +34,7 @@ export class AppInfo {
   };
   displayType: displayType;
   i18n?: any;
+
   constructor(app: TApp, pid: number) {
     this.isShow = false;
     this.zIndex = 1;
@@ -66,7 +68,7 @@ const useAppStore = create<TOSState>()(
         launchQuery: {},
         autolaunch: '',
         runner: new AppStateManager([]),
-        init: async () => {
+        async init() {
           const res = await request('/api/desktop/getInstalledApps');
           set((state) => {
             state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
@@ -83,7 +85,12 @@ const useAppStore = create<TOSState>()(
             state.runningInfo = state.runningInfo.filter((item) => item.pid !== pid);
           });
         },
-
+        closeAppAll: () => {
+          set((state) => {
+            state.runner.closeAppAll();
+            state.runningInfo = [];
+          });
+        },
         installApp: (app: TApp) => {
           set((state) => {
             state.installedApps.push(new AppInfo(app, -1));

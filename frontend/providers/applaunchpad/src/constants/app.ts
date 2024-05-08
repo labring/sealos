@@ -38,7 +38,7 @@ export const appStatusMap = {
     label: 'Waiting',
     value: AppStatusEnum.waiting,
     color: 'grayModern.500',
-    backgroundColor: 'grayModern.100',
+    backgroundColor: 'rgba(17, 24, 36, 0.05)',
     dotColor: 'grayModern.500'
   }
 };

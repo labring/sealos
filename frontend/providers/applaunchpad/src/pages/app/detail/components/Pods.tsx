@@ -1,7 +1,6 @@
 import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
-
 import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -21,15 +20,19 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  useDisclosure
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useAppStore } from '@/store/app';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
+const PodFileModal = dynamic(() => import('./PodFileModal'));
 
 const Pods = ({
   pods = [],
@@ -44,10 +47,14 @@ const Pods = ({
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
+  const [detailFilePodIndex, setDetailFilePodIndex] = useState<number>();
+
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
   });
+  const { appDetail = MOCK_APP_DETAIL, appDetailPods } = useAppStore();
+  const { isOpen: isOpenPodFile, onOpen: onOpenPodFile, onClose: onClosePodFile } = useDisclosure();
 
   const handleRestartPod = useCallback(
     async (podName: string) => {
@@ -130,9 +137,9 @@ const Pods = ({
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'} position={'relative'}>
           <Box h={'45px'} w={'120px'} position={'absolute'}>
-            <PodLineChart type="green" data={item.usedCpu} />
+            <PodLineChart type="blue" data={item.usedCpu} />
             <Box
-              color={'#00A9A6'}
+              color={'#0077A9'}
               fontSize={'sm'}
               fontWeight={'bold'}
               position={'absolute'}
@@ -153,9 +160,9 @@ const Pods = ({
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'} position={'relative'}>
           <Box h={'45px'} w={'120px'} position={'absolute'}>
-            <PodLineChart type="deepBlue" data={item.usedMemory} />
+            <PodLineChart type="purple" data={item.usedMemory} />
             <Text
-              color={'#3293EC'}
+              color={'#6F5DD7'}
               fontSize={'sm'}
               fontWeight={'bold'}
               position={'absolute'}
@@ -216,6 +223,19 @@ const Pods = ({
               <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
             </Button>
           </MyTooltip>
+          {appDetail.storeList?.length > 0 && (
+            <MyTooltip offset={[0, 10]} label={t('File Management')}>
+              <Button
+                variant={'square'}
+                onClick={() => {
+                  setDetailFilePodIndex(i);
+                  onOpenPodFile();
+                }}
+              >
+                <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
+              </Button>
+            </MyTooltip>
+          )}
         </Flex>
       )
     }
@@ -298,6 +318,22 @@ const Pods = ({
             setDetailPodIndex(pods.findIndex((item) => item.podName === e))
           }
           closeFn={() => setDetailPodIndex(undefined)}
+        />
+      )}
+
+      {isOpenPodFile && appDetail.storeList?.length > 0 && detailFilePodIndex !== undefined && (
+        <PodFileModal
+          isOpen={isOpenPodFile}
+          onClose={onClosePodFile}
+          pod={pods[detailFilePodIndex]}
+          podAlias={`${appName}-${detailFilePodIndex + 1}`}
+          pods={pods.map((item, i) => ({
+            alias: `${appName}-${i + 1}`,
+            podName: item.podName
+          }))}
+          setPodDetail={(e: string) =>
+            setDetailFilePodIndex(pods.findIndex((item) => item.podName === e))
+          }
         />
       )}
       <RestartConfirmChild />

@@ -87,22 +87,5 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^2.8.8"
-  },
-  "pnpm": {
-    "supportedArchitectures": {
-      "os": [
-        "win32",
-        "darwin",
-        "current",
-        "linuxmusl"
-      ],
-      "cpu": [
-        "x64",
-        "arm64"
-      ],
-      "libc": [
-        "musl"
-      ]
-    }
   }
 }

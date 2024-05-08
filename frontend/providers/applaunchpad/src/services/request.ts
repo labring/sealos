@@ -11,7 +11,7 @@ import { getUserKubeConfig } from '@/utils/user';
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 60000
+  timeout: 2 * 60 * 1000
 });
 
 // request interceptor

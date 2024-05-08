@@ -32,7 +32,23 @@ const map = {
   terminal: require('./icons/terminal.svg').default,
   log: require('./icons/log.svg').default,
   nvidia: require('./icons/gpu/nvidia.svg').default,
-  enlarge: require('./icons/enlarge.svg').default
+  enlarge: require('./icons/enlarge.svg').default,
+  file: require('./icons/file.svg').default,
+  rename: require('./icons/rename.svg').default,
+  folder: require('./icons/file/folder.svg').default,
+  csv: require('./icons/file/csv.svg').default,
+  pdf: require('./icons/file/pdf.svg').default,
+  png: require('./icons/file/png.svg').default,
+  txt: require('./icons/file/txt.svg').default,
+  yaml: require('./icons/file/yaml.svg').default,
+  folderLine: require('./icons/file/folder-line.svg').default,
+  default: require('./icons/file/default.svg').default,
+  home: require('./icons/home.svg').default,
+  upload: require('./icons/upload.svg').default,
+  search: require('./icons/search.svg').default,
+  pods: require('./icons/pods.svg').default,
+  hardDrive: require('./icons/hardDrive.svg').default,
+  download: require('./icons/download.svg').default
 };
 
 export type IconType = keyof typeof map;

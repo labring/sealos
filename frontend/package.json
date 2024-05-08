@@ -35,5 +35,22 @@
     "@emotion/styled": "^11.11.0",
     "framer-motion": "^10.16.4",
     "typescript": "^5.2.2"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "win32",
+        "darwin",
+        "current",
+        "linuxmusl"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ],
+      "libc": [
+        "musl"
+      ]
+    }
   }
 }

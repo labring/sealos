@@ -42,16 +42,20 @@ export default function RegionToggle() {
   return (
     <>
       {regionList?.length > 1 && (
-        <HStack h="36px" borderRadius={'12px'} position={'relative'}>
+        <HStack
+          // fix for blur
+          position={'relative'}
+        >
           <HStack
-            borderRadius={'12px'}
+            borderRadius={'10px'}
             p={'8px 12px'}
             gap={'20px'}
-            background={'rgba(244, 246, 248, 0.7)'}
+            background={'rgba(244, 246, 248, 0.6)'}
             boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
             fontSize={'14px'}
             color={'#152539'}
             fontWeight={'500'}
+            backdropFilter={'blur(8px)'}
             onClick={() => disclosure.onOpen()}
           >
             <Text>
@@ -59,13 +63,17 @@ export default function RegionToggle() {
             </Text>
             <ExchangeIcon />
           </HStack>
+
           {disclosure.isOpen ? (
             <>
               <Box
                 position={'fixed'}
                 inset={0}
                 zIndex={'998'}
-                onClick={() => disclosure.onClose()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  disclosure.onClose();
+                }}
               ></Box>
               <Box position={'absolute'} inset={0} zIndex={'999'}>
                 <Box
@@ -73,7 +81,7 @@ export default function RegionToggle() {
                   bg="rgba(255, 255, 255, 0.8)"
                   boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
                   position={'absolute'}
-                  top="48px"
+                  top="43px"
                   right={0}
                   cursor={'initial'}
                   borderRadius={'8px'}

@@ -49,7 +49,6 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
 
   const conf = useConfigStore().commonConfig;
   const handleSkipGuide = () => {
-    console.log('handleSkipGuide');
     setShowGuide(false);
     updateDesktopGuide().catch((err) => {
       console.log(err);

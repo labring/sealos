@@ -31,6 +31,9 @@ export default class AppStateManager {
     const idx = this.openedApps.findIndex((app) => app.pid === pid);
     this.openedApps.splice(idx, 1);
   }
+  closeAppAll() {
+    this.openedApps = [];
+  }
   loadApps(appKeys: string[]) {
     this.allApps = new Set(appKeys);
   }

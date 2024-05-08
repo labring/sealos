@@ -66,24 +66,23 @@ export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
     };
     attempt();
   });
-// 自己的权限能管理什么权限
-export const vaildManage =
-  (ownRole: UserRole, userId: string) => (targetRole: UserRole, tUserId: string) => {
-    if (targetRole === UserRole.Owner)
-      return [UserRole.Owner].includes(ownRole); // 不论目标是不是自己，都必须要最高权限
-    else if (targetRole === UserRole.Manager)
-      return [UserRole.Owner, ...(tUserId === userId ? [UserRole.Manager] : [])].includes(ownRole);
-    //对自己操作定义的role可以是平级
-    else if (targetRole === UserRole.Developer)
-      return [
-        UserRole.Owner,
-        UserRole.Manager,
-        ...(tUserId === userId ? [UserRole.Developer] : [])
-      ].includes(ownRole);
-    else return false;
-  };
+// search manager relation
+export const vaildManage = (ownRole: UserRole) => (targetRole: UserRole, isSelf: boolean) => {
+  if (targetRole === UserRole.Owner) return [UserRole.Owner].includes(ownRole); // only owner
+  else if (targetRole === UserRole.Manager)
+    //
+    return [UserRole.Owner, ...(isSelf ? [UserRole.Manager] : [])].includes(ownRole);
+  // manager via self
+  else if (targetRole === UserRole.Developer)
+    return [UserRole.Owner, UserRole.Manager, ...(isSelf ? [UserRole.Developer] : [])].includes(
+      ownRole
+    );
+  else return false;
+};
 export const isUserRole = (role: any): role is UserRole =>
   [UserRole.Developer, UserRole.Manager, UserRole.Owner].includes(role);
+export const UserRoleToRole = (role: UserRole): Role =>
+  [Role.OWNER, Role.MANAGER, Role.DEVELOPER][role];
 export const roleToUserRole = (role: Role): UserRole => {
   const map: Record<Role, UserRole> = {
     [Role.OWNER]: UserRole.Owner,
