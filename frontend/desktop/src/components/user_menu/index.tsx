@@ -6,7 +6,7 @@ import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 import GithubComponent from './github';
 import { useConfigStore } from '@/stores/config';
-import { ReactElement, useState } from 'react';
+import { ReactElement, useCallback, useState } from 'react';
 import RegionToggle from '@/components/region/RegionToggle';
 
 enum UserMenuKeys {

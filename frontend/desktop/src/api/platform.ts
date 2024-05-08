@@ -3,9 +3,11 @@ import {
   ApiResp,
   NotificationItem,
   LayoutConfigType,
-  AppConfigType,
   CloudConfigType,
-  AuthConfigType
+  AuthClientConfigType,
+  AppClientConfigType,
+  CommonConfigType,
+  CommonClientConfigType
 } from '@/types';
 import { AccountCRD } from '@/types/user';
 
@@ -33,7 +35,7 @@ export const getUserAccount = () => {
 };
 
 export const getAppConfig = () => {
-  return request.get<AppConfigType>('/api/platform/getAppConfig');
+  return request.get<AppClientConfigType>('/api/platform/getAppConfig');
 };
 
 export const getCloudConfig = () => {
@@ -41,7 +43,7 @@ export const getCloudConfig = () => {
 };
 
 export const getCommonConfig = () => {
-  return request.get<AppConfigType>('/api/platform/getCommonConfig');
+  return request.get<CommonClientConfigType>('/api/platform/getCommonConfig');
 };
 
 export const getLayoutConfig = () => {
@@ -49,7 +51,7 @@ export const getLayoutConfig = () => {
 };
 
 export const getAuthConfig = () => {
-  return request.get<AuthConfigType>('/api/platform/getAuthConfig');
+  return request.get<AuthClientConfigType>('/api/platform/getAuthConfig');
 };
 
 export const getPriceBonus = () => {

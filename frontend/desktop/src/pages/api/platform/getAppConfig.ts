@@ -1,16 +1,17 @@
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
-  AppConfigType,
-  AuthConfigType,
+  AppClientConfigType,
+  AuthClientConfigType,
   CloudConfigType,
-  CommonConfigType,
+  CommonClientConfigType,
+  DefaultAppClientConfig,
   LayoutConfigType
 } from '@/types/system';
 import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
-import { getAuthConfig } from '@/pages/api/platform/getAuthConfig';
+import { getAuthClientConfig } from '@/pages/api/platform/getAuthConfig';
 import { getLayoutConfig } from '@/pages/api/platform/getLayoutConfig';
-import { getCommonConfig } from '@/pages/api/platform/getCommonConfig';
+import { getCommonClientConfig } from './getCommonConfig';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const config = await getAppConfig();
@@ -22,10 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 function genResConfig(
   cloudConf: CloudConfigType,
-  authConf: AuthConfigType,
-  commonConf: CommonConfigType,
+  authConf: AuthClientConfigType,
+  commonConf: CommonClientConfigType,
   layoutConf: LayoutConfigType
-): AppConfigType {
+): AppClientConfigType {
   return {
     cloud: cloudConf,
     common: commonConf,
@@ -33,19 +34,19 @@ function genResConfig(
       auth: authConf,
       layout: layoutConf
     }
-  } as AppConfigType;
+  };
 }
 
-export async function getAppConfig(): Promise<AppConfigType> {
+export async function getAppConfig(): Promise<AppClientConfigType> {
   try {
     const cloudConf = await getCloudConfig();
-    const authConf = await getAuthConfig();
-    const commonConf = await getCommonConfig();
+    const authConf = await getAuthClientConfig();
+    const commonConf = await getCommonClientConfig();
     const layoutConf = await getLayoutConfig();
-    console.log(layoutConf);
-    return genResConfig(cloudConf, authConf, commonConf, layoutConf);
+    const conf = genResConfig(cloudConf, authConf, commonConf, layoutConf);
+    return conf;
   } catch (error) {
     console.log('-getAppConfig-', error);
-    return {} as AppConfigType;
+    return DefaultAppClientConfig;
   }
 }

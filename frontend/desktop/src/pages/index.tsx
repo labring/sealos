@@ -15,6 +15,7 @@ import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 
 const destination = '/signin';
+
 interface IMoreAppsContext {
   showMoreApps: boolean;
   setShowMoreApps: (value: boolean) => void;

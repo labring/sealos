@@ -135,19 +135,18 @@ export default function SigninComponent() {
       showError(t('Read and agree'));
     }
   }, 500);
-
   return (
     <Box
       position={'relative'}
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={`url(${conf.layoutConfig?.backgroundImage})`}
+      backgroundImage={`url(${conf.layoutConfig?.backgroundImage || ''})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >
       <Head>
-        <title>{conf.layoutConfig?.meta.title}</title>
+        <title>{conf.layoutConfig?.meta.title || ''}</title>
         <meta name="description" content={conf.layoutConfig?.meta.description} />
       </Head>
       <Flex h="full" w="full" flexDir={'column'} justifyContent={'center'} alignItems={'center'}>
@@ -201,7 +200,7 @@ export default function SigninComponent() {
                 <Tab px="0" _selected={{ color: 'white' }}>
                   {t('Password Login')}
                 </Tab>
-                {conf.authConfig?.idp.wechat?.enabled && (
+                {conf.authConfig?.idp.wechat.enabled && (
                   <Tab px="0" _selected={{ color: 'white' }}>
                     {t('Official account login')}
                   </Tab>

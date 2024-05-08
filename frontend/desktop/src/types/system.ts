@@ -1,3 +1,5 @@
+import { DeepRequired, OmitPath, OmitPathArr } from './tools';
+
 export type CloudConfigType = {
   domain: string;
   port: string;
@@ -11,7 +13,7 @@ export type CommonConfigType = {
   rechargeEnabled: boolean;
   cfSiteKey?: string;
 };
-
+export type CommonClientConfigType = DeepRequired<OmitPath<CommonConfigType, 'apiEnabled'>>;
 export type DatabaseConfigType = {
   mongodbURI: string;
   globalCockroachdbURI: string;
@@ -107,15 +109,33 @@ export type AuthConfigType = {
   };
 };
 
+export type AuthClientConfigType = DeepRequired<
+  OmitPathArr<
+    AuthConfigType,
+    [
+      'signUpEnabled',
+      'invite.lafSecretKey',
+      'invite.lafBaseURL',
+      'idp.password.salt',
+      'idp.github.clientSecret',
+      'idp.wechat.clientSecret',
+      'idp.google.clientSecret',
+      'idp.sms.ali',
+      'idp.oauth2.clientSecret',
+      'jwt'
+    ]
+  >
+>;
+
 export type JwtConfigType = {
   internal?: string;
   regional?: string;
   global?: string;
 };
 
-export type DesktopConfigType = {
+export type DesktopConfigType<T = AuthConfigType> = {
   layout: LayoutConfigType;
-  auth: AuthConfigType;
+  auth: T;
   teamManagement?: {
     maxTeamCount: number;
     maxTeamMemberCount: number;
@@ -128,10 +148,14 @@ export type AppConfigType = {
   database: DatabaseConfigType;
   desktop: DesktopConfigType;
 };
+export type AppClientConfigType = {
+  cloud: CloudConfigType;
+  common: CommonClientConfigType;
+  desktop: DesktopConfigType<AuthClientConfigType>;
+};
 
-export const DefaultCommonConfig: CommonConfigType = {
+export const DefaultCommonClientConfig: CommonClientConfigType = {
   guideEnabled: false,
-  apiEnabled: false,
   rechargeEnabled: false,
   cfSiteKey: ''
 };
@@ -168,16 +192,48 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   }
 };
 
-export const DefaultAuthConfig: AuthConfigType = {
-  callbackURL: 'https://cloud.sealos.io/callback',
-  jwt: {
-    internal: 'internal',
-    regional: 'regional',
-    global: 'global'
+export const DefaultAuthClientConfig: AuthClientConfigType = {
+  baiduToken: '',
+  invite: {
+    enabled: false
   },
+  callbackURL: 'https://cloud.sealos.io/callback',
   idp: {
     password: {
       enabled: true
+    },
+    github: {
+      enabled: false,
+      clientID: ''
+    },
+    wechat: {
+      enabled: false,
+      clientID: ''
+    },
+    google: {
+      enabled: false,
+      clientID: ''
+    },
+    sms: {
+      enabled: false
+    },
+    oauth2: {
+      enabled: false,
+      callbackURL: '',
+      clientID: '',
+      authURL: '',
+      tokenURL: '',
+      userInfoURL: ''
     }
+  },
+  proxyAddress: ''
+};
+
+export const DefaultAppClientConfig: AppClientConfigType = {
+  cloud: DefaultCloudConfig,
+  common: DefaultCommonClientConfig,
+  desktop: {
+    layout: DefaultLayoutConfig,
+    auth: DefaultAuthClientConfig
   }
 };
