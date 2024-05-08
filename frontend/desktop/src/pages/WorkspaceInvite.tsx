@@ -13,15 +13,16 @@ import {
 import useCallbackStore from '@/stores/callback';
 import { useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
-import { ImageFallBackUrl } from '@/stores/config';
 import { ROLE_LIST } from '@/types/team';
 import { compareFirstLanguages } from '@/utils/tools';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useConfigStore } from '@/stores/config';
 
 const Callback: NextPage = () => {
   const router = useRouter();
   const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
+  const logo = useConfigStore().layoutConfig?.logo;
   const { setWorkspaceInviteCode } = useCallbackStore();
   const { t } = useTranslation();
   const verifyMutation = useMutation({
@@ -113,7 +114,7 @@ const Callback: NextPage = () => {
           gap={'8px'}
         >
           {' '}
-          <Image boxSize={'34px'} borderRadius="full" src={ImageFallBackUrl} alt="logo" />
+          <Image boxSize={'34px'} borderRadius="full" src={logo} alt="logo" />
           <Text fontWeight={700} fontSize={'24px'}>
             Sealos
           </Text>

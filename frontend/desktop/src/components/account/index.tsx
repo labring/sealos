@@ -21,9 +21,8 @@ import useAppStore from '@/stores/app';
 import { ApiResp } from '@/types';
 import { formatMoney } from '@/utils/format';
 import PasswordModify from './PasswordModify';
-import { CopyIcon, DownloadIcon, LogoutIcon, RightArrowIcon } from '@sealos/ui';
+import { CopyIcon, DownloadIcon, LogoutIcon } from '@sealos/ui';
 import { useConfigStore } from '@/stores/config';
-import { sessionConfig } from '@/utils/sessionConfig';
 
 export default function Account({ disclosure }: { disclosure: UseDisclosureReturn }) {
   const [showId, setShowId] = useState(true);
@@ -96,7 +95,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
             height={'80px'}
             borderRadius="full"
             src={user?.avatar}
-            fallbackSrc={ImageFallBackUrl}
+            fallbackSrc={logo}
             alt="user avator"
           />
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
