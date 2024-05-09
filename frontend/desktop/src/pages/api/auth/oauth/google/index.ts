@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-const clientId = process.env.GOOGLE_CLIENT_ID!;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-const callbackUrl = process.env.CALLBACK_URL || '';
+const clientId = global.AppConfig?.desktop.auth.idp.google?.clientID!;
+const clientSecret = global.AppConfig?.desktop.auth.idp.google?.clientSecret!;
+const callbackUrl = global.AppConfig?.desktop.auth.callbackURL || '';
 import * as jwt from 'jsonwebtoken';
 import { enableGoogle } from '@/services/enable';
 import { getBase64FromRemote } from '@/utils/tools';

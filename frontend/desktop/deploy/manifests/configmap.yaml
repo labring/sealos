@@ -1,11 +1,10 @@
-apiVersion: apps.sealos.io/v1beta1
-kind: Config
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: secret
-spec:
-  path: manifests/configmap.yaml
-  strategy: override
-  data: |
+  name: desktop-frontend-config
+  namespace: sealos
+data:
+  config.yaml : |
     apiVersion: v1
     kind: ConfigMap
     metadata:
@@ -16,7 +15,7 @@ spec:
         cloud:
           domain: "{{ .cloudDomain }}"
           port: "{{ .cloudPort }}"
-          regionUID: "<your-local-region-uid>"
+          regionUID: "<your-local-region-uid-base64>"
           certSecretName: "{{ .certSecretName }}"
         common:
           guideEnabled: "false"
@@ -24,9 +23,9 @@ spec:
           rechargeEnabled: "false"
           cfSiteKey: ""
         database:
-          mongodbURI: "<your-mongodb-uri>"
-          globalCockroachdbURI: "<your-global-database-url>"
-          regionalCockroachdbURI: "<your-regional-database-url>"
+          mongodbURI: "<your-mongodb-uri-base64>"
+          globalCockroachdbURI: "<your-global-database-url-base64>"
+          regionalCockroachdbURI: "<your-region-database-url-base64>"
         desktop:
           layout:
             title: "Sealos Cloud"
@@ -47,10 +46,10 @@ spec:
             invite:
               enabled: "false"
             jwt:
-              internal: "<your-internal-jwt-secret>"
-              regional: "<your-regional-jwt-secret>"
-              global: "<your-global-jwt-secret>"
+              internal: "<your-jwt-secret-base64>"
+              regional: "<your-jwt-secret-base64>"
+              global: "<your-jwt-secret-base64>"
             idp:
               password:
                 enabled: "true"
-                salt: "<your-password-salt>"
+                salt: "<your-password-salt-base64>"

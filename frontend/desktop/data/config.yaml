@@ -1,0 +1,64 @@
+cloud:
+  domain: "127.0.0.1.nip.io"
+  port: ""
+  regionUID: "thisiaregionuid"
+  certSecretName: "wildcard-cert"
+common:
+  guideEnabled: "false"
+  apiEnabled: "false"
+  rechargeEnabled: "false"
+  cfSiteKey: ""
+database:
+  mongodbURI: "thisismongodburi"
+  globalCockroachdbURI: "thisisglobalcockroachdburi"
+  regionalCockroachdbURI: "thisisregionalcockroachdburi"
+desktop:
+  layout:
+    title: "Sealos Cloud"
+    logo: "/logo.png"
+    backgroundImage: "/images/bg-blue.svg"
+    meta:
+      title: "Sealos Cloud"
+      description: "Sealos Cloud"
+      keywords: "Sealos Cloud"
+      scripts: []
+    common:
+      githubStarEnabled: "false"
+  auth:
+    proxyAddress: ""
+    callbackURL: "https://127.0.0.1.nip.io/callback"
+    signUpEnabled: "true"
+    baiduToken: ""
+    invite:
+      enabled: "false"
+    jwt:
+      internal: "thisisinternaljwt"
+      regional: "thisisregionaljwt"
+      global: "thisisglobaljwt"
+    idp:
+      password:
+        enabled: "true"
+        salt: "thisispasswordsalt"
+#        github:
+#          enabled: "{{ .githubEnabled }}"
+#          clientId: "{{ .githubClientID }}"
+#          clientSecret: "{{ .githubClientSecret }}"
+#        wechat:
+#          enabled: "{{ .wechatEnabled }}"
+#          clientId: "{{ .wechatClientID }}"
+#          clientSecret: "{{ .wechatClientSecret }}"
+#        sms:
+#          ali:
+#            enabled: "{{ .smsEnabled }}"
+#            endpoint: "{{ .aliSmsEndpoint }}"
+#            signName: "{{ .aliSmsSignName }}"
+#            accessKeyId: "{{ .aliAccessKeyID }}"
+#            accessKeySecret: "{{ .aliAccessKeySecret }}"
+#        oauth2:
+#          enabled: "{{ .oauth2Enabled }}"
+#          callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
+#          clientId: "{{ .oauth2ClientId }}"
+#          clientSecret: "{{ .oauth2ClientSecret }}"
+#          authURL: "{{ .oauth2AuthURL }}"
+#          tokenURL: "{{ .oauth2TokenURL }}"
+#          userInfoURL: "{{ .oauth2UserInfoURL }}"

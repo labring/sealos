@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
 import { useTranslation } from 'next-i18next';
-import { ImageFallBackUrl } from '@/stores/config';
+import { useConfigStore } from '@/stores/config';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -23,6 +23,7 @@ export default function AppWindow(props: {
     findAppInfoById,
     maxZIndex
   } = useAppStore();
+  const logo = useConfigStore().layoutConfig?.logo;
   const { t, i18n } = useTranslation();
   const wnapp = findAppInfoById(pid);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -111,7 +112,7 @@ export default function AppWindow(props: {
           <Flex ml="16px" alignItems={'center'} fontSize={'12px'} fontWeight={400}>
             <Image
               src={wnapp?.icon}
-              fallbackSrc={ImageFallBackUrl}
+              fallbackSrc={logo}
               alt={wnapp?.name}
               width={'20px'}
               height={'20px'}
@@ -149,7 +150,7 @@ export default function AppWindow(props: {
             >
               <Image
                 src="/icons/minimize.png"
-                fallbackSrc={ImageFallBackUrl}
+                fallbackSrc={logo}
                 alt={wnapp?.name}
                 width={'12px'}
                 height={'12px'}
@@ -170,7 +171,7 @@ export default function AppWindow(props: {
             >
               <Image
                 src={wnapp.size === 'maximize' ? '/icons/maximize.png' : '/icons/maxmin.png'}
-                fallbackSrc={ImageFallBackUrl}
+                fallbackSrc={logo}
                 alt={wnapp?.name}
                 width={'12px'}
                 height={'12px'}
@@ -191,7 +192,7 @@ export default function AppWindow(props: {
             >
               <Image
                 src={'/icons/close.png'}
-                fallbackSrc={ImageFallBackUrl}
+                fallbackSrc={logo}
                 alt={wnapp?.name}
                 width={'12px'}
                 height={'12px'}

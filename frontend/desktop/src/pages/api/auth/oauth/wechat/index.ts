@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 
-const APP_ID = process.env.WECHAT_CLIENT_ID!;
-const APP_SECRET = process.env.WECHAT_CLIENT_SECRET!;
+const APP_ID = global.AppConfig?.desktop.auth.idp.wechat?.clientID!;
+const APP_SECRET = global.AppConfig?.desktop.auth.idp.wechat?.clientSecret!;
 import { TWechatToken, TWechatUser } from '@/types/user';
 import { enableWechat } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';

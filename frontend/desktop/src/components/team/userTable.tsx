@@ -19,6 +19,7 @@ import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
 import { useTranslation } from 'react-i18next';
+import { useConfigStore } from '@/stores/config';
 
 export default function UserTable({
   users = [],

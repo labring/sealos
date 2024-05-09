@@ -6,20 +6,12 @@ sealos build -t docker.io/labring/sealos-cloud-desktop:latest -f Kubefile .
 
 ### Env
 
-| Name                       | Description                 | Default                                |
-|----------------------------|-----------------------------|----------------------------------------|
-| `cloudDomain`              | sealos cloud domain         | `cloud.example.com`                    |
-| `wildcardCertSecretName`   | wildcard cert secret name   | `wildcard-cert`                        |
+| Name                       | Description                 | Default            |
+|----------------------------|-----------------------------|--------------------|
+| `cloudDomain`              | sealos cloud domain         | `127.0.0.1.nip.io` |
+| `wildcardCertSecretName`   | wildcard cert secret name   | `wildcard-cert`    |
 
 ### Config
-
-If you enable password login (which is enabled by default), you need to set the password salt by using a config file.
-
-And this is a command to generate a password salt:
-```shell
-echo -n "your-password-salt" | base64
-```
-
 
 Here is a config file example:
 ```yaml
@@ -27,19 +19,61 @@ Here is a config file example:
 apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
-  name: secret
+  name: configMap
 spec:
-  path: manifests/secret.yaml
-  match: docker.io/labring/sealos-cloud-desktop:latest
-  strategy: merge
+  path: manifests/configmap.yaml
+  strategy: override
   data: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: desktop-frontend-config
+      namespace: sealos
     data:
-      mongodb_uri: <your-mongodb-uri-base64>
-      jwt_secret: <your-jwt-secret-base64>
-      password_salt: <your-password-salt-base64>
+      config.yaml : |
+        cloud:
+          domain: "127.0.0.1.nip.io"
+          port: ""
+          regionUID: "thisiaregionuid"
+          certSecretName: "wildcard-cert"
+        common:
+          guideEnabled: "false"
+          apiEnabled: "false"
+          rechargeEnabled: "false"
+          cfSiteKey: ""
+        database:
+          mongodbUri: "thisismongodburi"
+          globalCockroachdbURI: "thisisglobalcockroachdburi"
+          regionalCockroachdbURI: "thisisregionalcockroachdburi"
+        desktop:
+          layout:
+            title: "Sealos Cloud"
+            logo: "/logo.png"
+            backgroundImage: "/images/bg-blue.svg"
+            meta:
+              title: "Sealos Cloud"
+              description: "Sealos Cloud"
+              keywords: "Sealos Cloud"
+              scripts: []
+            common:
+              githubStarEnabled: "false"
+          auth:
+            proxyAddress: ""
+            callbackURL: "https://127.0.0.1.nip.io/callback"
+            signUpEnabled: "true"
+            baiduToken: ""
+            invite:
+              enabled: "false"
+            jwt:
+              internal: "thisisinternaljwt"
+              regional: "thisisregionaljwt"
+              global: "thisisglobaljwt"
+            idp:
+              password:
+                enabled: "true"
+                salt: "thisispasswordsalt"
+    
 ```
-
-*Please make sure `spec.match` is the same as the image you want to run*
 
 ### How to run
 
@@ -47,7 +81,6 @@ spec:
 sealos run \
     --env cloudDomain="127.0.0.1.nip.io" \
     --env wildcardCertSecretName="wildcard-cert" \
-    --env passwordEnabled="true" \
     docker.io/labring/sealos-cloud-desktop:latest \
     --config-file desktop-config.yaml 
 ```

@@ -5,8 +5,8 @@ import { Box, Center, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/r
 import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 import GithubComponent from './github';
-import { ImageFallBackUrl, useSystemConfigStore } from '@/stores/config';
 import { ReactElement, useCallback, useState } from 'react';
+import { useConfigStore } from '@/stores/config';
 import RegionToggle from '@/components/region/RegionToggle';
 import WorkspaceToggle from '@/components/team/WorkspaceToggle';
 
@@ -22,7 +22,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
 
-  const { systemConfig } = useSystemConfigStore();
+  const { layoutConfig } = useConfigStore();
   const userInfo = useSessionStore((state) => state.session);
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const {
@@ -64,7 +64,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
           height={'36px'}
           borderRadius="full"
           src={userInfo?.user?.avatar || ''}
-          fallbackSrc={ImageFallBackUrl}
+          fallbackSrc={layoutConfig?.logo}
           alt="user avator"
         />
       ),
@@ -77,7 +77,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
       <RegionToggle />
       <WorkspaceToggle />
       <LangSelectSimple {...baseItemStyle} />
-      {systemConfig?.showGithubStar && <GithubComponent {...baseItemStyle} />}
+      {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (
         <Flex
           key={item.key}
