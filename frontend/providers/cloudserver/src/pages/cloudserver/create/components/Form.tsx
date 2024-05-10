@@ -1,6 +1,7 @@
 import { getCloudServerImage, getCloudServerRegion, getCloudServerType } from '@/api/cloudserver';
 import MyIcon from '@/components/Icon';
 import { MyTable, TableColumnsType } from '@/components/MyTable';
+import MyTooltip from '@/components/MyTooltip';
 import { CloudServerType, EditForm, StorageType } from '@/types/cloudserver';
 import { CVMArchType, CVMRegionType, CVMZoneType, VirtualMachineType } from '@/types/region';
 import {
@@ -178,7 +179,6 @@ function ArchTabs({ arch }: { arch: CVMArchType[] }) {
       variant="unstyled"
       onChange={(e) => {
         const item = arch[e];
-        console.log(e, item);
         formHook?.setValue('virtualMachineArch', item.arch);
         formHook?.setValue('virtualMachineType', item.virtualMachineType[0].virtualMachineType);
         formHook?.setValue(
@@ -303,14 +303,6 @@ export default function Form({
   const { data: systemImage } = useQuery(['getCloudServerImage'], getCloudServerImage, {
     staleTime: 5 * 60 * 1000
   });
-
-  console.log(
-    formHook.getValues('chargeType'),
-    formHook.getValues('zone'),
-    formHook.getValues('virtualMachineArch'),
-    formHook.getValues('virtualMachineType'),
-    formHook.getValues('virtualMachinePackageFamily')
-  );
 
   const { data: serverTypeData } = useQuery(
     [
@@ -768,30 +760,34 @@ export default function Form({
             <></>
           ) : (
             <Box mt={'12px'} pl={'120px'}>
-              <FormControl isInvalid={!!errors.password}>
-                <Input
-                  autoFocus={true}
-                  maxLength={60}
-                  placeholder={t('Please enter your password') || 'Please enter your password'}
-                  {...register('password', {
-                    required: {
-                      value: true,
-                      message: '不能为空'
-                    },
-                    maxLength: 60,
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,30}$/,
-                      message: `在 8 ～ 30 位字符数以内（推荐12位以上）
+              <MyTooltip>
+                <FormControl isInvalid={!!errors.password}>
+                  <Input
+                    autoFocus={true}
+                    maxLength={60}
+                    placeholder={t('Please enter your password') || 'Please enter your password'}
+                    {...register('password', {
+                      required: {
+                        value: true,
+                        message: '不能为空'
+                      },
+                      maxLength: 60,
+                      pattern: {
+                        value:
+                          /^(?=(?:[^/][\s\S]){8,30}$)(?![/])(?:(?=(?:.*[a-z]){1,})(?=(?:.*[A-Z]){1,})(?=(?:.*[0-9]){1,})|(?=(?:.*[a-z]){1,})(?=(?:.*[A-Z]){1,})(?=(?:.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/]){1,})|(?=(?:.*[a-z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/]){1,})|(?=(?:.*[A-Z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/]){1,})).*/,
+                        message: `在 8 ～ 30 位字符数以内（推荐12位以上）
                     不能包含空格
                     不能以" / "开头\n
                     至少包含
                     小写字母 a ~ z;
                     大写字母 A ～ Z;
                     数字 0 ～ 9`
-                    }
-                  })}
-                />
-              </FormControl>
+                      }
+                    })}
+                  />
+                </FormControl>
+              </MyTooltip>
+              <MyTooltip label={<Box>12312</Box>}>12313</MyTooltip>
             </Box>
           )}
         </Box>

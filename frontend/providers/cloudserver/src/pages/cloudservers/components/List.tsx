@@ -131,6 +131,7 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
             <Flex flexDirection={'column'}>
               <Center
                 gap={'4px'}
+                cursor={'pointer'}
                 onClick={() => copyData(item?.privateIpAddresses?.join(',') || '')}
               >
                 {item?.privateIpAddresses?.join(',')}(内)
@@ -138,6 +139,7 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
               </Center>
               {item?.publicIpAddresses && (
                 <Center
+                  gap={'4px'}
                   cursor={'pointer'}
                   onClick={() => copyData(item?.publicIpAddresses?.join(',') || '')}
                 >

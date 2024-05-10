@@ -27,7 +27,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : { internetMaxBandwidthOut: 0 }),
       loginPassword: form.password,
       loginName: '',
-      metaData: {}
+      metaData: {},
+      zone: form.zone,
+      virtualMachineType: form.virtualMachineType,
+      virtualMachineArch: form.virtualMachineArch,
+      chareType: form.chargeType
     };
 
     const { data } = await POST('/action/create', payload, {

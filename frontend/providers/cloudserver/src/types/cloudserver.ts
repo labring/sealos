@@ -142,4 +142,8 @@ export type CreateCloudServerPayload = {
   metaData: {
     [key: string]: any;
   };
+  zone: string;
+  virtualMachineType: string;
+  virtualMachineArch: string;
+  chareType: CVMChargeType;
 };

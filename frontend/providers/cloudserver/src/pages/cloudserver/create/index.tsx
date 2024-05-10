@@ -1,4 +1,4 @@
-import { getCloudServerPrice } from '@/api/cloudserver';
+import { createCloudServer, getCloudServerPrice } from '@/api/cloudserver';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
@@ -45,7 +45,7 @@ export default function EditOrder() {
       ],
       systemImageId: '',
       chargeType: CVMChargeType.postPaidByHour,
-      zone: 'ap-guangzhou-6',
+      zone: 'Guangzhou-6',
       virtualMachineArch: 'x86_64',
       virtualMachineType: 'costEffective',
       virtualMachinePackageFamily: 'A'
@@ -64,20 +64,19 @@ export default function EditOrder() {
 
   const submitSuccess = async (data: EditForm) => {
     console.log(data);
-    // setIsLoading(true);
-    // try {
-    //   console.log(data);
-    //   await createCloudServer(data);
-    //   toast({
-    //     status: 'success',
-    //     title: 'success'
-    //   });
-    //   router.push(lastRoute);
-    // } catch (error) {
-    //   console.error(error);
-    //   setErrorMessage(JSON.stringify(error));
-    // }
-    // setIsLoading(false);
+    setIsLoading(true);
+    try {
+      await createCloudServer(data);
+      toast({
+        status: 'success',
+        title: 'success'
+      });
+      router.push(lastRoute);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(JSON.stringify(error));
+    }
+    setIsLoading(false);
   };
 
   const submitError = useCallback(() => {
