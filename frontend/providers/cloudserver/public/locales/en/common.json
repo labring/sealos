@@ -70,6 +70,7 @@
   "Supports changing the operating system": "Note: After purchase, you can change the operating system according to your business needs",
   "SystemDisk": "System Disk",
   "The maximum number of instances is 100": "Maximum number of instances is 100",
+  "The maximum number of instances is 20": "The maximum number is 20",
   "The maximum number of instances is 500": "Maximum number of instances is 500",
   "The minimum number of instances is 1": "Minimum number of instances is 1",
   "The minimum number of instances is 20": "Minimum number of instances is 20",
@@ -87,5 +88,15 @@
   "sshPassword": "SSH Password",
   "storage fees": "Storage fees",
   "success": "Success",
-  "terminal": "Terminal"
+  "terminal": "Terminal",
+  "Billing model": "Billing model",
+  "Availability Zone": "Availability Zone",
+  "Architecture": "Architecture",
+  "Instance Family": "Instance Family",
+  "postPaidByHour": "Pay as you go",
+  "heterogeneous": "Heterogeneous",
+  "prePaid": "Yearly and monthly subscription",
+  "x86_64": "x86_64",
+  "costEffective": "Cost Effective",
+  "gpu": "GPU"
 }

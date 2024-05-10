@@ -67,7 +67,7 @@ function Home() {
         </Button>
       </Flex>
 
-      {MockInstance && MockInstance?.length > 0 ? (
+      {data?.list && data?.list?.length > 0 ? (
         <Box flex={'1 0 0'}>
           <List refetchApps={refetch} apps={data?.list || []} />
         </Box>

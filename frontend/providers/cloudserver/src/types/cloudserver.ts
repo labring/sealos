@@ -1,3 +1,5 @@
+import { CVMChargeType } from './region';
+
 export type EditForm = {
   system: string;
   systemImageId: string;
@@ -9,6 +11,10 @@ export type EditForm = {
   storages: StorageType[];
   virtualMachinePackageFamily: string;
   virtualMachinePackageName: string;
+  virtualMachineType: string;
+  virtualMachineArch: string;
+  chargeType: CVMChargeType;
+  zone: string;
 };
 
 export type StorageType = {
