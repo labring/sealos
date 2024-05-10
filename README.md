@@ -103,7 +103,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## 🚧 Roadmap
 
-Sealos maintains a [public roadmap](https://github.com/orgs/labring/projects/4/views/9). It gives a a high-level view of the main priorities for the project, the maturity of different features and projects, and how to influence the project direction.
+Sealos maintains a [public roadmap](https://github.com/orgs/labring/projects/4/views/9). It gives a high-level view of the main priorities for the project, the maturity of different features and projects, and how to influence the project direction.
 
 ## 👩‍💻 Contributing & Development
 
