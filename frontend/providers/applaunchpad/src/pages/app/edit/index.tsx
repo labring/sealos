@@ -265,6 +265,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
+        setYamlList(formData2Yamls(realTimeForm.current));
       },
       onError(err) {
         toast({
@@ -388,10 +389,16 @@ export async function getServerSideProps(content: any) {
 export default EditApp;
 
 function checkNetworkPorts(networks: AppEditType['networks']) {
-  const ports = networks.map((item) => item.port);
-  const portSet = new Set(ports);
-  if (portSet.size !== ports.length) {
-    return false;
+  const portProtocolSet = new Set<string>();
+
+  for (const network of networks) {
+    const { port, protocol } = network;
+    const key = `${port}-${protocol}`;
+    if (portProtocolSet.has(key)) {
+      return false;
+    }
+    portProtocolSet.add(key);
   }
+
   return true;
 }
