@@ -109,9 +109,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </tr>
             </thead>
             <tbody>
-              {networks.map((network) => {
+              {networks.map((network, index) => {
                 return (
-                  <tr key={network.inline}>
+                  <tr key={network.inline + index}>
                     <th>
                       <Flex>
                         <MyTooltip label={t('Copy')} placement={'bottom-start'}>
