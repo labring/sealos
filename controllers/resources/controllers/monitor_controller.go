@@ -337,8 +337,12 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to list svc: %v", err)
 	}
 	for _, svc := range svcList.Items {
-		if svc.Spec.Type != corev1.ServiceTypeNodePort {
+		if svc.Spec.Type != corev1.ServiceTypeNodePort || len(svc.Spec.Ports) == 0 {
 			continue
+		}
+		port := make(map[int32]struct{})
+		for i := range svc.Spec.Ports {
+			port[svc.Spec.Ports[i].NodePort] = struct{}{}
 		}
 		svcRes := resources.NewResourceNamed(&svc)
 		if resUsed[svcRes.String()] == nil {
@@ -346,7 +350,7 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 			resUsed[svcRes.String()] = initResources()
 		}
 		// nodeport 1:1000, the measurement is quantity 1000
-		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(1000, resource.BinarySI))
+		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI))
 	}
 
 	var monitors []*resources.Monitor
