@@ -1,16 +1,14 @@
 import { IncomingHttpHeaders } from 'http';
 import { KubeConfig, CoreV1Api } from "@kubernetes/client-node";
 
-import fs from 'fs';
-
-export const getUserKubeConfigMock = () => {
+export const getUserKubeConfig = () => {
   const kc = new KubeConfig();
   kc.loadFromCluster();
   const config = kc.exportConfig();
   return config;
 }
 
-export const getUserKubeConfig = () => {
+export const getUserKubeConfigMock = () => {
   const temp = `apiVersion: v1
 clusters:
 - cluster:
