@@ -69,7 +69,7 @@
   "Are you sure to create a cloud host?": "确认创建一台云主机吗",
   "Confirm": "确认",
   "close cloud server tip": "请注意，关机状态下存储仍会收费，请确认！",
-  "Quantity is 1 to 100": "数量是1到100",
+  "Quantity tips": "数量是 {{amount1}} 到 {{amount2}}",
   "Password copied to clipboard": "密码已复制到剪切板",
   "Copy Failed": "复制失败",
   "Changing": "变更中",

@@ -430,6 +430,7 @@ export default function Form({
                 value={getValues(`storages.${rowNumber}.size`)}
                 min={20}
                 max={500}
+                hoverText={t('Quantity tips', { amount1: 20, amount2: 500 }) || ''}
                 setVal={(val) => {
                   register(`storages.${rowNumber}.size`, {
                     required:
@@ -475,6 +476,7 @@ export default function Form({
                   value={getValues(`storages.${rowNumber}.amount`)}
                   min={1}
                   max={20}
+                  hoverText={t('Quantity tips', { amount1: 1, amount2: 20 }) || ''}
                   setVal={(val) => {
                     register(`storages.${rowNumber}.amount`, {
                       required:
@@ -660,7 +662,7 @@ export default function Form({
                 data={storages}
                 borderBottomRadius={'0px'}
                 borderBottom={'none'}
-              ></MyTable>
+              />
               <Button
                 variant={'outline'}
                 w={'100%'}
@@ -712,7 +714,7 @@ export default function Form({
               value={getValues('internetMaxBandWidthOut')}
               min={1}
               max={100}
-              // hoverText={t('Quantity is 1 to 100') || 'Quantity is 1 to 100'}
+              // hoverText={t('Quantity tips', { amount1: 1, amount2: 100 }) || ''}
               setVal={(val) => {
                 register('internetMaxBandWidthOut', {
                   required:

@@ -34,13 +34,12 @@ export default function EditOrder() {
   const formHook = useForm<EditForm>({
     defaultValues: {
       system: 'ubuntu',
-      systemDiskSize: 50,
       publicIpAssigned: false,
       internetMaxBandWidthOut: 1,
       storages: [
         {
           use: 'SystemDisk',
-          size: 50,
+          size: 20,
           amount: 1
         }
       ],

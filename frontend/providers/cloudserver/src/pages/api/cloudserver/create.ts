@@ -12,13 +12,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dataDisks = form.storages
       .filter(({ use }) => use === 'DataDisk')
       .flatMap(({ size, amount }) => Array(amount).fill(size));
-    console.log(dataDisks);
+    const systemDiskSize = form.storages.find(({ use }) => use === 'SystemDisk')?.size || 20;
 
     const payload: CreateCloudServerPayload = {
       virtualMachinePackageFamily: form.virtualMachinePackageFamily,
       virtualMachinePackageName: form.virtualMachinePackageName,
       imageId: form.systemImageId,
-      systemDisk: form.systemDiskSize,
+      systemDisk: systemDiskSize,
       dataDisks: dataDisks,
       ...(form.publicIpAssigned
         ? {

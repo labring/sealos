@@ -3,7 +3,6 @@ import { CVMChargeType } from './region';
 export type EditForm = {
   system: string;
   systemImageId: string;
-  systemDiskSize: number;
   publicIpAssigned: boolean;
   internetMaxBandWidthOut: number;
   password: string;
@@ -21,7 +20,7 @@ export type StorageType = {
   type?: string;
   size: number;
   amount: number;
-  use: string;
+  use: 'SystemDisk' | 'DataDisk';
 };
 
 export type CloudServerType = {
