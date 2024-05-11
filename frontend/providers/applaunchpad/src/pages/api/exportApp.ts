@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         })
       }
     );
+
     const result = await temp.json();
 
     jsonRes(res, {

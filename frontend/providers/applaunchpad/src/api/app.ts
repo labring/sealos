@@ -81,4 +81,8 @@ export const getAppMonitorData = (
   }
 ) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData?namespace=${namespace}`, payload);
 
-export const exportApp = (data: ExportAppPayload) => POST(`/api/exportApp`, data);
+export const exportApp = (data: ExportAppPayload) =>
+  POST<{
+    path: string;
+    error?: string;
+  }>(`/api/exportApp`, data);

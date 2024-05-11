@@ -5,6 +5,7 @@ import { AppEditType } from '@/types/app';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Flex } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -31,6 +32,7 @@ const Header = ({
   const { t } = useTranslation();
   const router = useRouter();
   const { lastRoute } = useGlobalStore();
+  const { message: toast } = useMessage();
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -40,19 +42,34 @@ const Header = ({
       'application/yaml',
       appName ? `${appName}.yaml` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
     );
-  }, [appName, yamlList]);
+    toast({
+      status: 'success',
+      title: 'success'
+    });
+  }, [appName, toast, yamlList]);
 
   const handleExportApp = async () => {
     const images = formHook.getValues().containers.map((item) => ({ name: item.imageName }));
     try {
       const exportYamlString = yamlList.map((i) => i.value).join('---\n');
-      await exportApp({
+      const result = await exportApp({
         yaml: exportYamlString,
         images: images,
         appname: appName,
         namespace: namespace
       });
-    } catch (error) {}
+      toast({
+        status: result?.error ? 'error' : 'success',
+        duration: null,
+        isClosable: true,
+        title: result?.error ? result.error : '打包成功，文件储存在：' + result.path
+      });
+    } catch (error) {
+      toast({
+        status: 'error',
+        title: 'error'
+      });
+    }
   };
 
   return (
