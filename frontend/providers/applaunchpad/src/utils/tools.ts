@@ -233,14 +233,17 @@ export const patchYamlList = ({
   newYamlList: string[];
   crYamlList: DeployKindsType[];
 }) => {
-  console.log(formOldYamlList, newYamlList, crYamlList, '=======');
-
   const oldFormJsonList = formOldYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
   const newFormJsonList = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
 
-  console.log(oldFormJsonList, newFormJsonList, crYamlList, '===patchYamlList===');
+  console.log(
+    oldFormJsonList,
+    newFormJsonList,
+    crYamlList,
+    'oldFormJsonList,newFormJsonList,crYamlList'
+  );
 
   const actions: AppPatchPropsType = [];
 
@@ -350,7 +353,6 @@ export const patchYamlList = ({
       if (actionsJson.kind === YamlKindEnum.Service) {
         // @ts-ignore
         const ports = actionsJson?.spec.ports || [];
-        console.log(ports);
 
         // @ts-ignore
         if (ports.length > 1 && !ports[0]?.name) {

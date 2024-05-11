@@ -228,15 +228,23 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 };
 
 export const json2Service = (data: AppEditType) => {
+  // openPublicDomain === open node port
   const ports = data.containers.flatMap((item) =>
-    item.networks.map((item, i) => ({
-      port: str2Num(item.port),
-      targetPort: str2Num(item.port),
-      nodePort: item.nodePort,
-      name: item.portName,
+    item.networks.map((network, i) => ({
+      port: str2Num(network.port),
+      targetPort: str2Num(network.port),
+      ...(network.openPublicDomain
+        ? {
+            nodePort: str2Num(network.nodePort)
+          }
+        : {}),
+      name: network.portName,
       protocol: 'TCP'
     }))
   );
+
+  const openPublicPorts = ports.filter((port) => port.nodePort);
+  const closedPublicPorts = ports.filter((port) => !port.nodePort);
 
   const template = {
     apiVersion: 'v1',
@@ -248,14 +256,32 @@ export const json2Service = (data: AppEditType) => {
       }
     },
     spec: {
-      type: 'NodePort',
-      ports: ports,
+      ports: closedPublicPorts,
       selector: {
         app: data.appName
       }
     }
   };
-  return yaml.dump(template);
+
+  const templateNodePort = {
+    apiVersion: 'v1',
+    kind: 'Service',
+    metadata: {
+      name: `${data.appName}-nodeport`,
+      labels: {
+        [appDeployKey]: data.appName
+      }
+    },
+    spec: {
+      type: 'NodePort',
+      ports: openPublicPorts,
+      selector: {
+        app: data.appName
+      }
+    }
+  };
+  const nodePortYaml = openPublicPorts.length > 0 ? `\n---\n` + yaml.dump(templateNodePort) : '';
+  return yaml.dump(template) + nodePortYaml;
 };
 
 export const json2NetWorkByType = (type: 'ingress' | 'gateway', data: AppEditType) => {

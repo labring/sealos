@@ -51,8 +51,6 @@ export const useAppStore = create<State>()(
           state.appDetailPods = [];
         });
         const res = await getAppByName(namespace, appName);
-        console.log(res, 'res');
-
         set((state) => {
           state.appDetail = res;
         });

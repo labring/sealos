@@ -31,7 +31,6 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     mountPath: string;
     value: string;
   }>();
-  console.log(app);
 
   const appInfoTable = useMemo<
     {
@@ -123,12 +122,12 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           ))}
         </Flex>
       </>
-      {appInfoTable.map((info) => (
+      {appInfoTable.map((info, index) => (
         <Box
           _notFirst={{
             mt: 6
           }}
-          key={info.name}
+          key={info.name + index}
         >
           <Flex
             alignItems={'center'}
@@ -142,7 +141,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           <Box mt={3} p={4} backgroundColor={'grayModern.50'} borderRadius={'md'}>
             {info.items.map((item, i) => (
               <Flex
-                key={item.label || i}
+                key={item.label + i}
                 flexWrap={'wrap'}
                 _notFirst={{
                   mt: 4

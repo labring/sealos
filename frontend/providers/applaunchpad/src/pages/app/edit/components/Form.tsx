@@ -237,32 +237,8 @@ const Networks = ({
                   </Box>
                 )}
               </Box>
-              <Box ml={'12px'}>
-                <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                  {t('Node Port')}
-                </Box>
-                <Input
-                  h={'32px'}
-                  type={'number'}
-                  w={'110px'}
-                  bg={'grayModern.50'}
-                  {...register(`containers.${containerIndex}.networks.${i}.nodePort`, {
-                    required:
-                      t('app.The container exposed port cannot be empty') ||
-                      'The container exposed port cannot be empty',
-                    valueAsNumber: true,
-                    min: {
-                      value: 1,
-                      message: t('app.The minimum exposed port is 1')
-                    },
-                    max: {
-                      value: 65535,
-                      message: t('app.The maximum number of exposed ports is 65535')
-                    }
-                  })}
-                />
-              </Box>
-              <Box mx={7}>
+
+              <Box mx={'6px'}>
                 <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                   {t('Open Public Access')}
                 </Box>
@@ -286,7 +262,32 @@ const Networks = ({
               </Box>
               {network.openPublicDomain && (
                 <>
-                  <Box flex={'1 0 0'}>
+                  <Box>
+                    <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
+                      {t('Node Port')}
+                    </Box>
+                    <Input
+                      h={'32px'}
+                      type={'number'}
+                      w={'80px'}
+                      bg={'grayModern.50'}
+                      {...register(`containers.${containerIndex}.networks.${i}.nodePort`, {
+                        required:
+                          t('app.The container exposed port cannot be empty') ||
+                          'The container exposed port cannot be empty',
+                        valueAsNumber: true,
+                        min: {
+                          value: 1,
+                          message: t('app.The minimum exposed port is 1')
+                        },
+                        max: {
+                          value: 65535,
+                          message: t('app.The maximum number of exposed ports is 65535')
+                        }
+                      })}
+                    />
+                  </Box>
+                  <Box ml={'6px'}>
                     <Box mb={'8px'} h={'20px'}></Box>
                     <Flex alignItems={'center'} h={'35px'}>
                       <MySelect

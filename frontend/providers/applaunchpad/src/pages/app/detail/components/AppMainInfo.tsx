@@ -24,20 +24,20 @@ const AppMainInfo = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const networks = useMemo(() => {
-    const networks = app.containers?.flatMap((container) => container.networks);
-
-    return networks?.map((network) => ({
-      inline: `${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
-      public: network.openPublicDomain
-        ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
-            network.customDomain
-              ? network.customDomain
-              : `${network.publicDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
-          }`
-        : '',
-      nodePort: network.nodePort ? `${SEALOS_DOMAIN}:${network.nodePort}` : ''
-    }));
-  }, [app]);
+    return app.containers?.flatMap((container) => {
+      return container.networks?.map((network) => ({
+        inline: `${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
+        public: network.openPublicDomain
+          ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
+              network.customDomain
+                ? network.customDomain
+                : `${network.publicDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
+            }`
+          : '',
+        nodePort: network.nodePort ? `${SEALOS_DOMAIN}:${network.nodePort}` : ''
+      }));
+    });
+  }, [app.appName, app.containers, namespace]);
 
   return (
     <Box px={6} py={6} position={'relative'}>
@@ -114,9 +114,9 @@ const AppMainInfo = ({
               </tr>
             </thead>
             <tbody>
-              {networks.map((network) => {
+              {networks.map((network, index) => {
                 return (
-                  <tr key={network.inline}>
+                  <tr key={network.inline + index}>
                     <th>
                       <Flex>
                         <MyTooltip label={t('Copy')} placement={'bottom-start'}>

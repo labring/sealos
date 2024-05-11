@@ -210,15 +210,16 @@ const EditApp = ({
     },
     [
       setIsLoading,
-      toast,
       appName,
       router,
+      namespace,
       formHook,
+      isGuided,
+      toast,
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice,
-      isGuided
+      refetchPrice
     ]
   );
   const submitError = useCallback(() => {
@@ -277,6 +278,7 @@ const EditApp = ({
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
+        setYamlList(formData2Yamls(res));
       },
       onError(err) {
         toast({
