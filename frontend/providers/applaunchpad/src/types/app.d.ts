@@ -97,6 +97,7 @@ export interface AppEditContainerType {
     networkName: string;
     portName: string;
     port: number;
+    nodePort?: number;
     protocol: 'HTTP' | 'GRPC' | 'WS';
     openPublicDomain: boolean;
     publicDomain: string; // default domain

@@ -227,5 +227,6 @@
   "ConfigMap Path Conflict": "ConfigMap 路径冲突",
   "Deploy Application": "部署应用",
   "Reboot Success": "重启成功",
-  "New Namaspace": "新建 Namespace"
+  "New Namaspace": "新建 Namespace",
+  "Node Port": "NodePort"
 }

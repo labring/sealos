@@ -243,6 +243,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
             networkName: ingress?.metadata?.name || '',
             portName: item.name || '',
             port: item.port,
+            nodePort: item.nodePort,
             protocol:
               (ingress?.metadata?.annotations?.[
                 'nginx.ingress.kubernetes.io/backend-protocol'

@@ -232,8 +232,9 @@ export const json2Service = (data: AppEditType) => {
     item.networks.map((item, i) => ({
       port: str2Num(item.port),
       targetPort: str2Num(item.port),
+      nodePort: item.nodePort,
       name: item.portName,
-      protocol: 'UDP'
+      protocol: 'TCP'
     }))
   );
 

@@ -227,5 +227,6 @@
   "The target cpu value must be less than 100": "The target cpu value must be less than 100",
   "The user name cannot be empty": "The user name cannot be empty",
   "Under Stock": "Under Stock",
-  "New Namaspace": "New Namaspace"
+  "New Namaspace": "New Namaspace",
+  "Node Port": "NodePort"
 }

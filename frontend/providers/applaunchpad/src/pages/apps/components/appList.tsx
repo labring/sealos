@@ -418,8 +418,15 @@ const AppList = ({
               width={'64px'}
               ml={3}
               variant={'solid'}
-              onClick={() => {
-                createNamespace({ ns });
+              onClick={async () => {
+                await createNamespace({ ns });
+                onClose();
+                setNs('');
+                refetchApps('default');
+                toast({
+                  title: 'success',
+                  status: 'success'
+                });
               }}
             >
               {t('Confirm')}

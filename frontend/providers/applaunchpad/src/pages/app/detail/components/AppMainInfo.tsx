@@ -27,14 +27,15 @@ const AppMainInfo = ({
     const networks = app.containers?.flatMap((container) => container.networks);
 
     return networks?.map((network) => ({
-      inline: `http://${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
+      inline: `${app.appName}.${namespace}.svc.cluster.local:${network.port}`,
       public: network.openPublicDomain
         ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
             network.customDomain
               ? network.customDomain
               : `${network.publicDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
           }`
-        : ''
+        : '',
+      nodePort: network.nodePort ? `${SEALOS_DOMAIN}:${network.nodePort}` : ''
     }));
   }, [app]);
 
@@ -131,35 +132,69 @@ const AppMainInfo = ({
                     </th>
                     <th className="driver-detail-network-public">
                       <Flex alignItems={'center'} justifyContent={'space-between'}>
-                        <MyTooltip
-                          label={network.public ? t('Open Link') : ''}
-                          placement={'bottom-start'}
-                        >
-                          <Box
-                            className={'textEllipsis'}
-                            {...(network.public
-                              ? {
-                                  cursor: 'pointer',
-                                  _hover: { textDecoration: 'underline' },
-                                  onClick: () => window.open(network.public, '_blank')
-                                }
-                              : {})}
-                          >
-                            {network.public || '-'}
-                          </Box>
-                        </MyTooltip>
                         {!!network.public && (
-                          <MyIcon
-                            cursor={'pointer'}
-                            mr={2}
-                            name={'copy'}
-                            w={'14px'}
-                            color={'grayModern.500'}
-                            _hover={{
-                              color: 'hover.iconBlue'
-                            }}
-                            onClick={() => copyData(network.public)}
-                          />
+                          <>
+                            <MyTooltip
+                              label={network.public ? t('Open Link') : ''}
+                              placement={'bottom-start'}
+                            >
+                              <Box
+                                className={'textEllipsis'}
+                                {...(network.public
+                                  ? {
+                                      cursor: 'pointer',
+                                      _hover: { textDecoration: 'underline' },
+                                      onClick: () => window.open(network.public, '_blank')
+                                    }
+                                  : {})}
+                              >
+                                {network.public}
+                              </Box>
+                            </MyTooltip>
+                            <MyIcon
+                              cursor={'pointer'}
+                              mr={2}
+                              name={'copy'}
+                              w={'14px'}
+                              color={'grayModern.500'}
+                              _hover={{
+                                color: 'hover.iconBlue'
+                              }}
+                              onClick={() => copyData(network.public)}
+                            />
+                          </>
+                        )}
+                        {!!network.nodePort && (
+                          <>
+                            <MyTooltip
+                              label={network.nodePort ? t('Open Link') : ''}
+                              placement={'bottom-start'}
+                            >
+                              <Box
+                                className={'textEllipsis'}
+                                {...(network.nodePort
+                                  ? {
+                                      cursor: 'pointer',
+                                      _hover: { textDecoration: 'underline' },
+                                      onClick: () => window.open(network.nodePort, '_blank')
+                                    }
+                                  : {})}
+                              >
+                                {network.nodePort}
+                              </Box>
+                            </MyTooltip>
+                            <MyIcon
+                              cursor={'pointer'}
+                              mr={2}
+                              name={'copy'}
+                              w={'14px'}
+                              color={'grayModern.500'}
+                              _hover={{
+                                color: 'hover.iconBlue'
+                              }}
+                              onClick={() => copyData(network.nodePort)}
+                            />
+                          </>
                         )}
                       </Flex>
                     </th>
