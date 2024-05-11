@@ -14,6 +14,7 @@ import {
   IconButton,
   Image,
   Input,
+  ListItem,
   Radio,
   Skeleton,
   Stack,
@@ -26,6 +27,8 @@ import {
   TabProps,
   Tabs,
   Text,
+  UnorderedList,
+  useDisclosure,
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, RangeInput, Tabs as SealosTabs } from '@sealos/ui';
@@ -292,6 +295,15 @@ export default function Form({
   const formHook = useFormContext<EditForm>();
   if (!formHook) return <></>;
   const [clientRender, setClientRender] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const specialTips = useMemo(() => {
+    return {
+      specialChars: "()`~!@#$%^&*-+=_|{}[]:;'<>,.?/",
+      regex:
+        /^(?!.*\s)(?!\/)(?=[^\/]{8,30}$)(?:(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])|(?=.*[a-z])(?=.*[A-Z])(?=.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/])|(?=.*[a-z])(?=.*[0-9])(?=.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/])|(?=.*[A-Z])(?=.*[0-9])(?=.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/])).*$/
+    };
+  }, []);
 
   useEffect(() => {
     setClientRender(true);
@@ -760,10 +772,30 @@ export default function Form({
             <></>
           ) : (
             <Box mt={'12px'} pl={'120px'}>
-              <MyTooltip>
-                <FormControl isInvalid={!!errors.password}>
+              <MyTooltip
+                placement="right"
+                offset={[0, 15]}
+                isOpen={isOpen}
+                label={
+                  <Flex>
+                    <UnorderedList>
+                      <ListItem>在 8 ～ 30 位字符数以内（推荐12位以上）</ListItem>
+                      <ListItem>不能包含空格</ListItem>
+                      <ListItem>{`不能以" / "开头`}</ListItem>
+                      <ListItem>至少包含其中三项</ListItem>
+                      <UnorderedList>
+                        <ListItem>小写字母 a ~ z</ListItem>
+                        <ListItem>大写字母 A ～ Z</ListItem>
+                        <ListItem>数字 0 ～ 9</ListItem>
+                        <ListItem>{specialTips.specialChars}</ListItem>
+                      </UnorderedList>
+                    </UnorderedList>
+                  </Flex>
+                }
+              >
+                <FormControl width={'300px'} isInvalid={!!errors.password}>
                   <Input
-                    autoFocus={true}
+                    onFocus={onOpen}
                     maxLength={60}
                     placeholder={t('Please enter your password') || 'Please enter your password'}
                     {...register('password', {
@@ -771,23 +803,17 @@ export default function Form({
                         value: true,
                         message: '不能为空'
                       },
-                      maxLength: 60,
                       pattern: {
-                        value:
-                          /^(?=(?:[^/][\s\S]){8,30}$)(?![/])(?:(?=(?:.*[a-z]){1,})(?=(?:.*[A-Z]){1,})(?=(?:.*[0-9]){1,})|(?=(?:.*[a-z]){1,})(?=(?:.*[A-Z]){1,})(?=(?:.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/]){1,})|(?=(?:.*[a-z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/]){1,})|(?=(?:.*[A-Z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/]){1,})).*/,
-                        message: `在 8 ～ 30 位字符数以内（推荐12位以上）
-                    不能包含空格
-                    不能以" / "开头\n
-                    至少包含
-                    小写字母 a ~ z;
-                    大写字母 A ～ Z;
-                    数字 0 ～ 9`
+                        value: specialTips.regex,
+                        message: '密码错误'
+                      },
+                      onBlur(event) {
+                        onClose();
                       }
                     })}
                   />
                 </FormControl>
               </MyTooltip>
-              <MyTooltip label={<Box>12312</Box>}>12313</MyTooltip>
             </Box>
           )}
         </Box>
