@@ -99,5 +99,12 @@
   "x86_64": "x86_64",
   "costEffective": "Cost Effective",
   "gpu": "GPU",
-  "Password does not meet requirements": "Password does not meet requirements"
+  "Password does not meet requirements": "Password does not meet requirements",
+  "Lowercase letters az": "Lowercase letters a ~ z",
+  "Capital letters az": "Capital letters A ~ Z",
+  "Numbers 09": "Numbers 0 ~ 9",
+  "Contains at least three of these": "Contains at least three of these",
+  "Cannot start with": "Cannot start with \"/\"",
+  "cannot contain spaces": "cannot contain spaces",
+  "Within 8 to 30 characters": "Within 8 to 30 characters (12 or more characters recommended)"
 }

@@ -99,5 +99,12 @@
   "x86_64": "x86计算",
   "costEffective": "实惠型",
   "gpu": "GPU",
-  "Password does not meet requirements": "密码不符合要求"
+  "Password does not meet requirements": "密码不符合要求",
+  "Lowercase letters az": "小写字母 a ~ z",
+  "Capital letters az": "大写字母 A ～ Z",
+  "Numbers 09": "数字 0 ～ 9",
+  "Contains at least three of these": "至少包含其中三项",
+  "Cannot start with": "不能以\" / \"开头",
+  "cannot contain spaces": "不能包含空格",
+  "Within 8 to 30 characters": "在 8 ～ 30 位字符数以内（推荐12位以上）"
 }

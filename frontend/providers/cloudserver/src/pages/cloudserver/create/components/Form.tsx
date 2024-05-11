@@ -56,17 +56,17 @@ const tabStyles: TabProps = {
   border: '1px solid',
   borderRadius: '2px',
   cursor: 'pointer',
-  fontWeight: 'bold',
+  fontWeight: '400',
   color: 'grayModern.900',
   borderColor: 'grayModern.200',
-  width: '150px',
+  width: '160px',
   css: {
     svg: {
       opacity: 0
     }
   },
   _selected: {
-    bg: 'rgba(33, 155, 244, 0.05)',
+    bg: '#F9FDFE',
     borderColor: 'brightBlue.400',
     svg: {
       opacity: 1,
@@ -116,8 +116,8 @@ function VirtualMachinePackageTabs({
         formHook?.setValue('virtualMachinePackageFamily', item);
       }}
     >
-      <TabList>
-        <Label alignSelf={'self-start'}>
+      <TabList alignItems={'center'}>
+        <Label>
           <Text>{t('Type')}</Text>
         </Label>
         {virtualMachinePackageFamily?.map((item) => (
@@ -148,8 +148,8 @@ function VirtualMachineTabs({ virtualMachine }: { virtualMachine: VirtualMachine
         formHook?.setValue('virtualMachinePackageFamily', item.virtualMachinePackageFamily[0]);
       }}
     >
-      <TabList>
-        <Label alignSelf={'self-start'}>
+      <TabList alignItems={'center'}>
+        <Label>
           <Text>{t('Instance Family')}</Text>
         </Label>
         {virtualMachine?.map((item) => (
@@ -190,8 +190,8 @@ function ArchTabs({ arch }: { arch: CVMArchType[] }) {
         );
       }}
     >
-      <TabList>
-        <Label alignSelf={'self-start'}>
+      <TabList alignItems={'center'}>
+        <Label>
           <Text>{t('Architecture')}</Text>
         </Label>
         {arch?.map((item) => (
@@ -219,8 +219,8 @@ function ZoneTabs({ zone }: { zone: CVMZoneType[] }) {
 
   return (
     <Tabs index={index !== -1 ? index : 0} variant="unstyled">
-      <TabList>
-        <Label alignSelf={'self-start'}>
+      <TabList alignItems={'center'}>
+        <Label>
           <Text>{t('Availability Zone')}</Text>
         </Label>
         {zone?.map((item) => (
@@ -263,8 +263,8 @@ function OuterTabs({ systemRegion }: { systemRegion: CVMRegionType[] }) {
         formHook?.setValue('chargeType', item.chargeType);
       }}
     >
-      <TabList>
-        <Label alignSelf={'self-start'}>
+      <TabList alignItems={'center'}>
+        <Label>
           <Text>{t('Billing model')}</Text>
         </Label>
         {systemRegion?.map((item) => (
@@ -779,14 +779,14 @@ export default function Form({
                 label={
                   <Flex>
                     <UnorderedList>
-                      <ListItem>在 8 ～ 30 位字符数以内（推荐12位以上）</ListItem>
-                      <ListItem>不能包含空格</ListItem>
-                      <ListItem>{`不能以" / "开头`}</ListItem>
-                      <ListItem>至少包含其中三项</ListItem>
+                      <ListItem>{t('Within 8 to 30 characters')}</ListItem>
+                      <ListItem>{t('cannot contain spaces')}</ListItem>
+                      <ListItem>{t('Cannot start with')}</ListItem>
+                      <ListItem>{t('Contains at least three of these')}</ListItem>
                       <UnorderedList>
-                        <ListItem>小写字母 a ~ z</ListItem>
-                        <ListItem>大写字母 A ～ Z</ListItem>
-                        <ListItem>数字 0 ～ 9</ListItem>
+                        <ListItem>{t('Lowercase letters az')}</ListItem>
+                        <ListItem>{t('Capital letters az')}</ListItem>
+                        <ListItem>{t('Numbers 09')}</ListItem>
                         <ListItem>{specialTips.specialChars}</ListItem>
                       </UnorderedList>
                     </UnorderedList>
