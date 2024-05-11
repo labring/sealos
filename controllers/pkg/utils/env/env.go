@@ -46,6 +46,10 @@ func GetInt64EnvWithDefault(key string, defaultValue int64) int64 {
 	return defaultValue
 }
 
+func GetIntEnvWithDefault(key string, defaultValue int) int {
+	return int(GetInt64EnvWithDefault(key, int64(defaultValue)))
+}
+
 func GetDurationEnvWithDefault(key string, defaultValue time.Duration) time.Duration {
 	if env, ok := os.LookupEnv(key); ok && env != "" {
 		if value, err := time.ParseDuration(env); err == nil {
