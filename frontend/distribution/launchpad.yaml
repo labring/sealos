@@ -38,12 +38,14 @@ spec:
       serviceAccountName: admin-service-account
       containers:
       - name: sealos-applaunchpad
-        image: luanshaotong/sealos-applaunchpad:v0.1
+        image: LAUNCHPAD_IMAGE
         env:
         - name: SEALOS_DOMAIN
           value: FLAG_SEALOS_DOMAIN
         - name: MONITOR_URL
           value: http://launchpad-monitor.sealos.svc.cluster.local:8428
+        - name: EXPORT_APP_URL
+          value: "http://sealos.hub:5002/api/exportApp"
         ports:
         - containerPort: 3000
 ---
