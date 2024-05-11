@@ -202,12 +202,12 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		ops := kbv1alpha1.OpsRequest{}
 		ops.Namespace = kbCluster.Namespace
 		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("20060102150405")
-		ops.Spec.TTLSecondsAfterSucceed = 86400
+		ops.Spec.TTLSecondsAfterSucceed = 1
 		ops.Spec.ClusterRef = kbCluster.Name
 		ops.Spec.Type = "Stop"
 		err := r.Client.Create(ctx, &ops)
 		if err != nil {
-			return fmt.Errorf("crete kbcluster `%s` opsrequest failed: %w", kbCluster.Name, err)
+			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
 		}
 	}
 	return nil
