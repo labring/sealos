@@ -201,8 +201,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 	for _, kbCluster := range kbClusterList.Items {
 		ops := kbv1alpha1.OpsRequest{}
 		ops.Namespace = kbCluster.Namespace
-		ops.ObjectMeta.Name = "stop-" + kbCluster.Name
-		//ops.ObjectMeta.GenerateName = "stop-"
+		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("20060102150405")
+		ops.Spec.TTLSecondsAfterSucceed = 86400
 		ops.Spec.ClusterRef = kbCluster.Name
 		ops.Spec.Type = "Stop"
 		err := r.Client.Create(ctx, &ops)
