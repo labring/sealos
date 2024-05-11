@@ -3,7 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
-import type { V1StatefulSet } from '@kubernetes/client-node';
+import type { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
@@ -29,16 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
   try {
     req.headers.namespace = reqNamespace;
-    const {
-      applyYamlList,
-      k8sApp,
-      k8sCore,
-      k8sNetworkingApp,
-      k8sAutoscaling,
-      k8sCustomObjects,
-    } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+    const { applyYamlList, k8sApp, k8sCore, k8sNetworkingApp, k8sAutoscaling, k8sCustomObjects } =
+      await getK8s({
+        kubeconfig: await authSession(req.headers)
+      });
 
     const crMap: Record<
       `${YamlKindEnum}`,
@@ -90,8 +84,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: (name) => k8sApp.deleteNamespacedStatefulSet(name, reqNamespace)
       },
       [YamlKindEnum.Service]: {
-        patch: (jsonPatch: Object) =>
-          k8sCore.replaceNamespacedService(appName, reqNamespace, jsonPatch),
+        patch: (jsonPatch: Object) => {
+          const temp = jsonPatch as V1Service;
+          const serviceName = temp.metadata?.name || appName;
+          return k8sCore.replaceNamespacedService(serviceName, reqNamespace, jsonPatch);
+        },
         delete: (name) => k8sCore.deleteNamespacedService(name, reqNamespace)
       },
       [YamlKindEnum.ConfigMap]: {
@@ -226,7 +223,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         // check whether delete
         if (!volume) {
           infoLog(`delete pvc: ${pvc.metadata?.name}`);
-          return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', reqNamespace);
+          return k8sCore.deleteNamespacedPersistentVolumeClaim(
+            pvc.metadata?.name || '',
+            reqNamespace
+          );
         }
         // check storage change
         if (

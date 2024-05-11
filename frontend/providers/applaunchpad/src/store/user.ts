@@ -49,7 +49,10 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, gpu, storeList, replicas, hpa }, usedData) => {
+      checkQuotaAllow: ({ containers, gpu, storeList, replicas, hpa }, usedData) => {
+        const cpu = containers.reduce((acc, container) => acc + container.cpu, 0);
+        const memory = containers.reduce((acc, container) => acc + container.memory, 0);
+
         const quote = get().userQuota;
 
         const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
@@ -61,7 +64,10 @@ export const useUserStore = create<State>()(
         };
 
         if (usedData) {
-          const { cpu, memory, gpu, storeList, replicas, hpa } = usedData;
+          const { containers, gpu, storeList, replicas, hpa } = usedData;
+          const cpu = containers.reduce((acc, container) => acc + container.cpu, 0);
+          const memory = containers.reduce((acc, container) => acc + container.memory, 0);
+
           const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
 
           request.cpu -= (cpu / 1000) * requestReplicas;

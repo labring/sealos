@@ -57,13 +57,15 @@ dev-%: build-packages
 	pnpm -r --offline --filter=$* dev
 
 # prebuild-image-for -j
+# --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+ 
 image-prebuild: pnpm-lock.yaml
-	docker build --platform=linux/amd64 --target deps . -t $(imageOwner)sealos-deps:dev --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+	docker build --platform=linux/amd64 --target deps . -t $(imageOwner)sealos-deps:dev 
 
 image-build-providers/%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . 
 image-build-%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . 
 
 image-push-providers/%: image-build-providers/%
 	docker push $(imageOwner)sealos-$*:$(imageTag)

@@ -15,7 +15,7 @@ import Pods from './components/Pods';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
-const AppDetail = ({ appName, namespace}: { appName: string; namespace: string }) => {
+const AppDetail = ({ appName, namespace }: { appName: string; namespace: string }) => {
   const { startGuide } = useDetailDriver();
   const theme = useTheme();
   const { toast } = useToast();
@@ -33,14 +33,18 @@ const AppDetail = ({ appName, namespace}: { appName: string; namespace: string }
   const [podsLoaded, setPodsLoaded] = useState(false);
   const [showSlider, setShowSlider] = useState(false);
 
-  const { refetch, isSuccess } = useQuery(['setAppDetail'], () => setAppDetail(namespace, appName), {
-    onError(err) {
-      toast({
-        title: String(err),
-        status: 'error'
-      });
+  const { refetch, isSuccess } = useQuery(
+    ['setAppDetail'],
+    () => setAppDetail(namespace, appName),
+    {
+      onError(err) {
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+      }
     }
-  });
+  );
 
   useQuery(
     ['app-detail-pod'],
@@ -120,7 +124,11 @@ const AppDetail = ({ appName, namespace}: { appName: string; namespace: string }
             flexShrink={0}
             minH={'257px'}
           >
-            {appDetail ? <AppMainInfo namespace={namespace} app={appDetail} /> : <Loading loading={true} fixed={false} />}
+            {appDetail ? (
+              <AppMainInfo namespace={namespace} app={appDetail} />
+            ) : (
+              <Loading loading={true} fixed={false} />
+            )}
           </Box>
           <Box
             bg={'white'}
@@ -130,7 +138,12 @@ const AppDetail = ({ appName, namespace}: { appName: string; namespace: string }
             flex={1}
             minH={'300px'}
           >
-            <Pods namespace={namespace} pods={appDetailPods} appName={appName} loading={!podsLoaded} />
+            <Pods
+              namespace={namespace}
+              pods={appDetailPods}
+              appName={appName}
+              loading={!podsLoaded}
+            />
           </Box>
         </Flex>
       </Flex>

@@ -18,7 +18,8 @@ import type {
   AppDetailType,
   PodMetrics,
   PodEvent,
-  HpaTarget
+  HpaTarget,
+  AppEditContainerType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -180,25 +181,35 @@ export enum YamlKindEnum {
 }
 
 export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
+  const allServicePorts = configs.flatMap((item) => {
+    if (item.kind === YamlKindEnum.Service) {
+      const temp = item as V1Service;
+      return temp.spec?.ports || [];
+    } else {
+      return [];
+    }
+  });
+
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
-    [YamlKindEnum.Service]?: V1Service;
+    // [YamlKindEnum.Service]?: V1Service;
     [YamlKindEnum.ConfigMap]?: V1ConfigMap;
     [YamlKindEnum.HorizontalPodAutoscaler]?: V2HorizontalPodAutoscaler;
     [YamlKindEnum.Secret]?: V1Secret;
   } = {};
 
   configs.forEach((item) => {
-    if (item.kind) {
+    if (item.kind !== YamlKindEnum.Service) {
       // @ts-ignore
       deployKindsMap[item.kind] = item;
     }
   });
 
   const appDeploy = deployKindsMap.Deployment || deployKindsMap.StatefulSet;
+  const _containers = appDeploy?.spec?.template.spec?.containers;
 
-  if (!appDeploy) {
+  if (!appDeploy || !_containers) {
     throw new Error('获取APP异常');
   }
 
@@ -206,6 +217,67 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey]
   );
   const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
+
+  const containers = _containers.map((container) => {
+    const containerPortNames = container.ports?.map((p) => p.name) || [];
+    const matchingServicePorts =
+      allServicePorts?.filter((servicePort) => containerPortNames.includes(servicePort.name)) || [];
+
+    const networks =
+      matchingServicePorts?.map((item) => {
+        const ingress = configs.find(
+          (config: any) =>
+            config.kind === YamlKindEnum.Ingress &&
+            config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
+        ) as V1Ingress;
+        const domain = ingress?.spec?.rules?.[0].host || '';
+
+        return {
+          networkName: ingress?.metadata?.name || '',
+          portName: item.name || '',
+          port: item.port,
+          nodePort: item.nodePort,
+          protocol:
+            (ingress?.metadata?.annotations?.[
+              'nginx.ingress.kubernetes.io/backend-protocol'
+            ] as AppEditContainerType['networks'][0]['protocol']) ||
+            item.protocol ||
+            'HTTP',
+          openPublicDomain: !!ingress,
+          ...(domain.endsWith(SEALOS_DOMAIN)
+            ? {
+                publicDomain: domain.split('.')[0],
+                customDomain: ''
+              }
+            : {
+                publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
+                customDomain: domain
+              })
+        };
+      }) || [];
+
+    return {
+      name: container?.name || '',
+      imageName: container?.image || '',
+      runCMD: container?.command?.join(' ') || '',
+      cmdParam:
+        (container?.args?.length === 1
+          ? container?.args.join(' ')
+          : JSON.stringify(container?.args)) || '',
+      cpu: cpuFormatToM(container?.resources?.limits?.cpu || '0'),
+      memory: memoryFormatToMi(container?.resources?.limits?.memory || '0'),
+      envs:
+        container?.env?.map((env) => {
+          return {
+            key: env.name,
+            value: env.value || '',
+            valueFrom: env.valueFrom
+          };
+        }) || [],
+      networks: networks,
+      secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson'])
+    };
+  });
 
   return {
     crYamlList: configs,
@@ -218,18 +290,21 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       appDeploy?.metadata?.annotations?.originImageName ||
       appDeploy.spec?.template?.spec?.containers?.[0]?.image ||
       '',
-    runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
-    cmdParam:
-      (appDeploy.spec?.template?.spec?.containers?.[0]?.args?.length === 1
-        ? appDeploy.spec?.template?.spec?.containers?.[0]?.args.join(' ')
-        : JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args)) || '',
     replicas: appDeploy.spec?.replicas || 0,
-    cpu: cpuFormatToM(
-      appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
-    ),
-    memory: memoryFormatToMi(
-      appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
-    ),
+    currentContainerName: containers[0].name,
+    containers: containers,
+
+    // runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
+    // cmdParam:
+    //   (appDeploy.spec?.template?.spec?.containers?.[0]?.args?.length === 1
+    //     ? appDeploy.spec?.template?.spec?.containers?.[0]?.args.join(' ')
+    //     : JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args)) || '',
+    // cpu: cpuFormatToM(
+    //   appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
+    // ),
+    // memory: memoryFormatToMi(
+    //   appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
+    // ),
     gpu: {
       type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(
@@ -247,43 +322,43 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    envs:
-      appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => {
-        return {
-          key: env.name,
-          value: env.value || '',
-          valueFrom: env.valueFrom
-        };
-      }) || [],
-    networks:
-      deployKindsMap.Service?.spec?.ports?.map((item) => {
-        const ingress = configs.find(
-          (config: any) =>
-            config.kind === YamlKindEnum.Ingress &&
-            config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
-        ) as V1Ingress;
-        const domain = ingress?.spec?.rules?.[0].host || '';
+    // envs:
+    //   appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => {
+    //     return {
+    //       key: env.name,
+    //       value: env.value || '',
+    //       valueFrom: env.valueFrom
+    //     };
+    //   }) || [],
+    // networks:
+    //   deployKindsMap.Service?.spec?.ports?.map((item) => {
+    //     const ingress = configs.find(
+    //       (config: any) =>
+    //         config.kind === YamlKindEnum.Ingress &&
+    //         config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
+    //     ) as V1Ingress;
+    //     const domain = ingress?.spec?.rules?.[0].host || '';
 
-        return {
-          networkName: ingress?.metadata?.name || '',
-          portName: item.name || '',
-          port: item.port,
-          protocol:
-            (ingress?.metadata?.annotations?.[
-              'nginx.ingress.kubernetes.io/backend-protocol'
-            ] as AppEditType['networks'][0]['protocol']) || 'HTTP',
-          openPublicDomain: !!ingress,
-          ...(domain.endsWith(SEALOS_DOMAIN)
-            ? {
-                publicDomain: domain.split('.')[0],
-                customDomain: ''
-              }
-            : {
-                publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
-                customDomain: domain
-              })
-        };
-      }) || [],
+    //     return {
+    //       networkName: ingress?.metadata?.name || '',
+    //       portName: item.name || '',
+    //       port: item.port,
+    //       protocol:
+    //         (ingress?.metadata?.annotations?.[
+    //           'nginx.ingress.kubernetes.io/backend-protocol'
+    //         ] as AppEditType['networks'][0]['protocol']) || 'HTTP',
+    //       openPublicDomain: !!ingress,
+    //       ...(domain.endsWith(SEALOS_DOMAIN)
+    //         ? {
+    //             publicDomain: domain.split('.')[0],
+    //             customDomain: ''
+    //           }
+    //         : {
+    //             publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
+    //             customDomain: domain
+    //           })
+    //     };
+    //   }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
       ? {
           use: true,
@@ -308,7 +383,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           value
         }))
       : [],
-    secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
+    // secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
     storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
       ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
           name: item.metadata?.name || '',
@@ -322,17 +397,19 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
 export const adaptEditAppData = (app: AppDetailType): AppEditType => {
   const keys: (keyof AppEditType)[] = [
     'appName',
-    'imageName',
-    'runCMD',
-    'cmdParam',
-    'replicas',
-    'cpu',
-    'memory',
-    'networks',
-    'envs',
+    'containers',
+    'currentContainerName',
+    // 'imageName',
+    // 'runCMD',
+    // 'cmdParam',
+    // 'cpu',
+    // 'memory',
+    // 'networks',
+    // 'envs',
+    // 'secret',
     'hpa',
+    'replicas',
     'configMapList',
-    'secret',
     'storeList',
     'gpu'
   ];
@@ -414,7 +491,7 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
       : undefined,
     secret: deployKindsMap.Secret
       ? {
-          ...defaultEditVal.secret,
+          ...defaultEditVal.containers[0].secret,
           use: true
         }
       : undefined

@@ -1,29 +1,38 @@
+import { exportApp } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { useGlobalStore } from '@/store/global';
+import { AppEditType } from '@/types/app';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Flex } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback } from 'react';
+import { UseFormReturn } from 'react-hook-form';
 
 const Header = ({
   appName,
   title,
   yamlList,
   applyCb,
-  applyBtnText
+  applyBtnText,
+  namespace,
+  formHook
 }: {
   appName: string;
   title: string;
   yamlList: YamlItemType[];
   applyCb: () => void;
   applyBtnText: string;
+  namespace: string;
+  formHook: UseFormReturn<AppEditType, any, undefined>;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
   const { lastRoute } = useGlobalStore();
+  const { message: toast } = useMessage();
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -33,7 +42,35 @@ const Header = ({
       'application/yaml',
       appName ? `${appName}.yaml` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
     );
-  }, [appName, yamlList]);
+    toast({
+      status: 'success',
+      title: 'success'
+    });
+  }, [appName, toast, yamlList]);
+
+  const handleExportApp = async () => {
+    const images = formHook.getValues().containers.map((item) => ({ name: item.imageName }));
+    try {
+      const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+      const result = await exportApp({
+        yaml: exportYamlString,
+        images: images,
+        appname: appName,
+        namespace: namespace
+      });
+      toast({
+        status: result?.error ? 'error' : 'success',
+        duration: null,
+        isClosable: true,
+        title: result?.error ? result.error : '打包成功，文件储存在：' + result.path
+      });
+    } catch (error) {
+      toast({
+        status: 'error',
+        title: 'error'
+      });
+    }
+  };
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
@@ -49,6 +86,10 @@ const Header = ({
         </Box>
       </Flex>
       <Box flex={1}></Box>
+      <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportApp}>
+        {t('Export')} App
+      </Button>
+
       <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>

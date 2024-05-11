@@ -59,39 +59,14 @@ export interface AppListItemType {
 
 export interface AppEditType {
   appName: string;
-  imageName: string;
-  runCMD: string;
-  cmdParam: string;
   replicas: number | '';
-  cpu: number;
-  memory: number;
   gpu?: GpuType;
-  networks: {
-    networkName: string;
-    portName: string;
-    port: number;
-    protocol: 'HTTP' | 'GRPC' | 'WS';
-    openPublicDomain: boolean;
-    publicDomain: string; // default domain
-    customDomain: string; // custom domain
-  }[];
-  envs: {
-    key: string;
-    value: string;
-    valueFrom?: any;
-  }[];
   hpa: {
     use: boolean;
     target: HpaTarget;
     value: number;
     minReplicas: number;
     maxReplicas: number;
-  };
-  secret: {
-    use: boolean;
-    username: string;
-    password: string;
-    serverAddress: string;
   };
   configMapList: {
     mountPath: string;
@@ -101,6 +76,37 @@ export interface AppEditType {
     name: string;
     path: string;
     value: number;
+  }[];
+  containers: AppEditContainerType[];
+  currentContainerName: string;
+}
+export interface AppEditContainerType {
+  name: string;
+  imageName: string;
+  runCMD: string;
+  cmdParam: string;
+  cpu: number;
+  memory: number;
+  secret: {
+    use: boolean;
+    username: string;
+    password: string;
+    serverAddress: string;
+  };
+  networks: {
+    networkName: string;
+    portName: string;
+    port: number;
+    nodePort?: number;
+    protocol: 'HTTP' | 'GRPC' | 'WS';
+    openPublicDomain: boolean;
+    publicDomain: string; // default domain
+    customDomain: string; // custom domain
+  }[];
+  envs: {
+    key: string;
+    value: string;
+    valueFrom?: any;
   }[];
 }
 

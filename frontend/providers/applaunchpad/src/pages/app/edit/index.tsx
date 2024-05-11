@@ -10,7 +10,7 @@ import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
-import type { AppEditType, DeployKindsType } from '@/types/app';
+import type { AppEditContainerType, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import {
   json2ConfigMap,
@@ -62,7 +62,7 @@ export const formData2Yamls = (
         }
       ]
     : []),
-  ...(data.networks.find((item) => item.openPublicDomain)
+  ...(data.containers.some((container) => container.networks.some((item) => item.openPublicDomain))
     ? [
         {
           filename: 'ingress.yaml',
@@ -78,17 +78,27 @@ export const formData2Yamls = (
         }
       ]
     : []),
-  ...(data.secret.use
-    ? [
-        {
-          filename: 'secret.yaml',
-          value: json2Secret(data)
-        }
-      ]
+  ...(data.containers.some((container) => container.secret.use)
+    ? data.containers
+        .filter((container) => container.secret.use)
+        .map((container) => {
+          return {
+            filename: `${container.name}-secret.yaml`,
+            value: json2Secret(container)
+          };
+        })
     : [])
 ];
 
-const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?: string; tabType: string}) => {
+const EditApp = ({
+  namespace,
+  appName,
+  tabType
+}: {
+  namespace: string;
+  appName?: string;
+  tabType: string;
+}) => {
   const { t } = useTranslation();
   const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
@@ -166,7 +176,7 @@ const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?:
           await putApp(namespace, {
             patch,
             appName,
-            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value,
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
           });
         } else {
           await postDeployApp(namespace, yamls);
@@ -200,15 +210,16 @@ const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?:
     },
     [
       setIsLoading,
-      toast,
       appName,
       router,
+      namespace,
       formHook,
+      isGuided,
+      toast,
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice,
-      isGuided
+      refetchPrice
     ]
   );
   const submitError = useCallback(() => {
@@ -267,6 +278,7 @@ const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?:
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
+        setYamlList(formData2Yamls(res));
       },
       onError(err) {
         toast({
@@ -298,6 +310,8 @@ const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?:
         backgroundColor={'grayModern.100'}
       >
         <Header
+          namespace={namespace}
+          formHook={formHook}
           appName={formHook.getValues('appName')}
           title={title}
           yamlList={yamlList}
@@ -305,9 +319,9 @@ const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?:
           applyCb={() => {
             closeGuide();
             formHook.handleSubmit((data) => {
+              console.log(data);
               const parseYamls = formData2Yamls(data);
 
-              console.log('parseYamls:', parseYamls);
               setYamlList(parseYamls);
               // balance check
               // if (balance <= 0) {
@@ -342,8 +356,8 @@ const EditApp = ({ namespace, appName, tabType }: { namespace: string; appName?:
                 });
               }
               // check network port
-              console.log('data.networks:', data.networks);
-              if (!checkNetworkPorts(data.networks)) {
+              const networks = data.containers.flatMap((item) => item.networks);
+              if (!checkNetworkPorts(networks)) {
                 return toast({
                   status: 'warning',
                   title: t('Network port conflict')
@@ -398,7 +412,7 @@ export async function getServerSideProps(content: any) {
 
 export default EditApp;
 
-function checkNetworkPorts(networks: AppEditType['networks']) {
+function checkNetworkPorts(networks: AppEditContainerType['networks']) {
   const ports = networks.map((item) => item.port);
   const portSet = new Set(ports);
   if (portSet.size !== ports.length) {

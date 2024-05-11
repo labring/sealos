@@ -24,24 +24,36 @@ export const editModeMap = (isEdit: boolean) => {
 
 export const defaultEditVal: AppEditType = {
   appName: 'hello-world',
-  imageName: 'nginx',
-  runCMD: '',
-  cmdParam: '',
   replicas: 1,
-  cpu: 100,
-  memory: 64,
-  networks: [
+  currentContainerName: 'hello-world',
+  containers: [
     {
-      networkName: '',
-      portName: nanoid(),
-      port: 80,
-      protocol: 'HTTP',
-      openPublicDomain: false,
-      publicDomain: '',
-      customDomain: ''
+      name: 'container1',
+      imageName: 'nginx',
+      runCMD: '',
+      cmdParam: '',
+      cpu: 100,
+      memory: 64,
+      secret: {
+        use: false,
+        username: '',
+        password: '',
+        serverAddress: 'docker.io'
+      },
+      networks: [
+        {
+          networkName: '',
+          portName: nanoid(),
+          port: 80,
+          protocol: 'HTTP',
+          openPublicDomain: false,
+          publicDomain: '',
+          customDomain: ''
+        }
+      ],
+      envs: []
     }
   ],
-  envs: [],
   hpa: {
     use: false,
     target: 'cpu',
@@ -50,12 +62,6 @@ export const defaultEditVal: AppEditType = {
     maxReplicas: 5
   },
   configMapList: [],
-  secret: {
-    use: false,
-    username: '',
-    password: '',
-    serverAddress: 'docker.io'
-  },
   storeList: [],
   gpu: {
     manufacturers: 'nvidia',
