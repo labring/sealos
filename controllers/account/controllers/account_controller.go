@@ -267,6 +267,9 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 					r.Logger.Error(err, "get payment details failed")
 				}
 				if status == pay.PaymentSuccess {
+					if payment.Status.Status != pay.PaymentSuccess {
+						continue
+					}
 					r.Logger.Info("payment success, post delete payment cr", "payment", payment, "amount", amount)
 				}
 				// expire session
