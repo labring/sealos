@@ -71,6 +71,10 @@ const (
 //+kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=namespaces/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -196,8 +200,9 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 	}
 	for _, kbCluster := range kbClusterList.Items {
 		ops := kbv1alpha1.OpsRequest{}
-		ops.ObjectMeta.Name = kbCluster.Name
-		ops.ObjectMeta.GenerateName = "stop-"
+		ops.Namespace = kbCluster.Namespace
+		ops.ObjectMeta.Name = "stop-" + kbCluster.Name
+		//ops.ObjectMeta.GenerateName = "stop-"
 		ops.Spec.ClusterRef = kbCluster.Name
 		ops.Spec.Type = "Stop"
 		err := r.Client.Create(ctx, &ops)
