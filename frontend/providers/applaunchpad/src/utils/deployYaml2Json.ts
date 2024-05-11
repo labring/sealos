@@ -280,8 +280,12 @@ export const json2Service = (data: AppEditType) => {
       }
     }
   };
-  const nodePortYaml = openPublicPorts.length > 0 ? `\n---\n` + yaml.dump(templateNodePort) : '';
-  return yaml.dump(template) + nodePortYaml;
+  const clusterIpYaml = closedPublicPorts.length > 0 ? yaml.dump(template) : '';
+  const nodePortYaml = openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
+
+  return clusterIpYaml && nodePortYaml
+    ? `${clusterIpYaml}\n---\n${nodePortYaml}`
+    : `${clusterIpYaml}${nodePortYaml}`;
 };
 
 export const json2NetWorkByType = (type: 'ingress' | 'gateway', data: AppEditType) => {

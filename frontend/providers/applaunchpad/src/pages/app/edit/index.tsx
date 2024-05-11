@@ -310,6 +310,8 @@ const EditApp = ({
         backgroundColor={'grayModern.100'}
       >
         <Header
+          namespace={namespace}
+          formHook={formHook}
           appName={formHook.getValues('appName')}
           title={title}
           yamlList={yamlList}

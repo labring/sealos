@@ -1,0 +1,44 @@
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { jsonRes } from '@/services/backend/response';
+import { ApiResp } from '@/services/kubernet';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+export type ExportAppPayload = {
+  yaml: string;
+  images: { name: string }[];
+  appName: string;
+  namespace: string;
+};
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  try {
+    const exportAppUrl = process.env.EXPORT_APP_URL || '';
+
+    await getK8s({
+      kubeconfig: await authSession(req.headers)
+    });
+
+    const data = req.body as ExportAppPayload;
+
+    const temp = await fetch(exportAppUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        data
+      })
+    });
+    const result = await temp.json();
+
+    jsonRes(res, {
+      data: result
+    });
+  } catch (err: any) {
+    jsonRes(res, {
+      code: 500,
+      error: err
+    });
+  }
+}
