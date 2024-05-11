@@ -98,5 +98,6 @@
   "prePaid": "Yearly and monthly subscription",
   "x86_64": "x86_64",
   "costEffective": "Cost Effective",
-  "gpu": "GPU"
+  "gpu": "GPU",
+  "Password does not meet requirements": "Password does not meet requirements"
 }

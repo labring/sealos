@@ -98,5 +98,6 @@
   "prePaid": "包年包月",
   "x86_64": "x86计算",
   "costEffective": "实惠型",
-  "gpu": "GPU"
+  "gpu": "GPU",
+  "Password does not meet requirements": "密码不符合要求"
 }

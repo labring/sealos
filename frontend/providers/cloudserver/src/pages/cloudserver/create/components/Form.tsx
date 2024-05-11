@@ -805,7 +805,7 @@ export default function Form({
                       },
                       pattern: {
                         value: specialTips.regex,
-                        message: '密码错误'
+                        message: t('Password does not meet requirements')
                       },
                       onBlur(event) {
                         onClose();
