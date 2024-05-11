@@ -49,7 +49,7 @@ const Header = ({
       await exportApp({
         yaml: exportYamlString,
         images: images,
-        appName: appName,
+        appname: appName,
         namespace: namespace
       });
     } catch (error) {}

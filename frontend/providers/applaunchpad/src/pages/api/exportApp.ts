@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export type ExportAppPayload = {
   yaml: string;
   images: { name: string }[];
-  appName: string;
+  appname: string;
   namespace: string;
 };
 
@@ -21,15 +21,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const data = req.body as ExportAppPayload;
 
-    const temp = await fetch(exportAppUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        data
-      })
-    });
+    const temp = await fetch(
+      `${exportAppUrl}?namespace=${data.namespace}&&appname=${data.appname}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          yaml: data.yaml,
+          images: data.images
+        })
+      }
+    );
     const result = await temp.json();
 
     jsonRes(res, {
