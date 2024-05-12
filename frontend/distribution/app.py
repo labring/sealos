@@ -42,7 +42,7 @@ def export_app():
     if not namespace:
         return jsonify({'error': 'Namespace is required'}), 400
     
-    print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'))
+    print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'), flush=True)
 
     workdir = os.path.join(SAVE_PATH, namespace, appname)
     
@@ -51,7 +51,7 @@ def export_app():
     os.makedirs(workdir)
 
     # 保存yaml文件至本地
-    print('write yaml file to:', os.path.join(workdir, 'app.yaml'))
+    print('write yaml file to:', os.path.join(workdir, 'app.yaml'), flush=True)
     with open(os.path.join(workdir, 'app.yaml'), 'w') as file:
         file.write(yaml_content)
 
@@ -59,7 +59,7 @@ def export_app():
 
     
     # 登录镜像仓库
-    print('login to registry')
+    print('login to registry', flush=True)
     err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
     if err:
         return jsonify({'error': 'Failed to login, ' + err}), 500
@@ -67,14 +67,14 @@ def export_app():
     # 拉取镜像并保存到本地
     for image in images:
         name = image['name'].strip()
-        print('pull image:', name)
+        print('pull image:', name, flush=True)
         image_file_name = name.replace('/', '_').replace(':', '_') + '.tar'
         path = os.path.join(workdir, image_file_name)
         image_pairs.append({'name': name, 'path': path})
         err = run_command(f'docker pull {name}')
         if err:
             return jsonify({'error': 'Failed to pull image, ' + err}), 500
-        print('save image:', name)
+        print('save image:', name, flush=True)
         err = run_command(f'docker save {name} -o {path}')
         if err:
             return jsonify({'error': 'Failed to save image, ' + err}), 500
