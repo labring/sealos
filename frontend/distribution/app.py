@@ -41,6 +41,8 @@ def export_app():
     namespace = request.args.get('namespace')
     if not namespace:
         return jsonify({'error': 'Namespace is required'}), 400
+    
+    print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'))
 
     workdir = os.path.join(SAVE_PATH, namespace, appname)
     
@@ -49,6 +51,7 @@ def export_app():
     os.makedirs(workdir)
 
     # 保存yaml文件至本地
+    print('write yaml file to:', os.path.join(workdir, 'app.yaml'))
     with open(os.path.join(workdir, 'app.yaml'), 'w') as file:
         file.write(yaml_content)
 
@@ -56,20 +59,23 @@ def export_app():
 
     
     # 登录镜像仓库
-    err = run_command('sealos login -u admin -p passw0rd sealos.hub:5000')
+    print('login to registry')
+    err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
     if err:
         return jsonify({'error': 'Failed to login, ' + err}), 500
     
     # 拉取镜像并保存到本地
     for image in images:
         name = image['name'].strip()
-        image_file_name = name.replace('/', '_') + '.tar'
+        print('pull image:', name)
+        image_file_name = name.replace('/', '_').replace(':', '_') + '.tar'
         path = os.path.join(workdir, image_file_name)
         image_pairs.append({'name': name, 'path': path})
-        err = run_command(f'sealos pull {name}')
+        err = run_command(f'docker pull {name}')
         if err:
             return jsonify({'error': 'Failed to pull image, ' + err}), 500
-        err = run_command(f'sealos save {name} -o {path}')
+        print('save image:', name)
+        err = run_command(f'docker save {name} -o {path}')
         if err:
             return jsonify({'error': 'Failed to save image, ' + err}), 500
     
@@ -108,12 +114,12 @@ def deploy_app_with_image():
         path = image['path']
 
         # 登录镜像仓库
-        err = run_command('sealos login -u admin -p passw0rd sealos.hub:5000')
+        err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
         if err:
             return jsonify({'error': 'Failed to login, ' + err}), 500
 
         # 加载镜像
-        err = run_command(f'sealos load -i {path}')
+        err = run_command(f'docker load -i {path}')
         if err:
             return jsonify({'error': 'Failed to load image, ' + err}), 500
         # 替换域名并推送镜像
@@ -126,10 +132,10 @@ def deploy_app_with_image():
             new_name = f'sealos.hub:5000/{name}'
         else:
             return jsonify({'error': 'Invalid image name: ' + name}), 400
-        err = run_command(f'sealos tag {name} {new_name}')
+        err = run_command(f'docker tag {name} {new_name}')
         if err:
             return jsonify({'error': 'Failed to tag image, ' + err}), 500
-        err = run_command(f'sealos push {new_name}')
+        err = run_command(f'docker push {new_name}')
         if err:
             return jsonify({'error': 'Failed to push image, ' + err}), 500
 

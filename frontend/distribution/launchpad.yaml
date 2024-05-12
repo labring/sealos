@@ -45,7 +45,7 @@ spec:
         - name: MONITOR_URL
           value: http://launchpad-monitor.sealos.svc.cluster.local:8428
         - name: EXPORT_APP_URL
-          value: "http://sealos.hub:5002/api/exportApp"
+          value: "http://FLAG_SEALOS_DOMAIN:5002/api/exportApp"
         ports:
         - containerPort: 3000
 ---
