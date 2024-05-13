@@ -99,16 +99,14 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(fmt.Errorf("no debt status"), "no debt status")
 		return ctrl.Result{}, nil
 	}
-	logger.Info("debt status", "status", debtStatus)
+	logger.V(1).Info("debt status", "status", debtStatus)
 	switch debtStatus {
 	case v1.SuspendDebtNamespaceAnnoStatus:
-		logger.Info("suspend namespace resources")
 		if err := r.SuspendUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "suspend namespace resources failed")
 			return ctrl.Result{}, err
 		}
 	case v1.ResumeDebtNamespaceAnnoStatus:
-		logger.Info("resume namespace resources")
 		if err := r.ResumeUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "resume namespace resources failed")
 			return ctrl.Result{}, err

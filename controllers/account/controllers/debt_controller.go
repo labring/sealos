@@ -156,14 +156,14 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID
 
-	r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
+	//r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
 	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
 		return err
 	} else if err != nil {
 		if err := r.syncDebt(ctx, owner, debt); err != nil {
 			return err
 		}
-		r.Logger.Info("create or update debt success", "debt", debt)
+		//r.Logger.Info("create or update debt success", "debt", debt)
 	}
 
 	nsList, err := getOwnNsList(r.Client, getUsername(owner))
@@ -326,7 +326,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	}
 
 	if update {
-		r.Logger.Info("update debt status", "account", debt.Spec.UserName,
+		r.Logger.V(1).Info("update debt status", "account", debt.Spec.UserName,
 			"last status", lastStatus, "last update time", time.Unix(debt.Status.LastUpdateTimestamp, 0).Format(time.RFC3339),
 			"current status", debt.Status.AccountDebtStatus, "time", time.Now().UTC().Format(time.RFC3339))
 		return r.Status().Update(ctx, debt)
