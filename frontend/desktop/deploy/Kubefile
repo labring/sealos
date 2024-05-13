@@ -8,5 +8,10 @@ COPY scripts scripts
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
 ENV certSecretName="wildcard-cert"
+ENV regionUID="randomRegionUID"
+ENV databaseMongodbURI="mongodb://localhost:27017"
+ENV databaseGlobalCockroachdbURI="cloud"
+ENV databaseLocalCockroachdbURI="cloud"
+ENV passwordSalt="randomSalt"
 
 CMD ["bash scripts/init.sh"]

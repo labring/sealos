@@ -1,11 +1,10 @@
-apiVersion: apps.sealos.io/v1beta1
-kind: Config
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: secret
-spec:
-  path: manifests/configmap.yaml
-  strategy: override
-  data: |
+  name: desktop-frontend-config
+  namespace: sealos
+data:
+  config.yaml : |
     apiVersion: v1
     kind: ConfigMap
     metadata:
@@ -16,7 +15,7 @@ spec:
         cloud:
           domain: "{{ .cloudDomain }}"
           port: "{{ .cloudPort }}"
-          regionUID: "<your-local-region-uid>"
+          regionUID: "{{ .regionUID }}"
           certSecretName: "{{ .certSecretName }}"
         common:
           guideEnabled: "false"
@@ -24,9 +23,9 @@ spec:
           rechargeEnabled: "false"
           cfSiteKey: ""
         database:
-          mongodbURI: "<your-mongodb-uri>"
-          globalCockroachdbURI: "<your-global-database-url>"
-          regionalCockroachdbURI: "<your-regional-database-url>"
+          mongodbURI: "{{ .databaseMongodbURI }}"
+          globalCockroachdbURI: "{{ .databaseGlobalCockroachdbURI }}"
+          regionalCockroachdbURI: "{{ .databaseLocalCockroachdbURI }}"
         desktop:
           layout:
             title: "Sealos Cloud"
@@ -53,4 +52,4 @@ spec:
             idp:
               password:
                 enabled: "true"
-                salt: "<your-password-salt>"
+                salt: "{{ .idpPasswordSalt }}"
