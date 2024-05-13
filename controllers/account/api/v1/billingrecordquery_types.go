@@ -46,7 +46,7 @@ type BillingRecordQueryStatus struct {
 	TotalCount      int                      `json:"totalCount"`
 	PageLength      int                      `json:"pageLength"`
 	RechargeAmount  int64                    `json:"rechargeAmount"`
-	DeductionAmount Costs                    `json:"deductionAmount,omitempty"`
+	DeductionAmount int64                    `json:"deductionAmount,omitempty"`
 	Items           []BillingRecordQueryItem `json:"item,omitempty"`
 	Status          string                   `json:"status"`
 }
