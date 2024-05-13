@@ -4,7 +4,6 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { CloudServerType, EditForm } from '@/types/cloudserver';
-import { CVMChargeType } from '@/types/region';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -43,12 +42,12 @@ export default function EditOrder() {
           amount: 1
         }
       ],
-      systemImageId: '',
-      chargeType: CVMChargeType.postPaidByHour,
-      zone: 'Guangzhou-6',
-      virtualMachineArch: 'x86_64',
-      virtualMachineType: 'costEffective',
-      virtualMachinePackageFamily: 'A'
+      systemImageId: ''
+      // chargeType: CVMChargeType.postPaidByHour,
+      // zone: 'Guangzhou-6',
+      // virtualMachineArch: 'x86_64',
+      // virtualMachineType: 'costEffective',
+      // virtualMachinePackageFamily: 'A'
     }
   });
 
