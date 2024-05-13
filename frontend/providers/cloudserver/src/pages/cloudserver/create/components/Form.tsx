@@ -59,7 +59,7 @@ const tabStyles: TabProps = {
   fontWeight: '400',
   color: 'grayModern.900',
   borderColor: 'grayModern.200',
-  width: '160px',
+  minW: '160px',
   css: {
     svg: {
       opacity: 0

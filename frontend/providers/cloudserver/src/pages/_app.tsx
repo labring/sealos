@@ -131,6 +131,7 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
+          {/* <div onClick={() => i18n.changeLanguage(i18n.language === 'zh' ? 'en' : 'zh')}>zh</div> */}
           <Component {...pageProps} />
           <ConfirmChild />
         </ChakraProvider>
