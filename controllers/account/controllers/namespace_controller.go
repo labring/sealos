@@ -199,6 +199,9 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		return err
 	}
 	for _, kbCluster := range kbClusterList.Items {
+		if kbCluster.Status.Phase != kbv1alpha1.RunningClusterPhase {
+			continue
+		}
 		ops := kbv1alpha1.OpsRequest{}
 		ops.Namespace = kbCluster.Namespace
 		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("2006-01-02-15")
