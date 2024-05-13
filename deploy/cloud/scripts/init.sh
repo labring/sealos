@@ -170,8 +170,8 @@ function sealos_run_desktop {
       --env passwordSalt="$saltKey" \
       --env regionUID="$localRegionUID" \
       --env databaseMongodbURI="${mongodbUri}/sealos-auth?authSource=admin" \
-      --env databaseLocalCockroachURI="$cockroachdbLocalUri" \
-      --env databaseGlobalCockroachURI="$cockroachdbGlobalUri"
+      --env databaseLocalCockroachdbURI="$cockroachdbLocalUri" \
+      --env databaseGlobalCockroachdbURI="$cockroachdbGlobalUri"
 }
 
 function sealos_run_controller {
