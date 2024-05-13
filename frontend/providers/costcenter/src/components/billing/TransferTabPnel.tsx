@@ -1,5 +1,5 @@
 import useOverviewStore from '@/stores/overview';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { BillingData, BillingSpec, BillingType } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { formatISO } from 'date-fns';
@@ -12,8 +12,9 @@ import SearchBox from '@/components/billing/SearchBox';
 import { TransferBillingTable } from '@/components/billing/billingTable';
 import SwitchPage from '@/components/billing/SwitchPage';
 import NotFound from '../notFound';
+import useBillingStore from '@/stores/billing';
 
-export default function TransferTabPanel({ namespace }: { namespace: string }) {
+export default function TransferTabPanel() {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   const [selectType, setType] = useState<BillingType>(BillingType.ALL);
@@ -22,6 +23,7 @@ export default function TransferTabPanel({ namespace }: { namespace: string }) {
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItem, setTotalItem] = useState(10);
+  const { namespace } = useBillingStore();
   useEffect(() => {
     setcurrentPage(1);
   }, [startTime, endTime, selectType, namespace]);

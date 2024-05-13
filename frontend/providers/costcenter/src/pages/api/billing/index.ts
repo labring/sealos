@@ -82,7 +82,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
           ...v,
           costs: convertGpu(v?.costs)
         })) || [];
-      const deductionAmount = convertGpu(crd?.body?.status?.deductionAmount);
+      const deductionAmount = crd.body.status.deductionAmount || 0;
+      // convertGpu(crd?.body?.status?.deductionAmount);
       return jsonRes<BillingData>(resp, {
         code: 200,
         data: {

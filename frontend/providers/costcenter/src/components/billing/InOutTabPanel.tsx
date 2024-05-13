@@ -1,5 +1,5 @@
 import useOverviewStore from '@/stores/overview';
-import { memo, useEffect, useState } from 'react';
+import { memo, useContext, useEffect, useState } from 'react';
 import { BillingData, BillingSpec, BillingType } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { formatISO } from 'date-fns';
@@ -12,9 +12,9 @@ import SearchBox from '@/components/billing/SearchBox';
 import { CommonBillingTable } from '@/components/billing/billingTable';
 import AmountDisplay from '@/components/billing/AmountDisplay';
 import SwitchPage from '@/components/billing/SwitchPage';
-import NotFound from '../notFound';
+import useBillingStore from '@/stores/billing';
 
-export default function InOutTabPanel({ namespace }: { namespace: string }) {
+export default function InOutTabPanel() {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   const [selectType, setType] = useState<BillingType>(BillingType.ALL);
@@ -23,7 +23,7 @@ export default function InOutTabPanel({ namespace }: { namespace: string }) {
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItem, setTotalItem] = useState(10);
-  const [appType, setApp] = useState('');
+  const { namespace, appType } = useBillingStore();
   useEffect(() => {
     setcurrentPage(1);
   }, [startTime, endTime, selectType, namespace]);
@@ -74,7 +74,7 @@ export default function InOutTabPanel({ namespace }: { namespace: string }) {
           <Text fontSize={'12px'} mx={'10px'} width={['60px', '60px', 'auto', 'auto']}>
             {t('APP Type')}
           </Text>
-          <AppMenu isDisabled={isFetching} setApp={setApp} mr={'32px'} />
+          <AppMenu isDisabled={isFetching} mr={'32px'} />
         </Flex>
         <Flex align={'center'} mb="24px">
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
