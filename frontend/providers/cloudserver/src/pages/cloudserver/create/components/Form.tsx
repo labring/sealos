@@ -394,7 +394,7 @@ export default function Form({
               <Flex flexDirection={'column'}>
                 <Text>{item.virtualMachinePackageName}</Text>
                 {item.status === CloudServerStatus.Unavailable && (
-                  <Text color={'brightBlue.700'}>售空</Text>
+                  <Text color={'brightBlue.700'}>{t('sold out')}</Text>
                 )}
               </Flex>
             </Flex>

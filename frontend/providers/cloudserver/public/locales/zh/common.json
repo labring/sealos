@@ -110,5 +110,6 @@
   "highMemory": "内存型",
   "highPerformance": "计算型",
   "Public IP is not enabled": "未开启公网IP",
-  "interval": "区间"
+  "interval": "区间",
+  "sold out": "售空"
 }

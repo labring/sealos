@@ -110,5 +110,6 @@
   "highMemory": "High Memory",
   "highPerformance": "High Performance",
   "Public IP is not enabled": "Public IP is not enabled",
-  "interval": "interval"
+  "interval": "Interval",
+  "sold out": "Sold Out"
 }
