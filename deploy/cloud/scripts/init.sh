@@ -35,9 +35,6 @@ function prepare {
   # gen regionUID if not set or not found in secret
   gen_regionUID
 
-  # mutate desktop config
-  mutate_desktop_config
-
   # create tls secret
   create_tls_secret
 }
@@ -152,18 +149,6 @@ function gen_regionUID(){
     fi
 }
 
-function mutate_desktop_config() {
-    # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random string
-    sed -i -e "s;<your-mongodb-uri>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin");" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-internal-jwt-secret>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-regional-jwt-secret>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-global-jwt-secret>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-password-salt>;$saltKey;" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-regional-database-url>;$(echo -n "${cockroachdbLocalUri}");" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-global-database-url>;$(echo -n "${cockroachdbGlobalUri}");" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-local-region-uid>;$(echo -n "${localRegionUID}");" etc/sealos/desktop-config.yaml
-}
-
 function create_tls_secret {
   if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
     echo "mock tls secret"
@@ -182,7 +167,11 @@ function sealos_run_desktop {
       --env cloudPort="$cloudPort" \
       --env certSecretName="wildcard-cert" \
       --env passwordEnabled="true" \
-      --config-file etc/sealos/desktop-config.yaml
+      --env passwordSalt="$saltKey" \
+      --env regionUID="$localRegionUID" \
+      --env databaseMongodbURI="${mongodbUri}/sealos-auth?authSource=admin" \
+      --env databaseLocalCockroachdbURI="$cockroachdbLocalUri" \
+      --env databaseGlobalCockroachdbURI="$cockroachdbGlobalUri"
 }
 
 function sealos_run_controller {
