@@ -55,8 +55,8 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              export REGIONAL_COCKROACHDB_URI=$(cat /app/data/config.yaml | awk '/regionalCockroachdbUri:/ {print $2}' | tr -d '"')
-              export GLOBAL_COCKROACHDB_URI=$(cat /app/data/config.yaml | awk '/globalCockroachdbUri:/ {print $2}' | tr -d '"')
+              export REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"')
+              export GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"')
               prisma migrate deploy --schema /app/desktop/prisma/global/schema.prisma
               prisma migrate deploy --schema /app/desktop/prisma/region/schema.prisma
           volumeMounts:

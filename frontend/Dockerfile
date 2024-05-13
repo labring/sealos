@@ -82,6 +82,8 @@ RUN if [ "$name" = "template" ]; then \
 fi
 RUN if [ "$name" = "desktop" ]; then \
     npm install -g prisma; \
+    echo 'export REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk "/regionalCockroachdbURI:/ {print \$2}" | tr -d "\"")' >> /etc/profile; \
+    echo 'export GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk "/globalCockroachdbURI:/ {print \$2}" | tr -d "\"")' >> /etc/profile; \
 fi
 USER nextjs
 
@@ -99,6 +101,4 @@ ENV PORT 3000
 
 ENV launchpath=./${path}/server.js
 
-ENTRYPOINT ["sh","-c","node ${launchpath}"]
-
-
+ENTRYPOINT ["sh","-c","source /etc/profile; node ${launchpath}"]
