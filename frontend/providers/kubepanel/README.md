@@ -26,7 +26,7 @@
    >
    > If you open your own dev in `localhost:3000` directly,you cannot have sealos desktop border,which maybe influence your style.
 
-   1. This url：[website](https://dev.sealos.top/?openapp=system-template%3FtemplateName%3Done-step-shortcuts)
+   1. This url：[website](https://cloud.sealos.run/?openapp=system-template%3FtemplateName%3Done-step-shortcuts)
 
    2. ![image-20240423111024336](https://raw.githubusercontent.com/mlhiter/typora-images/master/202404231110609.png)
 
