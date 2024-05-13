@@ -90,7 +90,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }@${host}:${port}`;
 
     if (db?.dbType === 'mongodb' || db?.dbType === 'postgresql') {
-      connection += '?directConnection=true';
+      connection += '/?directConnection=true';
     }
 
     return {
