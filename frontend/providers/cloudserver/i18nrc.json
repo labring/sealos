@@ -3,7 +3,6 @@
   "entryLocale": "zh",
   "output": "./public/locales",
   "outputLocales": [
-    "en",
-    "jp"
+    "en"
   ]
 }

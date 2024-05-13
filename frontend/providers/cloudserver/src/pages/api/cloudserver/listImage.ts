@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     );
 
-    return jsonRes(res, {
+    jsonRes(res, {
       data: data
     });
   } catch (error) {

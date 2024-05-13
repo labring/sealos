@@ -1,7 +1,8 @@
+import { CVMChargeType } from './region';
+
 export type EditForm = {
   system: string;
   systemImageId: string;
-  systemDiskSize: number;
   publicIpAssigned: boolean;
   internetMaxBandWidthOut: number;
   password: string;
@@ -9,13 +10,17 @@ export type EditForm = {
   storages: StorageType[];
   virtualMachinePackageFamily: string;
   virtualMachinePackageName: string;
+  virtualMachineType: string;
+  virtualMachineArch: string;
+  chargeType: CVMChargeType;
+  zone: string;
 };
 
 export type StorageType = {
   type?: string;
   size: number;
   amount: number;
-  use: string;
+  use: 'SystemDisk' | 'DataDisk';
 };
 
 export type CloudServerType = {
@@ -137,4 +142,8 @@ export type CreateCloudServerPayload = {
   metaData: {
     [key: string]: any;
   };
+  zone: string;
+  virtualMachineType: string;
+  virtualMachineArch: string;
+  chareType: CVMChargeType;
 };

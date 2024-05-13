@@ -1,10 +1,15 @@
+import { ServerTypePayload } from '@/pages/api/cloudserver/listType';
 import { UpdateStatusPayload } from '@/pages/api/cloudserver/updateStatus';
 import { POST } from '@/services/request';
 import adaptCloudServerListItem from '@/types/adapt';
 import { CloudServerPrice, CloudServerType, EditForm, OperatingSystems } from '@/types/cloudserver';
 import { CVMInstanceType } from '@/types/cloudserver';
+import { CVMRegionType } from '@/types/region';
 
-export const getCloudServerType = () => POST<CloudServerType[]>('/api/cloudserver/listType');
+export const getCloudServerRegion = () => POST<CVMRegionType[]>('/api/cloudserver/getRegion');
+
+export const getCloudServerType = (payload: ServerTypePayload) =>
+  POST<CloudServerType[]>('/api/cloudserver/listType', payload);
 
 export const getCloudServerImage = () => POST<OperatingSystems>('/api/cloudserver/listImage');
 

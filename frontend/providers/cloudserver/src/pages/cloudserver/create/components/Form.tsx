@@ -1,32 +1,80 @@
-import { getCloudServerImage, getCloudServerType } from '@/api/cloudserver';
+import { getCloudServerImage, getCloudServerRegion, getCloudServerType } from '@/api/cloudserver';
 import MyIcon from '@/components/Icon';
 import { MyTable, TableColumnsType } from '@/components/MyTable';
+import MyTooltip from '@/components/MyTooltip';
 import { CloudServerType, EditForm, StorageType } from '@/types/cloudserver';
+import { CVMArchType, CVMRegionType, CVMZoneType, VirtualMachineType } from '@/types/region';
 import {
   Box,
   Button,
+  Center,
   Divider,
   Flex,
   FormControl,
   IconButton,
   Image,
   Input,
+  ListItem,
   Radio,
   Skeleton,
   Stack,
   Switch,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  TabPanelsProps,
+  TabProps,
+  Tabs,
   Text,
+  UnorderedList,
+  useDisclosure,
   useTheme
 } from '@chakra-ui/react';
-import { MySelect, RangeInput, Tabs } from '@sealos/ui';
+import { MySelect, RangeInput, Tabs as SealosTabs } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
-import { UseFormReturn, useFieldArray } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 4);
 const nanoidUpper = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
 const nanoidNumber = customAlphabet('0123456789', 4);
+
+const tabPanelStyles: TabPanelsProps = {
+  padding: '0px',
+  my: '24px'
+};
+
+const tabStyles: TabProps = {
+  bg: 'grayModern.50',
+  _hover: {
+    opacity: 0.9,
+    color: 'brightBlue.700',
+    borderColor: '#85ccff'
+  },
+  border: '1px solid',
+  borderRadius: '2px',
+  cursor: 'pointer',
+  fontWeight: '400',
+  color: 'grayModern.900',
+  borderColor: 'grayModern.200',
+  width: '160px',
+  css: {
+    svg: {
+      opacity: 0
+    }
+  },
+  _selected: {
+    bg: '#F9FDFE',
+    borderColor: 'brightBlue.400',
+    svg: {
+      opacity: 1,
+      color: 'brightBlue.600'
+    }
+  },
+  mr: '8px'
+};
 
 const Label = ({
   children,
@@ -48,37 +96,253 @@ const Label = ({
   </Box>
 );
 
-export default function Form({
-  formHook,
-  refresh,
+function VirtualMachinePackageTabs({
+  virtualMachinePackageFamily
+}: {
+  virtualMachinePackageFamily: string[];
+}) {
+  const formHook = useFormContext<EditForm>();
+  const index = virtualMachinePackageFamily?.findIndex(
+    (item) => item === formHook?.getValues('virtualMachinePackageFamily')
+  );
+  const { t } = useTranslation();
 
+  return (
+    <Tabs
+      index={index !== -1 ? index : 0}
+      variant="unstyled"
+      onChange={(e) => {
+        const item = virtualMachinePackageFamily[e];
+        formHook?.setValue('virtualMachinePackageFamily', item);
+      }}
+    >
+      <TabList alignItems={'center'}>
+        <Label>
+          <Text>{t('Type')}</Text>
+        </Label>
+        {virtualMachinePackageFamily?.map((item) => (
+          <Tab {...tabStyles} key={item}>
+            {item}
+            <MyIcon key={item} ml={'auto'} name="check" width={'16px'} />
+          </Tab>
+        ))}
+      </TabList>
+    </Tabs>
+  );
+}
+
+function VirtualMachineTabs({ virtualMachine }: { virtualMachine: VirtualMachineType[] }) {
+  const formHook = useFormContext<EditForm>();
+  const index = virtualMachine?.findIndex(
+    (item) => item.virtualMachineType === formHook?.getValues('virtualMachineType')
+  );
+  const { t } = useTranslation();
+
+  return (
+    <Tabs
+      index={index !== -1 ? index : 0}
+      variant="unstyled"
+      onChange={(e) => {
+        const item = virtualMachine[e];
+        formHook?.setValue('virtualMachineType', item.virtualMachineType);
+        formHook?.setValue('virtualMachinePackageFamily', item.virtualMachinePackageFamily[0]);
+      }}
+    >
+      <TabList alignItems={'center'}>
+        <Label>
+          <Text>{t('Instance Family')}</Text>
+        </Label>
+        {virtualMachine?.map((item) => (
+          <Tab {...tabStyles} key={item.virtualMachineType}>
+            {t(item.virtualMachineType)}
+            <MyIcon key={item.virtualMachineType} ml={'auto'} name="check" width={'16px'} />
+          </Tab>
+        ))}
+      </TabList>
+      <TabPanels>
+        {virtualMachine?.map((item) => (
+          <TabPanel {...tabPanelStyles} key={item.virtualMachineType}>
+            <VirtualMachinePackageTabs
+              virtualMachinePackageFamily={item.virtualMachinePackageFamily}
+            />
+          </TabPanel>
+        ))}
+      </TabPanels>
+    </Tabs>
+  );
+}
+
+function ArchTabs({ arch }: { arch: CVMArchType[] }) {
+  const formHook = useFormContext<EditForm>();
+  const index = arch?.findIndex((item) => item.arch === formHook?.getValues('virtualMachineArch'));
+  const { t } = useTranslation();
+  return (
+    <Tabs
+      index={index !== -1 ? index : 0}
+      variant="unstyled"
+      onChange={(e) => {
+        const item = arch[e];
+        formHook?.setValue('virtualMachineArch', item.arch);
+        formHook?.setValue('virtualMachineType', item.virtualMachineType[0].virtualMachineType);
+        formHook?.setValue(
+          'virtualMachinePackageFamily',
+          item.virtualMachineType[0].virtualMachinePackageFamily[0]
+        );
+      }}
+    >
+      <TabList alignItems={'center'}>
+        <Label>
+          <Text>{t('Architecture')}</Text>
+        </Label>
+        {arch?.map((item) => (
+          <Tab key={item.arch} {...tabStyles}>
+            {t(item.arch)}
+            <MyIcon ml={'auto'} name="check" width={'16px'} />
+          </Tab>
+        ))}
+      </TabList>
+      <TabPanels>
+        {arch?.map((item) => (
+          <TabPanel {...tabPanelStyles} key={item.arch}>
+            <VirtualMachineTabs virtualMachine={item.virtualMachineType} />
+          </TabPanel>
+        ))}
+      </TabPanels>
+    </Tabs>
+  );
+}
+
+function ZoneTabs({ zone }: { zone: CVMZoneType[] }) {
+  const formHook = useFormContext<EditForm>();
+  const { t } = useTranslation();
+  const index = zone?.findIndex((item) => item.zone === formHook?.getValues('zone'));
+
+  return (
+    <Tabs index={index !== -1 ? index : 0} variant="unstyled">
+      <TabList alignItems={'center'}>
+        <Label>
+          <Text>{t('Availability Zone')}</Text>
+        </Label>
+        {zone?.map((item) => (
+          <Tab
+            key={item.zone}
+            {...tabStyles}
+            onClick={() => {
+              formHook?.setValue('zone', item.zone);
+            }}
+          >
+            {item.zone}
+            <MyIcon ml={'auto'} name="check" width={'16px'} />
+          </Tab>
+        ))}
+      </TabList>
+      <TabPanels>
+        {zone?.map((item) => (
+          <TabPanel {...tabPanelStyles} key={item.zone}>
+            <ArchTabs arch={item.arch} />
+          </TabPanel>
+        ))}
+      </TabPanels>
+    </Tabs>
+  );
+}
+
+function OuterTabs({ systemRegion }: { systemRegion: CVMRegionType[] }) {
+  const formHook = useFormContext<EditForm>();
+  const { t } = useTranslation();
+  const index = systemRegion?.findIndex(
+    (item) => item.chargeType === formHook?.getValues('chargeType')
+  );
+
+  return (
+    <Tabs
+      variant="unstyled"
+      index={index}
+      onChange={(e) => {
+        const item = systemRegion[e];
+        formHook?.setValue('chargeType', item.chargeType);
+      }}
+    >
+      <TabList alignItems={'center'}>
+        <Label>
+          <Text>{t('Billing model')}</Text>
+        </Label>
+        {systemRegion?.map((item) => (
+          <Tab key={item.chargeType} {...tabStyles}>
+            {t(item.chargeType)}
+            <MyIcon ml={'auto'} name="check" width={'16px'} />
+          </Tab>
+        ))}
+      </TabList>
+      <TabPanels>
+        {systemRegion?.map((item) => (
+          <TabPanel {...tabPanelStyles} key={item.chargeType}>
+            <ZoneTabs zone={item.zone} />
+          </TabPanel>
+        ))}
+      </TabPanels>
+    </Tabs>
+  );
+}
+
+export default function Form({
+  refresh,
   setInstanceType
 }: {
-  formHook: UseFormReturn<EditForm, any>;
   refresh: boolean;
-
   setInstanceType: Dispatch<SetStateAction<CloudServerType | undefined>>;
 }) {
+  const formHook = useFormContext<EditForm>();
   if (!formHook) return <></>;
   const [clientRender, setClientRender] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const specialTips = useMemo(() => {
+    return {
+      specialChars: "()`~!@#$%^&*-+=_|{}[]:;'<>,.?/",
+      regex:
+        /^(?!.*\s)(?!\/)(?=[^\/]{8,30}$)(?:(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])|(?=.*[a-z])(?=.*[A-Z])(?=.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/])|(?=.*[a-z])(?=.*[0-9])(?=.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/])|(?=.*[A-Z])(?=.*[0-9])(?=.*[\(\)`~!@#$%^&*\-+=_|{}\[\]:;'<>,.?/])).*$/
+    };
+  }, []);
 
   useEffect(() => {
     setClientRender(true);
   }, []);
 
-  const { data: SystemImage } = useQuery(['getCloudServerImage'], getCloudServerImage, {
+  const { data: systemRegion } = useQuery(['getCloudServerRegion'], getCloudServerRegion, {
+    staleTime: 5 * 60 * 1000
+  });
+  const { data: systemImage } = useQuery(['getCloudServerImage'], getCloudServerImage, {
     staleTime: 5 * 60 * 1000
   });
 
-  const { data: ServersData } = useQuery(['getCloudServerType'], getCloudServerType, {
-    staleTime: 5 * 60 * 1000,
-    onSuccess(data) {
-      if (data?.[0]) {
-        formHook.setValue('virtualMachinePackageName', data[0].virtualMachinePackageName);
-        setInstanceType(data?.[0]);
+  const { data: serverTypeData } = useQuery(
+    [
+      'getCloudServerType',
+      formHook.getValues('zone'),
+      formHook.getValues('virtualMachinePackageFamily'),
+      formHook.getValues('chargeType'),
+      formHook.getValues('virtualMachineType'),
+      formHook.getValues('virtualMachineArch')
+    ],
+    () =>
+      getCloudServerType({
+        zone: formHook.getValues('zone'),
+        virtualMachinePackageFamily: formHook.getValues('virtualMachinePackageFamily'),
+        chargeType: formHook.getValues('chargeType'),
+        virtualMachineType: formHook.getValues('virtualMachineType'),
+        virtualMachineArch: formHook.getValues('virtualMachineArch')
+      }),
+    {
+      staleTime: 5 * 60 * 1000,
+      onSuccess(data) {
+        if (data?.[0]) {
+          formHook.setValue('virtualMachinePackageName', data[0].virtualMachinePackageName);
+          setInstanceType(data?.[0]);
+        }
       }
     }
-  });
+  );
 
   const theme = useTheme();
   const { t } = useTranslation();
@@ -170,7 +434,7 @@ export default function Form({
                 value={getValues(`storages.${rowNumber}.size`)}
                 min={20}
                 max={500}
-                // hoverText={t('Number of instances: 1 to 20') || 'Number of instances: 1 to 20'}
+                hoverText={t('Quantity tips', { amount1: 20, amount2: 500 }) || ''}
                 setVal={(val) => {
                   register(`storages.${rowNumber}.size`, {
                     required:
@@ -216,7 +480,7 @@ export default function Form({
                   value={getValues(`storages.${rowNumber}.amount`)}
                   min={1}
                   max={20}
-                  // hoverText={t('Number of instances: 1 to 20') || 'Number of instances: 1 to 20'}
+                  hoverText={t('Quantity tips', { amount1: 1, amount2: 20 }) || ''}
                   setVal={(val) => {
                     register(`storages.${rowNumber}.amount`, {
                       required:
@@ -281,16 +545,17 @@ export default function Form({
         </Text>
       </Flex>
       <Box pt="24px" px="42px" pb="64px" flex={1} h="0" overflow={'auto'}>
+        <OuterTabs systemRegion={systemRegion || []} />
         <Flex alignItems={'center'} mb={'24px'}>
           <Label alignSelf={'self-start'}>
-            <Text>{t('Type')}</Text>
+            <Text></Text>
           </Label>
           <Box flex={1}>
-            {ServersData ? (
+            {serverTypeData ? (
               <MyTable
                 itemClass="appItem"
                 columns={columns}
-                data={ServersData}
+                data={serverTypeData}
                 openSelected
                 onRowClick={(item: CloudServerType) => {
                   setValue('virtualMachinePackageName', item.virtualMachinePackageName);
@@ -305,38 +570,42 @@ export default function Form({
             )}
           </Box>
         </Flex>
+        {/* systemImage */}
         <Flex alignItems={'center'} mb={'24px'} flex={1}>
           <Label alignSelf={'self-start'}>
             <Text>{t('Image')}</Text>
           </Label>
           <Box>
             <Flex flexWrap={'wrap'} gap={'12px'}>
-              {SystemImage &&
-                Object.keys(SystemImage)?.map((key) => {
+              {systemImage &&
+                Object.keys(systemImage)?.map((key) => {
                   return (
-                    <Button
-                      variant={'outline'}
-                      flexDirection={'column'}
+                    <Center
                       key={key}
+                      flexDirection={'column'}
                       w={'140px'}
                       height={'88px'}
-                      _hover={{
-                        filter: 'grayscale(0%)',
-                        background: 'rgba(33, 155, 244, 0.05)',
-                        opacity: 0.9,
-                        color: 'brightBlue.700',
-                        borderColor: 'brightBlue.300'
-                      }}
+                      border={'1px solid'}
+                      borderRadius={'2px'}
+                      cursor={'pointer'}
+                      fontWeight={'bold'}
+                      color={'grayModern.900'}
                       {...(getValues('system') === key
                         ? {
                             filter: 'grayscale(0%)',
-                            background: 'rgba(33, 155, 244, 0.05)',
-                            opacity: 0.9,
-                            color: 'brightBlue.700',
-                            borderColor: 'brightBlue.300'
+                            // background: '#FFF',
+                            bg: 'rgba(33, 155, 244, 0.05)',
+                            borderColor: 'brightBlue.500'
+                            // boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
                           }
                         : {
-                            filter: 'grayscale(100%)'
+                            bg: '#F7F8FA',
+                            borderColor: 'grayModern.200',
+                            filter: 'grayscale(100%)',
+                            _hover: {
+                              borderColor: '#85ccff',
+                              filter: 'grayscale(0%)'
+                            }
                           })}
                       onClick={() => {
                         setValue('system', key);
@@ -346,12 +615,12 @@ export default function Form({
                         width={'32px'}
                         height={'32px'}
                         alt={key}
-                        src={SystemImage[key].url || ''}
+                        src={systemImage[key].url || ''}
                       />
                       <Text mt={'4px'} textAlign={'center'}>
                         {key}
                       </Text>
-                    </Button>
+                    </Center>
                   );
                 })}
             </Flex>
@@ -362,8 +631,8 @@ export default function Form({
               width={'400px'}
               value={getValues('systemImageId')}
               list={
-                SystemImage && getValues('system')
-                  ? SystemImage[getValues('system')].images.map((item) => {
+                systemImage && getValues('system')
+                  ? systemImage[getValues('system')].images.map((item) => {
                       return {
                         value: item.id,
                         label: `${item.os} | ${item.version} | ${item.architect}`
@@ -385,6 +654,7 @@ export default function Form({
           </Box>
         </Flex>
 
+        {/* systemStorage */}
         <Flex alignItems={'center'} mb={'24px'} position={'relative'}>
           <Label alignSelf={'self-start'}>
             <Text>{t('Storage')}</Text>
@@ -396,7 +666,7 @@ export default function Form({
                 data={storages}
                 borderBottomRadius={'0px'}
                 borderBottom={'none'}
-              ></MyTable>
+              />
               <Button
                 variant={'outline'}
                 w={'100%'}
@@ -436,7 +706,6 @@ export default function Form({
             </Box>
           </Flex>
         </Flex>
-
         {getValues('publicIpAssigned') && (
           <Flex alignItems={'center'} mb={'24px'}>
             <Flex fontSize={'md'} width={'120px'} alignItems={'center'} fontWeight={'bold'}>
@@ -449,7 +718,7 @@ export default function Form({
               value={getValues('internetMaxBandWidthOut')}
               min={1}
               max={100}
-              hoverText={t('Quantity is 1 to 100') || 'Quantity is 1 to 100'}
+              // hoverText={t('Quantity tips', { amount1: 1, amount2: 100 }) || ''}
               setVal={(val) => {
                 register('internetMaxBandWidthOut', {
                   required:
@@ -470,13 +739,12 @@ export default function Form({
             <Text>Mbps</Text>
           </Flex>
         )}
-
         <Box mb={'24px'}>
           <Flex alignItems={'center'}>
             <Label>
               <Text>{t('Login Method')}</Text>
             </Label>
-            <Tabs
+            <SealosTabs
               size={'sm'}
               list={[
                 {
@@ -504,30 +772,48 @@ export default function Form({
             <></>
           ) : (
             <Box mt={'12px'} pl={'120px'}>
-              <FormControl isInvalid={!!errors.password}>
-                <Input
-                  autoFocus={true}
-                  maxLength={60}
-                  placeholder={t('Please enter your password') || 'Please enter your password'}
-                  {...register('password', {
-                    required: {
-                      value: true,
-                      message: '不能为空'
-                    },
-                    maxLength: 60,
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,30}$/,
-                      message: `在 8 ～ 30 位字符数以内（推荐12位以上）
-                    不能包含空格
-                    不能以" / "开头\n
-                    至少包含
-                    小写字母 a ~ z;
-                    大写字母 A ～ Z;
-                    数字 0 ～ 9`
-                    }
-                  })}
-                />
-              </FormControl>
+              <MyTooltip
+                placement="right"
+                offset={[0, 15]}
+                isOpen={isOpen}
+                label={
+                  <Flex>
+                    <UnorderedList>
+                      <ListItem>{t('Within 8 to 30 characters')}</ListItem>
+                      <ListItem>{t('cannot contain spaces')}</ListItem>
+                      <ListItem>{t('Cannot start with')}</ListItem>
+                      <ListItem>{t('Contains at least three of these')}</ListItem>
+                      <UnorderedList>
+                        <ListItem>{t('Lowercase letters az')}</ListItem>
+                        <ListItem>{t('Capital letters az')}</ListItem>
+                        <ListItem>{t('Numbers 09')}</ListItem>
+                        <ListItem>{specialTips.specialChars}</ListItem>
+                      </UnorderedList>
+                    </UnorderedList>
+                  </Flex>
+                }
+              >
+                <FormControl width={'300px'} isInvalid={!!errors.password}>
+                  <Input
+                    onFocus={onOpen}
+                    maxLength={60}
+                    placeholder={t('Please enter your password') || 'Please enter your password'}
+                    {...register('password', {
+                      required: {
+                        value: true,
+                        message: '不能为空'
+                      },
+                      pattern: {
+                        value: specialTips.regex,
+                        message: t('Password does not meet requirements')
+                      },
+                      onBlur(event) {
+                        onClose();
+                      }
+                    })}
+                  />
+                </FormControl>
+              </MyTooltip>
             </Box>
           )}
         </Box>

@@ -4,13 +4,14 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { CloudServerType, EditForm } from '@/types/cloudserver';
+import { CVMChargeType } from '@/types/region';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
 import Header from './components/Header';
@@ -33,18 +34,21 @@ export default function EditOrder() {
   const formHook = useForm<EditForm>({
     defaultValues: {
       system: 'ubuntu',
-      systemDiskSize: 50,
       publicIpAssigned: false,
       internetMaxBandWidthOut: 1,
       storages: [
         {
           use: 'SystemDisk',
-          size: 50,
+          size: 20,
           amount: 1
         }
       ],
-      virtualMachinePackageFamily: 'A',
-      systemImageId: ''
+      systemImageId: '',
+      chargeType: CVMChargeType.postPaidByHour,
+      zone: 'Guangzhou-6',
+      virtualMachineArch: 'x86_64',
+      virtualMachineType: 'costEffective',
+      virtualMachinePackageFamily: 'A'
     }
   });
 
@@ -59,9 +63,9 @@ export default function EditOrder() {
   });
 
   const submitSuccess = async (data: EditForm) => {
+    console.log(data);
     setIsLoading(true);
     try {
-      console.log(data);
       await createCloudServer(data);
       toast({
         status: 'success',
@@ -112,7 +116,9 @@ export default function EditOrder() {
         applyBtnText="Submit"
       />
       <Flex h={'calc(100% - 126px)'} justifyContent={'center'} borderRadius={'4px'}>
-        <Form formHook={formHook} refresh={forceUpdate} setInstanceType={setInstanceType} />
+        <FormProvider {...formHook}>
+          <Form refresh={forceUpdate} setInstanceType={setInstanceType} />
+        </FormProvider>
       </Flex>
       <ConfirmChild />
       <Loading />

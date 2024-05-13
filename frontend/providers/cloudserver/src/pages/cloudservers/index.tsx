@@ -62,19 +62,35 @@ function Home() {
           ({data?.total})
         </Box>
         <Box flex={1}></Box>
-        <Button w="156px" h="42px" onClick={() => router.push('/cloudserver/create')}>
+        <Button
+          w="156px"
+          h="42px"
+          lineHeight={'20px'}
+          leftIcon={<MyIcon name="plus" width={'20px'} />}
+          onClick={() => router.push('/cloudserver/create')}
+        >
           {t('New Server')}
         </Button>
       </Flex>
 
-      {MockInstance && MockInstance?.length > 0 ? (
+      {data?.list && data?.list?.length > 0 ? (
         <Box flex={'1 0 0'}>
           <List refetchApps={refetch} apps={data?.list || []} />
         </Box>
       ) : (
         <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'} flex={1}>
           <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
-          <Box py={8}>{t('Empty List')}</Box>
+          <Box mt={'25px'}>{t('Empty List')}</Box>
+          <Button
+            lineHeight={'20px'}
+            leftIcon={<MyIcon name="plus" width={'20px'} />}
+            mt={'40px'}
+            w="156px"
+            h="42px"
+            onClick={() => router.push('/cloudserver/create')}
+          >
+            {t('New Server')}
+          </Button>
         </Flex>
       )}
 

@@ -12,12 +12,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dataDisks = form.storages
       .filter(({ use }) => use === 'DataDisk')
       .flatMap(({ size, amount }) => Array(amount).fill(size));
+    const systemDiskSize = form.storages.find(({ use }) => use === 'SystemDisk')?.size || 20;
 
     const payload: CreateCloudServerPayload = {
       virtualMachinePackageFamily: form.virtualMachinePackageFamily,
       virtualMachinePackageName: form.virtualMachinePackageName,
       imageId: form.systemImageId,
-      systemDisk: form.systemDiskSize,
+      systemDisk: systemDiskSize,
       dataDisks: dataDisks,
       ...(form.publicIpAssigned
         ? {
@@ -26,7 +27,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : { internetMaxBandwidthOut: 0 }),
       loginPassword: form.password,
       loginName: '',
-      metaData: {}
+      metaData: {},
+      zone: form.zone,
+      virtualMachineType: form.virtualMachineType,
+      virtualMachineArch: form.virtualMachineArch,
+      chareType: form.chargeType
     };
 
     const result = await POST('/action/get-price', payload, {

@@ -3,7 +3,7 @@ import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
 import { CVMInstanceType, HandleEnum } from '@/types/cloudserver';
 import { formatTime } from '@/utils/tools';
-import { Box, Button, Flex, FlexProps, MenuButton } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, FlexProps, MenuButton } from '@chakra-ui/react';
 import { LogoutIcon, MyTable, SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -104,7 +104,18 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
         title: t('sshPassword'),
         key: 'sshPassword',
         render: (item: CVMInstanceType) => {
-          return <Box onClick={() => copyData(item.loginPassword)}>***********</Box>;
+          return (
+            <Flex
+              alignItems={'center'}
+              cursor={'pointer'}
+              gap={'4px'}
+              onClick={() => copyData(item.loginPassword)}
+              height={'12px'}
+            >
+              <Box pt={'2px'}>***********</Box>
+              <MyIcon name="copy" color={'grayModern.500'} width={'12px'} />
+            </Flex>
+          );
         }
       },
       {
@@ -118,8 +129,24 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
         render: (item: CVMInstanceType) => {
           return (
             <Flex flexDirection={'column'}>
-              <Box>{item?.privateIpAddresses?.join(',')}(内)</Box>
-              <Box>{item?.publicIpAddresses?.join(',')}(公)</Box>
+              <Center
+                gap={'4px'}
+                cursor={'pointer'}
+                onClick={() => copyData(item?.privateIpAddresses?.join(',') || '')}
+              >
+                {item?.privateIpAddresses?.join(',')}(内)
+                <MyIcon name="copy" color={'grayModern.500'} width={'12px'} />
+              </Center>
+              {item?.publicIpAddresses && (
+                <Center
+                  gap={'4px'}
+                  cursor={'pointer'}
+                  onClick={() => copyData(item?.publicIpAddresses?.join(',') || '')}
+                >
+                  {item?.publicIpAddresses?.join(',')}(公)
+                  <MyIcon name="copy" color={'grayModern.500'} width={'12px'} />
+                </Center>
+              )}
             </Flex>
           );
         }
