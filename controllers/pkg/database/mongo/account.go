@@ -687,22 +687,10 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 
 	pipelineCountAndAmount := bson.A{
-		bson.D{{Key: "$match", Value: bson.D{
-			{Key: "time", Value: timeMatchValue},
-			{Key: "owner", Value: owner},
-			{Key: "type", Value: accountv1.Consumption},
-		}}},
-		bson.D{{Key: "$addFields", Value: bson.D{
-			{Key: "costsArray", Value: bson.D{{Key: "$objectToArray", Value: "$costs"}}},
-		}}},
-		bson.D{{Key: "$unwind", Value: "$costsArray"}},
+		matchStage,
 		bson.D{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: bson.D{
-				{Key: "type", Value: "$type"},
-				{Key: "key", Value: "$costsArray.k"},
-			}},
-			{Key: "total", Value: bson.D{{Key: "$sum", Value: "$costsArray.v"}}},
-			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			primitive.E{Key: "_id", Value: nil},
+			primitive.E{Key: "result", Value: bson.D{primitive.E{Key: "$sum", Value: "$amount"}}},
 		}}},
 	}
 
@@ -785,23 +773,16 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 	defer cursorCountAndAmount.Close(ctx)
 
-	totalDeductionAmount := make(map[string]int64)
-	totalRechargeAmount := int64(0)
+	totalDeductionAmount, totalRechargeAmount := int64(0), int64(0)
 
 	for cursorCountAndAmount.Next(ctx) {
 		var result struct {
-			ID struct {
-				Type int    `bson:"type"`
-				Key  string `bson:"key"`
-			} `bson:"_id"`
-			Total int64 `bson:"total"`
+			Result int64 `bson:"result"`
 		}
 		if err := cursorCountAndAmount.Decode(&result); err != nil {
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
-		if result.ID.Type == 0 {
-			totalDeductionAmount[result.ID.Key] = result.Total
-		}
+		totalDeductionAmount = result.Result
 	}
 
 	// the total amount
