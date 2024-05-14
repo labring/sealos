@@ -59,6 +59,19 @@ spec:
           status:
             description: DebtStatus defines the observed state of Debt
             properties:
+              debtStatusRecords:
+                items:
+                  description: DebtStatusRecord defines the observed state of Debt
+                  properties:
+                    currentStatus:
+                      type: string
+                    lastDebtStatus:
+                      type: string
+                    updateTime:
+                      format: date-time
+                      type: string
+                  type: object
+                type: array
               lastUpdateTimestamp:
                 format: int64
                 type: integer
