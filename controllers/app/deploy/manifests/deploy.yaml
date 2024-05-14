@@ -642,15 +642,3 @@ spec:
         runAsNonRoot: true
       serviceAccountName: app-controller-manager
       terminationGracePeriodSeconds: 10
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "control-plane"
-                      operator: In
-                      values:
-                        - controller-manager
-                topologyKey: "kubernetes.io/hostname"
