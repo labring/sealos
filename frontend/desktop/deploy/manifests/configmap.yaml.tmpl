@@ -18,9 +18,9 @@ data:
           regionUID: "{{ .regionUID }}"
           certSecretName: "{{ .certSecretName }}"
         common:
-          guideEnabled: "false"
-          apiEnabled: "false"
-          rechargeEnabled: "false"
+          guideEnabled: false
+          apiEnabled: false
+          rechargeEnabled: false
           cfSiteKey: ""
         database:
           mongodbURI: "{{ .databaseMongodbURI }}"
@@ -29,7 +29,7 @@ data:
         desktop:
           layout:
             title: "Sealos Cloud"
-            logo: "/logo.png"
+            logo: "/logo.svg"
             backgroundImage: "/images/bg-blue.svg"
             meta:
               title: "Sealos Cloud"
@@ -37,19 +37,19 @@ data:
               keywords: "Sealos Cloud"
               scripts: []
             common:
-              githubStarEnabled: "true"
+              githubStarEnabled: true
           auth:
             proxyAddress: ""
             callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
-            signUpEnabled: "true"
+            signUpEnabled: true
             baiduToken: ""
             invite:
-              enabled: "false"
+              enabled: false
             jwt:
               internal: "<your-internal-jwt-secret>"
               regional: "<your-regional-jwt-secret>"
               global: "<your-global-jwt-secret>"
             idp:
               password:
-                enabled: "true"
+                enabled: true
                 salt: "{{ .passwordSalt }}"
