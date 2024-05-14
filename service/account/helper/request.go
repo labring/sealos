@@ -148,7 +148,6 @@ func ParseConsumptionRecordReq(c *gin.Context) (*ConsumptionRecordReq, error) {
 	if consumptionRecord.TimeRange.EndTime.After(time.Now()) {
 		consumptionRecord.TimeRange.EndTime = time.Now()
 	}
-	consumptionRecord.Namespace = strings.TrimPrefix(consumptionRecord.Namespace, "ns-")
 	return consumptionRecord, nil
 }
 
