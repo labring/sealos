@@ -72,6 +72,12 @@ spec:
             capabilities:
               drop:
                 - "ALL"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
+              GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
+              node /app/desktop/server.js
           image: ghcr.io/labring/sealos-desktop-frontend:latest
           imagePullPolicy: IfNotPresent
           volumeMounts:
