@@ -26,9 +26,8 @@ type Data struct {
 }
 
 type MenuData struct {
-	NameColor    string `json:"nameColor,omitempty"`
-	HelpDropDown bool   `json:"helpDropDown,omitempty"`
-	HelpDocs     string `json:"helpDocs,omitempty"`
+	Name string `json:"name,omitempty"`
+	Link string `json:"link,omitempty"`
 }
 
 type DisplayType string
@@ -50,8 +49,8 @@ type AppMeta struct {
 	//+kubebuilder:validation:Optional
 	DisplayType DisplayType `json:"displayType,omitempty"`
 
-	Data     Data     `json:"data,omitempty"`
-	MenuData MenuData `json:"menuData,omitempty"`
+	Data     Data       `json:"data,omitempty"`
+	MenuData []MenuData `json:"menuData,omitempty"`
 }
 
 // AppSpec defines the desired state of App
