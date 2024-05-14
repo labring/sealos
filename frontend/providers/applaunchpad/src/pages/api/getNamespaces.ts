@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
       const result = await k8sCore.listNamespace();
       const namespacesList = result.body.items.map((item: any) => item.metadata.name);
-      console.log(namespacesList);
       jsonRes(res, {
         data: namespacesList
       });
