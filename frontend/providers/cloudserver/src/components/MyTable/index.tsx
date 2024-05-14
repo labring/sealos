@@ -12,7 +12,7 @@ interface Props extends BoxProps {
   columns: TableColumnsType[];
   data: any[];
   itemClass?: string;
-  openSelected?: boolean;
+  openSelected?: boolean; // support select item // isOptional
   onRowClick?: (item: any) => void;
 }
 
@@ -59,13 +59,15 @@ export const MyTable = ({
           _hover={{
             bg: '#FBFBFC'
           }}
-          cursor={'pointer'}
+          cursor={!item.isOptional && openSelected ? 'not-allowed' : 'pointer'}
           borderBottom={'1px solid'}
           borderBottomColor={index1 !== data.length - 1 ? 'grayModern.150' : 'transparent'}
           bg={activeId == index1 && openSelected ? 'grayModern.100' : ''}
           onClick={() => {
-            setActiveId(index1);
-            onRowClick && onRowClick(item);
+            if (item.isOptional || !openSelected) {
+              setActiveId(index1);
+              onRowClick && onRowClick(item);
+            }
           }}
         >
           {columns.map((col, index2) => (
@@ -77,7 +79,7 @@ export const MyTable = ({
               px={3}
               py={4}
               fontSize={'base'}
-              color={'grayModern.900'}
+              color={!item.isOptional && openSelected ? 'grayModern.500' : 'grayModern.900'}
             >
               {col.render
                 ? col.render(item, index1, activeId)
