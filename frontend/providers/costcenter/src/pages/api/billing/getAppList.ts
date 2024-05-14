@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = kc.getContexts()[0].namespace || GetUserDefaultNameSpace(user.name);
+    const namespace = GetUserDefaultNameSpace(user.name);
     const name = new Date().getTime() + 'appquery';
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
