@@ -356,7 +356,7 @@ func (r *NamespaceReconciler) suspendObjectStorage(ctx context.Context, namespac
 		return err
 	}
 
-	r.Log.Info("suspend object storage", "user", user)
+	//r.Log.Info("suspend object storage", "user", user)
 	return nil
 }
 
@@ -370,7 +370,7 @@ func (r *NamespaceReconciler) resumeObjectStorage(ctx context.Context, namespace
 		return err
 	}
 
-	r.Log.Info("resume object storage", "user", user)
+	//r.Log.Info("resume object storage", "user", user)
 	return nil
 }
 
