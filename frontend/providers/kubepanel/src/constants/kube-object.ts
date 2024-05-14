@@ -6,5 +6,6 @@ export enum KubeObjectKind {
   PersistentVolumeClaim = 'PersistentVolumeClaim',
   Secret = 'Secret',
   Ingress = 'Ingress',
-  Event = 'Event'
+  Event = 'Event',
+  Service = 'Service'
 }
