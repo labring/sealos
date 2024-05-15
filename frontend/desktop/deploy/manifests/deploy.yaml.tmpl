@@ -78,15 +78,6 @@ spec:
               REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
               GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
               node /app/desktop/server.js
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - url="http://localhost:3000/api/platform/getAppConfig"
-                  - for i in {1..60}; do response=$(curl --write-out "%{http_code}" --silent --output /dev/null $url); if [ "$response" -eq 200 ]; then break; else sleep 1; fi; done;
-                  - for i in {1..5}; do curl $url; sleep 1; done
           readinessProbe:
             httpGet:
               path: /api/platform/getAppConfig
