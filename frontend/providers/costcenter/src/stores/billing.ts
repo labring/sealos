@@ -6,6 +6,10 @@ type BillingState = {
   storage: number;
   network: number;
   gpu: number;
+  namespace: string;
+  appType: string;
+  setAppType: (appType: string) => void;
+  setNamespace: (namespace: string) => void;
   updateCpu: (cpu: number) => void;
   updateMemory: (memory: number) => void;
   updateStorage: (storage: number) => void;
@@ -18,6 +22,14 @@ const useBillingStore = create<BillingState>((set) => ({
   storage: 0,
   gpu: 0,
   network: 0,
+  namespace: '',
+  appType: '',
+  setAppType(appType: string) {
+    set({ appType });
+  },
+  setNamespace(namespace: string) {
+    set({ namespace });
+  },
   updateCpu: (cpu: number) => set({ cpu: formatMoney(cpu) }),
   updateMemory: (memory: number) => set({ memory: formatMoney(memory) }),
   updateStorage: (storage: number) => set({ storage: formatMoney(storage) }),

@@ -124,7 +124,7 @@ const Header = ({
                     <Text w={'50px'} fontSize={'base'}>
                       {t('Storage')}
                     </Text>
-                    <Text fontSize={'sm'}>
+                    <Text fontSize={'base'}>
                       {t('Reference fee disk tips', { price: instanceType?.diskPerG })}
                     </Text>
                   </Flex>
@@ -138,12 +138,28 @@ const Header = ({
                     >
                       {t('BandWidth')}
                     </Text>
-                    <Text fontSize={'sm'} wordBreak={'break-all'}>
-                      {t('Reference fee network tips', {
-                        price1: instanceType?.networkSpeedUnderSpeedBoundaryPerHour,
-                        price2: instanceType?.networkSpeedAboveSpeedBoundaryPerHour
+                    <Flex flexDirection={'column'} fontSize={'base'} wordBreak={'break-all'}>
+                      <Flex gap={'8px'} justifyContent={'space-between'}>
+                        <Text>{t('interval')}</Text>
+                        <Text>{t('price')}</Text>
+                      </Flex>
+                      {instanceType?.bandwidthPricingTiers.map((item, index) => {
+                        return (
+                          <Flex
+                            gap={'8px'}
+                            justifyContent={'space-between'}
+                            key={item.pricePerMbps + item.minBandwidth}
+                          >
+                            <Text>{`[${item.minBandwidth} , ${
+                              item.maxBandwidth === null ? '∞' : item.maxBandwidth
+                            })`}</Text>
+                            <Text>
+                              {t('Reference fee bandwidth tips', { price: item.pricePerMbps })}
+                            </Text>
+                          </Flex>
+                        );
                       })}
-                    </Text>
+                    </Flex>
                   </Flex>
                 </Flex>
               </PopoverBody>

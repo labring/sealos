@@ -2,7 +2,7 @@ import { getCloudServerImage, getCloudServerRegion, getCloudServerType } from '@
 import MyIcon from '@/components/Icon';
 import { MyTable, TableColumnsType } from '@/components/MyTable';
 import MyTooltip from '@/components/MyTooltip';
-import { CloudServerType, EditForm, StorageType } from '@/types/cloudserver';
+import { CloudServerStatus, CloudServerType, EditForm, StorageType } from '@/types/cloudserver';
 import { CVMArchType, CVMRegionType, CVMZoneType, VirtualMachineType } from '@/types/region';
 import {
   Box,
@@ -59,7 +59,7 @@ const tabStyles: TabProps = {
   fontWeight: '400',
   color: 'grayModern.900',
   borderColor: 'grayModern.200',
-  width: '160px',
+  minW: '160px',
   css: {
     svg: {
       opacity: 0
@@ -122,7 +122,7 @@ function VirtualMachinePackageTabs({
         </Label>
         {virtualMachinePackageFamily?.map((item) => (
           <Tab {...tabStyles} key={item}>
-            {item}
+            {t(item)}
             <MyIcon key={item} ml={'auto'} name="check" width={'16px'} />
           </Tab>
         ))}
@@ -296,6 +296,8 @@ export default function Form({
   if (!formHook) return <></>;
   const [clientRender, setClientRender] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const theme = useTheme();
+  const { t } = useTranslation();
 
   const specialTips = useMemo(() => {
     return {
@@ -310,8 +312,25 @@ export default function Form({
   }, []);
 
   const { data: systemRegion } = useQuery(['getCloudServerRegion'], getCloudServerRegion, {
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    onSuccess(data) {
+      // set default form
+      if (data?.[0]?.chargeType) {
+        formHook.setValue('chargeType', data[0].chargeType);
+        formHook.setValue('zone', data[0].zone[0].zone);
+        formHook.setValue('virtualMachineArch', data[0].zone[0].arch[0].arch);
+        formHook.setValue(
+          'virtualMachineType',
+          data[0].zone[0].arch[0].virtualMachineType[0].virtualMachineType
+        );
+        formHook.setValue(
+          'virtualMachinePackageFamily',
+          data[0].zone[0].arch[0].virtualMachineType[0].virtualMachinePackageFamily[0]
+        );
+      }
+    }
   });
+
   const { data: systemImage } = useQuery(['getCloudServerImage'], getCloudServerImage, {
     staleTime: 5 * 60 * 1000
   });
@@ -335,6 +354,7 @@ export default function Form({
       }),
     {
       staleTime: 5 * 60 * 1000,
+      enabled: !!formHook.getValues('virtualMachinePackageFamily'),
       onSuccess(data) {
         if (data?.[0]) {
           formHook.setValue('virtualMachinePackageName', data[0].virtualMachinePackageName);
@@ -343,9 +363,6 @@ export default function Form({
       }
     }
   );
-
-  const theme = useTheme();
-  const { t } = useTranslation();
 
   const {
     register,
@@ -374,7 +391,12 @@ export default function Form({
           return (
             <Flex alignItems={'center'} pl={4} gap={'12px'}>
               <Radio colorScheme={'grayModern'} isChecked={rowNumber === activeId}></Radio>
-              <Text>{item.virtualMachinePackageName}</Text>
+              <Flex flexDirection={'column'}>
+                <Text>{item.virtualMachinePackageName}</Text>
+                {item.status === CloudServerStatus.Unavailable && (
+                  <Text color={'brightBlue.700'}>{t('sold out')}</Text>
+                )}
+              </Flex>
             </Flex>
           );
         }
@@ -403,7 +425,11 @@ export default function Form({
         key: 'instancePrice',
         render: (item: CloudServerType) => {
           return (
-            <Text color={'brightBlue.700'}>
+            <Text
+              color={
+                item.status === CloudServerStatus.Unavailable ? 'grayModern.500' : 'brightBlue.700'
+              }
+            >
               {t('Reference fee tip', { price: item.instancePrice })}{' '}
             </Text>
           );
@@ -555,7 +581,10 @@ export default function Form({
               <MyTable
                 itemClass="appItem"
                 columns={columns}
-                data={serverTypeData}
+                data={serverTypeData.map((item) => ({
+                  ...item,
+                  isOptional: item.status === CloudServerStatus.Available ? true : false
+                }))}
                 openSelected
                 onRowClick={(item: CloudServerType) => {
                   setValue('virtualMachinePackageName', item.virtualMachinePackageName);

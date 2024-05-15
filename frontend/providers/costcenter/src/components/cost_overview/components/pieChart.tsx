@@ -7,7 +7,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { formatMoney } from '@/utils/format';
 import { useMemo } from 'react';
 import { useBreakpointValue } from '@chakra-ui/react';
-import { BillingData } from '@/types/billing';
+import { BillingData, Costs } from '@/types/billing';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
 import {
@@ -28,7 +28,7 @@ echarts.use([
   DatasetComponent
 ]);
 
-export default function CostChart({ data }: { data: BillingData['status']['deductionAmount'] }) {
+export default function CostChart({ data }: { data: Costs }) {
   const { t } = useTranslation();
   const { cpu = 0, memory = 0, storage = 0, gpu = 0, network = 0, port = 0 } = data;
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);

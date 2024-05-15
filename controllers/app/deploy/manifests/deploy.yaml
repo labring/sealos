@@ -93,14 +93,14 @@ spec:
                     icon:
                       type: string
                     menuData:
-                      properties:
-                        helpDocs:
-                          type: string
-                        helpDropDown:
-                          type: boolean
-                        nameColor:
-                          type: string
-                      type: object
+                      items:
+                        properties:
+                          link:
+                            type: string
+                          name:
+                            type: string
+                        type: object
+                      type: array
                     name:
                       type: string
                     type:
@@ -110,14 +110,14 @@ spec:
               icon:
                 type: string
               menuData:
-                properties:
-                  helpDocs:
-                    type: string
-                  helpDropDown:
-                    type: boolean
-                  nameColor:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    link:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+                type: array
               name:
                 type: string
               type:

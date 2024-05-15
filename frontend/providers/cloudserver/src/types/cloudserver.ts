@@ -23,6 +23,12 @@ export type StorageType = {
   use: 'SystemDisk' | 'DataDisk';
 };
 
+export type BandwidthPricingTier = {
+  minBandwidth: number;
+  maxBandwidth: number;
+  pricePerMbps: number;
+};
+
 export type CloudServerType = {
   cpu?: number;
   memory?: number;
@@ -35,6 +41,7 @@ export type CloudServerType = {
   networkSpeedUnderSpeedBoundaryPerHour: number;
   networkSpeedAboveSpeedBoundaryPerHour: number;
   status: CloudServerStatus;
+  bandwidthPricingTiers: BandwidthPricingTier[];
 };
 
 export enum CloudServerStatus {

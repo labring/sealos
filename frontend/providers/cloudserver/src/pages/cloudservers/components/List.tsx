@@ -3,7 +3,7 @@ import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
 import { CVMInstanceType, HandleEnum } from '@/types/cloudserver';
 import { formatTime } from '@/utils/tools';
-import { Box, Button, Center, Flex, FlexProps, MenuButton } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, FlexProps, MenuButton, Text } from '@chakra-ui/react';
 import { LogoutIcon, MyTable, SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -137,7 +137,7 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
                 {item?.privateIpAddresses?.join(',')}(内)
                 <MyIcon name="copy" color={'grayModern.500'} width={'12px'} />
               </Center>
-              {item?.publicIpAddresses && (
+              {item?.publicIpAddresses ? (
                 <Center
                   gap={'4px'}
                   cursor={'pointer'}
@@ -146,6 +146,8 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
                   {item?.publicIpAddresses?.join(',')}(公)
                   <MyIcon name="copy" color={'grayModern.500'} width={'12px'} />
                 </Center>
+              ) : (
+                <Text>{t('Public IP is not enabled')}</Text>
               )}
             </Flex>
           );

@@ -58,6 +58,27 @@ type TransferAmountReq struct {
 	Auth `json:",inline" bson:",inline"`
 }
 
+type ConsumptionRecordReq struct {
+
+	// @Summary Start and end time for the request
+	// @Description Start and end time for the request
+	// @JSONSchema required
+	TimeRange `json:",inline" bson:",inline"`
+
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace,omitempty" bson:"namespace" example:"ns-admin"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	Auth `json:",inline" bson:",inline"`
+
+	// @Summary App type
+	// @Description App type
+	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
+}
+
 type NamespaceBillingHistoryResp struct {
 	Data    NamespaceBillingHistoryRespData `json:"data,omitempty" bson:"data,omitempty"`
 	Message string                          `json:"message,omitempty" bson:"message" example:"successfully retrieved namespace list"`
@@ -114,6 +135,20 @@ func ParseTransferAmountReq(c *gin.Context) (*TransferAmountReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	return transferAmount, nil
+}
+
+func ParseConsumptionRecordReq(c *gin.Context) (*ConsumptionRecordReq, error) {
+	consumptionRecord := &ConsumptionRecordReq{}
+	if err := c.ShouldBindJSON(consumptionRecord); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if consumptionRecord.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
+		consumptionRecord.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
+	}
+	if consumptionRecord.TimeRange.EndTime.After(time.Now()) {
+		consumptionRecord.TimeRange.EndTime = time.Now()
+	}
+	return consumptionRecord, nil
 }
 
 type UserBaseReq struct {
