@@ -29,7 +29,7 @@ const LogsModal = ({
   setLogsPodName,
   closeFn,
   containerName,
-  contaienrs
+  contaienrs = []
 }: {
   namespace: string;
   appName: string;

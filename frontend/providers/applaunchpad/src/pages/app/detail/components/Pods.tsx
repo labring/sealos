@@ -26,8 +26,9 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import LogsModal from './LogsModal';
+
 const DetailModel = dynamic(() => import('./PodDetailModal'));
+const LogsModal = dynamic(() => import('./LogsModal'));
 
 const Pods = ({
   namespace,
