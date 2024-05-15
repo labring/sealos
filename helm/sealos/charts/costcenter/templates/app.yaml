@@ -15,8 +15,6 @@ spec:
       name: 费用中心
   menuData:
     helpDocs: https://www.sealos.io/docs/cloud/apps/costcenter/
-    helpDropDown: false
-    nameColor: text-black
   name: Cost Center
   type: iframe
   displayType: normal

@@ -40,9 +40,6 @@ spec:
     url: ""
   icon: /images/pgadmin.svg
   menuData:
-    helpDocs: https://www.sealos.io/docs/cloud/apps/postgres/
-    helpDropDown: false
-    nameColor: text-black
   name: Postgres
   type: app
   displayType: normal
@@ -76,9 +73,6 @@ spec:
     url: https://www.sealos.io/docs/cloud/Intro
   icon: /images/sealos.svg
   menuData:
-    helpDocs: "false"
-    helpDropDown: false
-    nameColor: text-black
   name: Sealos Document
   type: iframe
   displayType: normal
@@ -94,9 +88,6 @@ spec:
     url: ""
   icon: /images/terminal.svg
   menuData:
-    helpDocs: https://www.sealos.io/docs/apps/terminal/
-    helpDropDown: false
-    nameColor: text-black
   name: Terminal
   type: iframe
   displayType: normal
