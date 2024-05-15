@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       stream: boolean;
       logSize?: number;
     };
-    console.log(req.body);
 
     if (!podName) {
       throw new Error('podName is empty');
