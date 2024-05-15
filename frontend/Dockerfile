@@ -100,5 +100,3 @@ ENV PORT 3000
 ENV launchpath=./${path}/server.js
 
 ENTRYPOINT ["sh","-c","node ${launchpath}"]
-
-

@@ -55,8 +55,8 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              export REGIONAL_COCKROACHDB_URI=$(cat /app/data/config.yaml | awk '/regionalCockroachdbUri:/ {print $2}' | tr -d '"')
-              export GLOBAL_COCKROACHDB_URI=$(cat /app/data/config.yaml | awk '/globalCockroachdbUri:/ {print $2}' | tr -d '"')
+              export REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"')
+              export GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"')
               prisma migrate deploy --schema /app/desktop/prisma/global/schema.prisma
               prisma migrate deploy --schema /app/desktop/prisma/region/schema.prisma
           volumeMounts:
@@ -72,6 +72,21 @@ spec:
             capabilities:
               drop:
                 - "ALL"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
+              GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
+              node /app/desktop/server.js
+          readinessProbe:
+            httpGet:
+              path: /api/platform/getAppConfig
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 2
+            successThreshold: 3
+            failureThreshold: 3
           image: ghcr.io/labring/sealos-desktop-frontend:latest
           imagePullPolicy: IfNotPresent
           volumeMounts:

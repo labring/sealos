@@ -11,13 +11,13 @@ import { addOrUpdateCode, checkSendable } from '@/services/backend/db/verifyCode
 import { enableSms } from '@/services/enable';
 import { retrySerially } from '@/utils/tools';
 
-const accessKeyId = global.AppConfig?.desktop.auth.idp.sms?.ali?.accessKeyID!;
-const accessKeySecret = global.AppConfig?.desktop.auth.idp.sms?.ali?.accessKeySecret!;
-const templateCode = global.AppConfig?.desktop.auth.idp.sms?.ali?.templateCode!;
-const signName = global.AppConfig?.desktop.auth.idp.sms?.ali?.signName!;
-const cfSiteKey = global.AppConfig?.common.cfSiteKey!;
-const cfVerifyEndpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const accessKeyId = global.AppConfig?.desktop.auth.idp.sms?.ali?.accessKeyID!;
+  const accessKeySecret = global.AppConfig?.desktop.auth.idp.sms?.ali?.accessKeySecret!;
+  const templateCode = global.AppConfig?.desktop.auth.idp.sms?.ali?.templateCode!;
+  const signName = global.AppConfig?.desktop.auth.idp.sms?.ali?.signName!;
+  const cfSiteKey = global.AppConfig?.common.cfSiteKey!;
+  const cfVerifyEndpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
   try {
     if (!enableSms()) {
       throw new Error('SMS is not enabled');
