@@ -1,23 +1,23 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getPodLogs } from '@/api/app';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalCloseButton,
-  Box,
-  useTheme,
-  Flex,
-  Button,
-  MenuButton
-} from '@chakra-ui/react';
 import { useLoading } from '@/hooks/useLoading';
 import { downLoadBold } from '@/utils/tools';
-import styles from '../index.module.scss';
+import {
+  Box,
+  Button,
+  Flex,
+  MenuButton,
+  Modal,
+  ModalCloseButton,
+  ModalContent,
+  ModalOverlay,
+  useTheme
+} from '@chakra-ui/react';
 import { SealosMenu } from '@sealos/ui';
-
-import { ChevronDownIcon } from '@chakra-ui/icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import styles from '../index.module.scss';
 import { streamFetch } from '@/services/streamFetch';
+import { AppEditType } from '@/types/app';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 
@@ -28,15 +28,19 @@ const LogsModal = ({
   pods = [],
   podAlias,
   setLogsPodName,
-  closeFn
+  closeFn,
+  containerName,
+  contaienrs
 }: {
   namespace: string;
   appName: string;
   podName: string;
   pods: { alias: string; podName: string }[];
   podAlias: string;
-  setLogsPodName: (name: string) => void;
+  setLogsPodName: (podName: string, containerName: string) => void;
   closeFn: () => void;
+  contaienrs: AppEditType['containers'];
+  containerName: string;
 }) => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -46,17 +50,20 @@ const LogsModal = ({
   const LogBox = useRef<HTMLDivElement>(null);
   const ansi_up = useRef(new AnsiUp());
 
-  const watchLogs = useCallback(() => {
-    // podName is empty. pod may  has been deleted
-    if (!podName) return closeFn();
-
+  const watchLogs = () => {
     const controller = new AbortController();
-    streamFetch({
+    // podName is empty. pod may  has been deleted
+    if (!podName) {
+      return closeFn();
+    }
+
+    return streamFetch({
       url: `/api/getPodLogs?namespace=${namespace}`,
       data: {
         appName,
         podName,
-        stream: true
+        stream: true,
+        containerName
       },
       abortSignal: controller,
       firstResponse() {
@@ -89,27 +96,31 @@ const LogsModal = ({
         }, 100);
       }
     });
-    return controller;
-  }, [appName, closeFn, podName]);
+  };
 
   useEffect(() => {
-    const controller = watchLogs();
-    return () => {
-      controller?.abort();
-    };
-  }, []);
+    setLogs('');
+    watchLogs();
+  }, [containerName]);
 
   const exportLogs = useCallback(async () => {
     const allLogs = await getPodLogs(namespace, {
       appName,
       podName,
-      stream: false
+      stream: false,
+      containerName
     });
     downLoadBold(allLogs, 'text/plain', 'log.txt');
-  }, [appName, podName]);
+  }, [appName, containerName, namespace, podName]);
 
   return (
-    <Modal isOpen={true} onClose={closeFn} isCentered={true}>
+    <Modal
+      isOpen={true}
+      onClose={() => {
+        closeFn();
+      }}
+      isCentered={true}
+    >
       <ModalOverlay />
       <ModalContent className={styles.logs} display={'flex'} maxW={'90vw'} h={'90vh'} m={0}>
         <Flex p={4} alignItems={'center'}>
@@ -137,7 +148,35 @@ const LogsModal = ({
               menuList={pods.map((item) => ({
                 isActive: item.podName === podName,
                 child: <Box>{item.alias}</Box>,
-                onClick: () => setLogsPodName(item.podName)
+                onClick: () => setLogsPodName(item.podName, containerName)
+              }))}
+            />
+          </Box>
+          <Box fontSize={'xl'} fontWeight={'bold'}>
+            Container {t('Log')}
+          </Box>
+          <Box px={3}>
+            <SealosMenu
+              width={240}
+              Button={
+                <MenuButton
+                  minW={'240px'}
+                  h={'32px'}
+                  textAlign={'start'}
+                  bg={'grayModern.100'}
+                  border={theme.borders.base}
+                  borderRadius={'md'}
+                >
+                  <Flex px={4} alignItems={'center'}>
+                    <Box flex={1}>{containerName}</Box>
+                    <ChevronDownIcon ml={2} />
+                  </Flex>
+                </MenuButton>
+              }
+              menuList={contaienrs.map((item) => ({
+                isActive: item.name === containerName,
+                child: <Box>{item.name}</Box>,
+                onClick: () => setLogsPodName(podName, item.name)
               }))}
             />
           </Box>

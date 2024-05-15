@@ -228,5 +228,6 @@
   "The user name cannot be empty": "The user name cannot be empty",
   "Under Stock": "Under Stock",
   "New Namaspace": "New Namaspace",
-  "Node Port": "NodePort"
+  "Node Port": "NodePort",
+  "Containers": "Containers"
 }

@@ -1,18 +1,17 @@
 import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
-import { MyTooltip } from '@sealos/ui';
-
 import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useAppStore } from '@/store/app';
 import type { PodDetailType } from '@/types/app';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
-  Center,
   Flex,
   Table,
   TableContainer,
@@ -22,12 +21,12 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
+import { MyTooltip } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-
-const LogsModal = dynamic(() => import('./LogsModal'));
+import LogsModal from './LogsModal';
 const DetailModel = dynamic(() => import('./PodDetailModal'));
 
 const Pods = ({
@@ -44,11 +43,13 @@ const Pods = ({
   const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
+  const [logsContainerIndex, setLogsContainerIndex] = useState<number>(0);
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
   });
+  const { appDetail = MOCK_APP_DETAIL } = useAppStore();
 
   const handleRestartPod = useCallback(
     async (podName: string) => {
@@ -193,6 +194,7 @@ const Pods = ({
       )
     }
   ];
+  // console.log(controller, controller.signal.aborted, 'controller');
 
   return (
     <Box h={'100%'} py={5} position={'relative'}>
@@ -242,8 +244,11 @@ const Pods = ({
       </TableContainer>
 
       <Loading loading={loading} fixed={false} />
-      {logsPodIndex !== undefined && (
+
+      {logsPodIndex !== undefined && logsContainerIndex !== undefined && (
         <LogsModal
+          contaienrs={appDetail.containers || []}
+          containerName={appDetail.containers[logsContainerIndex]?.name || ''}
           namespace={namespace}
           appName={appName}
           podName={pods[logsPodIndex]?.podName || ''}
@@ -254,12 +259,19 @@ const Pods = ({
               podName: item.podName
             }))}
           podAlias={`${appName}-${logsPodIndex + 1}`}
-          setLogsPodName={(name: string) =>
-            setLogsPodIndex(pods.findIndex((item) => item.podName === name))
-          }
-          closeFn={() => setLogsPodIndex(undefined)}
+          setLogsPodName={(podName: string, containerName: string) => {
+            setLogsPodIndex(pods.findIndex((item) => item.podName === podName));
+            setLogsContainerIndex(
+              appDetail.containers?.findIndex((item) => item.name === containerName)
+            );
+          }}
+          closeFn={() => {
+            setLogsPodIndex(undefined);
+            setLogsContainerIndex(0);
+          }}
         />
       )}
+
       {detailPodIndex !== undefined && (
         <DetailModel
           namespace={namespace}
