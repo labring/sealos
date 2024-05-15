@@ -1,6 +1,8 @@
 import { getPodLogs } from '@/api/app';
 import { useLoading } from '@/hooks/useLoading';
+import { AppEditType } from '@/types/app';
 import { downLoadBold } from '@/utils/tools';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
@@ -13,13 +15,10 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import { SealosMenu } from '@sealos/ui';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import styles from '../index.module.scss';
-import { streamFetch } from '@/services/streamFetch';
-import { AppEditType } from '@/types/app';
-import { ChevronDownIcon } from '@chakra-ui/icons';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import styles from '../index.module.scss';
 
 const LogsModal = ({
   namespace,
@@ -50,38 +49,43 @@ const LogsModal = ({
   const LogBox = useRef<HTMLDivElement>(null);
   const ansi_up = useRef(new AnsiUp());
 
-  const watchLogs = () => {
+  const watchLogs = async () => {
     const controller = new AbortController();
     // podName is empty. pod may  has been deleted
     if (!podName) {
       return closeFn();
     }
+    const data = {
+      appName,
+      podName,
+      stream: true,
+      containerName
+    };
 
-    return streamFetch({
-      url: `/api/getPodLogs?namespace=${namespace}`,
-      data: {
-        appName,
-        podName,
-        stream: true,
-        containerName
+    const res = await fetch(`/api/getPodLogs?namespace=${namespace}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-      abortSignal: controller,
-      firstResponse() {
+      body: JSON.stringify(data),
+      signal: controller.signal
+    });
+
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder();
+
+    const read = async () => {
+      const { done, value } = await reader?.read();
+      if (done) {
+        return;
+      }
+      const text = decoder.decode(value).replace(/<br\/>/g, '\n');
+      if (res.status === 200) {
         setIsLoading(false);
-        setTimeout(() => {
-          if (!LogBox.current) return;
-
-          LogBox.current.scrollTo({
-            top: LogBox.current.scrollHeight
-          });
-        }, 500);
-      },
-      onMessage(text) {
         setLogs((state) => {
           return state + ansi_up.current.ansi_to_html(text);
         });
-
-        // scroll bottom
         setTimeout(() => {
           if (!LogBox.current) return;
           const isBottom =
@@ -95,12 +99,32 @@ const LogsModal = ({
             });
         }, 100);
       }
-    });
+      read();
+    };
+
+    read();
+
+    const cancelRequest = () => {
+      reader.cancel();
+      controller.abort('cancel');
+    };
+
+    return cancelRequest;
   };
 
   useEffect(() => {
-    setLogs('');
-    watchLogs();
+    let cancelFn: any;
+    const fetchData = async () => {
+      setLogs('');
+      cancelFn = await watchLogs();
+    };
+    fetchData();
+
+    return () => {
+      if (cancelFn) {
+        cancelFn();
+      }
+    };
   }, [containerName]);
 
   const exportLogs = useCallback(async () => {
