@@ -11,7 +11,8 @@ export const enableApi = () => global.AppConfig.common.apiEnabled || false;
 export const enableOAuth2 = () => global.AppConfig.desktop.auth.idp.oauth2?.enabled || false;
 
 export const getTeamLimit = () => global.AppConfig.desktop.teamManagement?.maxTeamCount || 50;
-export const getTeamInviteLimit = () => global.AppConfig.desktop.teamManagement?.maxTeamMemberCount || 50;
+export const getTeamInviteLimit = () =>
+  global.AppConfig.desktop.teamManagement?.maxTeamMemberCount || 50;
 
 export const getRegionUid = () => global.AppConfig.cloud.regionUID;
 
