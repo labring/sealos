@@ -165,9 +165,6 @@ spec:
     desc:
   icon: https://tailchat.msgbyte.com/img/logo.svg
   menuData:
-    nameColor: text-black
-    helpDropDown:
-    helpDocs:
   displayType: normal
 ```
 
