@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import subprocess
 import os
 import json
+import yaml
 
 app = Flask(__name__)
 
@@ -42,7 +43,7 @@ def export_app():
     if not namespace:
         return jsonify({'error': 'Namespace is required'}), 400
     
-    print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'))
+    print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'), flush=True)
 
     workdir = os.path.join(SAVE_PATH, namespace, appname)
     
@@ -51,15 +52,14 @@ def export_app():
     os.makedirs(workdir)
 
     # 保存yaml文件至本地
-    print('write yaml file to:', os.path.join(workdir, 'app.yaml'))
+    print('write yaml file to:', os.path.join(workdir, 'app.yaml'), flush=True)
     with open(os.path.join(workdir, 'app.yaml'), 'w') as file:
         file.write(yaml_content)
 
     image_pairs = []
-
     
     # 登录镜像仓库
-    print('login to registry')
+    print('login to registry', flush=True)
     err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
     if err:
         return jsonify({'error': 'Failed to login, ' + err}), 500
@@ -67,14 +67,14 @@ def export_app():
     # 拉取镜像并保存到本地
     for image in images:
         name = image['name'].strip()
-        print('pull image:', name)
+        print('pull image:', name, flush=True)
         image_file_name = name.replace('/', '_').replace(':', '_') + '.tar'
         path = os.path.join(workdir, image_file_name)
         image_pairs.append({'name': name, 'path': path})
         err = run_command(f'docker pull {name}')
         if err:
             return jsonify({'error': 'Failed to pull image, ' + err}), 500
-        print('save image:', name)
+        print('save image:', name, flush=True)
         err = run_command(f'docker save {name} -o {path}')
         if err:
             return jsonify({'error': 'Failed to save image, ' + err}), 500
@@ -95,18 +95,32 @@ def export_app():
 @app.route('/api/deployAppWithImage', methods=['POST'])
 def deploy_app_with_image():
     # 获取请求参数
+    file_path = request.json.get('path')
+    if not file_path:
+        return jsonify({'error': 'Path is required'}), 400  
     namespace = request.args.get('namespace')
+    with open(os.path.join(file_path, 'metadata.json'), 'r') as file:
+        metadata = json.load(file)
+    appname = metadata['name']
     if not namespace:
-        return jsonify({'error': 'Namespace is required'}), 400
-    appname = request.args.get('appname')
-    if not appname:
-        return jsonify({'error': 'Appname is required'}), 400
-    images = request.json.get('images')
-    if not images:
-        return jsonify({'error': 'Images are required'}), 400
-    yaml_content = request.json.get('yaml')
-    if not yaml_content:
-        return jsonify({'error': 'YAML is required'}), 400
+        namespace = metadata['namespace']
+    images = metadata['images']
+    for image in images:
+        image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
+    with open(os.path.join(file_path, 'app.yaml'), 'r') as file:
+        yaml_content = file.read()
+    print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
+    # if not namespace:
+    #     return jsonify({'error': 'Namespace is required'}), 400
+    # appname = request.args.get('appname')
+    # if not appname:
+    #     return jsonify({'error': 'Appname is required'}), 400
+    # images = request.json.get('images')
+    # if not images:
+    #     return jsonify({'error': 'Images are required'}), 400
+    # yaml_content = request.json.get('yaml')
+    # if not yaml_content:
+    #     return jsonify({'error': 'YAML is required'}), 400
 
     # 加载和推送镜像
     for image in images:
@@ -143,6 +157,14 @@ def deploy_app_with_image():
     yaml_content = yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
     with open('temp.yaml', 'w') as file:
         file.write(yaml_content)
+
+    # 调用kubectl创建命名空间
+    create_namespace_command = f'kubectl create namespace {namespace} --kubeconfig=/etc/kubernetes/admin.conf'
+    err = run_command(create_namespace_command)
+
+    if err:
+        if 'already exists' not in err:
+            return jsonify({'error': 'Failed to create namespace, ' + err}), 500
 
     # 调用kubectl部署应用
     apply_command = f'kubectl apply -n {namespace} --kubeconfig=/etc/kubernetes/admin.conf -f temp.yaml'
