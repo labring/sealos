@@ -1,7 +1,7 @@
-sealos login -u admin -p passw0rd sealos.hub:5000
-sealos load -i launchpad.tar
-sealos tag luanshaotong/sealos-applaunchpad:LAUNCHPAD_TAG sealos.hub:5000/luanshaotong/sealos-applaunchpad:LAUNCHPAD_TAG
-sealos push sealos.hub:5000/luanshaotong/sealos-applaunchpad:LAUNCHPAD_TAG
+docker login -u admin -p passw0rd sealos.hub:5000
+docker load -i launchpad.tar
+docker tag luanshaotong/sealos-applaunchpad:LAUNCHPAD_TAG sealos.hub:5000/luanshaotong/sealos-applaunchpad:LAUNCHPAD_TAG
+docker push sealos.hub:5000/luanshaotong/sealos-applaunchpad:LAUNCHPAD_TAG
 DOMAIN=`grep sealos.hub /etc/hosts | awk '{print $1}'`
 cp originlaunchpad.yaml launchpad.yaml
 sed -i "s/FLAG_SEALOS_DOMAIN/${DOMAIN}/g" launchpad.yaml
