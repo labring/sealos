@@ -35,6 +35,8 @@ const map = {
   error: require('./icons/error.svg').default,
   currency: require('./icons/currency.svg').default,
   infoCircle: require('./icons/infoCircle.svg').default,
+  arrowUp: require('./icons/arrowUp.svg').default,
+  arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };
 

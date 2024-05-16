@@ -98,7 +98,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           borderRadius={'md'}
           position={'relative'}
         >
-          <Flex px={8} py={4} bg={'myWhite.400'}>
+          <Flex px={8} py={4} bg={'grayModern.50'}>
             <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
             </Box>

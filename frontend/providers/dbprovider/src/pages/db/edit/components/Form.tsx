@@ -1,17 +1,17 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import QuotaBox from '@/components/QuotaBox';
-
 import Tip from '@/components/Tip';
 import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import type { DBEditType } from '@/types/db';
-import { InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
+import { ArrowDownIcon, InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
 import {
   Box,
   Flex,
+  Image,
   FormControl,
   Grid,
   Input,
@@ -20,7 +20,9 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  useTheme
+  useTheme,
+  Center,
+  Text
 } from '@chakra-ui/react';
 import { MySelect, Tabs, MySlider, RangeInput, MyTooltip } from '@sealos/ui';
 import { throttle } from 'lodash';
@@ -239,18 +241,63 @@ const Form = ({
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Flex alignItems={'center'} mb={7}>
-                <Label w={100}>{t('Type')}</Label>
-                <MySelect
-                  isDisabled={isEdit}
-                  width={'130px'}
-                  placeholder={`${t('DataBase')} ${t('Type')}`}
-                  value={getValues('dbType')}
-                  list={DBTypeList.map((i) => ({ value: i.id, label: i.label }))}
-                  onchange={(val: any) => {
-                    setValue('dbType', val);
-                    setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
-                  }}
-                />
+                <Label w={100} alignSelf={'flex-start'}>
+                  {t('Type')}
+                </Label>
+                <Flex flexWrap={'wrap'} gap={'12px'}>
+                  {DBTypeList &&
+                    DBTypeList?.map((item) => {
+                      return (
+                        <Center
+                          key={item.id}
+                          flexDirection={'column'}
+                          w={'110px'}
+                          height={'80px'}
+                          border={'1px solid'}
+                          borderRadius={'6px'}
+                          cursor={'pointer'}
+                          fontWeight={'bold'}
+                          color={'grayModern.900'}
+                          {...(getValues('dbType') === item.id
+                            ? {
+                                filter: 'grayscale(0%)',
+                                bg: '#F9FDFE',
+                                borderColor: 'brightBlue.500',
+                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
+                              }
+                            : {
+                                bg: '#F7F8FA',
+                                borderColor: 'grayModern.200',
+                                filter: 'grayscale(100%)',
+                                _hover: {
+                                  borderColor: '#85ccff',
+                                  filter: 'grayscale(0%)'
+                                }
+                              })}
+                          onClick={() => {
+                            setValue('dbType', item.id);
+                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
+                          }}
+                        >
+                          <Image
+                            width={'32px'}
+                            height={'32px'}
+                            alt={item.id}
+                            src={`/images/${item.id}.svg`}
+                          />
+                          <Text
+                            _firstLetter={{
+                              textTransform: 'capitalize'
+                            }}
+                            mt={'4px'}
+                            textAlign={'center'}
+                          >
+                            {item.label}
+                          </Text>
+                        </Center>
+                      );
+                    })}
+                </Flex>
               </Flex>
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('Version')}</Label>
@@ -344,6 +391,7 @@ const Form = ({
                     setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue);
                   }}
                 />
+
                 {getValues('replicas') === 1 && (
                   <Tip
                     ml={4}
@@ -405,6 +453,8 @@ const Form = ({
                         min={minStorage}
                         max={300}
                         borderRadius={'md'}
+                        borderColor={'#E8EBF0'}
+                        bg={'#F7F8FA'}
                         _focusVisible={{
                           borderColor: 'brightBlue.500',
                           boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
@@ -412,9 +462,14 @@ const Form = ({
                           color: '#111824'
                         }}
                       />
+
                       <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
+                        <NumberIncrementStepper>
+                          <MyIcon name="arrowUp" width={'12px'} />
+                        </NumberIncrementStepper>
+                        <NumberDecrementStepper>
+                          <MyIcon name="arrowDown" width={'12px'} />
+                        </NumberDecrementStepper>
                       </NumberInputStepper>
                       <Box
                         zIndex={1}
