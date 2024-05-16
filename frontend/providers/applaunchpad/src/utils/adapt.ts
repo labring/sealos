@@ -240,9 +240,9 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           protocol:
             (ingress?.metadata?.annotations?.[
               'nginx.ingress.kubernetes.io/backend-protocol'
-            ] as AppEditContainerType['networks'][0]['protocol']) ||
-            item.protocol ||
-            'HTTP',
+            ] as AppEditContainerType['networks'][0]['protocol']) || item.protocol === 'TCP'
+              ? 'HTTP'
+              : (item.protocol as AppEditContainerType['networks'][number]['protocol']),
           openPublicDomain: !!ingress,
           ...(domain.endsWith(SEALOS_DOMAIN)
             ? {

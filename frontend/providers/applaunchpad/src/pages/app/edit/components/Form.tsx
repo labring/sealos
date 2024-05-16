@@ -856,7 +856,7 @@ const Form = ({
             <Tabs variant="enclosed" defaultIndex={0}>
               <Box {...headerStyles}>
                 <MyIcon name={'formInfo'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
-                Containers
+                {t('Containers')}
               </Box>
               <TabList mx={'42px'} mt={'28px'}>
                 <Flex alignItems={'center'}>

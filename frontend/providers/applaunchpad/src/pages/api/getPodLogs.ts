@@ -32,12 +32,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     const {
-      appName,
       podName,
       stream = false,
+      containerName,
       logSize
     } = req.body as {
       appName: string;
+      containerName: string;
       podName: string;
       stream: boolean;
       logSize?: number;
@@ -56,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const { body: data } = await k8sCore.readNamespacedPodLog(
         podName,
         reqNamespace,
-        appName,
+        containerName,
         undefined,
         undefined,
         undefined,
@@ -81,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     streamResponse = await logs.log(
       reqNamespace,
       podName,
-      appName,
+      containerName,
       logStream,
       (err) => {
         console.log('err', err);

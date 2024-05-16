@@ -54,6 +54,7 @@ export const getPodLogs = (
     podName: string;
     stream: boolean;
     logSize?: number;
+    containerName: string;
   }
 ) => POST<string>(`/api/getPodLogs?namespace=${namespace}`, data);
 
