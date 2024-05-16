@@ -263,12 +263,14 @@ func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.Namespace
 }
 
 func (r *MonitorReconciler) preMonitorResourceUsage() error {
-	metrics, err := objstorage.QueryUserUsage(r.ObjStorageMetricsClient)
-	if err != nil {
-		return fmt.Errorf("failed to query object storage metrics: %w", err)
+	if r.ObjStorageMetricsClient != nil {
+		metrics, err := objstorage.QueryUserUsage(r.ObjStorageMetricsClient)
+		if err != nil {
+			return fmt.Errorf("failed to query object storage metrics: %w", err)
+		}
+		r.currentObjectMetrics = metrics
+		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
 	}
-	r.currentObjectMetrics = metrics
-	logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
 	return nil
 }
 
