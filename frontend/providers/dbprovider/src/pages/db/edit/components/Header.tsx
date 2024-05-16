@@ -42,24 +42,16 @@ const Header = ({
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
-        <MyIcon name="arrowLeft" />
-        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
+        <MyIcon name="arrowLeft" width={'24px'} height={'24px'} />
+        <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
           {t(title)}
         </Box>
       </Flex>
       <Box flex={1}></Box>
-      <Button
-        h={'40px'}
-        flex={'0 0 140px'}
-        mr={5}
-        bg={'myWhite.600'}
-        borderColor={'myGray.200'}
-        variant={'base'}
-        onClick={handleExportYaml}
-      >
+      <Button h={'40px'} flex={'0 0 114px'} mr={5} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>
-      <Button flex={'0 0 140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button flex={'0 0 114px'} h={'40px'} variant={'solid'} onClick={applyCb}>
         {t(applyBtnText)}
       </Button>
     </Flex>

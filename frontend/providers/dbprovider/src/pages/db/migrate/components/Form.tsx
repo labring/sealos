@@ -1,9 +1,7 @@
-import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
-import Tabs from '@/components/Tabs';
+import QuotaBox from '@/components/QuotaBox';
 import TagTextarea from '@/components/Textarea/TagTextarea';
-import { DBTypeEnum, RedisHAConfig } from '@/constants/db';
-import { INSTALL_ACCOUNT } from '@/store/static';
+import { SupportMigrationDBType } from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
 import {
   Accordion,
@@ -19,16 +17,14 @@ import {
   Switch,
   Text
 } from '@chakra-ui/react';
+import { Tabs } from '@sealos/ui';
 import 'github-markdown-css/github-markdown-light.css';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import PriceBox from './PriceBox';
-import QuotaBox from '@/components/QuotaBox';
 import PrepareBox from './Prepare';
-import { SupportMigrationDBType } from '@/types/db';
 
 const Form = ({
   formHook,
@@ -201,8 +197,8 @@ const Form = ({
               </Box>
             ))}
           </Box>
-          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
-            <QuotaBox titleStyle={{ borderBottom: '1px solid rgb(222, 224, 226)' }} />
+          <Box mt={3} overflow={'hidden'}>
+            <QuotaBox />
           </Box>
           {/* {INSTALL_ACCOUNT && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>

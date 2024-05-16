@@ -199,7 +199,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     <Box h={'100%'} position={'relative'} px="26px" pb="40px">
       <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
-          <QuotaBox titleStyle={{ pt: '36px' }} />
+          <QuotaBox />
           {/* {db && (
             <PriceBox
               components={[

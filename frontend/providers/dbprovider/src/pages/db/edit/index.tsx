@@ -195,7 +195,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         alignItems={'center'}
         h={'100%'}
         minWidth={'1024px'}
-        bg={'#F3F4F5'}
+        backgroundColor={'grayModern.100'}
       >
         <Header
           dbName={formHook.getValues('dbName')}

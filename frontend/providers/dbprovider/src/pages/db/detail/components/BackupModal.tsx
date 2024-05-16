@@ -26,8 +26,7 @@ import { InfoOutlineIcon, TimeIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'next-i18next';
 import { useForm } from 'react-hook-form';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
-import Tabs from '@/components/Tabs';
-import MySelect from '@/components/Select';
+import { Tabs, MySelect } from '@sealos/ui';
 import { DBBackupMethodNameMap, DBTypeEnum } from '@/constants/db';
 
 enum NavEnum {
@@ -335,8 +334,10 @@ const BackupModal = ({
                         <MySelect
                           width={'120px'}
                           value={getAutoValues('hour')}
-                          list={selectTimeList.current.slice(0, 24)}
-                          icon={<TimeIcon color={'myGray.400'} />}
+                          list={selectTimeList.current
+                            .slice(0, 24)
+                            .map((i) => ({ value: i.id, label: i.label }))}
+                          // icon={<TimeIcon color={'myGray.400'} />}
                           onchange={(val: any) => {
                             setAutoValue('hour', val);
                             setRefresh((state) => !state);
@@ -349,8 +350,8 @@ const BackupModal = ({
                       <MySelect
                         width={'120px'}
                         value={getAutoValues('minute')}
-                        list={selectTimeList.current}
-                        icon={<TimeIcon color={'myGray.400'} />}
+                        list={selectTimeList.current.map((i) => ({ value: i.id, label: i.label }))}
+                        // icon={<TimeIcon color={'myGray.400'} />}
                         onchange={(val: any) => {
                           setAutoValue('minute', val);
                           setRefresh((state) => !state);
@@ -381,8 +382,8 @@ const BackupModal = ({
                         boxShadow={'none !important'}
                         borderColor={'myGray.200'}
                         list={[
-                          { id: 'd', label: 'Day' },
-                          { id: 'h', label: 'Hour' }
+                          { value: 'd', label: 'Day' },
+                          { value: 'h', label: 'Hour' }
                         ]}
                         h={'35px'}
                         borderTopLeftRadius={0}

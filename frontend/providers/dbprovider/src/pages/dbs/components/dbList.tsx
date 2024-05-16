@@ -242,7 +242,7 @@ const DBList = ({
   ];
 
   return (
-    <Box bg={'#F3F4F5'} px={'32px'} minH="100vh">
+    <Box backgroundColor={'grayModern.100'} px={'32px'} minH="100vh">
       <Flex h={'90px'} alignItems={'center'}>
         <Center
           mr={'16px'}

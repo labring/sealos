@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { Box, Grid, useTheme, Flex } from '@chakra-ui/react';
-import YamlCode from '@/components/YamlCode/index';
-import styles from './index.module.scss';
-import { useCopyData } from '@/utils/tools';
-import type { YamlItemType, QueryType } from '@/types';
-import Tabs from '@/components/Tabs';
-import { obj2Query } from '@/api/tools';
-import { useRouter } from 'next/router';
 import MyIcon from '@/components/Icon';
+import YamlCode from '@/components/YamlCode/index';
+import type { QueryType, YamlItemType } from '@/types';
+import { useCopyData } from '@/utils/tools';
+import { Box, Flex, Grid, useTheme } from '@chakra-ui/react';
+import { Tabs } from '@sealos/ui';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
+import styles from './index.module.scss';
 
 const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
