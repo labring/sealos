@@ -153,6 +153,11 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
 		return ErrAccountNotExist
 	}
+	if account.CreateRegionID == "" {
+		if err = r.AccountV2.SetAccountCreateLocalRegion(account, r.LocalRegionID); err != nil {
+			return fmt.Errorf("failed to set account %s create region: %v", owner, err)
+		}
+	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID
 

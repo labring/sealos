@@ -166,6 +166,11 @@ func (c *Cockroach) GetAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	return c.getAccount(ops)
 }
 
+func (c *Cockroach) SetAccountCreateLocalRegion(account *types.Account, region string) error {
+	account.CreateRegionID = region
+	return c.DB.Save(account).Error
+}
+
 func (c *Cockroach) GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error) {
 	userUID, err := c.GetUserUID(ops)
 	if err != nil {
@@ -608,6 +613,7 @@ func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		EncryptBalance:          c.ZeroAccount.EncryptBalance,
 		Balance:                 c.ZeroAccount.Balance,
 		DeductionBalance:        c.ZeroAccount.DeductionBalance,
+		CreateRegionID:          c.LocalRegion.UID.String(),
 		CreatedAt:               time.Now(),
 	}
 
