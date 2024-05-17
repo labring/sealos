@@ -3,6 +3,7 @@ import subprocess
 import os
 import json
 import yaml
+import time
 
 app = Flask(__name__)
 
@@ -56,6 +57,14 @@ def export_app():
     with open(os.path.join(workdir, 'app.yaml'), 'w') as file:
         file.write(yaml_content)
 
+    # 检索yaml中的所有nodeport端口和对应的内部port
+    nodeports = []
+    for single_yaml in yaml.safe_load_all(yaml_content):
+        if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
+            if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
+                nodeports.append({'internal_port': str(single_yaml['spec']['ports'][0]['port'])})
+    print('nodeports:', nodeports, flush=True)
+
     image_pairs = []
     
     # 登录镜像仓库
@@ -83,7 +92,8 @@ def export_app():
     metadata = {
         'name': appname,
         'namespace': namespace,
-        'images': image_pairs
+        'images': image_pairs,
+        'nodeports': nodeports
     }
     with open(os.path.join(workdir, 'metadata.json'), 'w') as file:
         file.write(json.dumps(metadata))
@@ -98,6 +108,9 @@ def deploy_app_with_image():
     file_path = request.json.get('path')
     if not file_path:
         return jsonify({'error': 'Path is required'}), 400  
+    ports = request.json.get('ports')
+    if not ports:
+        return jsonify({'error': 'Ports are required'}), 400
     namespace = request.args.get('namespace')
     with open(os.path.join(file_path, 'metadata.json'), 'r') as file:
         metadata = json.load(file)
@@ -109,6 +122,26 @@ def deploy_app_with_image():
         image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
     with open(os.path.join(file_path, 'app.yaml'), 'r') as file:
         yaml_content = file.read()
+
+    new_yaml_contents = []
+    for single_yaml in yaml.safe_load_all(yaml_content):
+        if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
+            if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
+                for port_index in range(len(single_yaml['spec']['ports'])):
+                    internal_port = str(single_yaml['spec']['ports'][port_index]['port'])
+                    if internal_port not in ports.keys():
+                        return jsonify({'error': f'ExternalPort for InternalPort {internal_port} is required'}), 400
+                    # check if ports[internal_port] is int
+                    if not isinstance(ports[internal_port], int):
+                        return jsonify({'error': f'ExternalPort for InternalPort {internal_port} should be int'}), 400
+                    # check if ports[internal_port] is 30000-32767
+                    if ports[internal_port] < 30000 or ports[internal_port] > 32767:
+                        return jsonify({'error': f'ExternalPort for InternalPort {internal_port} should be between 30000 and 32767'}), 400
+                    single_yaml['spec']['ports'][port_index]['nodePort'] = ports[internal_port]
+        new_yaml_contents.append(single_yaml)
+    new_yaml_content = yaml.dump_all(new_yaml_contents)
+
+
     print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
     # if not namespace:
     #     return jsonify({'error': 'Namespace is required'}), 400
@@ -154,9 +187,9 @@ def deploy_app_with_image():
             return jsonify({'error': 'Failed to push image, ' + err}), 500
 
     # 替换yaml中的CLUSTER_DOMAIN
-    yaml_content = yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
+    new_yaml_content = new_yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
     with open('temp.yaml', 'w') as file:
-        file.write(yaml_content)
+        file.write(new_yaml_content)
 
     # 调用kubectl创建命名空间
     create_namespace_command = f'kubectl create namespace {namespace} --kubeconfig=/etc/kubernetes/admin.conf'
