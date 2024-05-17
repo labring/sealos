@@ -1,61 +1,121 @@
-# 计费系统详细说明
+# Detailed Billing System Description
 
-## 通用计费方式说明
+## General Billing Method Explanation (Application, Database, Terminal)
 
-| 计费类型 | 描述                                                         | 计费规则                                             | 最小计费单位（不足1个单位时，按照1个单位计费） | 扣费方式 |
-| -------- | ------------------------------------------------------------ | ---------------------------------------------------- | ---------------------------------------------- | -------- |
-| CPU      | 统计每分钟的 CPU 使用量，并以每小时的平均使用量为基础进行计费。例如，如果用户在某一小时的前 30 分钟使用了 1 核 (c)，而后30分钟使用了 2 核，则该小时的 CPU 使用量为 1.5 核时 (c/h)，即 (30分钟 \* 1 核 + 30 分钟 \* 2 核)/ 60 分钟 = 1.5 核时。 | 按小时扣费，当前小时使用资源在下一个小时内进行扣费。 | 毫核 (mCore)                                   | 余额扣费 |
-| 内存     | 统计每分钟内存使用量，并以每小时的平均使用量为基础进行计费。 |                                                      | 兆字节 (MB)                                    |          |
-| 存储卷   | 统计每分钟的存储使用量，并以每小时的平均使用量为基础进行计费。私有云部署不作计费。 |                                                      | 兆字节 (MB)                                    |          |
-| 网络     | 按量计费，私有云部署不作计费。                               |                                                      | 兆字节 (MB)                                    |          |
+| Billing Type | Description                                                                                                                                                       | Billing Rule                                               | Minimum Billing Unit (If less than 1 unit, charge as 1 unit) | Deduction Method |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|------------------------------------------------------------|-----------------|
+| CPU          | CPU usage is calculated every minute and billed based on the average hourly usage. For example, if a user uses 1 core (c) for the first 30 minutes of an hour and 2 cores for the next 30 minutes, the CPU usage for that hour would be 1.5 core hours (c/h), i.e., (30 minutes * 1 core + 30 minutes * 2 cores)/60 minutes = 1.5 core hours. | Hourly billing, current hour resource usage deducted in the next hour. | Milli-core (mCore)                                           | Balance deduction |
+| Memory       | Memory usage is calculated every minute and billed based on the average hourly usage.                                                                             | Hourly billing, current hour resource usage deducted in the next hour. | Megabyte (MB)                                               | Balance deduction |
+| Storage Volume | Storage usage is calculated every minute and billed based on the average hourly usage. No charge for private cloud deployment.                                   | Hourly billing, current hour resource usage deducted in the next hour. | Megabyte (MB)                                               | Balance deduction |
+| Network      | Billed based on usage, no charge for private cloud deployment.                                                                                                     | Usage billing, current resource usage deducted in the next hour.      | Megabyte (MB)                                               | Balance deduction |
+| TCP Port     | Port usage is calculated every minute and billed based on the average hourly usage. No charge for private cloud deployment.                                       | Usage billing, current resource usage deducted in the next hour.      | Unit                                                       | Balance deduction |
 
-## 计费价格详情
+### Detailed Billing Prices
 
-### 公有云
+#### Public Cloud
 
-| 名称   | 单位    | 价格   |
-| ------ | ------- | ------ |
-| CPU    | Core/年 | 586.92 |
-| 内存   | GB/年   | 296.02 |
-| 存储卷 | GB/年   | 17.94  |
-| 网络   | GB      | 0.8    |
+##### Singapore (sgs)
 
-### 私有云
+| Name         | Unit     | Price  |
+|--------------|----------|--------|
+| CPU          | Core/year | 586.92 |
+| Memory       | GB/year  | 296.02 |
+| Storage Volume | GB/year | 17.94  |
+| Network      | GB       | 0.8    |
+| TCP External Port | Unit/year | 608   |
 
-| 名称   | 单位    | 价格 |
-| ------ | ------- | ---- |
-| CPU    | Core/年 | 19.6 |
-| 内存   | GB/年   | 9.8  |
-| 存储卷 | GB/年   | 0    |
-| 网络   | GB      | 0    |
+##### Hangzhou H (hzh)
 
-## 用户欠费处理流程
+| Name         | Unit     | Price  |
+|--------------|----------|--------|
+| CPU          | Core/year | 242.39 |
+| Memory       | GB/year  | 122.25 |
+| Storage Volume | GB/year | 7.40   |
+| Network      | GB       | 0.80   |
+| TCP External Port | Unit/year | 121   |
 
-### 欠费周期
+##### Beijing A (bja)
 
-当用户账号出现欠费情况时，我们将按照以下周期进行处理：
+| Name         | Unit     | Price  |
+|--------------|----------|--------|
+| CPU          | Core/year | 150.01 |
+| Memory       | GB/year  | 75.66  |
+| Storage Volume | GB/year | 4.58   |
+| Network      | GB       | 0.80   |
+| TCP External Port | Unit/year | 61.32  |
 
-+ **预警期**：当账号余额小于0时，用户将进入预警期。
-+ **临近删除期**：在预警期后的第4天，或者当欠费金额超过账户余额的一半时，用户将进入临近删除期。
-+ **即时删除期**：在临近删除期后的第3天，用户将进入临近删除期。
-+ **最终删除期**：在即时删除期后的第7天，如果账户仍未充值，用户将进入最终删除期。
+##### Guangzhou G (gzg)
 
-### 欠费处理
+| Name         | Unit     | Price  |
+|--------------|----------|--------|
+| CPU          | Core/year | 152.59 |
+| Memory       | GB/year  | 76.96  |
+| Storage Volume | GB/year | 4.66   |
+| Network      | GB       | 0.80   |
+| TCP External Port | Unit/year | 61.32  |
 
-+ **预警期**：已创建应用仍可使用，同时向用户发送欠费通知。
-+ **临近删除期**：已创建应用仍可使用，同时向用户发送临近删除资源的预警通知。
-+ **即时删除期**：暂停用户已创建资源，同时向用户发送确认删除资源的预警通知。
-+ **最终删除期**：最终删除期内用户的所有资源将被删除且无法恢复。
+#### Private Cloud
 
-在整个欠费周期内，用户将无法修改配置或新建资源。
+| Name         | Unit     | Price |
+|--------------|----------|-------|
+| CPU          | Core/year | 19.6  |
+| Memory       | GB/year  | 9.8   |
+| Storage Volume | GB/year | 0     |
+| Network      | GB       | 0     |
+| TCP External Port | Unit/year | 0     |
 
-### 通知方式
+## Cloud Host Billing Method Explanation
 
-我们将通过站内通知的方式，在用户进入欠费期时提醒用户，请用户注意查收并及时处理。
+### Configuration Cost Details
 
-### 注意事项
+### Storage Costs
 
-+ 请合理使用资源，避免产生欠费。
-+ 欠费后请及时充值，以免影响服务。
-+ 一旦资源在最终删除期被删除，即使后续充值，也无法恢复这些资源。
-+ 如果在最终删除前充值，暂停的资源可以在恢复欠费状态后自动恢复使用。
+| Item         | Unit       | Price            |
+|--------------|------------|------------------|
+| Storage      | GiB/hour   | ¥0.0008/GiB/hour |
+
+### Bandwidth Costs
+
+| Range        | Unit       | Price            |
+|--------------|------------|------------------|
+| [0 , 5)      | Mbps/hour  | ¥0.05/Mbps/hour  |
+| [5 , ∞)      | Mbps/hour  | ¥0.2/Mbps/hour   |
+
+### Instance Costs
+
+| Model     | CPU | Memory | GPU | Reference Cost   |
+|-----------|-----|--------|-----|------------------|
+| sealos-1  | 8C  | 64GB   | 0   | ¥2.2/hour        |
+| sealos-2  | 16C | 128GB  | 0   | ¥4.4/hour        |
+| sealos-3  | 32C | 256GB  | 0   | ¥8.8/hour        |
+
+## User Overdue Payment Handling Process
+
+### Overdue Periods
+
+When a user's account is overdue, the following process will be followed:
+
++ **Warning Period**: When the account balance is less than 0, the user enters the warning period.
++ **Approaching Deletion Period**: On the 4th day after the warning period, or when the overdue amount exceeds half of the account balance, the user enters the approaching deletion period.
++ **Immediate Deletion Period**: On the 3rd day after the approaching deletion period, the user enters the immediate deletion period.
++ **Final Deletion Period**: On the 7th day after the immediate deletion period, if the account is still not recharged, the user enters the final deletion period.
+
+### Overdue Payment Handling
+
++ **Warning Period**: Created applications are still billed and usable, and overdue notifications are sent to the user.
++ **Approaching Deletion Period**: Created applications are still usable, and an approaching deletion warning notification is sent to the user.
++ **Immediate Deletion Period**: User's created resources are suspended, and a confirmation of deletion warning notification is sent to the user.
++ **Final Deletion Period**: All resources of the user will be deleted and cannot be recovered during the final deletion period.
+
+Throughout the overdue period, users will be unable to modify configurations or create new resources.
+
+### Notification Method
+
+We will notify users through internal notifications, and public cloud users will also receive SMS notifications when entering the overdue period. Please check and handle them in time.
+
+### Notes
+
++ Please use resources reasonably to avoid overdue payments.
++ Please recharge in time after an overdue payment to avoid service disruption.
++ Once resources are deleted during the final deletion period, they cannot be recovered even after recharging.
++ If recharged before the final deletion, suspended resources can be automatically restored after resolving the overdue status.
