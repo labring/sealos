@@ -263,7 +263,12 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         </Box>
       </Flex>
 
-      <Modal isOpen={isOpen} onClose={closeMigrate} closeOnOverlayClick={false}>
+      <Modal
+        isOpen={isOpen}
+        onClose={closeMigrate}
+        closeOnOverlayClick={false}
+        lockFocusAcrossFrames={false}
+      >
         <ModalOverlay />
         {migrateStatus === MigrateStatusEnum.Prepare && (
           <ModalContent>

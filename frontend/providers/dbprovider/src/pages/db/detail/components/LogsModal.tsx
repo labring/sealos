@@ -112,7 +112,7 @@ const LogsModal = ({
   }, [dbName, podName]);
 
   return (
-    <Modal isOpen={true} onClose={closeFn} isCentered={true}>
+    <Modal isOpen={true} onClose={closeFn} isCentered={true} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent className={styles.logs} display={'flex'} maxW={'90vw'} h={'90vh'} m={0}>
         <Flex p={4} alignItems={'center'}>
@@ -148,7 +148,7 @@ const LogsModal = ({
             {t('Export')}
           </Button>
         </Flex>
-        <ModalCloseButton />
+        <ModalCloseButton top={'9px'} />
         <Box flex={'1 0 0'} h={0} position={'relative'}>
           <Box
             ref={LogBox}

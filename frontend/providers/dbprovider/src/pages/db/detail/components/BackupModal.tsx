@@ -121,7 +121,7 @@ const BackupModal = ({
             color: 'myGray.1000'
           }
         : {
-            color: 'myGray.500',
+            color: 'grayModern.600',
             onClick: () => setCurrentNav(nav)
           })
     }),
@@ -223,13 +223,18 @@ const BackupModal = ({
 
   return (
     <>
-      <Modal isOpen onClose={onClose} isCentered>
+      <Modal isOpen onClose={onClose} isCentered lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxW={'min(960px, 90vw)'} h={'480px'}>
           <ModalHeader>{t('Backup Database')}</ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton top={'9px'} />
           <ModalBody display={'flex'} pb={8}>
-            <Box flex={'0 0 220px'} pr={4} borderRight={theme.borders.sm} borderRightWidth={'2px'}>
+            <Box
+              flex={'0 0 220px'}
+              pr={4}
+              borderRight={theme.borders.base}
+              borderRightWidth={'2px'}
+            >
               <Box {...navStyle(NavEnum.manual)}>{t('Manual Backup')}</Box>
               <Flex {...navStyle(NavEnum.auto)} alignItems={'center'}>
                 <Box flex={1}>{t('Auto Backup')}</Box>

@@ -125,7 +125,7 @@ const Form = ({
     py: 4,
     pl: '46px',
     fontSize: '2xl',
-    color: 'myGray.900',
+    color: 'grayModern.900',
     fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
@@ -172,16 +172,16 @@ const Form = ({
                   }}
                   {...{
                     fontWeight: 'bold',
-                    borderColor: 'myGray.900'
+                    borderColor: 'grayModern.900'
                   }}
                   {...(activeNav === item.id
                     ? {
                         fontWeight: 'bold',
-                        borderColor: 'myGray.900',
+                        borderColor: 'grayModern.900',
                         backgroundColor: 'myWhite.600 !important'
                       }
                     : {
-                        color: 'myGray.500',
+                        color: 'grayModern.600',
                         borderColor: 'myGray.200',
                         backgroundColor: 'transparent'
                       })}
@@ -190,7 +190,7 @@ const Form = ({
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
-                    color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
+                    color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
                   />
                   <Box ml={4}>{t(item.label)}</Box>
                 </Flex>
@@ -236,7 +236,7 @@ const Form = ({
           {/* Migration Preparation */}
           <Box id="preparation" {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
+              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
               {t('Migration Preparation')}
             </Box>
             <Box px={'42px'} py={'24px'} userSelect={'none'}>
@@ -246,7 +246,7 @@ const Form = ({
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
+              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
               {t('Basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
@@ -337,7 +337,7 @@ const Form = ({
                 _hover={{ bg: '' }}
               >
                 <Flex alignItems={'center'}>
-                  <MyIcon name={'settings'} mr={5} w={'20px'} color={'myGray.500'} />
+                  <MyIcon name={'settings'} mr={5} w={'20px'} color={'grayModern.600'} />
                   <Box>{t('Advanced Configuration')}</Box>
                   <Box
                     bg={'myGray.100'}
@@ -346,7 +346,7 @@ const Form = ({
                     ml={3}
                     fontSize={'sm'}
                     borderRadius={'20px'}
-                    color={'myGray.600'}
+                    color={'grayModern.600'}
                     border={'1px solid'}
                     borderColor={'myGray.200'}
                   >

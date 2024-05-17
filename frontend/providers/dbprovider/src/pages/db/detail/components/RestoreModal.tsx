@@ -77,7 +77,7 @@ const BackupModal = ({
 
   return (
     <>
-      <Modal isOpen onClose={onClose}>
+      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxW={'min(600px, 90vw)'}>
           <ModalHeader>{t('Restore Database')}</ModalHeader>

@@ -48,10 +48,10 @@ const DBStatusTag = ({
         </Box>
         <MyIcon ml={3} w={'16px'} name={'statusDetail'} cursor={'pointer'} onClick={onOpen} />
       </Flex>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent minW={'520px'}>
-          <ModalHeader fontSize={'3xl'} display={'flex'}>
+          <ModalHeader display={'flex'} alignItems={'center'}>
             <Box flex={1}>{t(status.label)}</Box>
             <Flex
               h={'32px'}

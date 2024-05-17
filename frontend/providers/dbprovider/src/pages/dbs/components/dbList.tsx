@@ -110,7 +110,7 @@ const DBList = ({
       key: 'name',
       render: (item: DBListItemType) => {
         return (
-          <Box pl={4} color={'myGray.900'} fontSize={'md'}>
+          <Box pl={4} color={'grayModern.900'} fontSize={'md'}>
             {item.name}
           </Box>
         );

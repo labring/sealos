@@ -190,7 +190,7 @@ const Form = ({
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
-                    color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
+                    color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
                   />
                   <Box>{t(item.label)}</Box>
                 </Flex>
@@ -236,7 +236,7 @@ const Form = ({
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
+              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
               {t('Basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
@@ -260,7 +260,6 @@ const Form = ({
                           color={'grayModern.900'}
                           {...(getValues('dbType') === item.id
                             ? {
-                                filter: 'grayscale(0%)',
                                 bg: '#F9FDFE',
                                 borderColor: 'brightBlue.500',
                                 boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
@@ -268,10 +267,8 @@ const Form = ({
                             : {
                                 bg: '#F7F8FA',
                                 borderColor: 'grayModern.200',
-                                filter: 'grayscale(100%)',
                                 _hover: {
-                                  borderColor: '#85ccff',
-                                  filter: 'grayscale(0%)'
+                                  borderColor: '#85ccff'
                                 }
                               })}
                           onClick={() => {
@@ -342,7 +339,7 @@ const Form = ({
                   min={0}
                   step={1}
                 />
-                <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
+                <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
                   (Core)
                 </Box>
               </Flex>
@@ -477,7 +474,7 @@ const Form = ({
                         right={10}
                         top={'50%'}
                         transform={'translateY(-50%)'}
-                        color={'blackAlpha.600'}
+                        color={'grayModern.600'}
                       >
                         Gi
                       </Box>

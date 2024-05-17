@@ -66,7 +66,7 @@ const Logs = ({
           <Box
             flex={'1 0 0'}
             w={0}
-            color={'myGray.600'}
+            color={'grayModern.600'}
             userSelect={typeof children === 'string' ? 'all' : 'auto'}
           >
             {children}
@@ -86,7 +86,7 @@ const Logs = ({
           whiteSpace={'nowrap'}
           overflow={'hidden'}
           textOverflow={'ellipsis'}
-          color={'myGray.600'}
+          color={'grayModern.600'}
           cursor={'default'}
           border={'1px solid'}
           borderColor={'myGray.100'}
@@ -153,7 +153,7 @@ const Logs = ({
   }, [events, onCloseAnalysesModel, onEndAnalyses, onOpenAnalyses, onStartAnalyses, t, toast]);
 
   return (
-    <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered>
+    <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent h={'90vh'} maxW={'90vw'} m={0} display={'flex'} flexDirection={'column'}>
         <ModalCloseButton fontSize={16} top={6} right={6} />
@@ -189,7 +189,7 @@ const Logs = ({
         </Flex>
         <Grid py={5} flex={'1 0 0'} h={0} px={7} gridTemplateColumns={'450px 1fr'} gridGap={4}>
           <Flex flexDirection={'column'} h={'100%'}>
-            <Box mb={4} color={'myGray.600'}>
+            <Box mb={4} color={'grayModern.600'}>
               {t('Details')}
             </Box>
             <Box
@@ -226,7 +226,7 @@ const Logs = ({
           </Flex>
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
-              <Box color={'myGray.600'}>Events</Box>
+              <Box color={'grayModern.600'}>Events</Box>
               {/* {events.length > 0 && (
                 <Button
                   ml={3}
@@ -282,7 +282,7 @@ const Logs = ({
                   h={'100%'}
                 >
                   <MyIcon name="noEvents" w={'48px'} h={'48px'} color={'transparent'} />
-                  <Box mt={4} color={'myGray.600'}>
+                  <Box mt={4} color={'grayModern.600'}>
                     暂无 Events
                   </Box>
                 </Flex>

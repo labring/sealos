@@ -65,7 +65,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
               {...(index === selectedIndex
                 ? {
                     fontWeight: 'bold',
-                    borderColor: 'myGray.900',
+                    borderColor: 'grayModern.900',
                     backgroundColor: 'grayModern.100'
                   }
                 : {
@@ -99,12 +99,12 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           position={'relative'}
         >
           <Flex px={8} py={4} bg={'grayModern.50'}>
-            <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
+            <Box flex={1} fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
             </Box>
             <Box
               cursor={'pointer'}
-              color={'myGray.600'}
+              color={'grayModern.600'}
               _hover={{ color: '#219BF4' }}
               onClick={() => copyData(yamlList[selectedIndex].value)}
             >

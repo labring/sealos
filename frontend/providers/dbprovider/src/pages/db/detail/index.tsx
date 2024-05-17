@@ -99,8 +99,8 @@ const AppDetail = ({
           zIndex={9}
           transition={'0.4s'}
           bg={'white'}
-          border={theme.borders.sm}
-          borderRadius={'md'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
           {...(isLargeScreen
             ? {}
             : {
@@ -119,8 +119,8 @@ const AppDetail = ({
           w={0}
           h={'100%'}
           bg={'white'}
-          border={theme.borders.sm}
-          borderRadius={'md'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
         >
           <Flex p={'26px'} alignItems={'flex-start'}>
             {listNav.map((item) => (
@@ -137,7 +137,7 @@ const AppDetail = ({
                       borderBottomColor: 'black'
                     }
                   : {
-                      color: 'myGray.500',
+                      color: 'grayModern.600',
                       borderBottomColor: 'transparent',
                       onClick: () =>
                         router.replace(
@@ -149,7 +149,7 @@ const AppDetail = ({
               </Box>
             ))}
             <Box flex={1}></Box>
-            {listType === TabEnum.pod && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
+            {listType === TabEnum.pod && <Box color={'grayModern.600'}>{dbPods.length} Items</Box>}
             {listType === TabEnum.backup && !BackupTableRef.current?.backupProcessing && (
               <Flex alignItems={'center'}>
                 <Button

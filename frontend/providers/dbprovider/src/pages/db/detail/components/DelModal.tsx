@@ -52,17 +52,17 @@ const DelModal = ({
   }, [dbName, toast, t, onSuccess, onClose]);
 
   return (
-    <Modal isOpen onClose={onClose}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{t('Delete Warning')}</ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton top={'9px'} />
         <ModalBody pb={4}>
-          <Box color={'myGray.600'}>
+          <Box color={'grayModern.600'}>
             {t('Delete Hint')}
             <Box my={3}>
               {t('Please Enter')}{' '}
-              <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
+              <Box as={'span'} color={'grayModern.900'} fontWeight={'bold'} userSelect={'all'}>
                 {dbName}
               </Box>{' '}
               {t('Confirm')}
