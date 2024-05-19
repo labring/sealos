@@ -107,7 +107,7 @@ const Header = ({
       <Box ml={'4px'} mr={'18px'} fontSize={'2xl'} fontWeight={'bold'} color={'grayModern.900'}>
         {router.query.name || db.dbName}
       </Box>
-      <DBStatusTag status={db.status} conditions={db.conditions} showBorder />
+      <DBStatusTag status={db.status} conditions={db.conditions} />
       {!isLargeScreen && (
         <Box mx={4}>
           <Button

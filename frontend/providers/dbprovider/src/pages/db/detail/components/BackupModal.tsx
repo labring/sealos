@@ -402,8 +402,8 @@ const BackupModal = ({
                   </Box>
                   <Box textAlign={'end'}>
                     <Button
-                      isLoading={isLoadingSetAutoBackup}
                       variant={'primary'}
+                      isLoading={isLoadingSetAutoBackup}
                       // @ts-ignore
                       onClick={() => handleSubmitAuto(onclickSetAutoBackup)()}
                     >

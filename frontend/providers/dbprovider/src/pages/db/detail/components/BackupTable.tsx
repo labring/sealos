@@ -29,7 +29,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import dayjs from 'dayjs';
 import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useTranslation } from 'next-i18next';
-import { deleteBackup, getBackupPolicy, getBackupPolicyByCluster } from '@/api/backup';
+import { deleteBackup, getBackupPolicyByCluster } from '@/api/backup';
 import { getErrText } from '@/utils/tools';
 import { getBackupList } from '@/api/backup';
 import MyIcon from '@/components/Icon';
@@ -208,8 +208,9 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                   py={4}
                   key={item.key}
                   border={'none'}
-                  backgroundColor={'#F8F8FA'}
+                  backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
+                  color={'grayModern.600'}
                 >
                   {t(item.title)}
                 </Th>

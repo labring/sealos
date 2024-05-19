@@ -4,7 +4,7 @@ import MyIcon from '@/components/Icon';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { DBListItemType } from '@/types/db';
-import { Box, Button, Center, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, MenuButton, useTheme, Image } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useState } from 'react';
@@ -119,7 +119,12 @@ const DBList = ({
     {
       title: t('Type'),
       key: 'dbType',
-      render: (item: DBListItemType) => <>{DBComponentNameMap[item.dbType]}</>
+      render: (item: DBListItemType) => (
+        <Flex alignItems={'center'} gap={'6px'}>
+          <Image width={'20px'} height={'20px'} alt={item.id} src={`/images/${item.dbType}.svg`} />
+          {DBComponentNameMap[item.dbType]}
+        </Flex>
+      )
     },
     {
       title: t('Status'),

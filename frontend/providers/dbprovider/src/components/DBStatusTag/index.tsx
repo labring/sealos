@@ -42,7 +42,7 @@ const DBStatusTag = ({
         minW={'88px'}
         whiteSpace={'nowrap'}
       >
-        <Box w={'10px'} h={'10px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
+        <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
         <Box ml={2} flex={1}>
           {t(status.label)}
         </Box>
