@@ -17,7 +17,7 @@ export const LineStyleMap = [
   },
   {
     backgroundColor: '#FFF6ED',
-    lineColor: '##FB6514'
+    lineColor: '#FB6514'
   },
   {
     backgroundColor: '#FEF3F2',

@@ -37,6 +37,7 @@ const map = {
   infoCircle: require('./icons/infoCircle.svg').default,
   arrowUp: require('./icons/arrowUp.svg').default,
   book: require('./icons/book.svg').default,
+  upload: require('./icons/upload.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };

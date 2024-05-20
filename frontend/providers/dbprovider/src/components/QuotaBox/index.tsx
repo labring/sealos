@@ -52,16 +52,16 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
       <Box
         py={3}
         px={4}
-        borderBottom={theme.borders.base}
+        borderBottom={showBorder && theme.borders.base}
         color={'grayModern.900'}
         fontWeight={500}
       >
         {t('app.Resource Quota')}
       </Box>
-      <Box py={3} px={4}>
+      <Flex flexDirection={'column'} gap={'14px'} py={3} px={4}>
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
-            <Flex alignItems={'center'} mt="16px">
+            <Flex alignItems={'center'}>
               <Box flex={'0 0 60px'}>{t(item.type)}</Box>
               <Progress
                 flex={'1 0 0'}
@@ -78,7 +78,7 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
             </Flex>
           </MyTooltip>
         ))}
-      </Box>
+      </Flex>
     </Box>
   );
 };

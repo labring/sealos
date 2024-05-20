@@ -283,7 +283,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             {db.dbType !== 'milvus' && (
               <>
                 <Center
-                  minW={'75px'}
                   gap={'6px'}
                   h="28px"
                   color={'#24282C'}
@@ -410,7 +409,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   {SOURCE_PRICE.nodeports}
                   <SealosCoin ml="8px" name="currency" w="20px" h="20px"></SealosCoin>/ {t('Hour')}
                 </Center>
-                <Button mt="32px" variant={'primary'} onClick={openNetWorkService}>
+                <Button mt="32px" variant={'solid'} onClick={openNetWorkService}>
                   {t('Turn On')}
                 </Button>
               </Flex>

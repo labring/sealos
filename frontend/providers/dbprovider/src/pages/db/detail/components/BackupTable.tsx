@@ -8,6 +8,7 @@ import { getErrText } from '@/utils/tools';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Button,
   Flex,
   Table,
   TableContainer,
@@ -19,7 +20,7 @@ import {
   Tr,
   useDisclosure
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
@@ -158,26 +159,21 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       render: (item: BackupItemType) =>
         item.status.value !== BackupStatusEnum.InProgress ? (
           <Flex>
-            <Tooltip label={t('Restore Backup')}>
-              <Flex {...operationIconBoxStyles} onClick={() => setBackupInfo(item)}>
+            <MyTooltip label={t('Restore Backup')}>
+              <Button variant={'square'} onClick={() => setBackupInfo(item)}>
                 <MyIcon name={'restore'} {...operationIconStyles} />
-              </Flex>
-            </Tooltip>
-            {/* <Tooltip label={t('Download Backup')}>
-            <Flex {...operationIconBoxStyles}>
-              <MyIcon {...operationIconStyles} name={'download'} w={'16px'} />
-            </Flex>
-          </Tooltip> */}
-            <Tooltip label={t('Delete Backup')}>
-              <Flex
-                {...operationIconBoxStyles}
+              </Button>
+            </MyTooltip>
+            <MyTooltip label={t('Delete Backup')}>
+              <Button
+                variant={'square'}
                 mr={0}
                 _hover={{ bg: '#EFF0F1', color: 'red.600' }}
                 onClick={openConfirmDel(() => confirmDel(item.name))}
               >
                 <MyIcon name={'delete'} {...operationIconStyles} />
-              </Flex>
-            </Tooltip>
+              </Button>
+            </MyTooltip>
           </Flex>
         ) : null
     }

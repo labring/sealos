@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
-import { Box, Flex } from '@chakra-ui/react';
 import { SOURCE_PRICE } from '@/store/static';
-import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
+import { Box, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { useMemo } from 'react';
 
 export const colorMap = {
   cpu: '#33BABB',

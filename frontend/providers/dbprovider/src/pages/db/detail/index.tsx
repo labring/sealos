@@ -153,7 +153,7 @@ const AppDetail = ({
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
-                  variant={'primary'}
+                  variant={'solid'}
                   onClick={() => {
                     BackupTableRef.current?.openBackup();
                   }}
@@ -166,7 +166,7 @@ const AppDetail = ({
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
-                  variant={'primary'}
+                  variant={'solid'}
                   onClick={() => {
                     router.push(`/db/migrate?name=${dbName}&dbType=${dbType}`);
                   }}

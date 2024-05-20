@@ -278,7 +278,7 @@ const DBList = ({
         <Button
           minW={'156px'}
           h={'40px'}
-          variant={'primary'}
+          variant={'solid'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} />}
           onClick={() => router.push('/db/edit')}
         >

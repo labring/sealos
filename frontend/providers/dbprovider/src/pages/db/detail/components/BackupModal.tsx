@@ -278,7 +278,7 @@ const BackupModal = ({
                   <Box textAlign={'end'}>
                     <Button
                       isLoading={isLoading}
-                      variant={'primary'}
+                      variant={'solid'}
                       onClick={() => handleSubmitManual(openConfirm(onclickBackup))()}
                     >
                       {t('Start Backup')}
@@ -402,7 +402,7 @@ const BackupModal = ({
                   </Box>
                   <Box textAlign={'end'}>
                     <Button
-                      variant={'primary'}
+                      variant={'solid'}
                       isLoading={isLoadingSetAutoBackup}
                       // @ts-ignore
                       onClick={() => handleSubmitAuto(onclickSetAutoBackup)()}

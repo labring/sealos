@@ -195,8 +195,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   );
 
   return (
-    <Box h={'100%'} position={'relative'} px="26px" pb="40px">
-      <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
+    <Box h={'100%'} position={'relative'}>
+      <Flex borderTop={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
           <QuotaBox showBorder={false} />
           {/* {db && (
@@ -223,22 +223,18 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             />
           )} */}
         </Box>
-        <Box flex={1} pt="35px" px="68px" overflowY={'auto'}>
-          <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
+        <Box flex={1} pt="35px" px="40px" overflowY={'auto'}>
+          <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
             {t('Upload dump file')}
           </Text>
-
           <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
 
-          <Text mt="60px" color={'#24282C'} fontSize={'16px'} fontWeight={500}>
-            {t('Target Database')}
-          </Text>
-
           <Flex alignItems={'center'} mt="22px">
-            <Text fontSize={'14px'} fontWeight={400} w="160px" color={'#333333'}>
+            <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
               {t('DB Name')}
             </Text>
             <Input
+              width={'380px'}
               maxW={'400px'}
               isInvalid={!!formHook.formState?.errors?.databaseName}
               {...formHook.register('databaseName', {
@@ -248,14 +244,14 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           </Flex>
           {db?.dbType === 'mongodb' && (
             <Flex alignItems={'center'} mt="22px">
-              <Text fontSize={'14px'} fontWeight={400} w="160px" color={'#333333'}>
+              <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
                 {t('Collection Name')}
               </Text>
-              <Input maxW={'400px'} {...formHook.register('collectionName')} />
+              <Input width={'380px'} maxW={'400px'} {...formHook.register('collectionName')} />
             </Flex>
           )}
           <Flex justifyContent={'end'}>
-            <Button mt="40px" w="156px" h={'40px'} variant={'primary'} onClick={onOpen}>
+            <Button mt="40px" w={'100px'} h={'32px'} variant={'solid'} onClick={onOpen}>
               {t('Migrate Now')}
             </Button>
           </Flex>
@@ -292,8 +288,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
 
         {migrateStatus === MigrateStatusEnum.Progress && (
           <ModalContent>
+            <ModalCloseButton />
             <ModalBody>
-              <ModalCloseButton />
               <Flex
                 flexDirection={'column'}
                 alignItems={'center'}

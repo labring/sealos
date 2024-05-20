@@ -4,7 +4,7 @@ import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType } from '@/types/db';
-import { Box, Button, Center, Flex, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -101,12 +101,12 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <Center width={'36px'} height={'36px'} onClick={() => router.replace('/dbs')}>
+      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
         <MyIcon name="arrowLeft" w={'24px'} />
-      </Center>
-      <Box ml={'4px'} mr={'18px'} fontSize={'2xl'} fontWeight={'bold'} color={'grayModern.900'}>
-        {router.query.name || db.dbName}
-      </Box>
+        <Box ml={'4px'} mr={'18px'} fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
+          {router.query.name || db.dbName}
+        </Box>
+      </Flex>
       <DBStatusTag status={db.status} conditions={db.conditions} />
       {!isLargeScreen && (
         <Box mx={4}>

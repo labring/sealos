@@ -41,40 +41,51 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             })
           }
         />
-        <Box mt={3} borderRadius={'sm'} overflow={'hidden'} bg={'white'}>
+        <Flex
+          flexDirection={'column'}
+          mt={3}
+          borderRadius={'md'}
+          overflow={'hidden'}
+          bg={'white'}
+          p="4px"
+          border={theme.borders.base}
+        >
           {yamlList.map((file, index) => (
-            <Box
+            <Flex
               key={file.filename}
-              px={5}
-              py={3}
-              borderLeft={'2px solid'}
+              py={'8px'}
+              cursor={'pointer'}
               alignItems={'center'}
-              h={'48px'}
-              {...(yamlList.length > 1
+              h={'40px'}
+              borderRadius={'base'}
+              _hover={{
+                backgroundColor: 'grayModern.100'
+              }}
+              {...(index === selectedIndex
                 ? {
-                    cursor: 'pointer',
-                    _hover: {
-                      backgroundColor: 'myWhite.400'
-                    },
-                    ...(index === selectedIndex
-                      ? {
-                          fontWeight: 'bold',
-                          borderColor: 'grayModern.900',
-                          backgroundColor: 'myWhite.600 !important'
-                        }
-                      : {
-                          color: 'grayModern.600',
-                          borderColor: 'myGray.200',
-                          backgroundColor: 'transparent'
-                        })
+                    fontWeight: 'bold',
+                    borderColor: 'myGray.900',
+                    backgroundColor: 'grayModern.100'
                   }
-                : {})}
+                : {
+                    color: 'grayModern.900',
+                    borderColor: 'myGray.200',
+                    backgroundColor: 'transparent'
+                  })}
               onClick={() => setSelectedIndex(index)}
             >
-              {file.filename}
-            </Box>
+              <Box
+                w={'2px'}
+                h={'24px'}
+                justifySelf={'start'}
+                bg={'grayModern.900'}
+                borderRadius={'12px'}
+                opacity={selectedIndex === index ? 1 : 0}
+              ></Box>
+              <Box ml="18px">{file.filename}</Box>
+            </Flex>
           ))}
-        </Box>
+        </Flex>
       </Box>
       {!!yamlList[selectedIndex] && (
         <Flex

@@ -79,14 +79,23 @@ const MonitorChart = ({
         containLabel: true
       },
       xAxis: {
+        show: true,
         type: 'category',
         offset: 4,
         boundaryGap: false,
         axisLabel: {
-          interval: 10
+          interval: 10,
+          textStyle: {
+            color: '#667085'
+          }
         },
         axisTick: {
           show: false
+        },
+        axisLine: {
+          lineStyle: {
+            color: 'rgba(0, 0, 0, 0)'
+          }
         },
         data: data?.xData?.map((time) => dayjs(parseFloat(time) * 1000).format('HH:mm'))
       },

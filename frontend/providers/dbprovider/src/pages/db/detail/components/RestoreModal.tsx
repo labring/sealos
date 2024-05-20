@@ -103,7 +103,7 @@ const BackupModal = ({
               <Box mt={10} textAlign={'end'}>
                 <Button
                   isLoading={isLoading}
-                  variant={'primary'}
+                  variant={'solid'}
                   // @ts-ignore
                   onClick={() => handleSubmit(onclickRestore)()}
                 >
