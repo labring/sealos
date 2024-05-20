@@ -122,6 +122,8 @@ const MySelect = (
           }
           zIndex={99}
           transform={'translateY(40px) !important'}
+          overflow={'overlay'}
+          maxH={'300px'}
         >
           {list.map((item) => (
             <MenuItem
