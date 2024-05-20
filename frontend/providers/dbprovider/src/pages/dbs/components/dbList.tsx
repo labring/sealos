@@ -1,18 +1,17 @@
 import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { useToast } from '@/hooks/useToast';
+import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
+import { useConfirm } from '@/hooks/useConfirm';
 import { useGlobalStore } from '@/store/global';
 import { DBListItemType } from '@/types/db';
-import { Box, Button, Center, Flex, MenuButton, useTheme, Image } from '@chakra-ui/react';
+import { printMemory } from '@/utils/tools';
+import { Box, Button, Center, Flex, Image, MenuButton, useTheme } from '@chakra-ui/react';
+import { MyTable, SealosMenu, useMessage } from '@sealos/ui';
+import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useState } from 'react';
-import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
-import { useConfirm } from '@/hooks/useConfirm';
-import { printMemory } from '@/utils/tools';
-import { MyTable, SealosMenu } from '@sealos/ui';
-import { useTranslation } from 'next-i18next';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -25,7 +24,7 @@ const DBList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const theme = useTheme();
   const router = useRouter();
 

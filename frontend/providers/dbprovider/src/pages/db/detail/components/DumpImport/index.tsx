@@ -1,4 +1,4 @@
-import { applyYamlList, getDBSecret } from '@/api/db';
+import { getDBSecret } from '@/api/db';
 import {
   applyDumpCR,
   deleteMigrateJobByName,
@@ -8,7 +8,7 @@ import {
 import { uploadFile } from '@/api/platform';
 import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
-import { useToast } from '@/hooks/useToast';
+import QuotaBox from '@/components/QuotaBox';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
 import {
@@ -21,18 +21,17 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Spinner,
   Text,
   useDisclosure
 } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import QuotaBox from '@/components/QuotaBox';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -45,7 +44,7 @@ enum MigrateStatusEnum {
 export default function DumpImport({ db }: { db?: DBDetailType }) {
   const { t } = useTranslation();
   const [files, setFiles] = useState<File[]>([]);
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const [migrateStatus, setMigrateStatus] = useState<MigrateStatusEnum>(MigrateStatusEnum.Prepare);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const formHook = useForm<DumpForm>();
@@ -199,7 +198,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     <Box h={'100%'} position={'relative'} px="26px" pb="40px">
       <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
-          <QuotaBox />
+          <QuotaBox showBorder={false} />
           {/* {db && (
             <PriceBox
               components={[
@@ -275,17 +274,18 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             <ModalHeader>{t('Prompt')}</ModalHeader>
             <ModalBody>
               <ModalCloseButton />
-              <Flex>
+              <Flex mb={'44px'}>
                 <Text> {t('Are you sure to perform database migration')} </Text>
               </Flex>
-              <ModalFooter>
-                <Button colorScheme={'gray'} onClick={closeMigrate}>
+
+              <Flex justifyContent={'flex-end'}>
+                <Button variant={'outline'} onClick={closeMigrate}>
                   {t('Cancel')}
                 </Button>
-                <Button ml={3} variant={'primary'} onClick={handleConfirm}>
+                <Button ml={3} variant={'solid'} onClick={handleConfirm}>
                   {t('Confirm')}
                 </Button>
-              </ModalFooter>
+              </Flex>
             </ModalBody>
           </ModalContent>
         )}

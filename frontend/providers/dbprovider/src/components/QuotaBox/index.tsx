@@ -24,7 +24,7 @@ const sourceMap = {
   }
 };
 
-const QuotaBox = () => {
+const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
   const { t } = useTranslation();
   const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
@@ -48,7 +48,7 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
-    <Box borderRadius={'md'} border={theme.borders.base} bg={'#FFF'}>
+    <Box borderRadius={'md'} border={showBorder && theme.borders.base} bg={'#FFF'}>
       <Box
         py={3}
         px={4}

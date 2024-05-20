@@ -1,15 +1,15 @@
-import React, { Dispatch, useCallback, useState } from 'react';
-import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
-import type { DBDetailType } from '@/types/db';
-import { useRouter } from 'next/router';
-import { restartDB, pauseDBByName, startDBByName } from '@/api/db';
-import { useToast } from '@/hooks/useToast';
-import { useConfirm } from '@/hooks/useConfirm';
-import { defaultDBDetail } from '@/constants/db';
+import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import dynamic from 'next/dynamic';
+import { defaultDBDetail } from '@/constants/db';
+import { useConfirm } from '@/hooks/useConfirm';
+import type { DBDetailType } from '@/types/db';
+import { Box, Button, Center, Flex, useDisclosure } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import React, { Dispatch, useCallback, useState } from 'react';
 
 const DelModal = dynamic(() => import('./DelModal'));
 const BackupModal = dynamic(() => import('./BackupModal'));
@@ -25,7 +25,7 @@ const Header = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const {
     isOpen: isOpenDelModal,
     onOpen: onOpenDelModal,
@@ -129,7 +129,7 @@ const Header = ({
         mr={5}
         h={'36px'}
         borderColor={'myGray.200'}
-        leftIcon={<MyIcon name={'change'} w={'14px'} />}
+        leftIcon={<MyIcon name={'change'} w={'20px'} />}
         isLoading={loading}
         variant={'base'}
         bg={'white'}
@@ -161,7 +161,7 @@ const Header = ({
           minW={'97px'}
           h={'40px'}
           variant={'outline'}
-          leftIcon={<MyIcon name="continue" w={'14px'} />}
+          leftIcon={<MyIcon name="continue" w={'20px'} />}
           isLoading={loading}
           onClick={handleStartApp}
         >

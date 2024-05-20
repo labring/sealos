@@ -1,32 +1,31 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { getPodEvents } from '@/api/db';
+import MyIcon from '@/components/Icon';
+import MyMenu from '@/components/Menu';
+import { defaultPod } from '@/constants/db';
+import { useLoading } from '@/hooks/useLoading';
+import { streamFetch } from '@/services/streamFetch';
+import type { PodDetailType, PodEvent } from '@/types/db';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalCloseButton,
-  ModalHeader,
-  ModalBody,
   Box,
   Flex,
   Grid,
-  Button,
-  useTheme,
+  MenuButton,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Tooltip,
   useDisclosure,
-  MenuButton
+  useTheme
 } from '@chakra-ui/react';
-import type { PodDetailType, PodEvent } from '@/types/db';
-import { Tooltip } from '@chakra-ui/react';
-import { getPodEvents } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
-import { useLoading } from '@/hooks/useLoading';
-import MyIcon from '@/components/Icon';
-import { streamFetch } from '@/services/streamFetch';
-import { useToast } from '@/hooks/useToast';
-import MyMenu from '@/components/Menu';
-import { ChevronDownIcon } from '@chakra-ui/icons';
-import { defaultPod } from '@/constants/db';
 import { useTranslation } from 'next-i18next';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useMessage } from '@sealos/ui';
 import styles from '../index.module.scss';
 
 const Logs = ({
@@ -46,7 +45,7 @@ const Logs = ({
   const theme = useTheme();
   const controller = useRef(new AbortController());
   const { Loading } = useLoading();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const [events, setEvents] = useState<PodEvent[]>([]);
   const [eventAnalysesText, setEventAnalysesText] = useState('');
   const { isOpen: isAnalyzing, onOpen: onStartAnalyses, onClose: onEndAnalyses } = useDisclosure();

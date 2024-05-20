@@ -7,6 +7,7 @@ import { Tabs } from '@sealos/ui';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import styles from './index.module.scss';
+import { useTranslation } from 'next-i18next';
 
 const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
@@ -14,6 +15,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   const { name } = router.query as QueryType;
   const { copyData } = useCopyData();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { t } = useTranslation();
 
   return (
     <Grid
@@ -26,8 +28,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
       <Box>
         <Tabs
           list={[
-            { id: 'form', label: 'Config Form' },
-            { id: 'yaml', label: 'YAML File' }
+            { id: 'form', label: t('Config Form') },
+            { id: 'yaml', label: t('YAML File') }
           ]}
           activeId={'yaml'}
           onChange={() =>

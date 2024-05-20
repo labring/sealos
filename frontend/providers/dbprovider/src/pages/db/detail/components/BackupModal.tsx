@@ -1,33 +1,32 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { createBackup, updateBackupPolicy } from '@/api/backup';
+import Tip from '@/components/Tip';
+import { DBBackupMethodNameMap, DBTypeEnum } from '@/constants/db';
+import { useConfirm } from '@/hooks/useConfirm';
+import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
+import { convertCronTime, getErrText } from '@/utils/tools';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   Box,
   Button,
-  useTheme,
+  Checkbox,
   Flex,
   Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
   Switch,
-  Checkbox
+  useTheme
 } from '@chakra-ui/react';
-import { useConfirm } from '@/hooks/useConfirm';
-import { createBackup, updateBackupPolicy } from '@/api/backup';
+import { MySelect, Tabs, useMessage } from '@sealos/ui';
 import { useMutation } from '@tanstack/react-query';
-import { getErrText, convertCronTime } from '@/utils/tools';
-import { useToast } from '@/hooks/useToast';
 import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
-import Tip from '@/components/Tip';
-import { InfoOutlineIcon, TimeIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'next-i18next';
+import { useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
-import { Tabs, MySelect } from '@sealos/ui';
-import { DBBackupMethodNameMap, DBTypeEnum } from '@/constants/db';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 enum NavEnum {
   manual = 'manual',
@@ -49,7 +48,7 @@ const BackupModal = ({
 }) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
 
   const { openConfirm, ConfirmChild } = useConfirm({
     title: t('Confirm') || 'Confirm',
@@ -264,8 +263,8 @@ const BackupModal = ({
                     <Flex alignItems={'center'}>
                       <Box flex={'0 0 80px'}>{t('Backup Name')}</Box>
                       <Input
-                        maxW={'300px'}
-                        bg={'myWhite.300'}
+                        width={'328px'}
+                        maxW={'328px'}
                         {...manualRegister('backupName', {
                           required: t('Backup Name cannot empty') || 'Backup Name cannot empty'
                         })}
@@ -273,7 +272,7 @@ const BackupModal = ({
                     </Flex>
                     <Flex mt={7} alignItems={'center'}>
                       <Box flex={'0 0 80px'}>{t('Remark')}</Box>
-                      <Input maxW={'300px'} bg={'myWhite.300'} {...manualRegister('remark')} />
+                      <Input width={'328px'} maxW={'328px'} {...manualRegister('remark')} />
                     </Flex>
                   </Box>
                   <Box textAlign={'end'}>
@@ -295,9 +294,9 @@ const BackupModal = ({
                       <Tabs
                         w={'220px'}
                         list={[
-                          { id: 'hour', label: 'Hour' },
-                          { id: 'day', label: 'Day' },
-                          { id: 'week', label: 'Week' }
+                          { id: 'hour', label: t('Hour') },
+                          { id: 'day', label: t('Day') },
+                          { id: 'week', label: t('Week') }
                         ]}
                         activeId={getAutoValues('type')}
                         size={'sm'}
@@ -366,8 +365,9 @@ const BackupModal = ({
                     <Flex mt={7} alignItems={'center'}>
                       <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
                       <Input
+                        height={'35px'}
                         maxW={'100px'}
-                        bg={'myWhite.300'}
+                        bg={'#F7F8FA'}
                         borderTopRightRadius={0}
                         borderBottomRightRadius={0}
                         _focus={{

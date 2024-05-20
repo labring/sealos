@@ -10,12 +10,14 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
+  Center,
   Flex,
   FormControl,
   Grid,
   Input,
   Switch,
-  Text
+  Text,
+  useTheme
 } from '@chakra-ui/react';
 import { Tabs } from '@sealos/ui';
 import 'github-markdown-css/github-markdown-light.css';
@@ -35,6 +37,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
+  const theme = useTheme();
   const router = useRouter();
   const { name, dbType = 'apecloud-mysql' } = router.query as {
     name: string;
@@ -51,17 +54,17 @@ const Form = ({
   const navList = [
     {
       id: 'preparation',
-      label: 'Migration Preparation',
-      icon: 'formInfo'
+      label: t('Migration Preparation'),
+      icon: 'book'
     },
     {
       id: 'baseInfo',
-      label: 'Basic',
+      label: t('Basic'),
       icon: 'formInfo'
     },
     {
       id: 'settings',
-      label: 'Advanced Configuration',
+      label: t('Advanced Configuration'),
       icon: 'settings'
     }
   ];
@@ -115,21 +118,22 @@ const Form = ({
   );
 
   const boxStyles = {
-    border: '1px solid #DEE0E2',
-    borderRadius: 'sm',
+    border: theme.borders.base,
+    borderRadius: 'lg',
     mb: 4,
     bg: 'white'
   };
 
   const headerStyles = {
     py: 4,
-    pl: '46px',
-    fontSize: '2xl',
+    pl: '42px',
+    borderTopRadius: 'lg',
+    fontSize: 'xl',
     color: 'grayModern.900',
     fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'myWhite.600'
+    backgroundColor: 'grayModern.50'
   };
 
   return (
@@ -144,8 +148,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: 'Config Form' },
-              { id: 'yaml', label: 'YAML File' }
+              { id: 'form', label: t('Config Form') },
+              { id: 'yaml', label: t('YAML File') }
             ]}
             activeId={'form'}
             onChange={() => {
@@ -157,42 +161,43 @@ const Form = ({
               });
             }}
           />
-          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+          <Box
+            mt={3}
+            borderRadius={'md'}
+            overflow={'hidden'}
+            backgroundColor={'white'}
+            border={theme.borders.base}
+            p={'4px'}
+          >
             {navList.map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
-                  px={5}
-                  py={3}
+                  borderRadius={'base'}
                   cursor={'pointer'}
-                  borderLeft={'2px solid'}
+                  gap={'8px'}
                   alignItems={'center'}
-                  h={'48px'}
+                  h={'40px'}
                   _hover={{
-                    backgroundColor: 'myWhite.400'
+                    backgroundColor: 'grayModern.100'
                   }}
-                  {...{
-                    fontWeight: 'bold',
-                    borderColor: 'grayModern.900'
-                  }}
-                  {...(activeNav === item.id
-                    ? {
-                        fontWeight: 'bold',
-                        borderColor: 'grayModern.900',
-                        backgroundColor: 'myWhite.600 !important'
-                      }
-                    : {
-                        color: 'grayModern.600',
-                        borderColor: 'myGray.200',
-                        backgroundColor: 'transparent'
-                      })}
+                  color="grayModern.900"
+                  backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}
                 >
+                  <Box
+                    w={'2px'}
+                    h={'24px'}
+                    justifySelf={'start'}
+                    bg={'grayModern.900'}
+                    borderRadius={'12px'}
+                    opacity={activeNav === item.id ? 1 : 0}
+                  />
                   <MyIcon
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
                     color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
                   />
-                  <Box ml={4}>{t(item.label)}</Box>
+                  <Box>{t(item.label)}</Box>
                 </Flex>
               </Box>
             ))}
@@ -236,7 +241,7 @@ const Form = ({
           {/* Migration Preparation */}
           <Box id="preparation" {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
+              <MyIcon name={'book'} mr={5} w={'20px'} color={'grayModern.600'} />
               {t('Migration Preparation')}
             </Box>
             <Box px={'42px'} py={'24px'} userSelect={'none'}>
@@ -335,23 +340,23 @@ const Form = ({
                 {...headerStyles}
                 justifyContent={'space-between'}
                 _hover={{ bg: '' }}
+                borderRadius={'lg'}
               >
                 <Flex alignItems={'center'}>
                   <MyIcon name={'settings'} mr={5} w={'20px'} color={'grayModern.600'} />
                   <Box>{t('Advanced Configuration')}</Box>
-                  <Box
-                    bg={'myGray.100'}
-                    w={'46px'}
+                  <Center
+                    bg={'#E8EBF0'}
+                    w={'48px'}
+                    height={'28px'}
                     py={'2px'}
                     ml={3}
-                    fontSize={'sm'}
-                    borderRadius={'20px'}
+                    fontSize={'base'}
+                    borderRadius={'33px'}
                     color={'grayModern.600'}
-                    border={'1px solid'}
-                    borderColor={'myGray.200'}
                   >
                     {t('Option')}
-                  </Box>
+                  </Center>
                 </Flex>
                 <AccordionIcon w={'1.3em'} h={'1.3em'} color={'myGray.700'} />
               </AccordionButton>

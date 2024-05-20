@@ -1,6 +1,6 @@
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { Box, Flex, Icon, Text, type BoxProps } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useRef, useState } from 'react';
 
@@ -14,7 +14,7 @@ interface Props extends BoxProps {
 const FileSelect = ({ fileExtension, setFiles, multiple = false, files, ...props }: Props) => {
   const { Loading: FileSelectLoading } = useLoading();
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const [isDragging, setIsDragging] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const SelectFileDom = useRef<HTMLInputElement>(null);

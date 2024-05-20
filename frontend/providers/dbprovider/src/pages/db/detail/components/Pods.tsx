@@ -3,7 +3,6 @@ import MyIcon from '@/components/Icon';
 import PodStatus from '@/components/PodStatus';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useDBStore } from '@/store/db';
 import type { PodDetailType } from '@/types/db';
 import {
@@ -18,7 +17,7 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
-import { MyTooltip } from '@sealos/ui';
+import { MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -29,7 +28,7 @@ const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
 
 const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();

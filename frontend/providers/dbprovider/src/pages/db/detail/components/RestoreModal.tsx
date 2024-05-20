@@ -1,6 +1,5 @@
 import { createDB } from '@/api/db';
 import Tip from '@/components/Tip';
-import { useToast } from '@/hooks/useToast';
 import { BackupItemType, DBDetailType } from '@/types/db';
 import { getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
@@ -16,6 +15,7 @@ import {
   ModalHeader,
   ModalOverlay
 } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useMutation } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
@@ -37,7 +37,7 @@ const BackupModal = ({
   if (!db) return <></>;
   const router = useRouter();
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
 
   const { register, handleSubmit, getValues } = useForm({
     defaultValues: {

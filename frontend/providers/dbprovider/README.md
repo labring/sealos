@@ -38,7 +38,6 @@
 │   │   ├── useConfirm.tsx
 │   │   ├── useLoading.tsx
 │   │   ├── useScreen.ts
-│   │   └── useToast.ts
 │   ├── mock
 │   ├── pages
 │   │   ├── 404.tsx

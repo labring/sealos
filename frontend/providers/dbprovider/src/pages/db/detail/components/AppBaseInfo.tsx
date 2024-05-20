@@ -7,7 +7,6 @@ import {
 } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
-import { useToast } from '@/hooks/useToast';
 import useEnvStore from '@/store/env';
 import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType } from '@/types/db';
@@ -28,7 +27,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { MyTooltip, SealosCoin } from '@sealos/ui';
+import { MyTooltip, SealosCoin, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
@@ -42,7 +41,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const [showSecret, setShowSecret] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(

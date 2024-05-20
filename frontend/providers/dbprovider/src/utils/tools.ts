@@ -1,7 +1,7 @@
+import { useMessage } from '@sealos/ui';
+import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
-import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
-import { format, set, startOfDay, getDay, addHours } from 'date-fns';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
@@ -11,7 +11,7 @@ export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH
  * copy text data
  */
 export const useCopyData = () => {
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { t } = useTranslation();
 
   return {

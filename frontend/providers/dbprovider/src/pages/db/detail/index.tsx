@@ -1,12 +1,11 @@
-import { DBTypeEnum } from '@/constants/db';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useDBStore } from '@/store/db';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Button, Flex, useTheme } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -67,7 +66,7 @@ const AppDetail = ({
   }, [SystemEnv, dbType]);
 
   const theme = useTheme();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);

@@ -2,7 +2,6 @@ import { deleteMigrateByName, getMigrateList, getMigratePodList } from '@/api/mi
 import MyIcon from '@/components/Icon';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { MigrateItemType } from '@/types/migrate';
 import { getErrText } from '@/utils/tools';
 import {
@@ -17,6 +16,7 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
@@ -27,7 +27,7 @@ import MigrateStatus from './MigrateStatus';
 export const MigrateTable = ({ dbName }: { dbName: string }) => {
   if (!dbName) return <></>;
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const [migrateName, setMigrateName] = useState('');
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
@@ -147,8 +147,9 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
                   py={4}
                   key={item.key}
                   border={'none'}
-                  backgroundColor={'#F8F8FA'}
+                  backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
+                  color={'grayModern.600'}
                 >
                   {t(item.title)}
                 </Th>

@@ -1,38 +1,37 @@
-import React, {
-  forwardRef,
-  useCallback,
-  ForwardedRef,
-  useImperativeHandle,
-  useState,
-  useMemo
-} from 'react';
+import { deleteBackup, getBackupList, getBackupPolicyByCluster } from '@/api/backup';
+import MyIcon from '@/components/Icon';
+import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useLoading } from '@/hooks/useLoading';
+import type { BackupItemType, DBDetailType } from '@/types/db';
+import { getErrText } from '@/utils/tools';
+import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
   Flex,
-  useDisclosure,
-  Tooltip
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tooltip,
+  Tr,
+  useDisclosure
 } from '@chakra-ui/react';
-import { QuestionOutlineIcon } from '@chakra-ui/icons';
-import type { BackupItemType, DBDetailType } from '@/types/db';
-import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
-import dynamic from 'next/dynamic';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useConfirm } from '@/hooks/useConfirm';
 import dayjs from 'dayjs';
-import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useTranslation } from 'next-i18next';
-import { deleteBackup, getBackupPolicyByCluster } from '@/api/backup';
-import { getErrText } from '@/utils/tools';
-import { getBackupList } from '@/api/backup';
-import MyIcon from '@/components/Icon';
+import dynamic from 'next/dynamic';
+import React, {
+  ForwardedRef,
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useState
+} from 'react';
 
 const BackupModal = dynamic(() => import('./BackupModal'));
 const RestoreModal = dynamic(() => import('./RestoreModal'));
@@ -45,7 +44,7 @@ export type ComponentRef = {
 const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
   if (!db) return <></>;
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const {
     isOpen: isOpenBackupModal,
