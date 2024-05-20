@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/jaevor/go-nanoid"
@@ -73,13 +72,10 @@ const (
 // TerminalReconciler reconciles a Terminal object
 type TerminalReconciler struct {
 	client.Client
-	Scheme          *runtime.Scheme
-	recorder        record.EventRecorder
-	Config          *rest.Config
-	terminalDomain  string
-	terminalPort    string
-	secretName      string
-	secretNamespace string
+	Scheme    *runtime.Scheme
+	recorder  record.EventRecorder
+	Config    *rest.Config
+	CtrConfig *Config
 }
 
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals,verbs=get;list;watch;create;update;patch;delete
@@ -90,15 +86,6 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Terminal object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx, "terminal", req.NamespacedName)
 	terminal := &terminalv1.Terminal{}
@@ -172,7 +159,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string, recLabels map[string]string) error {
 	var err error
-	host := hostname + "." + r.terminalDomain
+	host := hostname + "." + r.CtrConfig.Global.CloudDomain
 	switch terminal.Spec.IngressType {
 	case terminalv1.Nginx:
 		err = r.syncNginxIngress(ctx, terminal, host, recLabels)
@@ -384,43 +371,11 @@ func isExpired(terminal *terminalv1.Terminal) bool {
 	return lastUpdateTime.Add(duration).Before(time.Now())
 }
 
-func getDomain() string {
-	domain := os.Getenv("DOMAIN")
-	if domain == "" {
-		return DefaultDomain
-	}
-	return domain
-}
-
-func getPort() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		return DefaultPort
-	}
-	return port
-}
-
-func getSecretName() string {
-	secretName := os.Getenv("SECRET_NAME")
-	if secretName == "" {
-		return DefaultSecretName
-	}
-	return secretName
-}
-
-func getSecretNamespace() string {
-	secretNamespace := os.Getenv("SECRET_NAMESPACE")
-	if secretNamespace == "" {
-		return DefaultSecretNamespace
-	}
-	return secretNamespace
-}
-
 func (r *TerminalReconciler) getPort() string {
-	if r.terminalPort == "" || r.terminalPort == "80" || r.terminalPort == "443" {
+	if r.CtrConfig.Global.CloudPort == "" || r.CtrConfig.Global.CloudPort == "80" || r.CtrConfig.Global.CloudPort == "443" {
 		return ""
 	}
-	return ":" + r.terminalPort
+	return ":" + r.CtrConfig.Global.CloudPort
 }
 
 func NewCache() cache.NewCacheFunc {
@@ -443,10 +398,6 @@ func NewCache() cache.NewCacheFunc {
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
-	r.terminalDomain = getDomain()
-	r.terminalPort = getPort()
-	r.secretName = getSecretName()
-	r.secretNamespace = getSecretNamespace()
 	r.Config = mgr.GetConfig()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminalv1.Terminal{}).

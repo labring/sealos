@@ -23,9 +23,6 @@ spec:
     desc:
   icon: https://cloud.sealos.io/logo.svg
   menuData:
-    nameColor: text-black
-    helpDropDown:
-    helpDocs:
   displayType: normal
 ```
 

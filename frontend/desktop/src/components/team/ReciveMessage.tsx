@@ -39,7 +39,7 @@ export default function ReciveMessage({
   });
   const { t, i18n } = useTranslation();
   const inviteTips = ({ managerName, teamName, role }: Record<string, string>) =>
-    t('Recive Tips', {
+    t('Receive Tips', {
       managerName,
       teamName,
       role

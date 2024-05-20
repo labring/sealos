@@ -1,8 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/services/backend/db/init';
-import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
-import { switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
 import { validate } from 'uuid';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { generateAccessToken, generateAppToken, verifyAccessToken } from '@/services/backend/auth';
@@ -29,9 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const newWorkspaceItem = queryResults.find((item) => item.workspace.uid === ns_uid);
     if (!newWorkspaceItem)
       return jsonRes(res, { code: 403, message: 'You are not in this workspace' });
-    const oldKcRaw = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
-    if (!oldKcRaw) return jsonRes(res, { code: 404, message: 'The kubeconfig is not found' });
-    const kubeconfig = switchKubeconfigNamespace(oldKcRaw, newWorkspaceItem.workspace.id);
     const jwtPayload = {
       workspaceUid: newWorkspaceItem.workspaceUid,
       workspaceId: newWorkspaceItem.workspace.id,
@@ -45,7 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const appToken = generateAppToken(jwtPayload);
     const data = {
       token,
-      kubeconfig,
       appToken
     };
     return jsonRes(res, {

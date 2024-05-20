@@ -1,10 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-
-const clientId = process.env.GITHUB_CLIENT_ID!;
-const clientSecret = process.env.GITHUB_CLIENT_SECRET!;
 import { TgithubToken, TgithubUser } from '@/types/user';
-
 import { enableGithub } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { persistImage } from '@/services/backend/persistImage';
@@ -12,6 +8,8 @@ import { isNumber } from 'lodash';
 import { ProviderType } from 'prisma/global/generated/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const clientId = global.AppConfig?.desktop.auth.idp.github?.clientID!;
+  const clientSecret = global.AppConfig?.desktop.auth.idp.github?.clientSecret!;
   try {
     if (!enableGithub()) {
       throw new Error('github clinet is not defined');

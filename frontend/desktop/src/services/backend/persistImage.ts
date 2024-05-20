@@ -3,6 +3,7 @@ import * as Minio from 'minio';
 import sharp from 'sharp';
 import { enablePersistImage } from '@/services/enable';
 
+// todo change env to configs
 const endPoint = process.env.OS_URL!;
 const bucketName = process.env.OS_BUCKET_NAME!;
 const port = Number(process.env.OS_PORT)!;

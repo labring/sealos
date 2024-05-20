@@ -62,18 +62,20 @@ import (
 type MonitorReconciler struct {
 	client.Client
 	logr.Logger
-	Interval              time.Duration
-	Scheme                *runtime.Scheme
-	stopCh                chan struct{}
-	wg                    sync.WaitGroup
-	periodicReconcile     time.Duration
-	NvidiaGpu             map[string]gpu.NvidiaGPU
-	DBClient              database.Interface
-	TrafficClient         database.Interface
-	Properties            *resources.PropertyTypeLS
-	PromURL               string
-	ObjStorageClient      *minio.Client
-	ObjectStorageInstance string
+	Interval                time.Duration
+	Scheme                  *runtime.Scheme
+	stopCh                  chan struct{}
+	wg                      sync.WaitGroup
+	periodicReconcile       time.Duration
+	NvidiaGpu               map[string]gpu.NvidiaGPU
+	DBClient                database.Interface
+	TrafficClient           database.Interface
+	Properties              *resources.PropertyTypeLS
+	PromURL                 string
+	currentObjectMetrics    map[string]objstorage.MetricData
+	ObjStorageClient        *minio.Client
+	ObjStorageMetricsClient *objstorage.MetricsClient
+	ObjectStorageInstance   string
 }
 
 type quantity struct {
@@ -236,6 +238,9 @@ func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.Namespace
 		r.Logger.Error(fmt.Errorf("no namespace to process"), "")
 		return nil
 	}
+	if err := r.preMonitorResourceUsage(); err != nil {
+		r.Logger.Error(err, "failed to pre monitor resource usage")
+	}
 	sem := semaphore.NewWeighted(concurrentLimit)
 	wg := sync.WaitGroup{}
 	wg.Add(len(namespaceList.Items))
@@ -254,6 +259,18 @@ func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.Namespace
 	}
 	wg.Wait()
 	logger.Info("end processNamespaceList", "time", time.Now().Format("2006-01-02 15:04:05"))
+	return nil
+}
+
+func (r *MonitorReconciler) preMonitorResourceUsage() error {
+	if r.ObjStorageMetricsClient != nil {
+		metrics, err := objstorage.QueryUserUsage(r.ObjStorageMetricsClient)
+		if err != nil {
+			return fmt.Errorf("failed to query object storage metrics: %w", err)
+		}
+		r.currentObjectMetrics = metrics
+		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
+	}
 	return nil
 }
 
@@ -322,8 +339,12 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to list svc: %v", err)
 	}
 	for _, svc := range svcList.Items {
-		if svc.Spec.Type != corev1.ServiceTypeNodePort {
+		if svc.Spec.Type != corev1.ServiceTypeNodePort || len(svc.Spec.Ports) == 0 {
 			continue
+		}
+		port := make(map[int32]struct{})
+		for i := range svc.Spec.Ports {
+			port[svc.Spec.Ports[i].NodePort] = struct{}{}
 		}
 		svcRes := resources.NewResourceNamed(&svc)
 		if resUsed[svcRes.String()] == nil {
@@ -331,7 +352,7 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 			resUsed[svcRes.String()] = initResources()
 		}
 		// nodeport 1:1000, the measurement is quantity 1000
-		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(1000, resource.BinarySI))
+		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI))
 	}
 
 	var monitors []*resources.Monitor
@@ -375,24 +396,19 @@ func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]
 }
 
 func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-	buckets, err := objstorage.ListUserObjectStorageBucket(r.ObjStorageClient, user)
-	if err != nil {
-		return fmt.Errorf("failed to list object storage user %s storage size: %w", user, err)
-	}
-	if len(buckets) == 0 {
+	if r.currentObjectMetrics == nil || r.currentObjectMetrics[user].Usage == nil {
 		return nil
 	}
-	for i := range buckets {
-		size, count := objstorage.GetObjectStorageSize(r.ObjStorageClient, buckets[i])
-		if count == 0 || size <= 0 {
+	for bucket, usage := range r.currentObjectMetrics[user].Usage {
+		if bucket == "" || usage <= 0 {
 			continue
 		}
-		objStorageNamed := resources.NewObjStorageResourceNamed(buckets[i])
+		objStorageNamed := resources.NewObjStorageResourceNamed(bucket)
 		(*namedMap)[objStorageNamed.String()] = objStorageNamed
 		if _, ok := (*resMap)[objStorageNamed.String()]; !ok {
 			(*resMap)[objStorageNamed.String()] = initResources()
 		}
-		(*resMap)[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
+		(*resMap)[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(usage, resource.BinarySI))
 	}
 	return nil
 }

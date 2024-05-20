@@ -22,9 +22,16 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/google/uuid"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"gorm.io/gorm"
 
@@ -74,6 +81,7 @@ type AccountReconciler struct {
 	Logger                 logr.Logger
 	AccountSystemNamespace string
 	DBClient               database.Account
+	CVMDBClient            database.CVM
 	MongoDBURI             string
 	Activities             pkgtypes.Activities
 	DefaultDiscount        pkgtypes.RechargeDiscount
@@ -259,6 +267,9 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 					r.Logger.Error(err, "get payment details failed")
 				}
 				if status == pay.PaymentSuccess {
+					if payment.Status.Status != pay.PaymentSuccess {
+						continue
+					}
 					r.Logger.Info("payment success, post delete payment cr", "payment", payment, "amount", amount)
 				}
 				// expire session
@@ -398,4 +409,69 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int
 		}
 	}
 	return int64(math.Ceil(float64(amount) * r / 100))
+}
+
+func (r *AccountReconciler) BillingCVM() error {
+	cvmMap, err := r.CVMDBClient.GetPendingStateInstance(os.Getenv("LOCAL_REGION"))
+	if err != nil {
+		return fmt.Errorf("get pending state instance failed: %v", err)
+	}
+	for userInfo, cvms := range cvmMap {
+		fmt.Println("billing cvm", userInfo, cvms)
+		userUID, namespace := strings.Split(userInfo, "/")[0], strings.Split(userInfo, "/")[1]
+		appCosts := make([]resources.AppCost, len(cvms))
+		cvmTotalAmount := 0.0
+		cvmIDs := make([]primitive.ObjectID, len(cvms))
+		cvmIDsDetail := make([]string, 0)
+		for i := range cvms {
+			appCosts[i] = resources.AppCost{
+				Amount: int64(cvms[i].Amount * BaseUnit),
+				Name:   cvms[i].InstanceName,
+			}
+			cvmTotalAmount += cvms[i].Amount
+			cvmIDs[i] = cvms[i].ID
+			cvmIDsDetail = append(cvmIDsDetail, cvms[i].ID.String())
+		}
+		userQueryOpts := pkgtypes.UserQueryOpts{UID: uuid.MustParse(userUID)}
+		user, err := r.AccountV2.GetUserCr(&userQueryOpts)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				fmt.Println("user not found", userQueryOpts)
+				continue
+			}
+			return fmt.Errorf("get user failed: %v", err)
+		}
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("generate billing id error: %v", err)
+		}
+		billing := &resources.Billing{
+			OrderID:   id,
+			AppCosts:  appCosts,
+			Type:      accountv1.Consumption,
+			Namespace: namespace,
+			AppType:   resources.AppType[resources.CVM],
+			Amount:    int64(cvmTotalAmount * BaseUnit),
+			Owner:     user.CrName,
+			Time:      time.Now().UTC(),
+			Status:    resources.Settled,
+			Detail:    "{" + strings.Join(cvmIDsDetail, ",") + "}",
+		}
+		err = r.AccountV2.AddDeductionBalanceWithFunc(&pkgtypes.UserQueryOpts{UID: user.UserUID}, billing.Amount, func() error {
+			if saveErr := r.DBClient.SaveBillings(billing); saveErr != nil {
+				return fmt.Errorf("save billing failed: %v", saveErr)
+			}
+			return nil
+		}, func() error {
+			if saveErr := r.CVMDBClient.SetDoneStateInstance(cvmIDs...); saveErr != nil {
+				return fmt.Errorf("set done state instance failed: %v", saveErr)
+			}
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("add balance failed: %v", err)
+		}
+		fmt.Printf("billing cvm success %#+v\n", billing)
+	}
+	return nil
 }

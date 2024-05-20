@@ -44,6 +44,8 @@ import (
 const (
 	EnvAccountDBName = "ACCOUNT_DB_NAME"
 	EnvTrafficDBName = "TRAFFIC_DB_NAME"
+	EnvCVMDBName     = "CVM_DB_NAME"
+	EnvCVMConn       = "CVM_DB_CONN"
 	EnvTrafficConn   = "TRAFFIC_CONN"
 )
 
@@ -51,6 +53,8 @@ const (
 	DefaultAccountDBName  = "sealos-resources"
 	DefaultTrafficDBName  = "sealos-networkmanager"
 	DefaultAuthDBName     = "sealos-auth"
+	DefaultCVMDBName      = "sealos-cvm"
+	DefaultCVMConn        = "cvm"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
 	DefaultBillingConn    = "billing"
@@ -73,6 +77,8 @@ type mongoDB struct {
 	AccountDB         string
 	TrafficDB         string
 	AuthDB            string
+	CvmDB             string
+	CvmConn           string
 	UserConn          string
 	MonitorConnPrefix string
 	MeteringConn      string
@@ -94,9 +100,13 @@ func (m *mongoDB) Disconnect(ctx context.Context) error {
 }
 
 func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error) {
+	// skip cvm billing time
 	filter := bson.M{
 		"owner": owner,
 		"type":  _type,
+		"app_type": bson.M{
+			"$ne": resources.AppType[resources.CVM],
+		},
 	}
 	findOneOptions := options.FindOne().SetSort(bson.D{primitive.E{Key: "time", Value: -1}})
 	var result bson.M
@@ -677,22 +687,10 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 
 	pipelineCountAndAmount := bson.A{
-		bson.D{{Key: "$match", Value: bson.D{
-			{Key: "time", Value: timeMatchValue},
-			{Key: "owner", Value: owner},
-			{Key: "type", Value: accountv1.Consumption},
-		}}},
-		bson.D{{Key: "$addFields", Value: bson.D{
-			{Key: "costsArray", Value: bson.D{{Key: "$objectToArray", Value: "$costs"}}},
-		}}},
-		bson.D{{Key: "$unwind", Value: "$costsArray"}},
+		matchStage,
 		bson.D{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: bson.D{
-				{Key: "type", Value: "$type"},
-				{Key: "key", Value: "$costsArray.k"},
-			}},
-			{Key: "total", Value: bson.D{{Key: "$sum", Value: "$costsArray.v"}}},
-			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			primitive.E{Key: "_id", Value: nil},
+			primitive.E{Key: "result", Value: bson.D{primitive.E{Key: "$sum", Value: "$amount"}}},
 		}}},
 	}
 
@@ -775,23 +773,16 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 	defer cursorCountAndAmount.Close(ctx)
 
-	totalDeductionAmount := make(map[string]int64)
-	totalRechargeAmount := int64(0)
+	totalDeductionAmount, totalRechargeAmount := int64(0), int64(0)
 
 	for cursorCountAndAmount.Next(ctx) {
 		var result struct {
-			ID struct {
-				Type int    `bson:"type"`
-				Key  string `bson:"key"`
-			} `bson:"_id"`
-			Total int64 `bson:"total"`
+			Result int64 `bson:"result"`
 		}
 		if err := cursorCountAndAmount.Decode(&result); err != nil {
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
-		if result.ID.Type == 0 {
-			totalDeductionAmount[result.ID.Key] = result.Total
-		}
+		totalDeductionAmount = result.Result
 	}
 
 	// the total amount
@@ -1011,6 +1002,7 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		Client:            client,
 		AccountDB:         env.GetEnvWithDefault(EnvAccountDBName, DefaultAccountDBName),
 		TrafficDB:         env.GetEnvWithDefault(EnvTrafficDBName, DefaultTrafficDBName),
+		CvmDB:             env.GetEnvWithDefault(EnvCVMDBName, DefaultCVMDBName),
 		AuthDB:            DefaultAuthDBName,
 		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
@@ -1019,5 +1011,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
 		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
+		CvmConn:           env.GetEnvWithDefault(EnvCVMConn, DefaultCVMConn),
 	}, err
 }

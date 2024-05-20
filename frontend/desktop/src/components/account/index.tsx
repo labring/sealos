@@ -9,117 +9,26 @@ import {
   Stack,
   Text,
   type UseDisclosureReturn,
-  PopoverTrigger,
-  Popover,
-  PopoverContent,
-  PopoverBody,
   IconButton,
   HStack,
   VStack
 } from '@chakra-ui/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import useAppStore from '@/stores/app';
-import { ApiResp, Region } from '@/types';
+import { ApiResp } from '@/types';
 import { formatMoney } from '@/utils/format';
-import TeamCenter from '@/components/team/TeamCenter';
-import NsList from '@/components/team/NsList';
-import { nsListRequest, switchRequest } from '@/api/namespace';
-import { NSType } from '@/types/team';
 import PasswordModify from './PasswordModify';
-import { useGlobalStore } from '@/stores/global';
-import { CopyIcon, DownloadIcon, LogoutIcon, RightArrowIcon } from '@sealos/ui';
-import { ImageFallBackUrl } from '@/stores/config';
-import { jwtDecode } from 'jwt-decode';
-import { AccessTokenPayload } from '@/types/token';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { CopyIcon, DownloadIcon, LogoutIcon } from '@sealos/ui';
+import { useConfigStore } from '@/stores/config';
 
-const NsMenu = () => {
-  const { t } = useTranslation();
-  const { session } = useSessionStore();
-  const ns_uid = session?.user?.ns_uid || '';
-  const router = useRouter();
-  const mutation = useMutation({
-    mutationFn: switchRequest,
-    async onSuccess(data) {
-      if (data.code === 200 && !!data.data) {
-        await sessionConfig(data.data);
-      } else {
-        throw Error('session in invalid');
-      }
-    }
-  });
-  const switchTeam = async ({ uid }: { uid: string }) => {
-    if (ns_uid !== uid) mutation.mutateAsync(uid).then(router.reload);
-  };
-  const { data } = useQuery({
-    queryKey: ['teamList', 'teamGroup'],
-    queryFn: nsListRequest
-  });
-  const namespaces = data?.data?.namespaces || [];
-  const namespace = namespaces.find((x) => x.uid === ns_uid);
-  const defaultNamespace = namespaces.find((x) => x.nstype === NSType.Private);
-  if (!namespace && defaultNamespace && namespaces.length > 0) {
-    // will be deleted
-    switchTeam({ uid: defaultNamespace.uid });
-  }
-  return (
-    <Popover placement="left">
-      <PopoverTrigger>
-        {
-          <Box
-            px="16px"
-            cursor={'pointer'}
-            py="10px"
-            bgColor={'rgba(255, 255, 255, 0.6)'}
-            borderRadius={'8px'}
-            width={'full'}
-          >
-            <Text color="#7B838B" fontSize={'11px'} p="4px">
-              {t('Team')}
-            </Text>
-            <Flex
-              justify={'space-between'}
-              align={'center'}
-              _hover={{
-                bgColor: 'rgba(0, 0, 0, 0.03)'
-              }}
-              transition={'0.3s'}
-              p="4px"
-            >
-              <Text fontSize="13px" fontWeight={'500'} color={'#363C42'}>
-                {namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName}
-              </Text>
-              <RightArrowIcon w="16px" h="16px" />
-            </Flex>
-          </Box>
-        }
-      </PopoverTrigger>
-      <PopoverContent
-        shadow={'0px 1.1666667461395264px 2.3333334922790527px 0px rgba(0, 0, 0, 0.2) !important'}
-        borderRadius={'8px'}
-        p="6px"
-        w="250px"
-        background="linear-gradient(270deg, #F1F1F1 0%, #EEE 43.75%, #ECECEC 100%)"
-        border={'none'}
-      >
-        <PopoverBody px="0" pb="0" pt="4px" maxH={'320px'} overflowY={'auto'}>
-          <NsList
-            displayPoint={true}
-            selected_ns_uid={ns_uid}
-            click={switchTeam}
-            namespaces={namespaces}
-          />
-        </PopoverBody>
-      </PopoverContent>
-    </Popover>
-  );
-};
 export default function Account({ disclosure }: { disclosure: UseDisclosureReturn }) {
   const [showId, setShowId] = useState(true);
-  const { needPassword, rechargeEnabled } = useGlobalStore((state) => state.systemEnv);
+  const passwordEnabled = useConfigStore().authConfig?.idp?.password?.enabled;
+  const rechargeEnabled = useConfigStore().commonConfig?.rechargeEnabled;
+  const logo = useConfigStore().layoutConfig?.logo;
   const router = useRouter();
   const { copyData } = useCopyData();
   const openApp = useAppStore((s) => s.openApp);
@@ -143,12 +52,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
     return real_balance;
   }, [data]);
   const queryclient = useQueryClient();
-  const kubeconfigQuery = useQuery({
-    queryKey: [user, 'kubeconfig'],
-    queryFn: () => request.get<any, ApiResp<{ kubeconfig: string }>>('/api/auth/getKubeconfig'),
-    enabled: !!user
-  });
-  const kubeconfig = kubeconfigQuery.data?.data?.kubeconfig;
+  const kubeconfig = session?.kubeconfig || '';
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
@@ -191,7 +95,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
             height={'80px'}
             borderRadius="full"
             src={user?.avatar}
-            fallbackSrc={ImageFallBackUrl}
+            fallbackSrc={logo}
             alt="user avator"
           />
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
@@ -217,8 +121,6 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
             />
           </HStack>
           <VStack w={'full'} gap={'12px'}>
-            {/*<RegionMenu />*/}
-            <NsMenu />
             <Stack
               direction={'column'}
               width={'100%'}
@@ -227,11 +129,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
               fontSize={'13px'}
               gap={'0px'}
             >
-              <Flex alignItems={'center'} borderBottom={'1px solid #0000001A'} px="16px" py="11px">
-                <Text>{t('Manage Team')}</Text>
-                <TeamCenter mr="0" />
-              </Flex>
-              {needPassword && (
+              {passwordEnabled && (
                 <Flex
                   justify={'space-between'}
                   alignItems={'center'}

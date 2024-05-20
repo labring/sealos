@@ -1,45 +1,239 @@
-export type SystemConfigType = {
-  scripts: ScriptConfig[];
-  isSystemConfigEnabled: boolean; // Compatible with older versions
-  backgroundImageUrl: string;
-  imageFallBackUrl: string;
-  title: string;
-  metaTitle: string;
-  metaDescription: string;
-  showGithubStar: boolean;
+import { DeepRequired, OmitPath, OmitPathArr } from './tools';
+
+export type CloudConfigType = {
+  domain: string;
+  port: string;
+  regionUID: string;
+  certSecretName: string;
 };
 
-export type ScriptConfig = {
+export type CommonConfigType = {
+  guideEnabled: boolean;
+  apiEnabled: boolean;
+  rechargeEnabled: boolean;
+  cfSiteKey?: string;
+};
+export type CommonClientConfigType = DeepRequired<OmitPath<CommonConfigType, 'apiEnabled'>>;
+export type DatabaseConfigType = {
+  mongodbURI: string;
+  globalCockroachdbURI: string;
+  regionalCockroachdbURI: string;
+};
+
+export type MetaConfigType = {
+  title: string;
+  description: string;
+  keywords: string;
+  scripts?: MetaScriptType[];
+};
+
+export type MetaScriptType = {
   src: string;
   'data-website-id'?: string;
 };
 
-export type LoginProps = {
-  wechat_client_id: string;
-  github_client_id: string;
-  google_client_id: string;
-  callback_url: string;
-  cf_sitekey: string;
-  service_protocol_zh: string;
-  private_protocol_zh: string;
-  service_protocol_en: string;
-  private_protocol_en: string;
-  needPassword: boolean;
-  oauth_proxy: string;
-  needSms: boolean;
-  needGithub: boolean;
-  needWechat: boolean;
-  needGoogle: boolean;
-  oauth2_client_id: string;
-  oauth2_auth_url: string;
-  needOAuth2: boolean;
+export type ProtocolConfigType = {
+  serviceProtocol: {
+    zh: string;
+    en: string;
+  };
+  privateProtocol: {
+    zh: string;
+    en: string;
+  };
 };
 
-export type SystemEnv = {
-  SEALOS_CLOUD_DOMAIN: string;
-  wechatEnabledRecharge: boolean;
-  rechargeEnabled: boolean;
-  licenseEnabled: boolean;
-  guideEnabled: boolean;
-  openWechatEnabled: boolean;
-} & LoginProps;
+export type LayoutConfigType = {
+  title: string;
+  logo: string;
+  backgroundImage: string;
+  meta: MetaConfigType;
+
+  protocol?: ProtocolConfigType;
+  common: {
+    githubStarEnabled: boolean;
+  };
+};
+
+export type AuthConfigType = {
+  proxyAddress?: string;
+  callbackURL: string;
+  signUpEnabled?: boolean;
+  baiduToken?: string;
+  jwt: JwtConfigType;
+  invite?: {
+    enabled: boolean;
+    lafSecretKey: string;
+    lafBaseURL: string;
+  };
+  idp: {
+    password?: {
+      enabled: boolean;
+      salt?: string;
+    };
+    github?: {
+      enabled: boolean;
+      clientID: string;
+      clientSecret?: string;
+    };
+    wechat?: {
+      enabled: boolean;
+      clientID: string;
+      clientSecret?: string;
+    };
+    google?: {
+      enabled: boolean;
+      clientID: string;
+      clientSecret?: string;
+    };
+    sms?: {
+      enabled: boolean;
+      ali?: {
+        enabled: boolean;
+        endpoint: string;
+        templateCode: string;
+        signName: string;
+        accessKeyID: string;
+        accessKeySecret?: string;
+      };
+    };
+    oauth2?: {
+      enabled: boolean;
+      callbackURL: string;
+      clientID: string;
+      clientSecret?: string;
+      authURL: string;
+      tokenURL: string;
+      userInfoURL: string;
+    };
+  };
+};
+
+export type AuthClientConfigType = DeepRequired<
+  OmitPathArr<
+    AuthConfigType,
+    [
+      'signUpEnabled',
+      'invite.lafSecretKey',
+      'invite.lafBaseURL',
+      'idp.password.salt',
+      'idp.github.clientSecret',
+      'idp.wechat.clientSecret',
+      'idp.google.clientSecret',
+      'idp.sms.ali',
+      'idp.oauth2.clientSecret',
+      'jwt'
+    ]
+  >
+>;
+
+export type JwtConfigType = {
+  internal?: string;
+  regional?: string;
+  global?: string;
+};
+
+export type DesktopConfigType<T = AuthConfigType> = {
+  layout: LayoutConfigType;
+  auth: T;
+  teamManagement?: {
+    maxTeamCount: number;
+    maxTeamMemberCount: number;
+  };
+};
+
+export type AppConfigType = {
+  cloud: CloudConfigType;
+  common: CommonConfigType;
+  database: DatabaseConfigType;
+  desktop: DesktopConfigType;
+};
+export type AppClientConfigType = {
+  cloud: CloudConfigType;
+  common: CommonClientConfigType;
+  desktop: DesktopConfigType<AuthClientConfigType>;
+};
+
+export const DefaultCommonClientConfig: CommonClientConfigType = {
+  guideEnabled: false,
+  rechargeEnabled: false,
+  cfSiteKey: ''
+};
+
+export const DefaultCloudConfig: CloudConfigType = {
+  domain: 'cloud.sealos.io',
+  port: '443',
+  regionUID: 'sealos-cloud',
+  certSecretName: 'wildcard-cert'
+};
+
+export const DefaultLayoutConfig: LayoutConfigType = {
+  title: 'Sealos Cloud',
+  logo: '/logo.svg',
+  backgroundImage: '/images/bg-blue.svg',
+  protocol: {
+    serviceProtocol: {
+      zh: '',
+      en: ''
+    },
+    privateProtocol: {
+      zh: '',
+      en: ''
+    }
+  },
+  meta: {
+    title: 'Sealos Cloud',
+    description: 'Sealos Cloud',
+    keywords: 'Sealos Cloud',
+    scripts: []
+  },
+  common: {
+    githubStarEnabled: false
+  }
+};
+
+export const DefaultAuthClientConfig: AuthClientConfigType = {
+  baiduToken: '',
+  invite: {
+    enabled: false
+  },
+  callbackURL: 'https://cloud.sealos.io/callback',
+  idp: {
+    password: {
+      enabled: true
+    },
+    github: {
+      enabled: false,
+      clientID: ''
+    },
+    wechat: {
+      enabled: false,
+      clientID: ''
+    },
+    google: {
+      enabled: false,
+      clientID: ''
+    },
+    sms: {
+      enabled: false
+    },
+    oauth2: {
+      enabled: false,
+      callbackURL: '',
+      clientID: '',
+      authURL: '',
+      tokenURL: '',
+      userInfoURL: ''
+    }
+  },
+  proxyAddress: ''
+};
+
+export const DefaultAppClientConfig: AppClientConfigType = {
+  cloud: DefaultCloudConfig,
+  common: DefaultCommonClientConfig,
+  desktop: {
+    layout: DefaultLayoutConfig,
+    auth: DefaultAuthClientConfig
+  }
+};

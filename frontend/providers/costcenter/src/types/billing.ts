@@ -52,7 +52,7 @@ export type BillingData<T = Costs> = {
   metadata: any;
   spec: BillingSpec;
   status: {
-    deductionAmount: T;
+    deductionAmount: number;
     item: BillingItem<T>[];
     pageLength: number;
     totalCount: number;
@@ -75,6 +75,12 @@ export type RechargeBillingItem = {
   CreatedAt: string;
   Amount: number;
   Gift: number;
+  RegionUID: string;
+  RegionUserOwner: string;
+  Method: 'stripe';
+  TradeNO: 'number';
+  CodeURL: string;
+  InvoicedAt: boolean;
 };
 export type RechargeBillingData = {
   payment: RechargeBillingItem[];

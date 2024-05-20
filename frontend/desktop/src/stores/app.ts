@@ -6,6 +6,7 @@ import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { formatUrl } from '@/utils/format';
 import { minBy, cloneDeep } from 'lodash';
+
 export class AppInfo {
   pid: number;
   isShow: boolean;
@@ -33,6 +34,7 @@ export class AppInfo {
   };
   displayType: displayType;
   i18n?: any;
+
   constructor(app: TApp, pid: number) {
     this.isShow = false;
     this.zIndex = 1;
@@ -66,7 +68,7 @@ const useAppStore = create<TOSState>()(
         launchQuery: {},
         autolaunch: '',
         runner: new AppStateManager([]),
-        init: async () => {
+        async init() {
           const res = await request('/api/desktop/getInstalledApps');
           set((state) => {
             state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
@@ -83,7 +85,12 @@ const useAppStore = create<TOSState>()(
             state.runningInfo = state.runningInfo.filter((item) => item.pid !== pid);
           });
         },
-
+        closeAppAll: () => {
+          set((state) => {
+            state.runner.closeAppAll();
+            state.runningInfo = [];
+          });
+        },
         installApp: (app: TApp) => {
           set((state) => {
             state.installedApps.push(new AppInfo(app, -1));
@@ -119,7 +126,7 @@ const useAppStore = create<TOSState>()(
           });
         },
 
-        openApp: async (app: TApp, { query, raw, pathname = '/' } = {}) => {
+        openApp: async (app: TApp, { query, raw, pathname = '/', appSize = 'maximize' } = {}) => {
           const zIndex = get().maxZIndex + 1;
           // debugger
           // 未支持多实例
@@ -140,7 +147,7 @@ const useAppStore = create<TOSState>()(
           let run_app = get().runner.openApp(app.key);
           const _app = new AppInfo(app, run_app.pid);
           _app.zIndex = zIndex;
-          _app.size = 'maximize';
+          _app.size = appSize;
           _app.isShow = true;
           // add query to url
           if (_app.data?.url) {

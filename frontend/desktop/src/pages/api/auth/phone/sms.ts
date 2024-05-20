@@ -11,28 +11,28 @@ import { addOrUpdateCode, checkSendable } from '@/services/backend/db/verifyCode
 import { enableSms } from '@/services/enable';
 import { retrySerially } from '@/utils/tools';
 
-const accessKeyId = process.env.ALI_ACCESS_KEY_ID;
-const accessKeySecret = process.env.ALI_ACCESS_KEY_SECRET;
-const templateCode = process.env.ALI_TEMPLATE_CODE;
-const signName = process.env.ALI_SIGN_NAME;
-const verifyEndpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-const secret = process.env.CF_SECRET_KEY;
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const accessKeyId = global.AppConfig?.desktop.auth.idp.sms?.ali?.accessKeyID!;
+  const accessKeySecret = global.AppConfig?.desktop.auth.idp.sms?.ali?.accessKeySecret!;
+  const templateCode = global.AppConfig?.desktop.auth.idp.sms?.ali?.templateCode!;
+  const signName = global.AppConfig?.desktop.auth.idp.sms?.ali?.signName!;
+  const cfSiteKey = global.AppConfig?.common.cfSiteKey!;
+  const cfVerifyEndpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
   try {
     if (!enableSms()) {
       throw new Error('SMS is not enabled');
     }
     const { phoneNumbers, cfToken } = req.body as { phoneNumbers?: string; cfToken?: string };
 
-    if (secret) {
+    if (cfSiteKey) {
       if (!cfToken)
         return jsonRes(res, {
           message: 'cfToken is invalid',
           code: 400
         });
-      const verifyRes = await fetch(verifyEndpoint, {
+      const verifyRes = await fetch(cfVerifyEndpoint, {
         method: 'POST',
-        body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(cfToken)}`,
+        body: `secret=${encodeURIComponent(cfSiteKey)}&response=${encodeURIComponent(cfToken)}`,
         headers: {
           'content-type': 'application/x-www-form-urlencoded'
         }

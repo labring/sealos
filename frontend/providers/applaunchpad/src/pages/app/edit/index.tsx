@@ -1,11 +1,10 @@
 import { postDeployApp, putApp } from '@/api/app';
 import { updateDesktopGuide } from '@/api/platform';
-import { noGpuSliderKey } from '@/constants/app';
+import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import useDriver from '@/hooks/useDriver';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
@@ -234,8 +233,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (!appName) {
         const defaultApp = {
           ...defaultEditVal,
-          cpu: formSliderListConfig[noGpuSliderKey].cpu[0],
-          memory: formSliderListConfig[noGpuSliderKey].memory[0]
+          cpu: formSliderListConfig[defaultSliderKey].cpu[0],
+          memory: formSliderListConfig[defaultSliderKey].memory[0]
         };
         setAlready(true);
         setYamlList([
@@ -266,6 +265,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
+        setYamlList(formData2Yamls(realTimeForm.current));
       },
       onError(err) {
         toast({
@@ -389,10 +389,16 @@ export async function getServerSideProps(content: any) {
 export default EditApp;
 
 function checkNetworkPorts(networks: AppEditType['networks']) {
-  const ports = networks.map((item) => item.port);
-  const portSet = new Set(ports);
-  if (portSet.size !== ports.length) {
-    return false;
+  const portProtocolSet = new Set<string>();
+
+  for (const network of networks) {
+    const { port, protocol } = network;
+    const key = `${port}-${protocol}`;
+    if (portProtocolSet.has(key)) {
+      return false;
+    }
+    portProtocolSet.add(key);
   }
+
   return true;
 }

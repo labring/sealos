@@ -30,7 +30,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       annotations:

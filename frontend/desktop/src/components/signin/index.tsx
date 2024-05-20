@@ -5,8 +5,7 @@ import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
-import { BackgroundImageUrl, useSystemConfigStore } from '@/stores/config';
-import { useGlobalStore } from '@/stores/global';
+import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { LoginType } from '@/types';
 import {
@@ -30,20 +29,10 @@ import useWechat from './auth/useWechat';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 
 export default function SigninComponent() {
-  const platformEnv = useGlobalStore((state) => state.systemEnv);
-
-  const { systemConfig } = useSystemConfigStore();
-  const {
-    service_protocol_zh = '',
-    private_protocol_zh = '',
-    service_protocol_en = '',
-    private_protocol_en = '',
-    needPassword = false,
-    needSms = false,
-    openWechatEnabled = false,
-    cf_sitekey
-  } = platformEnv || {};
-  const needTabs = needPassword && needSms;
+  const conf = useConfigStore();
+  const needPassword = conf.authConfig?.idp.password?.enabled;
+  const needSms = conf.authConfig?.idp.sms?.enabled;
+  const needTabs = conf.authConfig?.idp.password?.enabled && conf.authConfig?.idp.sms?.enabled;
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();
   const [tabIndex, setTabIndex] = useState<LoginType>(LoginType.NONE);
@@ -52,13 +41,13 @@ export default function SigninComponent() {
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
     protocol_data = {
-      service_protocol: service_protocol_zh,
-      private_protocol: private_protocol_zh
+      service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.zh as string,
+      private_protocol: conf.layoutConfig?.protocol?.privateProtocol.zh as string
     };
   else
     protocol_data = {
-      service_protocol: service_protocol_en,
-      private_protocol: private_protocol_en
+      service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
+      private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
     };
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { WechatComponent, login: wechatSubmit } = useWechat();
@@ -146,20 +135,19 @@ export default function SigninComponent() {
       showError(t('Read and agree'));
     }
   }, 500);
-
   return (
     <Box
       position={'relative'}
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={`url(${BackgroundImageUrl})`}
+      backgroundImage={`url(${conf.layoutConfig?.backgroundImage || ''})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >
       <Head>
-        <title>{systemConfig?.metaTitle}</title>
-        <meta name="description" content={systemConfig?.metaDescription} />
+        <title>{conf.layoutConfig?.meta.title || ''}</title>
+        <meta name="description" content={conf.layoutConfig?.meta.description} />
       </Head>
       <Flex h="full" w="full" flexDir={'column'} justifyContent={'center'} alignItems={'center'}>
         <Box mb="36px">
@@ -169,7 +157,7 @@ export default function SigninComponent() {
             fontWeight={700}
             textShadow={'0px 2px 6px rgba(0, 0, 0, 0.30)'}
           >
-            {systemConfig?.title}
+            {conf.layoutConfig?.title}
           </Text>
         </Box>
         <Flex
@@ -212,7 +200,7 @@ export default function SigninComponent() {
                 <Tab px="0" _selected={{ color: 'white' }}>
                   {t('Password Login')}
                 </Tab>
-                {openWechatEnabled && (
+                {conf.authConfig?.idp.wechat.enabled && (
                   <Tab px="0" _selected={{ color: 'white' }}>
                     {t('Official account login')}
                   </Tab>
@@ -227,13 +215,13 @@ export default function SigninComponent() {
           {tabIndex !== LoginType.WeChat && (
             <>
               <Protocol />
-              {!!cf_sitekey && (
+              {!!conf.commonConfig?.cfSiteKey && (
                 <Turnstile
                   options={{
                     size: 'invisible'
                   }}
                   ref={turnstileRef}
-                  siteKey={cf_sitekey}
+                  siteKey={conf.commonConfig?.cfSiteKey}
                 />
               )}
               <Button

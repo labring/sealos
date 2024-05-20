@@ -17,7 +17,15 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"os"
 	"testing"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
 
 	"github.com/labring/sealos/controllers/pkg/types"
 )
@@ -80,5 +88,51 @@ func Test_getAmountWithDiscount(t *testing.T) {
 				t.Errorf("getAmountWithDiscount() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestAccountReconciler_BillingCVM(t *testing.T) {
+	dbCtx := context.Background()
+	cvmDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.CVMMongoURI))
+	if err != nil {
+		t.Fatalf("unable to connect to mongo: %v", err)
+	}
+	defer func() {
+		if cvmDBClient != nil {
+			err := cvmDBClient.Disconnect(dbCtx)
+			if err != nil {
+				t.Errorf("unable to disconnect from mongo: %v", err)
+			}
+		}
+	}()
+	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
+	if err != nil {
+		t.Fatalf("unable to connect to cockroach: %v", err)
+	}
+	defer func() {
+		err := v2Account.Close()
+		if err != nil {
+			t.Errorf("unable to disconnect from cockroach: %v", err)
+		}
+	}()
+	DBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
+	if err != nil {
+		t.Fatalf("unable to connect to mongo: %v", err)
+	}
+	defer func() {
+		err := DBClient.Disconnect(dbCtx)
+		if err != nil {
+			t.Errorf("unable to disconnect from mongo: %v", err)
+		}
+	}()
+
+	r := &AccountReconciler{
+		AccountV2:   v2Account,
+		DBClient:    DBClient,
+		CVMDBClient: cvmDBClient,
+		Logger:      ctrl.Log.WithName("controllers").WithName("AccountReconciler"),
+	}
+	if err := r.BillingCVM(); err != nil {
+		t.Errorf("AccountReconciler.BillingCVM() error = %v", err)
 	}
 }

@@ -1,5 +1,5 @@
 import useOverviewStore from '@/stores/overview';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CellContext,
   createColumnHelper,
@@ -91,7 +91,8 @@ export default function RechargeTabPanel() {
         id: TableHeaderID.TransactionTime,
         enablePinning: true,
         cell(props) {
-          return format(parseISO(props.cell.getValue()), 'MM-dd HH:mm');
+          const date = new Date(props.cell.getValue());
+          return format(date, 'MM-dd HH:mm');
         }
       }),
       columnHelper.accessor((row) => row.Amount, {

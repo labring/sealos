@@ -1,0 +1,17 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: cloudserver
+  namespace: app-system
+spec:
+  data:
+    desc: cloudserver
+    url: "https://cloudserver.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://cloudserver.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  menuData:
+  name: cloudserver
+  type: iframe
+  displayType: normal
+  i18n:
+    zh:
+      name: 云主机

@@ -12,14 +12,27 @@ metadata:
   namespace: applaunchpad-frontend
 data:
   config.yaml: |-
-    addr: :3000
-  form_slider_config.json: |-
-    {
-      "NoGpu": {
-        "cpu": [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
-        "memory": [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-      }
-    }
+    cloud:
+      domain: {{ .cloudDomain }}
+      port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+    common:
+      guideEnabled: {{ .guideEnabled }}
+      apiEnabled: {{ .apiEnabled }}
+    launchpad:
+      ingressTlsSecretName: {{ .ingressTlsSecretName }}
+      eventAnalyze:
+        enabled: false
+        fastGPTKey: ""
+      components:
+        monitor:
+          url: {{ .monitorUrl }}
+      appResourceFormSliderConfig:
+        default:
+          cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+      fileManger:
+        uploadLimit: 50 # MB
+        downloadLimit: 100 # MB
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -42,18 +55,7 @@ spec:
         app: applaunchpad-frontend
     spec:
       containers:
-        - env:
-            - name: SEALOS_DOMAIN
-              value: {{ .cloudDomain }}
-            - name: MONITOR_URL
-              value: {{ .monitorUrl }}
-            - name: DOMAIN_PORT
-              value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-            - name: INGRESS_SECRET
-              value: {{ .ingressSecret }}
-            - name: GUIDE_ENABLED
-              value: "false"
-          name: applaunchpad-frontend
+        - name: applaunchpad-frontend
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -72,12 +74,9 @@ spec:
           image: ghcr.io/labring/sealos-applaunchpad-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
-            - name: applaunchpad-frontend-volume
-              mountPath: /config.yaml
-              subPath: config.yaml
-            - mountPath: /app/data/form_slider_config.json
+            - mountPath: /app/data/config.yaml
               name: applaunchpad-frontend-volume
-              subPath: form_slider_config.json
+              subPath: config.yaml
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

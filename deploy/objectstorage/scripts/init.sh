@@ -2,8 +2,8 @@
 
 # 1. create minio instance
 bash scripts/minio.sh
-# 2. create prometheus instance
-bash scripts/prometheus.sh
+# 2. create prometheus instance(Deprecated, now use vm)
+# bash scripts/prometheus.sh
 # 3. run objectstorage controller
 sealos run tars/objectstorage-controller.tar -e cloudDomain=${cloudDomain}
 # 4. run objectstorage frontend

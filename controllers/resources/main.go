@@ -19,8 +19,13 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/objectstorage"
+
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 
@@ -145,12 +150,14 @@ func main() {
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
 	const (
-		MinioEndpoint = "MINIO_ENDPOINT"
-		MinioAk       = "MINIO_AK"
-		MinioSk       = "MINIO_SK"
-		PromURL       = "PROM_URL"
+		MinioEndpoint          = "MINIO_ENDPOINT"
+		MinioAk                = "MINIO_AK"
+		MinioSk                = "MINIO_SK"
+		PromURL                = "PROM_URL"
+		MinioMetricsAddr       = "MINIO_METRICS_ADDR"
+		MinioMetricsAddrSecure = "MINIO_METRICS_SECURE"
 	)
-	if endpoint, ak, sk := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk); endpoint != "" && ak != "" && sk != "" {
+	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && mAddr != "" {
 		reconciler.Logger.Info("init minio client")
 		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
 			reconciler.Logger.Error(err, "failed to new minio client")
@@ -161,13 +168,18 @@ func main() {
 			reconciler.Logger.Error(err, "failed to list minio buckets")
 			os.Exit(1)
 		}
-		if promURL := os.Getenv(PromURL); promURL == "" {
+		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
 			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
-		} else {
-			reconciler.PromURL = promURL
 		}
+		secure := env.GetBoolWithDefault(MinioMetricsAddrSecure, false)
+		reconciler.ObjStorageMetricsClient, err = objectstorage.NewMetricsClient(mAddr, ak, sk, secure)
+		if err != nil {
+			reconciler.Logger.Error(err, "failed to new minio metrics client")
+			os.Exit(1)
+		}
+		reconciler.Logger.Info(fmt.Sprintf("init minio client with info (endpoint %s, metrics addr %s, metrics addr secure %v) success", endpoint, mAddr, secure))
 	} else {
-		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK")
+		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
 	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.

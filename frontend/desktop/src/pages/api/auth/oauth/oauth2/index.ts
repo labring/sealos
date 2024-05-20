@@ -7,14 +7,13 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { ProviderType } from 'prisma/global/generated/client';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-const clientId = process.env.OAUTH2_CLIENT_ID!;
-const clientSecret = process.env.OAUTH2_CLIENT_SECRET!;
-const tokenUrl = process.env.OAUTH2_TOKEN_URL;
-const userInfoUrl = process.env.OAUTH2_USERINFO_URL;
-const redirectUrl = process.env.CALLBACK_URL;
-
 //OAuth2 Support client_secret_post method to obtain token
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const clientId = global.AppConfig?.desktop.auth.idp.oauth2?.clientID!;
+  const clientSecret = global.AppConfig?.desktop.auth.idp.oauth2?.clientSecret!;
+  const tokenUrl = global.AppConfig?.desktop.auth.idp.oauth2?.tokenURL;
+  const userInfoUrl = global.AppConfig?.desktop.auth.idp.oauth2?.userInfoURL;
+  const redirectUrl = global.AppConfig?.desktop.auth.callbackURL;
   try {
     if (!enableOAuth2() || !redirectUrl) {
       throw new Error('District related env');

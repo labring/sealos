@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 export default function SigninPage() {
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');
-    if (url) {
+    if (!!url) {
       sessionStorage.clear();
       window.location.replace(url);
     }

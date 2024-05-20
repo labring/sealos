@@ -20,6 +20,7 @@ import { removeMemberRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'react-i18next';
+
 export default function RemoveMember({
   ns_uid,
   status,
@@ -41,10 +42,7 @@ export default function RemoveMember({
   const mutation = useMutation({
     mutationFn: removeMemberRequest,
     onSuccess() {
-      queryClient.invalidateQueries({
-        queryKey: ['ns-detail'],
-        exact: false
-      });
+      queryClient.invalidateQueries();
       onClose();
     },
     onError(error) {
@@ -61,6 +59,8 @@ export default function RemoveMember({
       : selfUserCrUid === targetUserCrUid
       ? t('Quit')
       : t('Remove');
+  const removeTips =
+    selfUserCrUid === targetUserCrUid ? t('Quit Workspace Tips') : t('Remove Member Tips');
   return (
     <>
       <Button
@@ -98,7 +98,7 @@ export default function RemoveMember({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              <Text>{t('Remove Member Tips')}</Text>
+              <Text>{removeTips}</Text>
               <Flex mt="37px" justify={'flex-end'} gap={'12px'}>
                 <Button
                   variant={'unstyled'}

@@ -95,7 +95,7 @@ func GetProperties(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "failed to get user consumption amount"
 // @Router /account/v1alpha1/costs/consumption [post]
 func GetConsumptionAmount(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParseConsumptionRecordReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user consumption amount request: %v", err)})
 		return
@@ -104,7 +104,7 @@ func GetConsumptionAmount(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	amount, err := dao.DBClient.GetConsumptionAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	amount, err := dao.DBClient.GetConsumptionAmount(req.Owner, req.Namespace, req.AppType, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
 		return

@@ -1,15 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-const clientId = process.env.GOOGLE_CLIENT_ID!;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-const callbackUrl = process.env.CALLBACK_URL || '';
 import * as jwt from 'jsonwebtoken';
 import { enableGoogle } from '@/services/enable';
 import { getBase64FromRemote } from '@/utils/tools';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { persistImage } from '@/services/backend/persistImage';
 import { ProviderType } from 'prisma/global/generated/client';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const clientId = global.AppConfig?.desktop.auth.idp.google?.clientID!;
+  const clientSecret = global.AppConfig?.desktop.auth.idp.google?.clientSecret!;
+  const callbackUrl = global.AppConfig?.desktop.auth.callbackURL || '';
   try {
     if (!enableGoogle()) {
       throw new Error('google clinet is not defined');

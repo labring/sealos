@@ -153,17 +153,22 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
 		return ErrAccountNotExist
 	}
+	if account.CreateRegionID == "" {
+		if err = r.AccountV2.SetAccountCreateLocalRegion(account, r.LocalRegionID); err != nil {
+			return fmt.Errorf("failed to set account %s create region: %v", owner, err)
+		}
+	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID
 
-	r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
+	//r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
 	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
 		return err
 	} else if err != nil {
 		if err := r.syncDebt(ctx, owner, debt); err != nil {
 			return err
 		}
-		r.Logger.Info("create or update debt success", "debt", debt)
+		//r.Logger.Info("create or update debt success", "debt", debt)
 	}
 
 	nsList, err := getOwnNsList(r.Client, getUsername(owner))
@@ -210,7 +215,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if oweamount >= 0 {
 			return nil
 		}
-		update = SetDebtStatus(debt, accountv1.WarningPeriod)
+		update = SetDebtStatus(debt, accountv1.NormalPeriod, accountv1.WarningPeriod)
 		if err := r.sendWarningNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Logger.Error(err, "send warning notice error")
 		}
@@ -225,7 +230,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  警告期 -> 临近删除期： 更新status 状态approachingDeletion事件及更新时间，发送临近删除消息通知
 		*/
 		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.WarningPeriod, accountv1.NormalPeriod)
 			if err := r.readNotice(ctx, userNamespaceList, WarningNotice); err != nil {
 				r.Logger.Error(err, "readNotice WarningNotice error")
 			}
@@ -235,7 +240,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if updateIntervalSeconds < DebtConfig[accountv1.ApproachingDeletionPeriod] && (account.Balance/2)+oweamount > 0 {
 			return nil
 		}
-		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod)
+		update = SetDebtStatus(debt, accountv1.WarningPeriod, accountv1.ApproachingDeletionPeriod)
 		if err := r.sendApproachingDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Logger.Error(err, "sendApproachingDeletionNotice error")
 		}
@@ -251,7 +256,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  临近删除期 -> 即刻删除期： 执行暂停用户资源，更新status 状态imminentDeletionPeriod事件及更新时间，发送最终删除消息通知
 		*/
 		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod, accountv1.NormalPeriod)
 			if err := r.readNotice(ctx, userNamespaceList, ApproachingDeletionNotice, WarningNotice); err != nil {
 				r.Logger.Error(err, "readNotice ApproachingDeletionNotice error")
 			}
@@ -260,7 +265,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if updateIntervalSeconds < DebtConfig[accountv1.ImminentDeletionPeriod] && account.Balance+oweamount > 0 {
 			return nil
 		}
-		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod)
+		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod, accountv1.ImminentDeletionPeriod)
 		if err := r.sendImminentDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Logger.Error(err, "sendImminentDeletionNotice error")
 		}
@@ -277,7 +282,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  即刻删除期 -> 最终删除期： 删除用户全部资源，更新status 状态finalDeletionPeriod事件及更新时间。发生最终删除消息通知
 		*/
 		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod, accountv1.NormalPeriod)
 			// 恢复用户资源
 			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 				return err
@@ -292,7 +297,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		// TODO 暂时只暂停资源，后续会添加真正删除全部资源逻辑, 或直接删除namespace
-		update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod)
+		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod, accountv1.FinalDeletionPeriod)
 		if err := r.sendFinalDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Error(err, "sendFinalDeletionNotice error")
 		}
@@ -309,7 +314,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 				r.Logger.Error(err, "readNotice FinalDeletionNotice error")
 			}
 			//TODO 用户从欠费到正常，是否需要发送消息通知
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod, accountv1.NormalPeriod)
 
 			// TODO 暂时非真正完全删除，仍可恢复用户资源，后续会添加真正删除全部资源逻辑，不在执行恢复逻辑
 			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
@@ -326,7 +331,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	}
 
 	if update {
-		r.Logger.Info("update debt status", "account", debt.Spec.UserName,
+		r.Logger.V(1).Info("update debt status", "account", debt.Spec.UserName,
 			"last status", lastStatus, "last update time", time.Unix(debt.Status.LastUpdateTimestamp, 0).Format(time.RFC3339),
 			"current status", debt.Status.AccountDebtStatus, "time", time.Now().UTC().Format(time.RFC3339))
 		return r.Status().Update(ctx, debt)
@@ -346,9 +351,24 @@ func (r *DebtReconciler) syncDebt(ctx context.Context, owner string, debt *accou
 	return nil
 }
 
-func SetDebtStatus(debt *accountv1.Debt, status accountv1.DebtStatusType) bool {
-	debt.Status.AccountDebtStatus = status
-	debt.Status.LastUpdateTimestamp = time.Now().UTC().Unix()
+var MaxDebtHistoryStatusLength = env.GetIntEnvWithDefault("MAX_DEBT_HISTORY_STATUS_LENGTH", 10)
+
+func SetDebtStatus(debt *accountv1.Debt, lastStatus, currentStatus accountv1.DebtStatusType) bool {
+	debt.Status.AccountDebtStatus = currentStatus
+	now := time.Now().UTC()
+	debt.Status.LastUpdateTimestamp = now.Unix()
+	length := len(debt.Status.DebtStatusRecords)
+	statusRecord := accountv1.DebtStatusRecord{
+		LastStatus:    lastStatus,
+		CurrentStatus: currentStatus,
+		UpdateTime:    metav1.NewTime(now),
+	}
+	if length == 0 {
+		debt.Status.DebtStatusRecords = make([]accountv1.DebtStatusRecord, 0)
+	} else if length == MaxDebtHistoryStatusLength {
+		debt.Status.DebtStatusRecords = debt.Status.DebtStatusRecords[1:]
+	}
+	debt.Status.DebtStatusRecords = append(debt.Status.DebtStatusRecords, statusRecord)
 	return true
 }
 

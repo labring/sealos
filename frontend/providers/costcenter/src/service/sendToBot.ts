@@ -84,7 +84,7 @@ export const sendToBot = async ({
             ...billings.map((item) => [
               {
                 tag: 'text',
-                text: `订单号: ${item.order_id}, 创建时间: ${item.createdTime}, 金额: ￥${item.amount}`
+                text: `订单号: ${item.order_id}, 创建时间: ${item.createdTime}, 金额: ￥${item.amount}, 可用区UID: ${item.regionUID}, 用户UID ${item.userUID}`
               }
             ])
           ]

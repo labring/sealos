@@ -30,7 +30,4 @@ spec:
     url: https://console.lafyun.com/
     desc:
   menuData:
-    nameColor: text-black
-    helpDropDown: false
-    helpDocs:
   displayType: normal

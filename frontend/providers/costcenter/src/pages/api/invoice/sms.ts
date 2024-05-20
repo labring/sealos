@@ -1,21 +1,32 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-// import twilio from 'twilio';
-//@ts-ignore
 import Dysmsapi, * as dysmsapi from '@alicloud/dysmsapi20170525';
-//@ts-ignore
 import * as OpenApi from '@alicloud/openapi-client';
-//@ts-ignore
 import * as Util from '@alicloud/tea-util';
 import { jsonRes } from '@/service/backend/response';
 import { addOrUpdateCode, checkSendable } from '@/service/backend/db/verifyCode';
-import { retrySerially } from '@/utils/tools';
+import { getClientIPFromRequest, retrySerially } from '@/utils/tools';
 import { authSession } from '@/service/backend/auth';
 import { enableInvoice } from '@/service/enabled';
+import * as process from 'process';
 const accessKeyId = process.env.ALI_ACCESS_KEY_ID;
 const accessKeySecret = process.env.ALI_ACCESS_KEY_SECRET;
 const templateCode = process.env.ALI_TEMPLATE_CODE;
 const signName = process.env.ALI_SIGN_NAME;
+const requestTimestamps: Record<string, number> = {};
+function checkRequestFrequency(ipAddress: string) {
+  const currentTime = Date.now();
+  const lastRequestTime = requestTimestamps[ipAddress] || 0;
+  const timeDiff = currentTime - lastRequestTime;
 
+  const requestInterval = 60 * 1000;
+
+  if (timeDiff < requestInterval) {
+    return false;
+  } else {
+    requestTimestamps[ipAddress] = currentTime;
+    return true;
+  }
+}
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enableInvoice()) {
@@ -27,10 +38,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 401, message: 'user null' });
     }
     const { phoneNumbers } = req.body;
-    if (!(await checkSendable(phoneNumbers))) {
+    let ip = getClientIPFromRequest(req);
+
+    if (!ip) {
+      if (process.env.NODE_ENV === 'development') ip = '127.0.0.1';
+      else
+        return jsonRes(res, {
+          message: 'The IP is null',
+          code: 403
+        });
+    }
+    if (
+      !(await checkSendable({
+        phone: phoneNumbers,
+        ip
+      }))
+    ) {
       return jsonRes(res, {
-        message: 'code already sent',
-        code: 400
+        message: 'Code already sent',
+        code: 429
       });
     }
 
@@ -76,7 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }, 3);
 
     // update cache
-    await addOrUpdateCode({ phone: phoneNumbers, code });
+    await addOrUpdateCode({ phone: phoneNumbers, code, ip });
     return jsonRes(res, {
       message: 'successfully',
       code: 200

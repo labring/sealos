@@ -17,6 +17,9 @@ package objectstorage
 import (
 	"context"
 	"fmt"
+
+	"github.com/prometheus/prom2json"
+
 	"regexp"
 	"strconv"
 	"strings"
@@ -179,4 +182,61 @@ func extractValues(result1, result2 model.Value) (int64, int64) {
 	val1, _ := strconv.ParseInt(rcvdStr1, 10, 64)
 	val2, _ := strconv.ParseInt(rcvdStr2, 10, 64)
 	return val1, val2
+}
+
+type MetricData struct {
+	// key: bucket name, value: usage
+	Usage map[string]int64
+}
+
+type Metrics map[string]MetricData
+
+func QueryUserUsage(client *MetricsClient) (Metrics, error) {
+	obMetrics := make(Metrics)
+	bucketMetrics, err := client.BucketUsageTotalBytesMetrics(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bucket metrics: %w", err)
+	}
+	for _, bucketMetric := range bucketMetrics {
+		if !isUsageBytesTargetMetric(bucketMetric.Name) {
+			continue
+		}
+		for _, metrics := range bucketMetric.Metrics {
+			promMetrics := metrics.(prom2json.Metric)
+			floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %s to float value", promMetrics.Value)
+			}
+			intValue := int64(floatValue)
+			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
+				user := getUserWithBucket(bucket)
+				metricData, exists := obMetrics[user]
+				if !exists {
+					metricData = MetricData{
+						Usage: make(map[string]int64),
+					}
+				}
+				metricData.Usage[bucket] += intValue
+				obMetrics[user] = metricData
+			}
+		}
+	}
+
+	return obMetrics, err
+}
+
+func isUsageBytesTargetMetric(name string) bool {
+	targetMetrics := []string{
+		"minio_bucket_usage_total_bytes",
+	}
+	for _, target := range targetMetrics {
+		if name == target {
+			return true
+		}
+	}
+	return false
+}
+
+func getUserWithBucket(bucket string) string {
+	return strings.Split(bucket, "-")[0]
 }

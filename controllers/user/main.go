@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	configpkg "github.com/labring/sealos/controllers/pkg/config"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
 	//+kubebuilder:scaffold:imports
@@ -57,6 +58,7 @@ func main() {
 		metricsAddr                string
 		enableLeaderElection       bool
 		probeAddr                  string
+		configFilePath             string
 		rateLimiterOptions         utilcontroller.RateLimiterOptions
 		syncPeriod                 time.Duration
 		minRequeueDuration         time.Duration
@@ -74,6 +76,7 @@ func main() {
 	flag.DurationVar(&maxRequeueDuration, "max-requeue-duration", time.Hour*24*2, "The maximum duration between requeue options of a resource.")
 	flag.DurationVar(&operationReqExpirationTime, "operation-req-expiration-time", time.Minute*3, "Sets the expiration time duration for an operation request. By default, the duration is set to 3 minutes.")
 	flag.DurationVar(&operationReqRetentionTime, "operation-req-retention-time", time.Minute*3, "Sets the retention time duration for an operation request. By default, the duration is set to 3 minutes.")
+	flag.StringVar(&configFilePath, "config-file-path", "/config.yaml", "The path to the configuration file.")
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -107,6 +110,20 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	// Load the configuration file
+	config := &controllers.Config{}
+	if err := configpkg.LoadConfig(configFilePath, config); err != nil {
+		setupLog.Error(err, "unable to load configuration file")
+		os.Exit(1)
+	}
+
+	// Set the configuration
+	if err := setConfigToEnv(*config); err != nil {
+		setupLog.Error(err, "unable to set configuration to environment variables")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateLimiterOptions, minRequeueDuration, maxRequeueDuration); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
@@ -153,4 +170,11 @@ func main() {
 		setupLog.Error(err, "failed to running manager")
 		os.Exit(1)
 	}
+}
+
+func setConfigToEnv(cfg controllers.Config) error {
+	if err := os.Setenv("SEALOS_CLOUD_HOST", cfg.Global.CloudDomain); err != nil {
+		return err
+	}
+	return os.Setenv("APISERVER_PORT", cfg.Kube.APIServerPort)
 }

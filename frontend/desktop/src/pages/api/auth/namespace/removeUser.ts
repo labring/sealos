@@ -6,12 +6,11 @@ import { validate } from 'uuid';
 import { prisma } from '@/services/backend/db/init';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
-
+import { Role } from 'prisma/region/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    //
     const { ns_uid, targetUserCrUid } = req.body as {
       ns_uid?: string;
       targetUserCrUid?: string;
@@ -22,9 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!targetUserCrUid || !validate(targetUserCrUid))
       return jsonRes(res, { code: 400, message: 'tUserId is invalid' });
 
-    if (targetUserCrUid === payload.userCrUid) {
-      return jsonRes(res, { code: 403, message: 'target user must be others' });
-    }
     const queryResults = await prisma.userWorkspace.findMany({
       where: {
         workspaceUid: ns_uid,
@@ -39,26 +35,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
     const own = queryResults.find((x) => x.userCrUid === payload.userCrUid);
+
     if (!own || own.status !== JoinStatus.IN_WORKSPACE)
       return jsonRes(res, { code: 403, message: 'you are not in the namespace' });
+    if (targetUserCrUid === payload.userCrUid && own.role === Role.OWNER) {
+      return jsonRes(res, { code: 403, message: 'target user must be others' });
+    }
     const tItem = queryResults.find((item) => item.userCr.uid === targetUserCrUid);
-    // 之前没绑上,
+    // for inviting state,
     if (!tItem) return jsonRes(res, { code: 404, message: 'target user is not in namespace' });
-    const vaild = vaildManage(roleToUserRole(own.role), own.userCrUid)(
+    const vaild = vaildManage(roleToUserRole(own.role))(
       roleToUserRole(tItem.role),
-      targetUserCrUid
+      tItem.userCrUid === payload.userCrUid
     );
     if (!vaild) return jsonRes(res, { code: 403, message: 'you are not manager' });
     let unbinding_result = null;
     if (JoinStatus.INVITED === tItem.status) {
-      // 等于取消邀请
+      // equal to cancel inviting
       unbinding_result = await unbindingRole({
         userCrUid: tItem.userCrUid,
         workspaceUid: ns_uid
       });
     } else if (JoinStatus.IN_WORKSPACE === tItem.status) {
-      // 删除权限
-
+      // modify role
       await modifyTeamRole({
         k8s_username: tItem.userCr.crName,
         role: roleToUserRole(tItem.role),

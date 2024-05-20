@@ -2,22 +2,24 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
-import { ApiResp, SystemEnv } from '@/types';
+import { ApiResp, AuthConfigType } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
 import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { compareFirstLanguages } from '@/utils/tools';
 import { OauthProvider } from '@/types/user';
+import { useConfigStore } from '@/stores/config';
 
 export default function Callback() {
   const router = useRouter();
   const setProvider = useSessionStore((s) => s.setProvider);
   const generateState = useSessionStore((s) => s.generateState);
-  const { data: platformEnv } = useQuery(['getPlatformEnv'], () =>
-    request<any, ApiResp<SystemEnv>>('/api/platform/getEnv')
+  const { data: res } = useQuery(['getPlatformEnv'], () =>
+    request<any, ApiResp<AuthConfigType>>('/api/platform/getLoginConfig')
   );
-  const { callback_url = '' } = platformEnv?.data ?? {};
+  const conf = res?.data;
+  const callback_url = conf?.callbackURL;
   const oauthLogin = async ({ url, provider }: { url: string; provider?: OauthProvider }) => {
     setProvider(provider);
     window.location.href = url;
@@ -29,8 +31,6 @@ export default function Callback() {
     const oauthProvider = router.query.oauthProxyProvider;
     // nextjs auto decode
     let oauthClientId = router.query.oauthProxyClientID;
-    // const abortController = new AbortController()
-    console.log(oauthProvider, oauthProxyState, oauthClientId);
     if (!isString(oauthProxyState) || !isString(oauthProvider) || !isString(oauthClientId)) return;
 
     console.log(oauthProvider, oauthProxyState, oauthClientId, callback_url);
@@ -42,9 +42,7 @@ export default function Callback() {
         ).json()) as ApiResp<{ containDomain: boolean }>;
         console.log(result);
         if (!result.data?.containDomain) return;
-        console.log('generate');
         const state = generateState(oauthProxyState);
-        console.log(callback_url, 'callback');
 
         if (oauthProvider === 'github') {
           await oauthLogin({
@@ -84,8 +82,7 @@ export async function getServerSideProps({ req, res, locales }: any) {
   const local =
     req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
   res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
-
-  const sealos_cloud_domain = process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
+  const sealos_cloud_domain = useConfigStore.getState().cloudConfig?.domain;
   return {
     props: {
       ...(await serverSideTranslations(local, undefined, null, locales || [])),

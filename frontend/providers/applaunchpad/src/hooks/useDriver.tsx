@@ -1,4 +1,4 @@
-import { getPlatformEnv, getUserAccount, updateDesktopGuide } from '@/api/platform';
+import { getInitData, getUserAccount, updateDesktopGuide } from '@/api/platform';
 import { GUIDE_LAUNCHPAD_CREATE_KEY } from '@/constants/account';
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
@@ -45,9 +45,9 @@ export default function useDriver() {
   useEffect(() => {
     const handleUserGuide = async () => {
       try {
-        const systemEnv = await getPlatformEnv();
+        const { guideEnabled } = await getInitData();
         const userAccount = await getUserAccount();
-        if (systemEnv.guideEnabled && userAccount?.metadata?.annotations) {
+        if (guideEnabled && userAccount?.metadata?.annotations) {
           const isGuided = !!userAccount.metadata.annotations?.[GUIDE_LAUNCHPAD_CREATE_KEY];
           if (!isGuided) {
             startGuide();

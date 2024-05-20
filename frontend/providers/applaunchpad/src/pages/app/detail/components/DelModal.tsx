@@ -73,7 +73,7 @@ const DelModal = ({
           </Box>
 
           <Input
-            placeholder={`请输入：${appName}`}
+            placeholder={t('please enter app name', { appName }) || ''}
             value={inputValue}
             bg={'myWhite.300'}
             onChange={(e) => setInputValue(e.target.value)}

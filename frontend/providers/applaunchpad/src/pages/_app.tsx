@@ -16,7 +16,6 @@ import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import { getPlatformEnv } from '@/api/platform';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';

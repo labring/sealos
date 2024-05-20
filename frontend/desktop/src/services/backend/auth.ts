@@ -2,11 +2,12 @@ import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
 import { JWTPayload } from '@/types';
 import { AuthenticationTokenPayload, AccessTokenPayload } from '@/types/token';
-import { getRegionUid } from '@/services/enable';
 
-const jwtSecret = (process.env.JWT_SECRET as string) || '123456789';
-const regionJwtSecret = process.env.JWT_SECRET_REGION || '123456789';
-const appJwtSecret = process.env.JWT_SECRET_APP || '123456789';
+const regionUID =()=> global.AppConfig?.cloud.regionUID || '123456789';
+const grobalJwtSecret =()=> global.AppConfig?.desktop.auth.jwt.global || '123456789';
+const regionalJwtSecret =()=> global.AppConfig?.desktop.auth.jwt.regional || '123456789';
+const internalJwtSecret =()=> global.AppConfig?.desktop.auth.jwt.internal || '123456789';
+
 const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
@@ -23,7 +24,7 @@ const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
 export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
   verifyToken<AccessTokenPayload>(header).then(
     (payload) => {
-      if (payload?.regionUid === getRegionUid()) {
+      if (payload?.regionUid === regionUID()) {
         return payload;
       } else {
         return null;
@@ -37,7 +38,7 @@ export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => 
       throw new Error('缺少凭证');
     }
     const token = decodeURIComponent(header.authorization);
-    const payload = await verifyJWT<AuthenticationTokenPayload>(token, regionJwtSecret);
+    const payload = await verifyJWT<AuthenticationTokenPayload>(token, grobalJwtSecret());
     return payload;
   } catch (err) {
     console.error(err);
@@ -47,7 +48,7 @@ export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => 
 export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?: string) =>
   new Promise<T | null>((resolve) => {
     if (!token) return resolve(null);
-    verify(token, secret || jwtSecret, (err, payload) => {
+    verify(token, secret || regionalJwtSecret(), (err, payload) => {
       if (err) {
         console.log(err);
         resolve(null);
@@ -60,8 +61,8 @@ export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?
     });
   });
 export const generateAccessToken = (props: AccessTokenPayload) =>
-  sign(props, jwtSecret, { expiresIn: '7d' });
+  sign(props, regionalJwtSecret(), { expiresIn: '7d' });
 export const generateAppToken = (props: AccessTokenPayload) =>
-  sign(props, appJwtSecret, { expiresIn: '7d' });
+  sign(props, internalJwtSecret(), { expiresIn: '7d' });
 export const generateAuthenticationToken = (props: AuthenticationTokenPayload) =>
-  sign(props, regionJwtSecret, { expiresIn: '60000' });
+  sign(props, grobalJwtSecret(), { expiresIn: '60000' });

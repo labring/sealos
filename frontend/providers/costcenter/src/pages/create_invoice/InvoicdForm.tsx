@@ -39,6 +39,7 @@ import arrow_icon from '@/assert/Vector.svg';
 import email_icon from '@/assert/mdi_email-receive-outline.svg';
 import listIcon from '@/assert/list.svg';
 import { InvoiceTable } from '@/components/invoice/invoiceTable';
+
 const BillingModal = ({
   billings,
   t,
@@ -55,17 +56,13 @@ const BillingModal = ({
   const [currentPage, setcurrentPage] = useState(1);
   return (
     <>
-      {' '}
       <ModalContent w={'910px'} maxW="910px" h={'auto'} maxH="620px">
-        {' '}
         <ModalHeader display={'flex'}>
-          {' '}
-          {t('orders.invoiceOrder')}({invoiceCount}){' '}
-          <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>{' '}
-        </ModalHeader>{' '}
-        <ModalCloseButton />{' '}
+          {t('orders.invoiceOrder')}({invoiceCount})
+          <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>
+        </ModalHeader>
+        <ModalCloseButton />
         <ModalBody>
-          {' '}
           <Box
             overflow={'auto'}
             fontFamily="PingFang SC"
@@ -73,28 +70,23 @@ const BillingModal = ({
             fontWeight="500"
             lineHeight="20px"
           >
-            {' '}
             <Flex mb={'16px'} align="center">
-              {' '}
               <Flex align={'center'}>
-                {' '}
-                <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} />{' '}
-                <Text>{t('orders.list')}</Text>{' '}
-              </Flex>{' '}
-            </Flex>{' '}
+                <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} />
+                <Text>{t('orders.list')}</Text>
+              </Flex>
+            </Flex>
             <InvoiceTable
               selectbillings={billings.current || []}
               data={(billings.current || []).filter(
                 (item, index) =>
                   index <= pageSize * currentPage - 1 && index >= pageSize * (currentPage - 1)
               )}
-            ></InvoiceTable>{' '}
-          </Box>{' '}
+            ></InvoiceTable>
+          </Box>
           <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
-            {' '}
-            <Text>{t('Total')}:</Text> <Flex w="40px">{billings?.current?.length || 0}</Flex>{' '}
+            <Text>{t('Total')}:</Text> <Flex w="40px">{billings?.current?.length || 0}</Flex>
             <Flex gap={'8px'}>
-              {' '}
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === 1}
@@ -103,9 +95,8 @@ const BillingModal = ({
                   setcurrentPage(1);
                 }}
               >
-                {' '}
-                <Img w="6px" h="6px" src={arrow_left_icon.src}></Img>{' '}
-              </Button>{' '}
+                <Img w="6px" h="6px" src={arrow_left_icon.src}></Img>
+              </Button>
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === 1}
@@ -114,10 +105,11 @@ const BillingModal = ({
                   setcurrentPage(currentPage - 1);
                 }}
               >
-                {' '}
-                <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>{' '}
-              </Button>{' '}
-              <Text>{currentPage}</Text>/<Text>{totalPage}</Text>{' '}
+                <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>
+              </Button>
+              <Flex my={'auto'}>
+                <Text>{currentPage}</Text>/<Text>{totalPage}</Text>
+              </Flex>
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === totalPage}
@@ -127,9 +119,8 @@ const BillingModal = ({
                   setcurrentPage(currentPage + 1);
                 }}
               >
-                {' '}
-                <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img>{' '}
-              </Button>{' '}
+                <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img>
+              </Button>
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === totalPage}
@@ -140,22 +131,17 @@ const BillingModal = ({
                   setcurrentPage(totalPage);
                 }}
               >
-                {' '}
-                <Img
-                  w="6px"
-                  h="6px"
-                  src={arrow_left_icon.src}
-                  transform={'rotate(180deg)'}
-                ></Img>{' '}
-              </Button>{' '}
-            </Flex>{' '}
-            <Text>{pageSize}</Text> <Text>/{t('Page')}</Text>{' '}
-          </Flex>{' '}
-        </ModalBody>{' '}
-      </ModalContent>{' '}
+                <Img w="6px" h="6px" src={arrow_left_icon.src} transform={'rotate(180deg)'}></Img>
+              </Button>
+            </Flex>
+            <Text>{pageSize}</Text> <Text>/{t('Page')}</Text>
+          </Flex>
+        </ModalBody>
+      </ModalContent>
     </>
   );
 };
+
 function InvoicdForm({
   invoiceAmount,
   invoiceCount,

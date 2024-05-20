@@ -72,10 +72,12 @@ export type TOSState = {
       query?: Record<string, string>;
       raw?: string;
       pathname?: string;
+      appSize?: WindowSize;
     }
   ): Promise<void>;
   // close app
   closeAppById: (pid: number) => void;
+  closeAppAll: () => void;
   // get current runningApp
   currentApp: () => AppInfo | undefined;
   switchAppById: (pid: number) => void;

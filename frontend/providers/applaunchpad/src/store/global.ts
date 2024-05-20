@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { FormSliderListType } from '@/types';
-import { noGpuSliderKey } from '@/constants/app';
+import { defaultSliderKey } from '@/constants/app';
 
 type State = {
   screenWidth: number;
@@ -37,7 +37,7 @@ export const useGlobalStore = create<State>()(
         });
       },
       formSliderListConfig: {
-        [noGpuSliderKey]: {
+        [defaultSliderKey]: {
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
           memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
         }

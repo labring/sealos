@@ -26,6 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (user === null) {
       return jsonRes(res, { code: 401, message: 'user null' });
     }
+
     const { detail, contract, billings } = req.body as ReqGenInvoice;
     if (
       !detail ||
@@ -44,6 +45,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 400
       });
     }
+    const url = process.env.BILLING_URI + '/account/v1alpha1/payment/set-invoice';
+    const setInvoiceRes = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        kubeConfig: kc.exportConfig(),
+        owner: user.name,
+        paymentIDList: billings.map((b) => b.ID)
+      })
+    });
+    if (!setInvoiceRes.ok) throw Error('setInvocice error');
     if (
       process.env.NODE_ENV !== 'development' &&
       !(await checkCode({ phone: contract.phone, code: contract.code }))
@@ -70,8 +81,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       detail,
       contract,
       billings: billings.map((item) => ({
-        ...item,
-        createdTime: new Date(item.createdTime)
+        order_id: item.ID,
+        amount: item.Amount,
+        regionUID: item.RegionUID,
+        userUID: item.UserUID,
+        createdTime: new Date(item.CreatedAt)
       }))
     };
 
@@ -85,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 500
       });
     }
-    retrySerially(async () => {
+    await retrySerially(async () => {
       try {
         const result = await sendToBot(document);
         if (result.StatusCode !== 0) {

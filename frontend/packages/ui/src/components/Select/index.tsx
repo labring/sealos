@@ -21,10 +21,20 @@ interface Props extends ButtonProps {
     value: string;
   }[];
   onchange?: (val: string) => void;
+  isInvalid?: boolean;
 }
 
 const MySelect = (
-  { placeholder, value, width = 'auto', height = '30px', list, onchange, ...props }: Props,
+  {
+    placeholder,
+    value,
+    width = 'auto',
+    height = '30px',
+    list,
+    onchange,
+    isInvalid,
+    ...props
+  }: Props,
   selectRef: any
 ) => {
   const ref = useRef<HTMLButtonElement>(null);
@@ -75,7 +85,8 @@ const MySelect = (
                 bg: '#FFF'
               }
             : {
-                bg: '#F7F8FA'
+                bg: '#F7F8FA',
+                borderColor: isInvalid ? 'red' : ''
               })}
           {...props}
         >

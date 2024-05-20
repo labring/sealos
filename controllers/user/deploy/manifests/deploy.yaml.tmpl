@@ -469,6 +469,13 @@ data:
     # if you are doing or is intended to do any operation such as perform cleanups
     # after the manager stops then its usage might be unsafe.
     # leaderElectionReleaseOnCancel: true
+  config.yaml: |
+    global:
+      cloudDomain: {{ .cloudDomain }}
+    kube:
+      apiServerHost: {{ .cloudDomain }}
+      apiServerPort: "{{ .apiServerPort }}"
+
 kind: ConfigMap
 metadata:
   name: user-manager-config
@@ -527,6 +534,7 @@ spec:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
+        - --config-file-path=/config.yaml
         command:
         - /manager
         env:
@@ -535,10 +543,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: SEALOS_CLOUD_HOST
-          value: {{ .cloudDomain }}
-        - name: APISERVER_PORT
-          value: "{{ .apiserverPort }}"
         image: ghcr.io/labring/sealos-user-controller:latest
         imagePullPolicy: Always
         livenessProbe:
@@ -575,6 +579,9 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        - name: user-manager-volume
+          mountPath: /config.yaml
+          subPath: config.yaml
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -620,6 +627,9 @@ spec:
         secret:
           defaultMode: 420
           secretName: webhook-server-cert
+      - name: user-manager-volume
+        configMap:
+          name: user-manager-config
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

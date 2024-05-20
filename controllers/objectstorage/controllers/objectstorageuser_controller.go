@@ -73,6 +73,7 @@ const (
 	OSKeySecretSecretKey = "secretKey"
 	OSKeySecretInternal  = "internal"
 	OSKeySecretExternal  = "external"
+	OSKeySecretBucket    = "bucket"
 )
 
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers,verbs=get;list;watch;create;update;patch;delete
