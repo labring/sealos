@@ -30,7 +30,7 @@ const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => voi
   const theme = useTheme();
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} autoFocus={false}>
+    <Modal isOpen={isOpen} onClose={onClose} autoFocus={false} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent maxW={'90vw'}>
         <ModalHeader>{t('Real-time Monitoring')}</ModalHeader>

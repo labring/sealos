@@ -303,7 +303,7 @@ const PodFile = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent h={'90vh'} maxW={'90vw'} m={0} display={'flex'} flexDirection={'column'}>
           <ModalHeader>
@@ -551,7 +551,7 @@ const PodFile = ({
           </ModalBody>
         </ModalContent>
       </Modal>
-      <Modal isOpen={isInternalOpen} onClose={onInternalClose}>
+      <Modal isOpen={isInternalOpen} onClose={onInternalClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>

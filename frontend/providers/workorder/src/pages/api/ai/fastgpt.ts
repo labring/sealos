@@ -82,6 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.write(value);
     }
   } catch (error) {
+    console.log(error);
     res.end();
   }
 }

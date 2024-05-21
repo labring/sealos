@@ -57,7 +57,7 @@ const ConfigmapModal = ({
 
   return (
     <>
-      <Modal isOpen onClose={closeCb}>
+      <Modal isOpen onClose={closeCb} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'530px'} w={'auto'}>
           <ModalHeader>

@@ -53,7 +53,7 @@ const DelModal = ({
   }, [appName, toast, t, onSuccess, onClose]);
 
   return (
-    <Modal isOpen onClose={onClose}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{t('Deletion warning')} </ModalHeader>

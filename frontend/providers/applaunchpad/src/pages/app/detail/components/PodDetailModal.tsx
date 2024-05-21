@@ -153,7 +153,7 @@ const Logs = ({
   }, [events, onCloseAnalysesModel, onEndAnalyses, onOpenAnalyses, onStartAnalyses, toast]);
 
   return (
-    <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered>
+    <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent h={'90vh'} maxW={'90vw'} m={0} display={'flex'} flexDirection={'column'}>
         <ModalCloseButton fontSize={16} top={6} right={6} />
@@ -314,7 +314,7 @@ const Logs = ({
         </Grid>
       </ModalContent>
       {/* analyses modal */}
-      <Modal isOpen={isOpenAnalyses} onClose={onCloseAnalysesModel}>
+      <Modal isOpen={isOpenAnalyses} onClose={onCloseAnalysesModel} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxW={'50vw'} h={'70vh'}>
           <ModalHeader>Pod {t('Intelligent Analysis')}</ModalHeader>
