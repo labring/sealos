@@ -461,6 +461,9 @@ const Form = ({
                           bg: '#FFF',
                           color: '#111824'
                         }}
+                        _hover={{
+                          borderColor: 'brightBlue.300'
+                        }}
                       />
 
                       <NumberInputStepper>

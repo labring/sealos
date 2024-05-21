@@ -85,7 +85,7 @@ const AppDetail = ({
   });
 
   return (
-    <Flex flexDirection={'column'} height={'100vh'} bg={'#F3F4F5'} px={9} pb={4}>
+    <Flex flexDirection={'column'} height={'100vh'} bg={'grayModern.100'} px={9} pb={4}>
       <Box>
         <Header db={dbDetail} setShowSlider={setShowSlider} isLargeScreen={isLargeScreen} />
       </Box>

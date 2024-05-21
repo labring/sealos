@@ -1,7 +1,10 @@
 import { delDBByName } from '@/api/db';
+import MyIcon from '@/components/Icon';
 import {
   Box,
   Button,
+  Flex,
+  Icon,
   Input,
   Modal,
   ModalBody,
@@ -56,7 +59,7 @@ const DelModal = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{t('Delete Warning')}</ModalHeader>
-        <ModalCloseButton top={'9px'} />
+        <ModalCloseButton top={'9px'} right={'10px'} />
         <ModalBody pb={4}>
           <Box color={'grayModern.600'}>
             {t('Delete Hint')}

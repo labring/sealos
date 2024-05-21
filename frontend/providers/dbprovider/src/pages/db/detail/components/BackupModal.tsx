@@ -226,7 +226,7 @@ const BackupModal = ({
         <ModalOverlay />
         <ModalContent maxW={'min(960px, 90vw)'} h={'480px'}>
           <ModalHeader>{t('Backup Database')}</ModalHeader>
-          <ModalCloseButton top={'9px'} />
+          <ModalCloseButton top={'9px'} right={'10px'} />
           <ModalBody display={'flex'} pb={8}>
             <Box
               flex={'0 0 220px'}

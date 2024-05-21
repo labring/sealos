@@ -86,7 +86,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
-        <Flex alignItems={'center'}>
+        <Flex alignItems={'center'} gap={'4px'}>
           <MyTooltip offset={[0, 10]} label={t('Details')}>
             <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
               <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
@@ -105,51 +105,6 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
               <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
             </Button>
           </MyTooltip>
-          {/* <Button
-            mr={3}
-            leftIcon={<MyIcon name="detail" />}
-            variant={'base'}
-            px={3}
-            onClick={() => setDetailPodIndex(i)}
-          >
-            {t('Details')}
-          </Button>
-          <SealosMenu
-            width={100}
-            Button={
-              <MenuButton
-                w={'32px'}
-                h={'32px'}
-                borderRadius={'sm'}
-                _hover={{
-                  bg: 'myWhite.400',
-                  color: 'hover.iconBlue'
-                }}
-              >
-                <MyIcon name={'more'} px={3} />
-              </MenuButton>
-            }
-            menuList={[
-              {
-                child: (
-                  <>
-                    <MyIcon name={'log'} w={'14px'} />
-                    <Box ml={2}>{t('Logs')}</Box>
-                  </>
-                ),
-                onClick: () => setLogsPodIndex(i)
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'restart'} />
-                    <Box ml={2}>{t('Restart')}</Box>
-                  </>
-                ),
-                onClick: openConfirmRestart(() => handleRestartPod(item.podName))
-              }
-            ]}
-          /> */}
         </Flex>
       )
     }

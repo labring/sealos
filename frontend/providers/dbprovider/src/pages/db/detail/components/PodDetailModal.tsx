@@ -7,6 +7,7 @@ import type { PodDetailType, PodEvent } from '@/types/db';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Button,
   Collapse,
   Flex,
   Grid,
@@ -175,7 +176,7 @@ const Logs = ({
     <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent h={'90vh'} maxW={'90vw'} m={0} display={'flex'} flexDirection={'column'}>
-        <ModalHeader>
+        <ModalHeader py={'8px'}>
           <Flex alignItems={'center'}>
             <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
               Pod {t('Details')}
@@ -185,6 +186,9 @@ const Logs = ({
                 width={240}
                 Button={
                   <MenuButton
+                    as={Button}
+                    variant={'outline'}
+                    leftIcon={<MyIcon name="pods" width={'16px'} height={'16px'} />}
                     minW={'240px'}
                     h={'32px'}
                     textAlign={'start'}
@@ -206,7 +210,7 @@ const Logs = ({
               />
             </Box>
           </Flex>
-          <ModalCloseButton top={'9px'} />
+          <ModalCloseButton top={'9px'} right={'10px'} />
         </ModalHeader>
         <Grid
           py={'32px'}

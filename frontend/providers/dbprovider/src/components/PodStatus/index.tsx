@@ -36,9 +36,8 @@ const PodStatus = ({ containerStatuses }: { containerStatuses: V1ContainerStatus
       {formatStatuses.map((item, i) => (
         <MyTooltip key={item.name} textAlign={'center'} label={item.label}>
           <Box
-            w={'16px'}
-            h={'16px'}
-            border={theme.borders.base}
+            w={'12px'}
+            h={'12px'}
             borderRadius={'2px'}
             _notLast={{ mr: 2 }}
             cursor={'pointer'}

@@ -20,6 +20,7 @@ import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from '../index.module.scss';
+import MyIcon from '@/components/Icon';
 
 const LogsModal = ({
   dbName,
@@ -126,6 +127,9 @@ const LogsModal = ({
                 width={240}
                 Button={
                   <MenuButton
+                    as={Button}
+                    variant={'outline'}
+                    leftIcon={<MyIcon name="pods" width={'16px'} height={'16px'} />}
                     minW={'240px'}
                     h={'32px'}
                     textAlign={'start'}
@@ -146,12 +150,17 @@ const LogsModal = ({
                 }))}
               />
             </Box>
-            <Button size={'sm'} onClick={exportLogs}>
+            <Button
+              height={'32px'}
+              variant={'outline'}
+              onClick={exportLogs}
+              leftIcon={<MyIcon name={'export'} w={'16px'} />}
+            >
               {t('Export')}
             </Button>
           </Flex>
         </ModalHeader>
-        <ModalCloseButton top={'9px'} />
+        <ModalCloseButton top={'9px'} right={'10px'} />
         <Box flex={'1 0 0'} h={0} position={'relative'} px={'36px'} mt={'24px'}>
           <Box
             ref={LogBox}

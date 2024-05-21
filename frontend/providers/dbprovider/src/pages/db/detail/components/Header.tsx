@@ -204,6 +204,9 @@ const Header = ({
         leftIcon={<MyIcon name="delete" w={'20px'} />}
         isLoading={loading}
         isDisabled={db.status.value === 'Updating'}
+        _hover={{
+          color: '#FF324A'
+        }}
         onClick={onOpenDelModal}
       >
         {t('Delete')}

@@ -273,12 +273,11 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               borderRadius={'md'}
               cursor={'pointer'}
               onClick={() => setShowSecret(!showSecret)}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
             >
-              <MyIcon
-                name={showSecret ? 'read' : 'unread'}
-                w={'16px'}
-                color={'grayModern.600'}
-              ></MyIcon>
+              <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
             {db.dbType !== 'milvus' && (
               <>
@@ -293,6 +292,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   cursor={'pointer'}
                   fontWeight={'bold'}
                   onClick={() => onclickConnectDB()}
+                  _hover={{
+                    color: 'brightBlue.600'
+                  }}
                 >
                   <MyIcon name="terminal" w="16px" h="16px" />
                   {t('Direct Connection')}
@@ -391,9 +393,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
           <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
             <ModalOverlay />
-            <ModalContent>
+            <ModalContent minW={'430px'}>
               <ModalHeader height={'48px'}>{t('Enable external network access')}</ModalHeader>
-              <ModalCloseButton top={'9px'} />
+              <ModalCloseButton top={'9px'} right={'10px'} />
               <Flex
                 alignItems={'center'}
                 justifyContent={'center'}
@@ -402,14 +404,21 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 pb="45px"
                 px="40px"
               >
-                <Text fontSize={'16px'} fontWeight={500} color={'#5A646E'}>
+                <Text fontSize={'14px'} fontWeight={500} color={'grayModern.500'}>
                   {t('Billing Standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
                   {SOURCE_PRICE.nodeports}
-                  <SealosCoin ml="8px" name="currency" w="20px" h="20px"></SealosCoin>/ {t('Hour')}
+                  <SealosCoin ml="8px" mr={'2px'} name="currency" w="20px" h="20px"></SealosCoin> /
+                  {t('Hour')}
                 </Center>
-                <Button mt="32px" variant={'solid'} onClick={openNetWorkService}>
+                <Button
+                  minW={'100px'}
+                  height={'32px'}
+                  mt="32px"
+                  variant={'solid'}
+                  onClick={openNetWorkService}
+                >
                   {t('Turn On')}
                 </Button>
               </Flex>

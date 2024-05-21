@@ -1,5 +1,6 @@
 import { SOURCE_PRICE } from '@/store/static';
 import { Box, Flex, useTheme, Text } from '@chakra-ui/react';
+import { SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
@@ -42,8 +43,8 @@ const PriceBox = ({
 
     const podScale = (val: number[]) => {
       return val[0] === val[1]
-        ? `￥${val[0].toFixed(2)}`
-        : `￥${val[0].toFixed(2)} ~ ${val[1].toFixed(2)}`;
+        ? `${val[0].toFixed(2)}`
+        : `${val[0].toFixed(2)} ~ ${val[1].toFixed(2)}`;
     };
 
     return [
@@ -71,7 +72,10 @@ const PriceBox = ({
           <Flex key={item.label} alignItems={'center'}>
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
             <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
-            <Box>{item.value}</Box>
+            <Flex alignItems={'center'} gap={'4px'}>
+              <SealosCoin />
+              {item.value}
+            </Flex>
           </Flex>
         ))}
       </Flex>

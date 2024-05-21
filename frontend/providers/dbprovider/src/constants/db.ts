@@ -40,9 +40,9 @@ export const dbStatusMap = {
   [DBStatusEnum.Creating]: {
     label: 'Creating',
     value: DBStatusEnum.Creating,
-    color: '#667085',
-    backgroundColor: '#F4F4F7',
-    dotColor: '#667085'
+    color: 'grayModern.500',
+    backgroundColor: 'rgba(17, 24, 36, 0.05)',
+    dotColor: 'grayModern.500'
   },
   [DBStatusEnum.Starting]: {
     label: 'Starting',

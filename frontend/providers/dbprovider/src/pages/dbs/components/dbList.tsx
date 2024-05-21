@@ -235,6 +235,12 @@ const DBList = ({
                     <Box ml={2}>{t('Delete')}</Box>
                   </>
                 ),
+                menuItemStyle: {
+                  _hover: {
+                    color: 'red.600',
+                    bg: 'rgba(17, 24, 36, 0.05)'
+                  }
+                },
                 onClick: () => setDelAppName(item.name),
                 isDisabled: item.status.value === 'Updating'
               }

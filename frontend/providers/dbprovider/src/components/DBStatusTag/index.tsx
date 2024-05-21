@@ -7,7 +7,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  useDisclosure
+  useDisclosure,
+  ModalCloseButton
 } from '@chakra-ui/react';
 import type { DBConditionItemType, DBStatusMapType } from '@/types/db';
 import MyIcon from '../Icon';
@@ -53,18 +54,7 @@ const DBStatusTag = ({
         <ModalContent minW={'520px'}>
           <ModalHeader display={'flex'} alignItems={'center'}>
             <Box flex={1}>{t(status.label)}</Box>
-            <Flex
-              h={'32px'}
-              w={'32px'}
-              alignItems={'center'}
-              justifyContent={'center'}
-              borderRadius={'50%'}
-              bg={'#F7F7F7'}
-              cursor={'pointer'}
-              onClick={onClose}
-            >
-              <MyIcon name={'statusDetail'} color={'myGray.800'} w={'20px'} />
-            </Flex>
+            <ModalCloseButton top={'9px'} right={'10px'} />
           </ModalHeader>
           <ModalBody>
             {conditions.map((item, i) => (
@@ -84,7 +74,7 @@ const DBStatusTag = ({
                   borderRadius: '8px',
                   backgroundColor: '#fff',
                   border: '2px solid',
-                  borderColor: item.status === 'False' ? '#FF8492' : '#33BABB'
+                  borderColor: item.status === 'False' ? '#D92D20' : '#039855'
                 }}
               >
                 <Flex lineHeight={1} mb={2} alignItems={'center'}>

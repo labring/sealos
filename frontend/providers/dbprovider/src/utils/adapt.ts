@@ -1,5 +1,5 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
-import { MigrationRemark, dbStatusMap } from '@/constants/db';
+import { DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
 import type { DBDetailType, DBEditType, DBListItemType, PodDetailType, PodEvent } from '@/types/db';
@@ -41,10 +41,11 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   return {
     id: db.metadata?.uid || ``,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    status:
-      db?.status?.phase && dbStatusMap[db?.status?.phase]
-        ? dbStatusMap[db?.status?.phase]
-        : dbStatusMap.UnKnow,
+    status: dbStatusMap[DBStatusEnum.Creating],
+    // status:
+    //   db?.status?.phase && dbStatusMap[db?.status?.phase]
+    //     ? dbStatusMap[db?.status?.phase]
+    //     : dbStatusMap.UnKnow,
     dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
