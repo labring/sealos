@@ -30,7 +30,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import PriceBox from './PriceBox';
+import PriceBox from '@/components/PriceBox';
 
 const Form = ({
   formHook,

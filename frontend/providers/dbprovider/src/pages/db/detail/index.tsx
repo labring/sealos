@@ -121,7 +121,7 @@ const AppDetail = ({
           border={theme.borders.base}
           borderRadius={'lg'}
         >
-          <Flex p={'26px'} alignItems={'flex-start'}>
+          <Flex m={'26px'} mb={'16px'} alignItems={'flex-start'}>
             {listNav.map((item) => (
               <Box
                 key={item.value}
@@ -153,6 +153,7 @@ const AppDetail = ({
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
+                  height={'32px'}
                   variant={'solid'}
                   onClick={() => {
                     BackupTableRef.current?.openBackup();
@@ -166,6 +167,7 @@ const AppDetail = ({
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
+                  height={'32px'}
                   variant={'solid'}
                   onClick={() => {
                     router.push(`/db/migrate?name=${dbName}&dbType=${dbType}`);

@@ -206,31 +206,6 @@ const Form = ({
           <Box mt={3} overflow={'hidden'}>
             <QuotaBox />
           </Box>
-          {/* {INSTALL_ACCOUNT && (
-            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
-              <PriceBox
-                components={[
-                  {
-                    cpu: getValues('cpu'),
-                    memory: getValues('memory'),
-                    storage: getValues('storage'),
-                    replicas: [getValues('replicas') || 1, getValues('replicas') || 1]
-                  },
-                  ...(getValues('dbType') === DBTypeEnum.redis
-                    ? (() => {
-                        const config = RedisHAConfig(getValues('replicas') > 1);
-                        return [
-                          {
-                            ...config,
-                            replicas: [config.replicas, config.replicas]
-                          }
-                        ];
-                      })()
-                    : [])
-                ]}
-              />
-            </Box>
-          )} */}
         </Box>
         <Box
           id={'form-container'}
