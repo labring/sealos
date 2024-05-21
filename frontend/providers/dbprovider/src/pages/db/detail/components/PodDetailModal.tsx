@@ -1,6 +1,5 @@
 import { getPodEvents } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import MyMenu from '@/components/Menu';
 import { defaultPod } from '@/constants/db';
 import { useLoading } from '@/hooks/useLoading';
 import { streamFetch } from '@/services/streamFetch';
@@ -8,6 +7,7 @@ import type { PodDetailType, PodEvent } from '@/types/db';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Collapse,
   Flex,
   Grid,
   MenuButton,
@@ -17,15 +17,14 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
-  Tooltip,
+  Text,
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
+import { SealosMenu, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-
-import { useMessage } from '@sealos/ui';
 import styles from '../index.module.scss';
 
 const Logs = ({
@@ -58,8 +57,8 @@ const Logs = ({
   const RenderItem = useCallback(
     ({ label, children }: { label: string; children: React.ReactNode }) => {
       return (
-        <Flex w={'100%'} my={5} alignItems="center">
-          <Box flex={'0 0 100px'} w={0}>
+        <Flex w={'100%'} my={'12px'} alignItems="center" fontSize={'base'}>
+          <Box flex={'0 0 100px'} w={0} color={'grayModern.900'}>
             {label}
           </Box>
           <Box
@@ -75,24 +74,45 @@ const Logs = ({
     },
     []
   );
+
   const RenderTag = useCallback(({ children }: { children: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const text = children.split('=');
+
     return (
-      <Tooltip label={children}>
-        <Box
-          py={1}
-          px={4}
-          backgroundColor={'myWhite.600'}
-          whiteSpace={'nowrap'}
-          overflow={'hidden'}
-          textOverflow={'ellipsis'}
-          color={'grayModern.600'}
-          cursor={'default'}
-          border={'1px solid'}
-          borderColor={'myGray.100'}
-        >
-          {children}
-        </Box>
-      </Tooltip>
+      <>
+        <Collapse startingHeight={'30px'} in={isExpanded}>
+          <Box
+            py={1}
+            px={4}
+            backgroundColor={'#F4F4F7'}
+            whiteSpace={isExpanded ? 'wrap' : 'nowrap'}
+            overflow={'hidden'}
+            textOverflow={'ellipsis'}
+            cursor={'pointer'}
+            border={'1px solid'}
+            borderColor={'#E8EBF0'}
+            borderRadius={'md'}
+            onMouseUp={(e) => {
+              const selection = window.getSelection();
+              if (selection && selection.toString() !== '') {
+                return;
+              }
+              setIsExpanded(!isExpanded);
+            }}
+          >
+            <Text color={'grayModern.900'} display={'inline'}>
+              {text[0]}
+            </Text>
+            <Text color={'grayModern.900'} display={'inline'}>
+              =
+            </Text>
+            <Text color={'grayModern.500'} display={'inline'}>
+              {text[1]}
+            </Text>
+          </Box>
+        </Collapse>{' '}
+      </>
     );
   }, []);
 
@@ -155,77 +175,96 @@ const Logs = ({
     <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent h={'90vh'} maxW={'90vw'} m={0} display={'flex'} flexDirection={'column'}>
-        <ModalCloseButton fontSize={16} top={6} right={6} />
-        <Flex p={7} pb={2} alignItems={'center'}>
-          <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
-            Pod {t('Details')}
-          </Box>
-          <Box px={3}>
-            <MyMenu
-              width={240}
-              Button={
-                <MenuButton
-                  minW={'240px'}
-                  h={'32px'}
-                  textAlign={'start'}
-                  bg={'myWhite.400'}
-                  border={theme.borders.base}
-                  borderRadius={'md'}
-                >
-                  <Flex px={4} alignItems={'center'}>
-                    <Box flex={1}>{podAlias}</Box>
-                    <ChevronDownIcon ml={2} />
-                  </Flex>
-                </MenuButton>
-              }
-              menuList={pods.map((item) => ({
-                isActive: item.podName === pod.podName,
-                child: <Box>{item.alias}</Box>,
-                onClick: () => setPodDetail(item.podName)
-              }))}
-            />
-          </Box>
-        </Flex>
-        <Grid py={5} flex={'1 0 0'} h={0} px={7} gridTemplateColumns={'450px 1fr'} gridGap={4}>
+        <ModalHeader>
+          <Flex alignItems={'center'}>
+            <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
+              Pod {t('Details')}
+            </Box>
+            <Box px={3}>
+              <SealosMenu
+                width={240}
+                Button={
+                  <MenuButton
+                    minW={'240px'}
+                    h={'32px'}
+                    textAlign={'start'}
+                    bg={'grayModern.100'}
+                    border={theme.borders.base}
+                    borderRadius={'md'}
+                  >
+                    <Flex px={4} alignItems={'center'}>
+                      <Box flex={1}>{podAlias}</Box>
+                      <ChevronDownIcon ml={2} />
+                    </Flex>
+                  </MenuButton>
+                }
+                menuList={pods.map((item) => ({
+                  isActive: item.podName === pod.podName,
+                  child: <Box>{item.alias}</Box>,
+                  onClick: () => setPodDetail(item.podName)
+                }))}
+              />
+            </Box>
+          </Flex>
+          <ModalCloseButton top={'9px'} />
+        </ModalHeader>
+        <Grid
+          py={'32px'}
+          flex={'1 0 0'}
+          h={0}
+          px={'52px'}
+          gridTemplateColumns={'450px 1fr'}
+          gridGap={4}
+        >
           <Flex flexDirection={'column'} h={'100%'}>
-            <Box mb={4} color={'grayModern.600'}>
+            <Box fontSize={'md'} fontWeight={'bold'} mb={4} color={'grayModern.600'}>
               {t('Details')}
             </Box>
             <Box
               flex={'1 0 0'}
               h={0}
-              backgroundColor={'myWhite.300'}
+              backgroundColor={'grayModern.25'}
+              border={theme.borders.base}
               px={7}
               py={3}
               overflow={'overlay'}
+              borderRadius={'8px'}
             >
               <RenderItem label="Restarts">{pod.restarts}</RenderItem>
               <RenderItem label="Age">{pod.age}</RenderItem>
               <RenderItem label="Pod Name">{pod.podName}</RenderItem>
               <RenderItem label="Controlled By">{`${pod.metadata?.ownerReferences?.[0].kind}/${pod.metadata?.ownerReferences?.[0].name}`}</RenderItem>
-              <RenderItem label="Labels">
-                <Grid gridTemplateColumns={'auto auto'} gridGap={2}>
+              <Box>
+                <Box mb={'12px'} color={'grayModern.900'} fontSize={'base'}>
+                  Labels
+                </Box>
+                <Flex flexWrap={'wrap'} gap={'8px'}>
                   {Object.entries(pod.metadata?.labels || {}).map(
                     ([key, value]: [string, string]) => (
                       <RenderTag key={key}>{`${key}=${value}`}</RenderTag>
                     )
                   )}
-                </Grid>
-              </RenderItem>
-              <RenderItem label="Annotations">
-                {Object.entries(pod.metadata?.annotations || {}).map(
-                  ([key, value]: [string, string]) => (
-                    <Box key={key} mb={2}>
-                      <RenderTag>{`${key}=${value}`}</RenderTag>
-                    </Box>
-                  )
-                )}
-              </RenderItem>
+                </Flex>
+              </Box>
+              <Box mt={'12px'}>
+                <Box mb={'12px'} color={'grayModern.900'} fontSize={'base'}>
+                  Annotations
+                </Box>
+                <Flex flexWrap={'wrap'} gap={'8px'}>
+                  {Object.entries(pod.metadata?.annotations || {}).map(
+                    ([key, value]: [string, string]) => (
+                      <RenderTag key={key}>{`${key}=${value}`}</RenderTag>
+                    )
+                  )}
+                </Flex>
+              </Box>
             </Box>
           </Flex>
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
-              <Box color={'grayModern.600'}>Events</Box>
+              <Box fontSize={'md'} fontWeight={'bold'} mb={4} color={'grayModern.600'}>
+                Events
+              </Box>
               {/* {events.length > 0 && (
                 <Button
                   ml={3}

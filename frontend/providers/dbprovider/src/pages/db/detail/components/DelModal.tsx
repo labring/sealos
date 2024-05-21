@@ -72,16 +72,14 @@ const DelModal = ({
           <Input
             placeholder={`${t('Please Enter')}：${dbName}`}
             value={inputValue}
-            bg={'myWhite.300'}
             onChange={(e) => setInputValue(e.target.value)}
           />
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'base'}>
+          <Button onClick={onClose} variant={'outline'}>
             {t('Cancel')}
           </Button>
           <Button
-            colorScheme="red"
             ml={3}
             variant={'solid'}
             isDisabled={inputValue !== dbName}

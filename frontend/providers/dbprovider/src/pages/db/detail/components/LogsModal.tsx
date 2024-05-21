@@ -1,25 +1,25 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getPodLogs } from '@/api/db';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalCloseButton,
-  Box,
-  useTheme,
-  Flex,
-  Button,
-  MenuButton,
-  ModalHeader
-} from '@chakra-ui/react';
 import { useLoading } from '@/hooks/useLoading';
-import { downLoadBold } from '@/utils/tools';
-import styles from '../index.module.scss';
-import MyMenu from '@/components/Menu';
-import { ChevronDownIcon } from '@chakra-ui/icons';
 import { streamFetch } from '@/services/streamFetch';
+import { downLoadBold } from '@/utils/tools';
+import { ChevronDownIcon } from '@chakra-ui/icons';
+import {
+  Box,
+  Button,
+  Flex,
+  MenuButton,
+  Modal,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  useTheme
+} from '@chakra-ui/react';
+import { SealosMenu } from '@sealos/ui';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import styles from '../index.module.scss';
 
 const LogsModal = ({
   dbName,
@@ -122,14 +122,14 @@ const LogsModal = ({
               Pod {t('Logs')}
             </Box>
             <Box px={3}>
-              <MyMenu
+              <SealosMenu
                 width={240}
                 Button={
                   <MenuButton
                     minW={'240px'}
                     h={'32px'}
                     textAlign={'start'}
-                    bg={'myWhite.400'}
+                    bg={'grayModern.100'}
                     border={theme.borders.base}
                     borderRadius={'md'}
                   >

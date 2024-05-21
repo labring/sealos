@@ -1,5 +1,4 @@
 import { getLogByNameAndContainerName } from '@/api/migrate';
-import MyMenu from '@/components/Menu';
 import { useLoading } from '@/hooks/useLoading';
 import styles from '@/pages/db/detail/index.module.scss';
 import { downLoadBold } from '@/utils/tools';
@@ -16,6 +15,7 @@ import {
   ModalOverlay,
   useTheme
 } from '@chakra-ui/react';
+import { SealosMenu } from '@sealos/ui';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -134,14 +134,14 @@ const LogsModal = ({
             Pod {t('Logs')}
           </Box>
           <Box px={3}>
-            <MyMenu
+            <SealosMenu
               width={240}
               Button={
                 <MenuButton
                   minW={'240px'}
                   h={'32px'}
                   textAlign={'start'}
-                  bg={'myWhite.400'}
+                  bg={'grayModern.100'}
                   border={theme.borders.base}
                   borderRadius={'md'}
                 >

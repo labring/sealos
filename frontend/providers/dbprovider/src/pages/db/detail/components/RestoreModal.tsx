@@ -83,17 +83,17 @@ const BackupModal = ({
           <ModalHeader>{t('Restore Database')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody display={'flex'} pb={8}>
-            <Box px={'50px'}>
+            <Box>
               <Tip
                 icon={<InfoOutlineIcon fontSize={'16px'} />}
                 size="sm"
                 text={t('Restore Backup Tip')}
+                borderRadius={'md'}
               />
               <Box>
                 <Flex mt={8} alignItems={'center'}>
                   <Box flex={'0 0 120px'}>{t('Database Name')}</Box>
                   <Input
-                    bg={'myWhite.300'}
                     {...register('databaseName', {
                       required: t('Database Name cannot empty') || 'Database Name cannot empty'
                     })}

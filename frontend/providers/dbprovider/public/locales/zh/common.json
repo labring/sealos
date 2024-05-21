@@ -267,5 +267,6 @@
   "Backup Running": "备份中",
   "Backup Deleting": "删除中",
   "DataBase": "数据库",
-  "Use Docs": "使用文档"
+  "Use Docs": "使用文档",
+  "Start": "开始"
 }

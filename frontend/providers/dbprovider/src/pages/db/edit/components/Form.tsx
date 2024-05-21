@@ -7,7 +7,7 @@ import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import type { DBEditType } from '@/types/db';
-import { ArrowDownIcon, InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
+import { InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
 import {
   Box,
   Flex,
@@ -395,6 +395,7 @@ const Form = ({
                     icon={<WarningIcon />}
                     text="The Single-node database is only suitable for development testing."
                     size="sm"
+                    borderRadius={'md'}
                   />
                 )}
                 {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
@@ -403,6 +404,7 @@ const Form = ({
                     icon={<InfoOutlineIcon />}
                     text="The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes."
                     size="sm"
+                    borderRadius={'md'}
                   />
                 )}
                 {(getValues('dbType') === DBTypeEnum.mongodb ||
@@ -415,6 +417,7 @@ const Form = ({
                         db: getValues('dbType')
                       })}
                       size="sm"
+                      borderRadius={'md'}
                     />
                   )}
               </Flex>

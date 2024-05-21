@@ -114,7 +114,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           >
             {t('Details')}
           </Button>
-          <MyMenu
+          <SealosMenu
             width={100}
             Button={
               <MenuButton
