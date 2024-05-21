@@ -319,7 +319,7 @@ const Form = ({
                 borderRadius={'lg'}
               >
                 <Flex alignItems={'center'}>
-                  <MyIcon name={'settings'} mr={5} w={'20px'} color={'grayModern.600'} />
+                  <MyIcon name={'settings'} mr={5} w={'20px'} />
                   <Box>{t('Advanced Configuration')}</Box>
                   <Center
                     bg={'#E8EBF0'}
