@@ -42,6 +42,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { message: toast } = useMessage();
+
   const [hasApplicationSource, sourceName] = useMemo(() => {
     return db?.labels
       ? [has(db.labels, templateDeployKey), db.labels[templateDeployKey]]
