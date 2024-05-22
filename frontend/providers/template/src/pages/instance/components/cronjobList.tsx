@@ -11,6 +11,7 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useMemo } from 'react';
 import { useResourceStore } from '@/store/resource';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { refetchIntervalTime } from './appList';
 
 export default function CronJobList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
@@ -21,6 +22,7 @@ export default function CronJobList({ instanceName }: { instanceName: string }) 
     ['getCronListByName', instanceName],
     () => getCronListByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(
           data.map((item) => {

@@ -11,6 +11,8 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
+export const refetchIntervalTime = 3000;
+
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const { appendResource } = useResourceStore();
@@ -19,7 +21,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
     ['getAppLaunchpadByName', instanceName],
     () => getAppLaunchpadByName(instanceName),
     {
-      // refetchInterval: 3000,
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(
           data.map((item) => {

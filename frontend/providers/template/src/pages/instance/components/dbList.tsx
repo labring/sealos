@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { refetchIntervalTime } from './appList';
 
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
@@ -19,6 +20,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
     ['getDBListByName', instanceName],
     () => getDBListByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(
           data.map((item) => {

@@ -26,6 +26,7 @@ import { useRouter } from 'next/router';
 import { useRef, useState } from 'react';
 import DelModal from './delDodal';
 import { useSearchStore } from '@/store/search';
+import { refetchIntervalTime } from './appList';
 
 export default function Header({ instanceName }: { instanceName: string }) {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function Header({ instanceName }: { instanceName: string }) {
     ['getInstanceByName', instanceName],
     () => getInstanceByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         yamlCR.current = data.yamlCR;
         setDisplayName(data?.displayName || instanceName);
