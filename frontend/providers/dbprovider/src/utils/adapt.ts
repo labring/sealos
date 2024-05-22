@@ -55,7 +55,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage
     ),
     conditions: db?.status?.conditions || [],
-    isDiskSpaceOverflow: false
+    isDiskSpaceOverflow: false,
+    labels: db.metadata.labels
   };
 };
 

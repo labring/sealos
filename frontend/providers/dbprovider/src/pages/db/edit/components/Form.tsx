@@ -298,6 +298,7 @@ const Form = ({
               </Flex>
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('Version')}</Label>
+
                 <MySelect
                   width={'200px'}
                   placeholder={`${t('DataBase')} ${t('Version')}`}

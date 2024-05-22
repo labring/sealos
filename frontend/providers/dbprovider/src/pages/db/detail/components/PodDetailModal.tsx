@@ -82,10 +82,9 @@ const Logs = ({
 
     return (
       <>
-        <Collapse startingHeight={'30px'} in={isExpanded}>
+        <Collapse startingHeight={'31px'} in={isExpanded}>
           <Box
-            py={1}
-            px={4}
+            p={'4px 8px'}
             backgroundColor={'#F4F4F7'}
             whiteSpace={isExpanded ? 'wrap' : 'nowrap'}
             overflow={'hidden'}
@@ -94,6 +93,9 @@ const Logs = ({
             border={'1px solid'}
             borderColor={'#E8EBF0'}
             borderRadius={'md'}
+            _hover={{
+              bg: '#E8EBF0'
+            }}
             onMouseUp={(e) => {
               const selection = window.getSelection();
               if (selection && selection.toString() !== '') {
@@ -196,7 +198,7 @@ const Logs = ({
                     border={theme.borders.base}
                     borderRadius={'md'}
                   >
-                    <Flex px={4} alignItems={'center'}>
+                    <Flex alignItems={'center'}>
                       <Box flex={1}>{podAlias}</Box>
                       <ChevronDownIcon ml={2} />
                     </Flex>

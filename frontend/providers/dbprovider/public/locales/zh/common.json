@@ -268,5 +268,8 @@
   "Backup Deleting": "删除中",
   "DataBase": "数据库",
   "Use Docs": "使用文档",
-  "Start": "开始"
+  "Start": "开始",
+  "Application Source": "应用来源",
+  "App Store": "应用商店",
+  "Manage all resources": "管理所有资源"
 }

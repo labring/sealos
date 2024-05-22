@@ -151,7 +151,7 @@ const LogsModal = ({
                     border={theme.borders.base}
                     borderRadius={'md'}
                   >
-                    <Flex px={4} alignItems={'center'}>
+                    <Flex alignItems={'center'}>
                       <Box flex={1}>{podAlias}</Box>
                       <ChevronDownIcon ml={2} />
                     </Flex>
@@ -175,7 +175,7 @@ const LogsModal = ({
           </Flex>
           <ModalCloseButton top={'10px'} right={'10px'} />
         </ModalHeader>
-        <Box flex={'1 0 0'} h={0} position={'relative'} pl={'36px'} mt={'24px'}>
+        <Box flex={'1 0 0'} h={0} position={'relative'} pl={'36px'} pr={'10px'} mt={'24px'}>
           <Box
             ref={LogBox}
             h={'100%'}
