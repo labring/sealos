@@ -2,7 +2,7 @@ import MyIcon from '@/components/Icon';
 import YamlCode from '@/components/YamlCode/index';
 import type { QueryType, YamlItemType } from '@/types';
 import { useCopyData } from '@/utils/tools';
-import { Box, Flex, Grid, useTheme } from '@chakra-ui/react';
+import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react';
 import { Tabs } from '@sealos/ui';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
@@ -101,14 +101,14 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             <Box flex={1} fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
             </Box>
-            <Box
+            <Center
               cursor={'pointer'}
               color={'grayModern.600'}
               _hover={{ color: '#219BF4' }}
               onClick={() => copyData(yamlList[selectedIndex].value)}
             >
               <MyIcon name="copy" w={'16px'} />
-            </Box>
+            </Center>
           </Flex>
           <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
             <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />

@@ -54,7 +54,7 @@ const DBStatusTag = ({
         <ModalContent minW={'520px'}>
           <ModalHeader display={'flex'} alignItems={'center'}>
             <Box flex={1}>{t(status.label)}</Box>
-            <ModalCloseButton top={'9px'} right={'10px'} />
+            <ModalCloseButton top={'10px'} right={'10px'} />
           </ModalHeader>
           <ModalBody>
             {conditions.map((item, i) => (

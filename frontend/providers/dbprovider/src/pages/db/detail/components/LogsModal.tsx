@@ -108,10 +108,11 @@ const LogsModal = ({
     const allLogs = await getPodLogs({
       dbName,
       podName,
-      stream: false
+      stream: false,
+      dbType: dbType
     });
     downLoadBold(allLogs, 'text/plain', 'log.txt');
-  }, [dbName, podName]);
+  }, [dbName, dbType, podName]);
 
   return (
     <Modal isOpen={true} onClose={closeFn} isCentered={true} lockFocusAcrossFrames={false}>
@@ -160,8 +161,8 @@ const LogsModal = ({
             </Button>
           </Flex>
         </ModalHeader>
-        <ModalCloseButton top={'9px'} right={'10px'} />
-        <Box flex={'1 0 0'} h={0} position={'relative'} px={'36px'} mt={'24px'}>
+        <ModalCloseButton top={'10px'} right={'10px'} />
+        <Box flex={'1 0 0'} h={0} position={'relative'} pl={'36px'} mt={'24px'}>
           <Box
             ref={LogBox}
             h={'100%'}

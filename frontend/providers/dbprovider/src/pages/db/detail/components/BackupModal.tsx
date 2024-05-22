@@ -15,7 +15,6 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalHeader,
   ModalOverlay,
   Switch,
   useTheme
@@ -226,14 +225,15 @@ const BackupModal = ({
       <Modal isOpen onClose={onClose} isCentered lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxW={'min(960px, 90vw)'} h={'480px'}>
-          <ModalCloseButton zIndex={2} top={'9px'} right={'10px'} />
-          <ModalBody display={'flex'} p={'0px'}>
+          <ModalCloseButton zIndex={2} top={'10px'} right={'10px'} />
+          <ModalBody display={'flex'} p={'0px'} borderRadius={'lg'}>
             <Box
               bg={'grayModern.50'}
               flex={'0 0 220px'}
               borderRight={'1px solid #E8EBF0'}
               py={'16px'}
               px={'20px'}
+              borderRadius={'lg'}
             >
               <Box mb={'16px'} fontSize={'16px'} fontWeight={'500'} color={'grayModern.900'}>
                 {t('Backup Database')}
@@ -437,6 +437,7 @@ const BackupModal = ({
                         bottom={0}
                         left={0}
                         bg={'rgba(255,255,255,0.6)'}
+                        borderRadius={'lg'}
                       />
                     )}
                   </>

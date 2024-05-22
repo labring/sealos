@@ -210,7 +210,7 @@ const Logs = ({
               />
             </Box>
           </Flex>
-          <ModalCloseButton top={'9px'} right={'10px'} />
+          <ModalCloseButton top={'10px'} right={'10px'} />
         </ModalHeader>
         <Grid
           py={'32px'}
@@ -299,7 +299,7 @@ const Logs = ({
                     borderRadius: '8px',
                     backgroundColor: '#fff',
                     border: '2px solid',
-                    borderColor: event.type === 'Warning' ? '#FF8492' : '#33BABB'
+                    borderColor: event.type === 'Warning' ? '#D92D20' : '#039855'
                   }}
                 >
                   <Flex lineHeight={1} mb={2} alignItems={'center'}>
@@ -339,7 +339,7 @@ const Logs = ({
         <ModalOverlay />
         <ModalContent maxW={'50vw'}>
           <ModalHeader>Pod 问题分析</ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody position={'relative'}>
             <Box
               className={isAnalyzing ? styles.analysesAnimation : ''}

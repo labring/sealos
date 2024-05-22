@@ -41,11 +41,10 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   return {
     id: db.metadata?.uid || ``,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    status: dbStatusMap[DBStatusEnum.Creating],
-    // status:
-    //   db?.status?.phase && dbStatusMap[db?.status?.phase]
-    //     ? dbStatusMap[db?.status?.phase]
-    //     : dbStatusMap.UnKnow,
+    status:
+      db?.status?.phase && dbStatusMap[db?.status?.phase]
+        ? dbStatusMap[db?.status?.phase]
+        : dbStatusMap.UnKnow,
     dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',

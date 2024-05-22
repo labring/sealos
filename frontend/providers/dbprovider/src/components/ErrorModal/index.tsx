@@ -8,7 +8,6 @@ import {
   ModalCloseButton,
   Box
 } from '@chakra-ui/react';
-import MyIcon from '@/components/Icon';
 
 const ErrorModal = ({
   title,
@@ -22,14 +21,17 @@ const ErrorModal = ({
   return (
     <Modal isOpen={true} onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
-      <ModalContent py={3}>
-        <ModalHeader display={'flex'} alignItems={'center'} color={'myRed.600'}>
-          <MyIcon name="warning" width={'14px'}></MyIcon>
-          <Box ml={3} fontSize={'xl'}>
-            {title}
-          </Box>
+      <ModalContent>
+        <ModalHeader
+          display={'flex'}
+          alignItems={'center'}
+          color={'grayModern.900'}
+          fontWeight={'bold'}
+          fontSize={'lg'}
+        >
+          <Box>{title}</Box>
         </ModalHeader>
-        <ModalCloseButton color={'myRed.600'} fontSize={'16px'} transform={'translateY(10px)'} />
+        <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
           {content}
         </ModalBody>

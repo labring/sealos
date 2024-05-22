@@ -395,7 +395,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             <ModalOverlay />
             <ModalContent minW={'430px'}>
               <ModalHeader height={'48px'}>{t('Enable external network access')}</ModalHeader>
-              <ModalCloseButton top={'9px'} right={'10px'} />
+              <ModalCloseButton top={'10px'} right={'10px'} />
               <Flex
                 alignItems={'center'}
                 justifyContent={'center'}

@@ -59,7 +59,7 @@ const DelModal = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{t('Delete Warning')}</ModalHeader>
-        <ModalCloseButton top={'9px'} right={'10px'} />
+        <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody pb={4}>
           <Box color={'grayModern.600'}>
             {t('Delete Hint')}

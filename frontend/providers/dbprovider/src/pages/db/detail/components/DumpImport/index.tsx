@@ -248,7 +248,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           <ModalContent>
             <ModalHeader>{t('Prompt')}</ModalHeader>
             <ModalBody>
-              <ModalCloseButton />
+              <ModalCloseButton top={'10px'} right={'10px'} />
               <Flex mb={'44px'}>
                 <Text> {t('Are you sure to perform database migration')} </Text>
               </Flex>
