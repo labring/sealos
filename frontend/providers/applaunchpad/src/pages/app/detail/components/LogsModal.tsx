@@ -108,7 +108,7 @@ const LogsModal = ({
   }, [appName, podName]);
 
   return (
-    <Modal isOpen={true} onClose={closeFn} isCentered={true}>
+    <Modal isOpen={true} onClose={closeFn} isCentered={true} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent className={styles.logs} display={'flex'} maxW={'90vw'} h={'90vh'} m={0}>
         <ModalHeader py={'8px'}>

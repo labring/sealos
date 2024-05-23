@@ -27,6 +27,7 @@ export const streamFetch = ({
       });
       const reader = res.body?.getReader();
       if (!reader) return;
+      abortSignal.signal.addEventListener('abort', () => reader.cancel(), { once: true });
       const decoder = new TextDecoder();
       let responseText = '';
 

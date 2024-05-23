@@ -1,38 +1,38 @@
-import React, {
-  forwardRef,
-  useCallback,
-  ForwardedRef,
-  useImperativeHandle,
-  useState,
-  useMemo
-} from 'react';
+import { deleteBackup, getBackupList, getBackupPolicyByCluster } from '@/api/backup';
+import MyIcon from '@/components/Icon';
+import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useLoading } from '@/hooks/useLoading';
+import type { BackupItemType, DBDetailType } from '@/types/db';
+import { getErrText } from '@/utils/tools';
+import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
+  Button,
   Flex,
-  useDisclosure,
-  Tooltip
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tooltip,
+  Tr,
+  useDisclosure
 } from '@chakra-ui/react';
-import { QuestionOutlineIcon } from '@chakra-ui/icons';
-import type { BackupItemType, DBDetailType } from '@/types/db';
-import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
-import dynamic from 'next/dynamic';
+import { MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useConfirm } from '@/hooks/useConfirm';
 import dayjs from 'dayjs';
-import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useTranslation } from 'next-i18next';
-import { deleteBackup, getBackupPolicy, getBackupPolicyByCluster } from '@/api/backup';
-import { getErrText } from '@/utils/tools';
-import { getBackupList } from '@/api/backup';
-import MyIcon from '@/components/Icon';
+import dynamic from 'next/dynamic';
+import React, {
+  ForwardedRef,
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useState
+} from 'react';
 
 const BackupModal = dynamic(() => import('./BackupModal'));
 const RestoreModal = dynamic(() => import('./RestoreModal'));
@@ -45,7 +45,7 @@ export type ComponentRef = {
 const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
   if (!db) return <></>;
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const {
     isOpen: isOpenBackupModal,
@@ -159,26 +159,21 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       render: (item: BackupItemType) =>
         item.status.value !== BackupStatusEnum.InProgress ? (
           <Flex>
-            <Tooltip label={t('Restore Backup')}>
-              <Flex {...operationIconBoxStyles} onClick={() => setBackupInfo(item)}>
+            <MyTooltip label={t('Restore Backup')}>
+              <Button variant={'square'} onClick={() => setBackupInfo(item)}>
                 <MyIcon name={'restore'} {...operationIconStyles} />
-              </Flex>
-            </Tooltip>
-            {/* <Tooltip label={t('Download Backup')}>
-            <Flex {...operationIconBoxStyles}>
-              <MyIcon {...operationIconStyles} name={'download'} w={'16px'} />
-            </Flex>
-          </Tooltip> */}
-            <Tooltip label={t('Delete Backup')}>
-              <Flex
-                {...operationIconBoxStyles}
+              </Button>
+            </MyTooltip>
+            <MyTooltip label={t('Delete Backup')}>
+              <Button
+                variant={'square'}
                 mr={0}
                 _hover={{ bg: '#EFF0F1', color: 'red.600' }}
                 onClick={openConfirmDel(() => confirmDel(item.name))}
               >
                 <MyIcon name={'delete'} {...operationIconStyles} />
-              </Flex>
-            </Tooltip>
+              </Button>
+            </MyTooltip>
           </Flex>
         ) : null
     }
@@ -208,8 +203,9 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                   py={4}
                   key={item.key}
                   border={'none'}
-                  backgroundColor={'#F8F8FA'}
+                  backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
+                  color={'grayModern.600'}
                 >
                   {t(item.title)}
                 </Th>

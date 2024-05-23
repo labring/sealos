@@ -7,6 +7,7 @@ export const KBMigrationTaskLabel = 'datamigration.apecloud.io/migrationtask';
 export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
+export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
@@ -40,9 +41,9 @@ export const dbStatusMap = {
   [DBStatusEnum.Creating]: {
     label: 'Creating',
     value: DBStatusEnum.Creating,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
+    color: 'grayModern.500',
+    backgroundColor: 'rgba(17, 24, 36, 0.05)',
+    dotColor: 'grayModern.500'
   },
   [DBStatusEnum.Starting]: {
     label: 'Starting',
@@ -54,9 +55,9 @@ export const dbStatusMap = {
   [DBStatusEnum.Stopping]: {
     label: 'Pausing',
     value: DBStatusEnum.Stopping,
-    color: '#8172D8',
-    backgroundColor: '#F2F1FB',
-    dotColor: '#8172D8'
+    color: '#6F5DD7',
+    backgroundColor: '#F0EEFF',
+    dotColor: '#6F5DD7'
   },
   [DBStatusEnum.Stopped]: {
     label: 'Paused',
@@ -68,9 +69,9 @@ export const dbStatusMap = {
   [DBStatusEnum.Running]: {
     label: 'Running',
     value: DBStatusEnum.Running,
-    color: '#00A9A6',
-    backgroundColor: '#E6F6F6',
-    dotColor: '#00A9A6'
+    color: '#039855',
+    backgroundColor: '#EDFBF3',
+    dotColor: '#039855'
   },
   [DBStatusEnum.Updating]: {
     label: 'Updating',
@@ -117,9 +118,9 @@ export const dbStatusMap = {
   [DBStatusEnum.Failed]: {
     label: 'Failed',
     value: DBStatusEnum.Failed,
-    color: '#FF5B6E',
-    backgroundColor: '#FFEBED',
-    dotColor: '#FF5B6E'
+    color: '#F04438',
+    backgroundColor: '#FEF3F2',
+    dotColor: '#F04438'
   },
   [DBStatusEnum.UnKnow]: {
     label: 'Creating',

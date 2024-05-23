@@ -82,14 +82,16 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
             mt="12px"
             gap="12px"
             py="16px"
-            pl="16px"
+            px="16px"
             borderRadius={'4px'}
             bg="#F8FAFB"
           >
             {appendixs?.map((item) => (
               <Flex h="22px" gap="8px" alignItems={'center'} key={item.fileName}>
                 {item.fileIcon}
-                <Text fontSize={'14px'}>{item.fileName}</Text>
+                <Text fontSize={'14px'} isTruncated>
+                  {item.fileName}
+                </Text>
                 <Icon
                   xmlns="http://www.w3.org/2000/svg"
                   width="16px"

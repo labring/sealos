@@ -20,7 +20,7 @@ const ConfigMapDetailModal = ({
   onClose: () => void;
 }) => {
   return (
-    <Modal isOpen onClose={onClose}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent top={'10vh'} minW={'600px'} backgroundColor={'#F5F5F5'}>
         <ModalHeader>{mountPath}</ModalHeader>

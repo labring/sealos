@@ -3,7 +3,7 @@ import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { PodStatusEnum, podStatusMap } from '@/constants/db';
 import type { V1ContainerStatus } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
-import MyTooltip from '../MyTooltip';
+import { MyTooltip } from '@sealos/ui';
 
 const PodStatus = ({ containerStatuses }: { containerStatuses: V1ContainerStatus[] }) => {
   const theme = useTheme();
@@ -36,10 +36,9 @@ const PodStatus = ({ containerStatuses }: { containerStatuses: V1ContainerStatus
       {formatStatuses.map((item, i) => (
         <MyTooltip key={item.name} textAlign={'center'} label={item.label}>
           <Box
-            w={'16px'}
-            h={'16px'}
-            border={theme.borders.base}
-            borderRadius={'md'}
+            w={'12px'}
+            h={'12px'}
+            borderRadius={'2px'}
             _notLast={{ mr: 2 }}
             cursor={'pointer'}
             bg={item.bg}

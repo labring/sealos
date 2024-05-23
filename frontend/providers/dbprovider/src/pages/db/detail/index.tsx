@@ -1,12 +1,11 @@
-import { DBTypeEnum } from '@/constants/db';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useDBStore } from '@/store/db';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Button, Flex, useTheme } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -67,7 +66,7 @@ const AppDetail = ({
   }, [SystemEnv, dbType]);
 
   const theme = useTheme();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
@@ -86,7 +85,7 @@ const AppDetail = ({
   });
 
   return (
-    <Flex flexDirection={'column'} height={'100vh'} bg={'#F3F4F5'} px={9} pb={4}>
+    <Flex flexDirection={'column'} height={'100vh'} bg={'grayModern.100'} px={9} pb={4}>
       <Box>
         <Header db={dbDetail} setShowSlider={setShowSlider} isLargeScreen={isLargeScreen} />
       </Box>
@@ -99,8 +98,8 @@ const AppDetail = ({
           zIndex={9}
           transition={'0.4s'}
           bg={'white'}
-          border={theme.borders.sm}
-          borderRadius={'md'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
           {...(isLargeScreen
             ? {}
             : {
@@ -119,10 +118,10 @@ const AppDetail = ({
           w={0}
           h={'100%'}
           bg={'white'}
-          border={theme.borders.sm}
-          borderRadius={'md'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
         >
-          <Flex p={'26px'} alignItems={'flex-start'}>
+          <Flex m={'26px'} mb={'16px'} alignItems={'flex-start'}>
             {listNav.map((item) => (
               <Box
                 key={item.value}
@@ -137,7 +136,7 @@ const AppDetail = ({
                       borderBottomColor: 'black'
                     }
                   : {
-                      color: 'myGray.500',
+                      color: 'grayModern.600',
                       borderBottomColor: 'transparent',
                       onClick: () =>
                         router.replace(
@@ -149,12 +148,13 @@ const AppDetail = ({
               </Box>
             ))}
             <Box flex={1}></Box>
-            {listType === TabEnum.pod && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
+            {listType === TabEnum.pod && <Box color={'grayModern.600'}>{dbPods.length} Items</Box>}
             {listType === TabEnum.backup && !BackupTableRef.current?.backupProcessing && (
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
-                  variant={'primary'}
+                  height={'32px'}
+                  variant={'solid'}
                   onClick={() => {
                     BackupTableRef.current?.openBackup();
                   }}
@@ -167,7 +167,8 @@ const AppDetail = ({
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
-                  variant={'primary'}
+                  height={'32px'}
+                  variant={'solid'}
                   onClick={() => {
                     router.push(`/db/migrate?name=${dbName}&dbType=${dbType}`);
                   }}

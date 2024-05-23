@@ -2,15 +2,16 @@ import { applyYamlList, getDBSecret } from '@/api/db';
 import { defaultDBEditValue } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useDBStore } from '@/store/db';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
+import { DBType } from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2MigrateCR } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -21,9 +22,8 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { DBType } from '@/types/db';
 
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
   ...defaultDBEditValue,
@@ -54,7 +54,7 @@ const EditApp = ({
   const { t } = useTranslation();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const { checkQuotaAllow, balance } = useUserStore();
   const { openConfirm, ConfirmChild } = useConfirm({

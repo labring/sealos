@@ -1,6 +1,6 @@
 import MyTooltip from '@/components/MyTooltip';
 import { useUserStore } from '@/store/user';
-import { Box, BoxProps, Flex, Progress, css } from '@chakra-ui/react';
+import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
@@ -24,10 +24,11 @@ const sourceMap = {
   }
 };
 
-const QuotaBox = ({ titleStyle }: { titleStyle?: BoxProps }) => {
+const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
   const { t } = useTranslation();
   const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
+  const theme = useTheme();
 
   const quotaList = useMemo(() => {
     if (!userQuota) return [];
@@ -47,15 +48,23 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
-    <Box>
-      <Box py={3} px={4} color={'#485058'} fontWeight={500} fontSize={'14px'} {...titleStyle}>
+    <Box borderRadius={'md'} border={showBorder && theme.borders.base} bg={'#FFF'}>
+      <Box
+        py={3}
+        px={'20px'}
+        borderBottom={showBorder && theme.borders.base}
+        color={'grayModern.900'}
+        fontWeight={500}
+      >
         {t('app.Resource Quota')}
       </Box>
-      <Box py={3} px={4}>
+      <Flex flexDirection={'column'} gap={'14px'} py={'16px'} px={'20px'}>
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
-            <Flex alignItems={'center'} mt="16px">
-              <Box flex={'0 0 60px'}>{t(item.type)}</Box>
+            <Flex alignItems={'center'}>
+              <Box flex={'0 0 60px'} textTransform={'capitalize'}>
+                {t(item.type === 'cpu' ? 'CPU' : item.type)}
+              </Box>
               <Progress
                 flex={'1 0 0'}
                 borderRadius={'sm'}
@@ -71,7 +80,7 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
             </Flex>
           </MyTooltip>
         ))}
-      </Box>
+      </Flex>
     </Box>
   );
 };

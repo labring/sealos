@@ -70,6 +70,7 @@ export interface DBDetailType extends DBEditType {
   status: DBStatusMapType;
   conditions: DBConditionItemType[];
   isDiskSpaceOverflow: boolean;
+  labels?: { [key: string]: string };
 }
 
 export interface DBConditionItemType {

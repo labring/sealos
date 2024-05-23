@@ -1,5 +1,5 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
-import { MigrationRemark, dbStatusMap } from '@/constants/db';
+import { DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
 import type { DBDetailType, DBEditType, DBListItemType, PodDetailType, PodEvent } from '@/types/db';
@@ -55,7 +55,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage
     ),
     conditions: db?.status?.conditions || [],
-    isDiskSpaceOverflow: false
+    isDiskSpaceOverflow: false,
+    labels: db.metadata.labels
   };
 };
 

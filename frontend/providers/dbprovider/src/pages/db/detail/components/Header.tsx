@@ -1,15 +1,15 @@
-import React, { Dispatch, useCallback, useState } from 'react';
-import { Box, Flex, Button, useDisclosure } from '@chakra-ui/react';
-import type { DBDetailType } from '@/types/db';
-import { useRouter } from 'next/router';
-import { restartDB, pauseDBByName, startDBByName } from '@/api/db';
-import { useToast } from '@/hooks/useToast';
-import { useConfirm } from '@/hooks/useConfirm';
-import { defaultDBDetail } from '@/constants/db';
+import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import dynamic from 'next/dynamic';
+import { defaultDBDetail } from '@/constants/db';
+import { useConfirm } from '@/hooks/useConfirm';
+import type { DBDetailType } from '@/types/db';
+import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import React, { Dispatch, useCallback, useState } from 'react';
 
 const DelModal = dynamic(() => import('./DelModal'));
 const BackupModal = dynamic(() => import('./BackupModal'));
@@ -25,7 +25,7 @@ const Header = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const {
     isOpen: isOpenDelModal,
     onOpen: onOpenDelModal,
@@ -101,22 +101,20 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <Button variant={'unstyled'} onClick={() => router.replace('/dbs')} lineHeight={1}>
-        <MyIcon name="arrowLeft" />
-      </Button>
-      <Box mx={5} fontSize={'3xl'} fontWeight={'bold'}>
-        {router.query.name || db.dbName}
-      </Box>
-      <DBStatusTag status={db.status} conditions={db.conditions} showBorder />
+      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
+        <MyIcon name="arrowLeft" w={'24px'} />
+        <Box ml={'4px'} mr={'18px'} fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
+          {router.query.name || db.dbName}
+        </Box>
+      </Flex>
+      <DBStatusTag status={db.status} conditions={db.conditions} />
       {!isLargeScreen && (
         <Box mx={4}>
           <Button
-            flex={1}
-            h={'36px'}
-            borderColor={'myGray.200'}
-            leftIcon={<MyIcon name="detail" w={'14px'} h={'14px'} transform={'translateY(3px)'} />}
-            variant={'base'}
-            bg={'white'}
+            minW={'97px'}
+            h={'40px'}
+            variant={'outline'}
+            leftIcon={<MyIcon name="detail" w={'16px'} />}
             onClick={() => setShowSlider(true)}
           >
             {t('Details')}
@@ -131,7 +129,7 @@ const Header = ({
         mr={5}
         h={'36px'}
         borderColor={'myGray.200'}
-        leftIcon={<MyIcon name={'change'} w={'14px'} />}
+        leftIcon={<MyIcon name={'change'} w={'20px'} />}
         isLoading={loading}
         variant={'base'}
         bg={'white'}
@@ -144,12 +142,11 @@ const Header = ({
       {db.status.value !== 'Stopped' && (
         <Button
           mr={5}
-          h={'36px'}
-          borderColor={'myGray.200'}
-          leftIcon={<MyIcon name={'change'} w={'14px'} />}
+          minW={'97px'}
+          h={'40px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name={'change'} w={'20px'} />}
           isLoading={loading}
-          variant={'base'}
-          bg={'white'}
           isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
           onClick={() => {
             router.push(`/db/edit?name=${db.dbName}`);
@@ -161,12 +158,11 @@ const Header = ({
       {db.status.value === 'Stopped' ? (
         <Button
           mr={5}
-          h={'36px'}
-          borderColor={'myGray.200'}
-          leftIcon={<MyIcon name="continue" w={'14px'} />}
+          minW={'97px'}
+          h={'40px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name="continue" w={'20px'} />}
           isLoading={loading}
-          variant={'base'}
-          bg={'white'}
           onClick={handleStartApp}
         >
           {t('Continue')}
@@ -174,12 +170,11 @@ const Header = ({
       ) : (
         <Button
           mr={5}
-          h={'36px'}
-          borderColor={'myGray.200'}
-          leftIcon={<MyIcon name="pause" w={'14px'} />}
+          minW={'97px'}
+          h={'40px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name="pause" w={'20px'} />}
           isLoading={loading}
-          variant={'base'}
-          bg={'white'}
           isDisabled={db.status.value === 'Updating'}
           onClick={onOpenPause(handlePauseApp)}
         >
@@ -187,31 +182,13 @@ const Header = ({
         </Button>
       )}
 
-      {/* {db.status.value === 'Running' && (
-        <>
-          <Button
-            mr={5}
-            h={'36px'}
-            borderColor={'myGray.200'}
-            variant={'base'}
-            bg={'white'}
-            leftIcon={<MyIcon name="restart" w={'14px'} h={'14px'} />}
-            onClick={onOpenBackupModal}
-            isLoading={loading}
-          >
-          {t('Backup')}
-          </Button>
-        </>
-      )} */}
-
       {db.status.value !== 'Stopped' && (
         <Button
           mr={5}
-          h={'36px'}
-          borderColor={'myGray.200'}
-          variant={'base'}
-          bg={'white'}
-          leftIcon={<MyIcon name="restart" w={'14px'} h={'14px'} />}
+          minW={'97px'}
+          h={'40px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name="restart" w={'20px'} />}
           isDisabled={db.status.value === 'Updating'}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
@@ -221,16 +198,15 @@ const Header = ({
       )}
 
       <Button
-        h={'36px'}
-        borderColor={'myGray.200'}
-        leftIcon={<MyIcon name="delete" w={'14px'} h={'14px'} />}
-        variant={'base'}
-        bg={'white'}
+        minW={'97px'}
+        h={'40px'}
+        variant={'outline'}
+        leftIcon={<MyIcon name="delete" w={'20px'} />}
+        isLoading={loading}
+        isDisabled={db.status.value === 'Updating'}
         _hover={{
           color: '#FF324A'
         }}
-        isLoading={loading}
-        isDisabled={db.status.value === 'Updating'}
         onClick={onOpenDelModal}
       >
         {t('Delete')}

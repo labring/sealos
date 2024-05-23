@@ -36,7 +36,7 @@ export default function RangeDate({
           <Box flex={1} textAlign={'center'}>
             {format(selectedRange.to || new Date(), 'y-MM-dd')}
           </Box>
-          <CalendarIcon pr={2} fontSize={'22px'} color={'myGray.600'} />
+          <CalendarIcon pr={2} fontSize={'22px'} color={'grayModern.600'} />
         </Button>
       </PopoverTrigger>
       <PopoverContent w={'100%'}>

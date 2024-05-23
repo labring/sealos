@@ -19,7 +19,7 @@ const Empty = () => {
     >
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <Box py={8}>{t('DataBase Empty')}</Box>
-      <Button w={155} mt={5} variant={'primary'} onClick={() => router.push('/db/edit')}>
+      <Button w={155} mt={5} variant={'solid'} onClick={() => router.push('/db/edit')}>
         {t('Create DB')}
       </Button>
     </Box>

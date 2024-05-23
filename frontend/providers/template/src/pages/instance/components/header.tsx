@@ -26,6 +26,8 @@ import { useRouter } from 'next/router';
 import { useRef, useState } from 'react';
 import DelModal from './delDodal';
 import { useSearchStore } from '@/store/search';
+import { refetchIntervalTime } from './appList';
+import useSessionStore from '@/store/session';
 
 export default function Header({ instanceName }: { instanceName: string }) {
   const router = useRouter();
@@ -41,11 +43,13 @@ export default function Header({ instanceName }: { instanceName: string }) {
   const [displayName, setDisplayName] = useState('');
   const yamlCR = useRef<TemplateInstanceType>();
   const { setAppType } = useSearchStore();
+  const { session } = useSessionStore();
 
   const { data, refetch } = useQuery(
-    ['getInstanceByName', instanceName],
+    ['getInstanceByName', instanceName, session?.kubeconfig],
     () => getInstanceByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         yamlCR.current = data.yamlCR;
         setDisplayName(data?.displayName || instanceName);

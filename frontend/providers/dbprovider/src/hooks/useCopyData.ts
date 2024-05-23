@@ -1,10 +1,11 @@
-import { useToast } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 
 /**
  * copy text data
  */
 export const useCopyData = () => {
-  const toast = useToast();
+  const { message: toast } = useMessage();
+
   return {
     copyData: async (data: string, title: string = '复制成功') => {
       try {

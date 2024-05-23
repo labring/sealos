@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { Box, Grid, useTheme, Flex } from '@chakra-ui/react';
-import YamlCode from '@/components/YamlCode/index';
-import styles from './index.module.scss';
-import { useCopyData } from '@/utils/tools';
-import type { YamlItemType, QueryType } from '@/types';
-import Tabs from '@/components/Tabs';
 import { obj2Query } from '@/api/tools';
-import { useRouter } from 'next/router';
 import MyIcon from '@/components/Icon';
+import YamlCode from '@/components/YamlCode/index';
+import type { QueryType, YamlItemType } from '@/types';
+import { useCopyData } from '@/utils/tools';
+import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react';
+import { Tabs } from '@sealos/ui';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
+import styles from './index.module.scss';
 
 const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
@@ -15,6 +16,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   const { name } = router.query as QueryType;
   const { copyData } = useCopyData();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { t } = useTranslation();
 
   return (
     <Grid
@@ -27,8 +29,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
       <Box>
         <Tabs
           list={[
-            { id: 'form', label: 'Config Form' },
-            { id: 'yaml', label: 'YAML File' }
+            { id: 'form', label: t('Config Form') },
+            { id: 'yaml', label: t('YAML File') }
           ]}
           activeId={'yaml'}
           onChange={() =>
@@ -40,40 +42,51 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             )
           }
         />
-        <Box mt={3} borderRadius={'sm'} overflow={'hidden'} bg={'white'}>
+        <Flex
+          flexDirection={'column'}
+          mt={3}
+          borderRadius={'md'}
+          overflow={'hidden'}
+          bg={'white'}
+          p="4px"
+          border={theme.borders.base}
+        >
           {yamlList.map((file, index) => (
-            <Box
+            <Flex
               key={file.filename}
-              px={5}
-              py={3}
-              borderLeft={'2px solid'}
+              py={'8px'}
+              cursor={'pointer'}
               alignItems={'center'}
-              h={'48px'}
-              {...(yamlList.length > 1
+              h={'40px'}
+              borderRadius={'base'}
+              _hover={{
+                backgroundColor: 'grayModern.100'
+              }}
+              {...(index === selectedIndex
                 ? {
-                    cursor: 'pointer',
-                    _hover: {
-                      backgroundColor: 'myWhite.400'
-                    },
-                    ...(index === selectedIndex
-                      ? {
-                          fontWeight: 'bold',
-                          borderColor: 'myGray.900',
-                          backgroundColor: 'myWhite.600 !important'
-                        }
-                      : {
-                          color: 'myGray.500',
-                          borderColor: 'myGray.200',
-                          backgroundColor: 'transparent'
-                        })
+                    fontWeight: 'bold',
+                    borderColor: 'grayModern.900',
+                    backgroundColor: 'grayModern.100'
                   }
-                : {})}
+                : {
+                    color: 'grayModern.900',
+                    borderColor: 'myGray.200',
+                    backgroundColor: 'transparent'
+                  })}
               onClick={() => setSelectedIndex(index)}
             >
-              {file.filename}
-            </Box>
+              <Box
+                w={'2px'}
+                h={'24px'}
+                justifySelf={'start'}
+                bg={'grayModern.900'}
+                borderRadius={'12px'}
+                opacity={selectedIndex === index ? 1 : 0}
+              ></Box>
+              <Box ml="18px">{file.filename}</Box>
+            </Flex>
           ))}
-        </Box>
+        </Flex>
       </Box>
       {!!yamlList[selectedIndex] && (
         <Flex
@@ -85,18 +98,18 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           borderRadius={'md'}
           position={'relative'}
         >
-          <Flex px={8} py={4} bg={'myWhite.400'}>
-            <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
+          <Flex px={8} py={4} bg={'grayModern.50'}>
+            <Box flex={1} fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
             </Box>
-            <Box
+            <Center
               cursor={'pointer'}
-              color={'myGray.600'}
+              color={'grayModern.600'}
               _hover={{ color: '#219BF4' }}
               onClick={() => copyData(yamlList[selectedIndex].value)}
             >
               <MyIcon name="copy" w={'16px'} />
-            </Box>
+            </Center>
           </Flex>
           <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
             <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />

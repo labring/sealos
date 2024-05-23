@@ -1,7 +1,6 @@
 import { getCronListByName } from '@/api/instance';
 import StatusTag from '@/components/StatusTag';
 import MyIcon from '@/components/Icon';
-import PodLineChart from '@/components/PodLineChart';
 import MyTable from '@/components/Table';
 import { CronJobListItemType } from '@/types/cronJob';
 import { Box, Button, Flex, Icon, Text } from '@chakra-ui/react';
@@ -11,16 +10,20 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useMemo } from 'react';
 import { useResourceStore } from '@/store/resource';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { refetchIntervalTime } from './appList';
+import useSessionStore from '@/store/session';
 
 export default function CronJobList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { appendResource } = useResourceStore();
+  const { session } = useSessionStore();
 
   const { data } = useQuery(
-    ['getCronListByName', instanceName],
+    ['getCronListByName', instanceName, session?.kubeconfig],
     () => getCronListByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(
           data.map((item) => {

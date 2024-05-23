@@ -1,20 +1,17 @@
-import React, { useCallback, useState } from 'react';
-import { useRouter } from 'next/router';
-import { Box, Button, Flex, MenuButton } from '@chakra-ui/react';
-import { DBListItemType } from '@/types/db';
+import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { useTheme } from '@chakra-ui/react';
-import { useGlobalStore } from '@/store/global';
-import { useToast } from '@/hooks/useToast';
-import { restartDB, pauseDBByName, startDBByName } from '@/api/db';
-import MyTable from '@/components/Table';
-import dynamic from 'next/dynamic';
-import MyMenu from '@/components/Menu';
+import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
-import { DBStatusEnum, DBComponentNameMap } from '@/constants/db';
+import { useGlobalStore } from '@/store/global';
+import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
+import { Box, Button, Center, Flex, Image, MenuButton, useTheme } from '@chakra-ui/react';
+import { MyTable, SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import { useCallback, useState } from 'react';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -27,7 +24,7 @@ const DBList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const theme = useTheme();
   const router = useRouter();
 
@@ -108,74 +105,77 @@ const DBList = ({
     render?: (item: DBListItemType) => JSX.Element;
   }[] = [
     {
-      title: 'Name',
+      title: t('Name'),
       key: 'name',
       render: (item: DBListItemType) => {
         return (
-          <Box pl={4} color={'myGray.900'} fontSize={'md'}>
+          <Box pl={4} color={'grayModern.900'} fontSize={'md'}>
             {item.name}
           </Box>
         );
       }
     },
     {
-      title: 'Type',
+      title: t('Type'),
       key: 'dbType',
-      render: (item: DBListItemType) => <>{DBComponentNameMap[item.dbType]}</>
+      render: (item: DBListItemType) => (
+        <Flex alignItems={'center'} gap={'6px'}>
+          <Image width={'20px'} height={'20px'} alt={item.id} src={`/images/${item.dbType}.svg`} />
+          {DBComponentNameMap[item.dbType]}
+        </Flex>
+      )
     },
     {
-      title: 'Status',
+      title: t('Status'),
       key: 'status',
       render: (item: DBListItemType) => (
         <DBStatusTag conditions={item.conditions} status={item.status} />
       )
     },
     {
-      title: 'Creation Time',
+      title: t('Creation Time'),
       dataIndex: 'createTime',
       key: 'createTime'
     },
     {
-      title: 'CPU',
+      title: t('CPU'),
       key: 'cpu',
       render: (item: DBListItemType) => <>{item.cpu / 1000}C</>
     },
     {
-      title: 'Memory',
+      title: t('Memory'),
       key: 'memory',
       render: (item: DBListItemType) => <>{printMemory(item.memory)}</>
     },
     {
-      title: 'Storage',
+      title: t('Storage'),
       key: 'storage',
       dataIndex: 'storage'
     },
     {
-      title: 'Operation',
+      title: t('Operation'),
       key: 'control',
       render: (item: DBListItemType) => (
         <Flex>
           <Button
             mr={5}
-            variant={'base'}
-            leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
-            px={3}
+            height={'32px'}
+            size={'sm'}
+            fontSize={'base'}
+            bg={'grayModern.150'}
+            color={'grayModern.900'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             onClick={() => router.push(`/db/detail?name=${item.name}&dbType=${item.dbType}`)}
           >
             {t('Details')}
           </Button>
-          <MyMenu
+          <SealosMenu
             width={100}
             Button={
-              <MenuButton
-                w={'32px'}
-                h={'32px'}
-                borderRadius={'sm'}
-                _hover={{
-                  bg: 'myWhite.400',
-                  color: 'hover.iconBlue'
-                }}
-              >
+              <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
                 <MyIcon name={'more'} px={3} />
               </MenuButton>
             }
@@ -185,7 +185,7 @@ const DBList = ({
                     {
                       child: (
                         <>
-                          <MyIcon name={'continue'} w={'14px'} />
+                          <MyIcon name={'continue'} w={'16px'} />
                           <Box ml={2}>{t('Continue')}</Box>
                         </>
                       ),
@@ -196,7 +196,7 @@ const DBList = ({
                     {
                       child: (
                         <>
-                          <MyIcon name={'change'} w={'14px'} />
+                          <MyIcon name={'change'} w={'16px'} />
                           <Box ml={2}>{t('Update')}</Box>
                         </>
                       ),
@@ -206,7 +206,7 @@ const DBList = ({
                     {
                       child: (
                         <>
-                          <MyIcon name={'restart'} />
+                          <MyIcon name={'restart'} width={'16px'} />
                           <Box ml={2}>{t('Restart')}</Box>
                         </>
                       ),
@@ -219,7 +219,7 @@ const DBList = ({
                     {
                       child: (
                         <>
-                          <MyIcon name={'pause'} w={'14px'} />
+                          <MyIcon name={'pause'} w={'16px'} />
                           <Box ml={2}>{t('Pause')}</Box>
                         </>
                       ),
@@ -231,10 +231,16 @@ const DBList = ({
               {
                 child: (
                   <>
-                    <MyIcon name={'delete'} w={'12px'} />
+                    <MyIcon name={'delete'} w={'16px'} />
                     <Box ml={2}>{t('Delete')}</Box>
                   </>
                 ),
+                menuItemStyle: {
+                  _hover: {
+                    color: 'red.600',
+                    bg: 'rgba(17, 24, 36, 0.05)'
+                  }
+                },
                 onClick: () => setDelAppName(item.name),
                 isDisabled: item.status.value === 'Updating'
               }
@@ -246,38 +252,40 @@ const DBList = ({
   ];
 
   return (
-    <Box bg={'#F3F4F5'} px={'34px'} minH="100vh">
-      <Flex h={'88px'} alignItems={'center'}>
-        <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
-          <MyIcon name="logo" w={'24px'} h={'24px'} />
-        </Box>
-        <Box fontSize={'2xl'} color={'black'}>
+    <Box backgroundColor={'grayModern.100'} px={'32px'} minH="100vh">
+      <Flex h={'90px'} alignItems={'center'}>
+        <Center
+          mr={'16px'}
+          width={'46px'}
+          bg={'#FFF'}
+          height={'46px'}
+          border={theme.borders.base}
+          borderRadius={'md'}
+        >
+          <MyIcon name="logo" w={'30px'} h={'30px'} />
+        </Center>
+        <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
           {t('DBList')}
         </Box>
-        <Box ml={3} color={'gray.500'}>
+        <Box ml={'8px'} fontSize={'md'} fontWeight={'bold'} color={'grayModern.500'}>
           ( {dbList.length} )
         </Box>
         <Box flex={1}></Box>
         <Button
-          flex={'0 0 156px'}
-          h={'42px'}
-          mr={'24px'}
-          bg={'#FFF'}
-          color={'#24282C'}
+          variant={'outline'}
+          minW={'156px'}
+          h={'40px'}
+          mr={'16px'}
           leftIcon={<MyIcon name={'docs'} w={'16px'} />}
           onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
-          _hover={{
-            bg: '#FFF'
-          }}
         >
           {t('Use Docs')}
         </Button>
         <Button
-          flex={'0 0 155px'}
+          minW={'156px'}
           h={'40px'}
-          colorScheme={'primary'}
+          variant={'solid'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} />}
-          variant={'primary'}
           onClick={() => router.push('/db/edit')}
         >
           {t('Create DB')}

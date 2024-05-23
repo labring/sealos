@@ -61,7 +61,7 @@ const CustomAccessModal = ({
 
   return (
     <>
-      <Modal isOpen onClose={onClose}>
+      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxH={'90vh'} maxW={'90vw'} width={'530px'}>
           <ModalHeader>{t('Custom Domain')}</ModalHeader>

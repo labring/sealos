@@ -35,6 +35,10 @@ export const OrderTypeList: {
   {
     id: WorkOrderType.FunctionServer,
     label: 'functionserver'
+  },
+  {
+    id: WorkOrderType.Other,
+    label: 'other'
   }
 ];
 

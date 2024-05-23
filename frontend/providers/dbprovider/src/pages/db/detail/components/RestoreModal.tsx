@@ -1,6 +1,5 @@
 import { createDB } from '@/api/db';
 import Tip from '@/components/Tip';
-import { useToast } from '@/hooks/useToast';
 import { BackupItemType, DBDetailType } from '@/types/db';
 import { getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
@@ -16,6 +15,7 @@ import {
   ModalHeader,
   ModalOverlay
 } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useMutation } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
@@ -37,7 +37,7 @@ const BackupModal = ({
   if (!db) return <></>;
   const router = useRouter();
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
 
   const { register, handleSubmit, getValues } = useForm({
     defaultValues: {
@@ -77,23 +77,23 @@ const BackupModal = ({
 
   return (
     <>
-      <Modal isOpen onClose={onClose}>
+      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxW={'min(600px, 90vw)'}>
           <ModalHeader>{t('Restore Database')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody display={'flex'} pb={8}>
-            <Box px={'50px'}>
+            <Box>
               <Tip
                 icon={<InfoOutlineIcon fontSize={'16px'} />}
                 size="sm"
                 text={t('Restore Backup Tip')}
+                borderRadius={'md'}
               />
               <Box>
                 <Flex mt={8} alignItems={'center'}>
                   <Box flex={'0 0 120px'}>{t('Database Name')}</Box>
                   <Input
-                    bg={'myWhite.300'}
                     {...register('databaseName', {
                       required: t('Database Name cannot empty') || 'Database Name cannot empty'
                     })}
@@ -103,7 +103,7 @@ const BackupModal = ({
               <Box mt={10} textAlign={'end'}>
                 <Button
                   isLoading={isLoading}
-                  variant={'primary'}
+                  variant={'solid'}
                   // @ts-ignore
                   onClick={() => handleSubmit(onclickRestore)()}
                 >
