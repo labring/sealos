@@ -264,5 +264,9 @@
   "Backup Running": "Backup Running",
   "Backup Deleting": "Backup Deleting",
   "DataBase": "DataBase",
-  "Use Docs": "Use Docs"
+  "Use Docs": "Use Docs",
+  "Start": "Start",
+  "Application Source": "Application Source",
+  "App Store": "App Store",
+  "Manage all resources": "Manage all resources"
 }

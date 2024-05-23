@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { Box, Flex, Text } from '@chakra-ui/react';
 import { SOURCE_PRICE } from '@/store/static';
-import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
+import { Box, Flex, useTheme, Text } from '@chakra-ui/react';
+import { SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
+import { useMemo } from 'react';
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -20,6 +20,7 @@ const PriceBox = ({
     replicas: number[];
   }[];
 }) => {
+  const theme = useTheme();
   const { t } = useTranslation();
   const priceList = useMemo(() => {
     let cp = [0, 0];
@@ -42,8 +43,8 @@ const PriceBox = ({
 
     const podScale = (val: number[]) => {
       return val[0] === val[1]
-        ? `￥${val[0].toFixed(2)}`
-        : `￥${val[0].toFixed(2)} ~ ${val[1].toFixed(2)}`;
+        ? `${val[0].toFixed(2)}`
+        : `${val[0].toFixed(2)} ~ ${val[1].toFixed(2)}`;
     };
 
     return [
@@ -59,18 +60,25 @@ const PriceBox = ({
   }, [components]);
 
   return (
-    <Box px="28px" pt="36px">
-      <Text color={'#485058'} fontWeight={500} fontSize={'14px'}>
-        {t('Anticipated Price')} ({t('Perday')})
-      </Text>
-      {priceList.map((item) => (
-        <Flex key={item.label} alignItems={'center'} mt={'16px'}>
-          <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-          <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
-          <Box>{item.value}</Box>
-        </Flex>
-      ))}
-      <Box></Box>
+    <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
+      <Flex py={3} px={'20px'} borderBottom={theme.borders.base} gap={'8px'}>
+        <Text color={'grayModern.900'} fontWeight={500}>
+          {t('Anticipated Price')}
+        </Text>
+        <Text color={'grayModern.500'}> ({t('Perday')})</Text>
+      </Flex>
+      <Flex flexDirection={'column'} gap={'12px'} py={'16px'} px={'20px'}>
+        {priceList.map((item) => (
+          <Flex key={item.label} alignItems={'center'}>
+            <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
+            <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
+            <Flex alignItems={'center'} gap={'4px'}>
+              <SealosCoin />
+              {item.value}
+            </Flex>
+          </Flex>
+        ))}
+      </Flex>
     </Box>
   );
 };

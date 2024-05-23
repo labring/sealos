@@ -1,20 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import { delDBByName } from '@/api/db';
+import MyIcon from '@/components/Icon';
 import {
+  Box,
+  Button,
+  Flex,
+  Icon,
+  Input,
   Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
   ModalBody,
   ModalCloseButton,
-  Input,
-  Box,
-  Button
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay
 } from '@chakra-ui/react';
-import { delDBByName } from '@/api/db';
-import { useToast } from '@/hooks/useToast';
-import { useTranslation } from 'next-i18next';
+import { useMessage } from '@sealos/ui';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useCallback, useState } from 'react';
 
 const DelModal = ({
   dbName,
@@ -29,7 +32,7 @@ const DelModal = ({
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
 
   const handleDelApp = useCallback(async () => {
     try {
@@ -52,17 +55,17 @@ const DelModal = ({
   }, [dbName, toast, t, onSuccess, onClose]);
 
   return (
-    <Modal isOpen onClose={onClose}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{t('Delete Warning')}</ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody pb={4}>
-          <Box color={'myGray.600'}>
+          <Box color={'grayModern.600'}>
             {t('Delete Hint')}
             <Box my={3}>
               {t('Please Enter')}{' '}
-              <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
+              <Box as={'span'} color={'grayModern.900'} fontWeight={'bold'} userSelect={'all'}>
                 {dbName}
               </Box>{' '}
               {t('Confirm')}
@@ -72,16 +75,14 @@ const DelModal = ({
           <Input
             placeholder={`${t('Please Enter')}：${dbName}`}
             value={inputValue}
-            bg={'myWhite.300'}
             onChange={(e) => setInputValue(e.target.value)}
           />
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'base'}>
+          <Button onClick={onClose} variant={'outline'}>
             {t('Cancel')}
           </Button>
           <Button
-            colorScheme="red"
             ml={3}
             variant={'solid'}
             isDisabled={inputValue !== dbName}

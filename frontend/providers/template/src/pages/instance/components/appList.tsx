@@ -3,6 +3,7 @@ import MyIcon from '@/components/Icon';
 import StatusTag from '@/components/StatusTag';
 import MyTable from '@/components/Table';
 import { useResourceStore } from '@/store/resource';
+import useSessionStore from '@/store/session';
 import { AppListItemType } from '@/types/launchpad';
 import { printMemory } from '@/utils/tools';
 import { Box, Button, Flex, Icon, Text } from '@chakra-ui/react';
@@ -11,15 +12,18 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
+export const refetchIntervalTime = 3000;
+
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const { appendResource } = useResourceStore();
+  const { session } = useSessionStore();
 
   const { data, isLoading } = useQuery(
-    ['getAppLaunchpadByName', instanceName],
+    ['getAppLaunchpadByName', instanceName, session?.kubeconfig],
     () => getAppLaunchpadByName(instanceName),
     {
-      // refetchInterval: 3000,
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(
           data.map((item) => {

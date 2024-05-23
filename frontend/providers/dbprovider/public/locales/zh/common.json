@@ -203,7 +203,7 @@
   "Confirm delete the migrate": "确定删除迁移记录吗?",
   "Are you sure to perform database migration": "确定执行数据库迁移吗?",
   "Migration task created successfully": "迁移任务创建成功",
-  "Upload dump file": "上传 Dump 文件",
+  "Upload dump file": "点击上传 Dump 文件",
   "Target Database": "目标数据库",
   "Select a maximum of 10 files": "最多选择 10 个文件",
   "Upload successful": "文件上传成功",
@@ -267,5 +267,9 @@
   "Backup Running": "备份中",
   "Backup Deleting": "删除中",
   "DataBase": "数据库",
-  "Use Docs": "使用文档"
+  "Use Docs": "使用文档",
+  "Start": "开始",
+  "Application Source": "应用来源",
+  "App Store": "应用商店",
+  "Manage all resources": "管理所有资源"
 }

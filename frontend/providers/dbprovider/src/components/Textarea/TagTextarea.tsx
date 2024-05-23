@@ -1,22 +1,14 @@
-import React, { useCallback, useRef, useState } from 'react';
-import {
-  Box,
-  BoxProps,
-  Flex,
-  Input,
-  Tag,
-  TagCloseButton,
-  TagLabel,
-  useToast
-} from '@chakra-ui/react';
+import { Box, BoxProps, Flex, Input, Tag, TagCloseButton, TagLabel } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
+import { useCallback, useRef, useState } from 'react';
 
 type Props = BoxProps & { defaultValues: string[]; onUpdate: (e: string[]) => void };
 
 const TagTextarea = ({ defaultValues, onUpdate, ...props }: Props) => {
   const InputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
-  const toast = useToast();
+  const { message: toast } = useMessage();
   const [focus, setFocus] = useState(false);
   const [tags, setTags] = useState<string[]>(defaultValues);
 
@@ -61,13 +53,13 @@ const TagTextarea = ({ defaultValues, onUpdate, ...props }: Props) => {
       w={'100%'}
       minH={'100px'}
       borderRadius={'md'}
-      border={'1px solid #DEE0E2'}
+      border={'1px solid #E8EBF0'}
       p={2}
       fontSize={'sm'}
-      bg={'#FBFBFC'}
+      bg={'#F7F8FA'}
       {...(focus && {
-        boxShadow: '0px 0px 4px #A8DBFF',
-        borderColor: 'myBlue.600',
+        boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+        borderColor: '#219BF4',
         bg: '#FFFFFF'
       })}
       {...props}
@@ -80,7 +72,7 @@ const TagTextarea = ({ defaultValues, onUpdate, ...props }: Props) => {
     >
       <Flex alignItems={'center'} gap={2} flexWrap={'wrap'}>
         {tags.map((tag, i) => (
-          <Tag key={tag} colorScheme="blue" onClick={(e) => e.stopPropagation()}>
+          <Tag key={tag} colorScheme="brightBlue" onClick={(e) => e.stopPropagation()}>
             <TagLabel>{tag}</TagLabel>
             <TagCloseButton
               onClick={() => {

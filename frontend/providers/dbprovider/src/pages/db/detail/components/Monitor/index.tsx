@@ -1,4 +1,3 @@
-import Tabs from '@/components/MonitorTabs/index';
 import { DBDetailType } from '@/types/db';
 import { Box, Flex } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
@@ -8,6 +7,7 @@ import RunningTime from './RunningTime';
 import { DBTypeEnum } from '@/constants/db';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
+import { Tabs } from '@sealos/ui';
 
 enum MonitorType {
   resources = 'resources',
@@ -35,11 +35,12 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
     <Flex h={'100%'} p={'0px 24px 24px 24px'} flexDirection={'column'}>
       <Flex justifyContent={'space-between'} alignItems={'center'}>
         <Tabs
+          size="sm"
           w={'280px'}
           list={[
-            { id: MonitorType.resources, label: 'Resources' },
-            { id: MonitorType.status, label: 'Status' },
-            { id: MonitorType.performance, label: 'Performance' }
+            { id: MonitorType.resources, label: t('Resources') },
+            { id: MonitorType.status, label: t('Status') },
+            { id: MonitorType.performance, label: t('Performance') }
           ]}
           activeId={activeId}
           onChange={(id) => setActiveId(id as MonitorType)}
@@ -49,7 +50,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
         </Box>
       </Flex>
       {activeId === MonitorType.resources && (
-        <Box mt={'16px'} overflowY={'scroll'} flex={1}>
+        <Box overflowY={'scroll'} flex={1}>
           <ChartTemplate
             apiUrl="/api/monitor/getMonitorData"
             chartTitle={'CPU'}

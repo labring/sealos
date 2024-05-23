@@ -35,6 +35,14 @@ const map = {
   error: require('./icons/error.svg').default,
   currency: require('./icons/currency.svg').default,
   infoCircle: require('./icons/infoCircle.svg').default,
+  upperRight: require('./icons/upperRight.svg').default,
+  arrowUp: require('./icons/arrowUp.svg').default,
+  book: require('./icons/book.svg').default,
+  export: require('./icons/export.svg').default,
+  pods: require('./icons/pods.svg').default,
+  upload: require('./icons/upload.svg').default,
+  target: require('./icons/target.svg').default,
+  arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };
 

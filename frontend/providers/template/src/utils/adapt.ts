@@ -39,16 +39,16 @@ export function sortItemsByCreateTime<T extends { createTime: string }>(items: T
 
 export function adaptInstanceListItem(item: TemplateInstanceType): InstanceListItemType {
   return {
-    id: item.metadata.name,
+    id: item.metadata?.name,
     createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    author: item.spec.author,
-    description: item.spec.description,
-    gitRepo: item.spec.gitRepo,
-    icon: item.spec.icon,
-    readme: item.spec.readme,
-    templateType: item.spec.templateType,
-    title: item.spec.title,
-    url: item.spec.url,
+    author: item.spec?.author,
+    description: item.spec?.description,
+    gitRepo: item.spec?.gitRepo,
+    icon: item.spec?.icon,
+    readme: item.spec?.readme,
+    templateType: item.spec?.templateType,
+    title: item.spec?.title,
+    url: item.spec?.url,
     yamlCR: item,
     displayName: item.metadata?.labels?.[templateDisplayNameKey]
   };

@@ -7,7 +7,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  useDisclosure
+  useDisclosure,
+  ModalCloseButton
 } from '@chakra-ui/react';
 import type { DBConditionItemType, DBStatusMapType } from '@/types/db';
 import MyIcon from '../Icon';
@@ -42,29 +43,18 @@ const DBStatusTag = ({
         minW={'88px'}
         whiteSpace={'nowrap'}
       >
-        <Box w={'10px'} h={'10px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
+        <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
         <Box ml={2} flex={1}>
           {t(status.label)}
         </Box>
         <MyIcon ml={3} w={'16px'} name={'statusDetail'} cursor={'pointer'} onClick={onOpen} />
       </Flex>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent minW={'520px'}>
-          <ModalHeader fontSize={'3xl'} display={'flex'}>
+          <ModalHeader display={'flex'} alignItems={'center'}>
             <Box flex={1}>{t(status.label)}</Box>
-            <Flex
-              h={'32px'}
-              w={'32px'}
-              alignItems={'center'}
-              justifyContent={'center'}
-              borderRadius={'50%'}
-              bg={'#F7F7F7'}
-              cursor={'pointer'}
-              onClick={onClose}
-            >
-              <MyIcon name={'statusDetail'} color={'myGray.800'} w={'20px'} />
-            </Flex>
+            <ModalCloseButton top={'10px'} right={'10px'} />
           </ModalHeader>
           <ModalBody>
             {conditions.map((item, i) => (
@@ -84,7 +74,7 @@ const DBStatusTag = ({
                   borderRadius: '8px',
                   backgroundColor: '#fff',
                   border: '2px solid',
-                  borderColor: item.status === 'False' ? '#FF8492' : '#33BABB'
+                  borderColor: item.status === 'False' ? '#D92D20' : '#039855'
                 }}
               >
                 <Flex lineHeight={1} mb={2} alignItems={'center'}>
