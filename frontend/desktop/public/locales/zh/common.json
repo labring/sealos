@@ -78,7 +78,7 @@
   "Added": "已加入",
   "Invaild Context": "你需要切换到其他工作空间操作",
   "Remove Member Tips": "确认要移除该成员?",
-  "Quit Workspace Tips":"确认要退出工作空间吗?",
+  "Quit Workspace Tips": "确认要退出工作空间吗?",
   "Invalid User ID": "用户的 ID 不合法",
   "The invited user must be others": "只能邀请其他人",
   "Dissovle Tips": "删除工作空间会清空所有资源，确定要删除吗？",
@@ -124,5 +124,6 @@
   "Year": "年",
   "Core": "核",
   "Yuan": "元",
-  "Description": "描述"
+  "Description": "描述",
+  "All Apps": "所有应用"
 }

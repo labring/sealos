@@ -109,7 +109,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
-        <FloatButton />
+        {/* <FloatButton /> */}
         <MoreApps />
       </MoreAppsContext.Provider>
     </Box>

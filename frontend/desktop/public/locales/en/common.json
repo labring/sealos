@@ -84,7 +84,7 @@
   "Added": "Added",
   "Invaild Context": "You need switch to other workspace for handling",
   "Remove Member Tips": "Determine that you want to remove the member?",
-  "Quit Workspace Tips":"Confirm leaving workspace?",
+  "Quit Workspace Tips": "Confirm leaving workspace?",
   "Invalid User ID": "Invalid User ID",
   "The invited user must be others": "The invited user must be others",
   "Dissovle Tips": "Deleting the workspace will clear all resources. Are you sure you want to disband",
@@ -131,5 +131,6 @@
   "Year": "Year",
   "Core": "Core",
   "Yuan": "Yuan",
-  "Description": "Description"
+  "Description": "Description",
+  "All Apps": "All Apps"
 }
