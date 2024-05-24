@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/license
 
-go 1.21
+go 1.22
 
 require (
 	github.com/go-logr/logr v1.3.0
@@ -82,7 +82,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
