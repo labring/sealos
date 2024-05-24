@@ -52,9 +52,6 @@ const (
 	ValidationClusterInfoMismatch
 )
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
 // LicenseStatus defines the observed state of License
 type LicenseStatus struct {
 	//+kubebuilder:validation:Enum=Pending;Failed;Active
