@@ -15,9 +15,9 @@
 package license
 
 import (
+	"encoding/base64"
 	"time"
 
-	"encoding/base64"
 	"github.com/golang-jwt/jwt/v4"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
@@ -40,7 +40,7 @@ const (
 
 func ParseLicenseToken(license *licensev1.License) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(license.Spec.Token, &utilclaims.Claims{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(_ *jwt.Token) (interface{}, error) {
 			decodeKey, err := base64.StdEncoding.DecodeString(key.EncryptionKey)
 			if err != nil {
 				return nil, err

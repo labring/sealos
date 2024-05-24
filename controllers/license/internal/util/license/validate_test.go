@@ -15,13 +15,13 @@
 package license
 
 import (
-	"github.com/labring/sealos/controllers/license/internal/util/cluster"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	utilclaims "github.com/labring/sealos/controllers/license/internal/util/claims"
+	"github.com/labring/sealos/controllers/license/internal/util/cluster"
 )
 
 func TestIsLicenseValid(t *testing.T) {
