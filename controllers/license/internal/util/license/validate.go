@@ -28,16 +28,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 )
 
-type ValidationResult int
-
-const (
-	ValidationSuccess ValidationResult = iota
-	ValidationError
-	ValidationExpired
-	ValidationClusterIDMismatch
-	ValidationClusterInfoMismatch
-)
-
 func ParseLicenseToken(license *licensev1.License) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(license.Spec.Token, &utilclaims.Claims{},
 		func(_ *jwt.Token) (interface{}, error) {
@@ -69,29 +59,29 @@ func GetClaims(license *licensev1.License) (*utilclaims.Claims, error) {
 	return claims, nil
 }
 
-func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clusterID string) (ValidationResult, error) {
+func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clusterID string) (licensev1.ValidationCode, error) {
 	token, err := ParseLicenseToken(license)
 	if err != nil {
-		return ValidationError, err
+		return licensev1.ValidationError, err
 	}
 	if !token.Valid {
-		return ValidationExpired, nil
+		return licensev1.ValidationExpired, nil
 	}
 	claims, err := GetClaims(license)
 	if err != nil {
-		return ValidationError, err
+		return licensev1.ValidationError, err
 	}
 	// if clusterID is empty, it means this license is a super license.
 	if claims.ClusterID != "" && claims.ClusterID != clusterID {
-		return ValidationError, nil
+		return licensev1.ValidationError, nil
 	}
 
 	if claims.Type == licensev1.ClusterLicenseType {
 		if !clusterInfo.CompareWithClaimData(&claims.Data) {
-			return ValidationClusterInfoMismatch, nil
+			return licensev1.ValidationClusterInfoMismatch, nil
 		}
 	}
-	return ValidationSuccess, nil
+	return licensev1.ValidationSuccess, nil
 }
 
 func GetLicenseExpireTime(license *licensev1.License) (time.Time, error) {
