@@ -49,6 +49,9 @@ spec:
               activationTime:
                 format: date-time
                 type: string
+              expirationTime:
+                format: date-time
+                type: string
               phase:
                 default: Pending
                 enum:

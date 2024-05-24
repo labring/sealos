@@ -15,6 +15,8 @@
 package license
 
 import (
+	"time"
+
 	"encoding/base64"
 	"github.com/golang-jwt/jwt/v4"
 
@@ -24,6 +26,16 @@ import (
 	"github.com/labring/sealos/controllers/license/internal/util/errors"
 	"github.com/labring/sealos/controllers/license/internal/util/key"
 	"github.com/labring/sealos/controllers/pkg/crypto"
+)
+
+type ValidationResult int
+
+const (
+	ValidationSuccess ValidationResult = iota
+	ValidationError
+	ValidationClusterIDMismatch
+	ValidationClusterInfoMismatch
+	ValidationExpired
 )
 
 func ParseLicenseToken(license *licensev1.License) (*jwt.Token, error) {
@@ -57,24 +69,35 @@ func GetClaims(license *licensev1.License) (*utilclaims.Claims, error) {
 	return claims, nil
 }
 
-func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clusterID string) (bool, error) {
+func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clusterID string) (ValidationResult, error) {
 	token, err := ParseLicenseToken(license)
 	if err != nil {
-		return false, err
+		return ValidationError, err
+	}
+	if !token.Valid {
+		return ValidationExpired, nil
 	}
 	claims, err := GetClaims(license)
 	if err != nil {
-		return false, err
+		return ValidationError, err
 	}
 	// if clusterID is empty, it means this license is a super license.
 	if claims.ClusterID != "" && claims.ClusterID != clusterID {
-		return false, errors.ErrClusterIDNotMatch
+		return ValidationError, nil
 	}
 
 	if claims.Type == licensev1.ClusterLicenseType {
 		if !clusterInfo.CompareWithClaimData(&claims.Data) {
-			return false, errors.ErrClusterLicenseNotMatch
+			return ValidationClusterInfoMismatch, nil
 		}
 	}
-	return token.Valid, nil
+	return ValidationSuccess, nil
+}
+
+func GetLicenseExpireTime(license *licensev1.License) (time.Time, error) {
+	claims, err := GetClaims(license)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return claims.ExpiresAt.UTC(), nil
 }

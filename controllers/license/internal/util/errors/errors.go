@@ -23,3 +23,4 @@ var ErrLicenseTypeNotMatch = fmt.Errorf("the license type provided appears to be
 var ErrClaimsConvent = fmt.Errorf("the claims data provided appears to be invalid")
 var ErrClusterIDNotMatch = fmt.Errorf("the cluster id provided appears to be invalid")
 var ErrClusterLicenseNotMatch = fmt.Errorf("the cluster license provided appears to be invalid")
+var ErrLicenseExpired = fmt.Errorf("the license provided appears to be expired")

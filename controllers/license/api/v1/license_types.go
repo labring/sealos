@@ -48,6 +48,7 @@ type LicenseStatus struct {
 	//+kubebuilder:default=Pending
 	Phase          LicenseStatusPhase `json:"phase,omitempty"`
 	ActivationTime metav1.Time        `json:"activationTime,omitempty"`
+	ExpirationTime metav1.Time        `json:"expirationTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

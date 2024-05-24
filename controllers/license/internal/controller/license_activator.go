@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
@@ -37,16 +39,21 @@ type LicenseActivator struct {
 
 func (l *LicenseActivator) Active(license *licensev1.License) error {
 	// TODO mv to active function
-	switch license.Spec.Type {
-	case licensev1.AccountLicenseType:
+	if license.Spec.Type == licensev1.AccountLicenseType {
 		if err := l.Recharge(license); err != nil {
 			return fmt.Errorf("recharge account failed: %w", err)
 		}
-	case licensev1.ClusterLicenseType:
-		license.Status.Phase = licensev1.LicenseStatusPhaseActive
-		if err := l.Client.Status().Update(context.Background(), license); err != nil {
-			return fmt.Errorf("update license status failed: %w", err)
-		}
+	}
+	exp, err := licenseutil.GetLicenseExpireTime(license)
+	if err != nil {
+		return err
+	}
+	license.Status.ExpirationTime = metav1.NewTime(exp)
+	license.Status.ActivationTime = metav1.NewTime(time.Now())
+	license.Status.Phase = licensev1.LicenseStatusPhaseActive
+
+	if err := l.Status().Update(context.Background(), license); err != nil {
+		return fmt.Errorf("update license status failed: %w", err)
 	}
 	return nil
 }

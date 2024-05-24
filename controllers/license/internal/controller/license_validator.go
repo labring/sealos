@@ -32,10 +32,10 @@ type LicenseValidator struct {
 	ClusterID string
 }
 
-func (v *LicenseValidator) Validate(license *licensev1.License) (bool, error) {
+func (v *LicenseValidator) Validate(license *licensev1.License) (licenseutil.ValidationResult, error) {
 	nodeList := &v1.NodeList{}
 	if err := v.Client.List(context.Background(), nodeList); err != nil {
-		return false, err
+		return licenseutil.ValidationError, err
 	}
 	nodeCount := len(nodeList.Items)
 	totalCPU := resource.NewQuantity(0, resource.DecimalSI)
