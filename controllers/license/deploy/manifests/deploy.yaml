@@ -160,6 +160,14 @@ metadata:
   name: license-manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - license.sealos.io
   resources:
   - licenses

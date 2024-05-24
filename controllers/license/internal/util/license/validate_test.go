@@ -15,6 +15,7 @@
 package license
 
 import (
+	"github.com/labring/sealos/controllers/license/internal/util/cluster"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -26,6 +27,7 @@ import (
 func TestIsLicenseValid(t *testing.T) {
 	type args struct {
 		license *licensev1.License
+		data    *cluster.Info
 	}
 	tests := []struct {
 		name    string
@@ -41,6 +43,9 @@ func TestIsLicenseValid(t *testing.T) {
 						Token: "",
 					},
 				},
+				data: &cluster.Info{
+					ClusterID: "",
+				},
 			},
 			want:    true,
 			wantErr: false,
@@ -48,7 +53,7 @@ func TestIsLicenseValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsLicenseValid(tt.args.license, "")
+			got, err := IsLicenseValid(tt.args.license, tt.args.data, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IsLicenseValid() error = %v, wantErr %v", err, tt.wantErr)
 				return

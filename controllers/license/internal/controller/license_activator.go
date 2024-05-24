@@ -15,20 +15,23 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	claimsutil "github.com/labring/sealos/controllers/license/internal/util/claims"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
 	count "github.com/labring/sealos/controllers/pkg/account"
 	database2 "github.com/labring/sealos/controllers/pkg/database"
 	types2 "github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
-
-	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 )
 
 type LicenseActivator struct {
+	client.Client
 	accountDB database2.AccountV2
 }
 
@@ -40,7 +43,10 @@ func (l *LicenseActivator) Active(license *licensev1.License) error {
 			return fmt.Errorf("recharge account failed: %w", err)
 		}
 	case licensev1.ClusterLicenseType:
-		// TODO implement cluster license
+		license.Status.Phase = licensev1.LicenseStatusPhaseActive
+		if err := l.Client.Status().Update(context.Background(), license); err != nil {
+			return fmt.Errorf("update license status failed: %w", err)
+		}
 	}
 	return nil
 }

@@ -21,8 +21,6 @@ import (
 	"errors"
 	"time"
 
-	database2 "github.com/labring/sealos/controllers/pkg/database"
-
 	"github.com/go-logr/logr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +33,7 @@ import (
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
 	utilerrors "github.com/labring/sealos/controllers/license/internal/util/errors"
+	database2 "github.com/labring/sealos/controllers/pkg/database"
 )
 
 // LicenseReconciler reconciles a License object
@@ -54,6 +53,7 @@ type LicenseReconciler struct {
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for license")
@@ -143,6 +143,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.Data
 	}
 
 	r.activator = &LicenseActivator{
+		Client:    r.Client,
 		accountDB: accountDB,
 	}
 

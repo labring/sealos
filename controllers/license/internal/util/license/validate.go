@@ -16,11 +16,11 @@ package license
 
 import (
 	"encoding/base64"
-
 	"github.com/golang-jwt/jwt/v4"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	utilclaims "github.com/labring/sealos/controllers/license/internal/util/claims"
+	"github.com/labring/sealos/controllers/license/internal/util/cluster"
 	"github.com/labring/sealos/controllers/license/internal/util/errors"
 	"github.com/labring/sealos/controllers/license/internal/util/key"
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -57,7 +57,7 @@ func GetClaims(license *licensev1.License) (*utilclaims.Claims, error) {
 	return claims, nil
 }
 
-func IsLicenseValid(license *licensev1.License, clusterID string) (bool, error) {
+func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clusterID string) (bool, error) {
 	token, err := ParseLicenseToken(license)
 	if err != nil {
 		return false, err
@@ -71,5 +71,10 @@ func IsLicenseValid(license *licensev1.License, clusterID string) (bool, error) 
 		return false, errors.ErrClusterIDNotMatch
 	}
 
+	if claims.Type == licensev1.ClusterLicenseType {
+		if !clusterInfo.CompareWithClaimData(&claims.Data) {
+			return false, errors.ErrClusterLicenseNotMatch
+		}
+	}
 	return token.Valid, nil
 }
