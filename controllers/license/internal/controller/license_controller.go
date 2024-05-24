@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -73,10 +74,28 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 		r.Logger.V(1).Error(err, "failed to validate license")
 		return requeueRes, err
 	}
+
+	claims, err := licenseutil.GetClaims(license)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	switch valid {
-	case licenseutil.ValidationClusterIDMismatch, licenseutil.ValidationClusterInfoMismatch, licenseutil.ValidationExpired:
-		// update license status to failed
+	case licenseutil.ValidationClusterIDMismatch:
 		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.Reason = fmt.Sprintf("cluster id mismatch, license cluster id: %s, cluster id: %s", claims.ClusterID, r.ClusterID)
+		r.Logger.V(1).Info("cluster id mismatch", "license", license.Namespace+"/"+license.Name, "cluster id", r.ClusterID, "license cluster id", claims.ClusterID)
+		_ = r.Status().Update(ctx, license)
+		return requeueRes, nil
+	case licenseutil.ValidationClusterInfoMismatch:
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.Reason = fmt.Sprintf("cluster info mismatch, license cluster info: %v", claims.Data)
+		r.Logger.V(1).Info("cluster info mismatch", "license", license.Namespace+"/"+license.Name, "cluster info", claims.Data)
+		_ = r.Status().Update(ctx, license)
+		return requeueRes, nil
+	case licenseutil.ValidationExpired:
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.Reason = "license is expired"
 		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name, "reason", valid)
 		_ = r.Status().Update(ctx, license)
 		return requeueRes, nil

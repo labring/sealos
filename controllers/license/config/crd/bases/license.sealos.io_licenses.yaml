@@ -73,6 +73,8 @@ spec:
                 - Failed
                 - Active
                 type: string
+              reason:
+                type: string
             type: object
         type: object
     served: true
