@@ -28,14 +28,14 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 )
 
-type ValidationResult string
+type ValidationResult int
 
 const (
-	ValidationSuccess             ValidationResult = "Success"
-	ValidationError                                = "Error"
-	ValidationExpired                              = "Expired"
-	ValidationClusterIDMismatch                    = "Cluster id mismatch"
-	ValidationClusterInfoMismatch                  = "Cluster info mismatch"
+	ValidationSuccess ValidationResult = iota
+	ValidationError
+	ValidationExpired
+	ValidationClusterIDMismatch
+	ValidationClusterInfoMismatch
 )
 
 func ParseLicenseToken(license *licensev1.License) (*jwt.Token, error) {

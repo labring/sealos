@@ -66,6 +66,8 @@ spec:
               expirationTime:
                 format: date-time
                 type: string
+              failedCode:
+                type: integer
               phase:
                 default: Pending
                 enum:
