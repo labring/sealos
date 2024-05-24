@@ -77,7 +77,7 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 	case licenseutil.ValidationClusterIDMismatch, licenseutil.ValidationClusterInfoMismatch, licenseutil.ValidationExpired:
 		// update license status to failed
 		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name)
+		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name, "reason", valid)
 		_ = r.Status().Update(ctx, license)
 		return requeueRes, nil
 	default:
@@ -102,6 +102,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, accountDB databas
 
 	r.validator = &LicenseValidator{
 		Client:    r.Client,
+		Logger:    r.Logger,
 		ClusterID: r.ClusterID,
 	}
 

@@ -17,6 +17,8 @@ package controller
 import (
 	"context"
 
+	"github.com/go-logr/logr"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +31,7 @@ import (
 
 type LicenseValidator struct {
 	client.Client
+	Logger    logr.Logger
 	ClusterID string
 }
 
@@ -55,6 +58,6 @@ func (v *LicenseValidator) Validate(license *licensev1.License) (licenseutil.Val
 			TotalMemory: int(totalMemory.Value() / (1024 * 1024 * 1024)),
 		},
 	}
-
+	v.Logger.Info("Validating license", "cluster info", clusterInfo, "license token", license.Spec.Token)
 	return licenseutil.IsLicenseValid(license, clusterInfo, v.ClusterID)
 }

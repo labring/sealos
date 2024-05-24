@@ -61,7 +61,7 @@ type ClusterClaimData struct {
 // Compare compares the claims with the data
 // return true if the claims is equal or lager to the data
 func (c *ClusterClaimData) Compare(data *ClusterClaimData) bool {
-	if c.NodeCount < data.NodeCount || c.TotalCPU < data.TotalCPU || c.TotalMemory < data.TotalMemory {
+	if c.NodeCount > data.NodeCount || c.TotalCPU > data.TotalCPU || c.TotalMemory > data.TotalMemory {
 		return false
 	}
 	return true
