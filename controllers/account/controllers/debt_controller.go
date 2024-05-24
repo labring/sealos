@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/volcengine/volc-sdk-golang/service/vms"
+
 	"github.com/labring/sealos/controllers/pkg/pay"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -71,9 +73,13 @@ const (
 
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
+	VmsAccessKeyIDEnv     = "VMS_AK"
+	VmsAccessKeySecretEnv = "VMS_SK"
 	SMSEndpointEnv        = "SMS_ENDPOINT"
 	SMSSignNameEnv        = "SMS_SIGN_NAME"
 	SMSCodeMapEnv         = "SMS_CODE_MAP"
+	VmsCodeMapEnv         = "VMS_CODE_MAP"
+	VmsNumberPollEnv      = "VMS_NUMBER_POLL"
 )
 
 // DebtReconciler reconciles a Debt object
@@ -86,6 +92,12 @@ type DebtReconciler struct {
 	logr.Logger
 	accountSystemNamespace string
 	SmsConfig              *SmsConfig
+	VmsConfig              *VmsConfig
+}
+
+type VmsConfig struct {
+	TemplateCode map[int]string
+	NumberPoll   string
 }
 
 type SmsConfig struct {
@@ -443,13 +455,23 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 		return nil
 	}
 	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	return utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+	err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
 		PhoneNumbers: tea.String(outh.ProviderID),
 		SignName:     tea.String(r.SmsConfig.SmsSignName),
 		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
 		// ｜ownAmount/1_000_000｜
 		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to send sms notice: %w", err)
+	}
+	if noticeType == WarningNotice {
+		err = utils.SendVms(outh.ProviderID, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll)
+		if err != nil {
+			return fmt.Errorf("failed to send vms notice: %w", err)
+		}
+	}
+	return nil
 }
 
 func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, noticeTypes ...int) error {
@@ -594,6 +616,23 @@ func setupSmsConfig() (*SmsConfig, error) {
 	}, nil
 }
 
+func setupVmsConfig() (*VmsConfig, error) {
+	if err := env.CheckEnvSetting([]string{VmsAccessKeyIDEnv, VmsAccessKeySecretEnv, VmsNumberPollEnv}); err != nil {
+		return nil, fmt.Errorf("check env setting error: %w", err)
+	}
+	vms.DefaultInstance.Client.SetAccessKey(os.Getenv(VmsAccessKeyIDEnv))
+	vms.DefaultInstance.Client.SetSecretKey(os.Getenv(VmsAccessKeySecretEnv))
+
+	vmsCodeMap, err := splitSmsCodeMap(os.Getenv(VmsCodeMapEnv))
+	if err != nil {
+		return nil, fmt.Errorf("split vms code map error: %w", err)
+	}
+	return &VmsConfig{
+		TemplateCode: vmsCodeMap,
+		NumberPoll:   os.Getenv(VmsNumberPollEnv),
+	}, nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("DebtController")
@@ -607,6 +646,12 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		r.Logger.Error(err, "Failed to set up SMS configuration")
 	} else {
 		r.SmsConfig = smsConfig
+	}
+	vmsConfig, err := setupVmsConfig()
+	if err != nil {
+		r.Logger.Error(err, "Failed to set up VMS configuration")
+	} else {
+		r.VmsConfig = vmsConfig
 	}
 
 	/*
