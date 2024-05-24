@@ -55,8 +55,6 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
-
-	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -71,7 +69,7 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
-	utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
+	//utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
