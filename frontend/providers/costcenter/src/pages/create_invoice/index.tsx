@@ -7,12 +7,7 @@ import arrow_left_icon from '@/assert/toleft.svg';
 import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
-import {
-  BillingData,
-  BillingSpec,
-  RechargeBillingData,
-  RechargeBillingItem
-} from '@/types/billing';
+import { RechargeBillingData, RechargeBillingItem } from '@/types/billing';
 import SelectRange from '@/components/billing/selectDateRange';
 import useOverviewStore from '@/stores/overview';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -21,7 +16,6 @@ import NotFound from '@/components/notFound';
 import listIcon from '@/assert/list.svg';
 import { ApiResp, ReqGenInvoice } from '@/types';
 import InvoicdForm from './InvoicdForm';
-import { enableInvoice } from '@/service/enabled';
 import { formatMoney } from '@/utils/format';
 
 function Invoice() {
@@ -293,7 +287,7 @@ function Invoice() {
 export default Invoice;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
-  if (!enableInvoice()) {
+  if (!global.AppConfig.costCenter.invoice.enabled) {
     return {
       redirect: {
         destination: '/cost_overview',

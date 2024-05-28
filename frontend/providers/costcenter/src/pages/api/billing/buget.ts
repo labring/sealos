@@ -24,8 +24,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'startTime is invalid'
       });
-    const consumptionUrl = process.env.BILLING_URI + '/account/v1alpha1/costs/consumption';
-    const rechagreUrl = process.env.BILLING_URI + '/account/v1alpha1/costs/recharge';
+    const base = global.AppConfig.costCenter.components.accountService.url as string;
+    const consumptionUrl = base + '/account/v1alpha1/costs/consumption';
+    const rechagreUrl = base + '/account/v1alpha1/costs/recharge';
 
     const results = await Promise.all([
       (

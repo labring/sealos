@@ -2,12 +2,11 @@ import { paymentMeta } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
 import { GetCRD, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
-import { enableRecharge } from '@/service/enabled';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!enableRecharge) {
+    if (!global.AppConfig.costCenter.recharge.enabled) {
       throw new Error('recharge is not enabled');
     }
     const kc = await authSession(req.headers);

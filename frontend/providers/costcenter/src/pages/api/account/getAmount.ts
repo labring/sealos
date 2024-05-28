@@ -4,7 +4,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const base = process.env['BILLING_URI'] as string;
+    const base = global.AppConfig.costCenter.components.accountService.url as string;
     if (!base) throw Error("can't ot get alapha1");
     const kc = await authSession(req.headers);
 
