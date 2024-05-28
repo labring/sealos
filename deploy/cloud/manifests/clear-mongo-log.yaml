@@ -45,12 +45,12 @@ spec:
           serviceAccountName: clear-mongo-logs-sa
           containers:
             - name: clear-logs
-              image: bitnami/kubectl
+              image: bitnami/kubectl:1.28
               command:
                 - /bin/bash
                 - -c
                 - |
-                  clusters=$(kubectl get cluster.apps.kubeblocks.io -A | grep mongo)
+                  clusters=$(kubectl get cluster.apps.kubeblocks.io -A -l clusterdefinition.kubeblocks.io/name=mongodb)
                   echo "$clusters" | while read -r line; do
                       namespace=$(echo "$line" | awk '{print $1}')
                       cluster_name=$(echo "$line" | awk '{print $2}')
