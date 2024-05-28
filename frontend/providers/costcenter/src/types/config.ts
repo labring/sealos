@@ -51,6 +51,45 @@ export type AppConfigType = {
   };
 };
 
+export var DefaultAppConfig: AppConfigType = {
+  costCenter: {
+    transferEnabled: true,
+    currencyType: 'shellCoin',
+    invoice: {
+      enabled: false,
+      feiShuBotURL: '',
+      aliSms: {
+        endpoint: '',
+        accessKeyID: '',
+        accessKeySecret: '',
+        templateCode: '',
+        signName: ''
+      },
+      mongo: {
+        uri: ''
+      }
+    },
+    recharge: {
+      enabled: false,
+      payMethods: {
+        wechat: {
+          enabled: false
+        },
+        stripe: {
+          enabled: false,
+          publicKey: ''
+        }
+      }
+    },
+    components: {
+      accountService: {
+        url: 'http://account-service.account-system.svc:2333'
+      }
+    },
+    gpuEnabled: false
+  }
+};
+
 declare global {
   var AppConfig: AppConfigType;
 }

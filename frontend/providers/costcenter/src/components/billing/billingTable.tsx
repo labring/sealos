@@ -157,7 +157,7 @@ export function CommonBillingTable({
         }
       })
     ];
-  }, [global.AppConfig.costCenter.gpuEnabled, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency]);
   const table = useReactTable({
     data,
     state: {
@@ -269,7 +269,7 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         }
       })
     ];
-  }, [global.AppConfig.costCenter.gpuEnabled, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency]);
 
   const table = useReactTable({
     data,
@@ -358,7 +358,7 @@ export function BillingDetailsTable({
         cell: customCell(true)
       })
     ];
-  }, [global.AppConfig.costCenter.gpuEnabled, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency]);
   const table = useReactTable({
     data,
     state: {
