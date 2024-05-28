@@ -142,6 +142,7 @@ type (
 
 const (
 	OauthProviderTypePhone    OauthProviderType = "PHONE"
+	OauthProviderTypeEmail    OauthProviderType = "EMAIL"
 	OauthProviderTypePassword OauthProviderType = "PASSWORD"
 	//OauthProviderTypeGithub   OauthProviderType = "GITHUB"
 	//OauthProviderTypeWechat   OauthProviderType = "WECHAT"
