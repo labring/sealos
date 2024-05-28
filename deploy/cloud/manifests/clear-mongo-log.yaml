@@ -64,4 +64,6 @@ spec:
                   done
               securityContext:
                 runAsUser: 0
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
           restartPolicy: OnFailure
