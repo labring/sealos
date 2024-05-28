@@ -29,7 +29,9 @@ export const defaultEditVal: AppEditType = {
   containers: [
     {
       name: 'container1',
-      imageName: 'nginx',
+      imageName: 'nginx:latest',
+      imageRepo: 'nginx',
+      imageTag: 'latest',
       runCMD: '',
       cmdParam: '',
       cpu: 100,

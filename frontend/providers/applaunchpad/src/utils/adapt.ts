@@ -37,7 +37,8 @@ import {
   memoryFormatToMi,
   formatPodTime,
   atobSecretYaml,
-  printMemory
+  printMemory,
+  parseImageName
 } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
@@ -256,9 +257,12 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
         };
       }) || [];
 
+    const { repository, tag } = parseImageName(container?.image || '');
     return {
       name: container?.name || '',
       imageName: container?.image || '',
+      imageRepo: repository,
+      imageTag: tag || 'latest',
       runCMD: container?.command?.join(' ') || '',
       cmdParam:
         (container?.args?.length === 1

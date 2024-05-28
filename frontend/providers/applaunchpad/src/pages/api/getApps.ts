@@ -20,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
 export async function GetApps({ req }: { req: NextApiRequest }) {
   const req_namespace = req.query.namespace as string;
+
   const { k8sApp, namespace } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });

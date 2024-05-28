@@ -2,7 +2,7 @@ import { pauseAppByName, restartAppByName, startAppByName } from '@/api/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
-import { SealosMenu } from '@sealos/ui';
+import { SealosMenu, useMessage } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { MyTable } from '@sealos/ui';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -52,7 +52,7 @@ const AppList = ({
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
   const currentNamespaceRef = useRef<string>(currentNamespace);
@@ -230,15 +230,16 @@ const AppList = ({
         render: (item: AppListItemType) => (
           <Flex>
             <Button
+              variant={'solid'}
               mr={5}
               height={'32px'}
               size={'sm'}
               fontSize={'base'}
-              bg={'grayModern.150'}
-              color={'grayModern.900'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
+              // bg={'grayModern.150'}
+              // color={'grayModern.900'}
+              // _hover={{
+              //   color: 'brightBlue.600'
+              // }}
               leftIcon={<MyIcon name={'detail'} w={'16px'} h="16px" />}
               onClick={() =>
                 router.push(
@@ -335,7 +336,12 @@ const AppList = ({
     [handlePauseApp, handleRestartApp, handleStartApp, onOpenPause, router, t, userSourcePrice?.gpu]
   );
 
-  //console.log("namespaces: ****************", namespaces, "***********************")
+  const validateNamespace = (name: string) => {
+    const regex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+    return regex.test(name);
+  };
+
+  // console.log('namespaces: ****************', namespaces, '***********************');
 
   return (
     <Box backgroundColor={'grayModern.100'} px={'32px'} pb={5} minH={'100%'}>
@@ -419,6 +425,18 @@ const AppList = ({
               ml={3}
               variant={'solid'}
               onClick={async () => {
+                if (!validateNamespace(ns)) {
+                  toast({
+                    title: '无效的命名空间名称',
+                    description:
+                      "命名空间名称必须由小写字母、数字或'-'组成，并且必须以字母或数字开头和结尾。",
+                    status: 'error',
+                    duration: 5000,
+                    isClosable: true
+                  });
+                  return;
+                }
+
                 await createNamespace({ ns });
                 onClose();
                 setNs('');

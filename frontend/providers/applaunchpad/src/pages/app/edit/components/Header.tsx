@@ -9,7 +9,7 @@ import { useMessage } from '@sealos/ui';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 
 const Header = ({
@@ -33,6 +33,7 @@ const Header = ({
   const router = useRouter();
   const { lastRoute } = useGlobalStore();
   const { message: toast } = useMessage();
+  const [exportLoading, setExportLoading] = useState(false);
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -49,6 +50,7 @@ const Header = ({
   }, [appName, toast, yamlList]);
 
   const handleExportApp = async () => {
+    setExportLoading(true);
     const images = formHook.getValues().containers.map((item) => ({ name: item.imageName }));
     try {
       const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -70,6 +72,7 @@ const Header = ({
         title: 'error'
       });
     }
+    setExportLoading(false);
   };
 
   return (
@@ -86,12 +89,19 @@ const Header = ({
         </Box>
       </Flex>
       <Box flex={1}></Box>
-      <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportApp}>
-        {t('Export')} App
+      <Button
+        isLoading={exportLoading}
+        h={'40px'}
+        mr={'14px'}
+        minW={'140px'}
+        variant={'outline'}
+        onClick={handleExportApp}
+      >
+        {t('Export')}应用
       </Button>
 
       <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportYaml}>
-        {t('Export')} Yaml
+        {t('Export')}编排
       </Button>
       <Button
         className="driver-deploy-button"

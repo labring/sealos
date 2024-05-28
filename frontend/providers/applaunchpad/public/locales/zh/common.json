@@ -96,7 +96,7 @@
   "Image": "镜像源",
   "App Name": "应用名称",
   "Basic Config": "基础配置",
-  "YAML File": "YAML 文件",
+  "YAML File": "编排文件",
   "filename": "文件名",
   "file value": "文件值",
   "Local Storage": "本地存储",
@@ -227,7 +227,7 @@
   "ConfigMap Path Conflict": "ConfigMap 路径冲突",
   "Deploy Application": "部署应用",
   "Reboot Success": "重启成功",
-  "New Namaspace": "新建 Namespace",
+  "New Namaspace": "新建命名空间",
   "Node Port": "NodePort",
   "Containers": "容器配置"
 }

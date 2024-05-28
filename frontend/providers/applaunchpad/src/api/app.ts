@@ -13,6 +13,11 @@ import { ExportAppPayload } from '@/pages/api/exportApp';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
 
+export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
+
+export const getImageTags = (data: { repository: string }) =>
+  GET<{ name: string; tags: string[] }>('/api/getImages', data);
+
 export const postDeployApp = (namespace: string, yamlList: string[]) =>
   POST(`/api/applyApp?namespace=${namespace}`, { yamlList });
 

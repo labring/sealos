@@ -81,7 +81,7 @@ const MySelect = (
         >
           {activeMenu ? (
             <>
-              <Box>{activeMenu.label}</Box>
+              <Box noOfLines={1}>{activeMenu.label}</Box>
             </>
           ) : (
             <>
@@ -90,7 +90,7 @@ const MySelect = (
           )}
 
           <Box flex={1} />
-          <ChevronDownIcon />
+          <ChevronDownIcon color={'#02A7F0'} />
         </Button>
 
         <MenuList
@@ -111,6 +111,8 @@ const MySelect = (
           }
           zIndex={99}
           transform={'translateY(40px) !important'}
+          overflow={'overlay'}
+          maxH={'300px'}
         >
           {list.map((item) => (
             <MenuItem

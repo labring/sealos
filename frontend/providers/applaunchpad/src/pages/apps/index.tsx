@@ -129,18 +129,16 @@ const Home = ({ namespace }: { namespace: string }) => {
 
   return (
     <>
-      {(
-        <AppList
-          namespaces = {namespacesRef.current}
-          currentNamespace = {currentNamespace.current}
-          apps={list.current}
-          refetchApps={(namespace: string) => {
-            currentNamespace.current = namespace;
-            refetchAppList();
-            refetchAvgMonitorData();
-          }}
-        />
-      )}
+      <AppList
+        namespaces={namespacesRef.current}
+        currentNamespace={currentNamespace.current}
+        apps={list.current}
+        refetchApps={(namespace: string) => {
+          currentNamespace.current = namespace;
+          refetchAppList();
+          refetchAvgMonitorData();
+        }}
+      />
       <Loading loading={isLoading} />
     </>
   );
