@@ -45,7 +45,7 @@ spec:
           imagePullPolicy: Always
           volumeMounts:
             - name: costcenter-frontend-volume
-              mountPath: /app/config.yaml
+              mountPath: /app/data/config.yaml
               subPath: config.yaml
           readinessProbe:
             httpGet:

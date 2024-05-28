@@ -12,7 +12,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!global.AppConfig.transferEnabled) {
+    if (!global.AppConfig.costCenter.transferEnabled) {
       throw new Error('transfer is not enabled');
     }
     if (req.method !== 'POST') {

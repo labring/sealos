@@ -25,18 +25,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     jsonRes<Response>(res, {
       data: {
-        RECHARGE_ENABLED: global.AppConfig.recharge.enabled,
-        TRANSFER_ENABLED: global.AppConfig.transferEnabled,
-        STRIPE_ENABLED: global.AppConfig.recharge.payMethods.stripe.enabled,
-        STRIPE_PUB: global.AppConfig.recharge.payMethods.stripe.publicKey,
-        WECHAT_ENABLED: global.AppConfig.recharge.payMethods.wechat.enabled,
-        CURRENCY: global.AppConfig.currencyType,
-        INVOICE_ENABLED: global.AppConfig.invoice.enabled,
-        GPU_ENABLED: global.AppConfig.gpuEnabled
+        RECHARGE_ENABLED: global.AppConfig.costCenter.recharge.enabled,
+        TRANSFER_ENABLED: global.AppConfig.costCenter.transferEnabled,
+        STRIPE_ENABLED: global.AppConfig.costCenter.recharge.payMethods.stripe.enabled,
+        STRIPE_PUB: global.AppConfig.costCenter.recharge.payMethods.stripe.publicKey,
+        WECHAT_ENABLED: global.AppConfig.costCenter.recharge.payMethods.wechat.enabled,
+        CURRENCY: global.AppConfig.costCenter.currencyType,
+        INVOICE_ENABLED: global.AppConfig.costCenter.invoice.enabled,
+        GPU_ENABLED: global.AppConfig.costCenter.gpuEnabled
       } as Response
     });
   } catch (error) {
-    console.log('error: /api/platform/getInitData', error);
+    console.log('error: /api/platform/getAppConfig', error);
     jsonRes(res, {
       code: 500,
       error: 'Missing necessary configuration files'

@@ -6,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!global.AppConfig.recharge.enabled) {
+    if (!global.AppConfig.costCenter.recharge.enabled) {
       throw new Error('recharge is not enabled');
     }
     const kc = await authSession(req.headers);

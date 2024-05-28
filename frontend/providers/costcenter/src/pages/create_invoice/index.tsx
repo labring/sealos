@@ -287,7 +287,7 @@ function Invoice() {
 export default Invoice;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
-  if (!global.AppConfig.invoice.enabled) {
+  if (!global.AppConfig.costCenter.invoice.enabled) {
     return {
       redirect: {
         destination: '/cost_overview',

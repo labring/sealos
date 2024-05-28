@@ -24,7 +24,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         message: 'endTime is invalid'
       });
     const url =
-      global.AppConfig.components.accountService.url + '/account/v1alpha1/costs/properties';
+      global.AppConfig.costCenter.components.accountService.url +
+      '/account/v1alpha1/costs/properties';
     const res = (await (
       await fetch(url, {
         method: 'POST',

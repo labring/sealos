@@ -41,12 +41,14 @@ export type Components = {
 };
 
 export type AppConfigType = {
-  transferEnabled: boolean;
-  currencyType: string;
-  invoice: Invoice;
-  recharge: Recharge;
-  components: Components;
-  gpuEnabled: boolean;
+  costCenter: {
+    transferEnabled: boolean;
+    currencyType: string;
+    invoice: Invoice;
+    recharge: Recharge;
+    components: Components;
+    gpuEnabled: boolean;
+  };
 };
 
 declare global {

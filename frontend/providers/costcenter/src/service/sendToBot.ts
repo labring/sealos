@@ -93,7 +93,7 @@ export const sendToBot = async ({
     }
   });
   console.log(body);
-  const url = global.AppConfig.invoice.feiShuBotURL;
+  const url = global.AppConfig.costCenter.invoice.feiShuBotURL;
   console.log(url);
   const result = await axios.post(url, body, {
     timeout: 15000,
