@@ -1,4 +1,11 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: costcenter-frontend
+  name: costcenter-frontend
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: costcenter-frontend-config
