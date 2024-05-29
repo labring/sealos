@@ -26,15 +26,11 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   HeaderContext,
-  RowData,
   Table as TTable,
   useReactTable
 } from '@tanstack/react-table';
 import { useMemo } from 'react';
-import { enableGpu } from '@/service/enabled';
 import Amount from '@/components/billing/AmountTableHeader';
 
 export function CommonBillingTable({
@@ -161,7 +157,7 @@ export function CommonBillingTable({
         }
       })
     ];
-  }, [enableGpu, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency]);
   const table = useReactTable({
     data,
     state: {
@@ -273,7 +269,7 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         }
       })
     ];
-  }, [enableGpu, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency]);
 
   const table = useReactTable({
     data,
@@ -362,7 +358,7 @@ export function BillingDetailsTable({
         cell: customCell(true)
       })
     ];
-  }, [enableGpu, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency]);
   const table = useReactTable({
     data,
     state: {

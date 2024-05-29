@@ -16,6 +16,7 @@ type EnvState = {
     value: EnvState[T]
   ) => void;
 };
+
 const useEnvStore = create<EnvState>((set, get) => ({
   rechargeEnabled: false,
   transferEnabled: false,

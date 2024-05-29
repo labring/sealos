@@ -8,7 +8,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const url = process.env.BILLING_URI + '/account/v1alpha1/properties';
+    const url =
+      global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/properties';
     const res = await (
       await fetch(url, {
         method: 'POST',

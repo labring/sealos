@@ -6,14 +6,14 @@ import { jsonRes } from '@/service/backend/response';
 import { addOrUpdateCode, checkSendable } from '@/service/backend/db/verifyCode';
 import { getClientIPFromRequest, retrySerially } from '@/utils/tools';
 import { authSession } from '@/service/backend/auth';
-import { enableInvoice } from '@/service/enabled';
 import * as process from 'process';
-const accessKeyId = process.env.ALI_ACCESS_KEY_ID;
-const accessKeySecret = process.env.ALI_ACCESS_KEY_SECRET;
-const templateCode = process.env.ALI_TEMPLATE_CODE;
-const signName = process.env.ALI_SIGN_NAME;
 const requestTimestamps: Record<string, number> = {};
+
 function checkRequestFrequency(ipAddress: string) {
+  const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
+  const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
+  const templateCode = global.AppConfig.costCenter.invoice.aliSms.templateCode;
+  const signName = global.AppConfig.costCenter.invoice.aliSms.signName;
   const currentTime = Date.now();
   const lastRequestTime = requestTimestamps[ipAddress] || 0;
   const timeDiff = currentTime - lastRequestTime;
@@ -27,9 +27,14 @@ function checkRequestFrequency(ipAddress: string) {
     return true;
   }
 }
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
+  const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
+  const templateCode = global.AppConfig.costCenter.invoice.aliSms.templateCode;
+  const signName = global.AppConfig.costCenter.invoice.aliSms.signName;
   try {
-    if (!enableInvoice()) {
+    if (!global.AppConfig.costCenter.invoice.enabled) {
       throw new Error('invoice is not enabled');
     }
     const kc = await authSession(req.headers);

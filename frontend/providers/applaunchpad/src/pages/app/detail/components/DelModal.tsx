@@ -61,7 +61,7 @@ const DelModal = ({
         <ModalBody>
           <Box color={'myGray.600'}>
             {t(
-              'Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.'
+              'Are you sure you want to delete this application? If you proceed, all data for this project will be deleted'
             )}
             <Box my={3}>
               {t('Please enter')}{' '}

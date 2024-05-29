@@ -1,4 +1,4 @@
-import { generatePaymentCrd, generateTransferCrd } from '@/constants/payment';
+import { generateTransferCrd } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
 import {
   ApplyYaml,
@@ -6,14 +6,13 @@ import {
   watchClusterObject
 } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
-import { enableTransfer } from '@/service/enabled';
 import { TransferState } from '@/types/Transfer';
 import { getTime } from 'date-fns';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!enableTransfer()) {
+    if (!global.AppConfig.costCenter.transferEnabled) {
       throw new Error('transfer is not enabled');
     }
     if (req.method !== 'POST') {
