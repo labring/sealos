@@ -235,7 +235,7 @@ func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	return &account, nil
 }
 
-func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error) {
+func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error) {
 	if ops.UID == uuid.Nil {
 		user, err := c.GetUserCr(ops)
 		if err != nil {
@@ -243,14 +243,14 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) (*types.Oauth
 		}
 		ops.UID = user.UserUID
 	}
-	var provider types.OauthProvider
-	if err := c.DB.Where(types.OauthProvider{UserUID: ops.UID}).First(&provider).Error; err != nil {
+	var provider []types.OauthProvider
+	if err := c.DB.Where(types.OauthProvider{UserUID: ops.UID}).Find(&provider).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get user oauth provider: %v", err)
 	}
-	return &provider, nil
+	return provider, nil
 }
 
 func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
