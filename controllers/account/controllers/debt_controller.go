@@ -22,9 +22,13 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"reflect"
+	runtime2 "runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/volcengine/volc-sdk-golang/service/vms"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
 
@@ -71,9 +75,18 @@ const (
 
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
+	VmsAccessKeyIDEnv     = "VMS_AK"
+	VmsAccessKeySecretEnv = "VMS_SK"
 	SMSEndpointEnv        = "SMS_ENDPOINT"
 	SMSSignNameEnv        = "SMS_SIGN_NAME"
 	SMSCodeMapEnv         = "SMS_CODE_MAP"
+	VmsCodeMapEnv         = "VMS_CODE_MAP"
+	VmsNumberPollEnv      = "VMS_NUMBER_POLL"
+	SMTPHostEnv           = "SMTP_HOST"
+	SMTPPortEnv           = "SMTP_PORT"
+	SMTPFromEnv           = "SMTP_FROM"
+	SMTPPasswordEnv       = "SMTP_PASSWORD"
+	SMTPTitleEnv          = "SMTP_TITLE"
 )
 
 // DebtReconciler reconciles a Debt object
@@ -86,6 +99,13 @@ type DebtReconciler struct {
 	logr.Logger
 	accountSystemNamespace string
 	SmsConfig              *SmsConfig
+	VmsConfig              *VmsConfig
+	smtpConfig             *utils.SMTPConfig
+}
+
+type VmsConfig struct {
+	TemplateCode map[int]string
+	NumberPoll   string
 }
 
 type SmsConfig struct {
@@ -150,7 +170,7 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 				return nil
 			}
 		}
-		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
+		r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
 		return ErrAccountNotExist
 	}
 	if account.CreateRegionID == "" {
@@ -430,6 +450,11 @@ var TitleTemplateEN = map[int]string{
 
 var NoticeTemplateZH map[int]string
 
+var (
+	forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
+	UTCPlus8    = time.FixedZone("UTC+8", 8*3600)
+)
+
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
 	if r.SmsConfig == nil {
 		return nil
@@ -438,18 +463,58 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 	if err != nil {
 		return fmt.Errorf("failed to get user oauth provider: %w", err)
 	}
-	if outh == nil || outh.ProviderID == "" || outh.ProviderType != pkgtypes.OauthProviderTypePhone {
-		r.Logger.Info("user not exist or user phone is empty, skip sms notification", "user", user)
+	phone, email := "", ""
+	for i := range outh {
+		if outh[i].ProviderType == pkgtypes.OauthProviderTypePhone {
+			phone = outh[i].ProviderID
+		} else if outh[i].ProviderType == pkgtypes.OauthProviderTypeEmail {
+			email = outh[i].ProviderID
+		}
+	}
+	if phone == "" && email == "" {
+		r.Logger.Info("user phone && email is not set, skip sms notification", "user", user)
 		return nil
 	}
 	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	return utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-		PhoneNumbers: tea.String(outh.ProviderID),
+	err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+		PhoneNumbers: tea.String(phone),
 		SignName:     tea.String(r.SmsConfig.SmsSignName),
 		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
 		// ｜ownAmount/1_000_000｜
 		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to send sms notice: %w", err)
+	}
+	if noticeType == WarningNotice {
+		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+		if err != nil {
+			return fmt.Errorf("failed to send vms notice: %w", err)
+		}
+		if r.smtpConfig != nil {
+			err = r.smtpConfig.SendEmail(NoticeTemplateZH[noticeType], email)
+			if err != nil {
+				return fmt.Errorf("failed to send email notice: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+// GetSendVmsTimeInUTCPlus8 send vms time in UTC+8 10:00-20:00
+func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
+	nowInUTCPlus8 := t.In(UTCPlus8)
+	hour := nowInUTCPlus8.Hour()
+	if hour >= 10 && hour < 20 {
+		return t
+	}
+	var next10AM time.Time
+	if hour < 10 {
+		next10AM = time.Date(nowInUTCPlus8.Year(), nowInUTCPlus8.Month(), nowInUTCPlus8.Day(), 10, 0, 0, 0, UTCPlus8)
+	} else {
+		next10AM = time.Date(nowInUTCPlus8.Year(), nowInUTCPlus8.Month(), nowInUTCPlus8.Day()+1, 10, 0, 0, 0, UTCPlus8)
+	}
+	return next10AM.In(time.Local)
 }
 
 func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, noticeTypes ...int) error {
@@ -572,26 +637,62 @@ func splitSmsCodeMap(codeStr string) (map[int]string, error) {
 	return codeMap, nil
 }
 
-func setupSmsConfig() (*SmsConfig, error) {
+func (r *DebtReconciler) setupSmsConfig() error {
 	if err := env.CheckEnvSetting([]string{SMSAccessKeyIDEnv, SMSAccessKeySecretEnv, SMSEndpointEnv, SMSSignNameEnv, SMSCodeMapEnv}); err != nil {
-		return nil, fmt.Errorf("check env setting error: %w", err)
+		return fmt.Errorf("check env setting error: %w", err)
 	}
 
 	smsCodeMap, err := splitSmsCodeMap(os.Getenv(SMSCodeMapEnv))
 	if err != nil {
-		return nil, fmt.Errorf("split sms code map error: %w", err)
+		return fmt.Errorf("split sms code map error: %w", err)
 	}
 
 	smsClient, err := utils.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
 	if err != nil {
-		return nil, fmt.Errorf("create sms client error: %w", err)
+		return fmt.Errorf("create sms client error: %w", err)
 	}
-
-	return &SmsConfig{
+	r.SmsConfig = &SmsConfig{
 		Client:      smsClient,
 		SmsSignName: os.Getenv(SMSSignNameEnv),
 		SmsCode:     smsCodeMap,
-	}, nil
+	}
+	return nil
+}
+
+func (r *DebtReconciler) setupVmsConfig() error {
+	if err := env.CheckEnvSetting([]string{VmsAccessKeyIDEnv, VmsAccessKeySecretEnv, VmsNumberPollEnv}); err != nil {
+		return fmt.Errorf("check env setting error: %w", err)
+	}
+	vms.DefaultInstance.Client.SetAccessKey(os.Getenv(VmsAccessKeyIDEnv))
+	vms.DefaultInstance.Client.SetSecretKey(os.Getenv(VmsAccessKeySecretEnv))
+
+	vmsCodeMap, err := splitSmsCodeMap(os.Getenv(VmsCodeMapEnv))
+	if err != nil {
+		return fmt.Errorf("split vms code map error: %w", err)
+	}
+	r.VmsConfig = &VmsConfig{
+		TemplateCode: vmsCodeMap,
+		NumberPoll:   os.Getenv(VmsNumberPollEnv),
+	}
+	return nil
+}
+
+func (r *DebtReconciler) setupSMTPConfig() error {
+	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPPortEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
+		return fmt.Errorf("check env setting error: %w", err)
+	}
+	serverPort, err := strconv.Atoi(os.Getenv(SMTPPortEnv))
+	if err != nil {
+		return fmt.Errorf("invalid smtp port: %w", err)
+	}
+	r.smtpConfig = &utils.SMTPConfig{
+		ServerHost: os.Getenv(SMTPHostEnv),
+		ServerPort: serverPort,
+		FromEmail:  os.Getenv(SMTPFromEnv),
+		Passwd:     os.Getenv(SMTPPasswordEnv),
+		EmailTitle: SMTPTitleEnv,
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -602,11 +703,15 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 
-	smsConfig, err := setupSmsConfig()
-	if err != nil {
-		r.Logger.Error(err, "Failed to set up SMS configuration")
-	} else {
-		r.SmsConfig = smsConfig
+	setupList := []func() error{
+		r.setupSmsConfig,
+		r.setupVmsConfig,
+		r.setupSMTPConfig,
+	}
+	for i := range setupList {
+		if err := setupList[i](); err != nil {
+			r.Logger.Error(err, fmt.Sprintf("failed to set up %s", runtime2.FuncForPC(reflect.ValueOf(setupList[i]).Pointer()).Name()))
+		}
 	}
 
 	/*
