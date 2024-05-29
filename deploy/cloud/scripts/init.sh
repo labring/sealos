@@ -144,7 +144,7 @@ function gen_saltKey() {
 }
 
 function gen_regionUID(){
-    uid=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "regionUID:" | awk '{print $2}' 2>/dev/null || true)
+    uid=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "regionUID:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
     if [[ -z "$uid" ]]; then
         localRegionUID=$(uuidgen)
     else
