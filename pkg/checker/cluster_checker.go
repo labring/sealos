@@ -103,6 +103,9 @@ func isControlPlaneNode(node corev1.Node) bool {
 	if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok {
 		return true
 	}
+	if _, ok := node.Labels["node-role.kubernetes.io/master"]; ok {
+		return true
+	}
 	return false
 }
 
