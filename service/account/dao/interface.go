@@ -28,6 +28,7 @@ type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
+	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 	GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error)
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
@@ -146,6 +147,71 @@ func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.Ti
 		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
 	}
 	return costsMap, nil
+}
+
+func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error) {
+	pageSize := req.PageSize
+	currentPage := req.Page
+
+	timeMatch := bson.E{Key: "time", Value: bson.D{{Key: "$gte", Value: req.StartTime}, {Key: "$lt", Value: req.EndTime}}}
+	pipeline := mongo.Pipeline{
+		// Initially matches a document with app_costs.name equal to the specified value | 初步匹配 app_costs.name 等于指定值的文档
+		{{Key: "$match", Value: bson.D{
+			{Key: "app_costs.name", Value: req.AppName},
+			{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]},
+			{Key: "namespace", Value: req.Namespace},
+			{Key: "owner", Value: req.Owner},
+			timeMatch,
+		}}},
+		// Process total records and paging data in parallel | 并行处理总记录数和分页数据
+		{{Key: "$facet", Value: bson.D{
+			{Key: "totalRecords", Value: bson.A{
+				bson.D{{Key: "$unwind", Value: "$app_costs"}},
+				bson.D{{Key: "$match", Value: bson.D{
+					{Key: "app_costs.name", Value: req.AppName},
+					timeMatch,
+				}}},
+				bson.D{{Key: "$count", Value: "count"}},
+			}},
+			{Key: "costs", Value: bson.A{
+				bson.D{{Key: "$unwind", Value: "$app_costs"}},
+				bson.D{{Key: "$match", Value: bson.D{
+					{Key: "app_costs.name", Value: req.AppName},
+					timeMatch,
+				}}},
+				bson.D{{Key: "$skip", Value: (currentPage - 1) * pageSize}},
+				bson.D{{Key: "$limit", Value: pageSize}},
+				bson.D{{Key: "$project", Value: bson.D{
+					{Key: "_id", Value: 0},
+					{Key: "time", Value: 1},
+					{Key: "order_id", Value: 1},
+					{Key: "namespace", Value: 1},
+					{Key: "used", Value: "$app_costs.used"},
+					{Key: "amount", Value: "$app_costs.amount"},
+					{Key: "app_name", Value: "$app_costs.name"},
+					{Key: "app_type", Value: "$app_type"},
+				}}},
+			}},
+		}}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "total_records", Value: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$totalRecords.count", 0}}}},
+			{Key: "total_pages", Value: bson.D{{Key: "$ceil", Value: bson.D{{Key: "$divide", Value: bson.A{bson.D{{Key: "$arrayElemAt", Value: bson.A{"$totalRecords.count", 0}}}, pageSize}}}}}},
+			{Key: "costs", Value: 1},
+		}}},
+	}
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+	}
+	var results common.AppCosts
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&results); err != nil {
+			return nil, fmt.Errorf("failed to decode result: %v", err)
+		}
+	}
+	results.CurrentPage = currentPage
+	return &results, nil
 }
 
 func (m *MongoDB) GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error) {

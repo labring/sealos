@@ -14,6 +14,53 @@ definitions:
         example: 10000
         type: number
     type: object
+  helper.AppCostsReq:
+    properties:
+      appName:
+        description: |-
+          @Summary App Name
+          @Description App Name
+        example: app
+        type: string
+      appType:
+        description: |-
+          @Summary App type
+          @Description App type
+        example: app
+        type: string
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      namespace:
+        description: |-
+          @Summary Namespace
+          @Description Namespace
+        example: ns-admin
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        example: 1
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        example: 10
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+    required:
+    - kubeConfig
+    - owner
+    type: object
   helper.Auth:
     properties:
       kubeConfig:
@@ -226,6 +273,44 @@ paths:
       summary: Get user costs
       tags:
       - Costs
+  /account/v1alpha1/costs/app:
+    post:
+      consumes:
+      - application/json
+      description: Get app costs within a specified time range
+      parameters:
+      - description: App costs request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AppCostsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved app costs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get app cost request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get app cost
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get app costs
+      tags:
+      - AppCosts
   /account/v1alpha1/costs/consumption:
     post:
       consumes:

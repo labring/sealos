@@ -374,3 +374,35 @@ func GetTransfer(c *gin.Context) {
 		"transfer": transfer,
 	})
 }
+
+// GetAPPCosts
+// @Summary Get app costs
+// @Description Get app costs within a specified time range
+// @Tags AppCosts
+// @Accept json
+// @Produce json
+// @Param request body helper.AppCostsReq true "App costs request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved app costs"
+// @Failure 400 {object} map[string]interface{} "failed to parse get app cost request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get app cost"
+// @Router /account/v1alpha1/costs/app [post]
+func GetAPPCosts(c *gin.Context) {
+	req, err := helper.ParseAppCostsReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get app cost request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	cost, err := dao.DBClient.GetAppCosts(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app cost : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"app_costs": cost,
+	})
+}

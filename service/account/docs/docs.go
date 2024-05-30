@@ -123,6 +123,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/costs/app": {
+            "post": {
+                "description": "Get app costs within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AppCosts"
+                ],
+                "summary": "Get app costs",
+                "parameters": [
+                    {
+                        "description": "App costs request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AppCostsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved app costs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get app cost request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get app cost",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/costs/consumption": {
             "post": {
                 "description": "Get user consumption amount within a specified time range",
@@ -626,6 +682,55 @@ const docTemplate = `{
                 "unit_price": {
                     "type": "number",
                     "example": 10000
+                }
+            }
+        },
+        "helper.AppCostsReq": {
+            "type": "object",
+            "required": [
+                "kubeConfig",
+                "owner"
+            ],
+            "properties": {
+                "appName": {
+                    "description": "@Summary App Name\n@Description App Name",
+                    "type": "string",
+                    "example": "app"
+                },
+                "appType": {
+                    "description": "@Summary App type\n@Description App type",
+                    "type": "string",
+                    "example": "app"
+                },
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "@Summary Namespace\n@Description Namespace",
+                    "type": "string",
+                    "example": "ns-admin"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer",
+                    "example": 10
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
                 }
             }
         },

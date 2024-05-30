@@ -174,3 +174,41 @@ func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
 	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
+
+type AppCostsReq struct {
+	UserBaseReq `json:",inline" bson:",inline"`
+
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace,omitempty" bson:"namespace" example:"ns-admin"`
+	// @Summary App type
+	// @Description App type
+	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
+
+	// @Summary App Name
+	// @Description App Name
+	AppName string `json:"appName,omitempty" bson:"appName" example:"app"`
+
+	// @Summary Page
+	// @Description Page
+	Page int `json:"page,omitempty" bson:"page" example:"1"`
+
+	// @Summary Page Size
+	// @Description Page Size
+	PageSize int `json:"pageSize,omitempty" bson:"pageSize" example:"10"`
+}
+
+func ParseAppCostsReq(c *gin.Context) (*AppCostsReq, error) {
+	userCosts := &AppCostsReq{}
+	if err := c.ShouldBindJSON(userCosts); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if userCosts.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
+		userCosts.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
+	}
+	if userCosts.TimeRange.EndTime.After(time.Now()) {
+		userCosts.TimeRange.EndTime = time.Now()
+	}
+	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
+	return userCosts, nil
+}
