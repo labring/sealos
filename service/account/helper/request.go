@@ -45,7 +45,7 @@ type TransferAmountReq struct {
 	// @Summary Transfer amount
 	// @Description Transfer amount
 	// @JSONSchema required
-	Amount int64 `json:"amount" bson:"amount" binding:"required" example:"100000000"`
+	Amount int64 `json:"amount" bson:"amount" example:"100000000"`
 
 	// @Summary To user
 	// @Description To user
@@ -56,6 +56,10 @@ type TransferAmountReq struct {
 	// @Description Authentication information
 	// @JSONSchema required
 	Auth `json:",inline" bson:",inline"`
+
+	// @Summary Transfer all
+	// @Description Transfer all amount
+	TransferAll bool `json:"transferAll" bson:"transferAll"`
 }
 
 type ConsumptionRecordReq struct {
@@ -133,6 +137,9 @@ func ParseTransferAmountReq(c *gin.Context) (*TransferAmountReq, error) {
 	transferAmount := &TransferAmountReq{}
 	if err := c.ShouldBindJSON(transferAmount); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if transferAmount.Amount == 0 && !transferAmount.TransferAll {
+		return nil, fmt.Errorf("transfer amount cannot be empty")
 	}
 	return transferAmount, nil
 }

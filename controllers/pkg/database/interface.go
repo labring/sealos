@@ -104,6 +104,7 @@ type AccountV2 interface {
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
 	CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
+	TransferAccountAll(from, to *types.UserQueryOpts) error
 	TransferAccountV1(owner string, account *types.Account) (*types.Account, error)
 	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
 	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error

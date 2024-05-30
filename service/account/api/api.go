@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/service/account/common"
@@ -336,6 +338,12 @@ func TransferAmount(c *gin.Context) {
 		return
 	}
 	if err := dao.DBClient.Transfer(req); err != nil {
+		if err == cockroach.InsufficientBalanceError {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "insufficient balance, skip transfer",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to transfer amount : %v", err)})
 		return
 	}

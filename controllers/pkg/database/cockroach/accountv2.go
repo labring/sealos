@@ -686,6 +686,16 @@ var (
 )
 
 func (c *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64) error {
+	return c.transferAccount(from, to, amount, false)
+}
+
+func (c *Cockroach) TransferAccountAll(from, to *types.UserQueryOpts) error {
+	return c.transferAccount(from, to, 0, true)
+}
+
+var InsufficientBalanceError = errors.New("insufficient balance")
+
+func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64, transferAll bool) error {
 	if from.UID == uuid.Nil {
 		fromUserUID, err := c.GetUserUID(from)
 		if err != nil {
@@ -705,8 +715,15 @@ func (c *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64)
 		if err != nil {
 			return fmt.Errorf("failed to get sender account: %w", err)
 		}
-		if sender.Balance < sender.DeductionBalance+amount+MinBalance+sender.ActivityBonus {
-			return fmt.Errorf("insufficient balance in sender account, the transferable amount is: %d", sender.Balance-sender.DeductionBalance-MinBalance-sender.ActivityBonus)
+		if !transferAll {
+			if sender.Balance < sender.DeductionBalance+amount+MinBalance+sender.ActivityBonus {
+				return fmt.Errorf("insufficient balance in sender account, the transferable amount is: %d", sender.Balance-sender.DeductionBalance-MinBalance-sender.ActivityBonus)
+			}
+		} else {
+			amount = sender.Balance - sender.DeductionBalance - c.ZeroAccount.Balance
+			if amount < 0 {
+				return InsufficientBalanceError
+			}
 		}
 
 		if err = c.updateBalance(tx, &types.UserQueryOpts{UID: from.UID}, -amount, false, true); err != nil {
