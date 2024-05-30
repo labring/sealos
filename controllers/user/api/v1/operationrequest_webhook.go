@@ -71,6 +71,10 @@ func (r ReqValidator) ValidateCreate(ctx context.Context, obj runtime.Object) er
 		return errors.New("obj convert Operationrequest is error")
 	}
 
+	if req.Annotations[OperationRequestWebhookSkipKey] == "true" {
+		operationrequestlog.Info("due to annotation, skip validate for operation request create", "namespace/name", req.Namespace+"/"+req.Name)
+		return nil
+	}
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
 
 	// list all requests in the same namespace with a same owner

@@ -42,9 +42,10 @@ const (
 	// UserAnnotationCreatorKey refers to the user who created the resource
 	UserAnnotationCreatorKey = "user.sealos.io/creator"
 	// UserAnnotationOwnerKey refers to the user who owns the resource
-	UserAnnotationOwnerKey   = "user.sealos.io/owner"
-	UserLabelOwnerKey        = "user.sealos.io/owner"
-	UserAnnotationDisplayKey = "user.sealos.io/display-name"
+	UserAnnotationOwnerKey         = "user.sealos.io/owner"
+	UserLabelOwnerKey              = "user.sealos.io/owner"
+	UserAnnotationDisplayKey       = "user.sealos.io/display-name"
+	OperationRequestWebhookSkipKey = "user.sealos.io/skip-webhook"
 )
 
 const (
