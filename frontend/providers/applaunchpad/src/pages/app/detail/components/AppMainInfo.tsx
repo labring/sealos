@@ -132,7 +132,7 @@ const AppMainInfo = ({
                     </th>
                     <th className="driver-detail-network-public">
                       <Flex alignItems={'center'} justifyContent={'space-between'}>
-                        {!!network.public && (
+                        {/* {!!network.public && (
                           <>
                             <MyTooltip
                               label={network.public ? t('Open Link') : ''}
@@ -163,7 +163,7 @@ const AppMainInfo = ({
                               onClick={() => copyData(network.public)}
                             />
                           </>
-                        )}
+                        )} */}
                         {!!network.nodePort && (
                           <>
                             <MyTooltip
@@ -176,7 +176,8 @@ const AppMainInfo = ({
                                   ? {
                                       cursor: 'pointer',
                                       _hover: { textDecoration: 'underline' },
-                                      onClick: () => window.open(network.nodePort, '_blank')
+                                      onClick: () =>
+                                        window.open(`http://${network.nodePort}`, '_blank')
                                     }
                                   : {})}
                               >

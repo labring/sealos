@@ -466,6 +466,8 @@ export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => 
 };
 
 export function parseImageName(imageName: string) {
+  imageName = imageName.replace(/^[^\/:]+:\d+\/+/, '');
+
   const match = imageName.match(/^(.*?)(?::([^:]*))?$/);
   if (!match) {
     return {

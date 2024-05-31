@@ -191,6 +191,7 @@ const Networks = ({
               key={network.id}
               _notLast={{ pb: 6, borderBottom: theme.borders.base }}
               _notFirst={{ pt: 6 }}
+              gap={'20px'}
             >
               <Box>
                 <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
@@ -287,7 +288,7 @@ const Networks = ({
                       })}
                     />
                   </Box>
-                  <Box ml={'6px'}>
+                  {/* <Box ml={'6px'}>
                     <Box mb={'8px'} h={'20px'}></Box>
                     <Flex alignItems={'center'} h={'35px'}>
                       <MySelect
@@ -296,7 +297,6 @@ const Networks = ({
                         borderTopRightRadius={0}
                         borderBottomRightRadius={0}
                         value={network.protocol}
-                        // border={theme.borders.base}
                         list={ProtocolList}
                         onchange={(val: any) => {
                           updateNetwork(i, {
@@ -337,7 +337,7 @@ const Networks = ({
                         </Box>
                       </Flex>
                     </Flex>
-                  </Box>
+                  </Box> */}
                 </>
               )}
               {networks.length > 1 && (

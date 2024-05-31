@@ -51,7 +51,14 @@ const Header = ({
 
   const handleExportApp = async () => {
     setExportLoading(true);
-    const images = formHook.getValues().containers.map((item) => ({ name: item.imageName }));
+    const images = formHook.getValues().containers.map((item) => {
+      if (!item.imageName.includes('sealos.hub:5000')) {
+        return { name: `sealos.hub:5000/${item.imageName}` };
+      } else {
+        return { name: item.imageName };
+      }
+    });
+
     try {
       const exportYamlString = yamlList.map((i) => i.value).join('---\n');
       const result = await exportApp({

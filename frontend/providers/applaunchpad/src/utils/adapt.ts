@@ -258,6 +258,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       }) || [];
 
     const { repository, tag } = parseImageName(container?.image || '');
+
     return {
       name: container?.name || '',
       imageName: container?.image || '',
@@ -297,7 +298,6 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     replicas: appDeploy.spec?.replicas || 0,
     currentContainerName: containers[0].name,
     containers: containers,
-
     // runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
     // cmdParam:
     //   (appDeploy.spec?.template?.spec?.containers?.[0]?.args?.length === 1
