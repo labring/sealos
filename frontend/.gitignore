@@ -2,3 +2,7 @@ node_modules/
 .next
 .env*.local
 next-env.d.ts
+docker-demo
+build
+__pycache__
+app.spec
