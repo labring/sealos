@@ -21,6 +21,7 @@ interface IMoreAppsContext {
   setShowMoreApps: (value: boolean) => void;
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
+
 export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
   const { isUserLogin } = useSessionStore();
@@ -110,7 +111,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
         {/* <FloatButton /> */}
-        <MoreApps />
+        {/* <MoreApps /> */}
       </MoreAppsContext.Provider>
     </Box>
   );

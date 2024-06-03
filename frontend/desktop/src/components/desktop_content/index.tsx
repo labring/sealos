@@ -4,10 +4,11 @@ import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { TApp, WindowSize } from '@/types';
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
 import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import AppDock from '../AppDock';
@@ -15,16 +16,17 @@ import { ChakraIndicator } from './ChakraIndicator';
 import Apps from './apps';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
-import UserMenu from '@/components/user_menu';
+import DesktopProvider from './providers';
+const Account = dynamic(() => import('../account'), { ssr: false });
 
 export const blurBackgroundStyles = {
-  bg: 'rgba(22, 30, 40, 0.4)',
-  backdropFilter: 'blur(80px) saturate(130%)',
+  bg: 'rgba(22, 30, 40, 0.35)',
+  backdropFilter: 'blur(80px) saturate(150%)',
   border: 'none',
   borderRadius: '12px'
 };
 
-export default function DesktopContent(props: any) {
+export default function Desktop(props: any) {
   const { t, i18n } = useTranslation();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
@@ -32,6 +34,7 @@ export default function DesktopContent(props: any) {
   const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
   const [maxItems, setMaxItems] = useState(10);
   const { message } = useMessage();
+  const desktopDisclosure = useDisclosure();
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -113,82 +116,98 @@ export default function DesktopContent(props: any) {
   });
 
   return (
-    <Box
-      id="desktop"
-      className={styles.desktop}
-      backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
-      backgroundRepeat={'no-repeat'}
-      backgroundSize={'cover'}
-    >
-      <ChakraIndicator />
-      <Flex
-        gap={'8px'}
-        width={'100%'}
-        height={'calc(100% - 87px)'}
-        pt={'24px'}
-        px={'24px'}
-        mx={'auto'}
-        maxW={'1232px'}
+    <DesktopProvider>
+      <Box
+        id="desktop"
+        className={styles.desktop}
+        backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
+        backgroundRepeat={'no-repeat'}
+        backgroundSize={'cover'}
       >
-        {/* monitor  */}
+        <ChakraIndicator />
         <Flex
-          flex={'0 0 250px'}
-          flexDirection={'column'}
-          display={{
-            base: 'none',
-            xl: 'flex'
-          }}
           gap={'8px'}
+          width={'100%'}
+          height={'calc(100% - 87px)'}
+          pt={'24px'}
+          px={'24px'}
+          mx={'auto'}
+          maxW={'1232px'}
         >
-          <Flex height={'48px'} {...blurBackgroundStyles}>
-            Sealos 小助理
+          {/* monitor  */}
+          <Flex
+            flex={'0 0 250px'}
+            flexDirection={'column'}
+            display={{
+              base: 'none',
+              xl: 'flex'
+            }}
+            gap={'8px'}
+          >
+            <Flex height={'48px'} {...blurBackgroundStyles}>
+              Sealos 小助理
+            </Flex>
+            <Flex flex={1} {...blurBackgroundStyles}>
+              asdasdasxx
+            </Flex>
           </Flex>
-          <Flex flex={1} {...blurBackgroundStyles}>
-            asdasdasxx
+
+          {/* apps padding-right: 266px + 4px */}
+          <Flex
+            flexDirection={'column'}
+            gap={'8px'}
+            flex={1}
+            // pr={{ base: '0px', lg: '270px' }}
+          >
+            <Flex flexShrink={0} height={'48px'} {...blurBackgroundStyles}>
+              搜索应用
+            </Flex>
+            <Apps />
           </Flex>
+
+          {/* user account */}
+          <Flex
+            display={{ base: 'none', lg: 'flex' }}
+            flex={'0 0 266px'}
+            flexDirection={'column'}
+            gap={'8px'}
+            // position={'absolute'}
+            width={'266px'}
+            // right={'20px'}
+          >
+            <Account />
+            <Flex {...blurBackgroundStyles} flex={1}></Flex>
+          </Flex>
+
+          {showGuide ? (
+            <>
+              <UserGuide />
+              <Box
+                position="fixed"
+                top="0"
+                left="0"
+                width="100%"
+                height="100%"
+                backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
+                zIndex="11000" // 保证蒙层在最上层
+              />
+            </>
+          ) : (
+            <></>
+          )}
+
+          <AppDock />
         </Flex>
 
-        {/* apps */}
-        <Flex flexDirection={'column'} gap={'8px'} flex={1}>
-          <Flex flexShrink={0} height={'48px'} {...blurBackgroundStyles}>
-            搜索应用
-          </Flex>
-          <Apps />
-        </Flex>
-
-        {/* user account */}
-        <Flex display={{ base: 'none', lg: 'flex' }} flex={'0 0 266px'} {...blurBackgroundStyles}>
-          {/* <UserMenu /> */}
-        </Flex>
-
-        {showGuide ? (
-          <>
-            <UserGuide />
-            <Box
-              position="fixed"
-              top="0"
-              left="0"
-              width="100%"
-              height="100%"
-              backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
-              zIndex="11000" // 保证蒙层在最上层
-            />
-          </>
-        ) : (
-          <></>
-        )}
-
-        <AppDock />
-      </Flex>
-
-      {/* opened apps */}
-      {runningInfo.map((process) => {
-        return (
-          <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
-            <IframeWindow pid={process.pid} />
-          </AppWindow>
-        );
-      })}
-    </Box>
+        {/* opened apps */}
+        {runningInfo.map((process) => {
+          return (
+            <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
+              <IframeWindow pid={process.pid} />
+            </AppWindow>
+          );
+        })}
+      </Box>
+    </DesktopProvider>
   );
 }
