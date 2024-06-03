@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import subprocess
 import os
 import json
 import yaml
+import time
 
 app = Flask(__name__)
 
@@ -23,7 +24,7 @@ def run_command(command):
         subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return None
     except subprocess.CalledProcessError as e:
-        print(f"Error executing command: {e.stderr.decode().strip()}")
+        print("Error executing command: " + e.stderr.decode().strip())
         return e.stderr.decode().strip()
 
 # API端点：导出应用程序
@@ -48,13 +49,21 @@ def export_app():
     workdir = os.path.join(SAVE_PATH, namespace, appname)
     
     if os.path.exists(workdir):
-        os.system(f'rm -rf {workdir}')
+        os.system('rm -rf ' + workdir)
     os.makedirs(workdir)
 
     # 保存yaml文件至本地
     print('write yaml file to:', os.path.join(workdir, 'app.yaml'), flush=True)
     with open(os.path.join(workdir, 'app.yaml'), 'w') as file:
         file.write(yaml_content)
+
+    # 检索yaml中的所有nodeport端口和对应的内部port
+    nodeports = []
+    for single_yaml in yaml.safe_load_all(yaml_content):
+        if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
+            if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
+                nodeports.append({'internal_port': str(single_yaml['spec']['ports'][0]['port'])})
+    print('nodeports:', nodeports, flush=True)
 
     image_pairs = []
     
@@ -71,11 +80,11 @@ def export_app():
         image_file_name = name.replace('/', '_').replace(':', '_') + '.tar'
         path = os.path.join(workdir, image_file_name)
         image_pairs.append({'name': name, 'path': path})
-        err = run_command(f'docker pull {name}')
+        err = run_command('docker pull ' + name)
         if err:
             return jsonify({'error': 'Failed to pull image, ' + err}), 500
         print('save image:', name, flush=True)
-        err = run_command(f'docker save {name} -o {path}')
+        err = run_command('docker save ' + name + ' -o ' + path)
         if err:
             return jsonify({'error': 'Failed to save image, ' + err}), 500
     
@@ -83,13 +92,50 @@ def export_app():
     metadata = {
         'name': appname,
         'namespace': namespace,
-        'images': image_pairs
+        'images': image_pairs,
+        'nodeports': nodeports
     }
     with open(os.path.join(workdir, 'metadata.json'), 'w') as file:
         file.write(json.dumps(metadata))
     
     # 返回成功响应
-    return jsonify({'message': 'Application exported successfully', 'path': workdir}), 200
+    return jsonify({'message': 'Application exported successfully', 'path': workdir, 'url': 'http://' + CLUSTER_DOMAIN + ':5002/api/downloadApp?appname=' + appname + '&namespace=' + namespace}), 200
+
+# API端点：打包并下载应用程序
+@app.route('/api/downloadApp', methods=['GET'])
+def download_app():
+    # 获取请求参数
+    appname = request.args.get('appname')
+    if not appname:
+        return jsonify({'error': 'Appname is required'}), 400
+    namespace = request.args.get('namespace')
+    if not namespace:
+        return jsonify({'error': 'Namespace is required'}), 400
+
+    print('downloadApp, appname:', appname, 'namespace:', namespace, flush=True)
+
+    # 打包应用程序
+    workdir = os.path.join(SAVE_PATH, namespace, appname)
+    tar_path = os.path.join(SAVE_PATH, namespace, appname + '.tar')
+    err = run_command('tar -cf ' + tar_path + ' -C ' + workdir + ' .')
+    if err:
+        return jsonify({'error': 'Failed to pack application, ' + err}), 500
+
+    # 以流的形式返回文件
+    def generate():
+        with open(tar_path, 'rb') as file:
+            while True:
+                data = file.read(1024)
+                if not data:
+                    break
+                yield data
+        os.system('rm -rf ' + workdir)
+        os.system('rm -rf ' + tar_path)
+
+    response = Response(generate(), content_type='application/octet-stream')
+    response.headers['Content-Disposition'] = 'attachment; filename=' + appname + '.tar'
+    return response
+
 
 # API端点：部署应用程序
 @app.route('/api/deployAppWithImage', methods=['POST'])
@@ -98,6 +144,9 @@ def deploy_app_with_image():
     file_path = request.json.get('path')
     if not file_path:
         return jsonify({'error': 'Path is required'}), 400  
+    ports = request.json.get('ports')
+    if not ports:
+        return jsonify({'error': 'Ports are required'}), 400
     namespace = request.args.get('namespace')
     with open(os.path.join(file_path, 'metadata.json'), 'r') as file:
         metadata = json.load(file)
@@ -109,6 +158,26 @@ def deploy_app_with_image():
         image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
     with open(os.path.join(file_path, 'app.yaml'), 'r') as file:
         yaml_content = file.read()
+
+    new_yaml_contents = []
+    for single_yaml in yaml.safe_load_all(yaml_content):
+        if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
+            if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
+                for port_index in range(len(single_yaml['spec']['ports'])):
+                    internal_port = str(single_yaml['spec']['ports'][port_index]['port'])
+                    if internal_port not in ports.keys():
+                        return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' is required'}), 400
+                    # check if ports[internal_port] is int
+                    if not isinstance(ports[internal_port], int):
+                        return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be int'}), 400
+                    # check if ports[internal_port] is 30000-32767
+                    if ports[internal_port] < 30000 or ports[internal_port] > 32767:
+                        return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be between 30000 and 32767'}), 400
+                    single_yaml['spec']['ports'][port_index]['nodePort'] = ports[internal_port]
+        new_yaml_contents.append(single_yaml)
+    new_yaml_content = yaml.dump_all(new_yaml_contents)
+
+
     print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
     # if not namespace:
     #     return jsonify({'error': 'Namespace is required'}), 400
@@ -133,7 +202,7 @@ def deploy_app_with_image():
             return jsonify({'error': 'Failed to login, ' + err}), 500
 
         # 加载镜像
-        err = run_command(f'docker load -i {path}')
+        err = run_command('docker load -i ' + path)
         if err:
             return jsonify({'error': 'Failed to load image, ' + err}), 500
         # 替换域名并推送镜像
@@ -141,25 +210,25 @@ def deploy_app_with_image():
         if len(parts) == 3:
             new_name = 'sealos.hub:5000/' + '/'.join(parts[1:])
         elif len(parts) == 1:
-            new_name = f'sealos.hub:5000/library/{name}'
+            new_name = 'sealos.hub:5000/library/' + name
         elif len(parts) == 2:
-            new_name = f'sealos.hub:5000/{name}'
+            new_name = 'sealos.hub:5000/' + name
         else:
             return jsonify({'error': 'Invalid image name: ' + name}), 400
-        err = run_command(f'docker tag {name} {new_name}')
+        err = run_command('docker tag ' + name + ' ' + new_name)
         if err:
             return jsonify({'error': 'Failed to tag image, ' + err}), 500
-        err = run_command(f'docker push {new_name}')
+        err = run_command('docker push ' + new_name)
         if err:
             return jsonify({'error': 'Failed to push image, ' + err}), 500
 
     # 替换yaml中的CLUSTER_DOMAIN
-    yaml_content = yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
+    new_yaml_content = new_yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
     with open('temp.yaml', 'w') as file:
-        file.write(yaml_content)
+        file.write(new_yaml_content)
 
     # 调用kubectl创建命名空间
-    create_namespace_command = f'kubectl create namespace {namespace} --kubeconfig=/etc/kubernetes/admin.conf'
+    create_namespace_command = 'kubectl create namespace ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf'
     err = run_command(create_namespace_command)
 
     if err:
@@ -167,14 +236,14 @@ def deploy_app_with_image():
             return jsonify({'error': 'Failed to create namespace, ' + err}), 500
 
     # 调用kubectl部署应用
-    apply_command = f'kubectl apply -n {namespace} --kubeconfig=/etc/kubernetes/admin.conf -f temp.yaml'
+    apply_command = 'kubectl apply -n ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf -f temp.yaml'
     err = run_command(apply_command)
 
     if err:
         return jsonify({'error': 'Failed to apply application, ' + err}), 500
 
     # 返回成功响应
-    detail_url = f'http://{CLUSTER_DOMAIN}:32293/app/detail?namespace={namespace}&&name={appname}'
+    detail_url = 'http://' + CLUSTER_DOMAIN + ':32293/app/detail?namespace=' + namespace + '&&name=' + appname
     return jsonify({'message': 'Application deployed successfully', 'url': detail_url}), 200
 
 if __name__ == '__main__':
