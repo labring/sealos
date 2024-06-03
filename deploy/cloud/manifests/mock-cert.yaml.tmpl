@@ -16,6 +16,7 @@ spec:
     name: selfsigned-issuer
     kind: ClusterIssuer
   commonName: {{ .cloudDomain }}
+  duration: 867240h # 99 year
   dnsNames:
     - '{{ .cloudDomain }}'
     - '*.{{ .cloudDomain }}'
