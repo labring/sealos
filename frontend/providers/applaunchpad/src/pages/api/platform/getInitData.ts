@@ -50,6 +50,14 @@ export const defaultAppConfig: AppConfigType = {
   }
 };
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`Caught unhandledRejection:`, reason, promise);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error(`Caught uncaughtException:`, err);
+});
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!global.AppConfig || process.env.NODE_ENV !== 'production') {
