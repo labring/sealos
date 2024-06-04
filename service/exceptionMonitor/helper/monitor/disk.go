@@ -55,13 +55,12 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 			return false, fmt.Errorf("error parsing float: %v", err)
 		}
 	}
-	if usage > 80 {
+	if usage > 99 {
 		return true, nil
-	} else {
-		if usage > 80 {
-			_, ownerNS := GetNSOwner(namespace)
-			notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
-		}
-		return false, nil
 	}
+	if usage > 80 {
+		_, ownerNS := GetNSOwner(namespace)
+		notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
+	}
+	return false, nil
 }

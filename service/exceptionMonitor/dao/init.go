@@ -19,11 +19,5 @@ func InitCockroachDB() error {
 		fmt.Println("unable to connect to cockroach:", err)
 		os.Exit(1)
 	}
-	defer func() {
-		err := CK.Close()
-		if err != nil {
-			fmt.Println("unable to connect to cockroach:", err)
-		}
-	}()
 	return nil
 }

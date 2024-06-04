@@ -5,22 +5,22 @@ import (
 	"exceptionMonitor/dao"
 	"exceptionMonitor/helper/client"
 	"exceptionMonitor/helper/monitor"
-	"log"
+	"fmt"
 	"time"
 )
 
 func main() {
 
-	api.ClusterName = api.GetClusterNameFromEnv()
-	api.MonitorType = api.GetMonitorTypeFromEnv()
-	api.ClusterNS = api.GetClusterNSFromEnv()
+	if err := api.GetENV(); err != nil {
+		fmt.Printf("Failed to get env: %v", err)
+	}
 
 	if err := client.InitClient(); err != nil {
-		log.Fatalf("Failed to initialize k8S client: %v", err)
+		fmt.Printf("Failed to initialize k8S client: %v", err)
 	}
 
 	if err := dao.InitCockroachDB(); err != nil {
-		log.Fatalf("Failed to initialize cockroachDB: %v", err)
+		fmt.Printf("Failed to initialize cockroachDB: %v", err)
 	}
 
 	for {

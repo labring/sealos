@@ -134,7 +134,7 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 func SendFeishuNotification(database_message, feishuWebHook string) error {
 
 	if api.MonitorType != "all" {
-		feishuWebHook = api.FeishuWebhookURL4
+		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
 
 	// Create a map to hold the POST request body
