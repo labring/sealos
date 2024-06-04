@@ -34,6 +34,8 @@ import SettingIcon from './icons/SettingIcon';
 import LogoutIcon from './icons/LogoutIcon';
 import GithubIcon from './icons/GithubIcon';
 import GoogleIcon from './icons/GoogleIcon';
+import DocsIcon from './icons/DocsIcon';
+import NotificationIcon from './icons/NotificationIcon';
 import WechatIcon from './icons/WechatIcon';
 import ListIcon from './icons/ListIcon';
 import PortIcon from './icons/PortIcon';
@@ -104,6 +106,8 @@ export {
   VisibityIcon,
   WechatIcon,
   PortIcon,
+  NotificationIcon,
+  DocsIcon,
   WarnIcon,
   CloseIcon,
   SortPolygonUpIcon,

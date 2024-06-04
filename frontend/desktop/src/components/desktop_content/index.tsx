@@ -17,6 +17,7 @@ import Apps from './apps';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
 import DesktopProvider from './providers';
+import Cost from '../account/cost';
 const Account = dynamic(() => import('../account'), { ssr: false });
 
 export const blurBackgroundStyles = {
@@ -176,7 +177,7 @@ export default function Desktop(props: any) {
             // right={'20px'}
           >
             <Account />
-            <Flex {...blurBackgroundStyles} flex={1}></Flex>
+            <Cost />
           </Flex>
 
           {showGuide ? (

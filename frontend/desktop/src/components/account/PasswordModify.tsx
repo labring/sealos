@@ -56,7 +56,7 @@ export default function PasswordModify(props: FlexProps) {
         transition={'all 0.3s'}
         justify={'center'}
         fontSize={'12px'}
-        color="#219BF4"
+        color="rgba(255, 255, 255, 0.7)"
         align={'center'}
         cursor={'pointer'}
         {...props}
