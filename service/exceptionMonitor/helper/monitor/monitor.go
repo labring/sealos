@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func CheckDatabases(ns string) {
+func CheckDatabases(ns string) error {
 	var clusters *unstructured.UnstructuredList
 	var err error
 	if api.MonitorType == "all" {
@@ -42,6 +42,7 @@ func CheckDatabases(ns string) {
 	}
 	if err != nil {
 		fmt.Printf("Unable to get kubeblocks crds %s \n", err.Error())
+		return err
 	}
 	for _, cluster := range clusters.Items {
 		//Avoid duplicate sending notifacation
@@ -85,14 +86,14 @@ func CheckDatabases(ns string) {
 					}
 					if !diskFull {
 						if status == "Deleting" || status == "Creating" || status == "Stopping" {
-							feishuWebHook = api.FeishuWebhookURL2
+							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
 						} else {
-							feishuWebHook = api.FeishuWebhookURL1
+							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLUFA"]
 						}
 						alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "unknown")
 					} else {
 						if !api.DiskFullNamespaceMap[databaseClusterName] {
-							feishuWebHook = api.FeishuWebhookURL3
+							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
 							alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "disk is full")
 							notificationMessage := "disk is full"
 							//Notify user that disk is full
@@ -103,7 +104,7 @@ func CheckDatabases(ns string) {
 					}
 				} else {
 					//Notify user that the quota is exceeded
-					feishuWebHook = api.FeishuWebhookURL3
+					feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
 					alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "exceeded quota")
 					notificationMessage := "exceeded quota"
 					notification.CreateNotification(namespace, databaseClusterName, status, notificationMessage)
@@ -124,6 +125,7 @@ func CheckDatabases(ns string) {
 			continue
 		}
 	}
+	return nil
 }
 
 func getDatabaseClusterEvents(databaseClusterName, namespace string) (string, bool) {

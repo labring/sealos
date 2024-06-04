@@ -22,26 +22,28 @@ var (
 	}
 )
 
-func GetPhoneNumberByNS(ns string) string {
+func GetPhoneNumberByNS(ns string) (error, string) {
 	provider, err := dao.CK.GetUserOauthProvider(&types.UserQueryOpts{
 		Owner: ns,
 	})
 	if err != nil {
-		fmt.Println("GetUserOauthProvider():", err)
-		return ""
+		return err, ""
 	}
-	return provider.ProviderID
+	return nil, provider.ProviderID
 }
 
 func SendToSms(namespace, databaseName, clusterName, content string) {
 	smsClient, err := utils.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Failed to create sms client: %v", err)
 	}
 	name := strings.ReplaceAll(databaseName, "-", ".")
-
+	err, phoneNumbers := GetPhoneNumberByNS(namespace)
+	if err != nil {
+		fmt.Printf("Failed to get phone numbers: %v", err)
+	}
 	err = utils.SendSms(smsClient, &client.SendSmsRequest{
-		PhoneNumbers: tea.String(GetPhoneNumberByNS(namespace)),
+		PhoneNumbers: tea.String(phoneNumbers),
 		SignName:     tea.String(os.Getenv("SMS_SIGN_NAME")),
 		TemplateCode: tea.String(os.Getenv("SMS_CODE")),
 		// user_id:, oweAmount
