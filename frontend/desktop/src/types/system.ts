@@ -61,6 +61,7 @@ export type AuthConfigType = {
   signUpEnabled?: boolean;
   baiduToken?: string;
   jwt: JwtConfigType;
+  billingUrl?: string;
   invite?: {
     enabled: boolean;
     lafSecretKey: string;
@@ -122,7 +123,8 @@ export type AuthClientConfigType = DeepRequired<
       'idp.google.clientSecret',
       'idp.sms.ali',
       'idp.oauth2.clientSecret',
-      'jwt'
+      'jwt',
+      'billingUrl'
     ]
   >
 >;

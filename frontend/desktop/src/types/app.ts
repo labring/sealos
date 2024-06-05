@@ -46,7 +46,11 @@ export type TAppConfig = {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
-  i18n?: any;
+  i18n?: {
+    [key: string]: {
+      name: string;
+    };
+  };
   displayType: displayType;
 };
 

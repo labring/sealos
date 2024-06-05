@@ -2,10 +2,8 @@ import { MoreAppsContext } from '@/pages/index';
 import useAppStore, { AppInfo } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { APPTYPE } from '@/types';
-import { Box, BoxProps, Flex, useDisclosure, Image, Img, Center } from '@chakra-ui/react';
-import { MouseEvent, useContext, useMemo, useState } from 'react';
-
-// const DockStyles: BoxProps = {};
+import { Box, Center, Flex, Image } from '@chakra-ui/react';
+import { MouseEvent, useContext } from 'react';
 
 export default function AppDock() {
   const {
@@ -58,8 +56,6 @@ export default function AppDock() {
     // },
     ...runningInfo
   ];
-
-  console.log(AppMenuLists);
 
   // Handle icon click event
   const handleNavItem = (e: MouseEvent<HTMLDivElement>, item: AppInfo) => {

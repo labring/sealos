@@ -76,6 +76,7 @@ export default function Apps() {
       py={'32px'}
       px={{ base: '24px', xl: '36px' }}
       height={'calc(100% - 8px)'}
+      zIndex={0} //  important!!!
     >
       <Box height={'20px'} color={'rgba(255, 255, 255, 0.90)'} fontSize={'md'} fontWeight={'bold'}>
         {t('All Apps')}

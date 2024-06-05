@@ -133,5 +133,19 @@
   "Yuan": "Yuan",
   "Description": "Description",
   "All Apps": "All Apps",
-  "Account Settings": "Account Settings"
+  "Account Settings": "Account Settings",
+  "Alerts": "Alerts",
+  "Monitor": "Monitor",
+  "Used Resources": "Used Resources",
+  "Memory": "Memory",
+  "Storage": "Storage",
+  "Flow": "Flow",
+  "Healthy Pod": "Healthy Pod: {{count}}",
+  "Alarm Pod": "Alarm Pod: {{count}}",
+  "Expected used": "Expected used",
+  "Used last month": "Used last month",
+  "Expected to use next month": "Expected to use next month",
+  "Day": "Day",
+  "Search Apps": "Search Apps",
+  "No Apps Found": "No Apps Found"
 }

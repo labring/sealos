@@ -8,6 +8,7 @@ export default function DocsIcon(props: IconProps) {
       height="20px"
       viewBox="0 0 21 20"
       fill="none"
+      {...props}
     >
       <path
         fillRule="evenodd"

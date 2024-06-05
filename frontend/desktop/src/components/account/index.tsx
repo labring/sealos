@@ -80,15 +80,16 @@ export default function Account() {
       flexDirection={'column'}
     >
       <Flex>
-        <Image
-          width={'36px'}
-          height={'36px'}
-          borderRadius="full"
-          src={user?.avatar || ''}
-          fallbackSrc={logo}
-          alt="user avator"
-          mr={'10px'}
-        />
+        <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
+          <Image
+            width={'24px'}
+            height={'24px'}
+            borderRadius="full"
+            src={user?.avatar || ''}
+            fallbackSrc={logo}
+            alt="user avator"
+          />
+        </Center>
         <Box>
           <Text lineHeight={'20px'} color={'white'} fontSize={'14px'} fontWeight={500}>
             {user?.name}

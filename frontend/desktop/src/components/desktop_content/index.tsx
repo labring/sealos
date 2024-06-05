@@ -4,8 +4,8 @@ import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { TApp, WindowSize } from '@/types';
-import { Box, Flex, useDisclosure } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { Box, Center, Flex, Image, Text, useDisclosure } from '@chakra-ui/react';
+import { WarnTriangleIcon, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -18,6 +18,10 @@ import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
 import DesktopProvider from './providers';
 import Cost from '../account/cost';
+import Monitor from './monitor';
+import Assistant from './assistant';
+import useSessionStore from '@/stores/session';
+import SearchBox from './searchBox';
 const Account = dynamic(() => import('../account'), { ssr: false });
 
 export const blurBackgroundStyles = {
@@ -36,6 +40,7 @@ export default function Desktop(props: any) {
   const [maxItems, setMaxItems] = useState(10);
   const { message } = useMessage();
   const desktopDisclosure = useDisclosure();
+  const user = useSessionStore((state) => state.session)?.user;
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -145,23 +150,41 @@ export default function Desktop(props: any) {
             }}
             gap={'8px'}
           >
-            <Flex height={'48px'} {...blurBackgroundStyles}>
-              Sealos 小助理
-            </Flex>
-            <Flex flex={1} {...blurBackgroundStyles}>
-              asdasdasxx
+            <Assistant />
+            <Monitor />
+            <Flex
+              flexDirection={'column'}
+              flex={'0 1 40%'}
+              pt={'20px '}
+              px={'16px'}
+              {...blurBackgroundStyles}
+            >
+              <Flex alignItems={'center'} gap={'6px'}>
+                <WarnTriangleIcon />
+                <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
+                  {t('Alerts')}
+                </Text>
+              </Flex>
             </Flex>
           </Flex>
 
-          {/* apps padding-right: 266px + 4px */}
-          <Flex
-            flexDirection={'column'}
-            gap={'8px'}
-            flex={1}
-            // pr={{ base: '0px', lg: '270px' }}
-          >
-            <Flex flexShrink={0} height={'48px'} {...blurBackgroundStyles}>
-              搜索应用
+          {/* apps */}
+          <Flex flexDirection={'column'} gap={'8px'} flex={1}>
+            <Flex flexShrink={0} height={'48px'} gap={'8px'} zIndex={1}>
+              <Assistant />
+              <SearchBox />
+              <Flex flexShrink={0} alignItems={'center'} justifyContent={'center'}>
+                <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full">
+                  <Image
+                    width={'24px'}
+                    height={'24px'}
+                    borderRadius="full"
+                    src={user?.avatar || ''}
+                    fallbackSrc={logo}
+                    alt="user avator"
+                  />
+                </Center>
+              </Flex>
             </Flex>
             <Apps />
           </Flex>

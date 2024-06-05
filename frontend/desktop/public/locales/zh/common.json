@@ -126,5 +126,19 @@
   "Yuan": "元",
   "Description": "描述",
   "All Apps": "所有应用",
-  "Account Settings": "账户设置"
+  "Account Settings": "账户设置",
+  "Alerts": "告警",
+  "Monitor": "监控",
+  "Used Resources": "已用资源",
+  "Memory": "内存",
+  "Storage": "存储",
+  "Flow": "流量",
+  "Healthy Pod": "健康 Pod: {{count}}",
+  "Alarm Pod": "告警 Pod: {{count}}",
+  "Expected used": "预计还能使用",
+  "Used last month": "上月已使用",
+  "Expected to use next month": "下月预计使用",
+  "Day": "天",
+  "Search Apps": "搜索应用",
+  "No Apps Found": "未找到任何应​​用"
 }

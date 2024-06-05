@@ -6,11 +6,6 @@ export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH
   return dayjs(time).format(format);
 };
 
-// 1¥=10000
-export const formatMoney = (money: number) => {
-  return (money / 10000).toFixed(2);
-};
-
 export function appWaitSeconds(ms: number) {
   return new Promise<void>((resolve, reject) => {
     setTimeout(() => {
