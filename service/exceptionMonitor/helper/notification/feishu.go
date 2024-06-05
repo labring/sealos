@@ -146,15 +146,13 @@ func SendFeishuNotification(database_message, feishuWebHook string) error {
 	// Convert the map to a JSON byte slice
 	bodyBytes, err := json.Marshal(bodyMap)
 	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
-		return nil
+		return err
 	}
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
-		return nil
+		return err
 	}
 
 	// Set the request header
@@ -164,8 +162,7 @@ func SendFeishuNotification(database_message, feishuWebHook string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
-		return nil
+		return err
 	}
 	defer resp.Body.Close()
 

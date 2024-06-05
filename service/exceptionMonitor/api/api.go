@@ -1,7 +1,7 @@
 package api
 
 import (
-	"fmt"
+	"errors"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"os"
@@ -37,54 +37,62 @@ var (
 	ClusterName            string
 	MonitorType            string
 	ClusterNS              []string
-	FeishuWebhookURLMap    = map[string]string{
-		//Updating、Failed、Abnormal
-		"FeishuWebhookURLUFA": "",
-		//Creating、Stopping、Deleteting
-		"FeishuWebhookURLCSD": "",
-		//exceeded quota、disk is full
-		"FeishuWebhookURLOther": "",
-		//important cluster ns
-		"FeishuWebhookURLImportant": "",
-	}
+	FeishuWebhookURLMap    = map[string]string{}
+	ClusterRegionMap       = map[string]string{}
+	BaseURL                string
 )
 
 func GetENV() error {
 	var missingEnvVars []string
 
-	ClusterName = os.Getenv("ClusterName")
-	if ClusterName == "" {
-		missingEnvVars = append(missingEnvVars, "ClusterName")
-	}
-
-	MonitorType = os.Getenv("MonitorType")
-	if MonitorType == "" {
-		missingEnvVars = append(missingEnvVars, "MonitorType")
-	}
-
-	clusterNS := os.Getenv("ClusterNS")
-	if clusterNS == "" {
-		missingEnvVars = append(missingEnvVars, "ClusterNS")
-	} else {
+	BaseURL = getEnvWithCheck("BaseURL", &missingEnvVars)
+	ClusterName = getEnvWithCheck("ClusterName", &missingEnvVars)
+	MonitorType = getEnvWithCheck("MonitorType", &missingEnvVars)
+	clusterNS := getEnvWithCheck("ClusterNS", &missingEnvVars)
+	if clusterNS != "" {
 		ClusterNS = strings.Split(clusterNS, ",")
 	}
 
-	checkAndAssignURL("FeishuWebhookURLUFA", &missingEnvVars)
-	checkAndAssignURL("FeishuWebhookURLCSD", &missingEnvVars)
-	checkAndAssignURL("FeishuWebhookURLOther", &missingEnvVars)
-	checkAndAssignURL("FeishuWebhookURLImportant", &missingEnvVars)
+	// Get FeishuWebhookURLMap
+	getEnvMapWithCheck([]string{
+		//Updating、Failed、Abnormal
+		"FeishuWebhookURLUFA",
+		//Creating、Stopping、Deleteting
+		"FeishuWebhookURLCSD",
+		//Exceeded Quota、Disk Is Full
+		"FeishuWebhookURLOther",
+		//Important Cluster NS
+		"FeishuWebhookURLImportant",
+	}, FeishuWebhookURLMap, &missingEnvVars)
+
+	// Get ClusterRegionMap
+	getEnvMapWithCheck([]string{
+		"REGION_IO",
+		"REGION_BJA",
+		"REGION_HZH",
+		"REGION_GZG",
+		"REGION_TOP",
+	}, ClusterRegionMap, &missingEnvVars)
 
 	if len(missingEnvVars) > 0 {
-		return fmt.Errorf("missing environment variables: %v", missingEnvVars)
+		return errors.New("missing environment variables")
 	}
 	return nil
 }
 
-func checkAndAssignURL(key string, missingEnvVars *[]string) {
-	url := os.Getenv(key)
-	if url == "" {
+func getEnvWithCheck(key string, missingEnvVars *[]string) string {
+	value := os.Getenv(key)
+	if value == "" {
 		*missingEnvVars = append(*missingEnvVars, key)
-	} else {
-		FeishuWebhookURLMap[key] = url
+	}
+	return value
+}
+
+func getEnvMapWithCheck(keys []string, targetMap map[string]string, missingEnvVars *[]string) {
+	for _, key := range keys {
+		value := getEnvWithCheck(key, missingEnvVars)
+		if value != "" {
+			targetMap[key] = value
+		}
 	}
 }

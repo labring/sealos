@@ -3,7 +3,6 @@ package monitor
 import (
 	"context"
 	"exceptionMonitor/api"
-	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"strings"
@@ -19,13 +18,11 @@ func checkDebt(namespace string) (error, bool, string) {
 		if strings.Contains(err.Error(), "not found") {
 			return checkOwnerDebt(namespace)
 		} else {
-			fmt.Printf("Error getting debt: %s %s\n", err.Error(), namespace)
 			return err, false, ""
 		}
 	}
 	status, found, err := unstructured.NestedString(debt.Object, "status", "status")
 	if err != nil || !found {
-		fmt.Printf("Unable to get %s status in account-system %s: %v\n", namespace, debtName, err)
 		return err, false, status
 	}
 	if status == "NormalPeriod" {
@@ -53,7 +50,6 @@ func GetNSOwner(namespace string) (error, string) {
 	// find owner debt
 	ns, err := api.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
 	if err != nil {
-		fmt.Printf("Error getting debt: %s %s\n", err.Error(), namespace)
 		return err, ""
 	}
 	return nil, ns.Labels[api.OwnerLabel]

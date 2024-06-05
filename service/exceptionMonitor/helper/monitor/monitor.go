@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"log"
 	"strings"
 )
 
@@ -41,7 +40,6 @@ func CheckDatabases(ns string) error {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(ns).List(context.Background(), metav1.ListOptions{})
 	}
 	if err != nil {
-		fmt.Printf("Unable to get kubeblocks crds %s \n", err.Error())
 		return err
 	}
 	for _, cluster := range clusters.Items {
@@ -148,21 +146,21 @@ func databaseQuotaExceptionFilter(databaseEvents string) bool {
 	return !strings.Contains(databaseEvents, api.ExceededQuotaException)
 }
 
-func getKubeConfig(namespace string) string {
+func getKubeConfig(namespace string) (string, error) {
 	userName := strings.Split(namespace, "-")[1]
 	user, err := api.DynamicClient.Resource(userGVR).Namespace("").Get(context.TODO(), userName, metav1.GetOptions{})
 	if err != nil {
-		log.Fatalf("Error getting CRD instance: %s", err.Error())
+		return "", err
 	}
 	kubeConfig, found, err := unstructured.NestedString(user.UnstructuredContent(), "status", "kubeConfig")
 	if err != nil {
-		log.Fatalf("Error finding kubeConfig: %s", err.Error())
+		return "", err
 	}
 	if !found {
-		log.Fatal("kubeConfig not found")
+		return "", err
 	}
 	kubeConfig = strings.ReplaceAll(kubeConfig, ":", "%3A")
 	kubeConfig = strings.ReplaceAll(kubeConfig, " ", "%20")
 	kubeConfig = strings.ReplaceAll(kubeConfig, "\n", "%0A")
-	return kubeConfig
+	return kubeConfig, nil
 }
