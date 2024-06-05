@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"exceptionMonitor/api"
 	"exceptionMonitor/helper/notification"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,39 +11,39 @@ import (
 )
 
 func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error) {
-	baseURL := "http://database-monitor.sealos.svc:9090/q"
-	if api.ClusterName == "io" {
-		baseURL = "http://monitor-system.monitor-system.svc:9090/q"
-	}
+	var kubeconfig string
 	params := url.Values{}
 	params.Add("namespace", namespace)
 	params.Add("app", databaseClusterName)
 	params.Add("type", databaseType)
 	params.Add("query", "disk")
 
-	urlStr := baseURL + "?" + params.Encode()
+	urlStr := api.BaseURL + "?" + params.Encode()
 
 	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
-		return false, fmt.Errorf("error creating HTTP request: %v", err)
+		return false, err
 	}
-	kubeconfig := getKubeConfig(namespace)
+	kubeconfig, err = getKubeConfig(namespace)
+	if err != nil {
+		return false, err
+	}
 	req.Header.Add("Authorization", kubeconfig)
 	// Create an HTTP client and send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, fmt.Errorf("error sending HTTP request: %v", err)
+		return false, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, fmt.Errorf("error reading response body: %v", err)
+		return false, err
 	}
 	var result *api.QueryResult
 	if err := json.Unmarshal(body, &result); err != nil {
-		return false, fmt.Errorf("error decoding JSON: %v", err)
+		return false, err
 	}
 
 	usage := 0.0
@@ -52,7 +51,7 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 		value := result.Value[1].(string)
 		usage, err = strconv.ParseFloat(value, 64)
 		if err != nil {
-			return false, fmt.Errorf("error parsing float: %v", err)
+			return false, err
 		}
 	}
 	if usage > 99 {
@@ -60,7 +59,10 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 	}
 	if usage > 80 {
 		_, ownerNS := GetNSOwner(namespace)
-		notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
+		err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
+	}
+	if err != nil {
+		return false, err
 	}
 	return false, nil
 }
