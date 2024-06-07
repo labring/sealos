@@ -1,11 +1,11 @@
 package exceptionMonitor
 
 import (
-	"exceptionMonitor/api"
-	"exceptionMonitor/dao"
-	"exceptionMonitor/helper/client"
-	"exceptionMonitor/helper/monitor"
 	"fmt"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionMonitor/dao"
+	"github.com/labring/sealos/service/exceptionMonitor/helper/client"
+	"github.com/labring/sealos/service/exceptionMonitor/helper/monitor"
 	"time"
 )
 

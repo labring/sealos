@@ -2,7 +2,7 @@ package monitor
 
 import (
 	"context"
-	"exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"strings"
