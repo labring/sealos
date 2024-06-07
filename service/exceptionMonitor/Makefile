@@ -43,7 +43,7 @@ clean:
 
 .PHONY: build
 build: ## Build service-hub binary.
-	CGO_ENABLED=0 GOOS=linux go build $(shell [ -n "${CRYPTOKEY}"  ] && echo "-ldflags '-X github.com/labring/sealos/controllers/pkg/crypto.encryptionKey=${CRYPTOKEY}'") -o bin/manager main.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
 
 .PHONY: docker-build
 docker-build: build
