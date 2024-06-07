@@ -1,13 +1,13 @@
 package notification
 
 import (
-	"exceptionMonitor/api"
-	"exceptionMonitor/dao"
 	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/labring/sealos/controllers/account/controllers/utils"
 	"github.com/labring/sealos/controllers/pkg/types"
 	_ "github.com/labring/sealos/service/account/dao"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionMonitor/dao"
 	"os"
 	"strings"
 )

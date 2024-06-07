@@ -3,8 +3,8 @@ package notification
 import (
 	"bytes"
 	"encoding/json"
-	"exceptionMonitor/api"
 	"fmt"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
 	"net/http"
 )
 

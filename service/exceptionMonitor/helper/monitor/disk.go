@@ -2,8 +2,8 @@ package monitor
 
 import (
 	"encoding/json"
-	"exceptionMonitor/api"
-	"exceptionMonitor/helper/notification"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionMonitor/helper/notification"
 	"io"
 	"net/http"
 	"net/url"

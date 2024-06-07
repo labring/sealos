@@ -1,7 +1,7 @@
 package client
 
 import (
-	"exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
