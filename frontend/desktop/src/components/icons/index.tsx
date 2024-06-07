@@ -181,7 +181,7 @@ export function DesktopSealosCoinIcon(props: IconProps) {
       {...props}
     >
       <g style={{ mixBlendMode: 'hard-light' }}>
-        <circle cx="7" cy="7" r="6.762" fill="#E8E8E8" stroke="#37383A" stroke-width="0.476" />
+        <circle cx="7" cy="7" r="6.762" fill="#E8E8E8" stroke="#37383A" strokeWidth="0.476" />
         <circle cx="6.9999" cy="7.00002" r="6.11562" fill="#CFCFCF" />
         <path
           d="M6.99978 13.1156C10.3773 13.1156 13.1154 10.3776 13.1154 7.00002C13.1154 5.61364 12.6541 4.335 11.8766 3.30923C11.4852 3.25402 11.0853 3.22546 10.6787 3.22546C6.2888 3.22546 2.6764 6.55431 2.22803 10.8254C3.34887 12.2218 5.06993 13.1156 6.99978 13.1156Z"

@@ -67,32 +67,45 @@ export default function SearchBox() {
         }}
       />
 
-      <Fade
+      {/* <Fade
         in={searchTerm !== ''}
         style={{
           position: 'absolute',
           top: '100%',
-          width: '100%'
+          width: '100%',
+          background: 'rgba(22, 30, 40, 0.35)',
+          backdropFilter: 'blur(250px)',
+          border: 'none',
+          borderRadius: '12px',
+          boxShadow: '0px 4px 30px 0px rgba(17, 24, 36, 0.25)',
+          zIndex: 1,
+          padding: '16px',
+          marginTop: '8px'
         }}
-      >
-        <List
+      > */}
+      {searchTerm !== '' && (
+        <Flex
+          flexDirection={'column'}
+          position={'absolute'}
+          top={'100%'}
+          width={'100%'}
           mt={2}
           p={'16px'}
-          bg={'white'}
-          // bg="linear-gradient(0deg, rgba(49, 84, 231, 0.40) 0%, rgba(49, 84, 231, 0.40) 100%), rgba(17, 24, 36, 0.35)"
-          borderRadius="xl"
-          boxShadow="0px 4px 30px 0px rgba(17, 24, 36, 0.25)"
-          zIndex={1}
-          width="100%"
-          backdropBlur={'blur(250px)'}
+          // bg={'white'}
+          bg={'rgba(22, 30, 40, 0.35)'}
+          backdropFilter="blur(150px)"
+          // borderRadius="xl"
+          // boxShadow="0px 4px 30px 0px rgba(17, 24, 36, 0.25)"
+
+          // {...blurBackgroundStyles}
         >
           {filteredApps.length > 0 ? (
             filteredApps.map((app) => (
-              <ListItem
+              <Flex
                 key={app.key}
                 p={2}
                 cursor="pointer"
-                _hover={{ bg: 'rgba(255, 255, 255, 0.07)' }}
+                // _hover={{ bg: 'rgba(255, 255, 255, 0.07)' }}
                 onClick={() => {
                   openApp(app);
                   setSearchTerm('');
@@ -121,13 +134,15 @@ export default function SearchBox() {
                 {app?.i18n?.[i18n?.language]?.name
                   ? app?.i18n?.[i18n?.language]?.name
                   : t(app?.name)}
-              </ListItem>
+              </Flex>
             ))
           ) : (
-            <ListItem p={2}>{t('No Apps Found') || 'No Apps Found'}</ListItem>
+            <Flex p={2}>{t('No Apps Found') || 'No Apps Found'}</Flex>
           )}
-        </List>
-      </Fade>
+        </Flex>
+      )}
+
+      {/* </Fade> */}
     </Flex>
   );
 }

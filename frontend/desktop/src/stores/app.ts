@@ -37,7 +37,7 @@ export class AppInfo {
 
   constructor(app: TApp, pid: number) {
     this.isShow = false;
-    this.zIndex = 1;
+    this.zIndex = 10; // It cannot be 1 anymore, leaving space for other components
     this.size = 'maximize';
     this.cacheSize = 'maximize';
     this.style = cloneDeep(app.style);
@@ -64,7 +64,7 @@ const useAppStore = create<TOSState>()(
         runningInfo: [],
         // present of highest layer
         currentAppPid: -1,
-        maxZIndex: 0,
+        maxZIndex: 10,
         launchQuery: {},
         autolaunch: '',
         runner: new AppStateManager([]),
@@ -73,7 +73,7 @@ const useAppStore = create<TOSState>()(
           set((state) => {
             state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
             state.runner.loadApps(state.installedApps.map((app) => app.key));
-            state.maxZIndex = 0;
+            state.maxZIndex = 10;
           });
           return get();
         },

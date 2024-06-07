@@ -5,8 +5,8 @@ export default function Assistant() {
   return (
     <Flex
       {...blurBackgroundStyles}
-      height={'48px'}
-      px="14px"
+      height={{ base: '32px', sm: '48px' }}
+      px={{ base: '8px', sm: '14px' }}
       alignItems={'center'}
       color={'white'}
       fontSize={'base'}

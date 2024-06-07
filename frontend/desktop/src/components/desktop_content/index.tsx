@@ -4,12 +4,12 @@ import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { TApp, WindowSize } from '@/types';
-import { Box, Center, Flex, Image, Text, useDisclosure } from '@chakra-ui/react';
+import { Box, Center, Fade, Flex, Image, Text, useDisclosure } from '@chakra-ui/react';
 import { WarnTriangleIcon, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { MouseEvent, useCallback, useEffect, useState } from 'react';
+import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import AppDock from '../AppDock';
 import { ChakraIndicator } from './ChakraIndicator';
@@ -22,6 +22,7 @@ import Monitor from './monitor';
 import Assistant from './assistant';
 import useSessionStore from '@/stores/session';
 import SearchBox from './searchBox';
+import TriggerAccountModule from '../account/trigger';
 const Account = dynamic(() => import('../account'), { ssr: false });
 
 export const blurBackgroundStyles = {
@@ -41,6 +42,7 @@ export default function Desktop(props: any) {
   const { message } = useMessage();
   const desktopDisclosure = useDisclosure();
   const user = useSessionStore((state) => state.session)?.user;
+  const showAccountRef = useRef(false);
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -121,6 +123,8 @@ export default function Desktop(props: any) {
     }
   });
 
+  console.log(showAccountRef.current, 'showAccount');
+
   return (
     <DesktopProvider>
       <Box
@@ -170,34 +174,33 @@ export default function Desktop(props: any) {
 
           {/* apps */}
           <Flex flexDirection={'column'} gap={'8px'} flex={1}>
-            <Flex flexShrink={0} height={'48px'} gap={'8px'} zIndex={1}>
-              <Assistant />
+            <Flex
+              flexShrink={0}
+              height={{ base: '32px', sm: '48px' }}
+              gap={'8px'}
+              // zIndex={2} // need > apps zIndex
+            >
+              <Box display={{ base: 'block', xl: 'none' }}>
+                <Assistant />
+              </Box>
               <SearchBox />
-              <Flex flexShrink={0} alignItems={'center'} justifyContent={'center'}>
-                <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full">
-                  <Image
-                    width={'24px'}
-                    height={'24px'}
-                    borderRadius="full"
-                    src={user?.avatar || ''}
-                    fallbackSrc={logo}
-                    alt="user avator"
-                  />
-                </Center>
-              </Flex>
+              {/* Triggering the account module */}
+              <TriggerAccountModule showAccountRef={showAccountRef} />
             </Flex>
             <Apps />
           </Flex>
 
           {/* user account */}
           <Flex
-            display={{ base: 'none', lg: 'flex' }}
+            display={{ base: showAccountRef.current ? 'flex' : 'none', lg: 'flex' }}
+            position={{ base: 'absolute', lg: 'static' }}
+            right={{ base: '0', lg: 'auto' }}
+            top={{ base: '24px', lg: 'auto' }}
             flex={'0 0 266px'}
             flexDirection={'column'}
             gap={'8px'}
-            // position={'absolute'}
             width={'266px'}
-            // right={'20px'}
+            zIndex={3}
           >
             <Account />
             <Cost />
