@@ -721,7 +721,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 			}
 		} else {
 			amount = sender.Balance - sender.DeductionBalance - c.ZeroAccount.Balance
-			if amount < 0 {
+			if amount <= 0 {
 				return InsufficientBalanceError
 			}
 		}

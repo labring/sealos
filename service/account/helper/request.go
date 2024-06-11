@@ -112,6 +112,7 @@ type TimeRange struct {
 
 type Auth struct {
 	Owner      string `json:"owner" bson:"owner" binding:"required" example:"admin"`
+	UserID     string `json:"userID" bson:"userID" example:"admin"`
 	KubeConfig string `json:"kubeConfig" bson:"kubeConfig" binding:"required"`
 }
 
