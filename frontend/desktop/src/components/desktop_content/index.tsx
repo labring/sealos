@@ -130,6 +130,7 @@ export default function Desktop(props: any) {
       backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
+      position={'relative'}
     >
       <ChakraIndicator />
       <Flex
@@ -141,6 +142,7 @@ export default function Desktop(props: any) {
         mx={'auto'}
         maxW={'1300px'}
         maxH={'1000px'}
+        position={'relative'}
       >
         {/* monitor  */}
         <Flex
@@ -172,7 +174,7 @@ export default function Desktop(props: any) {
 
         {/* apps */}
         <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
-          <Flex flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
+          <Flex zIndex={2} flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
             <Box display={{ base: 'block', xl: 'none' }}>
               <Assistant />
             </Box>
@@ -189,7 +191,7 @@ export default function Desktop(props: any) {
             <Box
               position={'fixed'}
               inset={0}
-              zIndex={'998'}
+              zIndex={2}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowAccount(false);
@@ -203,14 +205,10 @@ export default function Desktop(props: any) {
             top={{ base: '0px', lg: 'auto' }}
             flexDirection={'column'}
             gap={'8px'}
-            zIndex={999}
             flex={'0 0 266px'}
             width={'266px'}
             h={'full'}
-            overflowY={{
-              base: 'scroll',
-              md: undefined
-            }}
+            zIndex={3}
           >
             <Account />
             <Cost />
@@ -233,9 +231,9 @@ export default function Desktop(props: any) {
         ) : (
           <></>
         )}
-
-        <AppDock />
       </Flex>
+
+      <AppDock />
 
       {/* opened apps */}
       {runningInfo.map((process) => {

@@ -40,7 +40,6 @@ export default function SearchBox() {
       }}
       cursor={'pointer'}
       position={'relative'}
-      zIndex={2}
     >
       <Flex
         height={'full'}

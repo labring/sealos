@@ -73,7 +73,7 @@ export default function RegionToggle() {
           </HStack>
 
           {disclosure.isOpen ? (
-            <Box position={'relative'}>
+            <Box position={'absolute'} right={0}>
               <Box
                 position={'fixed'}
                 inset={0}
@@ -132,59 +132,6 @@ export default function RegionToggle() {
                         </Box>
                         <Divider color={'rgba(255, 255, 255, 0.10)'} my={'12px'} />
                         <Box px={'16px'} fontSize={'11px'} fontWeight={'500'}>
-                          <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
-                            <ProviderIcon boxSize={'12px'} />
-                            <Text>{providerT('Provider')}</Text>
-                          </HStack>
-                          <Text color={'#111824'} mb={'8px'}>
-                            {providerT(region?.description?.provider)}
-                          </Text>
-                          <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
-                            <InfoIcon boxSize={'12px'} />
-                            <Text>{t('Description')}</Text>
-                          </HStack>
-                          <Text color={'white'} lineHeight={'20px'}>
-                            {region?.description?.description?.[i18n.language as 'zh' | 'en']}
-                          </Text>
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                  {regionList.map((region) => {
-                    const cpuPrice = region?.description?.prices?.find((p) => p.name === 'CPU');
-                    return (
-                      <Box
-                        bg={'rgba(255, 255, 255, 0.10)'}
-                        borderRadius={'8px'}
-                        py={'12px'}
-                        key={region.uid}
-                        {...(region.uid === curRegionUid
-                          ? {
-                              border: '1.5px solid #219BF4'
-                            }
-                          : {
-                              async onClick() {
-                                await handleCick(region);
-                              },
-                              cursor: 'pointer',
-                              _hover: {
-                                bgColor: 'rgba(255, 255, 255, 0.10)'
-                              }
-                            })}
-                      >
-                        <Box px={'16px'} fontSize={'14px'} fontWeight={'500'}>
-                          <Text color={'rgba(255, 255, 255, 0.80)'}>
-                            {providerT(region?.location)} {region?.description?.serial}
-                          </Text>
-                          {cpuPrice && (
-                            <Text color={'#47B2FF'} whiteSpace={'nowrap'}>
-                              {cpuPrice?.name} {cpuPrice?.unit_price || 0} {t('Yuan')}/{t('Core')}/
-                              {t('Year')}
-                            </Text>
-                          )}
-                        </Box>
-                        <Divider color={'rgba(255, 255, 255, 0.10)'} my={'12px'} />
-                        <Box px={'16px'} fontSize={'11px'} fontWeight={'500'} whiteSpace={'nowrap'}>
                           <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
                             <ProviderIcon boxSize={'12px'} />
                             <Text>{providerT('Provider')}</Text>

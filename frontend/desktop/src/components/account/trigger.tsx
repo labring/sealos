@@ -13,8 +13,6 @@ export default function Trigger({
   const user = useSessionStore((state) => state.session)?.user;
   const logo = useConfigStore().layoutConfig?.logo;
 
-  console.log(showAccount, 'showAccount');
-
   return (
     <Flex
       flexShrink={0}

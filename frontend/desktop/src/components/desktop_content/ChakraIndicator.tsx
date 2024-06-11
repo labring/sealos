@@ -21,7 +21,7 @@ export function ChakraIndicator() {
       position="fixed"
       bottom="1"
       left="1"
-      zIndex="50"
+      zIndex={50}
       borderRadius="full"
       bg="white"
       fontSize="md"

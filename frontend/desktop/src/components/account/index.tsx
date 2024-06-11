@@ -76,7 +76,7 @@ export default function Account() {
 
   return (
     <Box position={'relative'} flex={1}>
-      <Flex position={'relative'} zIndex={9} px={'16px'} pt={'20px'} flexDirection={'column'}>
+      <Flex position={'relative'} zIndex={3} px={'16px'} pt={'20px'} flexDirection={'column'}>
         <Flex alignItems={'center'}>
           <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
             <Image
