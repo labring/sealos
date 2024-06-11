@@ -48,8 +48,9 @@ export default function PasswordModify(props: FlexProps) {
   return (
     <>
       <Flex
+        borderRadius={'4px'}
         _hover={{
-          bgColor: 'rgba(0, 0, 0, 0.03)'
+          background: 'rgba(255, 255, 255, 0.15)'
         }}
         h="28px"
         p="4px"

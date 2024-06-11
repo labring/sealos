@@ -30,7 +30,10 @@ const baseItemStyle = {
   h: '40px',
   background: 'rgba(255, 255, 255, 0.07)',
   color: 'white',
-  borderRadius: '100px'
+  borderRadius: '100px',
+  _hover: {
+    background: 'rgba(255, 255, 255, 0.15)'
+  }
 };
 
 export default function Account() {
@@ -72,128 +75,73 @@ export default function Account() {
   };
 
   return (
-    <Flex
-      {...blurBackgroundStyles}
-      flex={'1 0 60%'}
-      px={'16px'}
-      pt={'20px'}
-      flexDirection={'column'}
-    >
-      <Flex>
-        <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
-          <Image
-            width={'24px'}
-            height={'24px'}
-            borderRadius="full"
-            src={user?.avatar || ''}
-            fallbackSrc={logo}
-            alt="user avator"
-          />
-        </Center>
-        <Box>
-          <Text lineHeight={'20px'} color={'white'} fontSize={'14px'} fontWeight={500}>
-            {user?.name}
-          </Text>
-          <Flex
-            cursor={'pointer'}
-            gap="2px"
-            fontSize={'12px'}
-            lineHeight={'16px'}
-            fontWeight={'500'}
-            color={'rgba(255, 255, 255, 0.70)'}
-            alignItems={'center'}
-          >
-            <Text onClick={() => setShowId((s) => !s)}>
-              {showId ? `ID: ${user?.userId}` : `NS: ${user?.nsid}`}
-            </Text>
-            <CopyIcon
-              onClick={() => {
-                if (user?.userId && user.nsid) copyData(showId ? user?.userId : user?.nsid);
-              }}
-              boxSize={'12px'}
-              fill={'rgba(255, 255, 255, 0.70)'}
-            />
-          </Flex>
-        </Box>
-        <Center ml={'auto'} cursor={'pointer'}>
-          <LogoutIcon boxSize={'14px'} fill={'white'} />
-          <Text ml="4px" color={'white'} fontSize={'12px'} fontWeight={500} onClick={logout}>
-            {t('Log Out')}
-          </Text>
-        </Center>
-      </Flex>
-
-      <Flex mt={'16px'} justifyContent={'space-between'}>
-        <Center cursor={'pointer'} {...baseItemStyle}>
-          <NotificationIcon />
-        </Center>
-        <LangSelectSimple {...baseItemStyle} />
-        {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
-        <Center cursor={'pointer'} {...baseItemStyle}>
-          <DocsIcon />
-        </Center>
-      </Flex>
-
-      <RegionToggle />
-
-      <WorkspaceToggle />
-
-      <Flex
-        borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
-        color={'white'}
-        fontSize={'base'}
-        fontWeight={'bold'}
-        justifyContent={'space-between'}
-        alignItems={'center'}
-        py={'12px'}
-        px={'16px'}
-      >
-        <Text>{t('Account Settings')}</Text>
-        <IconButton
-          variant={'white-bg-icon'}
-          p="4px"
-          onClick={() => kubeconfig && copyData(kubeconfig)}
-          icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
-          aria-label={'setting'}
-        />
-      </Flex>
-      <Flex
-        borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
-        color={'white'}
-        fontSize={'base'}
-        fontWeight={'bold'}
-        justifyContent={'space-between'}
-        alignItems={'center'}
-        py={'12px'}
-        px={'16px'}
-      >
-        <Text>kubeconfig</Text>
+    <Box position={'relative'} flex={1}>
+      <Flex position={'relative'} zIndex={9} px={'16px'} pt={'20px'} flexDirection={'column'}>
         <Flex alignItems={'center'}>
-          <IconButton
-            variant={'white-bg-icon'}
-            p="4px"
-            ml="auto"
-            mr="4px"
-            onClick={() => kubeconfig && download('kubeconfig.yaml', kubeconfig)}
-            icon={
-              <DownloadIcon
-                boxSize={'16px'}
-                color={'rgba(255, 255, 255, 0.7)'}
-                fill={'rgba(255, 255, 255, 0.7)'}
+          <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
+            <Image
+              width={'24px'}
+              height={'24px'}
+              borderRadius="full"
+              src={user?.avatar || ''}
+              fallbackSrc={logo}
+              alt="user avator"
+            />
+          </Center>
+          <Box>
+            <Text lineHeight={'20px'} color={'white'} fontSize={'14px'} fontWeight={500}>
+              {user?.name}
+            </Text>
+            <Flex
+              cursor={'pointer'}
+              gap="2px"
+              fontSize={'12px'}
+              lineHeight={'16px'}
+              fontWeight={'500'}
+              color={'rgba(255, 255, 255, 0.70)'}
+              alignItems={'center'}
+            >
+              <Text onClick={() => setShowId((s) => !s)}>
+                {showId ? `ID: ${user?.userId}` : `NS: ${user?.nsid}`}
+              </Text>
+              <CopyIcon
+                onClick={() => {
+                  if (user?.userId && user.nsid) copyData(showId ? user?.userId : user?.nsid);
+                }}
+                boxSize={'12px'}
+                fill={'rgba(255, 255, 255, 0.70)'}
               />
-            }
-            aria-label={'Download kc'}
-          />
-          <IconButton
-            variant={'white-bg-icon'}
-            p="4px"
-            onClick={() => kubeconfig && copyData(kubeconfig)}
-            icon={<CopyIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
-            aria-label={'copy kc'}
-          />
+            </Flex>
+          </Box>
+          <Center
+            p={'4px'}
+            h={'fit-content'}
+            borderRadius={'4px'}
+            ml={'auto'}
+            cursor={'pointer'}
+            _hover={{
+              background: 'rgba(255, 255, 255, 0.15)'
+            }}
+          >
+            <LogoutIcon boxSize={'14px'} fill={'white'} />
+            <Text ml="4px" color={'white'} fontSize={'12px'} fontWeight={500} onClick={logout}>
+              {t('Log Out')}
+            </Text>
+          </Center>
         </Flex>
-      </Flex>
-      {passwordEnabled && (
+        <Flex mt={'16px'} justifyContent={'space-between'}>
+          <Center cursor={'pointer'} {...baseItemStyle}>
+            <NotificationIcon />
+          </Center>
+          <LangSelectSimple {...baseItemStyle} />
+          {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
+          <Center cursor={'pointer'} {...baseItemStyle}>
+            <DocsIcon />
+          </Center>
+        </Flex>
+
+        <RegionToggle />
+        <WorkspaceToggle />
         <Flex
           borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
           color={'white'}
@@ -204,10 +152,77 @@ export default function Account() {
           py={'12px'}
           px={'16px'}
         >
-          <Text>{t('changePassword')}</Text>
-          <PasswordModify mr="0" />
+          <Text>{t('Account Settings')}</Text>
+          <IconButton
+            variant={'white-bg-icon'}
+            p="4px"
+            onClick={() => kubeconfig && copyData(kubeconfig)}
+            icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
+            aria-label={'setting'}
+          />
         </Flex>
-      )}
-    </Flex>
+        <Flex
+          borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
+          color={'white'}
+          fontSize={'base'}
+          fontWeight={'bold'}
+          justifyContent={'space-between'}
+          alignItems={'center'}
+          py={'12px'}
+          px={'16px'}
+        >
+          <Text>kubeconfig</Text>
+          <Flex alignItems={'center'}>
+            <IconButton
+              variant={'white-bg-icon'}
+              p="4px"
+              ml="auto"
+              mr="4px"
+              onClick={() => kubeconfig && download('kubeconfig.yaml', kubeconfig)}
+              icon={
+                <DownloadIcon
+                  boxSize={'16px'}
+                  color={'rgba(255, 255, 255, 0.7)'}
+                  fill={'rgba(255, 255, 255, 0.7)'}
+                />
+              }
+              aria-label={'Download kc'}
+            />
+            <IconButton
+              variant={'white-bg-icon'}
+              p="4px"
+              onClick={() => kubeconfig && copyData(kubeconfig)}
+              icon={<CopyIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
+              aria-label={'copy kc'}
+            />
+          </Flex>
+        </Flex>
+        {passwordEnabled && (
+          <Flex
+            color={'white'}
+            fontSize={'base'}
+            fontWeight={'bold'}
+            justifyContent={'space-between'}
+            alignItems={'center'}
+            py={'12px'}
+            px={'16px'}
+          >
+            <Text>{t('changePassword')}</Text>
+            <PasswordModify mr="0" />
+          </Flex>
+        )}
+      </Flex>
+      <Box
+        id="blur-background"
+        zIndex={0}
+        position={'absolute'}
+        top={0}
+        left={0}
+        w={'full'}
+        h={'full'}
+        overflow={'hidden'}
+        {...blurBackgroundStyles}
+      ></Box>
+    </Box>
   );
 }

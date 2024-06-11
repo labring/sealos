@@ -3,8 +3,9 @@ import AppWindow from '@/components/app_window';
 import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
+import useSessionStore from '@/stores/session';
 import { TApp, WindowSize } from '@/types';
-import { Box, Center, Fade, Flex, Image, Text, useDisclosure } from '@chakra-ui/react';
+import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react';
 import { WarnTriangleIcon, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -12,17 +13,16 @@ import dynamic from 'next/dynamic';
 import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import AppDock from '../AppDock';
+import Cost from '../account/cost';
+import TriggerAccountModule from '../account/trigger';
 import { ChakraIndicator } from './ChakraIndicator';
 import Apps from './apps';
+import Assistant from './assistant';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
-import DesktopProvider from './providers';
-import Cost from '../account/cost';
 import Monitor from './monitor';
-import Assistant from './assistant';
-import useSessionStore from '@/stores/session';
 import SearchBox from './searchBox';
-import TriggerAccountModule from '../account/trigger';
+
 const Account = dynamic(() => import('../account'), { ssr: false });
 
 export const blurBackgroundStyles = {
@@ -42,7 +42,7 @@ export default function Desktop(props: any) {
   const { message } = useMessage();
   const desktopDisclosure = useDisclosure();
   const user = useSessionStore((state) => state.session)?.user;
-  const showAccountRef = useRef(false);
+  const [showAccount, setShowAccount] = useState(false);
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -123,118 +123,128 @@ export default function Desktop(props: any) {
     }
   });
 
-  console.log(showAccountRef.current, 'showAccount');
-
   return (
-    <DesktopProvider>
-      <Box
-        id="desktop"
-        className={styles.desktop}
-        backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
-        backgroundRepeat={'no-repeat'}
-        backgroundSize={'cover'}
+    <Box
+      id="desktop"
+      className={styles.desktop}
+      backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
+      backgroundRepeat={'no-repeat'}
+      backgroundSize={'cover'}
+    >
+      <ChakraIndicator />
+      <Flex
+        gap={'8px'}
+        width={'100%'}
+        height={'calc(100% - 87px)'}
+        pt={'24px'}
+        px={'24px'}
+        mx={'auto'}
+        maxW={'1300px'}
+        maxH={'1000px'}
       >
-        <ChakraIndicator />
+        {/* monitor  */}
         <Flex
+          flex={'0 0 250px'}
+          flexDirection={'column'}
+          display={{
+            base: 'none',
+            xl: 'flex'
+          }}
           gap={'8px'}
-          width={'100%'}
-          height={'calc(100% - 87px)'}
-          pt={'24px'}
-          px={'24px'}
-          mx={'auto'}
-          maxW={'1232px'}
         >
-          {/* monitor  */}
+          <Assistant />
+          <Monitor />
           <Flex
-            flex={'0 0 250px'}
             flexDirection={'column'}
-            display={{
-              base: 'none',
-              xl: 'flex'
-            }}
-            gap={'8px'}
+            flex={'0 1 400px'}
+            pt={'20px '}
+            px={'16px'}
+            {...blurBackgroundStyles}
           >
-            <Assistant />
-            <Monitor />
-            <Flex
-              flexDirection={'column'}
-              flex={'0 1 40%'}
-              pt={'20px '}
-              px={'16px'}
-              {...blurBackgroundStyles}
-            >
-              <Flex alignItems={'center'} gap={'6px'}>
-                <WarnTriangleIcon />
-                <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-                  {t('Alerts')}
-                </Text>
-              </Flex>
+            <Flex alignItems={'center'} gap={'6px'}>
+              <WarnTriangleIcon />
+              <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
+                {t('Alerts')}
+              </Text>
             </Flex>
           </Flex>
+        </Flex>
 
-          {/* apps */}
-          <Flex flexDirection={'column'} gap={'8px'} flex={1}>
-            <Flex
-              flexShrink={0}
-              height={{ base: '32px', sm: '48px' }}
-              gap={'8px'}
-              // zIndex={2} // need > apps zIndex
-            >
-              <Box display={{ base: 'block', xl: 'none' }}>
-                <Assistant />
-              </Box>
-              <SearchBox />
-              {/* Triggering the account module */}
-              <TriggerAccountModule showAccountRef={showAccountRef} />
-            </Flex>
-            <Apps />
+        {/* apps */}
+        <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
+          <Flex flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
+            <Box display={{ base: 'block', xl: 'none' }}>
+              <Assistant />
+            </Box>
+            <SearchBox />
+            {/* Triggering the account module */}
+            <TriggerAccountModule showAccount={showAccount} setShowAccount={setShowAccount} />
           </Flex>
+          <Apps />
+        </Flex>
 
-          {/* user account */}
-          <Flex
-            display={{ base: showAccountRef.current ? 'flex' : 'none', lg: 'flex' }}
-            position={{ base: 'absolute', lg: 'static' }}
-            right={{ base: '0', lg: 'auto' }}
-            top={{ base: '24px', lg: 'auto' }}
-            flex={'0 0 266px'}
+        {/* user account */}
+        <Box position={'relative'}>
+          {showAccount && (
+            <Box
+              position={'fixed'}
+              inset={0}
+              zIndex={'998'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAccount(false);
+              }}
+            ></Box>
+          )}
+          <Box
+            display={{ base: showAccount ? 'flex' : 'none', lg: 'flex' }}
+            position={{ base: 'absolute', lg: 'relative' }}
+            right={{ base: '0px', lg: 'auto' }}
+            top={{ base: '0px', lg: 'auto' }}
             flexDirection={'column'}
             gap={'8px'}
+            zIndex={999}
+            flex={'0 0 266px'}
             width={'266px'}
-            zIndex={3}
+            h={'full'}
+            overflowY={{
+              base: 'scroll',
+              md: undefined
+            }}
           >
             <Account />
             <Cost />
-          </Flex>
+          </Box>
+        </Box>
 
-          {showGuide ? (
-            <>
-              <UserGuide />
-              <Box
-                position="fixed"
-                top="0"
-                left="0"
-                width="100%"
-                height="100%"
-                backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
-                zIndex="11000" // 保证蒙层在最上层
-              />
-            </>
-          ) : (
-            <></>
-          )}
+        {showGuide ? (
+          <>
+            <UserGuide />
+            <Box
+              position="fixed"
+              top="0"
+              left="0"
+              width="100%"
+              height="100%"
+              backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
+              zIndex="11000" // 保证蒙层在最上层
+            />
+          </>
+        ) : (
+          <></>
+        )}
 
-          <AppDock />
-        </Flex>
+        <AppDock />
+      </Flex>
 
-        {/* opened apps */}
-        {runningInfo.map((process) => {
-          return (
-            <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
-              <IframeWindow pid={process.pid} />
-            </AppWindow>
-          );
-        })}
-      </Box>
-    </DesktopProvider>
+      {/* opened apps */}
+      {runningInfo.map((process) => {
+        return (
+          <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
+            <IframeWindow pid={process.pid} />
+          </AppWindow>
+        );
+      })}
+    </Box>
   );
 }

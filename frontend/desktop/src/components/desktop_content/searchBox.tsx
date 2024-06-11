@@ -1,7 +1,7 @@
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { TApp } from '@/types';
-import { Center, Fade, Flex, Image, Input, List, ListItem } from '@chakra-ui/react';
+import { Box, Center, Flex, Image, Input } from '@chakra-ui/react';
 import { SearchIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
@@ -33,56 +33,48 @@ export default function SearchBox() {
   });
 
   return (
-    <Flex
-      gap={'8px'}
+    <Box
       flex={1}
-      {...blurBackgroundStyles}
-      alignItems={'center'}
       onClick={() => {
         inputRef.current?.focus();
       }}
-      position={'relative'}
       cursor={'pointer'}
+      position={'relative'}
+      zIndex={2}
     >
-      <SearchIcon ml={'16px'} width={'16px'} height={'16px'} color={'white'} />
-      <Input
-        mr={'16px'}
-        ref={inputRef}
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        w={'full'}
-        outline={'none'}
-        type="text"
-        placeholder={t('Search Apps') || 'Search Apps'}
-        bg={'transparent'}
-        outlineOffset={''}
+      <Flex
+        height={'full'}
+        alignItems={'center'}
+        color={'white'}
+        bg={'rgba(22, 30, 40, 0.35)'}
+        backdropFilter={'blur(80px) saturate(180%)'}
         border={'none'}
-        _placeholder={{ color: 'white' }}
-        _hover={{
-          bg: 'transparent'
-        }}
-        _focus={{
-          bg: 'transparent',
-          color: 'white'
-        }}
-      />
-
-      {/* <Fade
-        in={searchTerm !== ''}
-        style={{
-          position: 'absolute',
-          top: '100%',
-          width: '100%',
-          background: 'rgba(22, 30, 40, 0.35)',
-          backdropFilter: 'blur(250px)',
-          border: 'none',
-          borderRadius: '12px',
-          boxShadow: '0px 4px 30px 0px rgba(17, 24, 36, 0.25)',
-          zIndex: 1,
-          padding: '16px',
-          marginTop: '8px'
-        }}
-      > */}
+        borderRadius={'12px'}
+      >
+        <SearchIcon ml={'16px'} width={'16px'} height={'16px'} />
+        <Input
+          pl={'6px'}
+          mr={'16px'}
+          ref={inputRef}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          w={'full'}
+          outline={'none'}
+          type="text"
+          placeholder={t('Search Apps') || 'Search Apps'}
+          bg={'transparent'}
+          outlineOffset={''}
+          border={'none'}
+          _placeholder={{ color: 'white' }}
+          _hover={{
+            bg: 'transparent'
+          }}
+          _focus={{
+            bg: 'transparent',
+            color: 'white'
+          }}
+        />
+      </Flex>
       {searchTerm !== '' && (
         <Flex
           flexDirection={'column'}
@@ -91,13 +83,8 @@ export default function SearchBox() {
           width={'100%'}
           mt={2}
           p={'16px'}
-          // bg={'white'}
-          bg={'rgba(22, 30, 40, 0.35)'}
-          backdropFilter="blur(150px)"
-          // borderRadius="xl"
-          // boxShadow="0px 4px 30px 0px rgba(17, 24, 36, 0.25)"
-
-          // {...blurBackgroundStyles}
+          color={'rgba(255, 255, 255, 0.90)'}
+          {...blurBackgroundStyles}
         >
           {filteredApps.length > 0 ? (
             filteredApps.map((app) => (
@@ -105,7 +92,9 @@ export default function SearchBox() {
                 key={app.key}
                 p={2}
                 cursor="pointer"
-                // _hover={{ bg: 'rgba(255, 255, 255, 0.07)' }}
+                _hover={{ bg: 'rgba(255, 255, 255, 0.07)' }}
+                alignItems={'center'}
+                borderRadius={'xl'}
                 onClick={() => {
                   openApp(app);
                   setSearchTerm('');
@@ -141,8 +130,6 @@ export default function SearchBox() {
           )}
         </Flex>
       )}
-
-      {/* </Fade> */}
-    </Flex>
+    </Box>
   );
 }

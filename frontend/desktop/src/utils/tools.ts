@@ -2,6 +2,8 @@ import { InvitedStatus, UserNsStatus, UserRole } from '@/types/team';
 import dayjs from 'dayjs';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 
+export const validateNumber = (num: number) => typeof num === 'number' && isFinite(num) && num > 0;
+
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
 };

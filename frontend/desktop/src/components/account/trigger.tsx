@@ -1,15 +1,19 @@
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { Center, Flex, Image } from '@chakra-ui/react';
-import { MutableRefObject } from 'react';
-import { useDesktopContext } from '../desktop_content/providers';
+import { Dispatch, SetStateAction } from 'react';
 
-export default function Trigger({ showAccountRef }: { showAccountRef: MutableRefObject<boolean> }) {
-  const desktopContext = useDesktopContext();
+export default function Trigger({
+  setShowAccount,
+  showAccount
+}: {
+  showAccount: boolean;
+  setShowAccount: Dispatch<SetStateAction<boolean>>;
+}) {
   const user = useSessionStore((state) => state.session)?.user;
   const logo = useConfigStore().layoutConfig?.logo;
 
-  console.log(desktopContext, 'desktopContext');
+  console.log(showAccount, 'showAccount');
 
   return (
     <Flex
@@ -18,11 +22,9 @@ export default function Trigger({ showAccountRef }: { showAccountRef: MutableRef
       justifyContent={'center'}
       display={{ base: 'flex', lg: 'none' }}
       onClick={() => {
-        showAccountRef.current = true;
-        desktopContext?.onOpen(() => {
-          showAccountRef.current = false;
-        });
+        setShowAccount(true);
       }}
+      cursor={'pointer'}
     >
       <Center
         width={{ base: '32px', sm: '36px' }}

@@ -1,10 +1,13 @@
 import { Flex, Icon, Text } from '@chakra-ui/react';
-import { blurBackgroundStyles } from './index';
 
 export default function Assistant() {
   return (
     <Flex
-      {...blurBackgroundStyles}
+      flexShrink={0}
+      bg={'rgba(22, 30, 40, 0.35)'}
+      backdropFilter={'blur(80px) saturate(180%)'}
+      border={'none'}
+      borderRadius={'12px'}
       height={{ base: '32px', sm: '48px' }}
       px={{ base: '8px', sm: '14px' }}
       alignItems={'center'}

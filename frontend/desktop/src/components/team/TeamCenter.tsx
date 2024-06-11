@@ -119,7 +119,7 @@ export default function TeamCenter(props: StackProps) {
           bgColor: 'rgba(0, 0, 0, 0.03)'
         }}
       >
-        <SettingIcon boxSize={'16px'} color={'grayModern.600'} />
+        <SettingIcon boxSize={'16px'} color={'white'} />
         <Text>{t('Manage Team')}</Text>
       </HStack>
 

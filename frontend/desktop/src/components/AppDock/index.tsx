@@ -16,6 +16,7 @@ export default function AppDock() {
   } = useAppStore();
   const logo = useConfigStore().layoutConfig?.logo;
   const moreAppsContent = useContext(MoreAppsContext);
+  console.log(apps, 'apps');
 
   const AppMenuLists: AppInfo[] = [
     {

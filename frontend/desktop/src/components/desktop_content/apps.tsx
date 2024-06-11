@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon, ArrowRightIcon } from '../icons';
 import { blurBackgroundStyles } from './index';
+import { validateNumber } from '@/utils/tools';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
@@ -66,8 +67,13 @@ export default function Apps() {
     [renderApps, page, pageSize]
   );
 
-  const totalPages = Math.ceil(renderApps.length / pageSize) || 1;
-  console.log(totalPages);
+  const totalPages = useMemo(() => {
+    const renderAppsLength = renderApps.length;
+    const validRenderAppsLength = validateNumber(renderAppsLength) ? renderAppsLength : 1;
+    const validPageSize = validateNumber(pageSize) ? pageSize : 1;
+
+    return Math.ceil(validRenderAppsLength / validPageSize) || 1;
+  }, [renderApps.length, pageSize]);
 
   return (
     <Flex
@@ -77,7 +83,8 @@ export default function Apps() {
       py={'32px'}
       px={{ base: '24px', xl: '36px' }}
       height={'calc(100% - 8px)'}
-      // zIndex={1} //  important!!!
+      position={'relative'}
+      zIndex={1}
     >
       <Box height={'20px'} color={'rgba(255, 255, 255, 0.90)'} fontSize={'md'} fontWeight={'bold'}>
         {t('All Apps')}
