@@ -4,12 +4,12 @@ import AppWindow from '@/components/app_window';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { TApp, WindowSize } from '@/types';
-import { Box, Flex, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, Text } from '@chakra-ui/react';
 import { WarnTriangleIcon, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import AppDock from '../AppDock';
 import Cost from '../account/cost';
@@ -21,6 +21,8 @@ import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
 import Monitor from './monitor';
 import SearchBox from './searchBox';
+import { EmptyIcon } from '../icons';
+import FloatButton from '@/components/floating_button';
 
 const Account = dynamic(() => import('../account'), { ssr: false });
 
@@ -157,11 +159,23 @@ export default function Desktop(props: any) {
             px={'16px'}
             {...blurBackgroundStyles}
           >
-            <Flex alignItems={'center'} gap={'6px'}>
-              <WarnTriangleIcon />
-              <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-                {t('Alerts')}
-              </Text>
+            <Flex flex={1} flexDirection={'column'} gap={'6px'}>
+              <Flex alignItems={'center'} gap={'6px'}>
+                <WarnTriangleIcon />
+                <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
+                  {t('Alerts')}
+                </Text>
+              </Flex>
+              <Center flex={1}>
+                <Center
+                  w={'48px'}
+                  h={'48px'}
+                  borderRadius={'full'}
+                  border={'1px dashed rgba(255, 255, 255, 0.70)'}
+                >
+                  <EmptyIcon />
+                </Center>
+              </Center>
             </Flex>
           </Flex>
         </Flex>
@@ -228,6 +242,8 @@ export default function Desktop(props: any) {
       </Flex>
 
       <AppDock />
+
+      {/* <FloatButton /> */}
 
       {/* opened apps */}
       {runningInfo.map((process) => {

@@ -1,6 +1,4 @@
 import DesktopContent from '@/components/desktop_content';
-import FloatButton from '@/components/floating_button';
-import MoreApps from '@/components/more_apps';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
@@ -110,8 +108,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
-        {/* <FloatButton /> */}
-        {/* <MoreApps /> */}
       </MoreAppsContext.Provider>
     </Box>
   );
