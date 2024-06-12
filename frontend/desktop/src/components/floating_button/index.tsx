@@ -1,13 +1,16 @@
 import useAppStore, { AppInfo } from '@/stores/app';
-import { Box, Flex, useDisclosure, Image, Img } from '@chakra-ui/react';
+import { useConfigStore } from '@/stores/config';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
+import { APPTYPE } from '@/types';
+import { Box, Flex, Image, useDisclosure } from '@chakra-ui/react';
 import clsx from 'clsx';
 import { MouseEvent, useMemo, useState } from 'react';
+import { Menu, useContextMenu } from 'react-contexify';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import Iconfont from '../iconfont';
 import styles from './index.module.scss';
-import homeIcon from 'public/icons/home.svg';
-import { APPTYPE } from '@/types';
-import { useConfigStore } from '@/stores/config';
+import dockStyles from '@/components/AppDock/index.module.css';
+import { useTranslation } from 'next-i18next';
 
 enum Suction {
   None,
@@ -15,7 +18,10 @@ enum Suction {
   Right = 'right'
 }
 
-export default function Index(props: any) {
+const Floating_Button_Menu_Id = 'Floating_Button_Menu_Id';
+
+export default function FloatingButton() {
+  const { t } = useTranslation();
   const {
     installedApps: apps,
     runningInfo,
@@ -31,6 +37,12 @@ export default function Index(props: any) {
   const [endPosition, setEndPosition] = useState({ x: 0, y: 0 });
   const [suction, setSuction] = useState(Suction.None);
   const [lockSuction, setLockSuction] = useState(true);
+  const { isAppBar, toggleShape } = useDesktopConfigStore();
+  const { show } = useContextMenu({
+    id: Floating_Button_Menu_Id
+  });
+  const [isRightClick, setIsRightClick] = useState(false);
+
   // Hover Ball Menu
   const AppMenuLists: AppInfo[] = [
     {
@@ -152,6 +164,21 @@ export default function Index(props: any) {
     }
   };
 
+  const displayMenu = (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    setIsRightClick(true);
+    onClose();
+    show({
+      event: e,
+      position: {
+        // @ts-ignore
+        x: '-65%',
+        // @ts-ignore
+        y: '-80%'
+      }
+    });
+  };
+
   return (
     <>
       <Draggable
@@ -171,11 +198,13 @@ export default function Index(props: any) {
         position={position}
       >
         <div
+          onContextMenu={(e) => displayMenu(e)}
           id="floatButtonNav"
           className={clsx(styles.container, 'floatButtonNav', dragging ? styles.notrans : '')}
           data-open={isOpen}
           onMouseEnter={(e) => {
             if (suction !== Suction.None) return;
+            if (isRightClick) return;
             onOpen();
           }}
           onMouseLeave={(e) => {
@@ -283,6 +312,22 @@ export default function Index(props: any) {
               height={24}
             />
           </Flex>
+          <Menu className={dockStyles.contexify} id={Floating_Button_Menu_Id}>
+            <>
+              <Box
+                cursor={'pointer'}
+                p={'4px'}
+                _hover={{
+                  bg: 'rgba(17, 24, 36, 0.10)'
+                }}
+                onClick={toggleShape}
+                borderRadius={'4px'}
+              >
+                {t('Toggle App Bar')}
+                <div className={dockStyles.arrow}></div>
+              </Box>
+            </>
+          </Menu>
         </div>
       </Draggable>
       {dragging && (

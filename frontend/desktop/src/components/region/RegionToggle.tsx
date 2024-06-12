@@ -143,7 +143,7 @@ export default function RegionToggle() {
                             <ProviderIcon boxSize={'12px'} />
                             <Text>{providerT('Provider')}</Text>
                           </HStack>
-                          <Text color={'#111824'} mb={'8px'}>
+                          <Text color={'white'} mb={'8px'}>
                             {providerT(region?.description?.provider)}
                           </Text>
                           <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>

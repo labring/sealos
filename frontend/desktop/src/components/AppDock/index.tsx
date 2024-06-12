@@ -1,12 +1,19 @@
 import { MoreAppsContext } from '@/pages/index';
 import useAppStore, { AppInfo } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { APPTYPE, TApp } from '@/types';
-import { Box, Center, Flex, Image, useDisclosure } from '@chakra-ui/react';
+import { Box, Center, Flex, Image } from '@chakra-ui/react';
 import { MouseEvent, useContext, useMemo, useState } from 'react';
+import { Menu, useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
+import styles from './index.module.css';
+import { useTranslation } from 'next-i18next';
+
+const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
 export default function AppDock() {
+  const { t } = useTranslation();
   const {
     installedApps: apps,
     runningInfo,
@@ -20,6 +27,10 @@ export default function AppDock() {
   const logo = useConfigStore().layoutConfig?.logo;
   const moreAppsContent = useContext(MoreAppsContext);
   const [isNavbarVisible, setNavbarVisible] = useState(true);
+  const { show } = useContextMenu({
+    id: APP_DOCK_MENU_ID
+  });
+  const { isAppBar, toggleShape } = useDesktopConfigStore();
 
   const AppMenuLists = useMemo(() => {
     const initialApps: TApp[] = [
@@ -89,6 +100,18 @@ export default function AppDock() {
     }
   };
 
+  const displayMenu = (e: MouseEvent<HTMLDivElement>) => {
+    show({
+      event: e,
+      position: {
+        // @ts-ignore
+        x: '60%',
+        // @ts-ignore
+        y: '-80%'
+      }
+    });
+  };
+
   return (
     <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'9999'}>
       <Center
@@ -114,6 +137,7 @@ export default function AppDock() {
         />
       </Center>
       <Flex
+        onContextMenu={(e) => displayMenu(e)}
         transition="all 0.3s ease-in-out"
         borderRadius="12px"
         border={'1px solid rgba(255, 255, 255, 0.07)'}
@@ -170,6 +194,23 @@ export default function AppDock() {
             );
           })}
       </Flex>
+
+      <Menu className={styles.contexify} id={APP_DOCK_MENU_ID}>
+        <>
+          <Box
+            cursor={'pointer'}
+            p={'4px'}
+            _hover={{
+              bg: 'rgba(17, 24, 36, 0.10)'
+            }}
+            onClick={toggleShape}
+            borderRadius={'4px'}
+          >
+            {t('Switching Disc')}
+          </Box>
+          <div className={styles.arrow}></div>
+        </>
+      </Menu>
     </Box>
   );
 }

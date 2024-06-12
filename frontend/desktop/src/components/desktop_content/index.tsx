@@ -11,7 +11,6 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
-import AppDock from '../AppDock';
 import Cost from '../account/cost';
 import TriggerAccountModule from '../account/trigger';
 import { ChakraIndicator } from './ChakraIndicator';
@@ -22,8 +21,10 @@ import styles from './index.module.scss';
 import Monitor from './monitor';
 import SearchBox from './searchBox';
 import { EmptyIcon } from '../icons';
-import FloatButton from '@/components/floating_button';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
 
+const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
+const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
 const Account = dynamic(() => import('../account'), { ssr: false });
 
 export const blurBackgroundStyles = {
@@ -35,6 +36,7 @@ export const blurBackgroundStyles = {
 
 export default function Desktop(props: any) {
   const { t, i18n } = useTranslation();
+  const { isAppBar, toggleShape } = useDesktopConfigStore();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { message } = useMessage();
@@ -168,12 +170,12 @@ export default function Desktop(props: any) {
               </Flex>
               <Center flex={1}>
                 <Center
-                  w={'48px'}
-                  h={'48px'}
+                  w={'32px'}
+                  h={'32px'}
                   borderRadius={'full'}
                   border={'1px dashed rgba(255, 255, 255, 0.70)'}
                 >
-                  <EmptyIcon />
+                  <EmptyIcon width={'16px'} height={'16px'} />
                 </Center>
               </Center>
             </Flex>
@@ -241,9 +243,7 @@ export default function Desktop(props: any) {
         )} */}
       </Flex>
 
-      <AppDock />
-
-      {/* <FloatButton /> */}
+      {isAppBar ? <AppDock /> : <FloatButton />}
 
       {/* opened apps */}
       {runningInfo.map((process) => {
