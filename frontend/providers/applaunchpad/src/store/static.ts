@@ -40,7 +40,7 @@ export const serverLoadInitData = () => {
   try {
     SEALOS_DOMAIN = global.AppConfig.cloud.domain || 'cloud.sealos.io';
     DOMAIN_PORT = global.AppConfig.cloud.port || '';
-    INGRESS_SECRET = global.AppConfig.cloud.domain || 'wildcard-cert';
+    INGRESS_SECRET = global.AppConfig.launchpad.ingressTlsSecretName || 'wildcard-cert';
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
   } catch (error) {}
 };
