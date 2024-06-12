@@ -1,9 +1,7 @@
+import Notification from '@/components/notification';
 import { useCopyData } from '@/hooks/useCopyData';
-import request from '@/services/request';
-import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
-import { ApiResp } from '@/types';
 import download from '@/utils/downloadFIle';
 import { Box, Center, Flex, IconButton, Image, Text, useDisclosure } from '@chakra-ui/react';
 import {
@@ -14,17 +12,16 @@ import {
   NotificationIcon,
   SettingIcon
 } from '@sealos/ui';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import { blurBackgroundStyles } from '../desktop_content';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import PasswordModify from './PasswordModify';
 import GithubComponent from './github';
-import Notification from '@/components/notification';
 
 const baseItemStyle = {
   w: '52px',
@@ -119,15 +116,15 @@ export default function Account() {
           </Center>
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
+          <Center cursor={'pointer'} {...baseItemStyle}>
+            <DocsIcon />
+          </Center>
+          <LangSelectSimple {...baseItemStyle} />
+          {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
           <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
             <NotificationIcon />
           </Center>
           <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
-          <LangSelectSimple {...baseItemStyle} />
-          {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
-          <Center cursor={'pointer'} {...baseItemStyle}>
-            <DocsIcon />
-          </Center>
         </Flex>
 
         <RegionToggle />

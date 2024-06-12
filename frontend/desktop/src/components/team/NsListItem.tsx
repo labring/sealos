@@ -7,12 +7,14 @@ const NsListItem = ({
   isPrivate,
   displayPoint = false,
   teamName,
+  selectedColor = 'white',
   ...flexprop
 }: {
   displayPoint: boolean;
   teamName: string;
   isPrivate: boolean;
   isSelected: boolean;
+  selectedColor?: string;
 } & FlexProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -54,7 +56,7 @@ const NsListItem = ({
         <Text
           {...(isSelected
             ? {
-                color: 'white'
+                color: selectedColor
               }
             : {})}
           textTransform={'capitalize'}

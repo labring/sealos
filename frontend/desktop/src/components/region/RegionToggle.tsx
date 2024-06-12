@@ -119,7 +119,14 @@ export default function RegionToggle() {
                               }
                             })}
                       >
-                        <Box px={'16px'} fontSize={'14px'} fontWeight={'500'}>
+                        <Box
+                          px={'16px'}
+                          fontSize={'14px'}
+                          fontWeight={'500'}
+                          pb={'10px'}
+                          borderBottom={'1px solid rgba(0, 0, 0, 0.05)'}
+                          mb={'12px'}
+                        >
                           <Text color={'rgba(255, 255, 255, 0.80)'}>
                             {providerT(region?.location)} {region?.description?.serial}
                           </Text>
@@ -130,7 +137,7 @@ export default function RegionToggle() {
                             </Text>
                           )}
                         </Box>
-                        <Divider color={'rgba(255, 255, 255, 0.10)'} my={'12px'} />
+                        {/* <Divider bg={'rgba(255, 255, 255, 0.10)'} my={'12px'} /> */}
                         <Box px={'16px'} fontSize={'11px'} fontWeight={'500'}>
                           <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
                             <ProviderIcon boxSize={'12px'} />

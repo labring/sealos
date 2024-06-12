@@ -193,12 +193,11 @@ export default function Notification(props: TNotification) {
                 ml={'auto'}
                 onClick={() => markAllAsRead()}
                 variant={'white-bg-icon'}
-                leftIcon={<ClearOutlineIcon color={'grayModern.600'} />}
+                leftIcon={<ClearOutlineIcon color={'rgba(255, 255, 255, 0.60)'} />}
                 iconSpacing="4px"
+                borderRadius={'4px'}
               >
-                <Text color={'#434F61'} className={styles.tab}>
-                  {t('Read All')}
-                </Text>
+                <Text className={styles.tab}>{t('Read All')}</Text>
               </Button>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>

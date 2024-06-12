@@ -109,7 +109,7 @@ export default function AppDock() {
         onClick={() => setNavbarVisible((prev) => !prev)}
       >
         <ChevronDownIcon
-          transform={isNavbarVisible ? 'rotate(180deg)' : 'rotate(0deg)'}
+          transform={isNavbarVisible ? 'rotate(0deg)' : 'rotate(180deg)'}
           transition="transform 0.3s ease-in-out"
         />
       </Center>

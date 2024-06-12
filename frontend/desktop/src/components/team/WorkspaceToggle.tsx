@@ -107,7 +107,7 @@ export default function WorkspaceToggle() {
             >
               <VStack gap={0} alignItems={'stretch'}>
                 <TeamCenter />
-                <Divider bgColor={'rgba(0, 0, 0, 0.05)'} my={'4px'} h={'1px'} />
+                {/* <Divider bgColor={'rgba(0, 0, 0, 0.05)'} my={'4px'} h={'0px'} /> */}
                 {namespaces.map((ns) => {
                   return (
                     <NsListItem
