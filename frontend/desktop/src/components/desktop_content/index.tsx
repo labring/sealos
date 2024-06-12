@@ -1,11 +1,10 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-import useDriver from '@/hooks/useDriver';
+// import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
-import useSessionStore from '@/stores/session';
 import { TApp, WindowSize } from '@/types';
-import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react';
+import { Box, Flex, Text } from '@chakra-ui/react';
 import { WarnTriangleIcon, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -36,12 +35,7 @@ export default function Desktop(props: any) {
   const { t, i18n } = useTranslation();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
-  const logo = useConfigStore().layoutConfig?.logo;
-  const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
-  const [maxItems, setMaxItems] = useState(10);
   const { message } = useMessage();
-  const desktopDisclosure = useDisclosure();
-  const user = useSessionStore((state) => state.session)?.user;
   const [showAccount, setShowAccount] = useState(false);
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
@@ -104,7 +98,7 @@ export default function Desktop(props: any) {
     return masterApp?.addEventListen('openDesktopApp', openDesktopApp);
   }, [openDesktopApp]);
 
-  const { UserGuide, showGuide } = useDriver({ openDesktopApp });
+  // const { UserGuide, showGuide } = useDriver({ openDesktopApp });
 
   useQuery(['getGlobalNotification'], getGlobalNotification, {
     onSuccess(data) {
@@ -215,7 +209,7 @@ export default function Desktop(props: any) {
           </Box>
         </Box>
 
-        {showGuide ? (
+        {/* {showGuide ? (
           <>
             <UserGuide />
             <Box
@@ -230,7 +224,7 @@ export default function Desktop(props: any) {
           </>
         ) : (
           <></>
-        )}
+        )} */}
       </Flex>
 
       <AppDock />

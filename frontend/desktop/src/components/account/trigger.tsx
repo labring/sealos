@@ -37,6 +37,7 @@ export default function Trigger({
           src={user?.avatar || ''}
           fallbackSrc={logo}
           alt="user avator"
+          draggable={false}
         />
       </Center>
     </Flex>

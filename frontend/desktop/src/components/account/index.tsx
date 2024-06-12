@@ -5,7 +5,7 @@ import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
 import download from '@/utils/downloadFIle';
-import { Box, Center, Flex, IconButton, Image, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, IconButton, Image, Text, useDisclosure } from '@chakra-ui/react';
 import {
   CopyIcon,
   DocsIcon,
@@ -17,13 +17,14 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import { blurBackgroundStyles } from '../desktop_content';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import PasswordModify from './PasswordModify';
 import GithubComponent from './github';
+import Notification from '@/components/notification';
 
 const baseItemStyle = {
   w: '52px',
@@ -40,32 +41,19 @@ export default function Account() {
   const { layoutConfig } = useConfigStore();
   const [showId, setShowId] = useState(true);
   const passwordEnabled = useConfigStore().authConfig?.idp?.password?.enabled;
-  const rechargeEnabled = useConfigStore().commonConfig?.rechargeEnabled;
   const logo = useConfigStore().layoutConfig?.logo;
   const router = useRouter();
   const { copyData } = useCopyData();
-  const openApp = useAppStore((s) => s.openApp);
-  const installApp = useAppStore((s) => s.installedApps);
   const { t } = useTranslation();
   const { delSession, session, setToken } = useSessionStore();
   const user = session?.user;
-  const { data } = useQuery({
-    queryKey: ['getAmount', { userId: user?.userCrUid }],
-    queryFn: () =>
-      request<any, ApiResp<{ balance: number; deductionBalance: number }>>(
-        '/api/account/getAmount'
-      ),
-    enabled: !!user
-  });
-  const balance = useMemo(() => {
-    let real_balance = data?.data?.balance || 0;
-    if (data?.data?.deductionBalance) {
-      real_balance -= data?.data.deductionBalance;
-    }
-    return real_balance;
-  }, [data]);
   const queryclient = useQueryClient();
   const kubeconfig = session?.kubeconfig || '';
+  const showDisclosure = useDisclosure();
+  const [notificationAmount, setNotificationAmount] = useState(0);
+
+  const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
+
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
@@ -86,6 +74,7 @@ export default function Account() {
               src={user?.avatar || ''}
               fallbackSrc={logo}
               alt="user avator"
+              draggable={'false'}
             />
           </Center>
           <Box>
@@ -129,10 +118,11 @@ export default function Account() {
             </Text>
           </Center>
         </Flex>
-        <Flex mt={'16px'} justifyContent={'space-between'}>
-          <Center cursor={'pointer'} {...baseItemStyle}>
+        <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
+          <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
             <NotificationIcon />
           </Center>
+          <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
           <LangSelectSimple {...baseItemStyle} />
           {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
           <Center cursor={'pointer'} {...baseItemStyle}>
@@ -141,7 +131,9 @@ export default function Account() {
         </Flex>
 
         <RegionToggle />
+
         <WorkspaceToggle />
+
         <Flex
           borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
           color={'white'}
@@ -156,7 +148,7 @@ export default function Account() {
           <IconButton
             variant={'white-bg-icon'}
             p="4px"
-            onClick={() => kubeconfig && copyData(kubeconfig)}
+            // onClick={() => kubeconfig && copyData(kubeconfig)}
             icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
             aria-label={'setting'}
           />

@@ -1,11 +1,11 @@
 import request from '@/services/request';
 import { APPTYPE, TApp, TOSState, WindowSize, displayType } from '@/types';
+import { formatUrl } from '@/utils/format';
+import { cloneDeep, minBy } from 'lodash';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
-import { formatUrl } from '@/utils/format';
-import { minBy, cloneDeep } from 'lodash';
 
 export class AppInfo {
   pid: number;
@@ -137,7 +137,7 @@ const useAppStore = create<TOSState>()(
             return;
           }
           // Up to 7 apps &&  one home app
-          if (get().runningInfo.length >= 7) {
+          if (get().runningInfo.length >= 8) {
             get().deleteLeastUsedAppByIndex();
           }
           if (app.type === APPTYPE.LINK) {
@@ -145,6 +145,7 @@ const useAppStore = create<TOSState>()(
             return;
           }
           let run_app = get().runner.openApp(app.key);
+
           const _app = new AppInfo(app, run_app.pid);
           _app.zIndex = zIndex;
           _app.size = appSize;

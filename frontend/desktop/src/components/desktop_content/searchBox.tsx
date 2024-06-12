@@ -89,17 +89,20 @@ export default function SearchBox() {
             filteredApps.map((app) => (
               <Flex
                 key={app.key}
-                p={2}
+                p={'7px 13px'}
                 cursor="pointer"
                 _hover={{ bg: 'rgba(255, 255, 255, 0.07)' }}
                 alignItems={'center'}
-                borderRadius={'xl'}
+                borderRadius={'md'}
                 onClick={() => {
                   openApp(app);
                   setSearchTerm('');
                 }}
                 display={'flex'}
                 gap={'10px'}
+                fontSize={'12px'}
+                fontWeight={500}
+                color={'rgba(255, 255, 255, 0.90)'}
               >
                 <Center
                   w="28px"
@@ -125,7 +128,14 @@ export default function SearchBox() {
               </Flex>
             ))
           ) : (
-            <Flex p={2}>{t('No Apps Found') || 'No Apps Found'}</Flex>
+            <Flex
+              p={'7px 13px'}
+              fontSize={'12px'}
+              fontWeight={500}
+              color={'rgba(255, 255, 255, 0.90)'}
+            >
+              {t('No Apps Found') || 'No Apps Found'}
+            </Flex>
           )}
         </Flex>
       )}

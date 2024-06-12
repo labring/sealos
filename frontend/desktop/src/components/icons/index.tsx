@@ -298,3 +298,22 @@ export function ZoneIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Icon
+      xmlns="http://www.w3.org/2000/svg"
+      width="12px"
+      height="12px"
+      viewBox="0 0 12 12"
+      fill="none"
+      {...props}
+    >
+      <path
+        d="M8.60214 4C9.49304 4 9.93921 5.07714 9.30925 5.70711L6.75918 8.25717C6.36866 8.6477 5.73549 8.6477 5.34497 8.25717L2.7949 5.70711C2.16493 5.07714 2.6111 4 3.502 4H8.60214Z"
+        fill="#071B41"
+        fillOpacity="0.5"
+      />
+    </Icon>
+  );
+}
