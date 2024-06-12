@@ -33,7 +33,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     jsonRes(res, {
       data: {
         user: result?.userInfo,
-        regionInfo: regionInfo
+        regionInfo: regionInfo,
+        workorderLink: `https://hzh.sealos.run/?openapp=system-workorder?orderId=${orderId}`
       }
     });
   } catch (error) {

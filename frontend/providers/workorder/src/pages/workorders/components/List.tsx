@@ -75,7 +75,13 @@ const OrderList = ({
         key: 'description',
         render: (item: WorkOrderDB) => {
           return (
-            <Box color={'#24282C'} fontSize={'12px'} fontWeight={'500'} noOfLines={1}>
+            <Box
+              maxW={'300px'}
+              color={'#24282C'}
+              fontSize={'12px'}
+              fontWeight={'500'}
+              noOfLines={1}
+            >
               {item.description}
             </Box>
           );
