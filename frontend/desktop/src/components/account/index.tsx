@@ -116,7 +116,11 @@ export default function Account() {
           </Center>
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
-          <Center cursor={'pointer'} {...baseItemStyle}>
+          <Center
+            cursor={'pointer'}
+            {...baseItemStyle}
+            onClick={() => window.open('https://sealos.io/docs/Intro')}
+          >
             <DocsIcon />
           </Center>
           <LangSelectSimple {...baseItemStyle} />
