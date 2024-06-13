@@ -267,6 +267,15 @@ function OuterTabs({ systemRegion }: { systemRegion: CVMRegionType[] }) {
       onChange={(e) => {
         const item = systemRegion[e];
         formHook?.setValue('chargeType', item.chargeType);
+        formHook?.setValue('virtualMachineArch', item.zone[0].arch[0].arch);
+        formHook.setValue(
+          'virtualMachineType',
+          item.zone[0].arch[0].virtualMachineType[0].virtualMachineType
+        );
+        formHook.setValue(
+          'virtualMachinePackageFamily',
+          item.zone[0].arch[0].virtualMachineType[0].virtualMachinePackageFamily[0]
+        );
       }}
     >
       <TabList alignItems={'center'}>
@@ -320,6 +329,8 @@ export default function Form({
   const { data: systemRegion } = useQuery(['getCloudServerRegion'], getCloudServerRegion, {
     staleTime: 5 * 60 * 1000,
     onSuccess(data) {
+      console.log(data, 1);
+
       // set default form
       if (data?.[0]?.chargeType) {
         formHook.setValue('chargeType', data[0].chargeType);
