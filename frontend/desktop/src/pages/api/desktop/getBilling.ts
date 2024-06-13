@@ -58,8 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes(res, {
       data: {
-        prevMonthAmountTime: results[0].amount || 0,
-        prevDayAmountTime: results[1].amount || 0
+        prevMonthTime: results[0].amount || 0,
+        prevDayTime: results[1].amount || 0
       }
     });
   } catch (err) {

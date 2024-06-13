@@ -5,12 +5,13 @@ import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
 import { formatMoney } from '@/utils/format';
-import { Box, Center, Flex, Icon, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import { blurBackgroundStyles } from '../desktop_content';
 import { ClockIcon, DesktopSealosCoinIcon, InfiniteIcon } from '../icons';
+import { Decimal } from 'decimal.js';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -34,24 +35,28 @@ export default function Cost() {
   });
 
   const balance = useMemo(() => {
-    let real_balance = data?.data?.balance || 0;
+    let realBalance = new Decimal(data?.data?.balance || 0);
     if (data?.data?.deductionBalance) {
-      real_balance -= data?.data.deductionBalance;
+      realBalance = realBalance.minus(new Decimal(data.data.deductionBalance));
     }
-    return real_balance;
+    return realBalance.toNumber();
   }, [data]);
 
   const calculations = useMemo(() => {
-    const prevDayAmount = billing?.data?.prevDayAmountTime || 0;
-    const estimatedNextMonthAmount = prevDayAmount * 30 || 0;
-    const estimatedDaysUsable =
-      prevDayAmount > 0 ? Math.ceil(balance / prevDayAmount) : <InfiniteIcon />;
+    const prevDayAmount = new Decimal(billing?.data?.prevDayTime || 0);
+    const estimatedNextMonthAmount = prevDayAmount.times(30).toNumber();
+    const _balance = new Decimal(balance || 0);
+
+    const estimatedDaysUsable = prevDayAmount.greaterThan(0)
+      ? _balance.div(prevDayAmount).ceil().toNumber()
+      : Number.POSITIVE_INFINITY;
+
     return {
-      prevMonthAmount: billing?.data?.prevMonthAmountTime || 0,
+      prevMonthAmount: new Decimal(billing?.data?.prevMonthTime || 0).toNumber(),
       estimatedNextMonthAmount,
       estimatedDaysUsable
     };
-  }, [billing?.data?.prevDayAmountTime, billing?.data?.prevMonthAmountTime, , balance]);
+  }, [billing?.data?.prevDayTime, billing?.data?.prevMonthTime, , balance]);
 
   return (
     <Box position={'relative'} flex={'0 1 400px'}>
@@ -150,7 +155,15 @@ export default function Cost() {
                 {t('Expected used')}
               </Text>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
-                {calculations.estimatedDaysUsable} {t('Day')}
+                {calculations.estimatedDaysUsable === Number.POSITIVE_INFINITY ? (
+                  <>
+                    <InfiniteIcon /> {t('Day')}
+                  </>
+                ) : (
+                  <>
+                    {calculations.estimatedDaysUsable} {t('Day')}
+                  </>
+                )}
               </Text>
             </Flex>
             <Flex
@@ -164,7 +177,7 @@ export default function Cost() {
                 {t('Used last month')}
               </Text>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
-                {calculations.prevMonthAmount}
+                {formatMoney(calculations.prevMonthAmount).toFixed(2)}
               </Text>
               <DesktopSealosCoinIcon />
             </Flex>
@@ -174,7 +187,7 @@ export default function Cost() {
                 {t('Expected to use next month')}
               </Text>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
-                {calculations.estimatedNextMonthAmount}
+                {formatMoney(calculations.estimatedNextMonthAmount).toFixed(2)}
               </Text>
               <DesktopSealosCoinIcon />
             </Flex>

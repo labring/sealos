@@ -37,6 +37,7 @@
     "clsx": "^1.2.1",
     "cors": "^2.8.5",
     "dayjs": "^1.11.10",
+    "decimal.js": "^10.4.3",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "framer-motion": "^10.16.4",

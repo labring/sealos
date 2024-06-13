@@ -96,8 +96,8 @@ export const getUserBilling = () => {
   return request.post<
     any,
     ApiResp<{
-      prevDayAmountTime: number;
-      prevMonthAmountTime: number;
+      prevMonthTime: number;
+      prevDayTime: number;
     }>
   >('/api/desktop/getBilling');
 };
