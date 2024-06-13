@@ -334,3 +334,24 @@ export function EmptyIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function ArrowIcon(props: IconProps) {
+  return (
+    <Icon
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="16px"
+      height="16px"
+      viewBox="0 0 16 16"
+      fill="none"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M8.86193 3.52864C8.60158 3.78899 8.60158 4.2111 8.86193 4.47145L11.7239 7.33337H2.66667C2.29848 7.33337 2 7.63185 2 8.00004C2 8.36823 2.29848 8.66671 2.66667 8.66671H11.7239L8.86193 11.5286C8.60158 11.789 8.60158 12.2111 8.86193 12.4714C9.12228 12.7318 9.54439 12.7318 9.80474 12.4714L13.8047 8.47144C14.0651 8.2111 14.0651 7.78899 13.8047 7.52864L9.80474 3.52864C9.54439 3.26829 9.12228 3.26829 8.86193 3.52864Z"
+        fill="white"
+        fillOpacity="0.8"
+      />
+    </Icon>
+  );
+}

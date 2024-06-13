@@ -22,6 +22,8 @@ import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import PasswordModify from './PasswordModify';
 import GithubComponent from './github';
+import { ArrowIcon } from '../icons';
+import useAppStore from '@/stores/app';
 
 const baseItemStyle = {
   w: '52px',
@@ -48,6 +50,7 @@ export default function Account() {
   const kubeconfig = session?.kubeconfig || '';
   const showDisclosure = useDisclosure();
   const [notificationAmount, setNotificationAmount] = useState(0);
+  const { installedApps, openApp } = useAppStore();
 
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
 
@@ -59,17 +62,21 @@ export default function Account() {
     setToken('');
   };
 
+  const openWorkOrderApp = () => {
+    const workorder = installedApps.find((t) => t.key === 'system-workorder');
+    if (!workorder) return;
+    openApp(workorder);
+  };
+
   return (
     <Box position={'relative'} flex={1}>
       <Flex position={'relative'} zIndex={3} px={'16px'} pt={'20px'} flexDirection={'column'}>
         <Flex alignItems={'center'}>
           <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
             <Image
-              width={'24px'}
-              height={'24px'}
               borderRadius="full"
               src={user?.avatar || ''}
-              fallbackSrc={logo}
+              fallbackSrc={'/images/default-user.svg'}
               alt="user avator"
               draggable={'false'}
             />
@@ -164,6 +171,24 @@ export default function Account() {
           py={'12px'}
           px={'16px'}
         >
+          <Text>{t('Work Order')}</Text>
+          <IconButton
+            variant={'white-bg-icon'}
+            p="4px"
+            onClick={openWorkOrderApp}
+            icon={<ArrowIcon fill={'rgba(255, 255, 255, 0.7)'} />}
+            aria-label={'setting'}
+          />
+        </Flex>
+        <Flex
+          color={'white'}
+          fontSize={'base'}
+          fontWeight={'bold'}
+          justifyContent={'space-between'}
+          alignItems={'center'}
+          py={'12px'}
+          px={'16px'}
+        >
           <Text>kubeconfig</Text>
           <Flex alignItems={'center'}>
             <IconButton
@@ -190,7 +215,7 @@ export default function Account() {
             />
           </Flex>
         </Flex>
-        {passwordEnabled && (
+        {/* {passwordEnabled && (
           <Flex
             color={'white'}
             fontSize={'base'}
@@ -203,7 +228,7 @@ export default function Account() {
             <Text>{t('changePassword')}</Text>
             <PasswordModify mr="0" />
           </Flex>
-        )}
+        )} */}
       </Flex>
       <Box
         id="blur-background"
