@@ -30,6 +30,8 @@ import (
 
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 
+	"github.com/labring/sealos/controllers/pkg/utils/notifier"
+
 	"github.com/labring/sealos/controllers/pkg/pay"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -476,7 +478,7 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 		return nil
 	}
 	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+	err = notifier.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
 		PhoneNumbers: tea.String(phone),
 		SignName:     tea.String(r.SmsConfig.SmsSignName),
 		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
@@ -487,7 +489,7 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 		return fmt.Errorf("failed to send sms notice: %w", err)
 	}
 	if noticeType == WarningNotice {
-		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+		err = notifier.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
 		if err != nil {
 			return fmt.Errorf("failed to send vms notice: %w", err)
 		}
@@ -647,7 +649,7 @@ func (r *DebtReconciler) setupSmsConfig() error {
 		return fmt.Errorf("split sms code map error: %w", err)
 	}
 
-	smsClient, err := utils.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
+	smsClient, err := notifier.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
 	if err != nil {
 		return fmt.Errorf("create sms client error: %w", err)
 	}

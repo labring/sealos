@@ -1,15 +1,15 @@
 package notification
 
 import (
-	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
-	"github.com/alibabacloud-go/tea/tea"
-	"github.com/labring/sealos/controllers/account/controllers/utils"
-	"github.com/labring/sealos/controllers/pkg/types"
-	_ "github.com/labring/sealos/service/account/dao"
-	"github.com/labring/sealos/service/exceptionMonitor/api"
-	"github.com/labring/sealos/service/exceptionMonitor/dao"
 	"os"
 	"strings"
+
+	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
+	"github.com/alibabacloud-go/tea/tea"
+	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils/notifier"
+	"github.com/labring/sealos/service/exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionMonitor/dao"
 )
 
 func GetPhoneNumberByNS(ns string) (error, string) {
@@ -23,7 +23,7 @@ func GetPhoneNumberByNS(ns string) (error, string) {
 }
 
 func SendToSms(namespace, databaseName, clusterName, content string) error {
-	smsClient, err := utils.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
+	smsClient, err := notifier.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 	if err != nil {
 		return err
 	}
-	err = utils.SendSms(smsClient, &client.SendSmsRequest{
+	err = notifier.SendSms(smsClient, &client.SendSmsRequest{
 		PhoneNumbers: tea.String(phoneNumbers),
 		SignName:     tea.String(os.Getenv("SMS_SIGN_NAME")),
 		TemplateCode: tea.String(os.Getenv("SMS_CODE")),
