@@ -246,7 +246,7 @@ init() {
     echo ""
     [[ $k8s_installed == "y" ]] || pull_image "kubernetes" "v${kubernetes_version#v:-1.27.11}"
     [[ $k8s_ready == "y" ]] || pull_image "cilium" "v${cilium_version#v:-1.14.8}"
-    pull_image "cert-manager" "v${cert_manager_version#v:-1.8.0}"
+    pull_image "cert-manager" "v${cert_manager_version#v:-1.14.4}"
     pull_image "helm" "v${helm_version#v:-3.14.1}"
     pull_image "openebs" "v${openebs_version#v:-3.10.0}"
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.9.4}"
