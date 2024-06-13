@@ -1,10 +1,9 @@
 package dao
 
 import (
-	"github.com/labring/sealos/controllers/pkg/database"
-	"github.com/labring/sealos/controllers/pkg/database/cockroach"
-	_ "github.com/labring/sealos/service/account/dao"
 	"os"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 )
 
 var (
@@ -13,7 +12,7 @@ var (
 
 func InitCockroachDB() error {
 	var err error
-	CK, err = cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
+	CK, err = cockroach.NewCockRoach(os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
 	if err != nil {
 		return err
 	}
