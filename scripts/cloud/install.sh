@@ -534,7 +534,7 @@ execute_commands() {
     command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.14.1}"
     [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.14.8}" --env ExtraValues="ipam.mode=kubernetes")
     wait_cluster_ready
-    sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
+    sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.14.4}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.10.0}"
     sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
     kubectl get sc openebs-backup > /dev/null 2>&1 || kubectl create -f - <<EOF
