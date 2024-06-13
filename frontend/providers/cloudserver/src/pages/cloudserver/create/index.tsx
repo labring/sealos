@@ -14,6 +14,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
 import Header from './components/Header';
+import { CVMChargeType } from '@/types/region';
 
 export default function EditOrder() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -42,7 +43,8 @@ export default function EditOrder() {
           amount: 1
         }
       ],
-      systemImageId: ''
+      systemImageId: '',
+      period: '1'
       // chargeType: CVMChargeType.postPaidByHour,
       // zone: 'Guangzhou-6',
       // virtualMachineArch: 'x86_64',
@@ -56,10 +58,16 @@ export default function EditOrder() {
     setForceUpdate(!forceUpdate);
   });
 
-  const { data: prices } = useQuery(['getCloudServerPrice', forceUpdate], () => {
-    const temp = formHook.getValues();
-    return getCloudServerPrice(temp);
-  });
+  const { data: prices } = useQuery(
+    ['getCloudServerPrice', forceUpdate],
+    () => {
+      const temp = formHook.getValues();
+      return getCloudServerPrice(temp);
+    },
+    {
+      enabled: !!formHook.getValues('virtualMachinePackageName')
+    }
+  );
 
   const submitSuccess = async (data: EditForm) => {
     console.log(data);
@@ -106,6 +114,7 @@ export default function EditOrder() {
       bg={'grayModern.100'}
     >
       <Header
+        isMonth={formHook.getValues('chargeType') === CVMChargeType.prePaid}
         instanceType={instanceType}
         prices={prices}
         title="New Server"

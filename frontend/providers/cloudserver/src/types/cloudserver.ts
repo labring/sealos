@@ -14,6 +14,7 @@ export type EditForm = {
   virtualMachineArch: string;
   chargeType: CVMChargeType;
   zone: string;
+  period: string;
 };
 
 export type StorageType = {
@@ -152,5 +153,6 @@ export type CreateCloudServerPayload = {
   zone: string;
   virtualMachineType: string;
   virtualMachineArch: string;
-  chareType: CVMChargeType;
+  chargeType: CVMChargeType;
+  period: number;
 };

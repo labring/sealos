@@ -31,7 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       zone: form.zone,
       virtualMachineType: form.virtualMachineType,
       virtualMachineArch: form.virtualMachineArch,
-      chareType: form.chargeType
+      chargeType: form.chargeType,
+      period: parseInt(form.period)
     };
 
     const { data } = await POST('/action/create', payload, {

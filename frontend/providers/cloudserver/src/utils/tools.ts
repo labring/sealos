@@ -1,7 +1,5 @@
-import { useToast } from '@/hooks/useToast';
 import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
-import { useTranslation } from 'next-i18next';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);

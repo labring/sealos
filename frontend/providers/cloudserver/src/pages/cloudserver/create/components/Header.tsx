@@ -24,8 +24,10 @@ const Header = ({
   applyCb,
   applyBtnText,
   prices,
-  instanceType
+  instanceType,
+  isMonth
 }: {
+  isMonth: boolean;
   title: string;
   applyCb: () => void;
   applyBtnText: string;
@@ -84,7 +86,8 @@ const Header = ({
                   <Flex {...priceItemStyle}>
                     <Text fontSize={'base'}>{t('Instance')}</Text>
                     <Text ml={'auto'} fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.instancePrice}/{t('hour')}
+                      ¥{prices?.instancePrice}
+                      {!isMonth && `/${t('hour')}`}
                     </Text>
                   </Flex>
 
@@ -93,7 +96,8 @@ const Header = ({
                       {t('storage fees')}
                     </Text>
                     <Text ml={'auto'} fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.diskPrice}/{t('hour')}
+                      ¥{prices?.diskPrice}
+                      {!isMonth && `/${t('hour')}`}
                     </Text>
                   </Flex>
 
@@ -107,7 +111,8 @@ const Header = ({
                       fontWeight={'bold'}
                       color={'brightBlue.600'}
                     >
-                      ¥{prices?.networkPrice}/{t('hour')}
+                      ¥{prices?.networkPrice}
+                      {!isMonth && `/${t('hour')}`}
                     </Text>
                   </Flex>
                 </Flex>
@@ -125,7 +130,8 @@ const Header = ({
                       {t('Storage')}
                     </Text>
                     <Text fontSize={'base'}>
-                      {t('Reference fee disk tips', { price: instanceType?.diskPerG })}
+                      {t('Reference fee disk tips', { price: instanceType?.diskPerG })}/
+                      {isMonth ? t('month') : t('hour')}
                     </Text>
                   </Flex>
                   <Flex {...priceItemStyle} justifyContent={'space-between'}>
@@ -150,11 +156,12 @@ const Header = ({
                             justifyContent={'space-between'}
                             key={item.pricePerMbps + item.minBandwidth}
                           >
-                            <Text>{`[${item.minBandwidth} , ${
+                            <Text>{`(${item.minBandwidth} , ${
                               item.maxBandwidth === null ? '∞' : item.maxBandwidth
-                            })`}</Text>
+                            }]`}</Text>
                             <Text>
-                              {t('Reference fee bandwidth tips', { price: item.pricePerMbps })}
+                              {t('Reference fee bandwidth tips', { price: item.pricePerMbps })}/
+                              {isMonth ? t('month') : t('hour')}
                             </Text>
                           </Flex>
                         );
