@@ -4,6 +4,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { CloudServerType, EditForm } from '@/types/cloudserver';
+import { CVMChargeType } from '@/types/region';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -13,8 +14,7 @@ import { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
-import Header from './components/Header';
-import { CVMChargeType } from '@/types/region';
+import Header, { CostTipContent } from './components/Header';
 
 export default function EditOrder() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -25,10 +25,6 @@ export default function EditOrder() {
   const [forceUpdate, setForceUpdate] = useState(false);
   const { lastRoute } = useGlobalStore();
   const [instanceType, setInstanceType] = useState<CloudServerType>();
-
-  const { openConfirm, ConfirmChild } = useConfirm({
-    content: t('Are you sure to create a cloud host?')
-  });
 
   // form
   const formHook = useForm<EditForm>({
@@ -104,6 +100,23 @@ export default function EditOrder() {
     });
   }, [formHook.formState.errors, t, toast]);
 
+  const { openConfirm, ConfirmChild } = useConfirm({
+    content: (
+      <Box>
+        {formHook.getValues('chargeType') === CVMChargeType.prePaid ? (
+          <CostTipContent
+            isMonth={formHook.getValues('chargeType') === CVMChargeType.prePaid}
+            instanceType={instanceType}
+            isModalTip
+            prices={prices}
+          />
+        ) : (
+          <Box>{t('Are you sure to create a cloud host?')}</Box>
+        )}
+      </Box>
+    )
+  });
+
   return (
     <Box
       flexDirection={'column'}
@@ -118,9 +131,10 @@ export default function EditOrder() {
         instanceType={instanceType}
         prices={prices}
         title="New Server"
-        applyCb={() =>
-          formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
-        }
+        applyCb={() => {
+          // formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+          openConfirm()();
+        }}
         applyBtnText="Submit"
       />
       <Flex h={'calc(100% - 126px)'} justifyContent={'center'} borderRadius={'4px'}>

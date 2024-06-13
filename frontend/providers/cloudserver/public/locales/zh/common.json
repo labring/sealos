@@ -115,5 +115,6 @@
   "month": "月",
   "indivual": "个",
   "year": "年",
-  "duration": "时长"
+  "duration": "时长",
+  "total": "总计"
 }
