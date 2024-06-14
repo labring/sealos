@@ -81,7 +81,7 @@ export default function WorkspaceToggle() {
         <DesktopExchangeIcon ml={'auto'} />
       </HStack>
       {disclosure.isOpen ? (
-        <>
+        <Box position={'absolute'} w={'full'}>
           <Box
             position={'fixed'}
             inset={0}
@@ -91,13 +91,13 @@ export default function WorkspaceToggle() {
               disclosure.onClose();
             }}
           ></Box>
-          <Box position={'absolute'} inset={0} zIndex={'999'} fontSize={'13px'}>
+          <Box position={'absolute'} inset={0} zIndex={999} fontSize={'13px'}>
             <Box
               color={'white'}
               bg="rgba(220, 220, 224, 0.10)"
               boxShadow={'0px 1.167px 2.333px 0px rgba(0, 0, 0, 0.20)'}
               position={'absolute'}
-              top="43px"
+              top="24px"
               right={0}
               left={0}
               cursor={'initial'}
@@ -127,7 +127,7 @@ export default function WorkspaceToggle() {
               </VStack>
             </Box>
           </Box>
-        </>
+        </Box>
       ) : null}
     </HStack>
   );

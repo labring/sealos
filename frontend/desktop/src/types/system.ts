@@ -52,6 +52,8 @@ export type LayoutConfigType = {
   protocol?: ProtocolConfigType;
   common: {
     githubStarEnabled: boolean;
+    workorderEnabled: boolean;
+    docsUrl?: string;
   };
 };
 
@@ -190,7 +192,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     scripts: []
   },
   common: {
-    githubStarEnabled: false
+    githubStarEnabled: false,
+    workorderEnabled: false
   }
 };
 

@@ -31,13 +31,14 @@ export default function Trigger({
         borderRadius="full"
       >
         <Image
-          width={{ base: '17px', sm: '24px' }}
-          height={{ base: '17px', sm: '24px' }}
+          width={user?.avatar && 'full'}
+          height={user?.avatar && 'full'}
+          objectFit={'cover'}
           borderRadius="full"
           src={user?.avatar || ''}
-          fallbackSrc={logo}
+          fallbackSrc={'/images/default-user.svg'}
           alt="user avator"
-          draggable={false}
+          draggable={'false'}
         />
       </Center>
     </Flex>

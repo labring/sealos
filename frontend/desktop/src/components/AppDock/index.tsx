@@ -152,6 +152,7 @@ export default function AppDock() {
         userSelect={'none'}
         px={'12px'}
         opacity={isNavbarVisible ? 1 : 0}
+        transform={isNavbarVisible ? 'scale(1)' : 'scale(0.8)'}
         overflow="hidden"
       >
         {isNavbarVisible &&

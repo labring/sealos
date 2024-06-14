@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next';
 import { CpuIcon, FlowIcon, MemoryIcon, StorageIcon } from '../icons';
 import { blurBackgroundStyles } from './index';
 
-export default function Monitor() {
+export default function Monitor({ needStyles = true }: { needStyles?: boolean }) {
   const { t } = useTranslation();
   const { data } = useQuery(['appListQuery'], getResource, {
     cacheTime: 5 * 60 * 1000
@@ -45,13 +45,23 @@ export default function Monitor() {
     totalPodCount > 0 ? Math.round((runningPodCount / totalPodCount) * 100) : 0;
 
   return (
-    <Flex flex={1} flexDirection={'column'} {...blurBackgroundStyles} py={'20px'} px={'16px'}>
-      <Flex alignItems={'center'} gap={'6px'}>
-        <MonitorIcon />
-        <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-          {t('Monitor')}
-        </Text>
-      </Flex>
+    <Flex
+      flex={1}
+      flexDirection={'column'}
+      zIndex={2}
+      py={'20px'}
+      px={'16px'}
+      {...(needStyles ? blurBackgroundStyles : {})}
+    >
+      {needStyles && (
+        <Flex alignItems={'center'} gap={'6px'}>
+          <MonitorIcon />
+          <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
+            {t('Monitor')}
+          </Text>
+        </Flex>
+      )}
+
       <Flex alignItems={'center'} mt={'12px'} gap={'20px'}>
         <CircularProgress
           size={'90px'}

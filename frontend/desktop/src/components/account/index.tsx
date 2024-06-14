@@ -40,7 +40,7 @@ export default function Account() {
   const { layoutConfig } = useConfigStore();
   const [showId, setShowId] = useState(true);
   const passwordEnabled = useConfigStore().authConfig?.idp?.password?.enabled;
-  const logo = useConfigStore().layoutConfig?.logo;
+
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -74,6 +74,9 @@ export default function Account() {
         <Flex alignItems={'center'}>
           <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
             <Image
+              width={user?.avatar && 'full'}
+              height={user?.avatar && 'full'}
+              objectFit={'cover'}
               borderRadius="full"
               src={user?.avatar || ''}
               fallbackSrc={'/images/default-user.svg'}
@@ -126,7 +129,7 @@ export default function Account() {
           <Center
             cursor={'pointer'}
             {...baseItemStyle}
-            onClick={() => window.open('https://sealos.io/docs/Intro')}
+            onClick={() => window.open(layoutConfig?.common?.docsUrl)}
           >
             <DocsIcon />
           </Center>
@@ -161,25 +164,28 @@ export default function Account() {
             aria-label={'setting'}
           />
         </Flex>
-        <Flex
-          borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
-          color={'white'}
-          fontSize={'base'}
-          fontWeight={'bold'}
-          justifyContent={'space-between'}
-          alignItems={'center'}
-          py={'12px'}
-          px={'16px'}
-        >
-          <Text>{t('Work Order')}</Text>
-          <IconButton
-            variant={'white-bg-icon'}
-            p="4px"
-            onClick={openWorkOrderApp}
-            icon={<ArrowIcon fill={'rgba(255, 255, 255, 0.7)'} />}
-            aria-label={'setting'}
-          />
-        </Flex>
+        {layoutConfig?.common.workorderEnabled && (
+          <Flex
+            borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
+            color={'white'}
+            fontSize={'base'}
+            fontWeight={'bold'}
+            justifyContent={'space-between'}
+            alignItems={'center'}
+            py={'12px'}
+            px={'16px'}
+          >
+            <Text>{t('Work Order')}</Text>
+            <IconButton
+              variant={'white-bg-icon'}
+              p="4px"
+              onClick={openWorkOrderApp}
+              icon={<ArrowIcon fill={'rgba(255, 255, 255, 0.7)'} />}
+              aria-label={'setting'}
+            />
+          </Flex>
+        )}
+
         <Flex
           color={'white'}
           fontSize={'base'}
