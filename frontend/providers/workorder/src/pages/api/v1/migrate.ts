@@ -3,8 +3,7 @@ import { migrateWorkOrders } from '@/services/db/workorder';
 import { verify } from 'jsonwebtoken';
 import { jsonRes } from '@/services/backend/response';
 import { getUserById, updateUser } from '@/services/db/user';
-
-const desktopJwtSecret = (process.env.JWT_SECRET_DESKTOP_TO_APP as string) || '123456789';
+import { desktopJwtSecret } from '@/services/backend/auth';
 
 const verifyToken = (token: string) => {
   try {
