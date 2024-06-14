@@ -54,7 +54,7 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 			return false, err
 		}
 	}
-	if usage > 99 {
+	if usage > 95 {
 		return true, nil
 	}
 	if usage > 80 {
