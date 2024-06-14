@@ -7,19 +7,18 @@ import (
 
 	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	"github.com/alibabacloud-go/tea/tea"
-	"github.com/labring/sealos/controllers/pkg/types"
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/notifier"
-	"github.com/labring/sealos/service/exceptionMonitor/api"
-	"github.com/labring/sealos/service/exceptionMonitor/dao"
+	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/dao"
 )
 
-func GetPhoneNumberByNS(ns string) (error, string) {
-	outh, err := dao.CK.GetUserOauthProvider(&types.UserQueryOpts{
+func GetPhoneNumberByNS(ns string) (string, error) {
+	outh, err := dao.CK.GetUserOauthProvider(&pkgtypes.UserQueryOpts{
 		Owner: ns,
 	})
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 	phone, email := "", ""
 	for i := range outh {
@@ -30,9 +29,9 @@ func GetPhoneNumberByNS(ns string) (error, string) {
 		}
 	}
 	if phone == "" && email == "" {
-		return errors.New("user phone && email is not set, skip sms notification"), ""
+		return "", errors.New("user phone && email is not set, skip sms notification")
 	}
-	return nil, phone
+	return phone, nil
 }
 
 func SendToSms(namespace, databaseName, clusterName, content string) error {
@@ -41,7 +40,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 		return err
 	}
 	name := strings.ReplaceAll(databaseName, "-", ".")
-	err, phoneNumbers := GetPhoneNumberByNS(namespace)
+	phoneNumbers, err := GetPhoneNumberByNS(namespace)
 	if err != nil {
 		return err
 	}
