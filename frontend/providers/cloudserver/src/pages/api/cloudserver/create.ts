@@ -35,11 +35,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       period: parseInt(form.period)
     };
 
-    const { data } = await POST('/action/create', payload, {
+    const { data, error } = await POST('/action/create', payload, {
       headers: {
         Authorization: req.headers.authorization
       }
     });
+
+    if (error) {
+      return jsonRes(res, { code: 500, error: error });
+    }
 
     return jsonRes(res, {
       data: data
