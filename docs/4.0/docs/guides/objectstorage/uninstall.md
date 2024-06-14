@@ -4,9 +4,12 @@ sidebar_position: 2
 
 # Uninstall Object Storage
 
+Installation of the Object Storage failed, you can use the script to clean up the remaining resources. Uninstalling the
+Object Storage can also be done using the script to clean up.
+
 ```bash
 #!/usr/bin/env bash
-set -e
+set +e
 
 kubectl delete app objectstorage -n app-system
 kubectl delete ns objectstorage-system objectstorage-frontend
