@@ -132,8 +132,8 @@ export default function EditOrder() {
         prices={prices}
         title="New Server"
         applyCb={() => {
-          // formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
-          openConfirm()();
+          formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)();
+          // openConfirm()();
         }}
         applyBtnText="Submit"
       />

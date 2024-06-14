@@ -42,18 +42,40 @@ export const CostTipContent = ({
   return (
     <Box>
       {prices && isModalTip && (
-        <Flex alignItems={'center'} justifyContent={'space-between'} pr={'10px'}>
-          <Box px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
-            {t('total')}
-          </Box>
-          <Text fontWeight={'bold'} color={'brightBlue.600'}>
-            ¥
-            {new Decimal(prices?.diskPrice)
-              .plus(new Decimal(prices?.instancePrice))
-              .plus(new Decimal(prices?.networkPrice))
-              .toNumber()}
-          </Text>
-        </Flex>
+        <>
+          <Flex
+            alignItems={'center'}
+            px={'12px'}
+            py={'12px'}
+            bg={'#FEF3F2'}
+            borderRadius={'6px'}
+            color={'#F04438'}
+            gap={'8px'}
+            mb={'16px'}
+          >
+            <MyIcon name="infoWarn" width={'20px'} />
+            <Box>
+              {t('After the annual and monthly cloud hosting is sold')}
+              <Text display={'inline'} fontWeight={500} px={'2px'}>
+                {t('No refund allowed')}
+              </Text>
+              {t('Pay Confirm tips')}
+            </Box>
+          </Flex>
+          <Flex alignItems={'center'} justifyContent={'space-between'} pr={'10px'}>
+            <Box px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
+              {t('total')}
+            </Box>
+
+            <Text fontWeight={'bold'} color={'brightBlue.600'}>
+              ¥
+              {new Decimal(prices?.diskPrice)
+                .plus(new Decimal(prices?.instancePrice))
+                .plus(new Decimal(prices?.networkPrice))
+                .toNumber()}
+            </Text>
+          </Flex>
+        </>
       )}
       <Box px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
         {t('Configuration fee details')}
