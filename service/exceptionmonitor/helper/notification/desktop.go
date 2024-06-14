@@ -3,15 +3,15 @@ package notification
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"time"
 )
 
 func CreateNotification(namespace, name, status, notificationMessage string) {
-
 	gvr := schema.GroupVersionResource{
 		Group:    "notification.sealos.io",
 		Version:  "v1",

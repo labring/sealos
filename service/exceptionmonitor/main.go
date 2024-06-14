@@ -1,12 +1,13 @@
-package exceptionmonitor
+package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/dao"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/client"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/monitor"
-	"time"
 )
 
 func main() {
