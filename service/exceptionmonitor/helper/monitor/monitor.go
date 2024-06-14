@@ -130,7 +130,6 @@ func CheckDatabases(ns string) error {
 }
 
 func getDatabaseClusterEvents(databaseClusterName, namespace string) (string, bool) {
-
 	events, err := api.ClientSet.CoreV1().Events(namespace).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("involvedObject.name=%s", databaseClusterName),
 	})
