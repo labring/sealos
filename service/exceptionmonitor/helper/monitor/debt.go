@@ -2,14 +2,14 @@ package monitor
 
 import (
 	"context"
+	"strings"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"strings"
 )
 
 func checkDebt(namespace string) (bool, string, error) {
-
 	// find debt crd
 	debtName := getAccountNameByNamespace(namespace)
 	debt, err := api.DynamicClient.Resource(debtGVR).Namespace(debtNamespace).Get(context.TODO(), debtName, metav1.GetOptions{})

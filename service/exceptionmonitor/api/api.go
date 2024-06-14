@@ -2,10 +2,11 @@ package api
 
 import (
 	"errors"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"strings"
+
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 )
 
 type QueryResult struct {

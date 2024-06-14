@@ -2,12 +2,13 @@ package monitor
 
 import (
 	"encoding/json"
-	"github.com/labring/sealos/service/exceptionmonitor/api"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 )
 
 func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error) {
