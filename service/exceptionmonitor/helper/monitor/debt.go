@@ -17,9 +17,8 @@ func checkDebt(namespace string) (bool, string, error) {
 		// processing error: Resource does not exist or other error
 		if strings.Contains(err.Error(), "not found") {
 			return checkOwnerDebt(namespace)
-		} else {
-			return false, "", err
 		}
+		return false, "", err
 	}
 	status, found, err := unstructured.NestedString(debt.Object, "status", "status")
 	if err != nil || !found {
