@@ -63,9 +63,9 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 			return false, err
 		}
 		err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
-	}
-	if err != nil {
-		return false, err
+		if err != nil {
+			return false, err
+		}
 	}
 	return false, nil
 }
