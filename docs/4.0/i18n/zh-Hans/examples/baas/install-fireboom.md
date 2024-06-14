@@ -1,6 +1,6 @@
 # 快速安装 Fireboom
 
-[Fireboom](https://fireboom.cloud) ⾯向开发者的可视化 API 开发平台，为开发者提供**声明式开发框架**、**可视化编辑套件**和**钩子机制**。
+[Fireboom](https://fireboom.io) ⾯向开发者的可视化 API 开发平台，为开发者提供**声明式开发框架**、**可视化编辑套件**和**钩子机制**。
 
 ![fireboom introduction](../images/fireboom/fireboom-intro.jpeg)
 

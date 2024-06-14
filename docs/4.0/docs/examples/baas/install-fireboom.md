@@ -1,6 +1,6 @@
 # Quick Installation of Fireboom
 
-[Fireboom](https://fireboom.cloud) is a visual API development platform designed for developers, providing a declarative development framework, a visual editing suite, and a hook mechanism.
+[Fireboom](https://fireboom.io) is a visual API development platform designed for developers, providing a declarative development framework, a visual editing suite, and a hook mechanism.
 
 
 Official website: https://fireboom.io
