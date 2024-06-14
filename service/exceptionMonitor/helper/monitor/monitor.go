@@ -3,8 +3,8 @@ package monitor
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/service/exceptionMonitor/api"
-	"github.com/labring/sealos/service/exceptionMonitor/helper/notification"
+	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -17,9 +17,9 @@ var (
 		Version:  "v1alpha1",
 		Resource: "clusters",
 	}
-	debtResourceQuota = "debt-limit0"
-	debtNamespace     = "account-system"
-	debtGVR           = schema.GroupVersionResource{
+	//debtResourceQuota = "debt-limit0"
+	debtNamespace = "account-system"
+	debtGVR       = schema.GroupVersionResource{
 		Group:    "account.sealos.io",
 		Version:  "v1",
 		Resource: "debts",
@@ -51,9 +51,9 @@ func CheckDatabases(ns string) error {
 			fmt.Printf("Unable to get %s status in ns %s: %v\n", databaseClusterName, namespace, err)
 			continue
 		}
-		if status == "Deleting" || status == "Stopping" {
-			continue
-		}
+		//if status == "Deleting" || status == "Stopping" {
+		//	continue
+		//}
 		if status == "Running" || status == "Stopped" {
 			//database recovery notification
 			if api.ExceptionDatabaseMap[databaseClusterName] {
@@ -75,8 +75,8 @@ func CheckDatabases(ns string) error {
 			api.LastDatabaseClusterStatus[databaseClusterName] = status
 			api.ExceptionDatabaseMap[databaseClusterName] = true
 		}
-		if (status != "Running" || status != "Stopped") && !api.DebtNamespaceMap[namespace] {
-			_, debt, debtLevel := checkDebt(namespace)
+		if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
+			debt, debtLevel, _ := checkDebt(namespace)
 			alertMessage, feishuWebHook := "", ""
 			if debt {
 				databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
@@ -86,7 +86,7 @@ func CheckDatabases(ns string) error {
 						fmt.Printf("check disk err: %s \n", err)
 					}
 					if !diskFull {
-						if status == "Creating" {
+						if status == "Creating" || status == "Deleting" || status == "Stopping" {
 							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
 						} else {
 							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLUFA"]
@@ -98,7 +98,6 @@ func CheckDatabases(ns string) error {
 							alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "disk is full")
 							notificationMessage := "disk is full"
 							//Notify user that disk is full
-
 							notification.CreateNotification(namespace, databaseClusterName, status, notificationMessage)
 						}
 						api.DiskFullNamespaceMap[databaseClusterName] = true

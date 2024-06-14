@@ -2,13 +2,13 @@ package monitor
 
 import (
 	"context"
-	"github.com/labring/sealos/service/exceptionMonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"strings"
 )
 
-func checkDebt(namespace string) (error, bool, string) {
+func checkDebt(namespace string) (bool, string, error) {
 
 	// find debt crd
 	debtName := getAccountNameByNamespace(namespace)
@@ -18,17 +18,17 @@ func checkDebt(namespace string) (error, bool, string) {
 		if strings.Contains(err.Error(), "not found") {
 			return checkOwnerDebt(namespace)
 		} else {
-			return err, false, ""
+			return false, "", err
 		}
 	}
 	status, found, err := unstructured.NestedString(debt.Object, "status", "status")
 	if err != nil || !found {
-		return err, false, status
+		return false, status, err
 	}
 	if status == "NormalPeriod" {
-		return nil, true, status
+		return true, status, nil
 	}
-	return nil, false, status
+	return false, status, nil
 }
 
 func getAccountNameByNamespace(namespace string) string {
@@ -37,20 +37,20 @@ func getAccountNameByNamespace(namespace string) string {
 	return strings.Join(tmp, "-")
 }
 
-func checkOwnerDebt(namespace string) (error, bool, string) {
-	err, owner := GetNSOwner(namespace)
+func checkOwnerDebt(namespace string) (bool, string, error) {
+	owner, err := GetNSOwner(namespace)
 	if err != nil {
-		return err, false, ""
+		return false, "", err
 	}
 	ownerNamespace := "ns-" + owner
 	return checkDebt(ownerNamespace)
 }
 
-func GetNSOwner(namespace string) (error, string) {
+func GetNSOwner(namespace string) (string, error) {
 	// find owner debt
 	ns, err := api.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
 	if err != nil {
-		return err, ""
+		return "", err
 	}
-	return nil, ns.Labels[api.OwnerLabel]
+	return ns.Labels[api.OwnerLabel], nil
 }

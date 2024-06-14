@@ -5,7 +5,7 @@ use (
 	./pay
 	./account
 	./launchpad
-	./exceptionMonitor
+	./exceptionmonitor
 	.
 )
 

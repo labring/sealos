@@ -1,4 +1,4 @@
-module github.com/labring/sealos/service/exceptionMonitor
+module github.com/labring/sealos/service/exceptionmonitor
 
 go 1.20
 
@@ -74,7 +74,7 @@ require (
 
 replace (
 	github.com/labring/sealos/controllers/pkg => ../../controllers/pkg
-	github.com/labring/sealos/service/exceptionMonitor => ../exceptionMonitor
+	github.com/labring/sealos/service/exceptionmonitor => ../exceptionmonitor
 	k8s.io/api => k8s.io/api v0.28.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.28.4
 	k8s.io/client-go => k8s.io/client-go v0.28.4

@@ -2,8 +2,8 @@ package monitor
 
 import (
 	"encoding/json"
-	"github.com/labring/sealos/service/exceptionMonitor/api"
-	"github.com/labring/sealos/service/exceptionMonitor/helper/notification"
+	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"io"
 	"net/http"
 	"net/url"
@@ -58,7 +58,10 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 		return true, nil
 	}
 	if usage > 80 {
-		_, ownerNS := GetNSOwner(namespace)
+		ownerNS, err := GetNSOwner(namespace)
+		if err != nil {
+			return false, err
+		}
 		err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
 	}
 	if err != nil {
