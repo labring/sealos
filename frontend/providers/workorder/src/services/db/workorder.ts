@@ -1,6 +1,7 @@
 import { WorkOrderDB, WorkOrderDialog, WorkOrderStatus, WorkOrderType } from '@/types/workorder';
 import { connectToDatabase } from './mongodb';
 import { getUserById } from './user';
+import { ClientSession } from 'mongodb';
 
 async function connectOrderCollection() {
   const client = await connectToDatabase();
@@ -153,4 +154,35 @@ export async function deleteOrder({ orderId, userId }: { orderId: string; userId
 
   const result = await collection.updateOne(filter, update);
   return result;
+}
+
+export async function migrateWorkOrders({
+  mergeUserUid,
+  userUid
+}: {
+  mergeUserUid: string;
+  userUid: string;
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const collection = await connectOrderCollection();
+
+    const mergeUserOrders = await collection.find({ userId: mergeUserUid }).toArray();
+    if (mergeUserOrders.length === 0) {
+      return { success: true, message: 'No work orders found for mergeUserUid' };
+    }
+
+    const updateResult = await collection.updateMany(
+      { userId: mergeUserUid },
+      { $set: { userId: userUid } }
+    );
+
+    if (updateResult.modifiedCount === 0) {
+      return { success: false, message: 'Failed to migrate work orders' };
+    }
+
+    return { success: true, message: 'Work orders migrated successfully' };
+  } catch (error) {
+    console.log(error);
+    return { success: false, message: 'Error migrating work orders' };
+  }
 }
