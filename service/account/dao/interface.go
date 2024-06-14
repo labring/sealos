@@ -74,9 +74,9 @@ func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
 
 func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
 	if req.TransferAll {
-		return g.ck.TransferAccountAll(&types.UserQueryOpts{Owner: req.Owner}, &types.UserQueryOpts{ID: req.ToUser})
+		return g.ck.TransferAccountAll(&types.UserQueryOpts{ID: req.Auth.UserID, Owner: req.Owner}, &types.UserQueryOpts{ID: req.ToUser})
 	}
-	return g.ck.TransferAccount(&types.UserQueryOpts{Owner: req.Owner}, &types.UserQueryOpts{ID: req.ToUser}, req.Amount)
+	return g.ck.TransferAccount(&types.UserQueryOpts{Owner: req.Owner, ID: req.Auth.UserID}, &types.UserQueryOpts{ID: req.ToUser}, req.Amount)
 }
 
 func (g *Cockroach) GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error) {
