@@ -51,6 +51,9 @@ func CheckDatabases(ns string) error {
 			fmt.Printf("Unable to get %s status in ns %s: %v\n", databaseClusterName, namespace, err)
 			continue
 		}
+		if status == "Deleting" || status == "Stopping" {
+			continue
+		}
 		if status == "Running" || status == "Stopped" {
 			//database recovery notification
 			if api.ExceptionDatabaseMap[databaseClusterName] {
@@ -83,7 +86,7 @@ func CheckDatabases(ns string) error {
 						fmt.Printf("check disk err: %s \n", err)
 					}
 					if !diskFull {
-						if status == "Deleting" || status == "Creating" || status == "Stopping" {
+						if status == "Creating" {
 							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
 						} else {
 							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLUFA"]
