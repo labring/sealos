@@ -25,6 +25,9 @@ func main() {
 		}
 		return nil
 	})
+	if err != nil {
+		fmt.Println(err)
+	}
 	if err = api.GetENV(); err != nil {
 		fmt.Printf("Failed to get env: %v", err)
 	}
