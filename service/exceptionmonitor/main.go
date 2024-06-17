@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	fmt.Println("111111")
 	envs := os.Environ()
 
 	// 打印所有环境变量
