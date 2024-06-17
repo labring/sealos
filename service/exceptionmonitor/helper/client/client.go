@@ -1,14 +1,28 @@
 package client
 
 import (
+	"fmt"
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
+	"path/filepath"
 )
 
 func InitClient() error {
 	// connect Kubernetes clusters using kubeconfig
+
+	// 获取当前可执行文件的路径
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	// 获取绝对路径
+	absPath := filepath.Dir(ex)
+
+	fmt.Println("Absolute path:", absPath)
 
 	kubeconfigPath := "./config/" + api.ClusterName + "_kubeconfig"
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
