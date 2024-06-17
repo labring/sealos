@@ -84,6 +84,9 @@ func GetENV() error {
 func getEnvWithCheck(key string, missingEnvVars *[]string) string {
 	value := os.Getenv(key)
 	if value == "" {
+		if MonitorType == "all" && key == "ClusterNS" {
+			return value
+		}
 		*missingEnvVars = append(*missingEnvVars, key)
 	}
 	return value
