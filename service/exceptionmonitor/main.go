@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
@@ -14,20 +12,6 @@ import (
 
 func main() {
 	var err error
-	err = filepath.Walk("/home/nonroot", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			fmt.Println("Directory:", path)
-		} else {
-			fmt.Println("File:", path)
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Println(err)
-	}
 	if err = api.GetENV(); err != nil {
 		fmt.Printf("Failed to get env: %v", err)
 	}
