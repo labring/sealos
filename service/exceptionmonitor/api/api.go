@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -74,6 +75,11 @@ func GetENV() error {
 		"REGION_GZG",
 		"REGION_TOP",
 	}, ClusterRegionMap, &missingEnvVars)
+
+	fmt.Println(BaseURL)
+	fmt.Println(ClusterName)
+	fmt.Println(MonitorType)
+	fmt.Println(clusterNS)
 
 	if len(missingEnvVars) > 0 {
 		return errors.New("missing environment variables")
