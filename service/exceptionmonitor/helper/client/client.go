@@ -10,7 +10,7 @@ import (
 )
 
 func InitClient() error {
-	kubeconfigPath := "/home/nonroot/kubeconfig"
+	kubeconfigPath := "/home/nonroot/kubeconfig/kubeconfig"
 
 	kubeconfig, err := os.ReadFile(kubeconfigPath)
 	if err != nil {
