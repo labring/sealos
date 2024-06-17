@@ -112,6 +112,8 @@ export default function AppDock() {
     });
   };
 
+  const transitionValue = 'all 350ms ease-in-out';
+
   return (
     <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'9999'}>
       <Center
@@ -119,8 +121,8 @@ export default function AppDock() {
         height={'16px'}
         position={'absolute'}
         color={'white'}
-        top={'-16px'}
-        left={'50%'}
+        transition={transitionValue}
+        top={isNavbarVisible ? '-80px' : '-16px'}
         transform={'translateX(-50%)'}
         cursor={'pointer'}
         bg="rgba(220, 220, 224, 0.3)"
@@ -138,7 +140,6 @@ export default function AppDock() {
       </Center>
       <Flex
         onContextMenu={(e) => displayMenu(e)}
-        transition="all 0.3s ease-in-out"
         borderRadius="12px"
         border={'1px solid rgba(255, 255, 255, 0.07)'}
         bg="rgba(220, 220, 224, 0.3)"
@@ -151,49 +152,51 @@ export default function AppDock() {
         gap={'12px'}
         userSelect={'none'}
         px={'12px'}
+        transition={transitionValue}
         opacity={isNavbarVisible ? 1 : 0}
-        transform={isNavbarVisible ? 'scale(1)' : 'scale(0.8)'}
+        transform={isNavbarVisible ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(0.6)'}
+        position="absolute"
+        top={isNavbarVisible ? '-64px' : '4px'}
         overflow="hidden"
       >
-        {isNavbarVisible &&
-          AppMenuLists.map((item: AppInfo, index: number) => {
-            return (
-              <Flex
-                flexDirection={'column'}
-                alignItems={'center'}
-                cursor={'pointer'}
-                key={item?.name}
-                pt={isNavbarVisible ? '6px' : 0}
-                pb={isNavbarVisible ? '2px' : 0}
-                onClick={(e) => handleNavItem(e, item)}
+        {AppMenuLists.map((item: AppInfo, index: number) => {
+          return (
+            <Flex
+              flexDirection={'column'}
+              alignItems={'center'}
+              cursor={'pointer'}
+              key={item?.name}
+              pt={'6px'}
+              pb={'2px'}
+              onClick={(e) => handleNavItem(e, item)}
+            >
+              <Center
+                w="40px"
+                h="40px"
+                borderRadius={'8px'}
+                bg={'rgba(255, 255, 255, 0.85)'}
+                backdropFilter={'blur(25px)'}
+                boxShadow={'0px 1.167px 2.333px 0px rgba(0, 0, 0, 0.20)'}
               >
-                <Center
-                  w="40px"
-                  h="40px"
-                  borderRadius={'8px'}
-                  bg={'rgba(255, 255, 255, 0.85)'}
-                  backdropFilter={'blur(25px)'}
-                  boxShadow={'0px 1.167px 2.333px 0px rgba(0, 0, 0, 0.20)'}
-                >
-                  <Image
-                    src={item?.icon}
-                    fallbackSrc={logo || '/logo.svg'}
-                    alt={item?.name}
-                    w="32px"
-                    h="32px"
-                  />
-                </Center>
-                <Box
-                  opacity={currentAppPid === item.pid ? 1 : 0}
-                  mt={'6px'}
-                  width={'4px'}
-                  height={'4px'}
-                  borderRadius={'full'}
-                  bg={'rgba(7, 27, 65, 0.50)'}
-                ></Box>
-              </Flex>
-            );
-          })}
+                <Image
+                  src={item?.icon}
+                  fallbackSrc={logo || '/logo.svg'}
+                  alt={item?.name}
+                  w="32px"
+                  h="32px"
+                />
+              </Center>
+              <Box
+                opacity={currentAppPid === item.pid ? 1 : 0}
+                mt={'6px'}
+                width={'4px'}
+                height={'4px'}
+                borderRadius={'full'}
+                bg={'rgba(7, 27, 65, 0.50)'}
+              ></Box>
+            </Flex>
+          );
+        })}
       </Flex>
 
       <Menu className={styles.contexify} id={APP_DOCK_MENU_ID}>
