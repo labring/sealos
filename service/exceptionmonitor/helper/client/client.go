@@ -2,12 +2,13 @@ package client
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"path/filepath"
 )
 
 func InitClient() error {
