@@ -154,7 +154,7 @@ export default function AppDock() {
         px={'12px'}
         transition={transitionValue}
         opacity={isNavbarVisible ? 1 : 0}
-        transform={isNavbarVisible ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(0.6)'}
+        transform={'translateX(-50%)'}
         position="absolute"
         top={isNavbarVisible ? '-64px' : '4px'}
         overflow="hidden"
