@@ -58,6 +58,7 @@ func CheckDatabases(ns string) error {
 		if status == "Running" || status == "Stopped" {
 			//database recovery notification
 			if api.ExceptionDatabaseMap[databaseClusterName] {
+				fmt.Println(111)
 				recoveryMessage := notification.GetNotificationMessage(databaseClusterName, namespace, status, "", "", "")
 				err = notification.SendFeishuNotification(recoveryMessage, api.FeishuWebHookMap[databaseClusterName])
 				if err != nil {
