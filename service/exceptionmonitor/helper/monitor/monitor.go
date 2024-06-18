@@ -134,7 +134,8 @@ func getDatabaseClusterEvents(databaseClusterName, namespace string) (string, bo
 		FieldSelector: fmt.Sprintf("involvedObject.name=%s", databaseClusterName),
 	})
 	if err != nil {
-		panic(err.Error())
+		fmt.Printf("Failed get events from databaseCluster: %v\n", err)
+		return "", false
 	}
 	databaseEvents := ""
 	for _, event := range events.Items {
