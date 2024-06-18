@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -46,7 +47,7 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 	if err := json.Unmarshal(body, &result); err != nil {
 		return false, err
 	}
-
+	fmt.Println(222)
 	usage := 0.0
 	for _, result := range result.Data.Result {
 		value := result.Value[1].(string)
@@ -55,6 +56,8 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 			return false, err
 		}
 	}
+	fmt.Println(111)
+	fmt.Println(namespace, databaseClusterName, databaseType, usage)
 	if usage > 95 {
 		return true, nil
 	}
