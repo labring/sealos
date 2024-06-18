@@ -45,7 +45,7 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 			},
 		},
 	}
-
+	fmt.Println(commonElements)
 	if isNormal {
 		headerTemplate = "blue"
 		titleContent = "数据库恢复通知"
