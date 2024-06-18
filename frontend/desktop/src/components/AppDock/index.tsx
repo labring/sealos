@@ -105,14 +105,14 @@ export default function AppDock() {
       event: e,
       position: {
         // @ts-ignore
-        x: '60%',
+        x: '60px',
         // @ts-ignore
-        y: '-80%'
+        y: '-114px'
       }
     });
   };
 
-  const transitionValue = 'all 350ms ease-in-out';
+  const transitionValue = 'transform 200ms ease-in-out, opacity 200ms ease-in-out';
 
   return (
     <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'9999'}>
@@ -122,8 +122,6 @@ export default function AppDock() {
         position={'absolute'}
         color={'white'}
         transition={transitionValue}
-        top={isNavbarVisible ? '-80px' : '-16px'}
-        transform={'translateX(-50%)'}
         cursor={'pointer'}
         bg="rgba(220, 220, 224, 0.3)"
         backdropFilter="blur(80px) saturate(150%)"
@@ -131,6 +129,9 @@ export default function AppDock() {
           '0px 0px 20px -4px rgba(12, 26, 67, 0.25), 0px 0px 1px 0px rgba(24, 43, 100, 0.25)'
         }
         borderTopRadius={'4px'}
+        top={'-80px'}
+        transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
+        will-change="transform, opacity"
         onClick={() => setNavbarVisible((prev) => !prev)}
       >
         <ChevronDownIcon
@@ -154,9 +155,10 @@ export default function AppDock() {
         px={'12px'}
         transition={transitionValue}
         opacity={isNavbarVisible ? 1 : 0}
-        transform={'translateX(-50%)'}
         position="absolute"
-        top={isNavbarVisible ? '-64px' : '4px'}
+        top={'-64px'}
+        transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 68px)'}
+        will-change="transform, opacity"
         overflow="hidden"
       >
         {AppMenuLists.map((item: AppInfo, index: number) => {

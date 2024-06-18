@@ -73,7 +73,14 @@ export default function Cost() {
   }, [billing?.data?.prevDayTime, billing?.data?.prevMonthTime, , balance]);
 
   return (
-    <Box position={'relative'} flex={'0 1 400px'} overflowY={'scroll'}>
+    <Box
+      position={'relative'}
+      flex={'0 1 400px'}
+      overflowY={'auto'}
+      style={{
+        scrollbarWidth: 'none'
+      }}
+    >
       <Flex
         {...blurBackgroundStyles}
         position={'relative'}

@@ -22,6 +22,7 @@ import Monitor from './monitor';
 import SearchBox from './searchBox';
 import { EmptyIcon } from '../icons';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
+import Warn from './warn';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -154,32 +155,7 @@ export default function Desktop(props: any) {
         >
           <Assistant />
           <Monitor />
-          <Flex
-            flexDirection={'column'}
-            flex={'0 1 400px'}
-            pt={'20px '}
-            px={'16px'}
-            {...blurBackgroundStyles}
-          >
-            <Flex flex={1} flexDirection={'column'} gap={'6px'}>
-              <Flex alignItems={'center'} gap={'6px'}>
-                <WarnTriangleIcon />
-                <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-                  {t('Alerts')}
-                </Text>
-              </Flex>
-              <Center flex={1}>
-                <Center
-                  w={'32px'}
-                  h={'32px'}
-                  borderRadius={'full'}
-                  border={'1px dashed rgba(255, 255, 255, 0.70)'}
-                >
-                  <EmptyIcon width={'16px'} height={'16px'} />
-                </Center>
-              </Center>
-            </Flex>
-          </Flex>
+          <Warn />
         </Flex>
 
         {/* apps */}

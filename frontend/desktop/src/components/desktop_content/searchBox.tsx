@@ -65,12 +65,15 @@ export default function SearchBox() {
           outlineOffset={''}
           border={'none'}
           _placeholder={{ color: 'white' }}
+          boxShadow={'none'}
           _hover={{
             bg: 'transparent'
           }}
           _focus={{
             bg: 'transparent',
-            color: 'white'
+            color: 'white',
+            border: 'none',
+            boxShadow: 'none'
           }}
         />
       </Flex>
