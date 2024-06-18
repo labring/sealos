@@ -18,6 +18,7 @@ import { useSystemConfigStore } from '@/store/config';
 import useSessionStore from '@/store/session';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
+import { getPlatformEnv } from '@/api/platform';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -115,6 +116,40 @@ const App = ({ Component, pageProps }: AppProps) => {
       i18n?.changeLanguage?.(lang);
     }
   }, [i18n, refresh, router.pathname]);
+
+  useEffect(() => {
+    const setupInternalAppCallListener = async () => {
+      try {
+        const envs = await getPlatformEnv();
+        const event = async (
+          e: MessageEvent<{
+            name: string;
+            type: string;
+          }>
+        ) => {
+          const whitelist = [`https://${envs.SEALOS_CLOUD_DOMAIN}`];
+          if (!whitelist.includes(e.origin)) {
+            return;
+          }
+          try {
+            if (e.data.type === 'InternalAppCall' && e.data?.name) {
+              router.push({
+                pathname: '/instance',
+                query: {
+                  instanceName: e.data.name
+                }
+              });
+            }
+          } catch (error) {
+            console.log(error, 'error');
+          }
+        };
+        window.addEventListener('message', event);
+        return () => window.removeEventListener('message', event);
+      } catch (error) {}
+    };
+    setupInternalAppCallListener();
+  }, []);
 
   return (
     <>
