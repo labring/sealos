@@ -50,7 +50,7 @@ func (m *mongoDB) GetPendingStateInstance(regionUID string) (cvmMap map[string][
 		return nil, err
 	}
 	for i := range cvm {
-		userInfo := cvm[i].SealosUserUID + "/" + cvm[i].Namespace
+		userInfo := cvm[i].SealosUserUID
 		if cvmMap[userInfo] == nil {
 			cvmMap[userInfo] = make([]types.CVMBilling, 0)
 		}
