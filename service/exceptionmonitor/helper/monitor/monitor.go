@@ -60,6 +60,7 @@ func CheckDatabases(ns string) error {
 			if api.ExceptionDatabaseMap[databaseClusterName] {
 				fmt.Println(111)
 				recoveryMessage := notification.GetNotificationMessage(databaseClusterName, namespace, status, "", "", "")
+				fmt.Println(recoveryMessage)
 				err = notification.SendFeishuNotification(recoveryMessage, api.FeishuWebHookMap[databaseClusterName])
 				if err != nil {
 					fmt.Printf("Error sending recovery notification: %v\n", err)
