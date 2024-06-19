@@ -1,6 +1,11 @@
 import { Flex, Icon, Text } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useTranslation } from 'next-i18next';
 
 export default function Assistant() {
+  const { t } = useTranslation();
+  const { message } = useMessage();
+
   return (
     <Flex
       flexShrink={0}
@@ -15,6 +20,11 @@ export default function Assistant() {
       fontSize={'base'}
       fontWeight={'bold'}
       gap={'8px'}
+      onClick={() => {
+        message({
+          title: t('Under active development')
+        });
+      }}
     >
       <Icon
         width="29px"
