@@ -11,9 +11,8 @@ import { validateNumber } from '@/utils/tools';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
-  const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
-  const logo = useConfigStore().layoutConfig?.logo;
-  const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
+  const { installedApps: renderApps, openApp } = useAppStore();
+  const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
 
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -37,13 +36,12 @@ export default function Apps() {
   const calculateMaxAppsPerPage = useCallback(
     throttle(() => {
       const appsContainer = document.getElementById('apps-container');
-
       if (appsContainer) {
         const gridWidth = appsContainer.offsetWidth - gridMX * 2 - pageButton * 2;
-        const gridHeight = appsContainer.offsetHeight - gridMT;
+        const gridHeight = appsContainer.offsetHeight - gridMT + gridSpacing;
 
         const maxAppsInRow = Math.floor((gridWidth + gridSpacing) / (appWidth + gridSpacing));
-        const maxAppsInColumn = Math.floor((gridHeight + gridSpacing) / (appHeight + gridSpacing));
+        const maxAppsInColumn = Math.floor(gridHeight / (appHeight + gridSpacing));
 
         const maxApps = maxAppsInRow * maxAppsInColumn;
 
@@ -51,7 +49,7 @@ export default function Apps() {
         setPageSize(maxApps);
       }
     }, 100),
-    []
+    [gridMX]
   );
 
   useEffect(() => {
@@ -60,7 +58,7 @@ export default function Apps() {
     return () => {
       window.removeEventListener('resize', calculateMaxAppsPerPage);
     };
-  }, []);
+  }, [calculateMaxAppsPerPage, gridMX]);
 
   const paginatedApps = useMemo(
     () => renderApps.slice((page - 1) * pageSize, page * pageSize),
@@ -79,10 +77,10 @@ export default function Apps() {
     <Flex
       flexDirection={'column'}
       flex={1}
+      height={'0'}
       {...blurBackgroundStyles}
       py={'32px'}
       px={{ base: '24px', xl: '36px' }}
-      height={'calc(100% - 8px)'}
       position={'relative'}
       zIndex={1}
     >
@@ -90,17 +88,19 @@ export default function Apps() {
         {t('All Apps')}
       </Box>
       <Flex width={'full'} height={'full'} id="apps-container" overflow={'auto'}>
-        <Button
-          minW={'12px'}
-          flexGrow={0}
-          alignSelf={'center'}
-          variant={'unstyled'}
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={page === 1}
-          opacity={page === 1 ? '0.3' : '0.7'}
-        >
-          <ArrowLeftIcon />
-        </Button>
+        {totalPages !== 1 && (
+          <Button
+            minW={'12px'}
+            flexGrow={0}
+            alignSelf={'center'}
+            variant={'unstyled'}
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={page === 1}
+            opacity={page === 1 ? '0.3' : '0.7'}
+          >
+            <ArrowLeftIcon />
+          </Button>
+        )}
         <Grid
           overflow={'hidden'}
           flex={1}
@@ -136,7 +136,7 @@ export default function Apps() {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc={logo || '/logo.svg'}
+                    fallbackSrc={logo}
                     draggable={false}
                     alt="app logo"
                   />
@@ -157,17 +157,19 @@ export default function Apps() {
               </Flex>
             ))}
         </Grid>
-        <Button
-          minW={'12px'}
-          flexGrow={0}
-          alignSelf={'center'}
-          variant={'unstyled'}
-          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={page === totalPages}
-          opacity={page === totalPages ? '0.3' : '0.7'}
-        >
-          <ArrowRightIcon />
-        </Button>
+        {totalPages !== 1 && (
+          <Button
+            minW={'12px'}
+            flexGrow={0}
+            alignSelf={'center'}
+            variant={'unstyled'}
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={page === totalPages}
+            opacity={page === totalPages ? '0.3' : '0.7'}
+          >
+            <ArrowRightIcon />
+          </Button>
+        )}
       </Flex>
       <HStack justifyContent="center">
         {Array.from({ length: totalPages }, (_, index) => (

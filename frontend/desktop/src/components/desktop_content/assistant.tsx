@@ -47,7 +47,7 @@ export default function Assistant() {
           🤖
         </text>
       </Icon>
-      <Text display={{ base: 'none', md: 'block' }}>Sealos 小助理</Text>
+      <Text display={{ base: 'none', md: 'block' }}>{t('Sealos Copilot')}</Text>
     </Flex>
   );
 }

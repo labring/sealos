@@ -64,6 +64,7 @@ export default function RegionToggle() {
               disclosure.onOpen();
             }}
             cursor={'pointer'}
+            userSelect={'none'}
           >
             <ZoneIcon />
             <Text>

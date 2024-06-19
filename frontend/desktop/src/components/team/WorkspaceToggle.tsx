@@ -73,6 +73,7 @@ export default function WorkspaceToggle() {
           disclosure.onOpen();
         }}
         cursor={'pointer'}
+        userSelect={'none'}
       >
         <CubeIcon />
         <Text>
@@ -104,6 +105,11 @@ export default function WorkspaceToggle() {
               borderRadius={'8px'}
               p="6px"
               backdropFilter={'blur(50px)'}
+              maxH={'300px'}
+              overflow={'auto'}
+              style={{
+                scrollbarWidth: 'none'
+              }}
             >
               <VStack gap={0} alignItems={'stretch'}>
                 <TeamCenter />

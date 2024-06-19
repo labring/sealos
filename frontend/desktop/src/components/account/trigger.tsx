@@ -31,8 +31,8 @@ export default function Trigger({
         borderRadius="full"
       >
         <Image
-          width={user?.avatar && 'full'}
-          height={user?.avatar && 'full'}
+          width={user?.avatar ? 'full' : ''}
+          height={user?.avatar ? 'full' : ''}
           objectFit={'cover'}
           borderRadius="full"
           src={user?.avatar || ''}

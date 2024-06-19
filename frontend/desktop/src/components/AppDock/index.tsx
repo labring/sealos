@@ -30,7 +30,8 @@ export default function AppDock() {
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
   });
-  const { isAppBar, toggleShape } = useDesktopConfigStore();
+  const { toggleShape } = useDesktopConfigStore();
+  const normalApps = apps.filter((item: TApp) => item?.displayType === 'normal');
 
   const AppMenuLists = useMemo(() => {
     const initialApps: TApp[] = [
@@ -52,7 +53,7 @@ export default function AppDock() {
         },
         displayType: 'hidden'
       },
-      ...apps.slice(0, 5).map((app, index) => ({ ...app, pid: -2 }))
+      ...normalApps.slice(0, 5).map((app, index) => ({ ...app, pid: -2 }))
     ];
 
     const mergedApps = initialApps.map((app) => {
@@ -64,7 +65,7 @@ export default function AppDock() {
       ...mergedApps,
       ...runningInfo.filter((running) => !initialApps.some((app) => app.key === running.key))
     ];
-  }, [apps, runningInfo]);
+  }, [normalApps, runningInfo]);
 
   // Handle icon click event
   const handleNavItem = (e: MouseEvent<HTMLDivElement>, item: AppInfo) => {

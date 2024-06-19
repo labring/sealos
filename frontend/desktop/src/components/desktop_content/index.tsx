@@ -165,7 +165,6 @@ export default function Desktop(props: any) {
               <Assistant />
             </Box>
             <SearchBox />
-            {/* Triggering the account module */}
             <TriggerAccountModule showAccount={showAccount} setShowAccount={setShowAccount} />
           </Flex>
           <Apps />
