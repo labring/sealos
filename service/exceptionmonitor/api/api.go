@@ -27,20 +27,21 @@ var (
 	// records the last database status
 	LastDatabaseClusterStatus = make(map[string]string)
 	// record the debt ns
-	ExceptionDatabaseMap   = make(map[string]bool)
-	FeishuWebHookMap       = make(map[string]string)
-	DebtNamespaceMap       = make(map[string]bool)
-	DiskFullNamespaceMap   = make(map[string]bool)
-	ExceededQuotaException = "exceeded quota"
-	DiskException          = "Writing to log file failed"
-	OwnerLabel             = "user.sealos.io/owner"
-	DatabaseTypeLabel      = "clusterdefinition.kubeblocks.io/name"
-	ClusterName            string
-	MonitorType            string
-	ClusterNS              []string
-	FeishuWebhookURLMap    = map[string]string{}
-	ClusterRegionMap       = map[string]string{}
-	BaseURL                string
+	ExceptionDatabaseMap    = make(map[string]bool)
+	FeishuWebHookMap        = make(map[string]string)
+	DebtNamespaceMap        = make(map[string]bool)
+	DiskFullNamespaceMap    = make(map[string]bool)
+	DiskMonitorNamespaceMap = make(map[string]bool)
+	ExceededQuotaException  = "exceeded quota"
+	DiskException           = "Writing to log file failed"
+	OwnerLabel              = "user.sealos.io/owner"
+	DatabaseTypeLabel       = "clusterdefinition.kubeblocks.io/name"
+	ClusterName             string
+	MonitorType             string
+	ClusterNS               []string
+	FeishuWebhookURLMap     = map[string]string{}
+	ClusterRegionMap        = map[string]string{}
+	BaseURL                 string
 )
 
 func GetENV() error {

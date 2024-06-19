@@ -24,6 +24,15 @@ func main() {
 		fmt.Printf("Failed to initialize cockroachDB: %v", err)
 	}
 
+	go databaseExceptionMonitor()
+	go databaseDiskMonitor()
+	go databaseBackupMonitor()
+
+	select {}
+}
+
+func databaseExceptionMonitor() {
+	var err error
 	for {
 		// execute command every 5 minutes
 		if api.MonitorType != "all" {
@@ -37,5 +46,35 @@ func main() {
 			fmt.Printf("Failed to check database: %v", err)
 		}
 		time.Sleep(5 * time.Minute)
+	}
+}
+
+func databaseDiskMonitor() {
+	var err error
+	for {
+		// execute command every 1 hour
+		err = monitor.CheckDatabaseDisk()
+		if err != nil {
+			fmt.Printf("Failed to check database: %v", err)
+		}
+		time.Sleep(1 * time.Hour)
+	}
+}
+
+func databaseBackupMonitor() {
+	var err error
+	for {
+		// execute command every 5 minutes
+		if api.MonitorType != "all" {
+			for _, ns := range api.ClusterNS {
+				err = monitor.CheckDatabases(ns)
+			}
+		} else {
+			err = monitor.CheckDatabases("")
+		}
+		if err != nil {
+			fmt.Printf("Failed to check database: %v", err)
+		}
+		time.Sleep(1 * time.Hour)
 	}
 }
