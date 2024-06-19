@@ -36,6 +36,6 @@ func main() {
 		if err != nil {
 			fmt.Printf("Failed to check database: %v", err)
 		}
-		time.Sleep(1 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }
