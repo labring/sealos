@@ -87,7 +87,9 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
     id: db.metadata?.uid || ``,
     name: db.metadata?.name || 'db name',
     dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
-    status: StatusMap[db?.status?.phase || 'Waiting'],
+    status: StatusMap[db?.status?.phase || 'Waiting']
+      ? StatusMap[db?.status?.phase || 'Waiting']
+      : StatusMap[StatusEnum.Waiting],
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources.limits.cpu),
     memory: memoryFormatToMi(db.spec?.componentSpecs?.[0]?.resources.limits.memory),
