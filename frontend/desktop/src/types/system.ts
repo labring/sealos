@@ -53,6 +53,7 @@ export type LayoutConfigType = {
   common: {
     githubStarEnabled: boolean;
     workorderEnabled: boolean;
+    accountSettingEnabled: boolean;
     docsUrl?: string;
   };
 };
@@ -193,7 +194,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   },
   common: {
     githubStarEnabled: false,
-    workorderEnabled: false
+    workorderEnabled: false,
+    accountSettingEnabled: false
   }
 };
 

@@ -145,25 +145,27 @@ export default function Account() {
 
         <WorkspaceToggle />
 
-        <Flex
-          borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
-          color={'white'}
-          fontSize={'base'}
-          fontWeight={'bold'}
-          justifyContent={'space-between'}
-          alignItems={'center'}
-          py={'12px'}
-          px={'16px'}
-        >
-          <Text>{t('Account Settings')}</Text>
-          <IconButton
-            variant={'white-bg-icon'}
-            p="4px"
-            // onClick={() => kubeconfig && copyData(kubeconfig)}
-            icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
-            aria-label={'setting'}
-          />
-        </Flex>
+        {layoutConfig?.common.accountSettingEnabled && (
+          <Flex
+            borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
+            color={'white'}
+            fontSize={'base'}
+            fontWeight={'bold'}
+            justifyContent={'space-between'}
+            alignItems={'center'}
+            py={'12px'}
+            px={'16px'}
+          >
+            <Text>{t('Account Settings')}</Text>
+            <IconButton
+              variant={'white-bg-icon'}
+              p="4px"
+              // onClick={() => kubeconfig && copyData(kubeconfig)}
+              icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
+              aria-label={'setting'}
+            />
+          </Flex>
+        )}
         {layoutConfig?.common.workorderEnabled && (
           <Flex
             borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
