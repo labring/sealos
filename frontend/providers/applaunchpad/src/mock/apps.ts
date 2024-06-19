@@ -25,7 +25,8 @@ export const MOCK_APPS: AppListItemType[] = [
     isPause: false,
     maxReplicas: 1,
     minReplicas: 1,
-    storeAmount: 0
+    storeAmount: 0,
+    labels: {}
   },
   {
     id: 'string2',
@@ -48,7 +49,8 @@ export const MOCK_APPS: AppListItemType[] = [
     activeReplicas: 1,
     maxReplicas: 1,
     minReplicas: 1,
-    storeAmount: 0
+    storeAmount: 0,
+    labels: {}
   },
   {
     id: 'string3',
@@ -71,7 +73,8 @@ export const MOCK_APPS: AppListItemType[] = [
     activeReplicas: 1,
     maxReplicas: 1,
     minReplicas: 1,
-    storeAmount: 0
+    storeAmount: 0,
+    labels: {}
   }
 ];
 export const MOCK_NAMESPACE = 'ns-34dccadb-8e62-4205-8c1b-fc2dc146cd68';
@@ -436,5 +439,6 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     password: '',
     serverAddress: ''
   },
-  storeList: []
+  storeList: [],
+  labels: {}
 };

@@ -40,6 +40,8 @@ const map = {
   pdf: require('./icons/file/pdf.svg').default,
   png: require('./icons/file/png.svg').default,
   txt: require('./icons/file/txt.svg').default,
+  upperRight: require('./icons/upperRight.svg').default,
+  target: require('./icons/target.svg').default,
   yaml: require('./icons/file/yaml.svg').default,
   folderLine: require('./icons/file/folder-line.svg').default,
   default: require('./icons/file/default.svg').default,

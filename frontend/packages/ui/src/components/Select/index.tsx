@@ -6,7 +6,8 @@ import {
   MenuItem,
   Button,
   useDisclosure,
-  useOutsideClick
+  useOutsideClick,
+  MenuButton
 } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
@@ -59,7 +60,9 @@ const MySelect = (
           isOpen ? onClose() : onOpen();
         }}
       >
-        <Button
+        <MenuButton
+          as={Button}
+          rightIcon={<ChevronDownIcon />}
           width={width}
           height={height}
           ref={ref}
@@ -99,10 +102,7 @@ const MySelect = (
               <Box>{placeholder}</Box>
             </>
           )}
-
-          <Box flex={1} />
-          <ChevronDownIcon />
-        </Button>
+        </MenuButton>
 
         <MenuList
           minW={(() => {
@@ -121,7 +121,6 @@ const MySelect = (
             '0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)'
           }
           zIndex={99}
-          transform={'translateY(40px) !important'}
           overflow={'overlay'}
           maxH={'300px'}
         >

@@ -268,5 +268,9 @@
   "Start": "Start",
   "Application Source": "Application Source",
   "App Store": "App Store",
-  "Manage all resources": "Manage all resources"
+  "Manage all resources": "Manage all resources",
+  "Remind": "Remind",
+  "Confirm to go": "Confirm to go",
+  "Delete anyway": "Delete anyway",
+  "Delete Template App Tip": "To fully remove this app and all its components, please uninstall it directly from the App Store."
 }

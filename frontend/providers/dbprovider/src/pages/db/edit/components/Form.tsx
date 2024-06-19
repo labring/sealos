@@ -393,7 +393,7 @@ const Form = ({
                 {getValues('replicas') === 1 && (
                   <Tip
                     ml={4}
-                    icon={<MyIcon name="warning" width={'14px'}></MyIcon>}
+                    icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
                     text="The Single-node database is only suitable for development testing."
                     size="sm"
                     borderRadius={'md'}
