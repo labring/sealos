@@ -33,7 +33,7 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
     },
     {
       label: t('Flow'),
-      value: data?.data?.totalStorage,
+      value: `~`,
       icon: <FlowIcon />,
       unit: 'GB'
     }

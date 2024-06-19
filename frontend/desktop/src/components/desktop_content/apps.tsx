@@ -22,7 +22,7 @@ export default function Apps() {
   const gridMX = useBreakpointValue({ base: 32, lg: 48 }) || 32;
   const gridMT = 32;
   const gridSpacing = 36;
-  const appWidth = 60;
+  const appWidth = 80;
   const appHeight = 86;
   const pageButton = 12;
 
@@ -112,8 +112,10 @@ export default function Apps() {
         >
           {paginatedApps &&
             paginatedApps.map((item: TApp, index) => (
-              <Box
-                w="60px"
+              <Flex
+                flexDirection={'column'}
+                alignItems={'center'}
+                w="100%"
                 h="86px"
                 key={index}
                 userSelect="none"
@@ -147,13 +149,12 @@ export default function Apps() {
                   textAlign={'center'}
                   textShadow={'0px 1px 2px rgba(17, 24, 36, 0.40)'}
                   lineHeight={'16px'}
-                  noOfLines={1}
                 >
                   {item?.i18n?.[i18n?.language]?.name
                     ? item?.i18n?.[i18n?.language]?.name
                     : t(item?.name)}
                 </Text>
-              </Box>
+              </Flex>
             ))}
         </Grid>
         <Button

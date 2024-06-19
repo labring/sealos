@@ -1,14 +1,15 @@
+import { useConfigStore } from '@/stores/config';
 import { Flex, FlexProps, Icon, Tooltip } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 
 export default function GithubComponent(props: FlexProps) {
-  const { data } = useQuery(
-    ['getGithubStar'],
-    () => fetch('https://api.github.com/repos/labring/sealos').then((res) => res.json()),
-    {
-      staleTime: 24 * 60 * 60 * 1000
-    }
-  );
+  // const { data } = useQuery(
+  //   ['getGithubStar'],
+  //   () => fetch('https://api.github.com/repos/labring/sealos').then((res) => res.json()),
+  //   {
+  //     staleTime: 24 * 60 * 60 * 1000
+  //   }
+  // );
 
   return (
     <Flex
