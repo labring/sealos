@@ -48,6 +48,7 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 	if isNormal {
 		headerTemplate = "blue"
 		titleContent = "数据库恢复通知"
+		elements = commonElements
 	} else {
 		exceptionElements := []map[string]interface{}{
 			{
