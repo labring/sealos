@@ -72,7 +72,7 @@ export default function Account() {
     <Box position={'relative'} flex={1}>
       <Flex position={'relative'} zIndex={3} px={'16px'} pt={'20px'} flexDirection={'column'}>
         <Flex alignItems={'center'}>
-          <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'10px'}>
+          <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'8px'}>
             <Image
               width={user?.avatar && 'full'}
               height={user?.avatar && 'full'}
@@ -91,14 +91,14 @@ export default function Account() {
             <Flex
               cursor={'pointer'}
               gap="2px"
-              fontSize={'12px'}
+              fontSize={'11px'}
               lineHeight={'16px'}
               fontWeight={'500'}
               color={'rgba(255, 255, 255, 0.70)'}
               alignItems={'center'}
             >
               <Text onClick={() => setShowId((s) => !s)}>
-                {showId ? `ID: ${user?.userId}` : `NS: ${user?.nsid}`}
+                {showId ? `ID:${user?.userId}` : `NS:${user?.nsid}`}
               </Text>
               <CopyIcon
                 onClick={() => {

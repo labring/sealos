@@ -150,7 +150,7 @@ export default function RegionToggle() {
                             <InfoIcon boxSize={'12px'} />
                             <Text>{t('Description')}</Text>
                           </HStack>
-                          <Text color={'white'} lineHeight={'20px'}>
+                          <Text whiteSpace={'pre-wrap'} color={'white'} lineHeight={'20px'}>
                             {region?.description?.description?.[i18n.language as 'zh' | 'en']}
                           </Text>
                         </Box>
