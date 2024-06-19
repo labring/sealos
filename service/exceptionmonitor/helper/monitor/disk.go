@@ -2,13 +2,13 @@ package monitor
 
 import (
 	"encoding/json"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 )
 
 func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error) {
@@ -54,9 +54,6 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 			return false, err
 		}
 	}
-	if usage > 95 {
-		return true, nil
-	}
 	if usage > 80 {
 		ownerNS, err := GetNSOwner(namespace)
 		if err != nil {
@@ -66,6 +63,9 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 		if err != nil {
 			return false, err
 		}
+	}
+	if usage > 95 {
+		return true, nil
 	}
 	return false, nil
 }
