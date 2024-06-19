@@ -26,8 +26,7 @@ func main() {
 
 	go databaseExceptionMonitor()
 	go databaseDiskMonitor()
-	go databaseBackupMonitor()
-
+	//go databaseBackupMonitor()
 	select {}
 }
 
@@ -57,24 +56,24 @@ func databaseDiskMonitor() {
 		if err != nil {
 			fmt.Printf("Failed to check database: %v", err)
 		}
-		time.Sleep(1 * time.Hour)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
-func databaseBackupMonitor() {
-	var err error
-	for {
-		// execute command every 5 minutes
-		if api.MonitorType != "all" {
-			for _, ns := range api.ClusterNS {
-				err = monitor.CheckDatabases(ns)
-			}
-		} else {
-			err = monitor.CheckDatabases("")
-		}
-		if err != nil {
-			fmt.Printf("Failed to check database: %v", err)
-		}
-		time.Sleep(1 * time.Hour)
-	}
-}
+//func databaseBackupMonitor() {
+//	var err error
+//	for {
+//		// execute command every 5 minutes
+//		if api.MonitorType != "all" {
+//			for _, ns := range api.ClusterNS {
+//				err = monitor.CheckDatabases(ns)
+//			}
+//		} else {
+//			err = monitor.CheckDatabases("")
+//		}
+//		if err != nil {
+//			fmt.Printf("Failed to check database: %v", err)
+//		}
+//		time.Sleep(1 * time.Hour)
+//	}
+//}
