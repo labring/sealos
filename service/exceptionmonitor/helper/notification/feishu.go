@@ -19,7 +19,7 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("集群环境：%s", api.ClusterName),
+				"content": fmt.Sprintf("集群环境：%s", api.ClusterRegionMap[api.ClusterName]),
 				"tag":     "lark_md",
 			},
 		},
