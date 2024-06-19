@@ -45,7 +45,6 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 			},
 		},
 	}
-	fmt.Println(commonElements)
 	if isNormal {
 		headerTemplate = "blue"
 		titleContent = "数据库恢复通知"
@@ -95,6 +94,7 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 		fmt.Println("Error marshaling JSON:", err)
 		return ""
 	}
+	fmt.Println(string(databaseMessage))
 	return string(databaseMessage)
 }
 
@@ -103,6 +103,7 @@ func SendFeishuNotification(message, feishuWebHook string) error {
 		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
 
+	fmt.Println(222)
 	// Create a map to hold the POST request body
 	bodyMap := map[string]interface{}{
 		"msg_type": "interactive",
