@@ -2,7 +2,6 @@ package notification
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -42,8 +41,6 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 	}
 	name := strings.ReplaceAll(databaseName, "-", ".")
 	phoneNumbers, err := GetPhoneNumberByNS(namespace)
-	fmt.Println(api.ClusterRegionMap)
-	fmt.Println(api.ClusterRegionMap[clusterName])
 	if err != nil {
 		return err
 	}
