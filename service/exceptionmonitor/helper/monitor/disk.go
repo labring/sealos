@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,7 +13,12 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
-func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error) {
+const (
+	databaseDiskMonitorThreshold      = 85.0
+	databaseExceptionMonitorThreshold = 99.0
+)
+
+func checkDisk(namespace, databaseClusterName, databaseType, UID, checkType string) (bool, error) {
 	var kubeconfig string
 	params := url.Values{}
 	params.Add("namespace", namespace)
@@ -55,18 +61,28 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (bool, error
 			return false, err
 		}
 	}
-	if usage > 80 {
+	if checkType == "databaseDiskExceptionCheck" && usage >= databaseDiskMonitorThreshold {
 		ownerNS, err := GetNSOwner(namespace)
 		if err != nil {
 			return false, err
+		}
+		if api.DiskMonitorNamespaceMap[UID] {
+			return false, nil
 		}
 		err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
 		if err != nil {
 			return false, err
 		}
+		return true, nil
+	} else if checkType == "databaseDiskExceptionCheck" && usage < databaseDiskMonitorThreshold {
+		delete(api.DiskMonitorNamespaceMap, UID)
+		fmt.Println(api.DiskMonitorNamespaceMap)
+		return false, nil
 	}
-	if usage > 95 {
+
+	if usage > databaseExceptionMonitorThreshold {
 		return true, nil
 	}
+
 	return false, nil
 }
