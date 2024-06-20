@@ -8,7 +8,8 @@ export enum APPTYPE {
 }
 
 export type WindowSize = 'maximize' | 'maxmin' | 'minimize';
-export type displayType = 'normal' | 'hidden' | 'more ';
+export type displayType = 'normal' | 'hidden' | 'more';
+
 export type TAppFront = {
   isShow: boolean;
   zIndex: number;
