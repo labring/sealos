@@ -61,6 +61,7 @@ func checkDisk(namespace, databaseClusterName, databaseType, UID, checkType stri
 			return false, err
 		}
 	}
+	fmt.Println(databaseClusterName, usage)
 	if checkType == "databaseDiskExceptionCheck" && usage >= databaseDiskMonitorThreshold {
 		ownerNS, err := GetNSOwner(namespace)
 		fmt.Println("aaaaaaa")
