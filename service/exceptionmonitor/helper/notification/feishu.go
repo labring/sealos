@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"net/http"
 )
 
 func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, events, reason string) string {
@@ -139,4 +138,72 @@ func SendFeishuNotification(message, feishuWebHook string) error {
 		return err
 	}
 	return nil
+}
+
+func createCard(headerTemplate, headerTitle string, elements []map[string]string) map[string]interface{} {
+	card := map[string]interface{}{
+		"config": map[string]bool{
+			"wide_screen_mode": true,
+		},
+		"elements": make([]map[string]interface{}, len(elements)),
+		"header": map[string]interface{}{
+			"template": headerTemplate,
+			"title": map[string]string{
+				"content": headerTitle,
+				"tag":     "plain_text",
+			},
+		},
+	}
+
+	for i, element := range elements {
+		card["elements"].([]map[string]interface{})[i] = map[string]interface{}{
+			"tag": "div",
+			"text": map[string]string{
+				"content": fmt.Sprintf("%s：%s", element["label"], element["value"]),
+				"tag":     "lark_md",
+			},
+		}
+	}
+
+	return card
+}
+
+func createElements(namespace, backupName, status, startTime, reason string, includeReason bool) []map[string]string {
+	elements := []map[string]string{
+		{"label": "集群环境", "value": api.ClusterRegionMap[api.ClusterName]},
+		{"label": "命名空间", "value": namespace},
+		{"label": "备份名", "value": backupName},
+		{"label": "备份状态", "value": status},
+		{"label": "备份开始时间", "value": startTime},
+	}
+	if includeReason {
+		elements = append(elements, map[string]string{"label": "备份异常原因", "value": reason})
+	}
+	return elements
+}
+
+func marshalCard(card map[string]interface{}) (string, error) {
+	databaseMessage, err := json.Marshal(card)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+	return string(databaseMessage), nil
+}
+
+func GetBackupMessage(notificationType, namespace, backupName, status, startTime, reason string) string {
+	var card map[string]interface{}
+	if notificationType == "exception" {
+		elements := createElements(namespace, backupName, status, startTime, reason, true)
+		card = createCard("red", "备份异常通知", elements)
+	} else {
+		elements := createElements(namespace, backupName, status, startTime, "", false)
+		card = createCard("blue", "备份恢复通知", elements)
+	}
+
+	databaseMessage, err := marshalCard(card)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return databaseMessage
 }

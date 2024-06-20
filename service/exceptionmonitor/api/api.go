@@ -32,6 +32,8 @@ var (
 	DebtNamespaceMap        = make(map[string]bool)
 	DiskFullNamespaceMap    = make(map[string]bool)
 	DiskMonitorNamespaceMap = make(map[string]bool)
+	LastBackupStatusMap     = make(map[string]string)
+	IsSendBackupStatusMap   = make(map[string]string)
 	ExceededQuotaException  = "exceeded quota"
 	DiskException           = "Writing to log file failed"
 	OwnerLabel              = "user.sealos.io/owner"
@@ -65,6 +67,8 @@ func GetENV() error {
 		"FeishuWebhookURLOther",
 		//Important Cluster NS
 		"FeishuWebhookURLImportant",
+		//Backup
+		"FeishuWebhookURLBackup",
 	}, FeishuWebhookURLMap, &missingEnvVars)
 
 	// Get ClusterRegionMap
