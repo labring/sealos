@@ -3,12 +3,12 @@ import request from '@/services/request';
 import useAppStore from '@/stores/app';
 import { formatTime } from '@/utils/tools';
 import { Box, Button, Flex, Text, UseDisclosureReturn } from '@chakra-ui/react';
-import { ClearOutlineIcon, CloseIcon, WarnIcon } from '@sealos/ui';
+import { ClearOutlineIcon, CloseIcon, WarnIcon, useMessage } from '@sealos/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { produce } from 'immer';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import { NotificationItem } from '@/types';
 
@@ -23,6 +23,8 @@ export default function Notification(props: TNotification) {
   const { installedApps, openApp } = useAppStore();
   const [readNotes, setReadNotes] = useState<NotificationItem[]>([]);
   const [unReadNotes, setUnReadNotes] = useState<NotificationItem[]>([]);
+  const { message } = useMessage();
+  const isForbiddenRef = useRef(false);
 
   const [MessageConfig, setMessageConfig] = useState<{
     activeTab: 'read' | 'unread';
@@ -46,7 +48,8 @@ export default function Notification(props: TNotification) {
           handleNotificationData(messages);
         }
       },
-      refetchInterval: 5 * 60 * 1000
+      refetchInterval: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000
     }
   );
 
@@ -63,7 +66,7 @@ export default function Notification(props: TNotification) {
     unReadMessage.sort(compareByTimestamp);
     readMessage.sort(compareByTimestamp);
 
-    if (unReadMessage?.[0]?.spec?.desktopPopup) {
+    if (unReadMessage?.[0]?.spec?.desktopPopup && !isForbiddenRef.current) {
       setMessageConfig(
         produce((draft) => {
           draft.popupMessage = unReadMessage[0];
@@ -79,8 +82,23 @@ export default function Notification(props: TNotification) {
   const notifications = MessageConfig.activeTab === 'unread' ? unReadNotes : readNotes;
 
   const readMsgMutation = useMutation({
-    mutationFn: (name: string[]) => request.post('/api/notification/read', { name }),
-    onSettled: () => refetch()
+    mutationFn: (name: string[]) =>
+      request.post<{ code: number; reason: string }>('/api/notification/read', { name }),
+    onSettled: () => refetch(),
+    onSuccess: (data) => {
+      if (data.data.code === 403) {
+        isForbiddenRef.current = true;
+        message({
+          status: 'warning',
+          title: data.data.reason
+        });
+        setMessageConfig(
+          produce((draft) => {
+            draft.popupMessage = undefined;
+          })
+        );
+      }
+    }
   });
 
   const goMsgDetail = (item: NotificationItem) => {

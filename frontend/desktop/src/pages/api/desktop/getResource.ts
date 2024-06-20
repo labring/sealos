@@ -25,9 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let totalMemoryLimits = 0;
     let totalStorageRequests = 0;
     let runningPodCount = 0;
-    let totalPodCount = result.body.items.length;
+    let totalPodCount = 0;
 
     for (const pod of result.body.items) {
+      if (pod.status?.phase === 'Succeeded') continue;
+      totalPodCount++;
+
       if (pod.status?.phase === 'Running') {
         runningPodCount++;
       }
