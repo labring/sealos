@@ -78,3 +78,26 @@ export const getWechatResult = (payload: { code: string }) =>
 export const getGlobalNotification = () => {
   return request.get<any, ApiResp<NotificationItem>>('/api/notification/global');
 };
+
+export const getResource = () => {
+  return request.get<
+    any,
+    ApiResp<{
+      totalCpu: string;
+      totalMemory: string;
+      totalStorage: string;
+      runningPodCount: string;
+      totalPodCount: string;
+    }>
+  >('/api/desktop/getResource');
+};
+
+export const getUserBilling = () => {
+  return request.post<
+    any,
+    ApiResp<{
+      prevMonthTime: number;
+      prevDayTime: number;
+    }>
+  >('/api/desktop/getBilling');
+};

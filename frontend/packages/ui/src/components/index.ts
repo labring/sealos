@@ -34,7 +34,10 @@ import SettingIcon from './icons/SettingIcon';
 import LogoutIcon from './icons/LogoutIcon';
 import GithubIcon from './icons/GithubIcon';
 import GoogleIcon from './icons/GoogleIcon';
+import DocsIcon from './icons/DocsIcon';
+import NotificationIcon from './icons/NotificationIcon';
 import WechatIcon from './icons/WechatIcon';
+import WarnTriangleIcon from './icons/WarnTriangleIcon';
 import ListIcon from './icons/ListIcon';
 import PortIcon from './icons/PortIcon';
 import WarnIcon from './icons/WarnIcon';
@@ -84,6 +87,7 @@ export {
   FileIcon,
   FolderIcon,
   GroupAddIcon,
+  WarnTriangleIcon,
   GithubIcon,
   GoogleIcon,
   InfoCircleIcon,
@@ -104,6 +108,8 @@ export {
   VisibityIcon,
   WechatIcon,
   PortIcon,
+  NotificationIcon,
+  DocsIcon,
   WarnIcon,
   CloseIcon,
   SortPolygonUpIcon,

@@ -1,7 +1,7 @@
 import { formatTime } from '@/utils/tools';
 import { Flex, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const WeekDay = {
   Sunday: '周日',
@@ -25,9 +25,7 @@ export default function TimeComponent(props: any) {
       clearInterval(timer);
     };
   }, []);
-  // useLayoutEffect(()=>{
-  //   setTime(new Date())
-  // },[])
+
   const day = useMemo(() => {
     try {
       const temp = formatTime(time, 'dddd') as keyof typeof WeekDay;

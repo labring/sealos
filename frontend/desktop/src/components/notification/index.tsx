@@ -36,15 +36,19 @@ export default function Notification(props: TNotification) {
     popupMessage: undefined
   });
 
-  const { refetch } = useQuery(['getNotifications'], () => request('/api/notification/list'), {
-    onSuccess: (data) => {
-      const messages = data?.data?.items as NotificationItem[];
-      if (messages) {
-        handleNotificationData(messages);
-      }
-    },
-    refetchInterval: 5 * 60 * 1000
-  });
+  const { refetch } = useQuery(
+    ['getNotifications'],
+    () => request('/api/notification/listNotification'),
+    {
+      onSuccess: (data) => {
+        const messages = data?.data?.items as NotificationItem[];
+        if (messages) {
+          handleNotificationData(messages);
+        }
+      },
+      refetchInterval: 5 * 60 * 1000
+    }
+  );
 
   const handleNotificationData = (data: NotificationItem[]) => {
     const parseIsRead = (item: NotificationItem) =>
@@ -193,12 +197,11 @@ export default function Notification(props: TNotification) {
                 ml={'auto'}
                 onClick={() => markAllAsRead()}
                 variant={'white-bg-icon'}
-                leftIcon={<ClearOutlineIcon color={'grayModern.600'} />}
+                leftIcon={<ClearOutlineIcon color={'rgba(255, 255, 255, 0.60)'} />}
                 iconSpacing="4px"
+                borderRadius={'4px'}
               >
-                <Text color={'#434F61'} className={styles.tab}>
-                  {t('Read All')}
-                </Text>
+                <Text className={styles.tab}>{t('Read All')}</Text>
               </Button>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
@@ -317,28 +320,33 @@ export default function Notification(props: TNotification) {
           h={'170px'}
           top={'48px'}
           right={'0px'}
-          bg="rgba(255, 255, 255, 0.80)"
+          bg="rgba(220, 220, 224, 0.05)"
           backdropFilter={'blur(50px)'}
           boxShadow={'0px 15px 20px 0px rgba(0, 0, 0, 0.10)'}
           borderRadius={'12px 0px 12px 12px'}
           p="20px"
+          zIndex={9}
+          color={'white'}
         >
           <Flex alignItems={'center'}>
             <WarnIcon />
-            <Text fontSize={'16px'} fontWeight={600} color={'#24282C'} ml="10px">
+            <Text fontSize={'16px'} fontWeight={600} ml="10px">
               {i18n.language === 'zh' && MessageConfig.popupMessage?.spec?.i18ns?.zh?.title
                 ? MessageConfig.popupMessage?.spec?.i18ns?.zh?.title
                 : MessageConfig.popupMessage?.spec?.title}
             </Text>
             <CloseIcon
               ml="auto"
+              fill={'white'}
               cursor={'pointer'}
               onClick={() => {
+                const temp = MessageConfig.popupMessage;
                 setMessageConfig(
                   produce((draft) => {
                     draft.popupMessage = undefined;
                   })
                 );
+                readMsgMutation.mutate([temp?.metadata?.name || '']);
               }}
             />
           </Flex>
@@ -347,7 +355,6 @@ export default function Notification(props: TNotification) {
             mt="14px"
             fontSize="12px"
             fontWeight={400}
-            color="#000000"
             className="overflow-auto"
             noOfLines={2}
             height={'36px'}
@@ -361,13 +368,12 @@ export default function Notification(props: TNotification) {
             <Button
               w="78px"
               h="32px"
-              bg="#F8FAFB"
+              bg="rgba(255, 255, 255, 0.20)"
               borderRadius={'4px'}
-              _hover={{ bg: '#F8FAFB' }}
+              variant={'unstyled'}
+              color={'white'}
               onClick={() => {
                 const temp = MessageConfig.popupMessage;
-                readMsgMutation.mutate([temp?.metadata?.name || '']);
-                disclosure.onOpen();
                 setMessageConfig(
                   produce((draft) => {
                     draft.activePage = 'detail';
@@ -375,6 +381,8 @@ export default function Notification(props: TNotification) {
                     draft.popupMessage = undefined;
                   })
                 );
+                readMsgMutation.mutate([temp?.metadata?.name || '']);
+                disclosure.onOpen();
               }}
             >
               {t('Detail')}
@@ -382,16 +390,18 @@ export default function Notification(props: TNotification) {
             <Button
               w="78px"
               h="32px"
-              variant={'primary'}
+              variant={'unstyled'}
+              bg={'white'}
+              color={'grayModern.900'}
               borderRadius={'4px'}
               onClick={() => {
                 const temp = MessageConfig.popupMessage;
-                readMsgMutation.mutate([temp?.metadata?.name || '']);
                 setMessageConfig(
                   produce((draft) => {
                     draft.popupMessage = undefined;
                   })
                 );
+                readMsgMutation.mutate([temp?.metadata?.name || '']);
                 handleCharge();
               }}
             >
