@@ -63,6 +63,7 @@ func checkDisk(namespace, databaseClusterName, databaseType, UID, checkType stri
 	}
 	if checkType == "databaseDiskExceptionCheck" && usage >= databaseDiskMonitorThreshold {
 		ownerNS, err := GetNSOwner(namespace)
+		fmt.Println("aaaaaaa")
 		if err != nil {
 			return false, err
 		}
@@ -75,12 +76,14 @@ func checkDisk(namespace, databaseClusterName, databaseType, UID, checkType stri
 		}
 		return true, nil
 	} else if checkType == "databaseDiskExceptionCheck" && usage < databaseDiskMonitorThreshold {
+		fmt.Println("bbbbbb")
 		delete(api.DiskMonitorNamespaceMap, UID)
 		fmt.Println(api.DiskMonitorNamespaceMap)
 		return false, nil
 	}
 
 	if usage > databaseExceptionMonitorThreshold {
+		fmt.Println(222)
 		return true, nil
 	}
 

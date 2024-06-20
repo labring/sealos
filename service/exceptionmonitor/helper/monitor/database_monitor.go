@@ -94,7 +94,9 @@ func CheckDatabases(ns string) error {
 						}
 						alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "unknown")
 					} else {
+						fmt.Println(333)
 						if !api.DiskFullNamespaceMap[databaseClusterName] {
+							fmt.Println(444)
 							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
 							alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "disk is full")
 							notificationMessage := "disk is full"
