@@ -44,7 +44,7 @@ func databaseExceptionMonitor() {
 		if err != nil {
 			fmt.Printf("Failed to check database: %v", err)
 		}
-		time.Sleep(5 * time.Minute)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
@@ -56,6 +56,7 @@ func databaseDiskMonitor() {
 		if err != nil {
 			fmt.Printf("Failed to check database: %v", err)
 		}
+		fmt.Println(111)
 		time.Sleep(1 * time.Minute)
 	}
 }

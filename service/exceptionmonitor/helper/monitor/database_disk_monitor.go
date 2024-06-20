@@ -24,6 +24,7 @@ func CheckDatabaseDisk() error {
 		}
 		if diskFull {
 			api.DiskMonitorNamespaceMap[UID] = true
+			fmt.Println("cccccc")
 			fmt.Println(api.DiskMonitorNamespaceMap)
 		}
 	}
