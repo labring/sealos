@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"net/http"
+
+	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
 func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, events, reason string) string {
