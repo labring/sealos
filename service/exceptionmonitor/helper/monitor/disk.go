@@ -77,12 +77,11 @@ func checkDisk(namespace, databaseClusterName, databaseType, UID, checkType stri
 				return false, err
 			}
 			return true, nil
-		} else {
-			fmt.Println("bbbbbb")
-			delete(api.DiskMonitorNamespaceMap, UID)
-			fmt.Println(api.DiskMonitorNamespaceMap)
-			return false, nil
 		}
+		fmt.Println("bbbbbb")
+		delete(api.DiskMonitorNamespaceMap, UID)
+		fmt.Println(api.DiskMonitorNamespaceMap)
+		return false, nil
 	}
 
 	if usage > databaseExceptionMonitorThreshold {
