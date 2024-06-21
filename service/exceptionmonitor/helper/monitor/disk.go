@@ -56,9 +56,10 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (float64, er
 		value := result.Value[1].(string)
 		usage, err = strconv.ParseFloat(value, 64)
 		if err != nil {
+			fmt.Println(111)
 			return 0.0, err
 		}
-		if maxUsage > usage {
+		if maxUsage < usage {
 			maxUsage = usage
 		}
 	}
