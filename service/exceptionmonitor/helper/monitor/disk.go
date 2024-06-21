@@ -30,6 +30,7 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (float64, er
 	if err != nil {
 		return 0.0, err
 	}
+	fmt.Println(namespace)
 	kubeconfig, err = getKubeConfig(namespace)
 	if err != nil {
 		return 0.0, err
@@ -56,14 +57,12 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (float64, er
 		value := result.Value[1].(string)
 		usage, err = strconv.ParseFloat(value, 64)
 		if err != nil {
-			fmt.Println(111)
 			return 0.0, err
 		}
 		if maxUsage < usage {
 			maxUsage = usage
 		}
 	}
-	fmt.Println(databaseClusterName, maxUsage)
 	return maxUsage, nil
 	//if usage >= databaseDiskMonitorThreshold {
 	//	ownerNS, err := GetNSOwner(namespace)
