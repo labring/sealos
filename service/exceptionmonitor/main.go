@@ -43,7 +43,7 @@ func databaseExceptionMonitor() {
 			err = monitor.CheckDatabases("")
 		}
 		if err != nil {
-			fmt.Printf("Failed to check database: %v", err)
+			fmt.Printf("Failed to check database: %v\n", err)
 		}
 	}
 }
