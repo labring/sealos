@@ -24,6 +24,7 @@ func CheckDatabaseDisk() {
 		maxUsage, err := checkDisk(namespace, databaseClusterName, databaseType)
 		if err != nil {
 			fmt.Printf("Failed to check database disk: %v\n", err)
+			continue
 		}
 		if maxUsage >= databaseDiskMonitorThreshold {
 			ownerNS, err := GetNSOwner(namespace)
@@ -36,6 +37,7 @@ func CheckDatabaseDisk() {
 			err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
 			if err != nil {
 				fmt.Printf("Failed to send sms to user: %v\n", err)
+				continue
 			}
 			api.DiskMonitorNamespaceMap[UID] = true
 		} else {
