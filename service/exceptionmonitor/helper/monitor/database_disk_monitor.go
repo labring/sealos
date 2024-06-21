@@ -18,6 +18,9 @@ func CheckDatabaseDisk() error {
 	}
 	for _, cluster := range clusters.Items {
 		databaseClusterName, databaseType, namespace, UID := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
+		if databaseClusterName == "dsf" || databaseClusterName == "dfsds" {
+			fmt.Println(databaseClusterName)
+		}
 		diskFull, err := checkDisk(namespace, databaseClusterName, databaseType, UID, "databaseDiskExceptionCheck")
 		if err != nil {
 			return err
