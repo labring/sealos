@@ -114,10 +114,11 @@ func CheckDatabases(ns string) error {
 				//database exception notification
 				if isSend {
 					api.FeishuWebHookMap[databaseClusterName] = feishuWebHook
-					err = notification.SendFeishuNotification(alertMessage, feishuWebHook)
-					if err != nil {
-						fmt.Printf("Error sending exception notification: %v\n", err)
-					}
+					fmt.Println(alertMessage)
+					//err = notification.SendFeishuNotification(alertMessage, feishuWebHook)
+					//if err != nil {
+					//	fmt.Printf("Error sending exception notification: %v\n", err)
+					//}
 				}
 				continue
 			}

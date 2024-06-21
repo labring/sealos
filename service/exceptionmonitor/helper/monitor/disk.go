@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -61,6 +62,7 @@ func checkDisk(namespace, databaseClusterName, databaseType string) (float64, er
 			maxUsage = usage
 		}
 	}
+	fmt.Println(databaseClusterName, maxUsage)
 	return maxUsage, nil
 	//if usage >= databaseDiskMonitorThreshold {
 	//	ownerNS, err := GetNSOwner(namespace)
