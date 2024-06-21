@@ -34,7 +34,7 @@ func databaseExceptionMonitor() {
 	var err error
 	for {
 		// execute command every 5 minutes
-		time.Sleep(5 * time.Minute)
+		time.Sleep(1 * time.Minute)
 		if api.MonitorType != "all" {
 			for _, ns := range api.ClusterNS {
 				err = monitor.CheckDatabases(ns)
@@ -51,7 +51,7 @@ func databaseExceptionMonitor() {
 func databaseDiskMonitor() {
 	var err error
 	for {
-		time.Sleep(60 * time.Minute)
+		time.Sleep(1 * time.Minute)
 		// execute command every 1 hour
 		err = monitor.CheckDatabaseDisk()
 		if err != nil {
