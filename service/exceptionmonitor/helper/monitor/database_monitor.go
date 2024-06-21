@@ -82,11 +82,11 @@ func CheckDatabases(ns string) error {
 			if debt {
 				databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
 				if send {
-					diskFull, err := checkDisk(namespace, databaseClusterName, databaseType, "", "databaseExceptionCheck")
+					maxUsage, err := checkDisk(namespace, databaseClusterName, databaseType)
 					if err != nil {
 						fmt.Printf("check disk err: %s \n", err)
 					}
-					if !diskFull {
+					if maxUsage < databaseExceptionMonitorThreshold {
 						if status == "Creating" || status == "Deleting" || status == "Stopping" {
 							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
 						} else {

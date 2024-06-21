@@ -5,31 +5,43 @@ import (
 	"fmt"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func CheckDatabaseDisk() error {
+func CheckDatabaseDisk() {
 	var clusters *unstructured.UnstructuredList
 	var err error
 	clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		fmt.Printf("Failed to get clusters: %v", err)
+		return
 	}
+
 	for _, cluster := range clusters.Items {
 		databaseClusterName, databaseType, namespace, UID := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
-		if databaseClusterName == "dsf" || databaseClusterName == "dfsds" {
-			fmt.Println(databaseClusterName)
-		}
-		diskFull, err := checkDisk(namespace, databaseClusterName, databaseType, UID, "databaseDiskExceptionCheck")
+		maxUsage, err := checkDisk(namespace, databaseClusterName, databaseType)
 		if err != nil {
-			return err
+			fmt.Printf("Failed to check database disk: %v", err)
 		}
-		if diskFull {
+		if maxUsage >= databaseDiskMonitorThreshold {
+			ownerNS, err := GetNSOwner(namespace)
+			if err != nil {
+				fmt.Printf("Failed to get ns owner: %v", err)
+			}
+			if api.DiskMonitorNamespaceMap[UID] {
+				continue
+			}
+			err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
+			if err != nil {
+				fmt.Printf("Failed to send sms to user: %v", err)
+			}
 			api.DiskMonitorNamespaceMap[UID] = true
-			fmt.Println("cccccc")
-			fmt.Println(api.DiskMonitorNamespaceMap)
+		} else {
+			if api.DiskMonitorNamespaceMap[UID] {
+				delete(api.DiskMonitorNamespaceMap, UID)
+			}
 		}
 	}
-	return nil
 }

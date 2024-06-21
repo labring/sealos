@@ -49,14 +49,10 @@ func databaseExceptionMonitor() {
 }
 
 func databaseDiskMonitor() {
-	var err error
 	for {
 		time.Sleep(1 * time.Minute)
 		// execute command every 1 hour
-		err = monitor.CheckDatabaseDisk()
-		if err != nil {
-			fmt.Printf("Failed to check database: %v", err)
-		}
+		monitor.CheckDatabaseDisk()
 	}
 }
 
