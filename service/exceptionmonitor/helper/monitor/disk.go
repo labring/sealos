@@ -62,25 +62,27 @@ func checkDisk(namespace, databaseClusterName, databaseType, UID, checkType stri
 		}
 		fmt.Println(databaseClusterName, checkType, usage)
 	}
-	if checkType == "databaseDiskExceptionCheck" && usage >= databaseDiskMonitorThreshold {
-		ownerNS, err := GetNSOwner(namespace)
-		fmt.Println("aaaaaaa")
-		if err != nil {
-			return false, err
-		}
-		if api.DiskMonitorNamespaceMap[UID] {
+	if checkType == "databaseDiskExceptionCheck" {
+		if usage >= databaseDiskMonitorThreshold {
+			ownerNS, err := GetNSOwner(namespace)
+			fmt.Println("aaaaaaa")
+			if err != nil {
+				return false, err
+			}
+			if api.DiskMonitorNamespaceMap[UID] {
+				return false, nil
+			}
+			err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		} else {
+			fmt.Println("bbbbbb")
+			delete(api.DiskMonitorNamespaceMap, UID)
+			fmt.Println(api.DiskMonitorNamespaceMap)
 			return false, nil
 		}
-		err = notification.SendToSms(ownerNS, databaseClusterName, api.ClusterName, "磁盘超过百分之八十")
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	} else if checkType == "databaseDiskExceptionCheck" && usage < databaseDiskMonitorThreshold {
-		fmt.Println("bbbbbb")
-		delete(api.DiskMonitorNamespaceMap, UID)
-		fmt.Println(api.DiskMonitorNamespaceMap)
-		return false, nil
 	}
 
 	if usage > databaseExceptionMonitorThreshold {
