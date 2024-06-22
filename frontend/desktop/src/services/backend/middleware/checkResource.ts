@@ -4,6 +4,7 @@ import { getUserKubeconfigNotPatch, K8sApiDefault } from '../kubernetes/admin';
 import { jsonRes } from '../response';
 import { generateAuthenticationToken } from '../auth';
 import { RESOURCE_STATUS } from '@/types/user';
+import { JoinStatus } from 'prisma/region/generated/client';
 export const resourceGuard =
   (userUid: string) => async (res: NextApiResponse, next?: () => void) => {
     const userCr = await prisma.userCr.findUnique({
@@ -30,7 +31,9 @@ export const resourceGuard =
         message: RESOURCE_STATUS.PRIVATE_WORKSPACE_NOT_FOUND,
         code: 404
       });
-    const OwnerWorspaces = userWorkspaces.filter((w) => w.role === 'OWNER');
+    const OwnerWorspaces = userWorkspaces.filter(
+      (w) => w.role === 'OWNER' && w.status === JoinStatus.IN_WORKSPACE
+    );
     if (OwnerWorspaces.length > 1)
       return jsonRes(res, {
         message: RESOURCE_STATUS.REMAIN_WORKSACE_OWNER,
@@ -148,6 +151,12 @@ export const otherRegionResourceGuard =
     const otherData = await Promise.all(otherCheckResp.map((resp) => resp.clone().json()));
     for (let i = 0; i < otherData.length; i++) {
       const resp = otherData[i];
+      if (resp?.message === RESOURCE_STATUS.INTERNAL_SERVER_ERROR) {
+        return jsonRes(res, {
+          code: 500,
+          message: RESOURCE_STATUS.GET_RESOURCE_ERROR
+        });
+      }
       if (
         resp?.message !== RESOURCE_STATUS.RESULT_SUCCESS &&
         resp?.message !== RESOURCE_STATUS.USER_CR_NOT_FOUND

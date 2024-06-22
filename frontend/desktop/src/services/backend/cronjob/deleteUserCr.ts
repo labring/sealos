@@ -6,8 +6,8 @@ import { CronJobStatus } from '@/services/backend/cronjob/index';
 export class DeleteUserCrJob implements CronJobStatus {
   private userUid = '';
   transactionType = TransactionType.DELETE_USER;
-  UNIT_TIMEOUT = 30000;
-  COMMIT_TIMEOUT = 60000;
+  UNIT_TIMEOUT = 3000;
+  COMMIT_TIMEOUT = 30000;
   constructor(private transactionUid: string, private infoUid: string) {}
   async init() {
     const infoUid = this.infoUid;
@@ -31,9 +31,15 @@ export class DeleteUserCrJob implements CronJobStatus {
       // throw new Error('the userCR not found');
     }
     const deleteResult = await setUserDelete(userCr.crName);
+
     if (!deleteResult) {
       throw new Error(`delete User not Success`);
     }
+    prisma.userWorkspace.deleteMany({
+      where: {
+        userCrUid: userCr.uid
+      }
+    });
   }
   canCommit() {
     return true;

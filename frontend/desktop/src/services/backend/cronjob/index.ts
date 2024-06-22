@@ -17,7 +17,7 @@ export type CronJobStatus = {
   COMMIT_TIMEOUT: number;
   commit: () => Promise<void>;
 };
-const TIMEOUT = 60000;
+const TIMEOUT = 5000;
 const getJob = (
   transaction: Prisma.Result<
     typeof globalPrisma.precommitTransaction,
@@ -39,6 +39,7 @@ const getJob = (
 export const runTransactionjob = async () => {
   // console.log('run transactionjob', new Date());
   const regionUid = getRegionUid();
+  let isTimeoutTransactionDetail = false;
   // find task
   let transactionDetail = await globalPrisma.transactionDetail.findFirst({
     where: {
@@ -59,13 +60,17 @@ export const runTransactionjob = async () => {
         //  death lock
         status: TransactionStatus.RUNNING,
         updatedAt: {
-          gte: dayjs().subtract(TIMEOUT, 'ms').toDate()
+          lte: dayjs().subtract(TIMEOUT, 'ms').toDate()
         }
+      },
+      orderBy: {
+        updatedAt: 'asc'
       },
       include: {
         precommitTransaction: true
       }
     });
+    isTimeoutTransactionDetail = true;
   }
   // not found task
   if (!transactionDetail) {
@@ -80,6 +85,12 @@ export const runTransactionjob = async () => {
   // startingRunning
   if (transaction.status === TransactionStatus.READY) {
     await globalPrisma.$transaction([
+      globalPrisma.transactionDetail.findUniqueOrThrow({
+        where: {
+          uid: transactionDetail.uid,
+          status: TransactionStatus.READY
+        }
+      }),
       globalPrisma.transactionDetail.update({
         where: {
           uid: transactionDetail.uid,
@@ -100,21 +111,51 @@ export const runTransactionjob = async () => {
       })
     ]);
   } else if (transaction.status === TransactionStatus.RUNNING) {
-    await globalPrisma.transactionDetail.update({
-      where: {
-        uid: transactionDetail.uid,
-        status: TransactionStatus.READY
-      },
-      data: {
-        status: TransactionStatus.RUNNING
-      }
-    });
+    if (isTimeoutTransactionDetail) {
+      await globalPrisma.$transaction([
+        // make sure it is not running
+        globalPrisma.transactionDetail.findUniqueOrThrow({
+          where: {
+            uid: transactionDetail.uid,
+            updatedAt: {
+              lte: dayjs().subtract(TIMEOUT, 'ms').toDate()
+            }
+          }
+        }),
+        globalPrisma.transactionDetail.update({
+          where: {
+            uid: transactionDetail.uid,
+            status: TransactionStatus.RUNNING
+          },
+          data: {
+            status: TransactionStatus.RUNNING
+          }
+        })
+      ]);
+    } else {
+      await globalPrisma.$transaction([
+        globalPrisma.transactionDetail.findUniqueOrThrow({
+          where: {
+            uid: transactionDetail.uid,
+            status: TransactionStatus.READY
+          }
+        }),
+        globalPrisma.transactionDetail.update({
+          where: {
+            uid: transactionDetail.uid,
+            status: TransactionStatus.READY
+          },
+          data: {
+            status: TransactionStatus.RUNNING
+          }
+        })
+      ]);
+    }
   } else {
     return;
   }
   // try {
   await job.unit();
-  // it will appear conflict if rollback to ready
   await globalPrisma.transactionDetail.update({
     where: {
       uid: transactionDetail.uid,
@@ -126,7 +167,7 @@ export const runTransactionjob = async () => {
   });
 };
 
-// running => finish
+// running => finish or error
 export const finishTransactionJob = async () => {
   // console.log('finish transactionjob', new Date());
   const regionList = await globalPrisma.region.findMany({});
@@ -137,17 +178,16 @@ export const finishTransactionJob = async () => {
     include: {
       transactionDetail: {
         select: {
-          status: true
+          status: true,
+          regionUid: true
         }
       }
     }
   });
   const needFinishTransactionList = transactionList
     .filter((tx) => {
-      const finishCount = tx.transactionDetail.filter(
-        (d) => d.status === TransactionStatus.FINISH
-      ).length;
-      return finishCount === regionList.length;
+      const finishList = tx.transactionDetail.filter((d) => d.status === TransactionStatus.FINISH);
+      return regionList.every(({ uid }) => finishList.findIndex((f) => f.regionUid) >= 0);
     })
     .map((tx) => tx.uid);
   if (!needFinishTransactionList) return;
@@ -184,7 +224,7 @@ export const commitTransactionjob = async () => {
   const currentTime = new Date().getTime();
   // the record will be updated when status is updated
   if (currentTime - unCommitedTransaction.updatedAt.getTime() > job.COMMIT_TIMEOUT)
-    await await globalPrisma.$transaction([
+    await globalPrisma.$transaction([
       globalPrisma.commitTransactionSet.create({
         data: {
           precommitTransactionUid: unCommitedTransaction.uid

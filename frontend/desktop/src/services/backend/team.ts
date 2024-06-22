@@ -5,17 +5,52 @@ import {
   RoleAction,
   UserRole
 } from '@/types/team';
-import { KubeConfig } from '@kubernetes/client-node';
+import { KubeConfig, V1Status } from '@kubernetes/client-node';
 import { K8sApiDefault } from './kubernetes/admin';
-import { ApplyYaml } from './kubernetes/user';
+import { ApplyYaml, GetCRD } from './kubernetes/user';
 import { prisma } from '@/services/backend/db/init';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 import { roleToUserRole, UserRoleToRole, vaildManage } from '@/utils/tools';
+import { createHash } from 'node:crypto';
+import { StatusCR } from '@/types';
 
 const _applyRoleRequest =
-  (kc: KubeConfig, nsid: string) =>
+  (kc: KubeConfig, nsid: string, idempotent: boolean = false) =>
   (action: 'Grant' | 'Deprive' | 'Update') =>
-  (k8s_username: string, role: UserRole) => {
+  async (k8s_username: string, role: UserRole) => {
+    const hash = createHash('sha256');
+    const props = {
+      user: k8s_username,
+      namespace: nsid,
+      action,
+      role: ROLE_LIST[role]
+    };
+    let name = '';
+    // if (idempotent) {
+    // 	hash.update(JSON.stringify(props));
+    // 	name = hash.digest('hex');
+    // 	try {
+    // 		const result = await GetCRD(kc,
+    // 			{ group: 'user.sealos.io', version: "v1", namespace: nsid, plural: 'operationrequests' },
+    // 			name)
+    // 		console.log('merge is exist op', result)
+    // 		return
+    // 	} catch (res: any) {
+    // 		console.log("merge , isn't exist op", res)
+    // 		const body = res.body as V1Status;
+    // 		if (
+    // 			!(body &&
+    // 				body.kind === 'Status' &&
+    // 				res.body.reason === 'NotFound' &&
+    // 				res.body.code === 404)
+    // 		) {
+    // 			return Promise.reject();
+    // 		}
+    // 	}
+    // } else {
+    hash.update(JSON.stringify(props) + new Date().getTime());
+    name = hash.digest('hex');
+    // }
     const createCR = () =>
       ApplyYaml(
         kc,
@@ -23,7 +58,8 @@ const _applyRoleRequest =
           user: k8s_username,
           namespace: nsid,
           action,
-          role: ROLE_LIST[role]
+          role: ROLE_LIST[role],
+          name
         })
       );
     return new Promise((resolve, reject) => {
@@ -42,6 +78,7 @@ const _applyRoleRequest =
       wrap();
     });
   };
+
 export const applyDeleteRequest = (user: string) => {
   const kc = new KubeConfig();
   kc.loadFromDefault();
@@ -151,7 +188,7 @@ export const mergeUserWorkspaceRole = async ({
   mergeUserRole: Role;
 }) => {
   const kc = K8sApiDefault();
-  const applyRoleRequest = _applyRoleRequest(kc, workspaceId);
+  const applyRoleRequest = _applyRoleRequest(kc, workspaceId, true);
   const grantApply = applyRoleRequest('Grant');
   const depriveApply = applyRoleRequest('Deprive');
   const updateApply = applyRoleRequest('Update');
@@ -316,6 +353,15 @@ export const mergeUserModifyBinding = async ({
       role = mergeUserRole;
     }
     await prisma.$transaction([
+      prisma.userWorkspace.findUniqueOrThrow({
+        where: {
+          workspaceUid_userCrUid: {
+            userCrUid: userCrUid,
+            workspaceUid
+          },
+          role: userRole
+        }
+      }),
       prisma.userWorkspace.update({
         where: {
           workspaceUid_userCrUid: {
@@ -337,62 +383,4 @@ export const mergeUserModifyBinding = async ({
       })
     ]);
   }
-};
-
-export const mergeUserModifyBindingCommit = async ({
-  preUserCrUid,
-  workspaceUid,
-  targetUserCrUid,
-  targetUserRole,
-  preUserRole
-}: {
-  preUserCrUid: string;
-  workspaceUid: string;
-  targetUserCrUid: string;
-  targetUserRole?: Role;
-  preUserRole: Role;
-}) => {
-  let role;
-  if (undefined === targetUserRole || targetUserRole === null) {
-    role = preUserRole;
-  } else {
-    const targetUserRoleisHigher = vaildManage(roleToUserRole(targetUserRole))(
-      roleToUserRole(preUserRole),
-      true
-    );
-    if (targetUserRoleisHigher) {
-      role = targetUserRole;
-    } else {
-      role = preUserRole;
-    }
-  }
-
-  return prisma.$transaction([
-    prisma.userWorkspace.upsert({
-      where: {
-        workspaceUid_userCrUid: {
-          userCrUid: targetUserCrUid,
-          workspaceUid
-        }
-      },
-      create: {
-        role,
-        userCrUid: targetUserCrUid,
-        workspaceUid,
-        status: JoinStatus.IN_WORKSPACE,
-        isPrivate: false
-      },
-      update: {
-        role
-      }
-    }),
-    prisma.userWorkspace.delete({
-      where: {
-        workspaceUid_userCrUid: {
-          userCrUid: preUserCrUid,
-          workspaceUid
-        }
-      }
-    })
-  ]);
 };

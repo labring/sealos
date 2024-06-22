@@ -4,7 +4,7 @@ import { applyDeleteRequest } from '@/services/backend/team';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/services/backend/db/init';
 import { validate } from 'uuid';
-import { JoinStatus, Role } from 'prisma/region/generated/client';
+import { Role } from 'prisma/region/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -40,13 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!res1) throw new Error('fail to update user ');
     const res2 = await applyDeleteRequest(creator);
     if (!res2) throw new Error('fail to delete namespace ');
-    const results = await prisma.userWorkspace.updateMany({
+    const results = await prisma.userWorkspace.deleteMany({
       where: {
         workspaceUid: ns_uid,
         isPrivate: false
-      },
-      data: {
-        status: JoinStatus.NOT_IN_WORKSPACE
       }
     });
 

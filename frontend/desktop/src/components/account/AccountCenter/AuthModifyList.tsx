@@ -1,7 +1,7 @@
 import { useConfigStore } from '@/stores/config';
 import useSessionStore, { OauthAction } from '@/stores/session';
 import { OauthProvider } from '@/types/user';
-import { Text, Image } from '@chakra-ui/react';
+import { Text, Image, Center } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import router from 'next/router';
 import { useMemo } from 'react';
@@ -24,7 +24,6 @@ export function AuthModifyList({
   const { authConfig: conf, layoutConfig } = useConfigStore();
   const { setProvider, generateState } = useSessionStore();
   const { t } = useTranslation();
-  const logo = layoutConfig?.logo || '';
   const authActionList: {
     title: string;
     actionCb: (actino: OauthAction) => void;
@@ -112,14 +111,16 @@ export function AuthModifyList({
         RightElement={
           <>
             {auth.isBinding ? (
-              <Image
-                boxSize={'48px'}
-                bgColor={'grayModern.150'}
-                borderRadius="full"
-                src={avatarUrl}
-                fallbackSrc={logo}
-                alt="user avator"
-              />
+              <Center boxSize={'48px'} bg={'grayModern.150'} borderRadius="full">
+                <Image
+                  objectFit={'cover'}
+                  borderRadius="full"
+                  src={avatarUrl}
+                  fallbackSrc={'/images/default-user.svg'}
+                  alt="user avator"
+                  draggable={'false'}
+                />
+              </Center>
             ) : (
               <Text>{t('Unbound')}</Text>
             )}

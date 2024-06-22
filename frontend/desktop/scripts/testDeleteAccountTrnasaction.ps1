@@ -1,4 +1,5 @@
 $desktopHostName = Read-Host "输入域名"
+$start = Read-Host "输入开始"
 $url = "https://${desktopHostName}/api/auth/password"
 $tokenUrl = "https://${desktopHostName}/api/auth/regionToken"
 $deleteAccountUrl = "https://${desktopHostName}/api/auth/delete"
@@ -7,7 +8,7 @@ $requests = 500
 $batchSize = 20
 $delay = 5
 
-for ($i = 0; $i -lt $requests; $i += $batchSize) {
+for ($i = $start; $i -lt $requests; $i += $batchSize) {
 		
 	foreach ($num in ($i..($i + $batchSize))) {
 		$body = @{

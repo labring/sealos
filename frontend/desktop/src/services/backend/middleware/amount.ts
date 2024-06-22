@@ -13,7 +13,7 @@ export const accountBalanceGuard =
     if (!account)
       return jsonRes(res, {
         code: 404,
-        message: 'account not found'
+        message: RESOURCE_STATUS.ACCOUNT_NOT_FOUND
       });
     const balance = Number(account.balance || 0) - Number(account.deduction_balance || 0);
     if (balance < 0)

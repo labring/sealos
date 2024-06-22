@@ -31,16 +31,49 @@ export const mergeUserSvc =
       }
     });
     // add task ( catch by outer )
-    await globalPrisma.$transaction([
+    await globalPrisma.$transaction(async (tx) => {
       // optimistic
-      ...oauthProviderList.flatMap((oauthProvider) => [
-        globalPrisma.oauthProvider.findUniqueOrThrow({
+      // ...oauthProviderList.flatMap((oauthProvider) => [
+      // 	globalPrisma.oauthProvider.findUniqueOrThrow({
+      // 		where: {
+      // 			uid: oauthProvider.uid,
+      // 			userUid: mergeUserUid
+      // 		}
+      // 	}),
+      // 	globalPrisma.oauthProvider.update({
+      // 		where: {
+      // 			uid: oauthProvider.uid,
+      // 			userUid: mergeUserUid
+      // 		},
+      // 		data: {
+      // 			userUid
+      // 		}
+      // 	}),
+      // 	globalPrisma.auditLog.create({
+      // 		data: {
+      // 			action: AuditAction.UPDATE,
+      // 			entityUid: oauthProvider.uid,
+      // 			entityName: 'oauthProvider',
+      // 			auditLogDetail: {
+      // 				create: [
+      // 					{
+      // 						key: 'userUid',
+      // 						preValue: mergeUserUid,
+      // 						newValue: userUid
+      // 					}
+      // 				]
+      // 			}
+      // 		}
+      // 	})
+      // ]),
+      for await (const oauthProvider of oauthProviderList) {
+        await tx.oauthProvider.findUniqueOrThrow({
           where: {
             uid: oauthProvider.uid,
             userUid: mergeUserUid
           }
-        }),
-        globalPrisma.oauthProvider.update({
+        });
+        await tx.oauthProvider.update({
           where: {
             uid: oauthProvider.uid,
             userUid: mergeUserUid
@@ -48,8 +81,8 @@ export const mergeUserSvc =
           data: {
             userUid
           }
-        }),
-        globalPrisma.auditLog.create({
+        });
+        await tx.auditLog.create({
           data: {
             action: AuditAction.UPDATE,
             entityUid: oauthProvider.uid,
@@ -64,31 +97,31 @@ export const mergeUserSvc =
               ]
             }
           }
-        })
-      ]),
-      globalPrisma.precommitTransaction.create({
+        });
+      }
+      await tx.precommitTransaction.create({
         data: {
           uid: txUid,
           status: TransactionStatus.READY,
           infoUid,
           transactionType: TransactionType.MERGE_USER
         }
-      }),
-      globalPrisma.mergeUserTransactionInfo.create({
+      });
+      await tx.mergeUserTransactionInfo.create({
         data: {
           uid: infoUid,
           mergeUserUid,
           userUid
         }
-      }),
-      globalPrisma.transactionDetail.createMany({
+      });
+      await tx.transactionDetail.createMany({
         data: regionList.map((regionUid) => ({
           status: TransactionStatus.READY,
           transactionUid: txUid,
           regionUid
         }))
-      })
-    ]);
+      });
+    });
     return jsonRes(res, {
       message: RESOURCE_STATUS.RESULT_SUCCESS,
       code: 200

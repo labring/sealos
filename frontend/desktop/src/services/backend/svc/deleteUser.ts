@@ -31,22 +31,14 @@ export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) =
   if (!regionResults) throw Error('region list is null');
   const regionList = regionResults.map((r) => r.uid);
   // add task ( catch by outer )
-  await globalPrisma.$transaction([
-    globalPrisma.precommitTransaction.create({
-      data: {
-        uid: txUid,
-        status: TransactionStatus.READY,
-        infoUid,
-        transactionType: TransactionType.DELETE_USER
-      }
-    }),
-    ...oauthProviderList.flatMap((oauthProvider) => [
-      globalPrisma.oauthProvider.delete({
+  await globalPrisma.$transaction(async (tx) => {
+    for await (const oauthProvider of oauthProviderList) {
+      await tx.oauthProvider.delete({
         where: {
           uid: oauthProvider.uid
         }
-      }),
-      globalPrisma.auditLog.create({
+      });
+      await tx.auditLog.create({
         data: {
           action: AuditAction.DELETE,
           entityUid: oauthProvider.uid,
@@ -61,22 +53,30 @@ export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) =
             ]
           }
         }
-      })
-    ]),
-    globalPrisma.deleteUserTransactionInfo.create({
+      });
+    }
+    await tx.precommitTransaction.create({
+      data: {
+        uid: txUid,
+        status: TransactionStatus.READY,
+        infoUid,
+        transactionType: TransactionType.DELETE_USER
+      }
+    });
+    await tx.deleteUserTransactionInfo.create({
       data: {
         uid: infoUid,
         userUid
       }
-    }),
-    globalPrisma.transactionDetail.createMany({
+    });
+    await tx.transactionDetail.createMany({
       data: regionList.map((regionUid) => ({
         status: TransactionStatus.READY,
         transactionUid: txUid,
         regionUid
       }))
-    })
-  ]);
+    });
+  });
   return jsonRes(res, {
     message: RESOURCE_STATUS.RESULT_SUCCESS,
     code: 200

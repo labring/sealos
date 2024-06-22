@@ -16,7 +16,7 @@ import { generateCronJobToken } from '../auth';
 export class MergeUserCrJob implements CronJobStatus {
   private mergeUserUid = '';
   private userUid: string = '';
-  UNIT_TIMEOUT = 30000;
+  UNIT_TIMEOUT = 3000;
   COMMIT_TIMEOUT = 60000;
   transactionType = TransactionType.MERGE_USER;
   constructor(private transactionUid: string, private infoUid: string) {}
@@ -82,23 +82,28 @@ export class MergeUserCrJob implements CronJobStatus {
       ]);
       // modify role
       await Promise.all(
-        mergeUserWorkspaceList.map(async ({ role, workspaceUid, workspace }) => {
-          const userWorkspace = userWorkspaceList.find((r) => r.workspaceUid === workspaceUid);
-          // modify k8s resource, the handle is idempotent
-          await mergeUserWorkspaceRole({
-            mergeUserRole: role,
-            userRole: userWorkspace?.role,
-            workspaceId: workspace.id,
-            mergeUserCrName: mergeUserCr.crName,
-            userCrName: userCr.crName
-          });
-          // modify db resource
-          await mergeUserModifyBinding({
-            mergeUserCrUid: mergeUserCr.uid,
-            mergeUserRole: role,
-            userCrUid: userCr.uid,
-            workspaceUid
-          });
+        mergeUserWorkspaceList.map(async ({ role: mergeUserRole, workspaceUid, workspace }) => {
+          try {
+            const userWorkspace = userWorkspaceList.find((r) => r.workspaceUid === workspaceUid);
+            // modify k8s resource, the handle is idempotent
+            await mergeUserWorkspaceRole({
+              mergeUserRole,
+              userRole: userWorkspace?.role,
+              workspaceId: workspace.id,
+              mergeUserCrName: mergeUserCr.crName,
+              userCrName: userCr.crName
+            });
+            // modify db resource
+            await mergeUserModifyBinding({
+              mergeUserCrUid: mergeUserCr.uid,
+              mergeUserRole,
+              userCrUid: userCr.uid,
+              workspaceUid,
+              userRole: userWorkspace?.role
+            });
+          } catch (err: any) {
+            console.error(err);
+          }
         })
       );
     }
@@ -186,16 +191,9 @@ export class MergeUserCrJob implements CronJobStatus {
           userUid: mergeUserUid
         }
       }),
-      globalPrisma.precommitTransaction.findUniqueOrThrow({
-        where: {
-          uid: this.transactionUid,
-          status: TransactionStatus.FINISH
-        }
-      }),
       globalPrisma.precommitTransaction.update({
         where: {
-          uid: this.transactionUid,
-          status: TransactionStatus.FINISH
+          uid: this.transactionUid
         },
         data: {
           status: TransactionStatus.COMMITED
