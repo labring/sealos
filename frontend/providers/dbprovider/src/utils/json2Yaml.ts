@@ -10,7 +10,7 @@ import {
 import { StorageClassName } from '@/store/env';
 import type { BackupItemType, DBDetailType, DBEditType, DBType } from '@/types/db';
 import { DumpForm, MigrateForm } from '@/types/migrate';
-import { formatTime, str2Num } from '@/utils/tools';
+import { encodeToHex, formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
@@ -25,7 +25,6 @@ import { V1StatefulSet } from '@kubernetes/client-node';
  * @returns Generated YAML configuration.
  */
 export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType) => {
-  const userNS = getUserNamespace();
   const resources = {
     limits: {
       cpu: `${str2Num(Math.floor(data.cpu))}m`,
@@ -50,7 +49,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
             [BACKUP_LABEL_KEY]: JSON.stringify({
               [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
                 name: backupInfo.name,
-                namespace: userNS,
+                namespace: backupInfo.namespace,
                 connectionPassword: backupInfo.connectionPassword
               }
             })
@@ -907,7 +906,7 @@ export const json2ManualBackup = ({
     metadata: {
       // finalizers: ['dataprotection.kubeblocks.io/finalizer'],
       labels: {
-        [BACKUP_REMARK_LABEL_KEY]: remark
+        [BACKUP_REMARK_LABEL_KEY]: encodeToHex(remark || '')
       },
       name
     },

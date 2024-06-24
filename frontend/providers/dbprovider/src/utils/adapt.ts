@@ -7,6 +7,7 @@ import { InternetMigrationCR, MigrateItemType } from '@/types/migrate';
 import {
   convertCronTime,
   cpuFormatToM,
+  decodeFromHex,
   formatPodTime,
   formatTime,
   memoryFormatToMi,
@@ -152,17 +153,19 @@ export const adaptEvents = (events: CoreV1EventList): PodEvent[] => {
 export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   const autoLabel = 'dataprotection.kubeblocks.io/autobackup';
   const passwordLabel = 'dataprotection.kubeblocks.io/connection-password';
+  const remark = backup.metadata.labels[BACKUP_REMARK_LABEL_KEY];
 
   return {
     id: backup.metadata.uid,
     name: backup.metadata.name,
+    namespace: backup.metadata.namespace,
     status:
       backup.status?.phase && backupStatusMap[backup.status.phase]
         ? backupStatusMap[backup.status.phase]
         : backupStatusMap.UnKnow,
     startTime: backup.metadata.creationTimestamp,
     type: autoLabel in backup.metadata.labels ? BackupTypeEnum.auto : BackupTypeEnum.manual,
-    remark: backup.metadata.labels[BACKUP_REMARK_LABEL_KEY] || '-',
+    remark: remark ? decodeFromHex(remark) : '-',
     failureReason: backup.status?.failureReason,
     connectionPassword: backup.metadata?.annotations?.[passwordLabel]
   };

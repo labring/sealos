@@ -38,6 +38,7 @@ export interface BackupCRItemType {
     labels: Record<string, string>;
     name: string;
     uid: string;
+    namespace: string;
   };
   spec: {
     backupPolicyName: string;

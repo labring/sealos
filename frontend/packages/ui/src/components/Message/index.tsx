@@ -24,7 +24,6 @@ export default function useMessage(props?: UseToastOptions) {
 
   const message = useToast({
     position: 'top',
-    duration: 2000,
     ...props,
     render: (props) => {
       return (
@@ -47,12 +46,19 @@ export default function useMessage(props?: UseToastOptions) {
                   fontSize={props?.description ? '16px' : '14px'}
                   fontWeight={props?.description ? 500 : 400}
                   mb={props?.description ? '6px' : '0px'}
+                  whiteSpace={'normal'}
+                  wordBreak={'break-word'}
                 >
                   {props?.title}
                 </Box>
               )}
               {props?.description && (
-                <Box fontSize={'14px'} fontWeight={400}>
+                <Box
+                  fontSize={'14px'}
+                  fontWeight={400}
+                  whiteSpace={'normal'}
+                  wordBreak={'break-word'}
+                >
                   {props?.description}
                 </Box>
               )}

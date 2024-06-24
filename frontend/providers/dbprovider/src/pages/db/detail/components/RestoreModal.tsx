@@ -23,7 +23,7 @@ import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
-const BackupModal = ({
+const RestoreModal = ({
   db,
   backupInfo,
   onClose,
@@ -118,4 +118,4 @@ const BackupModal = ({
   );
 };
 
-export default BackupModal;
+export default RestoreModal;

@@ -85,3 +85,5 @@ export const getMonitorData = (payload: {
   start: number;
   end: number;
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
+
+export const getOpsRequest = (name: string) => GET(`/api/opsrequest/get?name=${name}`);

@@ -42,7 +42,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
-  const { checkQuotaAllow, balance } = useUserStore();
+  const { checkQuotaAllow } = useUserStore();
+
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t(applyMessage)
