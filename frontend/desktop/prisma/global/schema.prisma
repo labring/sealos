@@ -51,8 +51,8 @@ model AccountTransaction {
   deduction_balance BigInt
   balance           BigInt
   message           String?
-  created_at        DateTime? @default(now()) @db.Timestamptz(3)
-  updated_at        DateTime? @default(now()) @db.Timestamptz(3)
+  created_at        DateTime @default(now()) @db.Timestamptz(3)
+  updated_at        DateTime @default(now()) @db.Timestamptz(3)
   billing_id        String    @db.Uuid
 }
 

@@ -7,9 +7,3 @@
 */
 -- AlterEnum
 ALTER TYPE "ProviderType" ADD VALUE 'EMAIL';
-
--- AlterTable
-ALTER TABLE "AccountTransaction" DROP COLUMN "useruid";
-ALTER TABLE "AccountTransaction" ADD COLUMN     "userUid" UUID NOT NULL;
-ALTER TABLE "AccountTransaction" ALTER COLUMN "created_at" DROP NOT NULL;
-ALTER TABLE "AccountTransaction" ALTER COLUMN "updated_at" DROP NOT NULL;
