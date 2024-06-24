@@ -13,6 +13,7 @@ export const sendSmsCodeResp =
     });
   };
 export const sendPhoneCodeSvc = (phone: string) => async (res: NextApiResponse) => {
+  console.log('svc!');
   const code = await smsReq(phone);
   return sendSmsCodeResp('phone', phone, code)(res);
 };
