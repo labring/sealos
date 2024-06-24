@@ -2,6 +2,7 @@
 
 encodeToHex() {
   local input="$1"
+  input=$(echo "$input" | cut -c -30)
   echo -n "$input" | xxd -p | tr -d '\n'
 }
 
@@ -10,9 +11,9 @@ decodeFromHex() {
   echo -n "$input" | xxd -r -p
 }
 
-backups=$(kubectl get Backup -A -o json)
+backups=$(kubectl get Backup -A -o json | jq -c '.items[]')
 
-echo "$backups" | jq -c '.items[]' | while read -r backup; do
+echo "$backups" | while IFS= read -r backup; do
   namespace=$(echo "$backup" | jq -r '.metadata.namespace')
   name=$(echo "$backup" | jq -r '.metadata.name')
 
