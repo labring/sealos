@@ -14,7 +14,7 @@ costCenter:
       uri: ""
   # gpuEnabled: false
   recharge:
-    enabled: false
+    enabled: true
     payMethods:
       wechat:
         enabled: false
@@ -23,4 +23,4 @@ costCenter:
         publicKey: ""
   components:
     accountService:
-      url: "http://account-service.account-system.svc:2333"
+      url: "http://127.0.0.1:2333"
