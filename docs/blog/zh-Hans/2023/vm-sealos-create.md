@@ -11,7 +11,7 @@ tags: [kubernetes,sealos]
 ### 前置条件
 1、安装好multipass
 如果需要虚拟机把ip暴露出来，需要配置一下网桥
-[multipass配置教程](https://laogen.cc/multipass-bridge-network-on-linux/)
+https://multipass.run/docs/networks-command
 
 2、~/.ssh必要创建好，使用本地ssh来作为虚拟机的ssh
 ```
