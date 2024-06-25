@@ -103,6 +103,8 @@ const Form = ({
                     className="template-dynamic-label"
                     color={'#333'}
                     userSelect={'none'}
+                    whiteSpace={'pre-wrap'}
+                    wordBreak={'break-word'}
                   >
                     {item?.label}
                     {item?.required && (
