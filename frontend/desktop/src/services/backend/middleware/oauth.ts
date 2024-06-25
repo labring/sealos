@@ -1,20 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '../response';
 import { isNumber } from 'lodash';
-import {
-  MERGE_USER_READY,
-  PROVIDER_STATUS,
-  TgithubToken,
-  TgithubUser,
-  TWechatToken,
-  TWechatUser
-} from '@/types/user';
+import { TgithubToken, TgithubUser, TWechatToken, TWechatUser } from '@/types/user';
 import * as jwt from 'jsonwebtoken';
 import { userCanMerge } from '@/utils/tools';
 import { ProviderType } from 'prisma/global/generated/client';
 import { globalPrisma } from '../db/init';
 import { addOrUpdateCode } from '../db/mergeUserCode';
 import { v4 } from 'uuid';
+import { BIND_STATUS } from '@/types/response/bind';
+import { UNBIND_STATUS } from '@/types/response/unbind';
 
 export const OauthCodeFilter = async (
   req: NextApiRequest,
@@ -216,7 +211,7 @@ export const bindGuard =
       if (providerType === 'EMAIL')
         return jsonRes(res, {
           code: 409,
-          message: MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT
+          message: BIND_STATUS.MERGE_USER_PROVIDER_CONFLICT
         });
       const mergeUserUid = oauthProvider.userUid;
       const [mergeUserOauthProviders, curUserOauthProviders] = await globalPrisma.$transaction([
@@ -235,7 +230,7 @@ export const bindGuard =
       if (!canMerge) {
         return jsonRes(res, {
           code: 409,
-          message: MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT
+          message: BIND_STATUS.MERGE_USER_PROVIDER_CONFLICT
         });
       } else {
         const code = v4();
@@ -246,7 +241,7 @@ export const bindGuard =
         });
         return jsonRes(res, {
           code: 203,
-          message: MERGE_USER_READY.MERGE_USER_CONTINUE,
+          message: BIND_STATUS.MERGE_USER_CONTINUE,
           data: {
             code
           }
@@ -273,7 +268,7 @@ export const unbindGuard =
     if (!oauthProvider)
       return jsonRes(res, {
         code: 409,
-        message: PROVIDER_STATUS.PROVIDER_NOT_FOUND
+        message: UNBIND_STATUS.PROVIDER_NOT_FOUND
       });
     await Promise.resolve(next?.());
   };

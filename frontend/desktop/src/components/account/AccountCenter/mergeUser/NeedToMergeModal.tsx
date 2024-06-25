@@ -19,6 +19,8 @@ import { useTranslation } from 'react-i18next';
 import { mergeUserRequest } from '@/api/auth';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { useEffect, useState } from 'react';
+import { USER_MERGE_STATUS } from '@/types/response/merge';
+import { ValueOf } from '@/types';
 
 function NeedToMerge({ ...props }: BoxProps & {}) {
   const { mergeUserStatus, mergeUserData, setMergeUserStatus, setMergeUserData } =
@@ -30,6 +32,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
   };
 
   const { t } = useTranslation();
+  const errorT = useTranslation('error').t;
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const mutation = useMutation({
@@ -37,10 +40,10 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
     onSuccess() {
       queryClient.clear();
     },
-    onError(err) {
+    onError(err: { message: ValueOf<USER_MERGE_STATUS> }) {
       toast({
         status: 'error',
-        title: (err as any).message
+        title: errorT(err.message)
       });
     },
     onSettled() {

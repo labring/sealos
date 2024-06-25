@@ -70,7 +70,8 @@ const useSessionStore = create<SessionState>()(
         return state;
       },
       compareState: (state: string) => {
-        let isSuccess = state === get().oauth_state;
+        // fix wechat
+        let isSuccess = decodeURIComponent(state) === decodeURIComponent(get().oauth_state);
         console.log(state, get().oauth_state);
         const [action, ...statePayload] = state.split('_');
         set({ oauth_state: undefined });

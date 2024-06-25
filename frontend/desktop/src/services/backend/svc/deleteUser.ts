@@ -1,9 +1,9 @@
 import { NextApiResponse } from 'next';
 import { jsonRes } from '../response';
 import { globalPrisma, prisma } from '../db/init';
-import { RESOURCE_STATUS } from '@/types/user';
 import { v4 } from 'uuid';
 import { TransactionType, TransactionStatus, AuditAction } from 'prisma/global/generated/client';
+import { RESOURCE_STATUS } from '@/types/response/checkResource';
 
 export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) => {
   const user = await globalPrisma.user.findUnique({

@@ -2,8 +2,11 @@ import { globalPrisma } from '../db/init';
 import { NextApiResponse } from 'next';
 import { ProviderType } from 'prisma/global/generated/client';
 import { jsonRes } from '../response';
-import { BIND_STATUS, UNBIND_STATUS, CHANGE_BIND_STATUS, PROVIDER_STATUS } from '@/types/user';
 import { findUser } from '../globalAuth';
+import { BIND_STATUS } from '@/types/response/bind';
+import { CHANGE_BIND_STATUS } from '@/types/response/changeBind';
+import { UNBIND_STATUS } from '@/types/response/unbind';
+import { PROVIDER_STATUS } from '@/types/response/utils';
 async function addOauthProvider({
   providerType,
   providerId,

@@ -3,8 +3,8 @@ import { globalPrisma, prisma } from '../db/init';
 import { getUserKubeconfigNotPatch, K8sApiDefault } from '../kubernetes/admin';
 import { jsonRes } from '../response';
 import { generateAuthenticationToken } from '../auth';
-import { RESOURCE_STATUS } from '@/types/user';
 import { JoinStatus } from 'prisma/region/generated/client';
+import { RESOURCE_STATUS } from '@/types/response/checkResource';
 export const resourceGuard =
   (userUid: string) => async (res: NextApiResponse, next?: () => void) => {
     const userCr = await prisma.userCr.findUnique({

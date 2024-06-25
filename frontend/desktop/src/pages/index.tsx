@@ -124,7 +124,12 @@ export async function getServerSideProps({ req, res, locales }: any) {
 
   return {
     props: {
-      ...(await serverSideTranslations(local, ['common', 'cloudProviders'], null, locales || [])),
+      ...(await serverSideTranslations(
+        local,
+        ['common', 'cloudProviders', 'error'],
+        null,
+        locales || []
+      )),
       sealos_cloud_domain
     }
   };

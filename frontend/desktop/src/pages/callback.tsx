@@ -8,11 +8,12 @@ import { uploadConvertData } from '@/api/platform';
 import { isString } from 'lodash';
 import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
 import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
-import { BIND_STATUS, MERGE_USER_READY } from '@/types/user';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import axios from 'axios';
 import request from '@/services/request';
+import { BIND_STATUS } from '@/types/response/bind';
+import { MERGE_USER_READY } from '@/types/response/utils';
 export default function Callback() {
   const router = useRouter();
   const setProvider = useSessionStore((s) => s.setProvider);

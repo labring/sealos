@@ -20,11 +20,11 @@ import { SettingInputGroup } from '../SettingInputGroup';
 import { SettingInputRightElement } from '../SettingInputRightElement';
 import { useTimer } from '@/hooks/useTimer';
 import { ApiResp } from '@/types';
-import { MERGE_USER_READY } from '@/types/user';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SmsType } from '@/services/backend/db/verifyCode';
 import { smsIdValid } from './utils';
+import { MERGE_USER_READY } from '@/types/response/utils';
 
 const smsBindGen = (smsType: SmsType) =>
   function SmsBindCore({ onClose }: { onClose: () => void }) {

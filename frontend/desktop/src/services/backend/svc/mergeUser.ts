@@ -1,9 +1,9 @@
 import { NextApiResponse } from 'next';
 import { jsonRes } from '../response';
 import { globalPrisma } from '../db/init';
-import { RESOURCE_STATUS, USER_MERGE_STATUS } from '@/types/user';
 import { v4 } from 'uuid';
 import { TransactionType, TransactionStatus, AuditAction } from 'prisma/global/generated/client';
+import { USER_MERGE_STATUS } from '@/types/response/merge';
 
 export const mergeUserSvc =
   (userUid: string, mergeUserUid: string) => async (res: NextApiResponse) => {
@@ -33,39 +33,6 @@ export const mergeUserSvc =
     // add task ( catch by outer )
     await globalPrisma.$transaction(async (tx) => {
       // optimistic
-      // ...oauthProviderList.flatMap((oauthProvider) => [
-      // 	globalPrisma.oauthProvider.findUniqueOrThrow({
-      // 		where: {
-      // 			uid: oauthProvider.uid,
-      // 			userUid: mergeUserUid
-      // 		}
-      // 	}),
-      // 	globalPrisma.oauthProvider.update({
-      // 		where: {
-      // 			uid: oauthProvider.uid,
-      // 			userUid: mergeUserUid
-      // 		},
-      // 		data: {
-      // 			userUid
-      // 		}
-      // 	}),
-      // 	globalPrisma.auditLog.create({
-      // 		data: {
-      // 			action: AuditAction.UPDATE,
-      // 			entityUid: oauthProvider.uid,
-      // 			entityName: 'oauthProvider',
-      // 			auditLogDetail: {
-      // 				create: [
-      // 					{
-      // 						key: 'userUid',
-      // 						preValue: mergeUserUid,
-      // 						newValue: userUid
-      // 					}
-      // 				]
-      // 			}
-      // 		}
-      // 	})
-      // ]),
       for await (const oauthProvider of oauthProviderList) {
         await tx.oauthProvider.findUniqueOrThrow({
           where: {
@@ -123,7 +90,7 @@ export const mergeUserSvc =
       });
     });
     return jsonRes(res, {
-      message: RESOURCE_STATUS.RESULT_SUCCESS,
+      message: USER_MERGE_STATUS.RESULT_SUCCESS,
       code: 200
     });
   };

@@ -8,3 +8,4 @@ enum _EMAIL_STATUS {
   DB_ERROR = 'DB_ERROR'
 }
 export const EMAIL_STATUS = Object.assign({}, _EMAIL_STATUS, RESPONSE_MESSAGE);
+export type EMAIL_STATUS = typeof EMAIL_STATUS;

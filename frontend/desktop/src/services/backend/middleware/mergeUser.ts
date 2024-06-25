@@ -2,8 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { ProviderType } from 'prisma/global/generated/client';
 import { globalPrisma } from '@/services/backend/db/init';
-import { USER_MERGE_STATUS } from '@/types/user';
 import { checkCode } from '../db/mergeUserCode';
+import { USER_MERGE_STATUS } from '@/types/response/merge';
 
 export const filterMergeUser = async (
   req: NextApiRequest,

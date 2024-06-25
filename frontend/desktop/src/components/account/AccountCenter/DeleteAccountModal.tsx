@@ -1,8 +1,6 @@
 import { useCustomToast } from '@/hooks/useCustomToast';
-import request from '@/services/request';
 import useSessionStore from '@/stores/session';
-import { ApiResp } from '@/types';
-import { RESOURCE_STATUS } from '@/types/user';
+import { ValueOf } from '@/types';
 import {
   ButtonProps,
   useDisclosure,
@@ -27,16 +25,22 @@ import { useTranslation } from 'react-i18next';
 import { SettingInput } from './SettingInput';
 import { SettingInputGroup } from './SettingInputGroup';
 import { useRouter } from 'next/router';
+import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { deleteUserRequest } from '@/api/auth';
 enum PageStatus {
   IDLE,
   REMAIN_OTHER_REGION_RESOURCE,
   REMAIN_WORKSPACE,
-  REMAIN_RESOURCE,
+  REMAIN_APP,
+  REMAIN_DATABASE,
+  REMAIN_OBJECT_STORAGE,
+  REMAIN_TEMPLATE,
   INSUFFICIENT_BALANCE
 }
 export default function DeleteAccount({ ...props }: ButtonProps) {
   const { onOpen, isOpen, onClose } = useDisclosure();
-  const { t } = useTranslation();
+  const t = useTranslation().t;
+  const errorT = useTranslation('error').t;
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const { delSession, setToken, session } = useSessionStore();
@@ -46,9 +50,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
   const router = useRouter();
   const [verifyValue, setVerifyValue] = useState('');
   const mutation = useMutation({
-    async mutationFn() {
-      return await request('/api/auth/delete');
-    },
+    mutationFn: deleteUserRequest,
     onSuccess() {
       delSession();
       queryClient.clear();
@@ -56,32 +58,32 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
       router.replace('/signin');
       setToken('');
     },
-    onError(error) {
-      const resp = error as ApiResp;
-      if (!resp.message) {
-        return toast({ title: (error as ApiResp).message });
-      }
-      if (
-        [
-          RESOURCE_STATUS.REMAIN_APP,
-          RESOURCE_STATUS.REMAIN_DATABASE,
-          RESOURCE_STATUS.REMAIN_OBJECT_STORAGE,
-          RESOURCE_STATUS.REMAIN_TEMPLATE
-        ].includes(resp.message as any)
-      ) {
-        return setPagestatus(PageStatus.REMAIN_RESOURCE);
-      } else if (resp.message === RESOURCE_STATUS.REMAIN_OTHER_REGION_RESOURCE) {
+    onError(error: { message: ValueOf<RESOURCE_STATUS> }) {
+      const message = error?.message;
+      if (message === RESOURCE_STATUS.REMAIN_APP) {
+        return setPagestatus(PageStatus.REMAIN_APP);
+      } else if (message === RESOURCE_STATUS.REMAIN_DATABASE) {
+        return setPagestatus(PageStatus.REMAIN_DATABASE);
+      } else if (message === RESOURCE_STATUS.REMAIN_OBJECT_STORAGE) {
+        return setPagestatus(PageStatus.REMAIN_OBJECT_STORAGE);
+      } else if (message === RESOURCE_STATUS.REMAIN_TEMPLATE) {
+        return setPagestatus(PageStatus.REMAIN_TEMPLATE);
+      } else if (message === RESOURCE_STATUS.REMAIN_OTHER_REGION_RESOURCE) {
         return setPagestatus(PageStatus.REMAIN_OTHER_REGION_RESOURCE);
-      } else if (resp.message === RESOURCE_STATUS.INSUFFICENT_BALANCE) {
+      } else if (message === RESOURCE_STATUS.INSUFFICENT_BALANCE) {
         return setPagestatus(PageStatus.INSUFFICIENT_BALANCE);
-      } else if (resp.message === RESOURCE_STATUS.REMAIN_WORKSACE_OWNER) {
+      } else if (message === RESOURCE_STATUS.REMAIN_WORKSACE_OWNER) {
         return setPagestatus(PageStatus.REMAIN_WORKSPACE);
       } else {
         setPagestatus(PageStatus.IDLE);
-        toast({ title: (error as ApiResp).message });
+        toast({ title: errorT(message) });
       }
     }
   });
+  const deleteModalOnClose = () => {
+    setPagestatus(PageStatus.IDLE);
+    onClose();
+  };
   return (
     <>
       {
@@ -96,7 +98,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
           {t('Delete Account Button')}
         </Button>
       }
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal isOpen={isOpen} onClose={deleteModalOnClose} isCentered>
         <ModalOverlay />
         <ModalContent
           borderRadius={'4px'}
@@ -190,8 +192,14 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                 <VStack alignItems={'stretch'} gap={'0'}>
                   {pagestatus === PageStatus.INSUFFICIENT_BALANCE ? (
                     <Text>{t('INSUFFICIENT_BALANCE_tips')}</Text>
-                  ) : pagestatus === PageStatus.REMAIN_RESOURCE ? (
-                    <Text>{t('Remain Resource Tips')}</Text>
+                  ) : pagestatus === PageStatus.REMAIN_APP ? (
+                    <Text>{t('Remain App Tips')}</Text>
+                  ) : pagestatus === PageStatus.REMAIN_TEMPLATE ? (
+                    <Text>{t('Remain Template Tips')}</Text>
+                  ) : pagestatus === PageStatus.REMAIN_OBJECT_STORAGE ? (
+                    <Text>{t('Remain ObjectStorage Tips')}</Text>
+                  ) : pagestatus === PageStatus.REMAIN_DATABASE ? (
+                    <Text>{t('Remain Database Tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_WORKSPACE ? (
                     <Text>{t('Remain Workspace Tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_OTHER_REGION_RESOURCE ? (
@@ -206,7 +214,10 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                     mt="12px"
                   >
                     <InfoCircleIcon boxSize={'14px'}></InfoCircleIcon>
-                    {(pagestatus === PageStatus.REMAIN_RESOURCE ||
+                    {(pagestatus === PageStatus.REMAIN_APP ||
+                      pagestatus === PageStatus.REMAIN_DATABASE ||
+                      pagestatus === PageStatus.REMAIN_OBJECT_STORAGE ||
+                      pagestatus === PageStatus.REMAIN_TEMPLATE ||
                       pagestatus === PageStatus.REMAIN_WORKSPACE ||
                       pagestatus === PageStatus.REMAIN_OTHER_REGION_RESOURCE) && (
                       <Text fontSize={'11px'}>{t('Delete Account Caution')}</Text>
@@ -214,7 +225,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                   </HStack>
                   <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
                     <Button
-                      onClick={onClose}
+                      onClick={deleteModalOnClose}
                       variant={'unstyled'}
                       border={'1px'}
                       borderColor={'grayModern.250'}
@@ -224,7 +235,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                     >
                       {t('Cancel')}
                     </Button>
-                    <Button onClick={onClose} variant={'primary'} {...props}>
+                    <Button onClick={deleteModalOnClose} variant={'primary'} {...props}>
                       {t('Confirm')}
                     </Button>
                   </HStack>

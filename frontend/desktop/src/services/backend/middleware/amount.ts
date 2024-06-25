@@ -1,7 +1,7 @@
 import { jsonRes } from '../response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { globalPrisma } from '../db/init';
-import { RESOURCE_STATUS } from '@/types/user';
+import { RESOURCE_STATUS } from '@/types/response/checkResource';
 
 export const accountBalanceGuard =
   (userUid: string) => async (res: NextApiResponse, next?: () => void) => {

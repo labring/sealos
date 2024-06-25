@@ -26,11 +26,11 @@ import {
   verifyNewSmsRequest,
   verifyOldSmsRequest
 } from '@/api/auth';
-import { MERGE_USER_READY } from '@/types/user';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SmsType } from '@/services/backend/db/verifyCode';
 import { smsIdValid } from './utils';
+import { MERGE_USER_READY } from '@/types/response/utils';
 enum PageState {
   VERIFY_OLD,
   VERIFY_NEW
