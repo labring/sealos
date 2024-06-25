@@ -3,7 +3,13 @@ import MyIcon from '@/components/Icon';
 import { MyTable, TableColumnsType } from '@/components/MyTable';
 import MyTooltip from '@/components/MyTooltip';
 import { CloudServerStatus, CloudServerType, EditForm, StorageType } from '@/types/cloudserver';
-import { CVMArchType, CVMRegionType, CVMZoneType, VirtualMachineType } from '@/types/region';
+import {
+  CVMArchType,
+  CVMChargeType,
+  CVMRegionType,
+  CVMZoneType,
+  VirtualMachineType
+} from '@/types/region';
 import {
   Box,
   Button,
@@ -261,6 +267,15 @@ function OuterTabs({ systemRegion }: { systemRegion: CVMRegionType[] }) {
       onChange={(e) => {
         const item = systemRegion[e];
         formHook?.setValue('chargeType', item.chargeType);
+        formHook?.setValue('virtualMachineArch', item.zone[0].arch[0].arch);
+        formHook.setValue(
+          'virtualMachineType',
+          item.zone[0].arch[0].virtualMachineType[0].virtualMachineType
+        );
+        formHook.setValue(
+          'virtualMachinePackageFamily',
+          item.zone[0].arch[0].virtualMachineType[0].virtualMachinePackageFamily[0]
+        );
       }}
     >
       <TabList alignItems={'center'}>
@@ -430,7 +445,10 @@ export default function Form({
                 item.status === CloudServerStatus.Unavailable ? 'grayModern.500' : 'brightBlue.700'
               }
             >
-              {t('Reference fee tip', { price: item.instancePrice })}{' '}
+              {t('Reference fee tip', { price: item.instancePrice })}/
+              {formHook.getValues('chargeType') === CVMChargeType.postPaidByHour
+                ? t('hour')
+                : t('month')}
             </Text>
           );
         }
@@ -554,6 +572,29 @@ export default function Form({
     ],
     [getValues, register, removeStorages, setValue, t]
   );
+
+  const monthsArray = useMemo(() => {
+    const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36];
+    return months.map((month) => {
+      let label;
+      if (month < 12) {
+        label = `${month} ${t('indivual')} ${t('month')}`;
+      } else if (month === 12) {
+        label = `1${t('year')}`;
+      } else {
+        const years = Math.floor(month / 12);
+        const remainingMonths = month % 12;
+        label =
+          remainingMonths === 0
+            ? `${years} ${t('year')}`
+            : `${years} ${t('year')}${remainingMonths} ${t('indivual')} ${t('month')}`;
+      }
+      return {
+        value: month.toString(),
+        label: label
+      };
+    });
+  }, [t]);
 
   return (
     <Flex
@@ -846,6 +887,26 @@ export default function Form({
             </Box>
           )}
         </Box>
+
+        {formHook.getValues('chargeType') === CVMChargeType.prePaid && (
+          <Flex alignItems={'center'} mb={'24px'} flex={1}>
+            <Label>
+              <Text>{t('duration')}</Text>
+            </Label>
+            <Box>
+              <MySelect
+                isInvalid={!!errors.period}
+                width={'200px'}
+                value={getValues('period')}
+                list={monthsArray}
+                onchange={(id: string) => {
+                  setValue('period', id);
+                  formHook.clearErrors();
+                }}
+              />
+            </Box>
+          </Flex>
+        )}
       </Box>
     </Flex>
   );

@@ -5,6 +5,12 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { appDeployKey } from '@/constants/app';
 
+export const config = {
+  api: {
+    responseLimit: false
+  }
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { appName } = req.query as { appName: string };

@@ -3,7 +3,7 @@ import { verify, sign } from 'jsonwebtoken';
 import type { NextApiRequest } from 'next';
 import { ERROR_ENUM } from '../error';
 
-const desktopJwtSecret = (process.env.JWT_SECRET_DESKTOP_TO_APP as string) || '123456789';
+export const desktopJwtSecret = (process.env.JWT_SECRET_DESKTOP_TO_APP as string) || '123456789';
 const appJwtSecret = (process.env.JWT_SECRET_SELF as string) || '123456789';
 
 export const verifyAccessToken = async (req: NextApiRequest) => {

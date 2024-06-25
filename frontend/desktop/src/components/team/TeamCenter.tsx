@@ -101,12 +101,12 @@ export default function TeamCenter(props: StackProps) {
       setNsid(defaultNamespace.id);
     }
   }, [_namespaces, ns_uid]);
+
   return (
     <>
       <HStack
         gap={'8px'}
         alignItems={'center'}
-        // borderBottom={'1px solid #0000001A'}
         p={'6px 4px'}
         cursor={'pointer'}
         borderRadius={'4px'}
@@ -118,8 +118,11 @@ export default function TeamCenter(props: StackProps) {
         _hover={{
           bgColor: 'rgba(0, 0, 0, 0.03)'
         }}
+        pb={'10px'}
+        borderBottom={'1px solid rgba(0, 0, 0, 0.05)'}
+        mb={'4px'}
       >
-        <SettingIcon boxSize={'16px'} color={'grayModern.600'} />
+        <SettingIcon boxSize={'16px'} color={'white'} />
         <Text>{t('Manage Team')}</Text>
       </HStack>
 
@@ -180,6 +183,7 @@ export default function TeamCenter(props: StackProps) {
                         isPrivate={ns.nstype === NSType.Private}
                         isSelected={ns.uid === ns_uid}
                         teamName={ns.teamName}
+                        selectedColor="#0884DD"
                       />
                     );
                   })

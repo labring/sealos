@@ -93,7 +93,7 @@ type AccountV2 interface {
 	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	SetAccountCreateLocalRegion(account *types.Account, region string) error
-	GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error)
+	GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error)
 	AddBalance(user *types.UserQueryOpts, balance int64) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error

@@ -460,7 +460,7 @@ const Form = ({
                       backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                       placeholder={`${t('Image Name')}`}
                       {...register('imageName', {
-                        required: 'Image name cannot be empty.',
+                        required: 'Image name cannot be empty',
                         setValueAs(e) {
                           return e.replace(/\s*/g, '');
                         }

@@ -348,7 +348,7 @@ data:
   config.yaml: |
     global:
       cloudDomain: {{ .cloudDomain }}
-      cloudPort: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+      cloudPort: {{ if .cloudPort }}{{ .cloudPort }}{{ end }}
     terminalController:
       ingressTLSSecretName: {{ .wildcardCertSecretName }}
 kind: ConfigMap

@@ -8,24 +8,166 @@ import {
   Divider,
   Flex,
   Popover,
-  PopoverArrow,
-  PopoverBody,
   PopoverContent,
-  PopoverHeader,
   PopoverTrigger,
   Text
 } from '@chakra-ui/react';
+import { Decimal } from 'decimal.js';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { Decimal } from 'decimal.js';
+
+export const priceItemStyle = {
+  alignItems: 'center',
+  py: '4px',
+  px: '6px',
+  borderRadius: 'base',
+  _hover: {
+    bg: 'grayModern.100'
+  }
+};
+
+export const CostTipContent = ({
+  prices,
+  instanceType,
+  isMonth,
+  isModalTip
+}: {
+  isMonth: boolean;
+  prices?: CloudServerPrice;
+  instanceType?: CloudServerType;
+  isModalTip?: boolean;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box>
+      {prices && isModalTip && (
+        <>
+          <Flex
+            alignItems={'center'}
+            px={'12px'}
+            py={'12px'}
+            bg={'#FEF3F2'}
+            borderRadius={'6px'}
+            color={'#F04438'}
+            gap={'8px'}
+            mb={'16px'}
+          >
+            <MyIcon name="infoWarn" width={'20px'} />
+            <Box>
+              {t('After the annual and monthly cloud hosting is sold')}
+              <Text display={'inline'} fontWeight={500} px={'2px'}>
+                {t('No refund allowed')}
+              </Text>
+              {t('Pay Confirm tips')}
+            </Box>
+          </Flex>
+          <Flex alignItems={'center'} justifyContent={'space-between'} pr={'10px'}>
+            <Box px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
+              {t('total')}
+            </Box>
+
+            <Text fontWeight={'bold'} color={'brightBlue.600'}>
+              ¥
+              {new Decimal(prices?.diskPrice)
+                .plus(new Decimal(prices?.instancePrice))
+                .plus(new Decimal(prices?.networkPrice))
+                .toNumber()}
+            </Text>
+          </Flex>
+        </>
+      )}
+      <Box px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
+        {t('Configuration fee details')}
+      </Box>
+      <Divider />
+      <Flex py={'7px'} px={'10px'} flexDirection={'column'} gap={'4px'}>
+        <Flex {...priceItemStyle}>
+          <Text fontSize={'base'}>{t('Instance')}</Text>
+          <Text ml={'auto'} fontWeight={'bold'} color={'brightBlue.600'}>
+            ¥{prices?.instancePrice}
+            {!isMonth && `/${t('hour')}`}
+          </Text>
+        </Flex>
+
+        <Flex {...priceItemStyle}>
+          <Text alignSelf={'self-start'} fontSize={'base'} width={'50px'}>
+            {t('storage fees')}
+          </Text>
+          <Text ml={'auto'} fontWeight={'bold'} color={'brightBlue.600'}>
+            ¥{prices?.diskPrice}
+            {!isMonth && `/${t('hour')}`}
+          </Text>
+        </Flex>
+
+        <Flex {...priceItemStyle}>
+          <Text alignSelf={'self-start'} fontSize={'base'} width={'50px'}>
+            {t('Public network bandwidth')}
+          </Text>
+          <Text ml={'auto'} alignSelf={'self-start'} fontWeight={'bold'} color={'brightBlue.600'}>
+            ¥{prices?.networkPrice}
+            {!isMonth && `/${t('hour')}`}
+          </Text>
+        </Flex>
+      </Flex>
+
+      {/* Billing rules */}
+      <Box px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
+        {t('Billing rules')}
+      </Box>
+      <Divider />
+      <Flex py={'7px'} px={'10px'} flexDirection={'column'} gap={'4px'}>
+        <Flex {...priceItemStyle} fontSize={'base'} justifyContent={'space-between'}>
+          <Text w={'50px'} fontSize={'base'}>
+            {t('Storage')}
+          </Text>
+          <Text fontSize={'base'}>
+            {t('Reference fee disk tips', { price: instanceType?.diskPerG })}/
+            {isMonth ? t('month') : t('hour')}
+          </Text>
+        </Flex>
+        <Flex {...priceItemStyle} justifyContent={'space-between'}>
+          <Text flexShrink={0} w={'50px'} alignSelf={'self-start'} fontSize={'base'} width={'50px'}>
+            {t('BandWidth')}
+          </Text>
+          <Flex flexDirection={'column'} fontSize={'base'} wordBreak={'break-all'}>
+            <Flex gap={'8px'} justifyContent={'space-between'}>
+              <Text>{t('interval')}</Text>
+              <Text>{t('price')}</Text>
+            </Flex>
+            {instanceType?.bandwidthPricingTiers.map((item, index) => {
+              return (
+                <Flex
+                  gap={'8px'}
+                  justifyContent={'space-between'}
+                  key={item.pricePerMbps + item.minBandwidth}
+                >
+                  <Text>{`(${item.minBandwidth} , ${
+                    item.maxBandwidth === null ? '∞' : item.maxBandwidth
+                  }]`}</Text>
+                  <Text>
+                    {t('Reference fee bandwidth tips', { price: item.pricePerMbps })}/
+                    {isMonth ? t('month') : t('hour')}
+                  </Text>
+                </Flex>
+              );
+            })}
+          </Flex>
+        </Flex>
+      </Flex>
+    </Box>
+  );
+};
 
 const Header = ({
   title,
   applyCb,
   applyBtnText,
   prices,
-  instanceType
+  instanceType,
+  isMonth
 }: {
+  isMonth: boolean;
   title: string;
   applyCb: () => void;
   applyBtnText: string;
@@ -35,16 +177,6 @@ const Header = ({
   const { t } = useTranslation();
   const router = useRouter();
   const { lastRoute } = useGlobalStore();
-
-  const priceItemStyle = {
-    alignItems: 'center',
-    py: '4px',
-    px: '6px',
-    borderRadius: 'base',
-    _hover: {
-      bg: 'grayModern.100'
-    }
-  };
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
@@ -75,94 +207,7 @@ const Header = ({
               </Flex>
             </PopoverTrigger>
             <PopoverContent>
-              <PopoverHeader px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
-                {t('Configuration fee details')}
-              </PopoverHeader>
-              <PopoverArrow />
-              <PopoverBody>
-                <Flex flexDirection={'column'} gap={'4px'}>
-                  <Flex {...priceItemStyle}>
-                    <Text fontSize={'base'}>{t('Instance')}</Text>
-                    <Text ml={'auto'} fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.instancePrice}/{t('hour')}
-                    </Text>
-                  </Flex>
-
-                  <Flex {...priceItemStyle}>
-                    <Text alignSelf={'self-start'} fontSize={'base'} width={'50px'}>
-                      {t('storage fees')}
-                    </Text>
-                    <Text ml={'auto'} fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.diskPrice}/{t('hour')}
-                    </Text>
-                  </Flex>
-
-                  <Flex {...priceItemStyle}>
-                    <Text alignSelf={'self-start'} fontSize={'base'} width={'50px'}>
-                      {t('Public network bandwidth')}
-                    </Text>
-                    <Text
-                      ml={'auto'}
-                      alignSelf={'self-start'}
-                      fontWeight={'bold'}
-                      color={'brightBlue.600'}
-                    >
-                      ¥{prices?.networkPrice}/{t('hour')}
-                    </Text>
-                  </Flex>
-                </Flex>
-              </PopoverBody>
-
-              {/* Billing rules */}
-              <PopoverHeader px={'18px'} py={'12px'} fontWeight={'bold'} fontSize={'md'}>
-                {t('Billing rules')}
-              </PopoverHeader>
-              <PopoverArrow />
-              <PopoverBody>
-                <Flex flexDirection={'column'} gap={'4px'}>
-                  <Flex {...priceItemStyle} fontSize={'base'} justifyContent={'space-between'}>
-                    <Text w={'50px'} fontSize={'base'}>
-                      {t('Storage')}
-                    </Text>
-                    <Text fontSize={'base'}>
-                      {t('Reference fee disk tips', { price: instanceType?.diskPerG })}
-                    </Text>
-                  </Flex>
-                  <Flex {...priceItemStyle} justifyContent={'space-between'}>
-                    <Text
-                      flexShrink={0}
-                      w={'50px'}
-                      alignSelf={'self-start'}
-                      fontSize={'base'}
-                      width={'50px'}
-                    >
-                      {t('BandWidth')}
-                    </Text>
-                    <Flex flexDirection={'column'} fontSize={'base'} wordBreak={'break-all'}>
-                      <Flex gap={'8px'} justifyContent={'space-between'}>
-                        <Text>{t('interval')}</Text>
-                        <Text>{t('price')}</Text>
-                      </Flex>
-                      {instanceType?.bandwidthPricingTiers.map((item, index) => {
-                        return (
-                          <Flex
-                            gap={'8px'}
-                            justifyContent={'space-between'}
-                            key={item.pricePerMbps + item.minBandwidth}
-                          >
-                            <Text>{`[${item.minBandwidth} , ${
-                              item.maxBandwidth === null ? '∞' : item.maxBandwidth
-                            })`}</Text>
-                            <Text>
-                              {t('Reference fee bandwidth tips', { price: item.pricePerMbps })}
-                            </Text>
-                          </Flex>
-                        );
-                      })}
-                    </Flex>
-                  </Flex>
-                </Flex>
-              </PopoverBody>
+              <CostTipContent isMonth={isMonth} instanceType={instanceType} prices={prices} />
             </PopoverContent>
           </Popover>
         ) : (

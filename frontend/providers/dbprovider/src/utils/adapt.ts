@@ -33,7 +33,8 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
       '-',
     conditions: db?.status?.conditions || [],
-    isDiskSpaceOverflow: false
+    isDiskSpaceOverflow: false,
+    labels: db.metadata.labels || {}
   };
 };
 
@@ -56,7 +57,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     ),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
-    labels: db.metadata.labels
+    labels: db.metadata.labels || {}
   };
 };
 

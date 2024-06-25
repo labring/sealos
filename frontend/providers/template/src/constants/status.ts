@@ -12,7 +12,8 @@ export enum StatusEnum {
   VolumeExpanding = 'VolumeExpanding',
   Failed = 'Failed',
   UnKnow = 'UnKnow',
-  Waiting = 'Waiting'
+  Waiting = 'Waiting',
+  Deleting = 'Deleting'
 }
 export const StatusMap = {
   [StatusEnum.Waiting]: {
@@ -112,5 +113,12 @@ export const StatusMap = {
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
+  },
+  [StatusEnum.Deleting]: {
+    label: 'Deleting',
+    value: StatusEnum.Deleting,
+    color: '#DC6803',
+    backgroundColor: '#FFFAEB',
+    dotColor: '#DC6803'
   }
 };

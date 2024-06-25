@@ -21,6 +21,9 @@ import { useTranslation } from 'next-i18next';
 import { MyTooltip } from '@sealos/ui';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
+import { has } from 'lodash';
+import { templateDeployKey } from '@/constants/account';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -31,6 +34,12 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     mountPath: string;
     value: string;
   }>();
+
+  const [hasApplicationSource, sourceName] = useMemo(() => {
+    return app?.labels
+      ? [has(app.labels, templateDeployKey), app.labels[templateDeployKey]]
+      : [false, ''];
+  }, [app.labels]);
 
   const appInfoTable = useMemo<
     {
@@ -97,6 +106,39 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
   return (
     <Box px={6} py={7} position={'relative'}>
+      {hasApplicationSource && (
+        <Box fontSize={'base'} mb={'12px'}>
+          <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
+            <MyIcon w={'16px'} name={'target'}></MyIcon>
+            <Box>{t('Application Source')}</Box>
+          </Flex>
+          <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
+            <Flex
+              flexWrap={'wrap'}
+              _notFirst={{
+                mt: 4
+              }}
+              cursor={'pointer'}
+              onClick={() => {
+                if (sourceName) {
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-template',
+                    pathname: '/instance',
+                    query: { instanceName: sourceName }
+                  });
+                }
+              }}
+            >
+              <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
+                {t('App Store')}
+              </Box>
+              <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
+              <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
+            </Flex>
+          </Box>
+        </Box>
+      )}
+
       <>
         <Flex alignItems={'center'} color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           <MyIcon w={'16px'} name={'appType'}></MyIcon>

@@ -2,13 +2,12 @@ import { generatePaymentCrd, PaymentForm } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
 import { ApplyYaml, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
-import { enableRecharge } from '@/service/enabled';
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!enableRecharge()) {
+    if (!global.AppConfig.costCenter.recharge.enabled) {
       throw new Error('recharge is not enabled');
     }
     if (req.method !== 'POST') {

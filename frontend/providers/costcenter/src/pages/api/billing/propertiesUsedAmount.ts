@@ -23,7 +23,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    const url = process.env.BILLING_URI + '/account/v1alpha1/costs/properties';
+    const url =
+      global.AppConfig.costCenter.components.accountService.url +
+      '/account/v1alpha1/costs/properties';
     const res = (await (
       await fetch(url, {
         method: 'POST',

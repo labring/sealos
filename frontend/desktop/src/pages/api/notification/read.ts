@@ -37,8 +37,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let result = [];
     for (const n of name) {
-      let temp = await UpdateCRD(kc, meta, n, patch);
-      result.push(temp?.body);
+      try {
+        let temp = await UpdateCRD(kc, meta, n, patch);
+        result.push(temp?.body);
+      } catch (err: any) {
+        if (err?.body?.code === 403) {
+          const temp = {
+            name: n,
+            reason: err?.body?.reason,
+            message: err?.body?.message,
+            code: 403
+          };
+
+          jsonRes(res, { data: temp });
+        } else {
+          throw err;
+        }
+      }
     }
     jsonRes(res, { data: result });
   } catch (err) {

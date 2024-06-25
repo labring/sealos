@@ -25,9 +25,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const getRawAppList = async (meta: CRDMeta) =>
       ((await ListCRD(kc, meta)).body as TAppCRList).items || [];
 
-    const defaultArr = (await getRawAppList(getMeta())).map<TAppConfig>((item) => {
-      return { key: `system-${item.metadata.name}`, ...item.spec };
-    });
+    const defaultArr = (await getRawAppList(getMeta()))
+      .map<TAppConfig>((item) => {
+        return { key: `system-${item.metadata.name}`, ...item.spec };
+      })
+      .sort((a, b) => {
+        if (a.displayType === 'more' && b.displayType !== 'more') {
+          return 1;
+        } else if (a.displayType !== 'more' && b.displayType === 'more') {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
 
     const userArr = (await getRawAppList(getMeta(payload.workspaceId))).map<TAppConfig>((item) => {
       return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };

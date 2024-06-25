@@ -23,6 +23,9 @@ function prepare {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
+  # clear mongo log by cronjob，temporary solution
+  kubectl apply -f manifests/clear-mongo-log.yaml
+
   # gen mongodb uri
   gen_mongodbUri
 
@@ -132,7 +135,7 @@ function gen_cockroachdbUri() {
 }
 
 function gen_saltKey() {
-    password_salt=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "salt:" | awk '{print $2}' 2>/dev/null || true)
+    password_salt=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "salt:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
     if [[ -z "$password_salt" ]]; then
         saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64)
     else
@@ -141,7 +144,7 @@ function gen_saltKey() {
 }
 
 function gen_regionUID(){
-    uid=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "regionUID:" | awk '{print $2}' 2>/dev/null || true)
+    uid=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "regionUID:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
     if [[ -z "$uid" ]]; then
         localRegionUID=$(uuidgen)
     else

@@ -354,7 +354,12 @@ const AppList = ({
 
       <PauseChild />
       {!!delAppName && (
-        <DelModal appName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
+        <DelModal
+          appName={delAppName}
+          labels={apps.find((item) => item.name === delAppName)?.labels || {}}
+          onClose={() => setDelAppName('')}
+          onSuccess={refetchApps}
+        />
       )}
     </Box>
   );

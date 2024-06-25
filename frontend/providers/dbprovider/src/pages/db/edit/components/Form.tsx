@@ -393,8 +393,8 @@ const Form = ({
                 {getValues('replicas') === 1 && (
                   <Tip
                     ml={4}
-                    icon={<MyIcon name="warning" width={'14px'}></MyIcon>}
-                    text="The Single-node database is only suitable for development testing."
+                    icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
+                    text="The Single-node database is only suitable for development testing"
                     size="sm"
                     borderRadius={'md'}
                   />
@@ -403,7 +403,7 @@ const Form = ({
                   <Tip
                     ml={4}
                     icon={<InfoOutlineIcon />}
-                    text="The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes."
+                    text="The multi-replica Redis includes High Availability (HA) nodes, Please note, the anticipated price already encompasses the cost for the HA nodes"
                     size="sm"
                     borderRadius={'md'}
                   />

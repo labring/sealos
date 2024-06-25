@@ -294,7 +294,12 @@ const DBList = ({
       <MyTable columns={columns} data={dbList} />
       <PauseChild />
       {!!delAppName && (
-        <DelModal dbName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
+        <DelModal
+          labels={dbList?.find((item) => item.name === delAppName)?.labels || {}}
+          dbName={delAppName}
+          onClose={() => setDelAppName('')}
+          onSuccess={refetchApps}
+        />
       )}
     </Box>
   );
