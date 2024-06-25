@@ -18,14 +18,11 @@ package controller
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
-
-	database2 "github.com/labring/sealos/controllers/pkg/database"
 
 	"github.com/go-logr/logr"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -33,8 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	"github.com/labring/sealos/controllers/license/internal/util/database"
-	utilerrors "github.com/labring/sealos/controllers/license/internal/util/errors"
+	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
+	database2 "github.com/labring/sealos/controllers/pkg/database"
 )
 
 // LicenseReconciler reconciles a License object
@@ -47,13 +44,15 @@ type LicenseReconciler struct {
 	ClusterID string
 
 	validator *LicenseValidator
-	recorder  *LicenseRecorder
 	activator *LicenseActivator
 }
+
+var requeueRes = ctrl.Result{RequeueAfter: time.Minute}
 
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for license")
@@ -69,80 +68,68 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
 	r.Logger.V(1).Info("reconcile for license", "license", license.Namespace+"/"+license.Name)
-	// if license is active, do nothing and return
-	if license.Status.Phase == licensev1.LicenseStatusPhaseActive {
-		r.Logger.V(1).Info("license is active", "license", license.Namespace+"/"+license.Name)
-		return ctrl.Result{}, nil
-	}
-
 	// check if license is valid
 	valid, err := r.validator.Validate(license)
-	if errors.Is(err, utilerrors.ErrClusterIDNotMatch) {
-		r.Logger.V(1).Info("license clusterID not match", "license", license.Namespace+"/"+license.Name)
-		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		_ = r.Status().Update(ctx, license)
-		return ctrl.Result{}, nil
-	}
 	if err != nil {
 		r.Logger.V(1).Error(err, "failed to validate license")
-		return ctrl.Result{}, err
-	}
-	// if license is invalid, update license status to failed
-	if !valid {
-		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name)
-		// TODO mv to a function
-		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
-		_ = r.Status().Update(ctx, license)
-		return ctrl.Result{}, nil
+		return requeueRes, err
 	}
 
-	// check if license has been used
-	found, err := r.recorder.Find(ctx, license)
+	claims, err := licenseutil.GetClaims(license)
 	if err != nil {
-		r.Logger.V(1).Error(err, "failed to get license from database")
 		return ctrl.Result{}, err
 	}
-	// if license has been used, update license status to failed
-	if found {
-		r.Logger.V(1).Info("license has been used", "license", license.Namespace+"/"+license.Name)
+
+	switch valid {
+	case licensev1.ValidationClusterIDMismatch:
 		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.ValidationCode = valid
+		license.Status.Reason = fmt.Sprintf("cluster id mismatch, license cluster id: %s, cluster id: %s", claims.ClusterID, r.ClusterID)
+		r.Logger.V(1).Info("cluster id mismatch", "license", license.Namespace+"/"+license.Name, "cluster id", r.ClusterID, "license cluster id", claims.ClusterID)
 		_ = r.Status().Update(ctx, license)
-		return ctrl.Result{}, nil
+		return requeueRes, nil
+	case licensev1.ValidationClusterInfoMismatch:
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.ValidationCode = valid
+		license.Status.Reason = fmt.Sprintf("cluster info mismatch, license cluster info: %v", claims.Data)
+		r.Logger.V(1).Info("cluster info mismatch", "license", license.Namespace+"/"+license.Name, "cluster info", claims.Data)
+		_ = r.Status().Update(ctx, license)
+		return requeueRes, nil
+	case licensev1.ValidationExpired:
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.ValidationCode = valid
+		license.Status.Reason = "license is expired"
+		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name, "reason", valid)
+		_ = r.Status().Update(ctx, license)
+		return requeueRes, nil
+	default:
+	}
+
+	if license.Spec.Type == licensev1.AccountLicenseType && license.Status.Phase == licensev1.LicenseStatusPhaseActive {
+		r.Logger.V(1).Info("license is active, skip reconcile", "license", license.Namespace+"/"+license.Name)
+		return requeueRes, nil
 	}
 
 	if err := r.activator.Active(license); err != nil {
 		r.Logger.V(1).Error(err, "failed to active license")
-		return ctrl.Result{}, err
+		return requeueRes, err
 	}
-
-	// update license status to active
-	license.Status.ActivationTime = metav1.NewTime(time.Now())
-	license.Status.Phase = licensev1.LicenseStatusPhaseActive
-	_ = r.Status().Update(ctx, license)
-	// record license token and key to database to prevent reuse
-	if err = r.recorder.Store(ctx, license); err != nil {
-		r.Logger.V(1).Error(err, "failed to store license in database")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Minute * 30}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.DataBase, accountDB database2.AccountV2) error {
+func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, accountDB database2.AccountV2) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
 	r.Client = mgr.GetClient()
 
 	r.validator = &LicenseValidator{
 		Client:    r.Client,
+		Logger:    r.Logger,
 		ClusterID: r.ClusterID,
 	}
 
-	r.recorder = &LicenseRecorder{
-		Client: r.Client,
-		db:     db,
-	}
-
 	r.activator = &LicenseActivator{
+		Client:    r.Client,
 		accountDB: accountDB,
 	}
 

@@ -124,7 +124,7 @@ func main() {
 		}
 	}()
 
-	if err = (&controller.LicenseReconciler{ClusterID: clusterID}).SetupWithManager(mgr, db, accountDB); err != nil {
+	if err = (&controller.LicenseReconciler{ClusterID: clusterID}).SetupWithManager(mgr, accountDB); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}

@@ -42,12 +42,25 @@ const (
 	LicenseStatusPhaseActive  LicenseStatusPhase = "Active"
 )
 
+type ValidationCode int
+
+const (
+	ValidationSuccess ValidationCode = iota
+	ValidationError
+	ValidationExpired
+	ValidationClusterIDMismatch
+	ValidationClusterInfoMismatch
+)
+
 // LicenseStatus defines the observed state of License
 type LicenseStatus struct {
 	//+kubebuilder:validation:Enum=Pending;Failed;Active
 	//+kubebuilder:default=Pending
 	Phase          LicenseStatusPhase `json:"phase,omitempty"`
+	ValidationCode ValidationCode     `json:"validationCode,omitempty"`
+	Reason         string             `json:"reason,omitempty"`
 	ActivationTime metav1.Time        `json:"activationTime,omitempty"`
+	ExpirationTime metav1.Time        `json:"expirationTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

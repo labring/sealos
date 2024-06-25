@@ -75,6 +75,9 @@ spec:
               activationTime:
                 format: date-time
                 type: string
+              expirationTime:
+                format: date-time
+                type: string
               phase:
                 default: Pending
                 enum:
@@ -82,6 +85,10 @@ spec:
                 - Failed
                 - Active
                 type: string
+              reason:
+                type: string
+              validationCode:
+                type: integer
             type: object
         type: object
     served: true
@@ -159,6 +166,14 @@ metadata:
   creationTimestamp: null
   name: license-manager-role
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - license.sealos.io
   resources:
@@ -366,9 +381,12 @@ spec:
         - --leader-elect
         command:
         - /manager
-        envFrom:
-          - configMapRef:
-              name: account-manager-env
+        env:
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              key: MONGO_URI
+              name: license-secret
         image: ghcr.io/labring/sealos-license-controller:latest
         livenessProbe:
           httpGet:

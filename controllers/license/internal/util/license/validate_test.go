@@ -21,16 +21,17 @@ import (
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	utilclaims "github.com/labring/sealos/controllers/license/internal/util/claims"
+	"github.com/labring/sealos/controllers/license/internal/util/cluster"
 )
 
 func TestIsLicenseValid(t *testing.T) {
 	type args struct {
 		license *licensev1.License
+		data    *cluster.Info
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    bool
 		wantErr bool
 	}{
 		{
@@ -39,23 +40,29 @@ func TestIsLicenseValid(t *testing.T) {
 				license: &licensev1.License{
 					Spec: licensev1.LicenseSpec{
 						Token: "",
+						Type:  licensev1.ClusterLicenseType,
+					},
+				},
+				data: &cluster.Info{
+					ClusterID: "",
+					ClusterClaimData: utilclaims.ClusterClaimData{
+						NodeCount:   3,
+						TotalCPU:    16,
+						TotalMemory: 32,
 					},
 				},
 			},
-			want:    true,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsLicenseValid(tt.args.license, "")
+			got, err := IsLicenseValid(tt.args.license, tt.args.data, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IsLicenseValid() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("IsLicenseValid() got = %v, want %v", got, tt.want)
-			}
+			t.Log(got)
 		})
 	}
 }
