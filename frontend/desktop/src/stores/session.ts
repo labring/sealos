@@ -23,7 +23,8 @@ type SessionState = {
   generateState: (action?: OauthAction, domainState?: string) => string;
   compareState: (state: string) => {
     isSuccess: boolean;
-    statePayload: StatePayload;
+    action: string;
+    statePayload: string[];
   };
   setProvider: (provider?: OauthProvider) => void;
   setToken: (token: string) => void;
@@ -51,22 +52,31 @@ const useSessionStore = create<SessionState>()(
         set({ session: undefined });
       },
       isUserLogin: () => !!get().session?.user,
+      // [LOGIN/UNBIND/BIND]_STATE
+      // PROXY_DOMAINSTATE, DOMAINSTATE = URL_[LOGIN/UNBIND/BIND]_STATE
       generateState: (action = 'LOGIN', domainState) => {
-        const stateObj = { rad: new Date().getTime().toString(), action } satisfies StatePayload;
-        if (!!domainState && action === 'PROXY') {
-          stateObj.rad = domainState;
+        // const stateObj ={ rad: new Date().getTime().toString(), action } satisfies StatePayload;
+        // if (!!domainState && action === 'PROXY') {
+        //   stateObj.rad = domainState;
+        // }
+        // const state = JSON.stringify(stateObj);
+        let state = action as string;
+        if (domainState && action === 'PROXY') {
+          state = state + '_' + domainState;
+        } else {
+          state = state + '_' + new Date().getTime().toString();
         }
-        const state = JSON.stringify(stateObj);
         set({ oauth_state: state });
         return state;
       },
       compareState: (state: string) => {
         let isSuccess = state === get().oauth_state;
-        const statePayload = JSON.parse(state) as StatePayload;
-        console.log(isSuccess, statePayload, state, get().oauth_state);
+        console.log(state, get().oauth_state);
+        const [action, ...statePayload] = state.split('_');
         set({ oauth_state: undefined });
         return {
           isSuccess,
+          action,
           statePayload
         };
       },

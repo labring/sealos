@@ -34,7 +34,8 @@ export default function Callback({ appConfig }: { appConfig: AppClientConfigType
       try {
         if (isProxying) return;
         isProxying = true;
-        const _url = new URL(oauthProxyState);
+        const [originUrl, ...res] = oauthProxyState.split('_');
+        const _url = new URL(decodeURIComponent(originUrl));
         const result = (await (
           await fetch(`/api/auth/canProxy?domain=${encodeURIComponent(_url.host)}`, {})
         ).json()) as ApiResp<{ containDomain: boolean }>;

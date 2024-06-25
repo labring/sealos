@@ -187,7 +187,7 @@ export const finishTransactionJob = async () => {
   const needFinishTransactionList = transactionList
     .filter((tx) => {
       const finishList = tx.transactionDetail.filter((d) => d.status === TransactionStatus.FINISH);
-      return regionList.every(({ uid }) => finishList.findIndex((f) => f.regionUid) >= 0);
+      return regionList.every(({ uid }) => finishList.findIndex((f) => f.regionUid === uid) >= 0);
     })
     .map((tx) => tx.uid);
   if (!needFinishTransactionList) return;

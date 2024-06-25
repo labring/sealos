@@ -46,8 +46,10 @@ export function AuthModifyList({
         if (conf.proxyAddress) {
           const target = new URL(conf.proxyAddress);
           const callback = new URL(conf.callbackURL);
-          callback.searchParams.append('state', state);
-          target.searchParams.append('oauthProxyState', callback.toString());
+          target.searchParams.append(
+            'oauthProxyState',
+            encodeURIComponent(callback.toString()) + '_' + state
+          );
           target.searchParams.append('oauthProxyClientID', clientId);
           target.searchParams.append('oauthProxyProvider', provider);
           router.replace(target.toString());

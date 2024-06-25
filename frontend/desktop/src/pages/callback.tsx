@@ -11,6 +11,8 @@ import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
 import { BIND_STATUS, MERGE_USER_READY } from '@/types/user';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
+import axios from 'axios';
+import request from '@/services/request';
 export default function Callback() {
   const router = useRouter();
   const setProvider = useSessionStore((s) => s.setProvider);
@@ -30,22 +32,23 @@ export default function Callback() {
         const { code, state } = router.query;
         if (!isString(code) || !isString(state)) throw new Error('failed to get code and state');
         const compareResult = compareState(state);
-        console.log(compareResult);
+        // console.log(compareResult);
         if (!compareResult.isSuccess) throw new Error('invalid state');
-        if (compareResult.statePayload.action === 'PROXY') {
-          // proxy oauth2.0
-          const _url = compareResult.statePayload.rad;
+        if (compareResult.action === 'PROXY') {
+          // proxy oauth2.0, PROXY_URL_[ACTION]_STATE
+          const [_url, ...ret] = compareResult.statePayload;
           await new Promise<URL>((resolve, reject) => {
-            resolve(new URL(_url));
+            resolve(new URL(decodeURIComponent(_url)));
           })
             .then(async (url) => {
-              const result = (await (
-                await fetch(`/api/auth/canProxy?domain=${url.host}`)
-              ).json()) as ApiResp<{ containDomain: boolean }>;
+              const result = (await request(`/api/auth/canProxy?domain=${url.host}`)) as ApiResp<{
+                containDomain: boolean;
+              }>;
+              console.log(result, url);
               isProxy = true;
               if (result.data?.containDomain) {
                 url.searchParams.append('code', code);
-                console.log(url);
+                url.searchParams.append('state', ret.join('_'));
                 await router.replace(url.toString());
               }
             })
@@ -59,9 +62,9 @@ export default function Callback() {
             return;
           }
         } else {
-          const statePayload = compareResult.statePayload;
+          const { statePayload, action } = compareResult;
           // return
-          if (statePayload.action === 'LOGIN') {
+          if (action === 'LOGIN') {
             const data = await signInRequest(provider)({ code, inviterId: getInviterId()! });
             setProvider();
             if (data.code === 200 && data.data?.token) {
@@ -83,7 +86,7 @@ export default function Callback() {
             } else {
               throw new Error();
             }
-          } else if (statePayload.action === 'BIND') {
+          } else if (action === 'BIND') {
             const response = await bindRequest(provider)({ code });
             if (response.message === BIND_STATUS.RESULT_SUCCESS) {
               setProvider();
@@ -104,7 +107,7 @@ export default function Callback() {
               setProvider();
               await router.replace('/');
             }
-          } else if (statePayload.action === 'UNBIND') {
+          } else if (action === 'UNBIND') {
             await unBindRequest(provider)({ code });
             setProvider();
             await router.replace('/');
