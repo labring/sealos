@@ -381,12 +381,9 @@ spec:
         - --leader-elect
         command:
         - /manager
-        env:
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              key: MONGO_URI
-              name: license-secret
+        envFrom:
+          - configMapRef:
+              name: account-manager-env
         image: ghcr.io/labring/sealos-license-controller:latest
         livenessProbe:
           httpGet:

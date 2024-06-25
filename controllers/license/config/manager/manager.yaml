@@ -85,12 +85,9 @@ spec:
         args:
         - --leader-elect
         image: controller:latest
-        env:
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              name: license-secret
-              key: MONGO_URI
+        envFrom:
+          - configMapRef:
+              name: account-manager-env
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
