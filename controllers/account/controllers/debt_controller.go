@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alibabacloud-go/tea/tea"
+
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
@@ -42,8 +44,6 @@ import (
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 
@@ -456,7 +456,7 @@ var (
 )
 
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
-	if r.SmsConfig == nil {
+	if r.SmsConfig == nil && r.VmsConfig == nil && r.smtpConfig == nil {
 		return nil
 	}
 	outh, err := r.AccountV2.GetUserOauthProvider(&pkgtypes.UserQueryOpts{Owner: user})
@@ -471,31 +471,30 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 			email = outh[i].ProviderID
 		}
 	}
-	if phone == "" && email == "" {
-		r.Logger.Info("user phone && email is not set, skip sms notification", "user", user)
-		return nil
-	}
-	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-		PhoneNumbers: tea.String(phone),
-		SignName:     tea.String(r.SmsConfig.SmsSignName),
-		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
-		// ｜ownAmount/1_000_000｜
-		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to send sms notice: %w", err)
-	}
-	if noticeType == WarningNotice {
-		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
-		if err != nil {
-			return fmt.Errorf("failed to send vms notice: %w", err)
-		}
-		if r.smtpConfig != nil {
-			err = r.smtpConfig.SendEmail(NoticeTemplateZH[noticeType], email)
+	if phone != "" {
+		if r.SmsConfig != nil && r.SmsConfig.SmsCode[noticeType] != "" {
+			oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
+			err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+				PhoneNumbers: tea.String(phone),
+				SignName:     tea.String(r.SmsConfig.SmsSignName),
+				TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
+				// ｜ownAmount/1_000_000｜
+				TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
+			})
 			if err != nil {
-				return fmt.Errorf("failed to send email notice: %w", err)
+				return fmt.Errorf("failed to send sms notice: %w", err)
 			}
+		}
+		if r.VmsConfig != nil && noticeType == WarningNotice && r.VmsConfig.TemplateCode[noticeType] != "" {
+			err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+			if err != nil {
+				return fmt.Errorf("failed to send vms notice: %w", err)
+			}
+		}
+	}
+	if r.smtpConfig != nil && email != "" && NoticeTemplateZH[noticeType] != "" {
+		if err = r.smtpConfig.SendEmail(NoticeTemplateZH[noticeType], email); err != nil {
+			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
 	return nil
@@ -690,7 +689,7 @@ func (r *DebtReconciler) setupSMTPConfig() error {
 		ServerPort: serverPort,
 		FromEmail:  os.Getenv(SMTPFromEnv),
 		Passwd:     os.Getenv(SMTPPasswordEnv),
-		EmailTitle: SMTPTitleEnv,
+		EmailTitle: os.Getenv(SMTPTitleEnv),
 	}
 	return nil
 }
