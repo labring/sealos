@@ -32,6 +32,8 @@ var (
 	DebtNamespaceMap        = make(map[string]bool)
 	DiskFullNamespaceMap    = make(map[string]bool)
 	DiskMonitorNamespaceMap = make(map[string]bool)
+	CPUMonitorNamespaceMap  = make(map[string]bool)
+	MemMonitorNamespaceMap  = make(map[string]bool)
 	LastBackupStatusMap     = make(map[string]string)
 	IsSendBackupStatusMap   = make(map[string]string)
 	ExceededQuotaException  = "exceeded quota"
@@ -44,6 +46,10 @@ var (
 	FeishuWebhookURLMap     = map[string]string{}
 	ClusterRegionMap        = map[string]string{}
 	BaseURL                 string
+	DatabaseMonitor         string
+	DiskMonitor             string
+	CPUMemMonitor           string
+	BackupMonitor           string
 )
 
 func GetENV() error {
@@ -53,6 +59,10 @@ func GetENV() error {
 	ClusterName = getEnvWithCheck("ClusterName", &missingEnvVars)
 	MonitorType = getEnvWithCheck("MonitorType", &missingEnvVars)
 	clusterNS := getEnvWithCheck("ClusterNS", &missingEnvVars)
+	DatabaseMonitor = getEnvWithCheck("DatabaseMonitor", &missingEnvVars)
+	DiskMonitor = getEnvWithCheck("DiskMonitor", &missingEnvVars)
+	CPUMemMonitor = getEnvWithCheck("CPUMemMonitor", &missingEnvVars)
+	BackupMonitor = getEnvWithCheck("BackupMonitor", &missingEnvVars)
 	if clusterNS != "" {
 		ClusterNS = strings.Split(clusterNS, ",")
 	}

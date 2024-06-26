@@ -12,7 +12,7 @@ import (
 func checkDebt(namespace string) (bool, string, error) {
 	// find debt crd
 	debtName := getAccountNameByNamespace(namespace)
-	debt, err := api.DynamicClient.Resource(debtGVR).Namespace(debtNamespace).Get(context.TODO(), debtName, metav1.GetOptions{})
+	debt, err := api.DynamicClient.Resource(debtGVR).Namespace(namespace).Get(context.TODO(), debtName, metav1.GetOptions{})
 	if err != nil {
 		// processing error: Resource does not exist or other error
 		if strings.Contains(err.Error(), "not found") {
