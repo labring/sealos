@@ -94,7 +94,7 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 
 func handleClusterRecovery(databaseClusterName, namespace, status string) {
 	if api.ExceptionDatabaseMap[databaseClusterName] {
-		notificationInfo := notification.NotificationInfo{
+		notificationInfo := notification.Info{
 			DatabaseClusterName: databaseClusterName,
 			Namespace:           namespace,
 			Status:              status,
@@ -175,7 +175,7 @@ func databaseQuotaExceptionFilter(databaseEvents string) bool {
 
 func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents string, maxUsage float64) (string, string) {
 	alertMessage, feishuWebHook := "", ""
-	notificationInfo := notification.NotificationInfo{
+	notificationInfo := notification.Info{
 		DatabaseClusterName: databaseClusterName,
 		Namespace:           namespace,
 		Status:              status,
@@ -210,7 +210,7 @@ func sendAlert(alertMessage, feishuWebHook, databaseClusterName string) error {
 }
 
 func notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel string) error {
-	notificationInfo := notification.NotificationInfo{
+	notificationInfo := notification.Info{
 		DatabaseClusterName: databaseClusterName,
 		Namespace:           namespace,
 		Status:              status,

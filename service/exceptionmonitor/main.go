@@ -27,8 +27,5 @@ func initialize() error {
 	if err := client.InitClient(); err != nil {
 		return err
 	}
-	if err := dao.InitCockroachDB(); err != nil {
-		return err
-	}
-	return nil
+	return dao.InitCockroachDB()
 }

@@ -11,7 +11,7 @@ import (
 
 const ExceptionType = "exception"
 
-type NotificationInfo struct {
+type Info struct {
 	DatabaseClusterName string
 	Namespace           string
 	Status              string
@@ -26,7 +26,7 @@ type NotificationInfo struct {
 	ExceptionType       string
 }
 
-func GetNotificationMessage(notificationInfo NotificationInfo) string {
+func GetNotificationMessage(notificationInfo Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "异常告警"
 	var elements []map[string]interface{}
