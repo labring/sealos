@@ -1,5 +1,8 @@
 import { ThemeConfig } from 'antd';
-import { editor } from 'monaco-editor';
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
+
+loader.config({ monaco });
 
 export const theme: ThemeConfig = {
   components: {
@@ -28,7 +31,7 @@ export const theme: ThemeConfig = {
   cssVar: true
 };
 
-export const monacoTheme: editor.IStandaloneThemeData = {
+export const monacoTheme: monaco.editor.IStandaloneThemeData = {
   base: 'vs',
   inherit: false,
   rules: [

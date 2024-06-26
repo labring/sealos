@@ -5,8 +5,13 @@ import { KubeObject } from '@/k8slens/kube-object';
 import { buildErrorResponse } from '@/services/backend/response';
 import { dumpKubeObject } from '@/utils/yaml';
 import { Button, Modal, message } from 'antd';
-import { editor } from 'monaco-editor';
 import { useRef } from 'react';
+
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
+
+loader.config({ monaco });
+
 
 interface Props<K extends KubeObject> {
   obj?: K;
@@ -25,7 +30,7 @@ export const UpdateEditorModal = <K extends KubeObject = KubeObject>({
 
   const [msgApi, contextHolder] = message.useMessage();
   const msgKey = 'updatedMsg';
-  const editorRef = useRef<editor.IStandaloneCodeEditor>();
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
 
   const editorValue = dumpKubeObject<KubeObject>(obj);
 
