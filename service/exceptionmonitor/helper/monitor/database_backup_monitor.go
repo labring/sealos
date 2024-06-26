@@ -22,7 +22,7 @@ var (
 )
 
 func DatabaseBackupMonitor() {
-	for api.BackupMonitor == "true" {
+	for api.BackupMonitor {
 		if err := checkDatabaseBackups(); err != nil {
 			log.Fatalf("Failed to check database backups: %v", err)
 		}

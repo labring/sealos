@@ -33,7 +33,7 @@ var (
 )
 
 func DatabaseExceptionMonitor() {
-	for api.DatabaseMonitor == "true" {
+	for api.DatabaseMonitor {
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Fatalf("Failed to check databases: %v", err)
 		}
@@ -88,23 +88,22 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 		// No action needed
 		break
 	default:
-		handleClusterException(cluster, databaseClusterName, namespace, databaseType, status)
+		handleClusterException(databaseClusterName, namespace, databaseType, status)
 	}
 }
 
 func handleClusterRecovery(databaseClusterName, namespace, status string) {
 	if api.ExceptionDatabaseMap[databaseClusterName] {
-		info := notification.NotificationInfo{
+		notificationInfo := notification.NotificationInfo{
 			DatabaseClusterName: databaseClusterName,
 			Namespace:           namespace,
 			Status:              status,
 			ExceptionType:       "database",
 			NotificationType:    "recovery",
 		}
-		recoveryMessage := notification.GetNotificationMessage(info)
+		recoveryMessage := notification.GetNotificationMessage(notificationInfo)
 		if err := notification.SendFeishuNotification(recoveryMessage, api.FeishuWebHookMap[databaseClusterName]); err != nil {
 			log.Fatalf("Error sending recovery notification: %v", err)
-
 		}
 		cleanClusterStatus(databaseClusterName)
 	}
@@ -117,7 +116,7 @@ func cleanClusterStatus(databaseClusterName string) {
 	delete(api.ExceptionDatabaseMap, databaseClusterName)
 }
 
-func handleClusterException(cluster metav1unstructured.Unstructured, databaseClusterName, namespace, databaseType, status string) {
+func handleClusterException(databaseClusterName, namespace, databaseType, status string) {
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
 		api.ExceptionDatabaseMap[databaseClusterName] = true
@@ -176,12 +175,13 @@ func databaseQuotaExceptionFilter(databaseEvents string) bool {
 
 func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents string, maxUsage float64) (string, string) {
 	alertMessage, feishuWebHook := "", ""
-	info := notification.NotificationInfo{
+	notificationInfo := notification.NotificationInfo{
 		DatabaseClusterName: databaseClusterName,
 		Namespace:           namespace,
 		Status:              status,
 		DebtLevel:           debtLevel,
 		ExceptionType:       "database",
+		Events:              databaseEvents,
 		NotificationType:    "exception",
 	}
 	if maxUsage < databaseExceptionMonitorThreshold {
@@ -191,12 +191,12 @@ func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, data
 		} else {
 			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLUFA"]
 		}
-		alertMessage = notification.GetNotificationMessage(info)
+		alertMessage = notification.GetNotificationMessage(notificationInfo)
 	} else {
 		if !api.DiskFullNamespaceMap[databaseClusterName] {
 			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
-			info.Reason = "disk is full"
-			alertMessage = notification.GetNotificationMessage(info)
+			notificationInfo.Reason = "disk is full"
+			alertMessage = notification.GetNotificationMessage(notificationInfo)
 			notification.CreateNotification(namespace, databaseClusterName, status, "disk is full")
 		}
 		api.DiskFullNamespaceMap[databaseClusterName] = true
@@ -210,7 +210,7 @@ func sendAlert(alertMessage, feishuWebHook, databaseClusterName string) error {
 }
 
 func notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel string) error {
-	info := notification.NotificationInfo{
+	notificationInfo := notification.NotificationInfo{
 		DatabaseClusterName: databaseClusterName,
 		Namespace:           namespace,
 		Status:              status,
@@ -219,9 +219,7 @@ func notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel strin
 		ExceptionType:       "database",
 		NotificationType:    "exception",
 	}
-	alertMessage := notification.GetNotificationMessage(info)
-	if err := notification.CreateNotification(namespace, databaseClusterName, status, api.ExceededQuotaException); err != nil {
-		return err
-	}
+	alertMessage := notification.GetNotificationMessage(notificationInfo)
+	notification.CreateNotification(namespace, databaseClusterName, status, api.ExceededQuotaException)
 	return notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLOther"])
 }

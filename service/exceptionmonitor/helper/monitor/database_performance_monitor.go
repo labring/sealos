@@ -47,10 +47,10 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		NotificationType:    "exception",
 		ExceptionType:       "performance",
 	}
-	if api.CPUMemMonitor == "true" {
+	if api.CPUMemMonitor {
 		handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID, info)
 	}
-	if api.DiskMonitor == "true" {
+	if api.DiskMonitor {
 		handleDiskMonitor(namespace, databaseClusterName, status, databaseType, UID)
 	}
 }
@@ -91,7 +91,6 @@ func handleDiskMonitor(namespace, databaseClusterName, status, databaseType, UID
 }
 
 func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.NotificationInfo, monitorMap map[string]bool) {
-
 	info.PerformanceType = performanceType
 	if usage >= threshold {
 		if !monitorMap[UID] {
