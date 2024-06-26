@@ -33,7 +33,7 @@ const switchPage = (key: SideNavItemKey): React.ReactNode => {
     case SideNavItemKey.Ingress:
       return <IngressOverviewPage />;
     case SideNavItemKey.Service:
-      return <ServiceOverviewPage />;  
+      return <ServiceOverviewPage />;
     default:
       return <OverviewPage />;
   }
