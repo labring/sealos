@@ -1,4 +1,3 @@
-import { editor as EditorNS } from 'monaco-editor';
 import { Button, Flex, Modal, Spin, notification } from 'antd';
 import React, { useCallback, useRef, useState } from 'react';
 import { createResource, getTemplate } from '@/api/kubernetes';
@@ -7,6 +6,10 @@ import { buildErrorResponse } from '@/services/backend/response';
 import { KubeObjectKind } from '@/constants/kube-object';
 import Title from '@/components/common/title/title';
 import StyledEditor from '@/components/common/editor/styled';
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
+
+loader.config({ monaco });
 
 interface Props {
   open: boolean;
@@ -23,8 +26,8 @@ export const CreateResourceModal = ({ open, setClose }: Props) => {
   const [template, setTemplate] = useState<string>(defaultTemplate);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [notifyApi, contextHolder] = notification.useNotification();
-  const editorRef = useRef<EditorNS.IStandaloneCodeEditor | null>(null);
-  const onEditorMount = (editor: EditorNS.IStandaloneCodeEditor) => {
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const onEditorMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
   };
 
