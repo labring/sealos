@@ -2,15 +2,15 @@ package monitor
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -21,75 +21,96 @@ var (
 	}
 )
 
-func CheckDatabaseBackup() error {
+func DatabaseBackupMonitor() {
+	for api.BackupMonitor == "true" {
+		if err := checkDatabaseBackups(); err != nil {
+			log.Fatalf("Failed to check database backups: %v", err)
+		}
+		time.Sleep(1 * time.Hour)
+	}
+}
+
+func checkDatabaseBackups() error {
 	backupList, err := api.DynamicClient.Resource(backupGVR).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, backup := range backupList.Items {
-		status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
-		backupName, namespace, startTime := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
-		if err != nil || !found {
-			fmt.Printf("Unable to get %s status in ns %s: %v\n", backupName, namespace, err)
-			continue
-		}
-		backupPolicyName, found, err := unstructured.NestedString(backup.Object, "spec", "backupPolicyName")
-		if err != nil || !found {
-			fmt.Printf("Unable to get %s backupPolicyName in ns %s: %v\n", backupName, namespace, err)
-			continue
-		}
-		if status == "Completed" {
-			//备份恢复告警
-			if _, ok := api.LastBackupStatusMap[backupName]; ok {
-				message := notification.GetBackupMessage("recovery", namespace, backupName, status, startTime, "")
-				err = notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"])
-				if err != nil {
-					fmt.Printf("Error sending recovery notification: %v\n", err)
-				}
-				delete(api.LastBackupStatusMap, backupName)
-				delete(api.IsSendBackupStatusMap, backupName)
-			}
-			continue
-		}
-		if status != "Failed" {
-			continue
-		}
-		if _, ok := api.LastBackupStatusMap[backupName]; !ok {
-			api.LastBackupStatusMap[backupName] = status
-			continue
-		}
-		if _, ok := api.IsSendBackupStatusMap[backupName]; ok {
-			continue
-		}
-
-		if ok, _ := checkFailedBackup(backupPolicyName, namespace); ok {
-			message := notification.GetBackupMessage("exception", namespace, backupName, status, startTime, "")
-			err = notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"])
-			if err != nil {
-				fmt.Printf("Error sending recovery notification: %v\n", err)
-			}
-			continue
-		}
-		err = api.DynamicClient.Resource(backupGVR).Namespace(namespace).Delete(context.TODO(), backupName, metav1.DeleteOptions{})
-		if err != nil {
-			fmt.Printf("Failed to delete %s in ns %s: %v\n", backupName, namespace, err)
-		}
+		processBackup(backup)
 	}
 	return nil
 }
 
+func processBackup(backup unstructured.Unstructured) {
+	status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
+	backupName, namespace, startTime := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
+	if err != nil || !found {
+		log.Fatalf("Unable to get %s status in ns %s:%v", backupName, namespace, err)
+		return
+	}
+	backupPolicyName, found, err := unstructured.NestedString(backup.Object, "spec", "backupPolicyName")
+	if err != nil || !found {
+		log.Fatalf("Unable to get %s backupPolicyName in ns %s:%v", backupName, namespace, err)
+		return
+	}
+	handleBackupStatus(backupName, namespace, status, startTime, backupPolicyName)
+}
+
+func handleBackupStatus(backupName, namespace, status, startTime, backupPolicyName string) {
+	if status == "Completed" {
+		handleBackupCompletion(backupName, namespace, status, startTime)
+		return
+	}
+	if status == "Failed" && shouldNotifyBackupFailure(backupName, namespace, backupPolicyName) {
+		err := api.DynamicClient.Resource(backupGVR).Namespace(namespace).Delete(context.Background(), backupName, metav1.DeleteOptions{})
+		if err != nil {
+			log.Fatalf("Failed to delete%s in ns %s:%v", backupName, namespace, err)
+		}
+	}
+}
+
+func handleBackupCompletion(backupName, namespace, status, startTime string) {
+	if _, ok := api.LastBackupStatusMap[backupName]; ok {
+		message := notification.GetBackupMessage("recovery", namespace, backupName, status, startTime, "")
+		if err := notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
+			log.Fatalf("Error sending recovery notification:%v", err)
+		}
+		delete(api.LastBackupStatusMap, backupName)
+		delete(api.IsSendBackupStatusMap, backupName)
+	}
+}
+
+func shouldNotifyBackupFailure(backupName, namespace, backupPolicyName string) bool {
+	if _, ok := api.LastBackupStatusMap[backupName]; !ok {
+		api.LastBackupStatusMap[backupName] = "Failed"
+		return false
+	}
+	if _, ok := api.IsSendBackupStatusMap[backupName]; ok {
+		return false
+	}
+
+	if ok, _ := checkFailedBackup(backupPolicyName, namespace); ok {
+		message := notification.GetBackupMessage("exception", namespace, backupName, "Failed", "", "")
+		if err := notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
+			log.Fatalf("Error sending exception notification:%v", err)
+		}
+		return true
+	}
+	return false
+}
+
 func checkFailedBackup(backupPolicyName, namespace string) (bool, error) {
 	databaseName := getPrefix(backupPolicyName)
-	podList, err := api.ClientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	podList, err := api.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
 	for _, pod := range podList.Items {
-		if podName := pod.GetName(); strings.HasPrefix(podName, databaseName) {
+		if strings.HasPrefix(pod.GetName(), databaseName) {
 			return true, nil
 		}
 	}
-	return false, err
+	return false, nil
 }
 
 func getPrefix(backupPolicyName string) string {

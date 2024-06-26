@@ -9,10 +9,24 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
-func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, events, reason string) string {
-	isNormal := status == "Running" || status == "Stopped"
+type NotificationInfo struct {
+	DatabaseClusterName string
+	Namespace           string
+	Status              string
+	DebtLevel           string
+	Events              string
+	Reason              string
+	NotificationType    string
+	DiskUsage           string
+	CPUUsage            string
+	MemUsage            string
+	PerformanceType     string
+	ExceptionType       string
+}
+
+func GetNotificationMessage(info NotificationInfo) string {
 	headerTemplate := "red"
-	titleContent := "数据库异常告警"
+	titleContent := "数据库" + info.ExceptionType + "异常告警"
 	var elements []map[string]interface{}
 
 	commonElements := []map[string]interface{}{
@@ -26,54 +40,74 @@ func GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, e
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("命名空间：%s", namespace),
+				"content": fmt.Sprintf("命名空间：%s", info.Namespace),
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库名：%s", databaseClusterName),
+				"content": fmt.Sprintf("数据库名：%s", info.DatabaseClusterName),
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库状态：%s", status),
+				"content": fmt.Sprintf("数据库状态：%s", info.Status),
 				"tag":     "lark_md",
 			},
 		},
 	}
-	if isNormal {
-		headerTemplate = "blue"
-		titleContent = "数据库恢复通知"
-		elements = commonElements
-	} else {
+
+	if info.NotificationType == "exception" && info.ExceptionType == "database" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("欠费级别：%s", debtLevel),
+					"content": fmt.Sprintf("欠费级别：%s", info.DebtLevel),
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("事件信息：%s", events),
+					"content": fmt.Sprintf("事件信息：%s", info.Events),
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("告警原因：%s", reason),
+					"content": fmt.Sprintf("告警原因：%s", info.Reason),
 					"tag":     "lark_md",
 				},
 			},
 		}
 		elements = append(commonElements, exceptionElements...)
+	} else if info.NotificationType == "exception" && info.ExceptionType == "performance" {
+		exceptionElements := []map[string]interface{}{
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("%s使用率：%s", info.PerformanceType, info.DebtLevel),
+					"tag":     "lark_md",
+				},
+			},
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("告警原因：%s", info.PerformanceType+"超过阀值"),
+					"tag":     "lark_md",
+				},
+			},
+		}
+		elements = append(commonElements, exceptionElements...)
+	}
+	if info.NotificationType == "recovery" {
+		headerTemplate = "blue"
+		titleContent = "数据库" + info.ExceptionType + "恢复通知"
+		elements = commonElements
 	}
 
 	card := map[string]interface{}{

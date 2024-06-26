@@ -3,12 +3,14 @@ package monitor
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -18,9 +20,7 @@ var (
 		Version:  "v1alpha1",
 		Resource: "clusters",
 	}
-	//debtResourceQuota = "debt-limit0"
-	debtNamespace = "account-system"
-	debtGVR       = schema.GroupVersionResource{
+	debtGVR = schema.GroupVersionResource{
 		Group:    "account.sealos.io",
 		Version:  "v1",
 		Resource: "debts",
@@ -32,100 +32,124 @@ var (
 	}
 )
 
-func CheckDatabases(ns string) error {
-	var clusters *unstructured.UnstructuredList
+func DatabaseExceptionMonitor() {
+	for api.DatabaseMonitor == "true" {
+		if err := checkDatabases(api.ClusterNS); err != nil {
+			log.Fatalf("Failed to check databases: %v", err)
+		}
+		time.Sleep(1 * time.Minute)
+	}
+}
+
+func checkDatabases(namespaces []string) error {
+	if api.MonitorType == "all" {
+		if err := checkDatabasesInNamespace(""); err != nil {
+			return err
+		}
+	} else {
+		for _, ns := range namespaces {
+			if err := checkDatabasesInNamespace(ns); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func checkDatabasesInNamespace(namespace string) error {
+	var clusters *metav1unstructured.UnstructuredList
 	var err error
 	if api.MonitorType == "all" {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	} else {
-		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(ns).List(context.Background(), metav1.ListOptions{})
+		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
 	}
 	if err != nil {
 		return err
 	}
 	for _, cluster := range clusters.Items {
-		//Avoid duplicate sending notifacation
-		isSend := false
-		databaseClusterName, databaseType, namespace := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace()
-		status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
-		if err != nil || !found {
-			fmt.Printf("Unable to get %s status in ns %s: %v\n", databaseClusterName, namespace, err)
-			continue
+		processCluster(cluster)
+	}
+	return nil
+}
+
+func processCluster(cluster metav1unstructured.Unstructured) {
+	databaseClusterName, databaseType, namespace := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace()
+	status, found, err := metav1unstructured.NestedString(cluster.Object, "status", "phase")
+	if err != nil || !found {
+		log.Fatalf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
+		return
+	}
+
+	switch status {
+	case "Running", "Stopped":
+		handleClusterRecovery(databaseClusterName, namespace, status)
+	case "Deleting", "Stopping":
+		// No action needed
+		break
+	default:
+		handleClusterException(cluster, databaseClusterName, namespace, databaseType, status)
+	}
+}
+
+func handleClusterRecovery(databaseClusterName, namespace, status string) {
+	if api.ExceptionDatabaseMap[databaseClusterName] {
+		info := notification.NotificationInfo{
+			DatabaseClusterName: databaseClusterName,
+			Namespace:           namespace,
+			Status:              status,
+			ExceptionType:       "database",
+			NotificationType:    "recovery",
 		}
-		//if status == "Deleting" || status == "Stopping" {
-		//	continue
-		//}
-		if status == "Running" || status == "Stopped" {
-			//database recovery notification
-			if api.ExceptionDatabaseMap[databaseClusterName] {
-				recoveryMessage := notification.GetNotificationMessage(databaseClusterName, namespace, status, "", "", "")
-				err = notification.SendFeishuNotification(recoveryMessage, api.FeishuWebHookMap[databaseClusterName])
-				if err != nil {
-					fmt.Printf("Error sending recovery notification: %v\n", err)
-				}
-				delete(api.LastDatabaseClusterStatus, databaseClusterName)
-				delete(api.DiskFullNamespaceMap, databaseClusterName)
-				delete(api.FeishuWebHookMap, databaseClusterName)
-				delete(api.ExceptionDatabaseMap, databaseClusterName)
+		recoveryMessage := notification.GetNotificationMessage(info)
+		if err := notification.SendFeishuNotification(recoveryMessage, api.FeishuWebHookMap[databaseClusterName]); err != nil {
+			log.Fatalf("Error sending recovery notification: %v", err)
+
+		}
+		cleanClusterStatus(databaseClusterName)
+	}
+}
+
+func cleanClusterStatus(databaseClusterName string) {
+	delete(api.LastDatabaseClusterStatus, databaseClusterName)
+	delete(api.DiskFullNamespaceMap, databaseClusterName)
+	delete(api.FeishuWebHookMap, databaseClusterName)
+	delete(api.ExceptionDatabaseMap, databaseClusterName)
+}
+
+func handleClusterException(cluster metav1unstructured.Unstructured, databaseClusterName, namespace, databaseType, status string) {
+	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
+		api.LastDatabaseClusterStatus[databaseClusterName] = status
+		api.ExceptionDatabaseMap[databaseClusterName] = true
+	}
+	if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
+		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
+			log.Fatalf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
+		}
+	}
+}
+
+func processClusterException(databaseClusterName, namespace, databaseType, status string) error {
+	debt, debtLevel, _ := checkDebt(namespace)
+	if debt {
+		databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
+		if send {
+			maxUsage, err := checkPerformance(namespace, databaseClusterName, databaseType, "disk")
+			if err != nil {
+				return err
 			}
-			continue
-		}
-		if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
-			// if the lastClusterStatus doesn't exist ，update status
-			isSend = true
-			api.LastDatabaseClusterStatus[databaseClusterName] = status
-			api.ExceptionDatabaseMap[databaseClusterName] = true
-		}
-		if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
-			debt, debtLevel, _ := checkDebt(namespace)
-			alertMessage, feishuWebHook := "", ""
-			if debt {
-				databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
-				if send {
-					maxUsage, err := checkDisk(namespace, databaseClusterName, databaseType)
-					if err != nil {
-						fmt.Printf("check disk err: %s \n", err)
-					}
-					if maxUsage < databaseExceptionMonitorThreshold {
-						if status == "Creating" || status == "Deleting" || status == "Stopping" {
-							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
-						} else {
-							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLUFA"]
-						}
-						alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "unknown")
-					} else {
-						if !api.DiskFullNamespaceMap[databaseClusterName] {
-							feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
-							alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "disk is full")
-							notificationMessage := "disk is full"
-							//Notify user that disk is full
-							notification.CreateNotification(namespace, databaseClusterName, status, notificationMessage)
-						}
-						api.DiskFullNamespaceMap[databaseClusterName] = true
-					}
-				} else {
-					//Notify user that the quota is exceeded
-					feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
-					alertMessage = notification.GetNotificationMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, "exceeded quota")
-					notificationMessage := "exceeded quota"
-					notification.CreateNotification(namespace, databaseClusterName, status, notificationMessage)
-				}
-				//CreateNotification(namespace, name, status)
-				//database exception notification
-				if isSend {
-					api.FeishuWebHookMap[databaseClusterName] = feishuWebHook
-					fmt.Println(alertMessage)
-					//err = notification.SendFeishuNotification(alertMessage, feishuWebHook)
-					//if err != nil {
-					//	fmt.Printf("Error sending exception notification: %v\n", err)
-					//}
-				}
-				continue
+			alertMessage, feishuWebHook := prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, maxUsage)
+			if err := sendAlert(alertMessage, feishuWebHook, databaseClusterName); err != nil {
+				return err
 			}
-			api.DebtNamespaceMap[namespace] = true
-			delete(api.LastDatabaseClusterStatus, databaseClusterName)
-			continue
+		} else {
+			if err := notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel); err != nil {
+				return err
+			}
 		}
+	} else {
+		api.DebtNamespaceMap[namespace] = true
+		delete(api.LastDatabaseClusterStatus, databaseClusterName)
 	}
 	return nil
 }
@@ -150,21 +174,54 @@ func databaseQuotaExceptionFilter(databaseEvents string) bool {
 	return !strings.Contains(databaseEvents, api.ExceededQuotaException)
 }
 
-func getKubeConfig(namespace string) (string, error) {
-	userName := strings.Split(namespace, "-")[1]
-	user, err := api.DynamicClient.Resource(userGVR).Namespace("").Get(context.TODO(), userName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
+func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents string, maxUsage float64) (string, string) {
+	alertMessage, feishuWebHook := "", ""
+	info := notification.NotificationInfo{
+		DatabaseClusterName: databaseClusterName,
+		Namespace:           namespace,
+		Status:              status,
+		DebtLevel:           debtLevel,
+		ExceptionType:       "database",
+		NotificationType:    "exception",
 	}
-	kubeConfig, found, err := unstructured.NestedString(user.UnstructuredContent(), "status", "kubeConfig")
-	if err != nil {
-		return "", err
+	if maxUsage < databaseExceptionMonitorThreshold {
+		//status == "Creating" || status == "Deleting" || status == "Stopping"
+		if status == "Creating" {
+			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
+		} else {
+			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLUFA"]
+		}
+		alertMessage = notification.GetNotificationMessage(info)
+	} else {
+		if !api.DiskFullNamespaceMap[databaseClusterName] {
+			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
+			info.Reason = "disk is full"
+			alertMessage = notification.GetNotificationMessage(info)
+			notification.CreateNotification(namespace, databaseClusterName, status, "disk is full")
+		}
+		api.DiskFullNamespaceMap[databaseClusterName] = true
 	}
-	if !found {
-		return "", err
+	return alertMessage, feishuWebHook
+}
+
+func sendAlert(alertMessage, feishuWebHook, databaseClusterName string) error {
+	api.FeishuWebHookMap[databaseClusterName] = feishuWebHook
+	return notification.SendFeishuNotification(alertMessage, feishuWebHook)
+}
+
+func notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel string) error {
+	info := notification.NotificationInfo{
+		DatabaseClusterName: databaseClusterName,
+		Namespace:           namespace,
+		Status:              status,
+		DebtLevel:           debtLevel,
+		Reason:              api.ExceededQuotaException,
+		ExceptionType:       "database",
+		NotificationType:    "exception",
 	}
-	kubeConfig = strings.ReplaceAll(kubeConfig, ":", "%3A")
-	kubeConfig = strings.ReplaceAll(kubeConfig, " ", "%20")
-	kubeConfig = strings.ReplaceAll(kubeConfig, "\n", "%0A")
-	return kubeConfig, nil
+	alertMessage := notification.GetNotificationMessage(info)
+	if err := notification.CreateNotification(namespace, databaseClusterName, status, api.ExceededQuotaException); err != nil {
+		return err
+	}
+	return notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLOther"])
 }
