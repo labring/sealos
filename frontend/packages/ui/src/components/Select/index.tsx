@@ -6,7 +6,8 @@ import {
   MenuItem,
   Button,
   useDisclosure,
-  useOutsideClick
+  useOutsideClick,
+  MenuButton
 } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
@@ -21,10 +22,20 @@ interface Props extends ButtonProps {
     value: string;
   }[];
   onchange?: (val: string) => void;
+  isInvalid?: boolean;
 }
 
 const MySelect = (
-  { placeholder, value, width = 'auto', height = '30px', list, onchange, ...props }: Props,
+  {
+    placeholder,
+    value,
+    width = 'auto',
+    height = '30px',
+    list,
+    onchange,
+    isInvalid,
+    ...props
+  }: Props,
   selectRef: any
 ) => {
   const ref = useRef<HTMLButtonElement>(null);
@@ -49,7 +60,9 @@ const MySelect = (
           isOpen ? onClose() : onOpen();
         }}
       >
-        <Button
+        <MenuButton
+          as={Button}
+          rightIcon={<ChevronDownIcon />}
           width={width}
           height={height}
           ref={ref}
@@ -70,12 +83,13 @@ const MySelect = (
           }}
           {...(isOpen
             ? {
-                // boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                borderColor: 'brightBlue.600',
+                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                borderColor: 'brightBlue.500',
                 bg: '#FFF'
               }
             : {
-                bg: '#F7F8FA'
+                bg: '#F7F8FA',
+                borderColor: isInvalid ? 'red' : ''
               })}
           {...props}
         >
@@ -88,10 +102,7 @@ const MySelect = (
               <Box>{placeholder}</Box>
             </>
           )}
-
-          <Box flex={1} />
-          <ChevronDownIcon />
-        </Button>
+        </MenuButton>
 
         <MenuList
           minW={(() => {
@@ -110,7 +121,8 @@ const MySelect = (
             '0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)'
           }
           zIndex={99}
-          transform={'translateY(40px) !important'}
+          overflow={'overlay'}
+          maxH={'300px'}
         >
           {list.map((item) => (
             <MenuItem

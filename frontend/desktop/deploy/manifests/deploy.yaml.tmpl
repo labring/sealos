@@ -29,26 +29,6 @@ spec:
   selector:
     app: desktop-frontend
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: desktop-frontend-config
-  namespace: sealos
-data:
-  config.yaml: |-
-    addr: :3000
-  config.json: |-
-    {
-      "scripts": [],
-      "isSystemConfigEnabled": true,
-      "backgroundImageUrl": '/images/bg-blue.svg',
-      "imageFallBackUrl": 'logo.svg',
-      "title": 'Sealos',
-      "metaTitle": 'Sealos Cloud',
-      "metaDescription": 'sealos cloud dashboard',
-      "showGithubStar": true
-    }
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -75,155 +55,16 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
+              export REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"')
+              export GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"')
               prisma migrate deploy --schema /app/desktop/prisma/global/schema.prisma
               prisma migrate deploy --schema /app/desktop/prisma/region/schema.prisma
-          env:
-            - name: GLOBAL_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  key: global_database_url
-                  name: desktop-frontend-secret
-            - name: REGION_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  key: region_database_url
-                  name: desktop-frontend-secret
+          volumeMounts:
+            - mountPath: /app/data/config.yaml
+              name: desktop-frontend-volume
+              subPath: config.yaml
       containers:
         - name: desktop-frontend
-          env:
-            # callback url is used for oauth2 login, required
-            - name: CALLBACK_URL
-              value: https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback
-            # mongodb uri, required
-            - name: MONGODB_URI
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: mongodb_uri
-            # jwt secret, required
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: jwt_secret
-
-            # set to true to enable password login, modify the PASSWORD_SALT env to change the salt
-            - name: PASSWORD_ENABLED
-              value: '{{ .passwordEnabled }}'
-            # set to true to enable github login
-            - name: GITHUB_ENABLED
-              value: '{{ .githubEnabled }}'
-            # set to true to enable wechat login
-            - name: WECHAT_ENABLED
-              value: '{{ .wechatEnabled }}'
-            # set to true to enable sms login
-            - name: SMS_ENABLED
-              value: '{{ .smsEnabled }}'
-            # set to true to enable sign up
-            - name: SIGN_UP_ENABLED
-              value: '{{ .signUpEnabled }}'
-            # set to true to open api
-            - name: API_ENABLED
-              value: '{{ .apiEnabled }}'
-            # password login env
-            - name: PASSWORD_SALT
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: password_salt
-            # github login env
-            - name: GITHUB_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: github_client_id
-                  optional: true
-            - name: GITHUB_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: github_client_secret
-                  optional: true
-            # wechat login env
-            - name: WECHAT_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: wechat_client_id
-                  optional: true
-            - name: WECHAT_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: wechat_client_secret
-                  optional: true
-            # sms login env
-            - name: ALI_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: ali_sms_endpoint
-                  optional: true
-            - name: ALI_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: ali_access_key_id
-                  optional: true
-            - name: ALI_ACCESS_KEY_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: ali_access_key_secret
-                  optional: true
-            - name: ALI_SIGN_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: ali_sms_sign_name
-                  optional: true
-            - name: ALI_TEMPLATE_CODE
-              valueFrom:
-                secretKeyRef:
-                  name: desktop-frontend-secret
-                  key: ali_sms_template_code
-                  optional: true
-            - name: SEALOS_CLOUD_DOMAIN
-              value: {{ .cloudDomain }}
-            - name: INVITE_ENABLED
-              value: "false"
-            - name: GUIDE_ENABLED
-              value: "false"
-            - name: GLOBAL_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  key: global_database_url
-                  name: desktop-frontend-secret
-            - name: REGION_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  key: region_database_url
-                  name: desktop-frontend-secret
-            - name: BILLING_URI
-              valueFrom:
-                secretKeyRef:
-                  key: billing_uri
-                  name: desktop-frontend-secret
-            - name: JWT_SECRET_REGION
-              valueFrom:
-                secretKeyRef:
-                  key: jwt_secret_region
-                  name: desktop-frontend-secret
-            - name: JWT_SECRET_APP
-              valueFrom:
-                secretKeyRef:
-                  key: jwt_secret_app
-                  name: desktop-frontend-secret
-            - name: REGION_UID
-              valueFrom:
-                secretKeyRef:
-                  key: region_uid
-                  name: desktop-frontend-secret
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -231,15 +72,27 @@ spec:
             capabilities:
               drop:
                 - "ALL"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
+              GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
+              node /app/desktop/server.js
+          readinessProbe:
+            httpGet:
+              path: /api/platform/getAppConfig
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 2
+            successThreshold: 3
+            failureThreshold: 3
           image: ghcr.io/labring/sealos-desktop-frontend:latest
           imagePullPolicy: IfNotPresent
           volumeMounts:
-            - name: desktop-frontend-volume
-              mountPath: /config.yaml
-              subPath: config.yaml
-            - mountPath: /app/data/config.json
+            - mountPath: /app/data/config.yaml
               name: desktop-frontend-volume
-              subPath: config.json
+              subPath: config.yaml
           resources:
             limits:
               cpu: 2000m
@@ -250,15 +103,15 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: "app"
-                  operator: In
-                  values:
-                  - desktop-frontend
-              topologyKey: "kubernetes.io/hostname"
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - desktop-frontend
+                topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: desktop-frontend-volume
           configMap:

@@ -1,5 +1,14 @@
 import request from '@/services/request';
-import { ApiResp, NotificationItem, Session, SystemConfigType, SystemEnv } from '@/types';
+import {
+  ApiResp,
+  NotificationItem,
+  LayoutConfigType,
+  CloudConfigType,
+  AuthClientConfigType,
+  AppClientConfigType,
+  CommonConfigType,
+  CommonClientConfigType
+} from '@/types';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
@@ -25,12 +34,24 @@ export const getUserAccount = () => {
   return request.get<AccountCRD>('/api/account/getAccount');
 };
 
-export const getSystemEnv = () => {
-  return request.get<SystemEnv>('/api/platform/getEnv');
+export const getAppConfig = () => {
+  return request.get<AppClientConfigType>('/api/platform/getAppConfig');
 };
 
-export const getSystemConfig = () => {
-  return request.get<SystemConfigType>('/api/platform/getSystemConfig');
+export const getCloudConfig = () => {
+  return request.get<CloudConfigType>('/api/platform/getCloudConfig');
+};
+
+export const getCommonConfig = () => {
+  return request.get<CommonClientConfigType>('/api/platform/getCommonConfig');
+};
+
+export const getLayoutConfig = () => {
+  return request.get<LayoutConfigType>('/api/platform/getLayoutConfig');
+};
+
+export const getAuthConfig = () => {
+  return request.get<AuthClientConfigType>('/api/platform/getAuthConfig');
 };
 
 export const getPriceBonus = () => {
@@ -56,4 +77,27 @@ export const getWechatResult = (payload: { code: string }) =>
 
 export const getGlobalNotification = () => {
   return request.get<any, ApiResp<NotificationItem>>('/api/notification/global');
+};
+
+export const getResource = () => {
+  return request.get<
+    any,
+    ApiResp<{
+      totalCpu: string;
+      totalMemory: string;
+      totalStorage: string;
+      runningPodCount: string;
+      totalPodCount: string;
+    }>
+  >('/api/desktop/getResource');
+};
+
+export const getUserBilling = () => {
+  return request.post<
+    any,
+    ApiResp<{
+      prevMonthTime: number;
+      prevDayTime: number;
+    }>
+  >('/api/desktop/getBilling');
 };

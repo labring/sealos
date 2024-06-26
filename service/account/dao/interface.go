@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
@@ -25,7 +28,7 @@ type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
-	GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error)
+	GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error)
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
@@ -145,17 +148,30 @@ func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.Ti
 	return costsMap, nil
 }
 
-func (m *MongoDB) GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error) {
-	return m.getAmountWithType(0, user, startTime, endTime)
+func (m *MongoDB) GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error) {
+	return m.getAmountWithType(0, user, namespace, appType, startTime, endTime)
 }
 
-func (m *MongoDB) getAmountWithType(_type int64, user string, startTime, endTime time.Time) (int64, error) {
+func (m *MongoDB) getAmountWithType(_type int64, user, namespace, _appType string, startTime, endTime time.Time) (int64, error) {
+	timeMatchValue := bson.D{primitive.E{Key: "$gte", Value: startTime}, primitive.E{Key: "$lte", Value: endTime}}
+	matchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: user},
+		primitive.E{Key: "type", Value: _type},
+	}
+	if namespace != "" {
+		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: namespace})
+	}
+	if _appType != "" {
+		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(_appType)]})
+	}
+	matchStage := bson.D{
+		primitive.E{
+			Key: "$match", Value: matchValue,
+		},
+	}
 	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: bson.M{
-			"type":  _type,
-			"time":  bson.M{"$gte": startTime, "$lte": endTime},
-			"owner": user,
-		}}},
+		matchStage,
 		bson.D{{Key: "$group", Value: bson.M{
 			"_id":   nil,
 			"total": bson.M{"$sum": "$amount"},

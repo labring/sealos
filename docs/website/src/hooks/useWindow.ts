@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 
-export default function () {
+export default function useWindow() {
   const isBrowser = useIsBrowser();
   const [screenWidth, setScreenWidth] = useState(isBrowser ? document.body.clientWidth : 1440);
   const [currentLanguage, setCurrentLanguage] = useState(

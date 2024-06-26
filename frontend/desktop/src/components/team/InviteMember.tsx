@@ -14,27 +14,30 @@ import {
   MenuItem,
   Text,
   Flex,
-  useToast,
   Spinner,
-  FlexProps,
-  ButtonProps
+  ButtonProps,
+  HStack,
+  useToast
 } from '@chakra-ui/react';
-import CustomInput from './Input';
-import { useState } from 'react';
+import { MouseEventHandler, useState } from 'react';
 import { ROLE_LIST, UserRole } from '@/types/team';
 import useSessionStore from '@/stores/session';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { inviteMemberRequest } from '@/api/namespace';
+import { getInviteCodeRequest, inviteMemberRequest } from '@/api/namespace';
 import { vaildManage } from '@/utils/tools';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { GroupAddIcon } from '@sealos/ui';
+import { useCopyData } from '@/hooks/useCopyData';
+
 export default function InviteMember({
   ns_uid,
+  workspaceName,
   ownRole,
   ...props
 }: ButtonProps & {
   ns_uid: string;
+  workspaceName: string;
   ownRole: UserRole;
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
@@ -59,34 +62,34 @@ export default function InviteMember({
       });
     }
   });
-  const canManage = vaildManage(ownRole, 'x');
+  const canManage = vaildManage(ownRole);
   const { t } = useTranslation();
-  const submit = () => {
-    let trim_to = userId.trim();
-    if (!trim_to || trim_to.length !== 10) {
+  const { copyData } = useCopyData();
+  const getLinkCode = useMutation({
+    mutationFn: getInviteCodeRequest,
+    mutationKey: [session?.user.ns_uid],
+    onError() {
       toast({
         status: 'error',
-        title: t('Invalid User ID'),
+        title: t('Failed to generate invitation link'),
         isClosable: true,
         position: 'top'
       });
-      return;
     }
-    const tk8s_username = trim_to.startsWith('ns-') ? trim_to.replace('ns-', '') : trim_to;
-    if (tk8s_username === k8s_username) {
-      toast({
-        status: 'error',
-        title: t('The invited user must be others'),
-        isClosable: true,
-        position: 'top'
-      });
-      return;
-    }
-    mutation.mutate({
+  });
+
+  const generateLink = (code: string) => {
+    return window.location.origin + encodeURI(`/WorkspaceInvite/?code=${code}`);
+  };
+  const handleGenLink: MouseEventHandler<HTMLButtonElement> = async (e) => {
+    e.preventDefault();
+    const data = await getLinkCode.mutateAsync({
       ns_uid,
-      targetUserId: trim_to,
       role
     });
+    const code = data.data?.code!;
+    const link = generateLink(code);
+    await copyData(link);
   };
   return (
     <>
@@ -121,69 +124,66 @@ export default function InviteMember({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              <CustomInput
-                onChange={(e) => {
-                  e.preventDefault();
-                  setUserId(e.target.value);
-                }}
-                placeholder={t('private team ID of user') || ''}
-                value={userId}
-              />
-              <Menu>
-                <MenuButton
-                  as={Button}
-                  variant={'unstyled'}
-                  borderRadius="2px"
-                  border="1px solid #DEE0E2"
-                  bgColor="#FBFBFC"
-                  w="100%"
-                  mt="24px"
+              <Text>
+                {t('Invite members to workspace', {
+                  workspace: workspaceName
+                })}
+              </Text>
+              <HStack gap={'8px'} justifyContent={'stretch'}>
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    variant={'unstyled'}
+                    borderRadius="2px"
+                    border="1px solid #DEE0E2"
+                    bgColor="#FBFBFC"
+                    w="140px"
+                    mt="24px"
+                    px="12px"
+                  >
+                    <Flex alignItems={'center'} justifyContent={'space-between'}>
+                      <Text>{ROLE_LIST[role]}</Text>
+                      <Image
+                        src="/images/material-symbols_expand-more-rounded.svg"
+                        w="16px"
+                        h="16px"
+                        transform={'rotate(90deg)'}
+                      />
+                    </Flex>
+                  </MenuButton>
+                  <MenuList borderRadius={'2px'} minW={'unset'}>
+                    {ROLE_LIST.map((role, idx) => (
+                      <MenuItem
+                        w="140px"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setRole(idx);
+                        }}
+                        key={idx}
+                      >
+                        {role}
+                      </MenuItem>
+                    )).filter((_, i) => canManage(i, false) && i !== UserRole.Owner)}
+                  </MenuList>
+                </Menu>
+                <Button
+                  flex={'1'}
+                  variant={''}
+                  bg="#24282C"
+                  borderRadius={'4px'}
+                  color="#fff"
+                  py="6px"
                   px="12px"
+                  mt="24px"
+                  _hover={{
+                    opacity: '0.8'
+                  }}
+                  isDisabled={getLinkCode.isLoading}
+                  onClick={handleGenLink}
                 >
-                  <Flex alignItems={'center'} justifyContent={'space-between'}>
-                    <Text>{ROLE_LIST[role]}</Text>
-                    <Image
-                      src="/images/material-symbols_expand-more-rounded.svg"
-                      w="16px"
-                      h="16px"
-                      transform={'rotate(90deg)'}
-                    />
-                  </Flex>
-                </MenuButton>
-                <MenuList borderRadius={'2px'}>
-                  {ROLE_LIST.map((role, idx) => (
-                    <MenuItem
-                      w="330px"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setRole(idx);
-                      }}
-                      key={idx}
-                    >
-                      {role}
-                    </MenuItem>
-                  )).filter((_, i) => canManage(i, 'y') && i !== UserRole.Owner)}
-                </MenuList>
-              </Menu>
-              <Button
-                w="100%"
-                variant={'unstyled'}
-                bg="#24282C"
-                borderRadius={'4px'}
-                color="#fff"
-                py="6px"
-                px="12px"
-                mt="24px"
-                _hover={{
-                  opacity: '0.8'
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  submit();
-                }}
-              >
-                {t('Confirm')}
-              </Button>
+                  {t('Generate invitation link')}
+                </Button>
+              </HStack>
             </ModalBody>
           )}
         </ModalContent>

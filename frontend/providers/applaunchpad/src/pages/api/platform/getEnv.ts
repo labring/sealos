@@ -6,8 +6,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   jsonRes<EnvResponse>(res, {
     data: {
-      domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
-      guideEnabled: process.env.GUIDE_ENABLED === 'true'
+      domain: global.AppConfig.cloud.domain || 'cloud.sealos.io',
+      guideEnabled: global.AppConfig.common.guideEnabled
     }
   });
 }

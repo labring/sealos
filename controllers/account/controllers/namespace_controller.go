@@ -23,6 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/minio/madmin-go/v3"
+
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -31,13 +35,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/go-logr/logr"
-	"github.com/minio/madmin-go/v3"
-
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
-
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,6 +70,10 @@ const (
 //+kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=namespaces/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -94,16 +98,14 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(fmt.Errorf("no debt status"), "no debt status")
 		return ctrl.Result{}, nil
 	}
-	logger.Info("debt status", "status", debtStatus)
+	logger.V(1).Info("debt status", "status", debtStatus)
 	switch debtStatus {
 	case v1.SuspendDebtNamespaceAnnoStatus:
-		logger.Info("suspend namespace resources")
 		if err := r.SuspendUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "suspend namespace resources failed")
 			return ctrl.Result{}, err
 		}
 	case v1.ResumeDebtNamespaceAnnoStatus:
-		logger.Info("resume namespace resources")
 		if err := r.ResumeUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "resume namespace resources failed")
 			return ctrl.Result{}, err
@@ -130,6 +132,7 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	// suspend pod: deploy pod && clone unmanaged pod
 	// delete infra cr
 	pipelines := []func(context.Context, string) error{
+		//r.suspendKBCluster,
 		r.suspendOrphanPod,
 		r.limitResourceQuotaCreate,
 		r.deleteControlledPod,
@@ -186,6 +189,29 @@ func GetLimit0ResourceQuota(namespace string) *corev1.ResourceQuota {
 	}
 	return &quota
 }
+
+//func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
+//	kbClusterList := kbv1alpha1.ClusterList{}
+//	if err := r.Client.List(ctx, &kbClusterList, client.InNamespace(namespace)); err != nil {
+//		return err
+//	}
+//	for _, kbCluster := range kbClusterList.Items {
+//		if kbCluster.Status.Phase != kbv1alpha1.RunningClusterPhase {
+//			continue
+//		}
+//		ops := kbv1alpha1.OpsRequest{}
+//		ops.Namespace = kbCluster.Namespace
+//		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("2006-01-02-15")
+//		ops.Spec.TTLSecondsAfterSucceed = 1
+//		ops.Spec.ClusterRef = kbCluster.Name
+//		ops.Spec.Type = "Stop"
+//		err := r.Client.Create(ctx, &ops)
+//		if err != nil {
+//			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
+//		}
+//	}
+//	return nil
+//}
 
 func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace string) error {
 	podList := corev1.PodList{}
@@ -329,7 +355,7 @@ func (r *NamespaceReconciler) suspendObjectStorage(ctx context.Context, namespac
 		return err
 	}
 
-	r.Log.Info("suspend object storage", "user", user)
+	//r.Log.Info("suspend object storage", "user", user)
 	return nil
 }
 
@@ -343,7 +369,7 @@ func (r *NamespaceReconciler) resumeObjectStorage(ctx context.Context, namespace
 		return err
 	}
 
-	r.Log.Info("resume object storage", "user", user)
+	//r.Log.Info("resume object storage", "user", user)
 	return nil
 }
 

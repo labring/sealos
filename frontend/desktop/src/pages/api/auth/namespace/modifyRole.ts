@@ -42,10 +42,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     const own = queryResults.find((x) => x.userCrUid === payload.userCrUid);
     if (!own) return jsonRes(res, { code: 403, message: 'you are not in namespace' });
-    const vaildFn = vaildManage(roleToUserRole(own.role), own.userCrUid);
+    const vaildFn = vaildManage(roleToUserRole(own.role));
     const targetUser = queryResults.find((x) => x.userCrUid === targetUserCrUid);
     if (!targetUser) return jsonRes(res, { code: 404, message: 'target is not in namespace' });
-    if (!vaildFn(roleToUserRole(targetUser.role), targetUser.userCrUid))
+    if (!vaildFn(roleToUserRole(targetUser.role), targetUser.userCrUid === own.userCrUid))
       return jsonRes(res, { code: 403, message: 'you are not manager' });
 
     // 权限一致，不用管

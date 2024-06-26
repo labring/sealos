@@ -1,14 +1,11 @@
 import { verifyAccessToken } from '@/services/backend/auth';
-import {
-  CRDMeta,
-  K8sApi,
-  switchKubeconfigNamespace,
-  UpdateCRD
-} from '@/services/backend/kubernetes/user';
+import { CRDMeta, K8sApi, UpdateCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import * as k8s from '@kubernetes/client-node';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
+
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { name } = req.body;
@@ -40,8 +37,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let result = [];
     for (const n of name) {
-      let temp = await UpdateCRD(kc, meta, n, patch);
-      result.push(temp?.body);
+      try {
+        let temp = await UpdateCRD(kc, meta, n, patch);
+        result.push(temp?.body);
+      } catch (err: any) {
+        if (err?.body?.code === 403) {
+          const temp = {
+            name: n,
+            reason: err?.body?.reason,
+            message: err?.body?.message,
+            code: 403
+          };
+
+          jsonRes(res, { data: temp });
+        } else {
+          throw err;
+        }
+      }
     }
     jsonRes(res, { data: result });
   } catch (err) {

@@ -1,0 +1,26 @@
+costCenter:
+  transferEnabled: true
+  currencyType: "shellCoin"
+  invoice:
+    enabled: false
+    feiShuBotURL: ""
+    aliSms:
+      endpoint: ""
+      accessKeyID: ""
+      accessKeySecret: ""
+      templateCode: ""
+      signName: ""
+    mongo:
+      uri: ""
+  # gpuEnabled: false
+  recharge:
+    enabled: true
+    payMethods:
+      wechat:
+        enabled: false
+      stripe:
+        enabled: false
+        publicKey: ""
+  components:
+    accountService:
+      url: "http://127.0.0.1:2333"

@@ -5,7 +5,6 @@ import { PrismaClient as GlobalPrismaClient } from 'prisma/global/generated/clie
 
 export const cleanK8s = async (kc: k8s.KubeConfig, prisma: PrismaClient) => {
   kc.loadFromDefault();
-  console.log('cleanK8s');
   const userCrs = await prisma.userCr.findMany();
   await Promise.all(
     userCrs.map(async (user) => {

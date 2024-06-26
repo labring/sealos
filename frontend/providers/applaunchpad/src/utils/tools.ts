@@ -9,6 +9,20 @@ import { YamlKindEnum } from './adapt';
 import { useTranslation } from 'next-i18next';
 import * as jsonpatch from 'fast-json-patch';
 
+export function formatSize(size: number, fixedNumber = 2) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let i = 0;
+  while (size >= 1024) {
+    size /= 1024;
+    i++;
+  }
+  return size.toFixed(fixedNumber) + ' ' + units[i];
+}
+
+export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
+  return dayjs(time).format(format);
+};
+
 /**
  * copy text data
  */

@@ -81,10 +81,8 @@ spec:
             description: BillingRecordQueryStatus defines the observed state of BillingRecordQuery
             properties:
               deductionAmount:
-                additionalProperties:
-                  format: int64
-                  type: integer
-                type: object
+                format: int64
+                type: integer
               item:
                 items:
                   properties:

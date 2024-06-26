@@ -1,24 +1,47 @@
-apiVersion: monitoring.coreos.com/v1
-kind: Probe
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
 metadata:
   labels:
     namespace: objectstorage-system
     release: prometheus
-  name: object-storage
+  name: object-storage-cluster
   namespace: objectstorage-system
 spec:
-  jobName: object-storage-job
   bearerTokenSecret:
-    name: object-storage-probe
     key: token
-  prober:
+    name: object-storage-probe
+  jobName: object-storage-cluster-job
+  targets:
+    staticConfig:
+      targets:
+        - object-storage.objectstorage-system.svc.cluster.local:80
+  vmProberSpec:
+    path: /minio/v2/metrics/cluster
+    scheme: http
+    url: object-storage.objectstorage-system.svc.cluster.local:80
+
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    namespace: objectstorage-system
+    release: prometheus
+  name: object-storage-bucket
+  namespace: objectstorage-system
+spec:
+  bearerTokenSecret:
+    key: token
+    name: object-storage-probe
+  jobName: object-storage-bucket-job
+  targets:
+    staticConfig:
+      targets:
+        - object-storage.objectstorage-system.svc.cluster.local:80
+  vmProberSpec:
     path: /minio/v2/metrics/bucket
     scheme: http
     url: object-storage.objectstorage-system.svc.cluster.local:80
-  targets:
-    staticConfig:
-      static:
-        - object-storage.objectstorage-system.svc.cluster.local:80
 ---
 apiVersion: v1
 kind: Secret
@@ -70,7 +93,7 @@ spec:
         - name: OBJECT_STORAGE_INSTANCE
           value: object-storage.objectstorage-system.svc.cluster.local:80
         - name: PROMETHEUS_SERVICE_HOST
-          value: http://prometheus-object-storage.objectstorage-system.svc.cluster.local:9090
+          value: http://vmselect-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/
         image: ghcr.io/labring/sealos-minio-service:latest
         imagePullPolicy: Always
         name: object-storage-monitor

@@ -1,12 +1,12 @@
-import { getPlatformEnv, getPriceBonus, getUserAccount, updateDesktopGuide } from '@/api/platform';
+import { getInitData, getPriceBonus, getUserAccount, updateDesktopGuide } from '@/api/platform';
 import { GUIDE_LAUNCHPAD_DETAIL_KEY, GUIDE_LAUNCHPAD_GIFT_KEY } from '@/constants/account';
+import { formatMoney } from '@/utils/tools';
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { DriveStep, driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { DriverStarIcon } from './useDriver';
-import { formatMoney } from '@/utils/tools';
 
 export default function useDriver() {
   const { t, i18n } = useTranslation();
@@ -294,7 +294,7 @@ export default function useDriver() {
   useEffect(() => {
     const handleUserGuide = async () => {
       try {
-        const systemEnv = await getPlatformEnv();
+        const { guideEnabled } = await getInitData();
         const userAccount = await getUserAccount();
 
         const bonus = await getPriceBonus();
@@ -318,7 +318,7 @@ export default function useDriver() {
           setActivity(activity);
         }
 
-        if (systemEnv.guideEnabled && userAccount?.metadata?.annotations) {
+        if (guideEnabled && userAccount?.metadata?.annotations) {
           const showGiftStep = !!userAccount.metadata.annotations?.[GUIDE_LAUNCHPAD_GIFT_KEY];
           const isGuided = !!userAccount.metadata.annotations?.[GUIDE_LAUNCHPAD_DETAIL_KEY];
           if (!isGuided) {

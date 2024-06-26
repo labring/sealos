@@ -10,15 +10,19 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { refetchIntervalTime } from './appList';
+import useSessionStore from '@/store/session';
 
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const { appendResource } = useResourceStore();
+  const { session } = useSessionStore();
 
   const { data } = useQuery(
-    ['getDBListByName', instanceName],
+    ['getDBListByName', instanceName, session?.kubeconfig],
     () => getDBListByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(
           data.map((item) => {

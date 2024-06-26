@@ -45,8 +45,8 @@ export async function verifyWechatCode({ code }: { code: string }) {
 }
 
 export async function hasWeChatAppSecret() {
-  const APP_ID = process.env.PBULIC_WECHAT_APP_ID;
-  const APP_SECRET = process.env.PBULIC_WECHAT_APP_SECRET;
+  const APP_ID = global.AppConfig?.desktop.auth?.idp.wechat?.clientID;
+  const APP_SECRET = global.AppConfig?.desktop.auth?.idp.wechat?.clientSecret;
   if (!APP_ID || !APP_SECRET) {
     throw new Error('Missing WeChat public account key');
   }

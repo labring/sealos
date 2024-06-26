@@ -6,8 +6,7 @@ import {
   getDBStatefulSetByName
 } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import { DBStatusEnum, DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
-import { useToast } from '@/hooks/useToast';
+import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail, templateDeployKey } from '@/constants/db';
 import useEnvStore from '@/store/env';
 import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType } from '@/types/db';
@@ -26,15 +25,14 @@ import {
   ModalOverlay,
   Switch,
   Text,
-  Tooltip,
   useDisclosure
 } from '@chakra-ui/react';
+import { MyTooltip, SealosCoin, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { pick } from 'lodash';
+import { has, pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import { SealosCoin } from '@sealos/ui';
 
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
@@ -43,7 +41,13 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const [showSecret, setShowSecret] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
+
+  const [hasApplicationSource, sourceName] = useMemo(() => {
+    return db?.labels
+      ? [has(db.labels, templateDeployKey), db.labels[templateDeployKey]]
+      : [false, ''];
+  }, [db.labels]);
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
@@ -90,7 +94,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }@${host}:${port}`;
 
     if (db?.dbType === 'mongodb' || db?.dbType === 'postgresql') {
-      connection += '?directConnection=true';
+      connection += '/?directConnection=true';
     }
 
     return {
@@ -211,18 +215,52 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   return (
     <Box px={5} py={7} position={'relative'}>
+      {hasApplicationSource && (
+        <Box fontSize={'base'}>
+          <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
+            <MyIcon w={'16px'} name={'target'}></MyIcon>
+            <Box>{t('Application Source')}</Box>
+          </Flex>
+          <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
+            <Flex
+              flexWrap={'wrap'}
+              _notFirst={{
+                mt: 4
+              }}
+              cursor={'pointer'}
+              onClick={() => {
+                if (sourceName) {
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-template',
+                    pathname: '/instance',
+                    query: { instanceName: sourceName }
+                  });
+                }
+              }}
+            >
+              <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
+                {t('App Store')}
+              </Box>
+              <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
+              <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
+            </Flex>
+          </Box>
+        </Box>
+      )}
       {appInfoTable.map((info) => (
         <Box
           _notFirst={{
             mt: 6
           }}
           key={info.name}
+          fontSize={'base'}
         >
-          <Flex alignItems={'center'} color={'myGray.500'}>
+          <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
             <MyIcon w={'16px'} name={info.iconName as any}></MyIcon>
-            <Box ml={2}>{t(info.name)}</Box>
+            <Box>{t(info.name)}</Box>
           </Flex>
-          <Box mt={3} p={4} backgroundColor={'myWhite.400'} borderRadius={'sm'}>
+
+          <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
             {info.items.map((item, i) => (
               <Flex
                 key={item.label || i}
@@ -231,17 +269,17 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   mt: 4
                 }}
               >
-                <Box flex={'0 0 110px'} w={0} color={'blackAlpha.800'}>
+                <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
                   {t(item.label)}
                 </Box>
                 <Box
-                  color={'blackAlpha.600'}
+                  color={'grayModern.600'}
                   flex={'1 0 0'}
                   textOverflow={'ellipsis'}
                   overflow={'hidden'}
                   whiteSpace={'nowrap'}
                 >
-                  <Tooltip label={item.value}>
+                  <MyTooltip label={item.value}>
                     <Box
                       as="span"
                       cursor={!!item.copy ? 'pointer' : 'default'}
@@ -249,7 +287,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                     >
                       {item.value}
                     </Box>
-                  </Tooltip>
+                  </MyTooltip>
                 </Box>
               </Flex>
             ))}
@@ -259,45 +297,52 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       {/* secret */}
       {secret && (
         <>
-          <Flex mt={6} alignItems={'center'} color={'myGray.500'}>
-            <MyIcon w={'16px'} name={'connection'} fill={'#5A646E'}></MyIcon>
-            <Box ml={2}>{t('Connection Info')}</Box>
+          <Flex
+            fontSize={'base'}
+            gap={'8px'}
+            mt={'24px'}
+            alignItems={'center'}
+            color={'grayModern.600'}
+          >
+            <MyIcon w={'16px'} name={'connection'}></MyIcon>
+            <Box fontWeight={'bold'}>{t('Connection Info')}</Box>
             <Center
-              ml="12px"
-              h="24px"
-              w="26px"
-              bg="#F4F6F8"
-              borderRadius={'4px'}
+              h="28px"
+              w="28px"
+              bg="grayModern.150"
+              borderRadius={'md'}
               cursor={'pointer'}
               onClick={() => setShowSecret(!showSecret)}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
             >
-              <MyIcon
-                name={showSecret ? 'read' : 'unread'}
-                w={'16px'}
-                color={'myGray.600'}
-              ></MyIcon>
+              <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
             {db.dbType !== 'milvus' && (
               <>
                 <Center
-                  ml="12px"
-                  h="24px"
-                  color={'#24282C'}
+                  gap={'6px'}
+                  h="28px"
                   fontSize={'12px'}
-                  bg="#F4F6F8"
-                  borderRadius={'4px'}
+                  bg="grayModern.150"
+                  borderRadius={'md'}
                   px="8px"
                   cursor={'pointer'}
+                  fontWeight={'bold'}
                   onClick={() => onclickConnectDB()}
+                  _hover={{
+                    color: 'brightBlue.600'
+                  }}
                 >
                   <MyIcon name="terminal" w="16px" h="16px" />
                   {t('Direct Connection')}
                 </Center>
-                <Center fontSize={'12px'} fontWeight={400} ml="auto">
-                  <Text> {t('External Network')} </Text>
+                <Center ml="auto">
+                  <Text color={'grayModern.900'}> {t('External Network')} </Text>
                   <Switch
-                    ml="8px"
-                    size="sm"
+                    ml="12px"
+                    size="md"
                     isChecked={isChecked}
                     onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
                   />
@@ -306,11 +351,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             )}
           </Flex>
           <Box
-            mt={3}
+            mt={'12px'}
             p={4}
-            backgroundColor={'myWhite.400'}
-            borderRadius={'sm'}
+            backgroundColor={'grayModern.50'}
+            borderRadius={'lg'}
             position={'relative'}
+            fontSize={'base'}
           >
             {Object.entries(baseSecret).map(([name, value]) => (
               <Box
@@ -319,8 +365,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   mt: 4
                 }}
               >
-                <Box color={'myGray.500'}>{name}</Box>
-                <Box color={'myGray.800'}>
+                <Box color={'grayModern.900'}>{name}</Box>
+                <Box color={'grayModern.600'}>
                   <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
                     {showSecret ? value : '***********'}
                   </Box>
@@ -329,15 +375,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             ))}
           </Box>
           <Box
-            mt={3}
+            mt={'12px'}
             p={4}
-            backgroundColor={'myWhite.400'}
-            borderRadius={'sm'}
+            backgroundColor={'grayModern.50'}
+            borderRadius={'lg'}
             position={'relative'}
+            fontSize={'base'}
           >
-            <Text fontWeight={500} fontSize={'12px'} color={'#24282C'}>
-              {t('Intranet Address')}
-            </Text>
+            <Text color={'grayModern.900'}>{t('Intranet Address')}</Text>
             <Divider my="12px" borderColor={'rgb(226, 232, 240)'} />
             {Object.entries(otherSecret).map(([name, value]) => (
               <Box
@@ -346,8 +391,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   mt: 4
                 }}
               >
-                <Box color={'myGray.500'}>{name}</Box>
-                <Box color={'myGray.800'}>
+                <Box color={'grayModern.900'}>{name}</Box>
+                <Box color={'grayModern.600'}>
                   <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
                     {showSecret ? value : '***********'}
                   </Box>
@@ -357,15 +402,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           </Box>
           {isChecked && (
             <Box
-              mt={3}
+              mt={'12px'}
               p={4}
-              backgroundColor={'myWhite.400'}
-              borderRadius={'sm'}
+              backgroundColor={'grayModern.50'}
+              borderRadius={'lg'}
               position={'relative'}
+              fontSize={'base'}
             >
-              <Text fontWeight={500} fontSize={'12px'} color={'#24282C'}>
-                {t('External Address')}
-              </Text>
+              <Text color={'grayModern.900'}>{t('External Address')}</Text>
               <Divider my="12px" />
               {Object.entries(externalNetWork).map(([name, value]) => (
                 <Box
@@ -374,8 +418,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                     mt: 4
                   }}
                 >
-                  <Box color={'myGray.500'}>{name}</Box>
-                  <Box color={'myGray.800'}>
+                  <Box color={'grayModern.900'}>{name}</Box>
+                  <Box color={'grayModern.600'}>
                     <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
                       {showSecret ? value : '***********'}
                     </Box>
@@ -385,11 +429,11 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </Box>
           )}
 
-          <Modal isOpen={isOpen} onClose={onClose}>
+          <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
             <ModalOverlay />
-            <ModalContent>
-              <ModalHeader>{t('Enable external network access')}</ModalHeader>
-              <ModalCloseButton />
+            <ModalContent minW={'430px'}>
+              <ModalHeader height={'48px'}>{t('Enable external network access')}</ModalHeader>
+              <ModalCloseButton top={'10px'} right={'10px'} />
               <Flex
                 alignItems={'center'}
                 justifyContent={'center'}
@@ -398,14 +442,21 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 pb="45px"
                 px="40px"
               >
-                <Text fontSize={'16px'} fontWeight={500} color={'#5A646E'}>
+                <Text fontSize={'14px'} fontWeight={500} color={'grayModern.500'}>
                   {t('Billing Standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
                   {SOURCE_PRICE.nodeports}
-                  <SealosCoin ml="8px" name="currency" w="20px" h="20px"></SealosCoin>/ {t('Hour')}
+                  <SealosCoin ml="8px" mr={'2px'} name="currency" w="20px" h="20px"></SealosCoin> /
+                  {t('Hour')}
                 </Center>
-                <Button mt="32px" variant={'primary'} onClick={openNetWorkService}>
+                <Button
+                  minW={'100px'}
+                  height={'32px'}
+                  mt="32px"
+                  variant={'solid'}
+                  onClick={openNetWorkService}
+                >
                   {t('Turn On')}
                 </Button>
               </Flex>

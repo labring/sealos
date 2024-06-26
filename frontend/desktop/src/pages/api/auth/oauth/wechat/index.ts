@@ -1,8 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-
-const APP_ID = process.env.WECHAT_CLIENT_ID!;
-const APP_SECRET = process.env.WECHAT_CLIENT_SECRET!;
 import { TWechatToken, TWechatUser } from '@/types/user';
 import { enableWechat } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
@@ -10,6 +7,8 @@ import { persistImage } from '@/services/backend/persistImage';
 import { ProviderType } from 'prisma/global/generated/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const APP_ID = global.AppConfig?.desktop.auth.idp.wechat?.clientID!;
+  const APP_SECRET = global.AppConfig?.desktop.auth.idp.wechat?.clientSecret!;
   try {
     if (!enableWechat()) {
       throw new Error('wechat clinet is not defined');

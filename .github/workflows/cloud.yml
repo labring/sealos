@@ -107,14 +107,11 @@ jobs:
         run: |
           [ -z "${{ inputs.build_from }}" ] && BuildFromTag="latest" || BuildFromTag="${{ inputs.build_from }}"; echo "BuildFromTag=${BuildFromTag}" 
           sed -i "s#labring#${{ github.repository_owner }}#g" init.sh
-          sed -i "s#labring#${{ github.repository_owner }}#g" etc/sealos/desktop-config.yaml
           sed -i "s#latest#${BuildFromTag}#g" init.sh
-          sed -i "s#latest#${BuildFromTag}#g" etc/sealos/desktop-config.yaml
           
           sudo bash init.sh amd64 
           sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-amd64 --platform linux/amd64 -f Kubefile
           sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-amd64 --platform linux/amd64 -f Kubefile
-          
           
           # delete old registry cache
           sudo rm -rf registry

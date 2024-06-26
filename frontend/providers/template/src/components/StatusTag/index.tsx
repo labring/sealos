@@ -10,6 +10,7 @@ export default function StatusTag({
   showBorder: boolean;
 }) {
   const { t } = useTranslation();
+
   return (
     <Flex
       color={status.color}

@@ -72,7 +72,7 @@ const StoreModal = ({
 
   return (
     <>
-      <Modal isOpen onClose={closeCb}>
+      <Modal isOpen onClose={closeCb} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{textMap[type].title}</ModalHeader>

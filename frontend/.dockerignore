@@ -12,3 +12,5 @@
 **/dist/
 **/yalc.lock
 **/.gitignore
+**/providers/template/templates/
+**/providers/template/templates.json

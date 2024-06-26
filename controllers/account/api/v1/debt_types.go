@@ -72,7 +72,7 @@ type DebtStatus struct {
 type DebtStatusRecord struct {
 	LastStatus    DebtStatusType `json:"lastDebtStatus,omitempty"`
 	CurrentStatus DebtStatusType `json:"currentStatus,omitempty"`
-	UpdateTime    int64          `json:"updateTime,omitempty"`
+	UpdateTime    metav1.Time    `json:"updateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

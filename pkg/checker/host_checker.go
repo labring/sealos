@@ -47,6 +47,9 @@ func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 	if err := checkHostnameUnique(execer, ipList); err != nil {
 		return err
 	}
+	if err := checkContainerd(execer, ipList); err != nil {
+		return err
+	}
 	return checkTimeSync(execer, ipList)
 }
 
@@ -86,6 +89,18 @@ func checkTimeSync(s exec.Interface, ipList []string) error {
 		timeDiff := time.Since(time.Unix(int64(ts), 0)).Minutes()
 		if timeDiff < -1 || timeDiff > 1 {
 			return fmt.Errorf("the time of %s node is not synchronized", ip)
+		}
+	}
+	return nil
+}
+
+// Check whether the containerd is installed
+func checkContainerd(s exec.Interface, ipList []string) error {
+	logger.Info("checker:containerd %v", ipList)
+	for _, ip := range ipList {
+		_, err := s.CmdToString(ip, "containerd --version", "")
+		if err == nil {
+			return fmt.Errorf("containerd is installed on %s please uninstall it first", ip)
 		}
 	}
 	return nil

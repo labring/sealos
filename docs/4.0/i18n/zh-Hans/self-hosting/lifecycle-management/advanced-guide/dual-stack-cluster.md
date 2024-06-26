@@ -789,4 +789,4 @@ spec:
 
 4. 运行 `sealos apply -f Clusterfile` 部署集群。
 
-5. 更多参考[Calico官网](https://docs.tigera.io/calico/3.25/networking/ipam/ipv6) 和 [k8s官方文档](https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/dual-stack-support/)
+5. 更多参考[Calico官网](https://docs.tigera.io/calico/latest/networking/ipam/ipv6) 和 [k8s官方文档](https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/dual-stack-support/)

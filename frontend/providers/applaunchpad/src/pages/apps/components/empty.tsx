@@ -18,7 +18,7 @@ const Empty = () => {
       bg={'#F3F4F5'}
     >
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
-      <Box py={8}>{t("You haven't created any application yet.")}</Box>
+      <Box py={8}>{t("You haven't created any application yet")}</Box>
       <Button
         w={155}
         mt={5}

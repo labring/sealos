@@ -52,7 +52,7 @@ export type BillingData<T = Costs> = {
   metadata: any;
   spec: BillingSpec;
   status: {
-    deductionAmount: T;
+    deductionAmount: number;
     item: BillingItem<T>[];
     pageLength: number;
     totalCount: number;

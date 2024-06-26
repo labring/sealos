@@ -23,7 +23,7 @@ image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
 kubernetes_version=${kubernetes_version:-"1.27.11"}
 cilium_version=${cilium_version:-"1.14.8"}
-cert_manager_version=${cert_manager_version:-"1.14.4"}
+cert_manager_version=${cert_manager_version:-"1.14.6"}
 helm_version=${helm_version:-"3.14.1"}
 openebs_version=${openebs_version:-"3.10.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
@@ -64,7 +64,7 @@ PROMPTS_EN=(
     ["cilium_requirement"]="Using Cilium as the network plugin, the host system must meet the following requirements:
 1. Hosts with AMD64 or AArch64 architecture;
 2. Linux kernel> = 4.19.57 or equivalent version (e.g., 4.18 on RHEL8)."
-    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.0 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -72,7 +72,7 @@ Options:
   --image-repository                # Image repository name (default: labring)
   --kubernetes-version              # Kubernetes version (default: 1.27.11)
   --cilium-version                  # Cilium version (default: 1.14.8)
-  --cert-manager-version            # Cert Manager version (default: 1.14.4)
+  --cert-manager-version            # Cert Manager version (default: 1.14.6)
   --helm-version                    # Helm version (default: 3.14.1)
   --openebs-version                 # OpenEBS version (default: 3.10.0)
   --ingress-nginx-version           # Ingress Nginx version (default: 1.9.4)
@@ -125,7 +125,7 @@ PROMPTS_CN=(
     ["cilium_requirement"]="正在使用 Cilium 作为网络插件, 主机系统必须满足以下要求:
 1.具有AMD64或AArch64架构的主机;
 2.Linux内核> = 4.19.57或等效版本 (例如, 在RHEL8上为4.18)."
-    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.0版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -133,7 +133,7 @@ Options:
   --image-repository              # 镜像仓库名称 (默认: labring)
   --kubernetes-version            # Kubernetes版本 (默认: 1.27.11)
   --cilium-version                # Cilium版本 (默认: 1.14.8)
-  --cert-manager-version          # Cert Manager版本 (默认: 1.14.4)
+  --cert-manager-version          # Cert Manager版本 (默认: 1.14.6)
   --helm-version                  # Helm版本 (默认: 3.14.1)
   --openebs-version               # OpenEBS版本 (默认: 3.10.0)
   --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.9.4)
@@ -202,13 +202,13 @@ set_language() {
   fi
 }
 
-#TODO mongo 5.0 need avx support, if not support, change to 4.0
+#TODO mongo 5.0 need avx support, if not support, change to 4.4
 setMongoVersion() {
   set +e
   grep avx /proc/cpuinfo > /dev/null 2>&1
   if [ $? -ne 0 ]; then
     get_prompt "mongo_avx_requirement"
-    mongodb_version="mongodb-4.0"
+    mongodb_version="mongodb-4.4"
   fi
   set -e
 }
@@ -246,7 +246,7 @@ init() {
     echo ""
     [[ $k8s_installed == "y" ]] || pull_image "kubernetes" "v${kubernetes_version#v:-1.27.11}"
     [[ $k8s_ready == "y" ]] || pull_image "cilium" "v${cilium_version#v:-1.14.8}"
-    pull_image "cert-manager" "v${cert_manager_version#v:-1.8.0}"
+    pull_image "cert-manager" "v${cert_manager_version#v:-1.14.6}"
     pull_image "helm" "v${helm_version#v:-3.14.1}"
     pull_image "openebs" "v${openebs_version#v:-3.10.0}"
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.9.4}"
@@ -495,6 +495,7 @@ stringData:
     if [[ $k8s_installed == "n" ]]; then
       $sealos_gen_cmd
       # Modify Clusterfile with sed
+      sed -e '/InitConfiguration/a skipPhases:\n  addon/kube-proxy' -i $CLOUD_DIR/Clusterfile
       sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
       sed -i "s|10.96.0.0/22|${service_cidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
     fi
@@ -534,7 +535,7 @@ execute_commands() {
     command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.14.1}"
     [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.14.8}" --env ExtraValues="ipam.mode=kubernetes")
     wait_cluster_ready
-    sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
+    sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.14.6}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.10.0}"
     sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
     kubectl get sc openebs-backup > /dev/null 2>&1 || kubectl create -f - <<EOF

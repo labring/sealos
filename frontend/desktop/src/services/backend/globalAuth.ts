@@ -4,6 +4,7 @@ import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { ProviderType, User } from 'prisma/global/generated/client';
 import { nanoid } from 'nanoid';
 import { generateAuthenticationToken } from '@/services/backend/auth';
+import { AuthConfigType } from '@/types';
 
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -32,11 +33,12 @@ export const inviteHandler = ({
   inviterId: string;
   signResult: any;
 }) => {
-  const secretKey = process.env.LAF_SECRET_KEY;
-  const baseUrl = process.env.LAF_BASE_URL;
-  const inviteEnabled = process.env.INVITE_ENABLED;
+  const conf = global.AppConfig?.desktop.auth as AuthConfigType;
+  const inviteEnabled = conf.invite?.enabled || false;
+  const secretKey = conf.invite?.lafSecretKey || '';
+  const baseUrl = conf.invite?.lafBaseURL || '';
 
-  if (inviteEnabled !== 'true' || !baseUrl || inviterId === inviteeId) return;
+  if (inviteEnabled || !baseUrl || inviterId === inviteeId) return;
 
   const payload = {
     inviterId,

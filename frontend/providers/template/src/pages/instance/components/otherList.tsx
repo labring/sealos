@@ -7,15 +7,19 @@ import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
+import { refetchIntervalTime } from './appList';
+import useSessionStore from '@/store/session';
 
 export default function OtherList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const { appendResource } = useResourceStore();
+  const { session } = useSessionStore();
 
   const { data } = useQuery(
-    ['listOtherByName', instanceName],
+    ['listOtherByName', instanceName, session?.kubeconfig],
     () => listOtherByName(instanceName),
     {
+      refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(data);
       }

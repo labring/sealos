@@ -1,5 +1,5 @@
 import React, { Dispatch, useCallback, useState } from 'react';
-import { Box, Flex, Button, useDisclosure } from '@chakra-ui/react';
+import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
 import type { AppStatusMapType } from '@/types/app';
 import { useRouter } from 'next/router';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
@@ -8,7 +8,6 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { AppStatusEnum, appStatusMap } from '@/constants/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
-import { EditIcon } from '@chakra-ui/icons';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
 
@@ -20,7 +19,8 @@ const Header = ({
   isPause = false,
   isLargeScreen = true,
   setShowSlider,
-  refetch
+  refetch,
+  labels
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
@@ -28,6 +28,7 @@ const Header = ({
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
   refetch: () => void;
+  labels: { [key: string]: string };
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -104,16 +105,10 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <Button
-        width={'36px'}
-        height={'36px'}
-        variant={'unstyled'}
-        onClick={() => router.replace('/apps')}
-        lineHeight={1}
-      >
-        <MyIcon name="arrowLeft" />
-      </Button>
-      <Box ml={'4px'} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
+      <Center cursor={'pointer'} onClick={() => router.replace('/apps')}>
+        <MyIcon name="arrowLeft" w={'24px'} />
+      </Center>
+      <Box ml={'4px'} mr={3} fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
         {appName}
       </Box>
       <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
@@ -209,6 +204,7 @@ const Header = ({
           appName={appName}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/apps')}
+          labels={labels}
         />
       )}
     </Flex>

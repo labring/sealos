@@ -2,7 +2,6 @@ import { deleteMigrateByName, getMigrateList, getMigratePodList } from '@/api/mi
 import MyIcon from '@/components/Icon';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { MigrateItemType } from '@/types/migrate';
 import { getErrText } from '@/utils/tools';
 import {
@@ -17,6 +16,7 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
+import { MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
@@ -27,7 +27,7 @@ import MigrateStatus from './MigrateStatus';
 export const MigrateTable = ({ dbName }: { dbName: string }) => {
   if (!dbName) return <></>;
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const [migrateName, setMigrateName] = useState('');
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
@@ -110,25 +110,22 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
       key: 'control',
       render: (item: MigrateItemType) => {
         return (
-          <Flex>
-            <Button
-              mr={3}
-              leftIcon={<MyIcon name="log" w="16px" h="16px" />}
-              variant={'base'}
-              px={3}
-              onClick={() => openLogModal(item.name)}
-            >
-              {t('Logs')}
-            </Button>
-            <Button
-              mr={3}
-              leftIcon={<MyIcon name="delete" w="16px" h="16px" />}
-              variant={'base'}
-              px={3}
-              onClick={openConfirmDel(() => confirmDel(item.name))}
-            >
-              {t('Delete')}
-            </Button>
+          <Flex alignItems={'center'} gap={'4px'}>
+            <MyTooltip offset={[0, 10]} label={t('Logs')}>
+              <Button variant={'square'} onClick={() => openLogModal(item.name)}>
+                <MyIcon name={'log'} w="18px" h="18px" fill={'#485264'} />
+              </Button>
+            </MyTooltip>
+
+            <MyTooltip offset={[0, 10]} label={t('Delete')}>
+              <Button
+                variant={'square'}
+                onClick={openConfirmDel(() => confirmDel(item.name))}
+                _hover={{ bg: '#EFF0F1', color: 'red.600' }}
+              >
+                <MyIcon name={'delete'} w="18px" h="18px" fill={'#485264'} />
+              </Button>
+            </MyTooltip>
           </Flex>
         );
       }
@@ -147,8 +144,9 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
                   py={4}
                   key={item.key}
                   border={'none'}
-                  backgroundColor={'#F8F8FA'}
+                  backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
+                  color={'grayModern.600'}
                 >
                   {t(item.title)}
                 </Th>

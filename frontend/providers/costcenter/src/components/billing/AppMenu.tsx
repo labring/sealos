@@ -1,4 +1,5 @@
 import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
 import { ApiResp } from '@/types';
 import {
   Button,
@@ -15,11 +16,9 @@ import { useState } from 'react';
 
 export default function AppMenu({
   isDisabled,
-  setApp,
   ...props
 }: {
   isDisabled: boolean;
-  setApp: (x: string) => void;
 } & FlexProps) {
   const [appIdx, setAppIdx] = useState(0);
   const { data } = useQuery({
@@ -28,6 +27,7 @@ export default function AppMenu({
     },
     queryKey: ['appList']
   });
+  const { setAppType } = useBillingStore();
   const { isOpen, onClose, onOpen } = useDisclosure();
   const { t } = useTranslation();
   const appList: string[] = [t('All APP'), ...(data?.data?.appList || [])];
@@ -88,7 +88,7 @@ export default function AppMenu({
               isDisabled={isDisabled}
               onClick={() => {
                 setAppIdx(idx);
-                setApp(idx === 0 ? '' : appList[idx]);
+                setAppType(idx === 0 ? '' : appList[idx]);
                 onClose();
               }}
               // _hover={{

@@ -9,6 +9,7 @@ interface Props {
     child: React.ReactNode;
     onClick: () => void;
     menuItemStyle?: MenuItemProps;
+    isDisabled?: boolean;
   }[];
 }
 
@@ -35,6 +36,7 @@ export const SealosMenu = ({ width, Button, menuList }: Props) => {
       >
         {menuList.map((item, i) => (
           <MenuItem
+            isDisabled={item?.isDisabled || false}
             key={i}
             onClick={item.onClick}
             color={item.isActive ? 'hover.blue' : 'grayModern.600'}

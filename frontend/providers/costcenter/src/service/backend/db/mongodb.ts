@@ -1,7 +1,6 @@
 import { MongoClient } from 'mongodb';
-const uri = process.env.MONGODB_URI as string;
-
 export async function connectToDatabase() {
+  const uri = global.AppConfig.costCenter.invoice.mongo.uri;
   if (global.mongodb) {
     return global.mongodb;
   }

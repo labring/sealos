@@ -1,12 +1,12 @@
 import { getPriceBonus, getUserAccount, updateDesktopGuide } from '@/api/platform';
 import { GUIDE_DESKTOP_INDEX_KEY } from '@/constants/account';
-import { useGlobalStore } from '@/stores/global';
 import { formatMoney } from '@/utils/format';
 import { Box, Button, Flex, FlexProps, Icon, Image, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useConfigStore } from '@/stores/config';
 
 export function DriverStarIcon() {
   return (
@@ -47,9 +47,8 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   const [giftAmount, setGiftAmount] = useState(8);
   const router = useRouter();
 
-  const { systemEnv } = useGlobalStore();
+  const conf = useConfigStore().commonConfig;
   const handleSkipGuide = () => {
-    console.log('handleSkipGuide');
     setShowGuide(false);
     updateDesktopGuide().catch((err) => {
       console.log(err);
@@ -59,7 +58,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   useEffect(() => {
     const handleUserGuide = async () => {
       try {
-        if (!systemEnv.guideEnabled) return;
+        if (!conf?.guideEnabled) return;
         const { data } = await getUserAccount();
         const bonus = await getPriceBonus();
         if (bonus.data?.activities) {
@@ -76,9 +75,9 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
         }
       } catch (error) {}
     };
-    systemEnv?.guideEnabled && handleUserGuide();
+    conf?.guideEnabled && handleUserGuide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [systemEnv]);
+  }, [conf]);
 
   const PopoverBodyInfo = (props: FlexProps) => (
     <Flex

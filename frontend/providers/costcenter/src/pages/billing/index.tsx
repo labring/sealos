@@ -1,5 +1,5 @@
 import { Flex, Heading, Img, Tab, TabList, TabPanels, Tabs } from '@chakra-ui/react';
-import { useState } from 'react';
+import { createContext, useMemo, useState } from 'react';
 import receipt_icon from '@/assert/receipt_long_black.svg';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
@@ -7,16 +7,16 @@ import NamespaceMenu from '@/components/billing/NamespaceMenu';
 import RechargeTabPanel from '@/components/billing/RechargeTabPanel';
 import InOutTabPanel from '@/components/billing/InOutTabPanel';
 import TransferTabPanel from '@/components/billing/TransferTabPnel';
-
+import useBillingStore from '@/stores/billing';
 function Billing() {
   const { t } = useTranslation();
-  const [namespace, setNamespace] = useState('');
+  const { setNamespace } = useBillingStore();
   return (
     <Flex flexDirection="column" w="100%" h="100%" bg={'white'} p="24px" overflow={'auto'}>
       <Flex mr="24px" align={'center'}>
         <Img src={receipt_icon.src} w={'24px'} h={'24px'} mr={'18px'} dropShadow={'#24282C'}></Img>
         <Heading size="lg">{t('SideBar.BillingDetails')}</Heading>
-        <NamespaceMenu isDisabled={false} setNamespace={setNamespace} />
+        <NamespaceMenu isDisabled={false} />
       </Flex>
       <Tabs mt={'20px'} flex={1} display={'flex'} flexDir={'column'}>
         <TabList borderColor={'#EFF0F1'}>
@@ -46,9 +46,9 @@ function Billing() {
           </Tab>
         </TabList>
         <TabPanels mt="24px" flexDirection={'column'} flex={'1'} display={'flex'}>
-          <InOutTabPanel namespace={namespace} />
+          <InOutTabPanel />
           <RechargeTabPanel />
-          <TransferTabPanel namespace={namespace} />
+          <TransferTabPanel />
         </TabPanels>
       </Tabs>
     </Flex>

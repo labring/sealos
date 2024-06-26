@@ -7,7 +7,7 @@ import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import clsx from 'clsx';
 import { useTranslation } from 'next-i18next';
-import { ImageFallBackUrl } from '@/stores/config';
+import { useConfigStore } from '@/stores/config';
 
 export default function Index() {
   const { t, i18n } = useTranslation();
@@ -19,6 +19,7 @@ export default function Index() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedApps = apps?.slice(startIndex, endIndex);
   const totalPages = Math.ceil((apps?.length || 0) / itemsPerPage);
+  const logo = useConfigStore().layoutConfig?.logo;
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -104,7 +105,7 @@ export default function Index() {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc={ImageFallBackUrl}
+                    fallbackSrc={logo || '/logo.svg'}
                     draggable={false}
                     alt="user avator"
                   />

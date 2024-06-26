@@ -3,7 +3,6 @@ import { defaultDBEditValue } from '@/constants/db';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useDBStore } from '@/store/db';
 import { useGlobalStore } from '@/store/global';
 import { DBVersionMap } from '@/store/static';
@@ -14,6 +13,7 @@ import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
   ...defaultDBEditValue,
@@ -38,7 +38,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [errorMessage, setErrorMessage] = useState('');
   const [forceUpdate, setForceUpdate] = useState(false);
   const [minStorage, setMinStorage] = useState(1);
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
@@ -195,7 +195,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         alignItems={'center'}
         h={'100%'}
         minWidth={'1024px'}
-        bg={'#F3F4F5'}
+        backgroundColor={'grayModern.100'}
       >
         <Header
           dbName={formHook.getValues('dbName')}

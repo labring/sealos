@@ -40,7 +40,7 @@ const ChartTemplate = ({
     >
       {ChartData?.result?.xData?.length > 0 ? (
         <Flex flexDirection={'column'} h="100%">
-          <Box fontSize={'12px'} fontWeight={500} color={'#24282C'} mb="16px">
+          <Box fontSize={'12px'} fontWeight={500} color={'grayModern.900'} mb="16px">
             {t(chartTitle)}
             {unit ? `(${unit})` : ''}
           </Box>

@@ -36,14 +36,13 @@ const Header = ({
           })
         }
       >
-        <MyIcon name="arrowLeft" />
-        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
+        <MyIcon name="arrowLeft" w={'24px'} />
+        <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
           {t(title)}
         </Box>
       </Flex>
       <Box flex={1}></Box>
-
-      <Button flex={'0 0 140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button flex={'0 0 140px'} h={'40px'} variant={'solid'} onClick={applyCb}>
         {t(applyBtnText)}
       </Button>
     </Flex>

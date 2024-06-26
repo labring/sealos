@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -33,6 +35,12 @@ import (
 type Interface interface {
 	Account
 	Traffic
+	CVM
+}
+
+type CVM interface {
+	GetPendingStateInstance(regionUID string) (cvmMap map[string][]types.CVMBilling, err error)
+	SetDoneStateInstance(instanceIDs ...primitive.ObjectID) error
 }
 
 type Account interface {
@@ -81,9 +89,11 @@ type Traffic interface {
 type AccountV2 interface {
 	Close() error
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
+	GetUser(ops *types.UserQueryOpts) (*types.User, error)
 	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
-	GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error)
+	SetAccountCreateLocalRegion(account *types.Account, region string) error
+	GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error)
 	AddBalance(user *types.UserQueryOpts, balance int64) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
@@ -97,6 +107,7 @@ type AccountV2 interface {
 	TransferAccountV1(owner string, account *types.Account) (*types.Account, error)
 	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
 	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error
+	AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error
 }
 
 type Creator interface {
@@ -118,6 +129,7 @@ type MeteringOwnerTimeResult struct {
 
 const (
 	MongoURI           = "MONGO_URI"
+	CVMMongoURI        = "CVM_MONGO_URI"
 	GlobalCockroachURI = "GLOBAL_COCKROACH_URI"
 	LocalCockroachURI  = "LOCAL_COCKROACH_URI"
 	TrafficMongoURI    = "TRAFFIC_MONGO_URI"

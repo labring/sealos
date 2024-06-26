@@ -1,35 +1,54 @@
-import React, { useState, useCallback } from 'react';
+import { delDBByName } from '@/api/db';
+import MyIcon from '@/components/Icon';
+import { templateDeployKey } from '@/constants/db';
 import {
+  Box,
+  Button,
+  Flex,
+  Input,
   Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
   ModalBody,
   ModalCloseButton,
-  Input,
-  Box,
-  Button
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay
 } from '@chakra-ui/react';
-import { delDBByName } from '@/api/db';
-import { useToast } from '@/hooks/useToast';
+import { useMessage } from '@sealos/ui';
+import { has } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
+
+enum Page {
+  REMINDER = 'REMINDER',
+  DELETION_WARNING = 'DELETION_WARNING'
+}
 
 const DelModal = ({
   dbName,
   onClose,
-  onSuccess
+  onSuccess,
+  labels
 }: {
   dbName: string;
   onClose: () => void;
   onSuccess: () => void;
+  labels: { [key: string]: string };
 }) => {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
+  const [activePage, setActivePage] = useState<Page>(Page.REMINDER);
+  const pageManuallyChangedRef = useRef(false);
+
+  useEffect(() => {
+    if (!pageManuallyChangedRef.current) {
+      const hasApplicationSource = has(labels, templateDeployKey);
+      hasApplicationSource ? setActivePage(Page.REMINDER) : setActivePage(Page.DELETION_WARNING);
+    }
+  }, [labels]);
 
   const handleDelApp = useCallback(async () => {
     try {
@@ -51,44 +70,78 @@ const DelModal = ({
     setLoading(false);
   }, [dbName, toast, t, onSuccess, onClose]);
 
+  const openTemplateApp = () => {
+    if (!labels) return;
+    const sourceName = labels[templateDeployKey];
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-template',
+      pathname: '/instance',
+      query: { instanceName: sourceName },
+      messageData: { type: 'InternalAppCall', name: sourceName }
+    });
+    onClose();
+  };
+
   return (
-    <Modal isOpen onClose={onClose}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>{t('Delete Warning')}</ModalHeader>
-        <ModalCloseButton />
+        <ModalHeader>
+          <Flex alignItems={'center'} gap={'10px'}>
+            <MyIcon name="warning" width={'20px'} h={'20px'} />
+            {activePage === Page.REMINDER ? t('Remind') : t('Delete Warning')}
+          </Flex>
+        </ModalHeader>
+        <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody pb={4}>
-          <Box color={'myGray.600'}>
-            {t('Delete Hint')}
-            <Box my={3}>
-              {t('Please Enter')}{' '}
-              <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
-                {dbName}
-              </Box>{' '}
-              {t('Confirm')}
-            </Box>
+          <Box color={'grayModern.600'}>
+            {activePage === Page.REMINDER ? t('Delete Template App Tip') : t('Delete Hint')}
+
+            {activePage === Page.DELETION_WARNING && (
+              <Box my={3}>
+                {t('Please Enter')}
+                <Box as={'span'} color={'grayModern.900'} fontWeight={'bold'} userSelect={'all'}>
+                  {dbName}
+                </Box>
+                {t('Confirm')}
+              </Box>
+            )}
           </Box>
 
-          <Input
-            placeholder={`${t('Please Enter')}：${dbName}`}
-            value={inputValue}
-            bg={'myWhite.300'}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
+          {activePage === Page.DELETION_WARNING && (
+            <Input
+              placeholder={`${t('Please Enter')}：${dbName}`}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+            />
+          )}
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'base'}>
+          <Button onClick={onClose} variant={'outline'}>
             {t('Cancel')}
           </Button>
+
+          {activePage === Page.REMINDER && (
+            <Button
+              ml={3}
+              variant={'outline'}
+              onClick={() => {
+                setActivePage(Page.DELETION_WARNING);
+                pageManuallyChangedRef.current = true;
+              }}
+            >
+              {t('Delete anyway')}
+            </Button>
+          )}
+
           <Button
-            colorScheme="red"
             ml={3}
             variant={'solid'}
-            isDisabled={inputValue !== dbName}
+            isDisabled={activePage === Page.DELETION_WARNING && inputValue !== dbName}
             isLoading={loading}
-            onClick={handleDelApp}
+            onClick={activePage === Page.REMINDER ? openTemplateApp : handleDelApp}
           >
-            {t('Confirm Delete')}
+            {activePage === Page.REMINDER ? t('Confirm to go') : t('Confirm Delete')}
           </Button>
         </ModalFooter>
       </ModalContent>

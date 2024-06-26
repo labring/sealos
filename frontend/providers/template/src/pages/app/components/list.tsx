@@ -10,7 +10,7 @@ import MyIcon from '@/components/Icon';
 export default function InstanceList() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { data, refetch } = useQuery(['listInstance'], listInstance);
+  const { data, refetch } = useQuery(['listInstance'], listInstance, { refetchInterval: 3000 });
   const [instanceName, setInstanceName] = useState('');
 
   const {

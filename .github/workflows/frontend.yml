@@ -66,6 +66,7 @@ jobs:
             providers/costcenter,
             providers/objectstorage,
             providers/kubepanel,
+            providers/workorder,
             desktop,
           ]
     steps:
@@ -163,6 +164,7 @@ jobs:
             providers/costcenter,
             providers/objectstorage,
             providers/kubepanel,
+            providers/workorder,
             desktop,
           ]
     steps:

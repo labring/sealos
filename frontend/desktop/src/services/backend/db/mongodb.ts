@@ -4,7 +4,7 @@ export async function connectToDatabase() {
   if (global.mongodb) {
     return global.mongodb;
   }
-  const uri = process.env.MONGODB_URI || '';
+  const uri = global.AppConfig?.database.mongodbURI || '';
   global.mongodb = new MongoClient(uri);
   // global.mongodb = 'connecting';
   try {

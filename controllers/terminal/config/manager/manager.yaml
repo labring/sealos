@@ -52,6 +52,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - --config-file-path=/config.yaml
         image: controller:latest
         name: manager
         imagePullPolicy: Always
@@ -82,14 +83,13 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-        env:
-          - name: USER_NAMESPACE
-            value: "user-system"
-          - name: DOMAIN
-            value: "cloud.sealos.io"
-          - name: SECRET_NAME
-            value: "wildcard-cloud-sealos-io-cert"
-          - name: SECRET_NAMESPACE
-            value: "sealos-system"
+        volumeMounts:
+          - name: terminal-controller-volume
+            mountPath: /config.yaml
+            subPath: config.yaml
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: terminal-controller-volume
+          configMap:
+            name: terminal-controller-config

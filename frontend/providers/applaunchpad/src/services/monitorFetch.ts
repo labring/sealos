@@ -9,7 +9,9 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
       Authorization: encodeURIComponent(kubeconfig)
     }
   };
-  const doMain = process.env.MONITOR_URL || 'http://monitor-system.cloud.sealos.run';
+  const doMain =
+    global.AppConfig.launchpad.components.monitor.url ||
+    'http://launchpad-monitor.sealos.svc.cluster.local:8428';
 
   try {
     const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions);
@@ -17,9 +19,7 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
     if (!response.ok) {
       throw new Error(`Error monitorFetch ${response.status}`);
     }
-
-    const jsonResponse = await response.json();
-    return jsonResponse;
+    return await response.json();
   } catch (error) {
     throw error;
   }

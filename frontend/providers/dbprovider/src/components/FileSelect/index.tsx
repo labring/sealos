@@ -1,8 +1,9 @@
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { Box, Flex, Icon, Text, type BoxProps } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useRef, useState } from 'react';
+import MyIcon from '../Icon';
 
 interface Props extends BoxProps {
   fileExtension: string;
@@ -14,7 +15,7 @@ interface Props extends BoxProps {
 const FileSelect = ({ fileExtension, setFiles, multiple = false, files, ...props }: Props) => {
   const { Loading: FileSelectLoading } = useLoading();
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const [isDragging, setIsDragging] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const SelectFileDom = useRef<HTMLInputElement>(null);
@@ -37,23 +38,18 @@ const FileSelect = ({ fileExtension, setFiles, multiple = false, files, ...props
     <Flex
       mt="24px"
       position={'relative'}
-      bg={'#f4f6f8'}
+      bg={'grayModern.25'}
       justifyContent={'center'}
       alignItems={'center'}
-      h="132px"
-      borderRadius={'4px'}
-      border={'1px solid #DEE0E2'}
+      h="140px"
+      borderRadius={'md'}
+      border={'1px dashed #DFE2EA'}
+      flexDirection={'column'}
+      cursor={'pointer'}
+      onClick={() => SelectFileDom.current && SelectFileDom.current.click()}
     >
-      <Icon w="24px" h="24px" fill={'#1D8CDC'}>
-        <path d="M11 19.7908V13.7908H5V11.7908H11V5.79077H13V11.7908H19V13.7908H13V19.7908H11Z" />
-      </Icon>
-      <Text
-        color={'#1D8CDC'}
-        fontSize={'16px'}
-        fontWeight={600}
-        cursor={'pointer'}
-        onClick={() => SelectFileDom.current && SelectFileDom.current.click()}
-      >
+      <MyIcon name="upload" width={'24px'} color={'#219BF4'}></MyIcon>
+      <Text mt={'8px'} color={'grayModern.500'} fontSize={'base'} fontWeight={'bold'}>
         {t('Upload dump file')}
       </Text>
       <Box

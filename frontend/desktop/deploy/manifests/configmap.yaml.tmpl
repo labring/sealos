@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desktop-frontend-config
+  namespace: sealos
+data:
+  config.yaml: |
+    cloud:
+      domain: "{{ .cloudDomain }}"
+      port: "{{ .cloudPort }}"
+      regionUID: "{{ .regionUID }}"
+      certSecretName: "{{ .certSecretName }}"
+    common:
+      guideEnabled: false
+      apiEnabled: false
+      rechargeEnabled: false
+      cfSiteKey: ""
+    database:
+      mongodbURI: "{{ .databaseMongodbURI }}"
+      globalCockroachdbURI: "{{ .databaseGlobalCockroachdbURI }}"
+      regionalCockroachdbURI: "{{ .databaseLocalCockroachdbURI }}"
+    desktop:
+      layout:
+        title: "Sealos Cloud"
+        logo: "/logo.svg"
+        backgroundImage: "/images/bg-blue.svg"
+        meta:
+          title: "Sealos Cloud"
+          description: "Sealos Cloud"
+          keywords: "Sealos Cloud"
+          scripts: []
+        common:
+          githubStarEnabled: true
+      auth:
+        proxyAddress: ""
+        callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
+        signUpEnabled: true
+        baiduToken: ""
+        invite:
+          enabled: false
+        jwt:
+          internal: "<your-internal-jwt-secret>"
+          regional: "<your-regional-jwt-secret>"
+          global: "<your-global-jwt-secret>"
+        idp:
+          password:
+            enabled: true
+            salt: "{{ .passwordSalt }}"

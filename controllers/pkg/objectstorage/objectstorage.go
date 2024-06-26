@@ -29,7 +29,6 @@ import (
 
 	"github.com/prometheus/common/model"
 
-	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -192,9 +191,9 @@ type MetricData struct {
 
 type Metrics map[string]MetricData
 
-func QueryUserUsage(client *madmin.MetricsClient) (Metrics, error) {
+func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 	obMetrics := make(Metrics)
-	bucketMetrics, err := client.BucketMetrics(context.TODO())
+	bucketMetrics, err := client.BucketUsageTotalBytesMetrics(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bucket metrics: %w", err)
 	}

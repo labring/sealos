@@ -37,7 +37,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       startTime
     };
 
-    const url = process.env.BILLING_URI + '/account/v1alpha1/payment';
+    const url =
+      global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/payment';
     const response = await fetch(url, {
       method: 'POST',
       body: JSON.stringify(data)

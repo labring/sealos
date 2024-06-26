@@ -13,27 +13,27 @@ export const backupStatusMap: Record<`${BackupStatusEnum}`, BackupStatusMapType>
   [BackupStatusEnum.Completed]: {
     label: 'Backup Completed',
     value: BackupStatusEnum.Completed,
-    color: '#13B2A9'
+    color: '#039855'
   },
   [BackupStatusEnum.InProgress]: {
     label: 'Backup Processing',
     value: BackupStatusEnum.InProgress,
-    color: '#CE9629'
+    color: '#667085'
   },
   [BackupStatusEnum.Failed]: {
     label: 'Backup Failed',
     value: BackupStatusEnum.Failed,
-    color: '#FF5B6E'
+    color: '#F04438'
   },
   [BackupStatusEnum.Running]: {
     label: 'Backup Running',
     value: BackupStatusEnum.Running,
-    color: '#13B2A9'
+    color: '#667085'
   },
   [BackupStatusEnum.Deleting]: {
     label: 'Backup Deleting',
     value: BackupStatusEnum.Deleting,
-    color: '#FF5B6E'
+    color: '#DC6803'
   },
   [BackupStatusEnum.UnKnow]: {
     label: 'UnKnow',

@@ -12,11 +12,10 @@ import {
   isValidPhoneNumber,
   retrySerially
 } from '@/utils/tools';
-import { enableInvoice } from '@/service/enabled';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!enableInvoice()) {
+    if (!global.AppConfig.costCenter.invoice.enabled) {
       throw new Error('invoice is not enabled');
     }
     const kc = await authSession(req.headers);
@@ -45,7 +44,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 400
       });
     }
-    const url = process.env.BILLING_URI + '/account/v1alpha1/payment/set-invoice';
+    const url =
+      global.AppConfig.costCenter.components.accountService.url +
+      '/account/v1alpha1/payment/set-invoice';
     const setInvoiceRes = await fetch(url, {
       method: 'POST',
       body: JSON.stringify({

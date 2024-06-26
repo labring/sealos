@@ -19,6 +19,8 @@ import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
 import { useTranslation } from 'react-i18next';
+import { useConfigStore } from '@/stores/config';
+
 export default function UserTable({
   users = [],
   isTeam,
@@ -39,11 +41,10 @@ export default function UserTable({
   const userSelf = users.find(
     (user) => user.crUid === userCrUid && user.k8s_username === k8s_username
   );
-  const canManage = vaildManage(userSelf?.role ?? UserRole.Developer, '');
-  const abdicationUser = users.filter(
+  const canManage = vaildManage(userSelf?.role ?? UserRole.Developer);
+  const otherWorkspaceUsers = users.filter(
     (user) => user.uid !== userSelf?.uid && user.status === InvitedStatus.Accepted
   );
-
   const vaildateRoles: UserRole[] = [];
   if (userSelf?.role === UserRole.Owner) vaildateRoles.push(UserRole.Manager, UserRole.Developer);
   else if (userSelf?.role === UserRole.Manager) vaildateRoles.push(UserRole.Developer);
@@ -108,10 +109,12 @@ export default function UserTable({
                 {status[user.status]}
               </Td>
               <Td py="5px">
-                {isTeam ? (
-                  userCrUid && canManage(user.role, userCrUid) ? (
-                    user.role === UserRole.Owner && abdicationUser.length !== 0 ? (
-                      <Abdication ns_uid={ns_uid} users={abdicationUser} />
+                {isTeam &&
+                  (userCrUid &&
+                  canManage(user.role, user.crUid === userCrUid) &&
+                  otherWorkspaceUsers.length !== 0 ? (
+                    user.role === UserRole.Owner ? (
+                      <Abdication ns_uid={ns_uid} users={otherWorkspaceUsers} />
                     ) : userCrUid !== user.uid ? (
                       <RemoveMember
                         nsid={nsid}
@@ -120,15 +123,8 @@ export default function UserTable({
                         k8s_username={user.k8s_username}
                         targetUserCrUid={user.crUid}
                       />
-                    ) : (
-                      <></>
-                    )
-                  ) : (
-                    <></>
-                  )
-                ) : (
-                  <></>
-                )}
+                    ) : null
+                  ) : null)}
               </Td>
             </Tr>
           ))}

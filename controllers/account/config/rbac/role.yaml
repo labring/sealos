@@ -38,17 +38,17 @@ rules:
   verbs:
   - get
 - apiGroups:
-    - ""
+  - ""
   resources:
-    - secrets
+  - secrets
   verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - account.sealos.io
   resources:
@@ -232,32 +232,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - account.sealos.io
-  resources:
-  - transfers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - transfers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - transfers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - apps
   resources:
   - daemonsets
@@ -305,6 +279,46 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - apps.kubeblocks.io
+  resources:
+  - clusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps.kubeblocks.io
+  resources:
+  - clusters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps.kubeblocks.io
+  resources:
+  - opsrequests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps.kubeblocks.io
+  resources:
+  - opsrequests/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:

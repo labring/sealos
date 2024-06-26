@@ -20,7 +20,7 @@ const ErrorModal = ({
   onClose: () => void;
 }) => {
   return (
-    <Modal isOpen={true} onClose={onClose}>
+    <Modal isOpen={true} onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader display={'flex'} alignItems={'center'} color={'myRed.600'}>

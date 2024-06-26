@@ -54,10 +54,11 @@ export const Button = defineStyleConfig({
       boxShadow: ThemeColors.buttonBoxShadow,
       _hover: {
         opacity: '0.9',
-        bg: ThemeColors.grayModern[900]
-        // _disabled: {
-        //   bg: ''
-        // }
+        bg: ThemeColors.grayModern[900],
+        _disabled: {
+          bg: ThemeColors.grayModern[900],
+          opacity: '0.4'
+        }
       },
       _active: {
         bg: ''

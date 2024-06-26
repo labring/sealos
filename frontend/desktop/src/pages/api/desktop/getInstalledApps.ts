@@ -1,9 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { K8sApi, ListCRD, switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
+import { K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken } from '@/services/backend/auth';
+
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -23,9 +25,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const getRawAppList = async (meta: CRDMeta) =>
       ((await ListCRD(kc, meta)).body as TAppCRList).items || [];
 
-    const defaultArr = (await getRawAppList(getMeta())).map<TAppConfig>((item) => {
-      return { key: `system-${item.metadata.name}`, ...item.spec };
-    });
+    const defaultArr = (await getRawAppList(getMeta()))
+      .map<TAppConfig>((item) => {
+        return { key: `system-${item.metadata.name}`, ...item.spec };
+      })
+      .sort((a, b) => {
+        if (a.displayType === 'more' && b.displayType !== 'more') {
+          return 1;
+        } else if (a.displayType !== 'more' && b.displayType === 'more') {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
 
     const userArr = (await getRawAppList(getMeta(payload.workspaceId))).map<TAppConfig>((item) => {
       return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };

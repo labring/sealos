@@ -8,9 +8,11 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const { endTime, startTime } = req.body as {
+    const { endTime, startTime, appType, namespace } = req.body as {
       endTime?: Date;
       startTime?: Date;
+      appType?: string;
+      namespace?: string;
     };
     if (!endTime)
       return jsonRes(resp, {
@@ -20,10 +22,11 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!startTime)
       return jsonRes(resp, {
         code: 400,
-        message: 'endTime is invalid'
+        message: 'startTime is invalid'
       });
-    const consumptionUrl = process.env.BILLING_URI + '/account/v1alpha1/costs/consumption';
-    const rechagreUrl = process.env.BILLING_URI + '/account/v1alpha1/costs/recharge';
+    const base = global.AppConfig.costCenter.components.accountService.url as string;
+    const consumptionUrl = base + '/account/v1alpha1/costs/consumption';
+    const rechagreUrl = base + '/account/v1alpha1/costs/recharge';
 
     const results = await Promise.all([
       (
@@ -33,6 +36,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
             endTime,
             kubeConfig: kc.exportConfig(),
             owner: user.name,
+            appType,
+            namespace,
             startTime
           })
         })
@@ -44,7 +49,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
             endTime,
             kubeConfig: kc.exportConfig(),
             owner: user.name,
-            startTime
+            appType
           })
         })
       ).json()

@@ -1,20 +1,16 @@
 import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
 import useOverviewStore from '@/stores/overview';
 import { Button, Flex, Popover, PopoverContent, PopoverTrigger } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
-export default function NamespaceMenu({
-  isDisabled,
-  setNamespace
-}: {
-  isDisabled: boolean;
-  setNamespace: (x: string) => void;
-}) {
+export default function NamespaceMenu({ isDisabled }: { isDisabled: boolean }) {
   const startTime = useOverviewStore((s) => s.startTime);
   const endTime = useOverviewStore((s) => s.endTime);
   const [namespaceIdx, setNamespaceIdx] = useState(0);
+  const { setNamespace } = useBillingStore();
   const { data: nsListData } = useQuery({
     queryFn() {
       return request.post('/api/billing/getNamespaceList', {

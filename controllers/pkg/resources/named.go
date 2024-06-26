@@ -39,16 +39,17 @@ const (
 )
 
 const (
-	DBPodLabelInstanceKey      = "app.kubernetes.io/instance"
-	DBPodLabelManagedByKey     = "app.kubernetes.io/managed-by"
-	DBPodLabelManagedByValue   = "kubeblocks"
-	DBPodLabelComponentNameKey = "apps.kubeblocks.io/component-name"
-	TerminalIDLabelKey         = "TerminalID"
-	AppLabelKey                = "app"
-	AppDeployLabelKey          = "cloud.sealos.io/app-deploy-manager"
-	JobNameLabelKey            = "job-name"
-	ACMEChallengeKey           = "acme.cert-manager.io/http01-solver"
-	KubeBlocksBackUpName       = "kubeblocks-backup-data"
+	DBPodLabelInstanceKey       = "app.kubernetes.io/instance"
+	DBPodLabelManagedByKey      = "app.kubernetes.io/managed-by"
+	DBPodLabelManagedByValue    = "kubeblocks"
+	DBPodLabelComponentNameKey  = "apps.kubeblocks.io/component-name"
+	TerminalIDLabelKey          = "TerminalID"
+	AppLabelKey                 = "app"
+	AppDeployLabelKey           = "cloud.sealos.io/app-deploy-manager"
+	JobNameLabelKey             = "job-name"
+	ACMEChallengeKey            = "acme.cert-manager.io/http01-solver"
+	KubeBlocksBackUpName        = "kubeblocks-backup-data"
+	dataProtectionBackupRepoKey = "dataprotection.kubeblocks.io/backup-repo-name"
 )
 
 type ResourceNamed struct {
@@ -77,12 +78,12 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[JobNameLabelKey] != "":
 		p._type = JOB
 		p._name = strings.SplitN(labels[JobNameLabelKey], "-", 2)[0]
-	case cr.GetName() == KubeBlocksBackUpName:
-		p._type = JOB
-		p._name = KubeBlocksBackUpName
 	case labels[ACMEChallengeKey] != "":
 		p._type = APP
 		p._name = getACMEResolverName(cr)
+	case cr.GetName() == KubeBlocksBackUpName || labels[dataProtectionBackupRepoKey] != "":
+		p._type = JOB
+		p._name = KubeBlocksBackUpName
 	default:
 		p._type = OTHER
 		p._name = ""

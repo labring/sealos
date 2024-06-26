@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 // use sha256 to hash the password
 export function hashPassword(password: string): string {
   const hash = crypto.createHash('sha256');
-  hash.update(password + process.env.PASSWORD_SALT);
+  hash.update(password + global.AppConfig?.desktop.auth.idp.password?.salt || '');
   return hash.digest('hex');
 }
 

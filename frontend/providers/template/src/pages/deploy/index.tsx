@@ -11,7 +11,7 @@ import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import { deepSearch, useCopyData } from '@/utils/tools';
+import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JSYAML from 'js-yaml';
@@ -350,6 +350,15 @@ export default function EditApp({ appName }: { appName?: string }) {
 }
 
 export async function getServerSideProps(content: any) {
+  const local =
+    content?.req?.cookies?.NEXT_LOCALE ||
+    compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
+
+  content?.res.setHeader(
+    'Set-Cookie',
+    `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`
+  );
+
   const appName = content?.query?.templateName || '';
 
   return {

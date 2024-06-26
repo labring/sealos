@@ -108,6 +108,7 @@ type Billing struct {
 	Payment *Payment `json:"payment" bson:"payment,omitempty"`
 	// if type = Transfer, then transfer is not nil
 	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
+	Detail   string    `json:"detail" bson:"detail,omitempty"`
 }
 
 type Payment struct {
@@ -160,6 +161,7 @@ const (
 	job
 	other
 	objectStorage
+	cvm
 )
 
 const (
@@ -169,14 +171,15 @@ const (
 	JOB           = "JOB"
 	OTHER         = "OTHER"
 	ObjectStorage = "OBJECT-STORAGE"
+	CVM           = "CLOUD-VM"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM,
 }
 
 // resource consumption

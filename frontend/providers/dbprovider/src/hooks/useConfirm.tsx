@@ -50,7 +50,7 @@ export const useConfirm = ({
 
               <AlertDialogFooter>
                 <Button
-                  colorScheme={'gray'}
+                  variant={'outline'}
                   onClick={() => {
                     onClose();
                     typeof cancelCb.current === 'function' && cancelCb.current();
@@ -60,7 +60,7 @@ export const useConfirm = ({
                 </Button>
                 <Button
                   ml={3}
-                  variant={'primary'}
+                  variant={'solid'}
                   onClick={() => {
                     onClose();
                     typeof confirmCb.current === 'function' && confirmCb.current();

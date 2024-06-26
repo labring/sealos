@@ -9,7 +9,8 @@ import {
   useTheme,
   Flex,
   Button,
-  MenuButton
+  MenuButton,
+  ModalHeader
 } from '@chakra-ui/react';
 import { useLoading } from '@/hooks/useLoading';
 import { downLoadBold } from '@/utils/tools';
@@ -107,49 +108,50 @@ const LogsModal = ({
   }, [appName, podName]);
 
   return (
-    <Modal isOpen={true} onClose={closeFn} isCentered={true}>
+    <Modal isOpen={true} onClose={closeFn} isCentered={true} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent className={styles.logs} display={'flex'} maxW={'90vw'} h={'90vh'} m={0}>
-        <Flex p={4} alignItems={'center'}>
-          <Box fontSize={'xl'} fontWeight={'bold'}>
-            Pod {t('Log')}
-          </Box>
-          <Box px={3}>
-            <SealosMenu
-              width={240}
-              Button={
-                <MenuButton
-                  minW={'240px'}
-                  h={'32px'}
-                  textAlign={'start'}
-                  bg={'grayModern.100'}
-                  border={theme.borders.base}
-                  borderRadius={'md'}
-                >
-                  <Flex px={4} alignItems={'center'}>
-                    <Box flex={1}>{podAlias}</Box>
-                    <ChevronDownIcon ml={2} />
-                  </Flex>
-                </MenuButton>
-              }
-              menuList={pods.map((item) => ({
-                isActive: item.podName === podName,
-                child: <Box>{item.alias}</Box>,
-                onClick: () => setLogsPodName(item.podName)
-              }))}
-            />
-          </Box>
-          <Button size={'sm'} onClick={exportLogs}>
-            {t('Export')}
-          </Button>
-        </Flex>
-        <ModalCloseButton />
-        <Box flex={'1 0 0'} h={0} position={'relative'}>
+        <ModalHeader py={'8px'}>
+          <Flex alignItems={'center'}>
+            <Box fontSize={'xl'} fontWeight={'bold'}>
+              Pod {t('Log')}
+            </Box>
+            <Box px={3}>
+              <SealosMenu
+                width={240}
+                Button={
+                  <MenuButton
+                    minW={'240px'}
+                    h={'32px'}
+                    textAlign={'start'}
+                    bg={'grayModern.100'}
+                    border={theme.borders.base}
+                    borderRadius={'md'}
+                  >
+                    <Flex px={4} alignItems={'center'}>
+                      <Box flex={1}>{podAlias}</Box>
+                      <ChevronDownIcon ml={2} />
+                    </Flex>
+                  </MenuButton>
+                }
+                menuList={pods.map((item) => ({
+                  isActive: item.podName === podName,
+                  child: <Box>{item.alias}</Box>,
+                  onClick: () => setLogsPodName(item.podName)
+                }))}
+              />
+            </Box>
+            <Button size={'sm'} onClick={exportLogs}>
+              {t('Export')}
+            </Button>
+          </Flex>
+          <ModalCloseButton />
+        </ModalHeader>
+        <Box flex={'1 0 0'} h={0} position={'relative'} px={'36px'} mt={'24px'}>
           <Box
             ref={LogBox}
             h={'100%'}
             whiteSpace={'pre'}
-            px={4}
             pb={2}
             overflow={'auto'}
             fontWeight={400}

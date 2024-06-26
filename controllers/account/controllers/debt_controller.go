@@ -22,9 +22,13 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"reflect"
+	runtime2 "runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/volcengine/volc-sdk-golang/service/vms"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
 
@@ -71,9 +75,18 @@ const (
 
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
+	VmsAccessKeyIDEnv     = "VMS_AK"
+	VmsAccessKeySecretEnv = "VMS_SK"
 	SMSEndpointEnv        = "SMS_ENDPOINT"
 	SMSSignNameEnv        = "SMS_SIGN_NAME"
 	SMSCodeMapEnv         = "SMS_CODE_MAP"
+	VmsCodeMapEnv         = "VMS_CODE_MAP"
+	VmsNumberPollEnv      = "VMS_NUMBER_POLL"
+	SMTPHostEnv           = "SMTP_HOST"
+	SMTPPortEnv           = "SMTP_PORT"
+	SMTPFromEnv           = "SMTP_FROM"
+	SMTPPasswordEnv       = "SMTP_PASSWORD"
+	SMTPTitleEnv          = "SMTP_TITLE"
 )
 
 // DebtReconciler reconciles a Debt object
@@ -86,6 +99,13 @@ type DebtReconciler struct {
 	logr.Logger
 	accountSystemNamespace string
 	SmsConfig              *SmsConfig
+	VmsConfig              *VmsConfig
+	smtpConfig             *utils.SMTPConfig
+}
+
+type VmsConfig struct {
+	TemplateCode map[int]string
+	NumberPoll   string
 }
 
 type SmsConfig struct {
@@ -150,20 +170,25 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 				return nil
 			}
 		}
-		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
+		r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
 		return ErrAccountNotExist
+	}
+	if account.CreateRegionID == "" {
+		if err = r.AccountV2.SetAccountCreateLocalRegion(account, r.LocalRegionID); err != nil {
+			return fmt.Errorf("failed to set account %s create region: %v", owner, err)
+		}
 	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID
 
-	r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
+	//r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
 	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
 		return err
 	} else if err != nil {
 		if err := r.syncDebt(ctx, owner, debt); err != nil {
 			return err
 		}
-		r.Logger.Info("create or update debt success", "debt", debt)
+		//r.Logger.Info("create or update debt success", "debt", debt)
 	}
 
 	nsList, err := getOwnNsList(r.Client, getUsername(owner))
@@ -210,7 +235,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if oweamount >= 0 {
 			return nil
 		}
-		update = SetDebtStatus(debt, accountv1.WarningPeriod)
+		update = SetDebtStatus(debt, accountv1.NormalPeriod, accountv1.WarningPeriod)
 		if err := r.sendWarningNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Logger.Error(err, "send warning notice error")
 		}
@@ -225,7 +250,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  警告期 -> 临近删除期： 更新status 状态approachingDeletion事件及更新时间，发送临近删除消息通知
 		*/
 		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.WarningPeriod, accountv1.NormalPeriod)
 			if err := r.readNotice(ctx, userNamespaceList, WarningNotice); err != nil {
 				r.Logger.Error(err, "readNotice WarningNotice error")
 			}
@@ -235,7 +260,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if updateIntervalSeconds < DebtConfig[accountv1.ApproachingDeletionPeriod] && (account.Balance/2)+oweamount > 0 {
 			return nil
 		}
-		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod)
+		update = SetDebtStatus(debt, accountv1.WarningPeriod, accountv1.ApproachingDeletionPeriod)
 		if err := r.sendApproachingDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Logger.Error(err, "sendApproachingDeletionNotice error")
 		}
@@ -251,7 +276,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  临近删除期 -> 即刻删除期： 执行暂停用户资源，更新status 状态imminentDeletionPeriod事件及更新时间，发送最终删除消息通知
 		*/
 		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod, accountv1.NormalPeriod)
 			if err := r.readNotice(ctx, userNamespaceList, ApproachingDeletionNotice, WarningNotice); err != nil {
 				r.Logger.Error(err, "readNotice ApproachingDeletionNotice error")
 			}
@@ -260,7 +285,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if updateIntervalSeconds < DebtConfig[accountv1.ImminentDeletionPeriod] && account.Balance+oweamount > 0 {
 			return nil
 		}
-		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod)
+		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod, accountv1.ImminentDeletionPeriod)
 		if err := r.sendImminentDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Logger.Error(err, "sendImminentDeletionNotice error")
 		}
@@ -277,7 +302,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  即刻删除期 -> 最终删除期： 删除用户全部资源，更新status 状态finalDeletionPeriod事件及更新时间。发生最终删除消息通知
 		*/
 		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod, accountv1.NormalPeriod)
 			// 恢复用户资源
 			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 				return err
@@ -292,7 +317,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		// TODO 暂时只暂停资源，后续会添加真正删除全部资源逻辑, 或直接删除namespace
-		update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod)
+		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod, accountv1.FinalDeletionPeriod)
 		if err := r.sendFinalDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
 			r.Error(err, "sendFinalDeletionNotice error")
 		}
@@ -309,7 +334,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 				r.Logger.Error(err, "readNotice FinalDeletionNotice error")
 			}
 			//TODO 用户从欠费到正常，是否需要发送消息通知
-			update = SetDebtStatus(debt, accountv1.NormalPeriod)
+			update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod, accountv1.NormalPeriod)
 
 			// TODO 暂时非真正完全删除，仍可恢复用户资源，后续会添加真正删除全部资源逻辑，不在执行恢复逻辑
 			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
@@ -326,7 +351,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	}
 
 	if update {
-		r.Logger.Info("update debt status", "account", debt.Spec.UserName,
+		r.Logger.V(1).Info("update debt status", "account", debt.Spec.UserName,
 			"last status", lastStatus, "last update time", time.Unix(debt.Status.LastUpdateTimestamp, 0).Format(time.RFC3339),
 			"current status", debt.Status.AccountDebtStatus, "time", time.Now().UTC().Format(time.RFC3339))
 		return r.Status().Update(ctx, debt)
@@ -346,9 +371,24 @@ func (r *DebtReconciler) syncDebt(ctx context.Context, owner string, debt *accou
 	return nil
 }
 
-func SetDebtStatus(debt *accountv1.Debt, status accountv1.DebtStatusType) bool {
-	debt.Status.AccountDebtStatus = status
-	debt.Status.LastUpdateTimestamp = time.Now().UTC().Unix()
+var MaxDebtHistoryStatusLength = env.GetIntEnvWithDefault("MAX_DEBT_HISTORY_STATUS_LENGTH", 10)
+
+func SetDebtStatus(debt *accountv1.Debt, lastStatus, currentStatus accountv1.DebtStatusType) bool {
+	debt.Status.AccountDebtStatus = currentStatus
+	now := time.Now().UTC()
+	debt.Status.LastUpdateTimestamp = now.Unix()
+	length := len(debt.Status.DebtStatusRecords)
+	statusRecord := accountv1.DebtStatusRecord{
+		LastStatus:    lastStatus,
+		CurrentStatus: currentStatus,
+		UpdateTime:    metav1.NewTime(now),
+	}
+	if length == 0 {
+		debt.Status.DebtStatusRecords = make([]accountv1.DebtStatusRecord, 0)
+	} else if length == MaxDebtHistoryStatusLength {
+		debt.Status.DebtStatusRecords = debt.Status.DebtStatusRecords[1:]
+	}
+	debt.Status.DebtStatusRecords = append(debt.Status.DebtStatusRecords, statusRecord)
 	return true
 }
 
@@ -410,6 +450,11 @@ var TitleTemplateEN = map[int]string{
 
 var NoticeTemplateZH map[int]string
 
+var (
+	forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
+	UTCPlus8    = time.FixedZone("UTC+8", 8*3600)
+)
+
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
 	if r.SmsConfig == nil {
 		return nil
@@ -418,18 +463,58 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 	if err != nil {
 		return fmt.Errorf("failed to get user oauth provider: %w", err)
 	}
-	if outh == nil || outh.ProviderID == "" || outh.ProviderType != pkgtypes.OauthProviderTypePhone {
-		r.Logger.Info("user not exist or user phone is empty, skip sms notification", "user", user)
+	phone, email := "", ""
+	for i := range outh {
+		if outh[i].ProviderType == pkgtypes.OauthProviderTypePhone {
+			phone = outh[i].ProviderID
+		} else if outh[i].ProviderType == pkgtypes.OauthProviderTypeEmail {
+			email = outh[i].ProviderID
+		}
+	}
+	if phone == "" && email == "" {
+		r.Logger.Info("user phone && email is not set, skip sms notification", "user", user)
 		return nil
 	}
 	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	return utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-		PhoneNumbers: tea.String(outh.ProviderID),
+	err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+		PhoneNumbers: tea.String(phone),
 		SignName:     tea.String(r.SmsConfig.SmsSignName),
 		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
 		// ｜ownAmount/1_000_000｜
 		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to send sms notice: %w", err)
+	}
+	if noticeType == WarningNotice {
+		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+		if err != nil {
+			return fmt.Errorf("failed to send vms notice: %w", err)
+		}
+		if r.smtpConfig != nil {
+			err = r.smtpConfig.SendEmail(NoticeTemplateZH[noticeType], email)
+			if err != nil {
+				return fmt.Errorf("failed to send email notice: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+// GetSendVmsTimeInUTCPlus8 send vms time in UTC+8 10:00-20:00
+func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
+	nowInUTCPlus8 := t.In(UTCPlus8)
+	hour := nowInUTCPlus8.Hour()
+	if hour >= 10 && hour < 20 {
+		return t
+	}
+	var next10AM time.Time
+	if hour < 10 {
+		next10AM = time.Date(nowInUTCPlus8.Year(), nowInUTCPlus8.Month(), nowInUTCPlus8.Day(), 10, 0, 0, 0, UTCPlus8)
+	} else {
+		next10AM = time.Date(nowInUTCPlus8.Year(), nowInUTCPlus8.Month(), nowInUTCPlus8.Day()+1, 10, 0, 0, 0, UTCPlus8)
+	}
+	return next10AM.In(time.Local)
 }
 
 func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, noticeTypes ...int) error {
@@ -552,26 +637,62 @@ func splitSmsCodeMap(codeStr string) (map[int]string, error) {
 	return codeMap, nil
 }
 
-func setupSmsConfig() (*SmsConfig, error) {
+func (r *DebtReconciler) setupSmsConfig() error {
 	if err := env.CheckEnvSetting([]string{SMSAccessKeyIDEnv, SMSAccessKeySecretEnv, SMSEndpointEnv, SMSSignNameEnv, SMSCodeMapEnv}); err != nil {
-		return nil, fmt.Errorf("check env setting error: %w", err)
+		return fmt.Errorf("check env setting error: %w", err)
 	}
 
 	smsCodeMap, err := splitSmsCodeMap(os.Getenv(SMSCodeMapEnv))
 	if err != nil {
-		return nil, fmt.Errorf("split sms code map error: %w", err)
+		return fmt.Errorf("split sms code map error: %w", err)
 	}
 
 	smsClient, err := utils.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
 	if err != nil {
-		return nil, fmt.Errorf("create sms client error: %w", err)
+		return fmt.Errorf("create sms client error: %w", err)
 	}
-
-	return &SmsConfig{
+	r.SmsConfig = &SmsConfig{
 		Client:      smsClient,
 		SmsSignName: os.Getenv(SMSSignNameEnv),
 		SmsCode:     smsCodeMap,
-	}, nil
+	}
+	return nil
+}
+
+func (r *DebtReconciler) setupVmsConfig() error {
+	if err := env.CheckEnvSetting([]string{VmsAccessKeyIDEnv, VmsAccessKeySecretEnv, VmsNumberPollEnv}); err != nil {
+		return fmt.Errorf("check env setting error: %w", err)
+	}
+	vms.DefaultInstance.Client.SetAccessKey(os.Getenv(VmsAccessKeyIDEnv))
+	vms.DefaultInstance.Client.SetSecretKey(os.Getenv(VmsAccessKeySecretEnv))
+
+	vmsCodeMap, err := splitSmsCodeMap(os.Getenv(VmsCodeMapEnv))
+	if err != nil {
+		return fmt.Errorf("split vms code map error: %w", err)
+	}
+	r.VmsConfig = &VmsConfig{
+		TemplateCode: vmsCodeMap,
+		NumberPoll:   os.Getenv(VmsNumberPollEnv),
+	}
+	return nil
+}
+
+func (r *DebtReconciler) setupSMTPConfig() error {
+	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPPortEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
+		return fmt.Errorf("check env setting error: %w", err)
+	}
+	serverPort, err := strconv.Atoi(os.Getenv(SMTPPortEnv))
+	if err != nil {
+		return fmt.Errorf("invalid smtp port: %w", err)
+	}
+	r.smtpConfig = &utils.SMTPConfig{
+		ServerHost: os.Getenv(SMTPHostEnv),
+		ServerPort: serverPort,
+		FromEmail:  os.Getenv(SMTPFromEnv),
+		Passwd:     os.Getenv(SMTPPasswordEnv),
+		EmailTitle: SMTPTitleEnv,
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -582,11 +703,15 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 
-	smsConfig, err := setupSmsConfig()
-	if err != nil {
-		r.Logger.Error(err, "Failed to set up SMS configuration")
-	} else {
-		r.SmsConfig = smsConfig
+	setupList := []func() error{
+		r.setupSmsConfig,
+		r.setupVmsConfig,
+		r.setupSMTPConfig,
+	}
+	for i := range setupList {
+		if err := setupList[i](); err != nil {
+			r.Logger.Error(err, fmt.Sprintf("failed to set up %s", runtime2.FuncForPC(reflect.ValueOf(setupList[i]).Pointer()).Name()))
+		}
 	}
 
 	/*

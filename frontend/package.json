@@ -13,6 +13,8 @@
     "dev-template": "pnpm -r --filter ./providers/template  run dev",
     "dev-cronjob": "pnpm -r --filter ./providers/cronjob  run dev",
     "dev-license": "pnpm -r --filter ./providers/license  run dev",
+    "dev-invite": "pnpm -r --filter ./providers/invite  run dev",
+    "dev-workorder": "pnpm -r --filter ./providers/workorder  run dev",
     "gen:theme-typings": "pnpm chakra-cli tokens packages/ui/src/theme/theme.ts --out node_modules/.pnpm/node_modules/@chakra-ui/styled-system/dist/theming.types.d.ts",
     "postinstall": "pnpm run gen:theme-typings"
   },
@@ -35,5 +37,22 @@
     "@emotion/styled": "^11.11.0",
     "framer-motion": "^10.16.4",
     "typescript": "^5.2.2"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "win32",
+        "darwin",
+        "current",
+        "linuxmusl"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ],
+      "libc": [
+        "musl"
+      ]
+    }
   }
 }

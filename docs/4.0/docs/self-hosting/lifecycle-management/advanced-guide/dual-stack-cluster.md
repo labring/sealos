@@ -785,5 +785,5 @@ spec:
 
 4. run`sealos apply -f Clusterfile` to install the cluster。
 
-5. More refer to [Calico official docs](https://docs.tigera.io/calico/3.25/networking/ipam/ipv6) and [k8s offical docs](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/dual-stack-support/)
+5. More refer to [Calico official docs](https://docs.tigera.io/calico/latest/networking/ipam/ipv6) and [k8s offical docs](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/dual-stack-support/)
 

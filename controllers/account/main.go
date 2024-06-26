@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -67,6 +69,7 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
+	//utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -76,6 +79,7 @@ func main() {
 		enableLeaderElection bool
 		probeAddr            string
 		concurrent           int
+		development          bool
 		rateLimiterOptions   rate.LimiterOptions
 		leaseDuration        time.Duration
 		renewDeadline        time.Duration
@@ -83,6 +87,7 @@ func main() {
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.BoolVar(&development, "development", false, "Enable development mode.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -91,7 +96,7 @@ func main() {
 	flag.DurationVar(&renewDeadline, "leader-elect-renew-deadline", 40*time.Second, "Duration the acting master will retry refreshing leadership before giving up.")
 	flag.DurationVar(&retryPeriod, "leader-elect-retry-period", 5*time.Second, "Duration the LeaderElector clients should wait between tries of actions.")
 	opts := zap.Options{
-		Development: true,
+		Development: development,
 	}
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts.BindFlags(flag.CommandLine)
@@ -143,6 +148,23 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
+	var cvmDBClient database.Interface
+	cvmURI := os.Getenv(database.CVMMongoURI)
+	if cvmURI != "" {
+		cvmDBClient, err = mongo.NewMongoInterface(dbCtx, cvmURI)
+		if err != nil {
+			setupLog.Error(err, "unable to connect to mongo")
+			os.Exit(1)
+		}
+	}
+	defer func() {
+		if cvmDBClient != nil {
+			err := cvmDBClient.Disconnect(dbCtx)
+			if err != nil {
+				setupLog.Error(err, "unable to disconnect from mongo")
+			}
+		}
+	}()
 	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to cockroach")
@@ -155,10 +177,11 @@ func main() {
 		}
 	}()
 	accountReconciler := &controllers.AccountReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
-		DBClient:  dbClient,
-		AccountV2: v2Account,
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		DBClient:    dbClient,
+		AccountV2:   v2Account,
+		CVMDBClient: cvmDBClient,
 	}
 	billingInfoQueryReconciler := &controllers.BillingInfoQueryReconciler{
 		Client:     mgr.GetClient(),
@@ -268,6 +291,24 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
+
+	go func() {
+		if cvmDBClient == nil {
+			setupLog.Info("CVM DB client is nil, skip billing cvm")
+			return
+		}
+		ticker := time.NewTicker(env.GetDurationEnvWithDefault("BILLING_CVM_INTERVAL", 10*time.Minute))
+		defer ticker.Stop()
+		for {
+			setupLog.Info("start billing cvm", "time", time.Now().Format(time.RFC3339))
+			err := accountReconciler.BillingCVM()
+			if err != nil {
+				setupLog.Error(err, "fail to billing cvm")
+			}
+			setupLog.Info("end billing cvm", "time", time.Now().Format(time.RFC3339))
+			<-ticker.C
+		}
+	}()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

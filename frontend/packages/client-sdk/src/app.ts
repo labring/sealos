@@ -1,11 +1,6 @@
 import { v4 } from 'uuid';
 import { API_NAME } from './constants';
-import {
-  AppMessageType,
-  AppSendMessageType,
-  MasterReplyMessageType,
-  SessionV1
-} from './types';
+import { AppMessageType, AppSendMessageType, MasterReplyMessageType, SessionV1 } from './types';
 import { isBrowser } from './utils';
 
 class ClientSDK {

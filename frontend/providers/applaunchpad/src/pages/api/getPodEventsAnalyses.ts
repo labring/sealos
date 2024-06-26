@@ -98,7 +98,7 @@ function streamFetch(res: NextApiResponse<ApiResp>, events: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.FASTGPT_KEY}`
+          Authorization: `Bearer ${global.AppConfig.launchpad.eventAnalyze.fastGPTKey}`
         },
         body: JSON.stringify({
           stream: true,

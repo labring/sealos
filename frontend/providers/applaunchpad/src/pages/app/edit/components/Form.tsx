@@ -1,10 +1,7 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
-import { MyTooltip } from '@sealos/ui';
-import { RangeInput } from '@sealos/ui';
-import { MySelect } from '@sealos/ui';
-import { MySlider } from '@sealos/ui';
-import { ProtocolList, noGpuSliderKey } from '@/constants/app';
+import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
+import { defaultSliderKey, ProtocolList } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
@@ -33,14 +30,13 @@ import {
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
-import { MyRangeSlider, Tabs, Tip } from '@sealos/ui';
 import { throttle } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { UseFormReturn, useFieldArray } from 'react-hook-form';
+import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import type { ConfigMapType } from './ConfigmapModal';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import PriceBox from './PriceBox';
@@ -274,7 +270,7 @@ const Form = ({
   // cpu, memory have different sliderValue
   const countSliderList = useCallback(() => {
     const gpuType = getValues('gpu.type');
-    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : noGpuSliderKey;
+    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : defaultSliderKey;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -464,7 +460,7 @@ const Form = ({
                       backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                       placeholder={`${t('Image Name')}`}
                       {...register('imageName', {
-                        required: 'Image name cannot be empty.',
+                        required: 'Image name cannot be empty',
                         setValueAs(e) {
                           return e.replace(/\s*/g, '');
                         }

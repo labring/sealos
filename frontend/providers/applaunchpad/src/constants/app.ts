@@ -38,7 +38,7 @@ export const appStatusMap = {
     label: 'Waiting',
     value: AppStatusEnum.waiting,
     color: 'grayModern.500',
-    backgroundColor: 'grayModern.100',
+    backgroundColor: 'rgba(17, 24, 36, 0.05)',
     dotColor: 'grayModern.500'
   }
 };
@@ -76,7 +76,7 @@ export const ProtocolList = [
   { value: 'WS', label: 'wss://' }
 ];
 
-export const noGpuSliderKey = 'NoGpu';
+export const defaultSliderKey = 'default';
 export const pauseKey = 'deploy.cloud.sealos.io/pause';
 export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';

@@ -1,3 +1,6 @@
+import { deleteAllResources } from '@/api/delete';
+import { useToast } from '@/hooks/useToast';
+import { useResourceStore } from '@/store/resource';
 import {
   Box,
   Button,
@@ -10,11 +13,8 @@ import {
   ModalHeader,
   ModalOverlay
 } from '@chakra-ui/react';
-import { useCallback, useState } from 'react';
-import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
-import { deleteAllResources } from '@/api/delete';
-import { useResourceStore } from '@/store/resource';
+import { useCallback, useState } from 'react';
 
 const DelModal = ({
   name,

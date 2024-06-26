@@ -1,7 +1,7 @@
 .logs {
   ::-webkit-scrollbar {
-    width: 15px;
-    height: 15px;
+    width: 8px;
+    height: 8px;
     border-radius: 2px;
   }
   ::-webkit-scrollbar-track {
@@ -58,5 +58,43 @@
   }
   50% {
     opacity: 1;
+  }
+}
+
+.fileSystemTable {
+  table {
+    thead {
+      th {
+        font-size: 12px;
+        font-weight: 500;
+        color: #485264;
+        background: #f4f4f7;
+      }
+      tr:first-child th:first-child {
+        border-top-left-radius: 6px;
+      }
+      tr:first-child th:last-child {
+        border-top-right-radius: 6px;
+      }
+      tr:last-child th:first-child {
+        border-bottom-left-radius: 6px;
+      }
+      tr:last-child th:last-child {
+        border-bottom-right-radius: 6px;
+      }
+      th {
+        border-bottom: none;
+      }
+    }
+    tbody {
+      tr:first-child {
+        border-top: none;
+      }
+      tr {
+        font-size: 12px;
+        color: #485264;
+        font-weight: 500;
+      }
+    }
   }
 }

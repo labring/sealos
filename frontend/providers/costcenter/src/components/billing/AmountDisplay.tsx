@@ -1,26 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
-import { ApiResp } from '@/types';
 import { deFormatMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import { Text, Box, Flex } from '@chakra-ui/react';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import useOverviewStore from '@/stores/overview';
+import useBillingStore from '@/stores/billing';
 
 export default function AmountDisplay() {
-  // const {data} = useQuery({
-  //     queryKey: ['getAccount'],
-  //     queryFn: () =>
-  //         request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
-  // });
   const startTime = useOverviewStore((s) => s.startTime);
   const endTime = useOverviewStore((s) => s.endTime);
+  const { namespace, appType } = useBillingStore();
   const { data, isSuccess } = useQuery({
-    queryKey: ['billing', 'buget', { startTime, endTime }],
+    queryKey: ['billing', 'buget', { startTime, endTime, appType, namespace }],
     queryFn: () => {
       return request.post<{ amount: number }[]>('/api/billing/buget', {
         startTime,
-        endTime
+        endTime,
+        appType,
+        namespace
       });
     }
   });

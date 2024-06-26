@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
@@ -67,23 +68,25 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 			IP:   ip,
 			Node: node.Name,
 		}
-		apiPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeAPIServer)
-		if err != nil {
-			return err
-		}
-		cStatus.KubeAPIServer = healthyClient.ForHealthyPod(apiPod)
+		if isControlPlaneNode(node) {
+			apiPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeAPIServer)
+			if err != nil {
+				return err
+			}
+			cStatus.KubeAPIServer = healthyClient.ForHealthyPod(apiPod)
 
-		controllerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeControllerManager)
-		if err != nil {
-			return err
-		}
-		cStatus.KubeControllerManager = healthyClient.ForHealthyPod(controllerPod)
+			controllerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeControllerManager)
+			if err != nil {
+				return err
+			}
+			cStatus.KubeControllerManager = healthyClient.ForHealthyPod(controllerPod)
 
-		schedulerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeScheduler)
-		if err != nil {
-			return err
+			schedulerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeScheduler)
+			if err != nil {
+				return err
+			}
+			cStatus.KubeScheduler = healthyClient.ForHealthyPod(schedulerPod)
 		}
-		cStatus.KubeScheduler = healthyClient.ForHealthyPod(schedulerPod)
 
 		if err = healthyClient.ForHealthyKubelet(5*time.Second, ip); err != nil {
 			cStatus.KubeletErr = err.Error()
@@ -94,6 +97,16 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 
 	return n.Output(NodeList)
+}
+
+func isControlPlaneNode(node corev1.Node) bool {
+	if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok {
+		return true
+	}
+	if _, ok := node.Labels["node-role.kubernetes.io/master"]; ok {
+		return true
+	}
+	return false
 }
 
 func (n *ClusterChecker) Output(clusterStatus []ClusterStatus) error {

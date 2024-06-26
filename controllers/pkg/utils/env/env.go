@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 func GetEnvWithDefault(key, defaultValue string) string {
@@ -39,6 +40,19 @@ func GetBoolWithDefault(key string, defaultValue bool) bool {
 func GetInt64EnvWithDefault(key string, defaultValue int64) int64 {
 	if env, ok := os.LookupEnv(key); ok && env != "" {
 		if value, err := strconv.ParseInt(env, 10, 64); err == nil {
+			return value
+		}
+	}
+	return defaultValue
+}
+
+func GetIntEnvWithDefault(key string, defaultValue int) int {
+	return int(GetInt64EnvWithDefault(key, int64(defaultValue)))
+}
+
+func GetDurationEnvWithDefault(key string, defaultValue time.Duration) time.Duration {
+	if env, ok := os.LookupEnv(key); ok && env != "" {
+		if value, err := time.ParseDuration(env); err == nil {
 			return value
 		}
 	}

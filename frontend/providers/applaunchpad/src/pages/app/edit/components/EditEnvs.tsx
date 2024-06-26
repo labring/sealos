@@ -67,7 +67,7 @@ const EditEnvs = ({
   }, [defaultEnv, inputVal, onClose, successCb]);
 
   return (
-    <Modal isOpen onClose={onClose}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'530px'} w={'auto'}>
         <ModalHeader>{t('Edit Environment Variables')}</ModalHeader>

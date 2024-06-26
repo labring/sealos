@@ -14,31 +14,31 @@ export const codeTheme = {
     color: '#A19F9D'
   },
   'hljs-keyword': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-selector-tag': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-meta-keyword': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-doctag': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-section': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-selector-class': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-meta': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-selector-pseudo': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-attr': {
-    color: '#015692'
+    color: '#0770BC'
   },
   'hljs-attribute': {
     color: '#803378'
@@ -71,28 +71,28 @@ export const codeTheme = {
     color: '#b75501'
   },
   'hljs-string': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-regexp': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-symbol': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-variable': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-template-variable': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-link': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-selector-attr': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-meta-string': {
-    color: '#54790d'
+    color: '#9E53C1'
   },
   'hljs-bullet': {
     color: '#535a60'
@@ -111,5 +111,11 @@ export const codeTheme = {
   },
   'hljs-strong': {
     fontWeight: 'bold'
-  }
+  },
+  '-webkit-touch-callout': 'none' /* iOS Safari */,
+  '-webkit-user-select': 'none' /* Safari */,
+  '-khtml-user-select': 'none' /* Konqueror HTML */,
+  '-moz-user-select': 'none' /* Old versions of Firefox */,
+  '-ms-user-select': 'none' /* Internet Explorer/Edge */,
+  'user-select': 'none' /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
 };

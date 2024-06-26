@@ -3,28 +3,32 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
 import { Flex, Spinner } from '@chakra-ui/react';
-import { uploadConvertData } from '@/api/platform';
-import { getRegionToken, UserInfo } from '@/api/auth';
+import { getRegionToken } from '@/api/auth';
 import { isString } from 'lodash';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import { sessionConfig } from '@/utils/sessionConfig';
 import { useMutation } from '@tanstack/react-query';
 import { nsListRequest, switchRequest } from '@/api/namespace';
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 const Callback: NextPage = () => {
   const router = useRouter();
   const setSession = useSessionStore((s) => s.setSession);
   const setToken = useSessionStore((s) => s.setToken);
   const delSession = useSessionStore((s) => s.delSession);
-  const curToken = useSessionStore((s) => s.token);
+  const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
 
   const mutation = useMutation({
     mutationFn: switchRequest,
     async onSuccess(data) {
-      if (data.code === 200 && !!data.data) {
-        await sessionConfig(data.data);
+      if (data.code === 200 && !!data.data && session) {
+        const payload = jwtDecode<AccessTokenPayload>(data.data.token);
+        await sessionConfig({
+          ...data.data,
+          kubeconfig: switchKubeconfigNamespace(session.kubeconfig, payload.workspaceId)
+        });
       } else {
         throw Error('session in invalid');
       }

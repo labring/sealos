@@ -6,44 +6,44 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: object-storage-frontend
- namespace: objectstorage-frontend
- labels:
-   app: object-storage-frontend
+  name: object-storage-frontend
+  namespace: objectstorage-frontend
+  labels:
+    app: object-storage-frontend
 spec:
- replicas: 1
- revisionHistoryLimit: 1
- selector:
-   matchLabels:
-     app: object-storage-frontend
- strategy:
-   type: RollingUpdate
-   rollingUpdate:
-     maxUnavailable: 1
-     maxSurge: 0
- template:
-   metadata:
-     labels:
-       app: object-storage-frontend
-   spec:
-     containers:
-       - name: object-storage-frontend
-         image: ghcr.io/labring/sealos-objectstorage-frontend:latest
-         ports:
-           - containerPort: 3000
-             protocol: TCP
-         env:
-           - name: MONITOR_URL
-             value: https://object-storage-monitor.{{ .cloudDomain }}/q
-         resources:
-           limits:
-             cpu: 2000m
-             memory: 2048Mi
-           requests:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: object-storage-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  template:
+    metadata:
+      labels:
+        app: object-storage-frontend
+    spec:
+      containers:
+        - name: object-storage-frontend
+          image: ghcr.io/labring/sealos-objectstorage-frontend:latest
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: MONITOR_URL
+              value: https://object-storage-monitor.{{ .cloudDomain }}/q
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
               cpu: 10m
               memory: 128Mi
-         imagePullPolicy: Always
-         volumeMounts: []
+          imagePullPolicy: Always
+          volumeMounts: []
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -56,22 +56,22 @@ spec:
                   values:
                   - object-storage-frontend
               topologyKey: "kubernetes.io/hostname"
-     volumes: []
+      volumes: []
 ---
 apiVersion: v1
 kind: Service
 metadata:
- name: object-storage-frontend
- namespace: objectstorage-frontend
- labels:
-   app: object-storage-frontend
+  name: object-storage-frontend
+  namespace: objectstorage-frontend
+  labels:
+    app: object-storage-frontend
 spec:
- ports:
-   - port: 3000
-     targetPort: 3000
-     protocol: TCP
- selector:
-   app: object-storage-frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app: object-storage-frontend
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -122,7 +122,5 @@ spec:
       name: 对象存储
   icon: https://objectstorage.{{ .cloudDomain }}:{{ .cloudPort }}/logo.svg
   menuData:
-    helpDropDown: false
-    nameColor: text-black
   name: Object Storage
   type: iframe

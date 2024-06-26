@@ -8,7 +8,8 @@ export enum APPTYPE {
 }
 
 export type WindowSize = 'maximize' | 'maxmin' | 'minimize';
-export type displayType = 'normal' | 'hidden' | 'more ';
+export type displayType = 'normal' | 'hidden' | 'more';
+
 export type TAppFront = {
   isShow: boolean;
   zIndex: number;
@@ -46,7 +47,11 @@ export type TAppConfig = {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
-  i18n?: any;
+  i18n?: {
+    [key: string]: {
+      name: string;
+    };
+  };
   displayType: displayType;
 };
 
@@ -72,10 +77,12 @@ export type TOSState = {
       query?: Record<string, string>;
       raw?: string;
       pathname?: string;
+      appSize?: WindowSize;
     }
   ): Promise<void>;
   // close app
   closeAppById: (pid: number) => void;
+  closeAppAll: () => void;
   // get current runningApp
   currentApp: () => AppInfo | undefined;
   switchAppById: (pid: number) => void;
