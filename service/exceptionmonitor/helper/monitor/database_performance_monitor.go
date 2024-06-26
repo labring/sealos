@@ -40,7 +40,7 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 		return
 	}
-	info := notification.NotificationInfo{
+	info := notification.Info{
 		DatabaseClusterName: databaseClusterName,
 		Namespace:           namespace,
 		Status:              status,
@@ -55,7 +55,7 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	}
 }
 
-func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.NotificationInfo) {
+func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
 	if cpuUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "cpu"); err == nil {
 		usageStr := strconv.FormatFloat(cpuUsage, 'f', 2, 64)
 		info.CPUUsage = usageStr
@@ -74,7 +74,7 @@ func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID strin
 }
 
 func handleDiskMonitor(namespace, databaseClusterName, status, databaseType, UID string) {
-	info := notification.NotificationInfo{
+	info := notification.Info{
 		DatabaseClusterName: databaseClusterName,
 		Namespace:           namespace,
 		Status:              status,
@@ -90,7 +90,7 @@ func handleDiskMonitor(namespace, databaseClusterName, status, databaseType, UID
 	}
 }
 
-func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.NotificationInfo, monitorMap map[string]bool) {
+func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.Info, monitorMap map[string]bool) {
 	info.PerformanceType = performanceType
 	if usage >= threshold {
 		if !monitorMap[UID] {
