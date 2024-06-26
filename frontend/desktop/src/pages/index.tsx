@@ -1,6 +1,4 @@
 import DesktopContent from '@/components/desktop_content';
-import FloatButton from '@/components/floating_button';
-import MoreApps from '@/components/more_apps';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
@@ -14,6 +12,8 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 import useCallbackStore from '@/stores/callback';
+import FloatButton from '@/components/floating_button';
+import 'react-contexify/dist/ReactContexify.css';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -21,6 +21,7 @@ interface IMoreAppsContext {
   setShowMoreApps: (value: boolean) => void;
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
+
 export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
   const { isUserLogin } = useSessionStore();
@@ -109,8 +110,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
-        <FloatButton />
-        <MoreApps />
       </MoreAppsContext.Provider>
     </Box>
   );

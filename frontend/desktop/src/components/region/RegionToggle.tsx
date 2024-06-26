@@ -1,15 +1,16 @@
-import request from '@/services/request';
-import { Box, Divider, HStack, Text, useDisclosure } from '@chakra-ui/react';
-import { ExchangeIcon, InfoIcon, ProviderIcon } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
-import useSessionStore from '@/stores/session';
-import { useRouter } from 'next/router';
 import { regionList as getRegionList } from '@/api/auth';
+import request from '@/services/request';
+import useSessionStore from '@/stores/session';
 import { ApiResp, Region } from '@/types';
-import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
+import { Box, Divider, HStack, Text, useDisclosure } from '@chakra-ui/react';
+import { InfoIcon, ProviderIcon } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
+import { jwtDecode } from 'jwt-decode';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useMemo } from 'react';
+import { DesktopExchangeIcon, ZoneIcon } from '../icons';
 
 export default function RegionToggle() {
   const disclosure = useDisclosure();
@@ -45,27 +46,35 @@ export default function RegionToggle() {
         <HStack
           // fix for blur
           position={'relative'}
+          mt={'8px'}
         >
           <HStack
-            borderRadius={'10px'}
+            w={'full'}
+            borderRadius={'100px'}
             p={'8px 12px'}
-            gap={'20px'}
-            background={'rgba(244, 246, 248, 0.6)'}
-            boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
-            fontSize={'14px'}
-            color={'#152539'}
+            background={'rgba(255, 255, 255, 0.07)'}
+            _hover={{
+              background: 'rgba(255, 255, 255, 0.15)'
+            }}
+            fontSize={'12px'}
+            color={'white'}
             fontWeight={'500'}
-            backdropFilter={'blur(8px)'}
-            onClick={() => disclosure.onOpen()}
+            minH={'40px'}
+            onClick={() => {
+              disclosure.onOpen();
+            }}
+            cursor={'pointer'}
+            userSelect={'none'}
           >
+            <ZoneIcon />
             <Text>
               {providerT(curRegion?.location || '')} {curRegion?.description?.serial}
             </Text>
-            <ExchangeIcon />
+            <DesktopExchangeIcon ml={'auto'} />
           </HStack>
 
           {disclosure.isOpen ? (
-            <>
+            <Box position={'absolute'} right={0}>
               <Box
                 position={'fixed'}
                 inset={0}
@@ -75,80 +84,83 @@ export default function RegionToggle() {
                   disclosure.onClose();
                 }}
               ></Box>
-              <Box position={'absolute'} inset={0} zIndex={'999'}>
-                <Box
-                  bgColor={'red'}
-                  bg="rgba(255, 255, 255, 0.8)"
-                  boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
-                  position={'absolute'}
-                  top="43px"
-                  right={0}
-                  cursor={'initial'}
-                  borderRadius={'8px'}
-                  p="20px"
-                  backdropFilter={'blur(150px)'}
-                >
-                  <HStack gap={'12px'} alignItems={'stretch'}>
-                    {regionList.map((region) => {
-                      const cpuPrice = region?.description?.prices?.find((p) => p.name === 'CPU');
-                      return (
-                        <Box
-                          bgColor={'rgba(255, 255, 255, 0.75)'}
-                          borderRadius={'8px'}
-                          // minW={'165px'}
-                          // minH={'200px'}
-                          py={'12px'}
-                          key={region.uid}
-                          {...(region.uid === curRegionUid
-                            ? {
-                                border: '1.5px solid #219BF4'
+              <Box
+                bg="rgba(22, 30, 40, 0.35)"
+                boxShadow={'0px 15px 20px 0px rgba(0, 0, 0, 0.10)'}
+                position={'absolute'}
+                zIndex={999}
+                top="43px"
+                right={0}
+                cursor={'initial'}
+                borderRadius={'8px'}
+                p="20px"
+                backdropFilter={'blur(80px) saturate(150%)'}
+              >
+                <HStack gap={'12px'} alignItems={'stretch'}>
+                  {regionList.map((region) => {
+                    const cpuPrice = region?.description?.prices?.find((p) => p.name === 'CPU');
+                    return (
+                      <Box
+                        whiteSpace={'nowrap'}
+                        bg={'rgba(255, 255, 255, 0.10)'}
+                        borderRadius={'8px'}
+                        py={'12px'}
+                        key={region.uid}
+                        {...(region.uid === curRegionUid
+                          ? {
+                              border: '1.5px solid #219BF4'
+                            }
+                          : {
+                              async onClick() {
+                                await handleCick(region);
+                              },
+                              cursor: 'pointer',
+                              _hover: {
+                                bgColor: 'rgba(255, 255, 255, 0.10)'
                               }
-                            : {
-                                async onClick() {
-                                  await handleCick(region);
-                                },
-                                cursor: 'pointer',
-                                _hover: {
-                                  bgColor: 'rgba(255, 255, 255, 0.5)'
-                                }
-                              })}
-                          // aspectRatio={'16/20'}
+                            })}
+                      >
+                        <Box
+                          px={'16px'}
+                          fontSize={'14px'}
+                          fontWeight={'500'}
+                          pb={'10px'}
+                          borderBottom={'1px solid rgba(0, 0, 0, 0.05)'}
+                          mb={'12px'}
                         >
-                          <Box px={'16px'} fontSize={'14px'} fontWeight={'500'}>
-                            <Text color={'#152539'}>
-                              {providerT(region?.location)} {region?.description?.serial}
+                          <Text color={'rgba(255, 255, 255, 0.80)'}>
+                            {providerT(region?.location)} {region?.description?.serial}
+                          </Text>
+                          {cpuPrice && (
+                            <Text color={'#47B2FF'} whiteSpace={'nowrap'}>
+                              {cpuPrice?.name} {cpuPrice?.unit_price || 0} {t('Yuan')}/{t('Core')}/
+                              {t('Year')}
                             </Text>
-                            {cpuPrice && (
-                              <Text color={'#0884DD'} whiteSpace={'nowrap'}>
-                                {cpuPrice?.name} {cpuPrice?.unit_price || 0} {t('Yuan')}/{t('Core')}
-                                /{t('Year')}
-                              </Text>
-                            )}
-                          </Box>
-                          <Divider color={'#0000000D'} my={'12px'} />
-                          <Box px={'16px'} fontSize={'11px'} fontWeight={'500'}>
-                            <HStack color={'#485264'} gap={'4px'} mb={'2px'}>
-                              <ProviderIcon boxSize={'12px'} />
-                              <Text>{providerT('Provider')}</Text>
-                            </HStack>
-                            <Text color={'#111824'} mb={'8px'}>
-                              {providerT(region?.description?.provider)}
-                            </Text>
-                            <HStack color={'#485264'} gap={'4px'} mb={'2px'}>
-                              <InfoIcon boxSize={'12px'} />
-                              <Text>{t('Description')}</Text>
-                            </HStack>
-                            <Text color={'#111824'} lineHeight={'20px'}>
-                              {region?.description?.description?.[i18n.language as 'zh' | 'en']}
-                            </Text>
-                          </Box>
+                          )}
                         </Box>
-                      );
-                    })}
-                  </HStack>
-                </Box>
+                        {/* <Divider bg={'rgba(255, 255, 255, 0.10)'} my={'12px'} /> */}
+                        <Box px={'16px'} fontSize={'11px'} fontWeight={'500'}>
+                          <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
+                            <ProviderIcon boxSize={'12px'} />
+                            <Text>{providerT('Provider')}</Text>
+                          </HStack>
+                          <Text color={'white'} mb={'8px'}>
+                            {providerT(region?.description?.provider)}
+                          </Text>
+                          <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
+                            <InfoIcon boxSize={'12px'} />
+                            <Text>{t('Description')}</Text>
+                          </HStack>
+                          <Text whiteSpace={'pre-wrap'} color={'white'} lineHeight={'20px'}>
+                            {region?.description?.description?.[i18n.language as 'zh' | 'en']}
+                          </Text>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </HStack>
               </Box>
-            </>
+            </Box>
           ) : null}
         </HStack>
       )}

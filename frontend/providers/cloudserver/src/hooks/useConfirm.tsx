@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { ReactNode, useCallback, useRef } from 'react';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -17,7 +17,7 @@ export const useConfirm = ({
   confirmText = 'Confirm'
 }: {
   title?: string;
-  content: string;
+  content: ReactNode;
   confirmText?: string;
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -41,7 +41,7 @@ export const useConfirm = ({
       () => (
         <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
           <AlertDialogOverlay>
-            <AlertDialogContent>
+            <AlertDialogContent maxW={'600px'}>
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
                 {t(title)}
               </AlertDialogHeader>

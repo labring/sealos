@@ -11,6 +11,7 @@ const map = {
   restart: require('./icons/restart.svg').default,
   start: require('./icons/start.svg').default,
   pause: require('./icons/pause.svg').default,
+  warningInfo: require('./icons/warningInfo.svg').default,
   detail: require('./icons/detail.svg').default,
   logo: require('./icons/logo.svg').default,
   change: require('./icons/change.svg').default,

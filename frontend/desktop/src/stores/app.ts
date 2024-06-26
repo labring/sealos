@@ -1,11 +1,11 @@
 import request from '@/services/request';
 import { APPTYPE, TApp, TOSState, WindowSize, displayType } from '@/types';
+import { formatUrl } from '@/utils/format';
+import { cloneDeep, minBy } from 'lodash';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
-import { formatUrl } from '@/utils/format';
-import { minBy, cloneDeep } from 'lodash';
 
 export class AppInfo {
   pid: number;
@@ -37,7 +37,7 @@ export class AppInfo {
 
   constructor(app: TApp, pid: number) {
     this.isShow = false;
-    this.zIndex = 1;
+    this.zIndex = 10; // It cannot be 1 anymore, leaving space for other components
     this.size = 'maximize';
     this.cacheSize = 'maximize';
     this.style = cloneDeep(app.style);
@@ -64,7 +64,7 @@ const useAppStore = create<TOSState>()(
         runningInfo: [],
         // present of highest layer
         currentAppPid: -1,
-        maxZIndex: 0,
+        maxZIndex: 10,
         launchQuery: {},
         autolaunch: '',
         runner: new AppStateManager([]),
@@ -73,7 +73,7 @@ const useAppStore = create<TOSState>()(
           set((state) => {
             state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
             state.runner.loadApps(state.installedApps.map((app) => app.key));
-            state.maxZIndex = 0;
+            state.maxZIndex = 10;
           });
           return get();
         },
@@ -137,7 +137,7 @@ const useAppStore = create<TOSState>()(
             return;
           }
           // Up to 7 apps &&  one home app
-          if (get().runningInfo.length >= 7) {
+          if (get().runningInfo.length >= 8) {
             get().deleteLeastUsedAppByIndex();
           }
           if (app.type === APPTYPE.LINK) {
@@ -145,6 +145,7 @@ const useAppStore = create<TOSState>()(
             return;
           }
           let run_app = get().runner.openApp(app.key);
+
           const _app = new AppInfo(app, run_app.pid);
           _app.zIndex = zIndex;
           _app.size = appSize;

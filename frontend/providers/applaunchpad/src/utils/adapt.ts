@@ -86,7 +86,8 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     activeReplicas: app.status?.readyReplicas || 0,
     maxReplicas: +(app.metadata?.annotations?.[maxReplicasKey] || app.status?.readyReplicas || 0),
     minReplicas: +(app.metadata?.annotations?.[minReplicasKey] || app.status?.readyReplicas || 0),
-    storeAmount
+    storeAmount,
+    labels: app.metadata?.labels || {}
   };
 };
 
@@ -208,6 +209,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
   const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
   return {
+    labels: appDeploy?.metadata?.labels || {},
     crYamlList: configs,
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',

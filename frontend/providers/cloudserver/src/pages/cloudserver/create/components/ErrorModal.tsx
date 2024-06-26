@@ -22,14 +22,14 @@ const ErrorModal = ({
   return (
     <Modal isOpen={true} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent py={3}>
+      <ModalContent>
         <ModalHeader display={'flex'} alignItems={'center'} color={'myRed.600'}>
           <MyIcon name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
             {title}
           </Box>
         </ModalHeader>
-        <ModalCloseButton color={'myRed.600'} fontSize={'16px'} transform={'translateY(10px)'} />
+        <ModalCloseButton color={'myRed.600'} fontSize={'16px'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
           {content}
         </ModalBody>

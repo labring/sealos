@@ -8,7 +8,6 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { AppStatusEnum, appStatusMap } from '@/constants/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
-import { EditIcon } from '@chakra-ui/icons';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
 
@@ -20,7 +19,8 @@ const Header = ({
   isPause = false,
   isLargeScreen = true,
   setShowSlider,
-  refetch
+  refetch,
+  labels
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
@@ -28,6 +28,7 @@ const Header = ({
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
   refetch: () => void;
+  labels: { [key: string]: string };
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -203,6 +204,7 @@ const Header = ({
           appName={appName}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/apps')}
+          labels={labels}
         />
       )}
     </Flex>

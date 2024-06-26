@@ -17,7 +17,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await verifyAccessToken(req);
 
     const payload = req.body as ServerTypePayload;
-    console.log(payload);
 
     const { data, error } = await POST('/action/get-virtual-machine-package', payload, {
       headers: {

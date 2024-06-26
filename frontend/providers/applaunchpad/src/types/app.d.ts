@@ -55,6 +55,7 @@ export interface AppListItemType {
   minReplicas: number;
   maxReplicas: number;
   storeAmount: number;
+  labels: { [key: string]: string };
 }
 
 export interface AppEditType {
@@ -113,6 +114,7 @@ export interface AppDetailType extends AppEditType {
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
   crYamlList: DeployKindsType[];
+  labels: { [key: string]: string };
 
   // pods: PodDetailType[];
 }

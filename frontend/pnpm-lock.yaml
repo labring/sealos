@@ -105,6 +105,9 @@ importers:
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
+      decimal.js:
+        specifier: ^10.4.3
+        version: 10.4.3
       eslint:
         specifier: 8.38.0
         version: 8.38.0
@@ -168,6 +171,9 @@ importers:
       react:
         specifier: 18.2.0
         version: 18.2.0
+      react-contexify:
+        specifier: ^6.0.0
+        version: 6.0.0(react-dom@18.2.0)(react@18.2.0)
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
@@ -19216,6 +19222,17 @@ packages:
       react: '>=16.0.0'
     dependencies:
       react: 18.2.0
+    dev: false
+
+  /react-contexify@6.0.0(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-jMhz6yZI81Jv3UDj7TXqCkhdkCFEEmvwGCPXsQuA2ZUC8EbCuVQ6Cy8FzKMXa0y454XTDClBN2YFvvmoFlrFkg==}
+    peerDependencies:
+      react: '>=16'
+      react-dom: '>=16'
+    dependencies:
+      clsx: 1.2.1
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /react-day-picker@8.9.1(date-fns@2.30.0)(react@18.2.0):

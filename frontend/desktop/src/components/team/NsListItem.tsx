@@ -7,12 +7,14 @@ const NsListItem = ({
   isPrivate,
   displayPoint = false,
   teamName,
+  selectedColor = 'white',
   ...flexprop
 }: {
   displayPoint: boolean;
   teamName: string;
   isPrivate: boolean;
   isSelected: boolean;
+  selectedColor?: string;
 } & FlexProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -31,7 +33,7 @@ const NsListItem = ({
       {...flexprop}
       {...(isSelected
         ? {
-            background: 'rgba(0, 0, 0, 0.05)'
+            background: 'rgba(255, 244, 244, 0.10)'
           }
         : {
             bgColor: 'unset'
@@ -40,7 +42,7 @@ const NsListItem = ({
         '> .namespace-option': {
           display: 'flex'
         },
-        bgColor: 'rgba(0, 0, 0, 0.03)'
+        bgColor: 'rgba(255, 244, 244, 0.10)'
       }}
     >
       <HStack gap={'8px'} align={'center'} width={'full'}>
@@ -54,7 +56,7 @@ const NsListItem = ({
         <Text
           {...(isSelected
             ? {
-                color: '#0884DD'
+                color: selectedColor
               }
             : {})}
           textTransform={'capitalize'}

@@ -12,6 +12,7 @@ import Introduce from './components/Introduce';
 import HomeUserBy from './components/UserBy';
 import './index.scss';
 import Head from '@docusaurus/Head';
+import SaleBanner from '../components/SaleBanner';
 
 const Home = () => {
   const { screenWidth, currentLanguage } = useWindow();

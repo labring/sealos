@@ -4,7 +4,7 @@ import useSessionStore from '@/stores/session';
 import { Box, Center, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/react';
 import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
-import GithubComponent from './github';
+import GithubComponent from '../account/github';
 import { ReactElement, useCallback, useState } from 'react';
 import { useConfigStore } from '@/stores/config';
 import RegionToggle from '@/components/region/RegionToggle';
@@ -21,14 +21,13 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
-
   const { layoutConfig } = useConfigStore();
   const userInfo = useSessionStore((state) => state.session);
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const {
     userMenuStyleProps = {
       alignItems: 'center',
-      position: 'absolute',
+      // position: 'absolute',
       top: '42px',
       right: '42px',
       cursor: 'pointer',
@@ -40,7 +39,6 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
     w: '36px',
     h: '36px',
     background: 'rgba(244, 246, 248, 0.6)',
-
     boxShadow: '0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'
   };
 
@@ -55,27 +53,25 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
       button: <Iconfont iconName="icon-notifications" width={20} height={20}></Iconfont>,
       click: () => showDisclosure.onOpen(),
       content: <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
-    },
-    {
-      key: UserMenuKeys.Account,
-      button: (
-        <Image
-          width={'36px'}
-          height={'36px'}
-          borderRadius="full"
-          src={userInfo?.user?.avatar || ''}
-          fallbackSrc={layoutConfig?.logo}
-          alt="user avator"
-        />
-      ),
-      click: () => accountDisclosure.onOpen(),
-      content: <Account disclosure={accountDisclosure} key={'avatar'} />
     }
+    // {
+    //   key: UserMenuKeys.Account,
+    //   button: (
+    //     <Image
+    //       width={'36px'}
+    //       height={'36px'}
+    //       borderRadius="full"
+    //       src={userInfo?.user?.avatar || ''}
+    //       fallbackSrc={layoutConfig?.logo}
+    //       alt="user avator"
+    //     />
+    //   ),
+    //   click: () => accountDisclosure.onOpen(),
+    //   content: <Account disclosure={accountDisclosure} key={'avatar'} />
+    // }
   ];
   return (
     <Flex {...userMenuStyleProps}>
-      <RegionToggle />
-      <WorkspaceToggle />
       <LangSelectSimple {...baseItemStyle} />
       {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (

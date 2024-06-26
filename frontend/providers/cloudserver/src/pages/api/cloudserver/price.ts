@@ -31,7 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       zone: form.zone,
       virtualMachineType: form.virtualMachineType,
       virtualMachineArch: form.virtualMachineArch,
-      chareType: form.chargeType
+      chargeType: form.chargeType,
+      period: parseInt(form.period)
     };
 
     const result = await POST('/action/get-price', payload, {
@@ -44,6 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: result?.data
     });
   } catch (error) {
-    jsonRes(res, { code: 500, error: error });
+    jsonRes(res, { code: 500, error: 'error' });
   }
 }

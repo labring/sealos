@@ -79,6 +79,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
     >
       <Box>
         <Header
+          labels={appDetail?.labels || {}}
           appName={appName}
           appStatus={appDetail?.status}
           isPause={appDetail?.isPause}

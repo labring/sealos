@@ -217,6 +217,7 @@ const Header = ({
       <PauseChild />
       {isOpenDelModal && (
         <DelModal
+          labels={db.labels}
           dbName={db.dbName}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/dbs')}

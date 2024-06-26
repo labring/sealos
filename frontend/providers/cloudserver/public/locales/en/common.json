@@ -52,9 +52,9 @@
   "Quantity tips": "Quantity is {{amount1}} to {{amount2}}",
   "ReStart": "Restart",
   "Reference fee": "Reference fee",
-  "Reference fee disk tips": "{{price}}/GiB/hour",
-  "Reference fee tip": "{{price}}/hour",
-  "Reference fee bandwidth tips": "{{price}}/Mbps/hour",
+  "Reference fee disk tips": "{{price}}/GiB",
+  "Reference fee tip": "{{price}}",
+  "Reference fee bandwidth tips": "{{price}}/Mbps",
   "Restarting": "Restarting",
   "Set Password": "Set Password",
   "Start": "Start",
@@ -111,5 +111,13 @@
   "highPerformance": "High Performance",
   "Public IP is not enabled": "Public IP is not enabled",
   "interval": "Interval",
-  "sold out": "Sold Out"
+  "sold out": "Sold Out",
+  "month": "month",
+  "indivual": "indivual",
+  "year": "year",
+  "duration": "duration",
+  "total": "total",
+  "After the annual and monthly cloud hosting is sold": "After the annual and monthly cloud hosting is sold",
+  "No refund allowed": "No refund allowed,",
+  "Pay Confirm tips": "Clicking \"Confirm\" indicates that you have understood and agreed to this clause. If you do not agree to the clause \"No refunds are allowed after the annual or monthly cloud hosting is sold\", please click the \"Cancel\" button. If you do not agree, this purchase will be canceled and you will not be charged any fees."
 }

@@ -24,12 +24,12 @@ import (
 type CVMBilling struct {
 	ID           primitive.ObjectID `json:"_id" bson:"_id"`
 	InstanceName string             `json:"instanceName"`
-	Namespace    string             `json:"namespace"`
+	//Namespace    string             `json:"namespace"`
 	//VirtualMachinePackageId string           `json:"virtualMachinePackageId"`
 	StartAt time.Time `json:"startAt"`
 	EndAt   time.Time `json:"endAt"`
 	//CloudProvider           CvmCloudProvider `json:"cloudProvider"`
-	SealosUserID       string  `json:"sealosUserId"`
+	//SealosUserID       string  `json:"sealosUserId"`
 	SealosUserUID      string  `json:"sealosUserUid"`
 	SealosRegionUID    string  `json:"sealosRegionUid"`
 	SealosRegionDomain string  `json:"sealosRegionDomain"`

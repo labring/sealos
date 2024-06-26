@@ -31,7 +31,7 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
     window.open(fileUrl);
   };
 
-  const { data: userInfo } = useQuery(
+  const { data: workorderInfo } = useQuery(
     ['findUserById'],
     () => findUserById({ orderId: app?.orderId || '' }),
     {
@@ -158,17 +158,20 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
             gap={'4px'}
             cursor={'pointer'}
           >
-            <Box onClick={() => copyData(userInfo?.user?.userId || '')}>
-              userID: {userInfo?.user?.userId}
+            <Box onClick={() => copyData(workorderInfo?.user?.userId || '')}>
+              userID: {workorderInfo?.user?.userId}
             </Box>
-            <Box onClick={() => copyData(userInfo?.user?.userCrName || '')}>
-              userCrName: {userInfo?.user?.userCrName}
+            <Box onClick={() => copyData(workorderInfo?.user?.userCrName || '')}>
+              userCrName: {workorderInfo?.user?.userCrName}
             </Box>
-            <Box onClick={() => copyData(userInfo?.user?.workspaceId || '')}>
-              workspaceId: {userInfo?.user?.workspaceId}
+            <Box onClick={() => copyData(workorderInfo?.user?.workspaceId || '')}>
+              workspaceId: {workorderInfo?.user?.workspaceId}
             </Box>
-            <Box onClick={() => copyData(userInfo?.regionInfo?.sealosRegionDomain || '')}>
-              region: {userInfo?.regionInfo?.sealosRegionDomain}
+            <Box onClick={() => copyData(workorderInfo?.regionInfo?.sealosRegionDomain || '')}>
+              region: {workorderInfo?.regionInfo?.sealosRegionDomain}
+            </Box>
+            <Box onClick={() => copyData(workorderInfo?.workorderLink || '')}>
+              workorderLink: {workorderInfo?.workorderLink}
             </Box>
           </Flex>
         </Box>

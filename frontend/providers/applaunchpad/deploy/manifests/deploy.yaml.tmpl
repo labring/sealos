@@ -16,8 +16,8 @@ data:
       domain: {{ .cloudDomain }}
       port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
     common:
-      guideEnabled: {{ .guideEnabled }}
-      apiEnabled: {{ .apiEnabled }}
+      guideEnabled: false
+      apiEnabled: false
     launchpad:
       ingressTlsSecretName: {{ .ingressTlsSecretName }}
       eventAnalyze:

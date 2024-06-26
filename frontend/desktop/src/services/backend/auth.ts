@@ -3,10 +3,10 @@ import { sign, verify } from 'jsonwebtoken';
 import { JWTPayload } from '@/types';
 import { AuthenticationTokenPayload, AccessTokenPayload } from '@/types/token';
 
-const regionUID =()=> global.AppConfig?.cloud.regionUID || '123456789';
-const grobalJwtSecret =()=> global.AppConfig?.desktop.auth.jwt.global || '123456789';
-const regionalJwtSecret =()=> global.AppConfig?.desktop.auth.jwt.regional || '123456789';
-const internalJwtSecret =()=> global.AppConfig?.desktop.auth.jwt.internal || '123456789';
+const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
+const grobalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
+const regionalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.regional || '123456789';
+const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '123456789';
 
 const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
