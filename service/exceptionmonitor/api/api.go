@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 
 	"k8s.io/client-go/dynamic"
@@ -46,10 +47,10 @@ var (
 	FeishuWebhookURLMap     = map[string]string{}
 	ClusterRegionMap        = map[string]string{}
 	BaseURL                 string
-	DatabaseMonitor         string
-	DiskMonitor             string
-	CPUMemMonitor           string
-	BackupMonitor           string
+	DatabaseMonitor         bool
+	DiskMonitor             bool
+	CPUMemMonitor           bool
+	BackupMonitor           bool
 )
 
 func GetENV() error {
@@ -59,10 +60,10 @@ func GetENV() error {
 	ClusterName = getEnvWithCheck("ClusterName", &missingEnvVars)
 	MonitorType = getEnvWithCheck("MonitorType", &missingEnvVars)
 	clusterNS := getEnvWithCheck("ClusterNS", &missingEnvVars)
-	DatabaseMonitor = getEnvWithCheck("DatabaseMonitor", &missingEnvVars)
-	DiskMonitor = getEnvWithCheck("DiskMonitor", &missingEnvVars)
-	CPUMemMonitor = getEnvWithCheck("CPUMemMonitor", &missingEnvVars)
-	BackupMonitor = getEnvWithCheck("BackupMonitor", &missingEnvVars)
+	DatabaseMonitor, _ = strconv.ParseBool(getEnvWithCheck("DatabaseMonitor", &missingEnvVars))
+	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
+	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
+	BackupMonitor, _ = strconv.ParseBool(getEnvWithCheck("BackupMonitor", &missingEnvVars))
 	if clusterNS != "" {
 		ClusterNS = strings.Split(clusterNS, ",")
 	}

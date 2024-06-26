@@ -9,6 +9,8 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
+const ExceptionType = "exception"
+
 type NotificationInfo struct {
 	DatabaseClusterName string
 	Namespace           string
@@ -24,9 +26,9 @@ type NotificationInfo struct {
 	ExceptionType       string
 }
 
-func GetNotificationMessage(info NotificationInfo) string {
+func GetNotificationMessage(notificationInfo NotificationInfo) string {
 	headerTemplate := "red"
-	titleContent := "数据库" + info.ExceptionType + "异常告警"
+	titleContent := "数据库" + notificationInfo.ExceptionType + "异常告警"
 	var elements []map[string]interface{}
 
 	commonElements := []map[string]interface{}{
@@ -40,73 +42,73 @@ func GetNotificationMessage(info NotificationInfo) string {
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("命名空间：%s", info.Namespace),
+				"content": fmt.Sprintf("命名空间：%s", notificationInfo.Namespace),
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库名：%s", info.DatabaseClusterName),
+				"content": fmt.Sprintf("数据库名：%s", notificationInfo.DatabaseClusterName),
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库状态：%s", info.Status),
+				"content": fmt.Sprintf("数据库状态：%s", notificationInfo.Status),
 				"tag":     "lark_md",
 			},
 		},
 	}
 
-	if info.NotificationType == "exception" && info.ExceptionType == "database" {
+	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "database" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("欠费级别：%s", info.DebtLevel),
+					"content": fmt.Sprintf("欠费级别：%s", notificationInfo.DebtLevel),
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("事件信息：%s", info.Events),
+					"content": fmt.Sprintf("事件信息：%s", notificationInfo.Events),
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("告警原因：%s", info.Reason),
+					"content": fmt.Sprintf("告警原因：%s", notificationInfo.Reason),
 					"tag":     "lark_md",
 				},
 			},
 		}
 		elements = append(commonElements, exceptionElements...)
-	} else if info.NotificationType == "exception" && info.ExceptionType == "performance" {
+	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "performance" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("%s使用率：%s", info.PerformanceType, info.DebtLevel),
+					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, notificationInfo.DebtLevel),
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("告警原因：%s", info.PerformanceType+"超过阀值"),
+					"content": fmt.Sprintf("告警原因：%s", notificationInfo.PerformanceType+"超过阀值"),
 					"tag":     "lark_md",
 				},
 			},
 		}
 		elements = append(commonElements, exceptionElements...)
 	}
-	if info.NotificationType == "recovery" {
+	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
-		titleContent = "数据库" + info.ExceptionType + "恢复通知"
+		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
 		elements = commonElements
 	}
 
@@ -227,7 +229,7 @@ func marshalCard(card map[string]interface{}) (string, error) {
 
 func GetBackupMessage(notificationType, namespace, backupName, status, startTime, reason string) string {
 	var card map[string]interface{}
-	if notificationType == "exception" {
+	if notificationType == ExceptionType {
 		elements := createElements(namespace, backupName, status, startTime, reason, true)
 		card = createCard("red", "备份异常通知", elements)
 	} else {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"time"
 
@@ -30,7 +31,7 @@ func randString(n int) (string, error) {
 	return string(b), nil
 }
 
-func CreateNotification(namespace, name, status, notificationMessage string) error {
+func CreateNotification(namespace, name, status, notificationMessage string) {
 	gvr := schema.GroupVersionResource{
 		Group:    "notification.sealos.io",
 		Version:  "v1",
@@ -67,7 +68,6 @@ func CreateNotification(namespace, name, status, notificationMessage string) err
 
 	_, err := api.DynamicClient.Resource(gvr).Namespace(namespace).Create(context.TODO(), notification, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		log.Fatalf("Failed to send desktop notification: %v", err)
 	}
-	return nil
 }
