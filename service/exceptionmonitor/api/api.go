@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -104,7 +103,6 @@ func getEnvWithCheck(key string, missingEnvVars *[]string) string {
 		if MonitorType == "all" && key == "ClusterNS" {
 			return value
 		}
-		fmt.Println(key)
 		*missingEnvVars = append(*missingEnvVars, key)
 	}
 	return value

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
@@ -14,7 +13,6 @@ func main() {
 	if err := initialize(); err != nil {
 		log.Fatalf("Initialization failed: %v", err)
 	}
-	fmt.Println("test")
 	go monitor.DatabaseExceptionMonitor()
 	go monitor.DatabasePerformanceMonitor()
 	go monitor.DatabaseBackupMonitor()
