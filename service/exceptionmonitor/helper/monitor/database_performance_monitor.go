@@ -49,14 +49,14 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		ExceptionType:       "阀值",
 	}
 	switch status {
-	case "Deleting", "Creating", "Stopping", "Stopped", "":
+	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
 		break
 	default:
 		if api.CPUMemMonitor {
 			handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID, info)
 		}
 		if api.DiskMonitor {
-			handleDiskMonitor(namespace, databaseClusterName, status, databaseType, UID, info)
+			handleDiskMonitor(namespace, databaseClusterName, databaseType, UID, info)
 		}
 	}
 }
@@ -81,7 +81,7 @@ func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID strin
 	}
 }
 
-func handleDiskMonitor(namespace, databaseClusterName, status, databaseType, UID string, info notification.Info) {
+func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
 	if maxUsage, err := checkPerformance(namespace, databaseClusterName, databaseType, "disk"); err == nil {
 		usageStr := strconv.FormatFloat(maxUsage, 'f', 2, 64)
 		info.CPUUsage = usageStr

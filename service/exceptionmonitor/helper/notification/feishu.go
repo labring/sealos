@@ -85,19 +85,12 @@ func GetNotificationMessage(notificationInfo Info) string {
 			},
 		}
 		elements = append(commonElements, exceptionElements...)
-	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "阀值" {
+	} else if notificationInfo.ExceptionType == "阀值" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
 					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, notificationInfo.DebtLevel),
-					"tag":     "lark_md",
-				},
-			},
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("告警原因：%s", notificationInfo.PerformanceType+"超过阀值"),
 					"tag":     "lark_md",
 				},
 			},
@@ -107,18 +100,6 @@ func GetNotificationMessage(notificationInfo Info) string {
 	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
-		if notificationInfo.ExceptionType == "阀值" {
-			exceptionElements := []map[string]interface{}{
-				{
-					"tag": "div",
-					"text": map[string]string{
-						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, notificationInfo.DebtLevel),
-						"tag":     "lark_md",
-					},
-				},
-			}
-			elements = append(commonElements, exceptionElements...)
-		}
 		elements = commonElements
 	}
 	card := map[string]interface{}{
@@ -144,10 +125,11 @@ func GetNotificationMessage(notificationInfo Info) string {
 }
 
 func SendFeishuNotification(message, feishuWebHook string) error {
-	if api.MonitorType != "all" {
-		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
-	}
-	log.Printf(message)
+	log.Print(message, feishuWebHook)
+	//if api.MonitorType != "all" {
+	//	feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+	//}
+	//
 	//// Create a map to hold the POST request body
 	//bodyMap := map[string]interface{}{
 	//	"msg_type": "interactive",
