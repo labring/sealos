@@ -60,6 +60,7 @@ func checkDatabasesInNamespace(namespace string) error {
 	var clusters *metav1unstructured.UnstructuredList
 	var err error
 	if api.MonitorType == "all" {
+		fmt.Println(111)
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	} else {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
@@ -67,6 +68,7 @@ func checkDatabasesInNamespace(namespace string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(len(clusters.Items))
 	for _, cluster := range clusters.Items {
 		processCluster(cluster)
 	}
