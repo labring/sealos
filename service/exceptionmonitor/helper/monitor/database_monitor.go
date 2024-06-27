@@ -68,8 +68,11 @@ func checkDatabasesInNamespace(namespace string) error {
 	if err != nil {
 		return err
 	}
+	i := 1
 	for _, cluster := range clusters.Items {
 		processCluster(cluster)
+		fmt.Println(i)
+		i++
 	}
 	return nil
 }
@@ -79,9 +82,6 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	status, _, err := metav1unstructured.NestedString(cluster.Object, "status", "phase")
 	if err != nil {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
-	}
-	if status == "" {
-		fmt.Println(555)
 	}
 	switch status {
 	case api.StatusRunning, api.StatusStopped:
