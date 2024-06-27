@@ -33,7 +33,6 @@ var (
 )
 
 func DatabaseExceptionMonitor() {
-	fmt.Println(api.DatabaseMonitor)
 	for api.DatabaseMonitor {
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Fatalf("Failed to check databases: %v", err)
@@ -62,7 +61,6 @@ func checkDatabasesInNamespace(namespace string) error {
 	var clusters *metav1unstructured.UnstructuredList
 	var err error
 	if api.MonitorType == "all" {
-		fmt.Println(222)
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	} else {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
@@ -77,12 +75,10 @@ func checkDatabasesInNamespace(namespace string) error {
 }
 
 func processCluster(cluster metav1unstructured.Unstructured) {
-	fmt.Println(333)
 	databaseClusterName, databaseType, namespace := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace()
 	status, found, err := metav1unstructured.NestedString(cluster.Object, "status", "phase")
 	if err != nil || !found {
 		log.Fatalf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
-		return
 	}
 
 	switch status {
@@ -121,7 +117,6 @@ func cleanClusterStatus(databaseClusterName string) {
 }
 
 func handleClusterException(databaseClusterName, namespace, databaseType, status string) {
-	fmt.Println(444)
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
 		api.ExceptionDatabaseMap[databaseClusterName] = true
