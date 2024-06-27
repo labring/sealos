@@ -1,12 +1,10 @@
 package notification
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"log"
 )
 
 const ExceptionType = "exception"
@@ -28,7 +26,7 @@ type Info struct {
 
 func GetNotificationMessage(notificationInfo Info) string {
 	headerTemplate := "red"
-	titleContent := "数据库" + notificationInfo.ExceptionType + "异常告警"
+	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
 	var elements []map[string]interface{}
 
 	commonElements := []map[string]interface{}{
@@ -62,7 +60,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 		},
 	}
 
-	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "database" {
+	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
@@ -87,7 +85,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 			},
 		}
 		elements = append(commonElements, exceptionElements...)
-	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "performance" {
+	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "阀值" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
@@ -109,9 +107,20 @@ func GetNotificationMessage(notificationInfo Info) string {
 	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
+		if notificationInfo.ExceptionType == "阀值" {
+			exceptionElements := []map[string]interface{}{
+				{
+					"tag": "div",
+					"text": map[string]string{
+						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, notificationInfo.DebtLevel),
+						"tag":     "lark_md",
+					},
+				},
+			}
+			elements = append(commonElements, exceptionElements...)
+		}
 		elements = commonElements
 	}
-
 	card := map[string]interface{}{
 		"config": map[string]bool{
 			"wide_screen_mode": true,
@@ -138,42 +147,42 @@ func SendFeishuNotification(message, feishuWebHook string) error {
 	if api.MonitorType != "all" {
 		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
-
-	// Create a map to hold the POST request body
-	bodyMap := map[string]interface{}{
-		"msg_type": "interactive",
-		"card":     message,
-	}
-
-	// Convert the map to a JSON byte slice
-	bodyBytes, err := json.Marshal(bodyMap)
-	if err != nil {
-		return err
-	}
-
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return err
-	}
-
-	// Set the request header
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request using the default client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Print the status and response body
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return err
-	}
+	log.Printf(message)
+	//// Create a map to hold the POST request body
+	//bodyMap := map[string]interface{}{
+	//	"msg_type": "interactive",
+	//	"card":     message,
+	//}
+	//
+	//// Convert the map to a JSON byte slice
+	//bodyBytes, err := json.Marshal(bodyMap)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//// Create a new HTTP request
+	//req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//// Set the request header
+	//req.Header.Set("Content-Type", "application/json")
+	//
+	//// Send the request using the default client
+	//client := &http.Client{}
+	//resp, err := client.Do(req)
+	//if err != nil {
+	//	return err
+	//}
+	//defer resp.Body.Close()
+	//
+	//// Print the status and response body
+	//buf := new(bytes.Buffer)
+	//_, err = buf.ReadFrom(resp.Body)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 

@@ -97,7 +97,7 @@ func handleClusterRecovery(databaseClusterName, namespace, status string) {
 			DatabaseClusterName: databaseClusterName,
 			Namespace:           namespace,
 			Status:              status,
-			ExceptionType:       "database",
+			ExceptionType:       "状态",
 			NotificationType:    "recovery",
 		}
 		recoveryMessage := notification.GetNotificationMessage(notificationInfo)
@@ -179,7 +179,7 @@ func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, data
 		Namespace:           namespace,
 		Status:              status,
 		DebtLevel:           debtLevel,
-		ExceptionType:       "database",
+		ExceptionType:       "状态",
 		Events:              databaseEvents,
 		NotificationType:    "exception",
 	}
@@ -215,7 +215,7 @@ func notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel strin
 		Status:              status,
 		DebtLevel:           debtLevel,
 		Reason:              api.ExceededQuotaException,
-		ExceptionType:       "database",
+		ExceptionType:       "状态",
 		NotificationType:    "exception",
 	}
 	alertMessage := notification.GetNotificationMessage(notificationInfo)
