@@ -8,8 +8,14 @@ import { throttle } from 'lodash';
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
 import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import Head from 'next/head';
-import { useMonaco } from '@monaco-editor/react';
+import { useMonaco, loader } from '@monaco-editor/react';
 import { monacoTheme } from '@/constants/theme';
+
+loader.config({
+  paths: {
+    vs: '/vs'
+  }
+});
 
 import 'nprogress/nprogress.css';
 import '@/styles/globals.css';
