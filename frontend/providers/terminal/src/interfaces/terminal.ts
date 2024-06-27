@@ -31,7 +31,7 @@ export const generateTerminalTemplate = (form: TerminalForm): string => {
       apiServer: 'https://kubernetes.default.svc.cluster.local:443',
       ttyImage: process.env.TTYD_IMAGE,
       replicas: 1,
-      keepalived: '4h'
+      keepalived: process.env.KEEPALIVED
     }
   };
 
