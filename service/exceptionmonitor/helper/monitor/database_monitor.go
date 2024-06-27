@@ -81,9 +81,9 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	}
 
 	switch status {
-	case "Running", "Stopped":
+	case api.StatusRunning, api.StatusStopped:
 		handleClusterRecovery(databaseClusterName, namespace, status)
-	case "Deleting", "Stopping":
+	case api.StatusDeleting, api.StatusStopping:
 		// No action needed
 		break
 	default:

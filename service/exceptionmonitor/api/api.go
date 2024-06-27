@@ -22,6 +22,16 @@ type QueryResult struct {
 	} `json:"data"`
 }
 
+const (
+	StatusDeleting = "Deleting"
+	StatusCreating = "Creating"
+	StatusStopping = "Stopping"
+	StatusStopped  = "Stopped"
+	StatusRunning  = "Running"
+	StatusUpdating = "Updating"
+	StatusUnknown  = ""
+)
+
 var (
 	ClientSet     *kubernetes.Clientset
 	DynamicClient *dynamic.DynamicClient
@@ -44,8 +54,8 @@ var (
 	ClusterName             string
 	MonitorType             string
 	ClusterNS               []string
-	FeishuWebhookURLMap     = map[string]string{}
-	ClusterRegionMap        = map[string]string{}
+	FeishuWebhookURLMap     = make(map[string]string)
+	ClusterRegionMap        = make(map[string]string)
 	BaseURL                 string
 	DatabaseMonitor         bool
 	DiskMonitor             bool
