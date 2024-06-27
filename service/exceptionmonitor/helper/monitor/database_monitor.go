@@ -69,8 +69,11 @@ func checkDatabasesInNamespace(namespace string) error {
 		return err
 	}
 	fmt.Println(len(clusters.Items))
+	i := 1
 	for _, cluster := range clusters.Items {
 		processCluster(cluster)
+		fmt.Println(i)
+		i++
 	}
 	return nil
 }
@@ -82,9 +85,6 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
 	fmt.Println(status, databaseClusterName, namespace)
-	if namespace == "ns-m0mugwwk" {
-		fmt.Println(333)
-	}
 	switch status {
 	case api.StatusRunning, api.StatusStopped:
 		handleClusterRecovery(databaseClusterName, namespace, status)

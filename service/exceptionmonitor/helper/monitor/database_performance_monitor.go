@@ -14,6 +14,7 @@ import (
 )
 
 func DatabasePerformanceMonitor() {
+	fmt.Println("test1111")
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -35,6 +36,7 @@ func checkDatabasePerformance() error {
 }
 
 func monitorCluster(cluster unstructured.Unstructured) {
+	fmt.Println("test2222")
 	databaseClusterName, databaseType, namespace, UID := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
 	status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
 	if err != nil || !found {
