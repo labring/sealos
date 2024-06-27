@@ -68,13 +68,8 @@ func checkDatabasesInNamespace(namespace string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(len(clusters.Items))
-	fmt.Println(clusters)
-	i := 1
 	for _, cluster := range clusters.Items {
 		processCluster(cluster)
-		fmt.Println(i)
-		i++
 	}
 	return nil
 }
@@ -85,13 +80,20 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	if err != nil {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
-	fmt.Println(status, databaseClusterName, namespace)
+	if status == "" {
+		fmt.Println(555)
+	}
 	switch status {
 	case api.StatusRunning, api.StatusStopped:
 		handleClusterRecovery(databaseClusterName, namespace, status)
 	case api.StatusDeleting, api.StatusStopping:
 		// No action needed
 		break
+	case api.StatusUnknown:
+		alertMessage, feishuWebHook := prepareAlertMessage(databaseClusterName, namespace, status, "", "status is empty", 0)
+		if err := sendAlert(alertMessage, feishuWebHook, databaseClusterName); err != nil {
+			log.Printf("Failed to send feishu %s in ns %s: %v", databaseClusterName, namespace, err)
+		}
 	default:
 		handleClusterException(databaseClusterName, namespace, databaseType, status)
 	}
