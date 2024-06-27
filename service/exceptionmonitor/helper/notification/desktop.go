@@ -68,6 +68,6 @@ func CreateNotification(namespace, name, status, notificationMessage string) {
 
 	_, err := api.DynamicClient.Resource(gvr).Namespace(namespace).Create(context.TODO(), notification, metav1.CreateOptions{})
 	if err != nil {
-		log.Fatalf("Failed to send desktop notification: %v", err)
+		log.Printf("Failed to send desktop notification: %v", err)
 	}
 }

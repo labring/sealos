@@ -17,7 +17,7 @@ func DatabasePerformanceMonitor() {
 	defer ticker.Stop()
 	for range ticker.C {
 		if err := checkDatabasePerformance(); err != nil {
-			log.Fatalf("Failed to check database performance: %v", err)
+			log.Printf("Failed to check database performance: %v", err)
 		}
 	}
 }

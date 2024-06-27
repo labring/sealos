@@ -35,7 +35,7 @@ var (
 func DatabaseExceptionMonitor() {
 	for api.DatabaseMonitor {
 		if err := checkDatabases(api.ClusterNS); err != nil {
-			log.Fatalf("Failed to check databases: %v", err)
+			log.Printf("Failed to check databases: %v", err)
 		}
 		time.Sleep(1 * time.Minute)
 	}
@@ -77,7 +77,7 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	databaseClusterName, databaseType, namespace := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace()
 	status, _, err := metav1unstructured.NestedString(cluster.Object, "status", "phase")
 	if err != nil {
-		log.Fatalf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
+		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
 
 	switch status {
@@ -102,7 +102,7 @@ func handleClusterRecovery(databaseClusterName, namespace, status string) {
 		}
 		recoveryMessage := notification.GetNotificationMessage(notificationInfo)
 		if err := notification.SendFeishuNotification(recoveryMessage, api.FeishuWebHookMap[databaseClusterName]); err != nil {
-			log.Fatalf("Error sending recovery notification: %v", err)
+			log.Printf("Error sending recovery notification: %v", err)
 		}
 		cleanClusterStatus(databaseClusterName)
 	}
@@ -122,7 +122,7 @@ func handleClusterException(databaseClusterName, namespace, databaseType, status
 	}
 	if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
 		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
-			log.Fatalf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
+			log.Printf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
 		}
 	}
 }

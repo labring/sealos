@@ -11,7 +11,7 @@ import (
 
 func main() {
 	if err := initialize(); err != nil {
-		log.Fatalf("Initialization failed: %v", err)
+		log.Printf("Initialization failed: %v", err)
 	}
 	go monitor.DatabaseExceptionMonitor()
 	go monitor.DatabasePerformanceMonitor()

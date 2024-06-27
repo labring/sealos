@@ -24,7 +24,7 @@ var (
 func DatabaseBackupMonitor() {
 	for api.BackupMonitor {
 		if err := checkDatabaseBackups(); err != nil {
-			log.Fatalf("Failed to check database backups: %v", err)
+			log.Printf("Failed to check database backups: %v", err)
 		}
 		time.Sleep(1 * time.Hour)
 	}
@@ -45,12 +45,12 @@ func processBackup(backup unstructured.Unstructured) {
 	status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
 	backupName, namespace, startTime := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
 	if err != nil || !found {
-		log.Fatalf("Unable to get %s status in ns %s:%v", backupName, namespace, err)
+		log.Printf("Unable to get %s status in ns %s:%v", backupName, namespace, err)
 		return
 	}
 	backupPolicyName, found, err := unstructured.NestedString(backup.Object, "spec", "backupPolicyName")
 	if err != nil || !found {
-		log.Fatalf("Unable to get %s backupPolicyName in ns %s:%v", backupName, namespace, err)
+		log.Printf("Unable to get %s backupPolicyName in ns %s:%v", backupName, namespace, err)
 		return
 	}
 	handleBackupStatus(backupName, namespace, status, startTime, backupPolicyName)
@@ -64,7 +64,7 @@ func handleBackupStatus(backupName, namespace, status, startTime, backupPolicyNa
 	if status == "Failed" && shouldNotifyBackupFailure(backupName, namespace, backupPolicyName) {
 		err := api.DynamicClient.Resource(backupGVR).Namespace(namespace).Delete(context.Background(), backupName, metav1.DeleteOptions{})
 		if err != nil {
-			log.Fatalf("Failed to delete%s in ns %s:%v", backupName, namespace, err)
+			log.Printf("Failed to delete%s in ns %s:%v", backupName, namespace, err)
 		}
 	}
 }
@@ -73,7 +73,7 @@ func handleBackupCompletion(backupName, namespace, status, startTime string) {
 	if _, ok := api.LastBackupStatusMap[backupName]; ok {
 		message := notification.GetBackupMessage("recovery", namespace, backupName, status, startTime, "")
 		if err := notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
-			log.Fatalf("Error sending recovery notification:%v", err)
+			log.Printf("Error sending recovery notification:%v", err)
 		}
 		delete(api.LastBackupStatusMap, backupName)
 		delete(api.IsSendBackupStatusMap, backupName)
@@ -92,7 +92,7 @@ func shouldNotifyBackupFailure(backupName, namespace, backupPolicyName string) b
 	if ok, _ := checkFailedBackup(backupPolicyName, namespace); ok {
 		message := notification.GetBackupMessage("exception", namespace, backupName, "Failed", "", "")
 		if err := notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
-			log.Fatalf("Error sending exception notification:%v", err)
+			log.Printf("Error sending exception notification:%v", err)
 		}
 		return true
 	}
