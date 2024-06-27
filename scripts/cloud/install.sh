@@ -495,7 +495,7 @@ stringData:
     if [[ $k8s_installed == "n" ]]; then
       $sealos_gen_cmd
       # Modify Clusterfile with sed
-      sed -e '/InitConfiguration/a skipPhases:\n  addon/kube-proxy' -i $CLOUD_DIR/Clusterfile
+      sed -e '/InitConfiguration/a skipPhases:\n  - addon/kube-proxy' -i $CLOUD_DIR/Clusterfile
       sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
       sed -i "s|10.96.0.0/22|${service_cidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
     fi
