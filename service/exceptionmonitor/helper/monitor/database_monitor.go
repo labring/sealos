@@ -79,7 +79,7 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	if err != nil {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
-
+	fmt.Println(status, databaseClusterName, namespace)
 	switch status {
 	case api.StatusRunning, api.StatusStopped:
 		handleClusterRecovery(databaseClusterName, namespace, status)
