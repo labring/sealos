@@ -69,6 +69,7 @@ func checkDatabasesInNamespace(namespace string) error {
 		return err
 	}
 	fmt.Println(len(clusters.Items))
+	fmt.Println(clusters)
 	i := 1
 	for _, cluster := range clusters.Items {
 		processCluster(cluster)
