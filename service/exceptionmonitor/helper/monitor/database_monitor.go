@@ -43,7 +43,6 @@ func DatabaseExceptionMonitor() {
 
 func checkDatabases(namespaces []string) error {
 	if api.MonitorType == "all" {
-		fmt.Println(111)
 		if err := checkDatabasesInNamespace(""); err != nil {
 			return err
 		}
@@ -76,8 +75,8 @@ func checkDatabasesInNamespace(namespace string) error {
 
 func processCluster(cluster metav1unstructured.Unstructured) {
 	databaseClusterName, databaseType, namespace := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace()
-	status, found, err := metav1unstructured.NestedString(cluster.Object, "status", "phase")
-	if err != nil || !found {
+	status, _, err := metav1unstructured.NestedString(cluster.Object, "status", "phase")
+	if err != nil {
 		log.Fatalf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
 
