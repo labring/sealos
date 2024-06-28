@@ -326,7 +326,7 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to list pvc: %v", err)
 	}
 	for _, pvc := range pvcList.Items {
-		if pvc.Status.Phase != corev1.ClaimBound || pvc.Name == resources.KubeBlocksBackUpName {
+		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
 		if len(pvc.OwnerReferences) > 0 && pvc.OwnerReferences[0].Kind == "BackupRepo" {
@@ -339,13 +339,13 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		}
 		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
 	}
-	if r.ObjStorageUserBackupSize[namespace.Name] > 0 {
-		backupRes := resources.NewObjStorageResourceNamed("DB-Backup")
+	if backupSize := r.ObjStorageUserBackupSize[getBackupObjectStorageName(namespace.Name)]; backupSize > 0 {
+		backupRes := resources.NewObjStorageResourceNamed("DB-BACKUP")
 		if resUsed[backupRes.String()] == nil {
 			resNamed[backupRes.String()] = backupRes
 			resUsed[backupRes.String()] = initResources()
 		}
-		resUsed[backupRes.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(r.ObjStorageUserBackupSize[namespace.Name], resource.BinarySI))
+		resUsed[backupRes.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(backupSize, resource.BinarySI))
 	}
 	svcList := corev1.ServiceList{}
 	if err := r.List(context.Background(), &svcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
@@ -389,6 +389,10 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		})
 	}
 	return r.DBClient.InsertMonitor(context.Background(), monitors...)
+}
+
+func getBackupObjectStorageName(namespace string) string {
+	return strings.TrimPrefix(namespace, "ns-")
 }
 
 func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]*quantity) (bool, map[uint8]int64) {
