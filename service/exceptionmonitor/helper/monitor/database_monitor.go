@@ -139,6 +139,7 @@ func handleClusterException(databaseClusterName, namespace, databaseType, status
 
 func processClusterException(databaseClusterName, namespace, databaseType, status string) error {
 	debt, debtLevel, _ := checkDebt(namespace)
+	fmt.Println(debtLevel)
 	if debt {
 		databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
 		if send {
@@ -156,6 +157,7 @@ func processClusterException(databaseClusterName, namespace, databaseType, statu
 			}
 		}
 	} else {
+		fmt.Println("debtLevel-----" + databaseClusterName)
 		api.DebtNamespaceMap[namespace] = true
 		delete(api.LastDatabaseClusterStatus, databaseClusterName)
 	}
