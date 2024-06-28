@@ -154,11 +154,11 @@ func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 
 func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline JoinCheck in ScaleProcessor.")
-	var ips []string
+	var ips, scales []string
 	ips = append(ips, cluster.GetMaster0IPAndPort())
-	ips = append(ips, c.MastersToJoin...)
-	ips = append(ips, c.NodesToJoin...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(ips)}, cluster, checker.PhasePre))
+	scales = append(c.MastersToJoin, c.NodesToJoin...)
+	ips = append(ips, scales...)
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(scales)}, cluster, checker.PhasePre))
 }
 
 func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
