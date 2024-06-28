@@ -25,7 +25,8 @@ var (
 		Version:  "v1",
 		Resource: "debts",
 	}
-	userGVR = schema.GroupVersionResource{
+	debtNamespace = "account-system"
+	userGVR       = schema.GroupVersionResource{
 		Group:    "user.sealos.io",
 		Version:  "v1",
 		Resource: "users",
@@ -37,7 +38,6 @@ func DatabaseExceptionMonitor() {
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Printf("Failed to check databases: %v", err)
 		}
-		fmt.Println("aaaaaaa")
 		time.Sleep(1 * time.Minute)
 	}
 }
@@ -61,7 +61,6 @@ func checkDatabasesInNamespace(namespace string) error {
 	var clusters *metav1unstructured.UnstructuredList
 	var err error
 	if api.MonitorType == "all" {
-		fmt.Println(111)
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	} else {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
@@ -97,7 +96,6 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 			log.Printf("Failed to send feishu %s in ns %s: %v", databaseClusterName, namespace, err)
 		}
 	default:
-		fmt.Println("other")
 		handleClusterException(databaseClusterName, namespace, databaseType, status)
 	}
 }
@@ -127,15 +125,11 @@ func cleanClusterStatus(databaseClusterName string) {
 }
 
 func handleClusterException(databaseClusterName, namespace, databaseType, status string) {
-	fmt.Println("bbbbb")
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
-		fmt.Println("ccccc")
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
 		api.ExceptionDatabaseMap[databaseClusterName] = true
 	}
-	fmt.Println("ddddd")
 	if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
-		fmt.Println("eeeee")
 		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
 			log.Printf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
 		}
@@ -144,8 +138,6 @@ func handleClusterException(databaseClusterName, namespace, databaseType, status
 
 func processClusterException(databaseClusterName, namespace, databaseType, status string) error {
 	debt, debtLevel, _ := checkDebt(namespace)
-	fmt.Println("ffff")
-	fmt.Println(debtLevel)
 	if debt {
 		databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
 		if send {
@@ -163,7 +155,6 @@ func processClusterException(databaseClusterName, namespace, databaseType, statu
 			}
 		}
 	} else {
-		fmt.Println("debtLevel-----" + databaseClusterName)
 		api.DebtNamespaceMap[namespace] = true
 		delete(api.LastDatabaseClusterStatus, databaseClusterName)
 	}
