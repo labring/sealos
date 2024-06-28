@@ -87,7 +87,7 @@ func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID strin
 func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
 	if maxUsage, err := checkPerformance(namespace, databaseClusterName, databaseType, "disk"); err == nil {
 		usageStr := strconv.FormatFloat(maxUsage, 'f', 2, 64)
-		info.CPUUsage = usageStr
+		info.DiskUsage = usageStr
 		processUsage(maxUsage, databaseDiskMonitorThreshold, "磁盘", UID, info, api.DiskMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
@@ -96,6 +96,12 @@ func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string,
 
 func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.Info, monitorMap map[string]bool) {
 	info.PerformanceType = performanceType
+	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
+	if performanceType == "CPU" {
+		info.CPUUsage = usageStr
+	} else if performanceType == "内存" {
+		info.MemUsage = usageStr
+	}
 	if usage >= threshold && !monitorMap[UID] {
 		alertMessage := notification.GetNotificationMessage(info)
 		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
