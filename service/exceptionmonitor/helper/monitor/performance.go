@@ -15,12 +15,6 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
-const (
-	databaseDiskMonitorThreshold      = 85.0
-	databaseExceptionMonitorThreshold = 95.0
-	databaseCPUMemMonitorThreshold    = 75.0
-)
-
 func checkPerformance(namespace, databaseClusterName, databaseType, checkType string) (float64, error) {
 	params := url.Values{}
 	params.Add("namespace", namespace)

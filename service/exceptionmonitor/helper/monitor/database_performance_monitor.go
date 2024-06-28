@@ -66,12 +66,12 @@ func monitorCluster(cluster unstructured.Unstructured) {
 
 func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
 	if cpuUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "cpu"); err == nil {
-		processUsage(cpuUsage, databaseCPUMemMonitorThreshold, "CPU", UID, info, api.CPUMonitorNamespaceMap)
+		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, "CPU", UID, info, api.CPUMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
 	if memUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "memory"); err == nil {
-		processUsage(memUsage, databaseCPUMemMonitorThreshold, "内存", UID, info, api.MemMonitorNamespaceMap)
+		processUsage(memUsage, api.DatabaseMemMonitorThreshold, "内存", UID, info, api.MemMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Memory: %v", err)
 	}
@@ -79,7 +79,7 @@ func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID strin
 
 func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
 	if maxUsage, err := checkPerformance(namespace, databaseClusterName, databaseType, "disk"); err == nil {
-		processUsage(maxUsage, databaseDiskMonitorThreshold, "磁盘", UID, info, api.DiskMonitorNamespaceMap)
+		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, "磁盘", UID, info, api.DiskMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
 	}
