@@ -87,11 +87,19 @@ func GetNotificationMessage(notificationInfo Info) string {
 		}
 		elements = append(commonElements, exceptionElements...)
 	} else if notificationInfo.ExceptionType == "阀值" {
+		usage := ""
+		if notificationInfo.PerformanceType == "CPU" {
+			usage = notificationInfo.CPUUsage
+		} else if notificationInfo.PerformanceType == "内存" {
+			usage = notificationInfo.MemUsage
+		} else if notificationInfo.PerformanceType == "磁盘" {
+			usage = notificationInfo.DiskUsage
+		}
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, notificationInfo.DebtLevel),
+					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
 					"tag":     "lark_md",
 				},
 			},
