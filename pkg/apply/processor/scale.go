@@ -158,7 +158,7 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	ips = append(ips, c.MastersToJoin...)
 	ips = append(ips, c.NodesToJoin...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(ips)}, cluster, checker.PhasePre))
 }
 
 func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
