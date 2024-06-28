@@ -5,7 +5,7 @@ metadata:
     sealos-db-provider-cr: sealos-mongodb
     app.kubernetes.io/instance: sealos-mongodb
     app.kubernetes.io/managed-by: kbcli
-  name: sealos-mongodb
+  name: sealos-mongodb-sa
   namespace: sealos
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -40,7 +40,7 @@ roleRef:
   name: sealos-mongodb
 subjects:
   - kind: ServiceAccount
-    name: sealos-mongodb
+    name: sealos-mongodb-sa
 ---
 apiVersion: apps.kubeblocks.io/v1alpha1
 kind: Cluster
