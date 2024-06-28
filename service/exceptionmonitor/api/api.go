@@ -38,29 +38,33 @@ var (
 	// records the last database status
 	LastDatabaseClusterStatus = make(map[string]string)
 	// record the debt ns
-	ExceptionDatabaseMap    = make(map[string]bool)
-	FeishuWebHookMap        = make(map[string]string)
-	DebtNamespaceMap        = make(map[string]bool)
-	DiskFullNamespaceMap    = make(map[string]bool)
-	DiskMonitorNamespaceMap = make(map[string]bool)
-	CPUMonitorNamespaceMap  = make(map[string]bool)
-	MemMonitorNamespaceMap  = make(map[string]bool)
-	LastBackupStatusMap     = make(map[string]string)
-	IsSendBackupStatusMap   = make(map[string]string)
-	ExceededQuotaException  = "exceeded quota"
-	DiskException           = "Writing to log file failed"
-	OwnerLabel              = "user.sealos.io/owner"
-	DatabaseTypeLabel       = "clusterdefinition.kubeblocks.io/name"
-	ClusterName             string
-	MonitorType             string
-	ClusterNS               []string
-	FeishuWebhookURLMap     = make(map[string]string)
-	ClusterRegionMap        = make(map[string]string)
-	BaseURL                 string
-	DatabaseMonitor         bool
-	DiskMonitor             bool
-	CPUMemMonitor           bool
-	BackupMonitor           bool
+	ExceptionDatabaseMap              = make(map[string]bool)
+	FeishuWebHookMap                  = make(map[string]string)
+	DebtNamespaceMap                  = make(map[string]bool)
+	DiskFullNamespaceMap              = make(map[string]bool)
+	DiskMonitorNamespaceMap           = make(map[string]bool)
+	CPUMonitorNamespaceMap            = make(map[string]bool)
+	MemMonitorNamespaceMap            = make(map[string]bool)
+	LastBackupStatusMap               = make(map[string]string)
+	IsSendBackupStatusMap             = make(map[string]string)
+	ExceededQuotaException            = "exceeded quota"
+	DiskException                     = "Writing to log file failed"
+	OwnerLabel                        = "user.sealos.io/owner"
+	DatabaseTypeLabel                 = "clusterdefinition.kubeblocks.io/name"
+	ClusterName                       string
+	MonitorType                       string
+	ClusterNS                         []string
+	FeishuWebhookURLMap               = make(map[string]string)
+	ClusterRegionMap                  = make(map[string]string)
+	BaseURL                           string
+	DatabaseMonitor                   bool
+	DiskMonitor                       bool
+	CPUMemMonitor                     bool
+	BackupMonitor                     bool
+	DatabaseDiskMonitorThreshold      float64
+	DatabaseExceptionMonitorThreshold float64
+	DatabaseCPUMonitorThreshold       float64
+	DatabaseMemMonitorThreshold       float64
 )
 
 func GetENV() error {
@@ -74,6 +78,11 @@ func GetENV() error {
 	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
 	BackupMonitor, _ = strconv.ParseBool(getEnvWithCheck("BackupMonitor", &missingEnvVars))
+	DatabaseDiskMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseDiskMonitorThreshold", &missingEnvVars), 64)
+	DatabaseExceptionMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseExceptionMonitorThreshold", &missingEnvVars), 64)
+	DatabaseCPUMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseCPUMonitorThreshold", &missingEnvVars), 64)
+	DatabaseMemMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseMemMonitorThreshold", &missingEnvVars), 64)
+
 	if clusterNS != "" {
 		ClusterNS = strings.Split(clusterNS, ",")
 	}

@@ -188,7 +188,7 @@ func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, data
 		Events:              databaseEvents,
 		NotificationType:    "exception",
 	}
-	if maxUsage < databaseExceptionMonitorThreshold {
+	if maxUsage < api.DatabaseExceptionMonitorThreshold {
 		//status == "Creating" || status == "Deleting" || status == "Stopping"
 		if status == "Creating" {
 			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLCSD"]
