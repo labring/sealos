@@ -3,23 +3,21 @@ package monitor
 import (
 	"context"
 	"fmt"
-	"log"
-	"strconv"
-	"time"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"log"
+	"strconv"
+	"time"
 )
 
 func DatabasePerformanceMonitor() {
-	ticker := time.NewTicker(1 * time.Minute)
-	defer ticker.Stop()
-	for range ticker.C {
+	for {
 		if err := checkDatabasePerformance(); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
+		time.Sleep(2 * time.Minute)
 	}
 }
 
@@ -102,7 +100,7 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 			log.Printf("Failed to send notification: %v", err)
 		}
 		monitorMap[UID] = true
-	} else if monitorMap[UID] {
+	} else if usage < threshold && monitorMap[UID] {
 		info.NotificationType = "recovery"
 		alertMessage := notification.GetNotificationMessage(info)
 		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
