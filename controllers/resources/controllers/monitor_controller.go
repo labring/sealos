@@ -275,8 +275,10 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 		r.currentObjectMetrics = metrics
 		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
 	}
-	r.ObjStorageUserBackupSize = objstorage.GetUserBakFileSize(r.ObjStorageClient)
-	fmt.Println("ObjStorageUserBackupSize", r.ObjStorageUserBackupSize)
+	if r.ObjStorageClient != nil {
+		r.ObjStorageUserBackupSize = objstorage.GetUserBakFileSize(r.ObjStorageClient)
+		logger.Info("success query object storage backup size", "time", time.Now().Format("2006-01-02 15:04:05"))
+	}
 	return nil
 }
 
@@ -293,7 +295,7 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to monitor PVC resource usage: %v", err)
 	}
 
-	if err := r.monitorBackupResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+	if err := r.monitorDatabaseBackupUsage(namespace.Name, resUsed, resNamed); err != nil {
 		return fmt.Errorf("failed to monitor backup resource usage: %v", err)
 	}
 
@@ -301,13 +303,12 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to monitor service resource usage: %v", err)
 	}
 
+	if err := r.monitorObjectStorageUsage(namespace.Name, resUsed, resNamed); err != nil {
+		return fmt.Errorf("failed to get object storage resource usage: %v", err)
+	}
+
 	var monitors []*resources.Monitor
 
-	if username := config.GetUserNameByNamespace(namespace.Name); r.ObjStorageClient != nil {
-		if err := r.getObjStorageUsed(username, &resNamed, &resUsed); err != nil {
-			r.Logger.Error(err, "failed to get object storage used", "username", username)
-		}
-	}
 	for name, podResource := range resUsed {
 		isEmpty, used := r.getResourceUsed(podResource)
 		if isEmpty {
@@ -393,7 +394,10 @@ func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed ma
 	return nil
 }
 
-func (r *MonitorReconciler) monitorBackupResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+	if r.ObjStorageUserBackupSize == nil {
+		return nil
+	}
 	backupSize := r.ObjStorageUserBackupSize[getBackupObjectStorageName(namespace)]
 	if backupSize <= 0 {
 		return nil
@@ -457,20 +461,21 @@ func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]
 	return isEmpty, used
 }
 
-func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-	if r.currentObjectMetrics == nil || r.currentObjectMetrics[user].Usage == nil {
+func (r *MonitorReconciler) monitorObjectStorageUsage(namespace string, resMap map[string]map[corev1.ResourceName]*quantity, namedMap map[string]*resources.ResourceNamed) error {
+	username := config.GetUserNameByNamespace(namespace)
+	if r.currentObjectMetrics == nil || r.currentObjectMetrics[username].Usage == nil {
 		return nil
 	}
-	for bucket, usage := range r.currentObjectMetrics[user].Usage {
+	for bucket, usage := range r.currentObjectMetrics[username].Usage {
 		if bucket == "" || usage <= 0 {
 			continue
 		}
 		objStorageNamed := resources.NewObjStorageResourceNamed(bucket)
-		(*namedMap)[objStorageNamed.String()] = objStorageNamed
-		if _, ok := (*resMap)[objStorageNamed.String()]; !ok {
-			(*resMap)[objStorageNamed.String()] = initResources()
+		namedMap[objStorageNamed.String()] = objStorageNamed
+		if _, ok := resMap[objStorageNamed.String()]; !ok {
+			resMap[objStorageNamed.String()] = initResources()
 		}
-		(*resMap)[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(usage, resource.BinarySI))
+		resMap[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(usage, resource.BinarySI))
 	}
 	return nil
 }
