@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/terminal
 
-go 1.20
+go 1.22
 
 require (
 	github.com/jaevor/go-nanoid v1.3.0

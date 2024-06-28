@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/resources
 
-go 1.20
+go 1.22
 
 require (
 	github.com/dinoallo/sealos-networkmanager-protoapi v0.0.0-20230928031328-cf9649d6af49

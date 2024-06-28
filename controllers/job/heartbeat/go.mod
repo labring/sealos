@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/job/heartbeat
 
-go 1.20
+go 1.22
 
 replace (
 	k8s.io/api => k8s.io/api v0.25.6

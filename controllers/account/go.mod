@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/account
 
-go 1.20
+go 1.22
 
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.5
