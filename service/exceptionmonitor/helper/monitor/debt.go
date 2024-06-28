@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
@@ -11,8 +12,12 @@ import (
 
 func checkDebt(namespace string) (bool, string, error) {
 	// find debt crd
+	fmt.Println(namespace)
 	debtName := getAccountNameByNamespace(namespace)
+	fmt.Println(debtName)
 	debt, err := api.DynamicClient.Resource(debtGVR).Namespace(namespace).Get(context.TODO(), debtName, metav1.GetOptions{})
+	fmt.Println(debt)
+	fmt.Println(err)
 	if err != nil {
 		// processing error: Resource does not exist or other error
 		if strings.Contains(err.Error(), "not found") {
@@ -21,6 +26,7 @@ func checkDebt(namespace string) (bool, string, error) {
 		return false, "", err
 	}
 	status, found, err := unstructured.NestedString(debt.Object, "status", "status")
+	fmt.Println(status, found)
 	if err != nil || !found {
 		return false, status, err
 	}
