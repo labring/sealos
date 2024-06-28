@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -66,16 +65,13 @@ func monitorCluster(cluster unstructured.Unstructured) {
 
 func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
 	if cpuUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "cpu"); err == nil {
-		fmt.Println(databaseClusterName, namespace, "cpu", cpuUsage)
 		usageStr := strconv.FormatFloat(cpuUsage, 'f', 2, 64)
 		info.CPUUsage = usageStr
 		processUsage(cpuUsage, databaseCPUMemMonitorThreshold, "CPU", UID, info, api.CPUMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
-
 	if memUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "memory"); err == nil {
-		fmt.Println(databaseClusterName, namespace, "mem", memUsage)
 		usageStr := strconv.FormatFloat(memUsage, 'f', 2, 64)
 		info.CPUUsage = usageStr
 		processUsage(memUsage, databaseCPUMemMonitorThreshold, "内存", UID, info, api.MemMonitorNamespaceMap)
