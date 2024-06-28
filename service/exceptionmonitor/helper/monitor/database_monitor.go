@@ -127,11 +127,15 @@ func cleanClusterStatus(databaseClusterName string) {
 }
 
 func handleClusterException(databaseClusterName, namespace, databaseType, status string) {
+	fmt.Println("bbbbb")
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
+		fmt.Println("ccccc")
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
 		api.ExceptionDatabaseMap[databaseClusterName] = true
 	}
+	fmt.Println("ddddd")
 	if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
+		fmt.Println("eeeee")
 		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
 			log.Printf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
 		}
@@ -140,6 +144,7 @@ func handleClusterException(databaseClusterName, namespace, databaseType, status
 
 func processClusterException(databaseClusterName, namespace, databaseType, status string) error {
 	debt, debtLevel, _ := checkDebt(namespace)
+	fmt.Println("ffff")
 	fmt.Println(debtLevel)
 	if debt {
 		databaseEvents, send := getDatabaseClusterEvents(databaseClusterName, namespace)
