@@ -273,6 +273,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
 	}
 	r.ObjStorageUserBackupSize = objstorage.GetUserBakFileSize(r.ObjStorageClient)
+	fmt.Println("ObjStorageUserBackupSize", r.ObjStorageUserBackupSize)
 	return nil
 }
 

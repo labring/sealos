@@ -17,7 +17,6 @@ package objectstorage
 import (
 	"context"
 	"fmt"
-	"unsafe"
 
 	"github.com/prometheus/prom2json"
 
@@ -259,15 +258,9 @@ func getUserWithBucket(bucket string) string {
 
 func GetUserBakFileSize(client *minio.Client) map[string]int64 {
 	bucket := "file-backup"
-
 	userUsageMap := make(map[string]int64)
-
 	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
-
-	fmt.Println("len:", cap(objectsCh), ", size:", unsafe.Sizeof(minio.ObjectInfo{}))
-
 	for object := range objectsCh {
-		fmt.Println("key:", object.Key, ", size:", object.Size)
 		user := extractNamespace(object.Key)
 		if user != "" {
 			userUsageMap[user] += object.Size
