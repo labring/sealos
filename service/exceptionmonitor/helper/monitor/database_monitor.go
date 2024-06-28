@@ -38,7 +38,7 @@ func DatabaseExceptionMonitor() {
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Printf("Failed to check databases: %v", err)
 		}
-		time.Sleep(1 * time.Minute)
+		time.Sleep(2 * time.Minute)
 	}
 }
 
@@ -68,11 +68,8 @@ func checkDatabasesInNamespace(namespace string) error {
 	if err != nil {
 		return err
 	}
-	i := 1
 	for _, cluster := range clusters.Items {
 		processCluster(cluster)
-		fmt.Println(i)
-		i++
 	}
 	return nil
 }
@@ -83,7 +80,6 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	if err != nil {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
-	fmt.Println(status, databaseClusterName, namespace)
 	switch status {
 	case api.StatusRunning, api.StatusStopped:
 		handleClusterRecovery(databaseClusterName, namespace, status)
