@@ -8,4 +8,5 @@ use (
 	./test/e2e
 	./deprecated/controllers/db/bytebase
 	./deprecated/controllers/imagehub
+	pkg
 )

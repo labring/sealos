@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	github.com/labring/sealos/controllers/pkg v0.0.0-20231106094935-88ef18f0124f
+	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/stripe/stripe-go/v74 v74.30.0
 	go.mongodb.org/mongo-driver v1.16.0

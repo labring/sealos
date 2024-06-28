@@ -9,6 +9,7 @@ use (
 )
 
 replace (
+    github.com/labring/sealos/controllers/pkg => ../controllers/pkg
 	github.com/labring/sealos/controllers/account => ../controllers/account
 	github.com/labring/sealos/controllers/user => ../controllers/user
 )
