@@ -1,6 +1,6 @@
 module github.com/labring/image-cri-shim
 
-go 1.20
+go 1.22
 
 require (
 	github.com/docker/docker v24.0.2+incompatible

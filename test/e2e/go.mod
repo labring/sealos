@@ -1,6 +1,6 @@
 module github.com/labring/sealos/test/e2e
 
-go 1.20
+go 1.22
 
 replace (
 	github.com/labring/image-cri-shim => ../../staging/src/github.com/labring/image-cri-shim

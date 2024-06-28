@@ -1,6 +1,6 @@
 module github.com/labring/lvscare
 
-go 1.20
+go 1.22
 
 require (
 	github.com/labring/sealos v0.0.0
