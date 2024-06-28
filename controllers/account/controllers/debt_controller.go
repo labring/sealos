@@ -432,23 +432,27 @@ const (
 	trueStatus       = "true"
 )
 
-var NoticeTemplateEN map[int]string
+var (
+	TitleTemplateZH = map[int]string{
+		WarningNotice:             "欠费告警",
+		ApproachingDeletionNotice: "资源暂停告警",
+		ImminentDeletionNotice:    "资源释放告警",
+		FinalDeletionNotice:       "资源已释放告警",
+	}
+	TitleTemplateEN = map[int]string{
+		WarningNotice:             "Debt Warning",
+		ApproachingDeletionNotice: "Resource Suspension Warning",
+		ImminentDeletionNotice:    "Resource Release Warning",
+		FinalDeletionNotice:       "Resource Release Warning",
+	}
+)
 
-var TitleTemplateZH = map[int]string{
-	WarningNotice:             "欠费告警",
-	ApproachingDeletionNotice: "资源暂停告警",
-	ImminentDeletionNotice:    "资源释放告警",
-	FinalDeletionNotice:       "资源已释放告警",
-}
-
-var TitleTemplateEN = map[int]string{
-	WarningNotice:             "Debt Warning",
-	ApproachingDeletionNotice: "Resource Suspension Warning",
-	ImminentDeletionNotice:    "Resource Release Warning",
-	FinalDeletionNotice:       "Resource Release Warning",
-}
-
-var NoticeTemplateZH map[int]string
+var (
+	EmailTemplateEN  map[int]string
+	EmailTemplateZH  map[int]string
+	NoticeTemplateEN map[int]string
+	NoticeTemplateZH map[int]string
+)
 
 var (
 	forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
@@ -492,8 +496,8 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 			}
 		}
 	}
-	if r.smtpConfig != nil && email != "" && NoticeTemplateZH[noticeType] != "" {
-		if err = r.smtpConfig.SendEmail(NoticeTemplateZH[noticeType], email); err != nil {
+	if r.smtpConfig != nil && email != "" {
+		if err = r.smtpConfig.SendEmail(EmailTemplateZH[noticeType]+"\n"+EmailTemplateEN[noticeType], email); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
@@ -753,6 +757,12 @@ func setDefaultDebtPeriodWaitSecond() {
 		ApproachingDeletionNotice: fmt.Sprintf("Your account balance is not enough to pay this month's bill, and your resources will be released after %2.f hours or when the arrears exceed the recharge amount. Please recharge in time to avoid affecting your normal use.", math.Ceil(float64(DebtConfig[accountv1.ImminentDeletionPeriod])/3600)),
 		ImminentDeletionNotice:    fmt.Sprintf("Your container instance resources have been suspended, and the system will completely release the resources after %2.f hours, which cannot be recovered. Please recharge in time to avoid affecting your normal use.", math.Ceil(float64(DebtConfig[accountv1.FinalDeletionPeriod])/3600)),
 		FinalDeletionNotice:       "The system will completely release all your resources at any time. Please recharge in time to avoid affecting your normal use.",
+	}
+	domain := os.Getenv("DOMAIN")
+	EmailTemplateEN, EmailTemplateZH = make(map[int]string), make(map[int]string)
+	for _, i := range []int{WarningNotice, ApproachingDeletionNotice, ImminentDeletionNotice, FinalDeletionNotice} {
+		EmailTemplateEN[i] = TitleTemplateEN[i] + "：" + NoticeTemplateEN[i] + "(" + domain + ")"
+		EmailTemplateZH[i] = TitleTemplateZH[i] + "：" + NoticeTemplateZH[i] + "(" + domain + ")"
 	}
 }
 
