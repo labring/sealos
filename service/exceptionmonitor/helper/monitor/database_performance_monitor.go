@@ -40,8 +40,7 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	if err != nil || !found {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
 	}
-	debt, level, _ := checkDebt(namespace)
-	log.Println(level)
+	debt, _, _ := checkDebt(namespace)
 	if !debt {
 		return
 	}
@@ -97,15 +96,13 @@ func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string,
 
 func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.Info, monitorMap map[string]bool) {
 	info.PerformanceType = performanceType
-	if usage >= threshold {
-		if !monitorMap[UID] {
-			alertMessage := notification.GetNotificationMessage(info)
-			if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
-				log.Printf("Failed to send notification: %v", err)
-			}
-			monitorMap[UID] = true
+	if usage >= threshold && !monitorMap[UID] {
+		alertMessage := notification.GetNotificationMessage(info)
+		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+			log.Printf("Failed to send notification: %v", err)
 		}
-	} else {
+		monitorMap[UID] = true
+	} else if monitorMap[UID] {
 		info.NotificationType = "recovery"
 		alertMessage := notification.GetNotificationMessage(info)
 		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
