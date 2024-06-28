@@ -53,6 +53,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,6 +69,7 @@ type MonitorReconciler struct {
 	wg                       sync.WaitGroup
 	periodicReconcile        time.Duration
 	NvidiaGpu                map[string]gpu.NvidiaGPU
+	gpuMutex                 sync.Mutex
 	DBClient                 database.Interface
 	TrafficClient            database.Interface
 	Properties               *resources.PropertyTypeLS
@@ -116,6 +118,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		periodicReconcile:     1 * time.Minute,
 		PromURL:               os.Getenv(PrometheusURL),
 		ObjectStorageInstance: os.Getenv(ObjectStorageInstance),
+		NvidiaGpu:             make(map[string]gpu.NvidiaGPU),
 	}
 	concurrentLimit = env.GetInt64EnvWithDefault(ConcurrentLimit, DefaultConcurrencyLimit)
 	var err error
@@ -279,94 +282,23 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 
 func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) error {
 	timeStamp := time.Now().UTC()
-	podList := corev1.PodList{}
 	resUsed := map[string]map[corev1.ResourceName]*quantity{}
 	resNamed := make(map[string]*resources.ResourceNamed)
-	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return err
-	}
-	for _, pod := range podList.Items {
-		if pod.Spec.NodeName == "" || (pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute) {
-			continue
-		}
-		podResNamed := resources.NewResourceNamed(&pod)
-		resNamed[podResNamed.String()] = podResNamed
-		if resUsed[podResNamed.String()] == nil {
-			resUsed[podResNamed.String()] = initResources()
-		}
-		// skip pods that do not start for more than 1 minute
-		skip := pod.Status.Phase != corev1.PodRunning && (pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
-		for _, container := range pod.Spec.Containers {
-			// gpu only use limit and not ignore pod pending status
-			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
-				err := r.getGPUResourceUsage(pod, gpuRequest, resUsed[podResNamed.String()])
-				if err != nil {
-					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
-				}
-			}
-			if skip {
-				continue
-			}
-			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
-				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
-			} else {
-				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
-			}
-			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
-				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
-			} else {
-				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
-			}
-		}
+
+	if err := r.monitorPodResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+		return fmt.Errorf("failed to monitor pod resource usage: %v", err)
 	}
 
-	//logger.Info("mid", "namespace", namespace.Name, "time", timeStamp.Format("2006-01-02 15:04:05"), "resourceMap", resourceMap, "podsRes", podsRes)
+	if err := r.monitorPVCResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+		return fmt.Errorf("failed to monitor PVC resource usage: %v", err)
+	}
 
-	pvcList := corev1.PersistentVolumeClaimList{}
-	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return fmt.Errorf("failed to list pvc: %v", err)
+	if err := r.monitorBackupResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+		return fmt.Errorf("failed to monitor backup resource usage: %v", err)
 	}
-	for _, pvc := range pvcList.Items {
-		if pvc.Status.Phase != corev1.ClaimBound {
-			continue
-		}
-		if len(pvc.OwnerReferences) > 0 && pvc.OwnerReferences[0].Kind == "BackupRepo" {
-			continue
-		}
-		pvcRes := resources.NewResourceNamed(&pvc)
-		if resUsed[pvcRes.String()] == nil {
-			resNamed[pvcRes.String()] = pvcRes
-			resUsed[pvcRes.String()] = initResources()
-		}
-		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
-	}
-	if backupSize := r.ObjStorageUserBackupSize[getBackupObjectStorageName(namespace.Name)]; backupSize > 0 {
-		backupRes := resources.NewObjStorageResourceNamed("DB-BACKUP")
-		if resUsed[backupRes.String()] == nil {
-			resNamed[backupRes.String()] = backupRes
-			resUsed[backupRes.String()] = initResources()
-		}
-		resUsed[backupRes.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(backupSize, resource.BinarySI))
-	}
-	svcList := corev1.ServiceList{}
-	if err := r.List(context.Background(), &svcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return fmt.Errorf("failed to list svc: %v", err)
-	}
-	for _, svc := range svcList.Items {
-		if svc.Spec.Type != corev1.ServiceTypeNodePort || len(svc.Spec.Ports) == 0 {
-			continue
-		}
-		port := make(map[int32]struct{})
-		for i := range svc.Spec.Ports {
-			port[svc.Spec.Ports[i].NodePort] = struct{}{}
-		}
-		svcRes := resources.NewResourceNamed(&svc)
-		if resUsed[svcRes.String()] == nil {
-			resNamed[svcRes.String()] = svcRes
-			resUsed[svcRes.String()] = initResources()
-		}
-		// nodeport 1:1000, the measurement is quantity 1000
-		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI))
+
+	if err := r.monitorServiceResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+		return fmt.Errorf("failed to monitor service resource usage: %v", err)
 	}
 
 	var monitors []*resources.Monitor
@@ -390,6 +322,118 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		})
 	}
 	return r.DBClient.InsertMonitor(context.Background(), monitors...)
+}
+
+func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+	podList := &corev1.PodList{}
+	if err := r.List(context.Background(), podList, &client.ListOptions{
+		Namespace:     namespace,
+		FieldSelector: fields.OneTermNotEqualSelector("spec.nodeName", ""),
+	}); err != nil {
+		return fmt.Errorf("failed to list pods: %v", err)
+	}
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
+			continue
+		}
+		podResNamed := resources.NewResourceNamed(pod)
+		resNamed[podResNamed.String()] = podResNamed
+		if resUsed[podResNamed.String()] == nil {
+			resUsed[podResNamed.String()] = initResources()
+		}
+		// skip pods that do not start for more than 1 minute
+		skip := pod.Status.Phase != corev1.PodRunning && (pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
+		for _, container := range pod.Spec.Containers {
+			// gpu only use limit and not ignore pod pending status
+			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
+				if err := r.getGPUResourceUsage(pod, gpuRequest, resUsed[podResNamed.String()]); err != nil {
+					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
+				}
+			}
+			if skip {
+				continue
+			}
+			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
+				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
+			} else {
+				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
+			}
+			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
+				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
+			} else {
+				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
+			}
+		}
+	}
+	return nil
+}
+
+func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	if err := r.List(context.Background(), pvcList, &client.ListOptions{
+		Namespace:     namespace,
+		FieldSelector: fields.OneTermEqualSelector("status.phase", string(corev1.ClaimBound)),
+	}); err != nil {
+		return fmt.Errorf("failed to list pvc: %v", err)
+	}
+	for i := range pvcList.Items {
+		pvc := &pvcList.Items[i]
+		if len(pvc.OwnerReferences) > 0 && pvc.OwnerReferences[0].Kind == "BackupRepo" {
+			continue
+		}
+		pvcRes := resources.NewResourceNamed(pvc)
+		if resUsed[pvcRes.String()] == nil {
+			resNamed[pvcRes.String()] = pvcRes
+			resUsed[pvcRes.String()] = initResources()
+		}
+		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
+	}
+	return nil
+}
+
+func (r *MonitorReconciler) monitorBackupResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+	backupSize := r.ObjStorageUserBackupSize[getBackupObjectStorageName(namespace)]
+	if backupSize <= 0 {
+		return nil
+	}
+
+	backupRes := resources.NewObjStorageResourceNamed("DB-BACKUP")
+	if resUsed[backupRes.String()] == nil {
+		resNamed[backupRes.String()] = backupRes
+		resUsed[backupRes.String()] = initResources()
+	}
+	resUsed[backupRes.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(backupSize, resource.BinarySI))
+	return nil
+}
+
+func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+	svcList := &corev1.ServiceList{}
+	if err := r.List(context.Background(), svcList, &client.ListOptions{
+		Namespace:     namespace,
+		FieldSelector: fields.OneTermEqualSelector("spec.type", string(corev1.ServiceTypeNodePort)),
+	}); err != nil {
+		return fmt.Errorf("failed to list svc: %v", err)
+	}
+	for i := range svcList.Items {
+		svc := &svcList.Items[i]
+		if len(svc.Spec.Ports) == 0 {
+			continue
+		}
+		port := make(map[int32]struct{})
+		for _, svcPort := range svc.Spec.Ports {
+			port[svcPort.NodePort] = struct{}{}
+		}
+		svcRes := resources.NewResourceNamed(svc)
+		if resUsed[svcRes.String()] == nil {
+			resNamed[svcRes.String()] = svcRes
+			resUsed[svcRes.String()] = initResources()
+		}
+		// nodeport 1:1000, the measurement is quantity 1000
+		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI))
+	}
+	return nil
 }
 
 func getBackupObjectStorageName(namespace string) string {
@@ -538,8 +582,10 @@ func (r *MonitorReconciler) handlerTrafficUsed(startTime, endTime time.Time, mon
 	return nil
 }
 
-func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
+func (r *MonitorReconciler) getGPUResourceUsage(pod *corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
 	nodeName := pod.Spec.NodeName
+	r.gpuMutex.Lock()
+	defer r.gpuMutex.Unlock()
 	gpuModel, exist := r.NvidiaGpu[nodeName]
 	if !exist {
 		if r.NvidiaGpu, err = gpu.GetNodeGpuModel(r.Client); err != nil {
