@@ -97,6 +97,7 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 			log.Printf("Failed to send feishu %s in ns %s: %v", databaseClusterName, namespace, err)
 		}
 	default:
+		fmt.Println("other")
 		handleClusterException(databaseClusterName, namespace, databaseType, status)
 	}
 }
