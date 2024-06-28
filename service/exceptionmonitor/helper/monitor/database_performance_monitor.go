@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -99,6 +100,7 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 		info.MemUsage = usageStr
 	}
 	if usage >= threshold && !monitorMap[UID] {
+		fmt.Println(info.DatabaseClusterName, info.Namespace, info.MemUsage)
 		alertMessage := notification.GetNotificationMessage(info)
 		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
 			log.Printf("Failed to send notification: %v", err)
