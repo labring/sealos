@@ -41,7 +41,6 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
 	if err != nil || !found {
 		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
-		return
 	}
 	debt, level, _ := checkDebt(namespace)
 	log.Println(level)

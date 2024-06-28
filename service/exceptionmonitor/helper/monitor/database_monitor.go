@@ -37,7 +37,8 @@ func DatabaseExceptionMonitor() {
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Printf("Failed to check databases: %v", err)
 		}
-		time.Sleep(2 * time.Minute)
+		fmt.Println("aaaaaaa")
+		time.Sleep(1 * time.Minute)
 	}
 }
 
