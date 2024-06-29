@@ -136,7 +136,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	return r, nil
 }
 
-func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func InitIndexField(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
 		pvc := rawObj.(*corev1.PersistentVolumeClaim)
 		return []string{string(pvc.Status.Phase)}
