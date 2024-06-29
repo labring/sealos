@@ -328,15 +328,14 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
 	podList := &corev1.PodList{}
 	if err := r.List(context.Background(), podList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermNotEqualSelector("spec.nodeName", ""),
+		Namespace: namespace,
 	}); err != nil {
 		return fmt.Errorf("failed to list pods: %v", err)
 	}
 
 	for i := range podList.Items {
 		pod := &podList.Items[i]
-		if pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
+		if pod.Spec.NodeName == "" || pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(pod)
