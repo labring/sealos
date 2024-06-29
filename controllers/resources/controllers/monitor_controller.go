@@ -143,13 +143,10 @@ func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}); err != nil {
 		return err
 	}
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Service{}, "spec.type", func(rawObj client.Object) []string {
+	return mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Service{}, "spec.type", func(rawObj client.Object) []string {
 		svc := rawObj.(*corev1.Service)
 		return []string{string(svc.Spec.Type)}
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
