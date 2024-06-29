@@ -118,6 +118,11 @@ func main() {
 		setupLog.Error(err, "failed to init monitor reconciler")
 		os.Exit(1)
 	}
+	err = reconciler.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "failed to init monitor reconciler")
+		os.Exit(1)
+	}
 	reconciler.DBClient, err = mongo.NewMongoInterface(context.Background(), os.Getenv(database.MongoURI))
 	if err != nil {
 		setupLog.Error(err, "failed to init db client")
