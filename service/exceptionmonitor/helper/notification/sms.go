@@ -36,7 +36,7 @@ func GetPhoneNumberByNS(ns string) (string, error) {
 }
 
 func SendToSms(namespace, databaseName, clusterName, content string) error {
-	fmt.Println(namespace, databaseName, clusterName, content)
+
 	smsClient, err := utils.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(phoneNumbers)
+	fmt.Println(namespace, databaseName, clusterName, content, phoneNumbers)
 	err = utils.SendSms(smsClient, &client.SendSmsRequest{
 		PhoneNumbers: tea.String(phoneNumbers),
 		SignName:     tea.String(os.Getenv("SMS_SIGN_NAME")),
