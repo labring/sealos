@@ -46,6 +46,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(phoneNumbers)
 	err = utils.SendSms(smsClient, &client.SendSmsRequest{
 		PhoneNumbers: tea.String(phoneNumbers),
 		SignName:     tea.String(os.Getenv("SMS_SIGN_NAME")),
