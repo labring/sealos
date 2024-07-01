@@ -98,11 +98,13 @@ Sealos 集群管理面板，该面板将提供更加简便的方法来替换集�
 关闭用户注册:
 
 ```shell
-kubectl -n sealos patch deployment desktop-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"desktop-frontend","env":[{"name":"SIGN_UP_ENABLED","value":"false"}]}]}}}}'
+kubectl get cm -n sealos desktop-frontend-config -o yaml | sed 's/signUpEnabled: true/signUpEnabled: false/g' | kubectl apply -f -
+kubectl rollout restart deployment desktop-frontend -n sealos
 ```
 
 开启用户注册:
 
 ```shell
-kubectl -n sealos patch deployment desktop-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"desktop-frontend","env":[{"name":"SIGN_UP_ENABLED","value":"true"}]}]}}}}'
+kubectl get cm -n sealos desktop-frontend-config -o yaml | sed 's/signUpEnabled: false/signUpEnabled: true/g' | kubectl apply -f -
+kubectl rollout restart deployment desktop-frontend -n sealos
 ```
