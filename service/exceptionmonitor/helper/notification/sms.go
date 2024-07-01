@@ -41,6 +41,7 @@ func GetPhoneNumberByNS(ns string) (string, error) {
 func SendToSms(namespace, databaseName, clusterName, content string) error {
 	smsClient, err := utils.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
 	if err != nil {
+		fmt.Println(444)
 		return err
 	}
 	name := strings.ReplaceAll(databaseName, "-", ".")
