@@ -41,13 +41,13 @@ func checkDatabaseBackups() error {
 }
 
 func processBackup(backup unstructured.Unstructured) {
-	status, _, err := unstructured.NestedString(backup.Object, "status", "phase")
+	status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
 	backupName, namespace, startTime := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
 	if err != nil {
 		log.Printf("Unable to get %s status in ns %s:%v", backupName, namespace, err)
 		return
 	}
-	if status != "Failed" || status != "" {
+	if !found || status != "Failed" {
 		return
 	}
 	if _, ok := api.LastBackupStatusMap[backupName]; !ok {
