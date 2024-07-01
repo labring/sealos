@@ -87,9 +87,12 @@ type OauthProvider struct {
 }
 
 type Transfer struct {
+	ID          string    `gorm:"type:text;primary_key"`
 	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	FromUserUID uuid.UUID `gorm:"column:fromUserUid;type:uuid;not null"`
+	FromUserID  string    `gorm:"column:fromUserId;type:text;not null"`
 	ToUserUID   uuid.UUID `gorm:"column:toUserUid;type:uuid;not null"`
+	ToUserID    string    `gorm:"column:toUserId;type:text;not null"`
 	Amount      int64     `gorm:"type:bigint;not null"`
 	Remark      string    `gorm:"type:text;not null"`
 	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`

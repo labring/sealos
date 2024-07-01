@@ -160,6 +160,10 @@ func ParseConsumptionRecordReq(c *gin.Context) (*ConsumptionRecordReq, error) {
 }
 
 type UserBaseReq struct {
+
+	// @Summary Start and end time for the request
+	// @Description Start and end time for the request
+	// @JSONSchema required
 	TimeRange `json:",inline" bson:",inline"`
 
 	// @Summary Authentication information
@@ -219,4 +223,40 @@ func ParseAppCostsReq(c *gin.Context) (*AppCostsReq, error) {
 	}
 	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
+}
+
+type GetTransferRecordReq struct {
+	UserBaseReq `json:",inline" bson:",inline"`
+
+	// 0: all, 1: in, 2: out
+	// @Summary Type of the request
+	// @Description Type of the request: 0: all, 1: transfer in, 2: transfer out
+	Type int `json:"type,omitempty" bson:"type" example:"0"`
+
+	// @Summary Transfer ID
+	// @Description Transfer ID
+	TransferID string `json:"transferID,omitempty" bson:"transferID" example:"transfer-id-1"`
+
+	// @Summary Page
+	// @Description Page
+	Page int `json:"page,omitempty" bson:"page" example:"1"`
+
+	// @Summary Page Size
+	// @Description Page Size
+	PageSize int `json:"pageSize,omitempty" bson:"pageSize" example:"10"`
+}
+
+func ParseGetTransferRecordReq(c *gin.Context) (*GetTransferRecordReq, error) {
+	transferReq := &GetTransferRecordReq{}
+	if err := c.ShouldBindJSON(transferReq); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if transferReq.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
+		transferReq.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
+	}
+	if transferReq.TimeRange.EndTime.After(time.Now()) {
+		transferReq.TimeRange.EndTime = time.Now()
+	}
+	transferReq.Owner = strings.TrimPrefix(transferReq.Owner, "ns-")
+	return transferReq, nil
 }

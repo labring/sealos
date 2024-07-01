@@ -338,7 +338,7 @@ func TransferAmount(c *gin.Context) {
 		return
 	}
 	if err := dao.DBClient.Transfer(req); err != nil {
-		if err == cockroach.InsufficientBalanceError {
+		if err == cockroach.ErrInsufficientBalance {
 			c.JSON(http.StatusOK, gin.H{
 				"message": "insufficient balance, skip transfer",
 			})
@@ -364,7 +364,7 @@ func TransferAmount(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "failed to get transfer"
 // @Router /account/v1alpha1/get-transfer [post]
 func GetTransfer(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParseGetTransferRecordReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get transfer amount request: %v", err)})
 		return
@@ -373,13 +373,22 @@ func GetTransfer(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	transfer, err := dao.DBClient.GetTransfer(&types.UserQueryOpts{Owner: req.Auth.Owner})
+	ops := types.GetTransfersReq{
+		UserQueryOpts: &types.UserQueryOpts{Owner: req.Auth.Owner},
+		Type:          types.TransferType(req.Type),
+		LimitRep: types.LimitRep{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
+		TransferID: req.TransferID,
+	}
+	transferResp, err := dao.DBClient.GetTransfer(&ops)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get transfer amount : %v", err)})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"transfer": transfer,
+		"data": transferResp,
 	})
 }
 

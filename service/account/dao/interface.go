@@ -36,7 +36,7 @@ type Interface interface {
 	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
 	Transfer(req *helper.TransferAmountReq) error
-	GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error)
+	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 }
 
 type Account struct {
@@ -79,7 +79,7 @@ func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
 	return g.ck.TransferAccount(&types.UserQueryOpts{Owner: req.Owner, ID: req.Auth.UserID}, &types.UserQueryOpts{ID: req.ToUser}, req.Amount)
 }
 
-func (g *Cockroach) GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error) {
+func (g *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error) {
 	return g.ck.GetTransfer(ops)
 }
 
