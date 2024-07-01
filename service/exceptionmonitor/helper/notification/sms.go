@@ -19,6 +19,7 @@ func GetPhoneNumberByNS(ns string) (string, error) {
 		Owner: ns,
 	})
 	if err != nil {
+		fmt.Println(666)
 		return "", err
 	}
 	fmt.Println(111)
