@@ -105,6 +105,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 			},
 		}
 		commonElements = append(commonElements, exceptionElements...)
+		fmt.Println(commonElements)
 	}
 	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
