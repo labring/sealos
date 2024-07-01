@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -12,6 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
+
+var numToChinese = []string{"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"}
 
 func DatabasePerformanceMonitor() {
 	for {
@@ -95,10 +96,13 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 		info.DiskUsage = usageStr
 	}
 	if usage >= threshold && !monitorMap[UID] {
-		fmt.Println(info.DatabaseClusterName, info.Namespace, info.MemUsage)
 		alertMessage := notification.GetNotificationMessage(info)
 		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
 			log.Printf("Failed to send notification: %v", err)
+		}
+		ZNThreshold := NumberToChinese(int(threshold))
+		if err := notification.SendToSms(info.Namespace, info.DatabaseClusterName, api.ClusterName, "数据库"+performanceType+"超过"+ZNThreshold); err != nil {
+			log.Printf("Failed to send Sms: %v", err)
 		}
 		monitorMap[UID] = true
 	} else if usage < threshold && monitorMap[UID] {
@@ -113,4 +117,19 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 
 func CPUMemMonitor(namespace, databaseClusterName, databaseType, checkType string) (float64, error) {
 	return checkPerformance(namespace, databaseClusterName, databaseType, checkType)
+}
+
+func NumberToChinese(num int) string {
+	tenDigit := num / 10
+	unitDigit := num % 10
+
+	if tenDigit == 1 && unitDigit == 0 {
+		return "十"
+	} else if tenDigit == 1 {
+		return "十" + numToChinese[unitDigit]
+	} else if unitDigit == 0 {
+		return numToChinese[tenDigit] + "十"
+	} else {
+		return numToChinese[tenDigit] + "十" + numToChinese[unitDigit]
+	}
 }
