@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -44,6 +45,7 @@ func checkDatabaseBackups() error {
 func processBackup(backup unstructured.Unstructured) {
 	status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
 	backupName, namespace, startTime := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
+	fmt.Println(backupName, namespace)
 	if err != nil || !found {
 		log.Printf("Unable to get %s status in ns %s:%v", backupName, namespace, err)
 		return
