@@ -21,6 +21,7 @@ func GetPhoneNumberByNS(ns string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	fmt.Println(111)
 	phone, email := "", ""
 	for i := range outh {
 		if outh[i].ProviderType == pkgtypes.OauthProviderTypePhone {
@@ -29,9 +30,11 @@ func GetPhoneNumberByNS(ns string) (string, error) {
 			email = outh[i].ProviderID
 		}
 	}
+	fmt.Println(222)
 	if phone == "" && email == "" {
 		return "", errors.New("user phone && email is not set, skip sms notification")
 	}
+	fmt.Println(333)
 	return phone, nil
 }
 
