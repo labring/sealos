@@ -99,7 +99,7 @@ type Transfer struct {
 }
 
 func (Transfer) TableName() string {
-	return "Transfer"
+	return "UserTransfer"
 }
 
 type User struct {
