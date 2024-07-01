@@ -31,7 +31,8 @@ cilium_version=${cilium_version:-"1.14.8"}
 cert_manager_version=${cert_manager_version:-"1.14.6"}
 helm_version=${helm_version:-"3.14.1"}
 openebs_version=${openebs_version:-"3.10.0"}
-ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
+istio_base_version=${istio_base_version:-"1.22.1"}
+higress_version=${higress_version:-"1.4.1"}
 kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
@@ -60,9 +61,9 @@ PROMPTS_EN=(
     ["choose_language"]="Please choose a language: "
     ["enter_choice"]="Please enter your choice (zh/en): "
     ["k8s_installation"]="Installing Kubernetes cluster."
-    ["ingress_installation"]="Installing Ingress-nginx-controller and Kubeblocks."
+    ["partner_installation"]="Installing Higress and Kubeblocks."
     ["installing_monitoring"]="Installing kubernetes monitoring."
-    ["patching_ingress"]="Modifying the tolerance of Ingress-nginx-controller to allow it to run on the master node."
+    ["patching_ingress"]="Modifying the tolerance of Higress to allow it to run on the master node."
     ["installing_cloud"]="Installing Sealos Cloud."
     ["avx_not_supported"]="CPU does not support AVX instruction set."
     ["ssh_private_key"]="Please enter the ssh private key path (Press enter to use the default value: '/root/.ssh/id_rsa'): "
@@ -86,7 +87,8 @@ Options:
   --cert-manager-version            # Cert Manager version (default: 1.14.6)
   --helm-version                    # Helm version (default: 3.14.1)
   --openebs-version                 # OpenEBS version (default: 3.10.0)
-  --ingress-nginx-version           # Ingress Nginx version (default: 1.9.4)
+  --istio-base-version              # Istio/base version (default: 1.4.1)
+  --higress-version                 # Higress version (default: 1.4.1)
   --kubeblocks-version              # Kubeblocks version (default: 0.8.2)
   --metrics-server-version          # Metrics Server version (default: 0.6.4)
   --cloud-version                   # Sealos Cloud version (default: latest)
@@ -129,9 +131,9 @@ PROMPTS_CN=(
     ["choose_language"]="请选择语言: "
     ["enter_choice"]="请输入您的选择 (zh/en): "
     ["k8s_installation"]="正在安装 Kubernetes 集群."
-    ["ingress_installation"]="正在安装 Ingress-nginx-controller 和 Kubeblocks."
+    ["partner_installation"]="正在安装 Higress 和 Kubeblocks."
     ["installing_monitoring"]="正在安装 kubernetes 监控."
-    ["patching_ingress"]="正在修改 Ingress-nginx-controller 的容忍度, 以允许它在主节点上运行."
+    ["patching_ingress"]="正在修改 Higress 的容忍度, 以允许它在主节点上运行."
     ["installing_cloud"]="正在安装 Sealos Cloud."
     ["avx_not_supported"]="CPU 不支持 AVX 指令集."
     ["ssh_private_key"]="请输入 ssh 私钥路径 (回车使用默认值: '/root/.ssh/id_rsa'): "
@@ -155,7 +157,8 @@ Options:
   --cert-manager-version          # Cert Manager版本 (默认: 1.14.6)
   --helm-version                  # Helm版本 (默认: 3.14.1)
   --openebs-version               # OpenEBS版本 (默认: 3.10.0)
-  --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.9.4)
+  --istio-base-version            # Istio/base版本 (默认: 1.22.1)
+  --higress-version               # Higress版本 (默认: 1.4.1)
   --kubeblocks-version            # Kubeblocks版本 (默认: 0.8.2)
   --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
   --cloud-version                 # Sealos Cloud版本 (默认: latest)
@@ -271,7 +274,8 @@ init() {
     pull_image "cert-manager" "v${cert_manager_version#v:-1.14.6}"
     pull_image "helm" "v${helm_version#v:-3.14.1}"
     pull_image "openebs" "v${openebs_version#v:-3.10.0}"
-    pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.9.4}"
+    pull_image "istio-base" "v${istio_base_version#v:-1.22.1}"
+    pull_image "higress" "v${higress_version#v:-1.4.1}"
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-redis" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
@@ -377,6 +381,12 @@ collect_input() {
 }
 
 prepare_configs() {
+    IFS=',' read -r -a cmaster_ips <<< "$master_ips"
+    IFS=',' read -r -a cnode_ips <<< "$node_ips"
+    local num_masters=${#cmaster_ips[@]}
+    local num_nodes=${#cnode_ips[@]}
+    local total_nodes=$((num_masters + num_nodes))
+
     if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
         # Convert certificate and key to base64
         tls_crt_base64=$(cat $cert_path | base64 | tr -d '\n')
@@ -401,24 +411,144 @@ spec:
         echo "$tls_config" > $CLOUD_DIR/tls-secret.yaml
     fi
 
-    ingress_config="
+    higress_config="
 apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
-  creationTimestamp: null
-  name: ingress-nginx-config
+  name: higress-config
 spec:
   data: |
-    controller:
+    global:
+      ingressClass: nginx
+      enableStatus: false
+      enableGatewayAPI: false
+      disableAlpnH2: false
+      enableIstioAPI: true
+      enableSRDS: true
+    gateway:
+      httpsPort: ${cloud_port:-443}
       hostNetwork: true
-      kind: DaemonSet
       service:
         type: NodePort
-  match: ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4}
-  path: charts/ingress-nginx/values.yaml
+      replicas: ${total_nodes}
+      resources:
+        requests:
+          cpu: 256m
+          memory: 256Mi
+        limits:
+          memory: 4Gi
+    controller:
+      replicas: ${num_masters}
+      resources:
+        requests:
+          cpu: 256m
+          memory: 256Mi
+  match: ${image_registry}/${image_repository}/higress:v${higress_version#v:-1.4.1}
+  path: charts/higress/charts/higress-core/values.yaml
   strategy: merge
 "
-    echo "$ingress_config" > $CLOUD_DIR/ingress-nginx-config.yaml
+    echo "$higress_config" > $CLOUD_DIR/higress-config.yaml
+    higress_console_config="
+apiVersion: apps.sealos.io/v1beta1
+kind: Config
+metadata:
+  name: higress-console-config
+spec:
+  data: |
+    replicaCount: 0
+  match: ${image_registry}/${image_repository}/higress:v${higress_version#v:-1.4.1}
+  path: charts/higress/charts/higress-console/values.yaml
+  strategy: merge
+"
+    echo "$higress_console_config" > $CLOUD_DIR/higress-console-config.yaml
+
+    higress_https_config="
+apiVersion: v1
+data:
+  cert: |
+    automaticHttps: false
+    fallbackForInvalidSecret: true
+    acmeIssuer:
+    - email: cloud@sealos.io
+      name: letsencrypt
+    renewBeforeDays: 1
+    credentialConfig:
+    - domains:
+        - '*.$cloud_domain'
+        - '$cloud_domain'
+      tlsSecret: wildcard-cert
+kind: ConfigMap
+metadata:
+  name: higress-https
+  namespace: higress-system
+"
+    echo "$higress_https_config" > $CLOUD_DIR/higress-https.yaml
+
+    higress_plugins_config="
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name:  hcm-options
+  namespace: higress-system
+spec:
+  configPatches:
+  - applyTo: NETWORK_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+    patch:
+      operation: MERGE
+      value:
+        name: envoy.filters.network.http_connection_manager
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          max_request_headers_kb: 8192
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: global-route-config
+  namespace: higress-system
+spec:
+  configPatches:
+  - applyTo: ROUTE_CONFIGURATION
+    match:
+      context: GATEWAY
+    patch:
+      operation: MERGE
+      value:
+        request_headers_to_add:
+        - append: false
+          header:
+            key: x-real-ip
+            value: '%REQ(X-ENVOY-EXTERNAL-ADDRESS)%'
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name:  tailscale-options
+  namespace: higress-system
+spec:
+  configPatches:
+  - applyTo: NETWORK_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: envoy.filters.network.http_connection_manager
+    patch:
+      operation: MERGE
+      value:
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          upgrade_configs:
+            - upgrade_type: tailscale-control-protocol
+"
+    echo "$higress_plugins_config" > $CLOUD_DIR/higress-plugins.yaml
 
     backuprepo='
     apiVersion: dataprotection.kubeblocks.io/v1alpha1
@@ -632,8 +762,11 @@ EOF
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
 
-    get_prompt "ingress_installation"
-    sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4} --config-file $CLOUD_DIR/ingress-nginx-config.yaml
+    get_prompt "partner_installation"
+    sealos run ${image_registry}/${image_repository}/istio-base:v${istio_base_version#v:-1.22.1}
+    sealos run ${image_registry}/${image_repository}/higress:v${higress_version#v:-1.4.1} --config-file $CLOUD_DIR/higress-config.yaml --config-file $CLOUD_DIR/higress-console-config.yaml
+    kubectl apply -f $CLOUD_DIR/higress-https.yaml
+    kubectl apply -f $CLOUD_DIR/higress-plugins.yaml
 
     sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}
     sealos run ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
@@ -654,10 +787,7 @@ EOF
     kubectl rollout restart deploy -n vm vmagent-victoria-metrics-k8s-stack || true
 
     get_prompt "patching_ingress"
-    kubectl patch cm -n ingress-nginx ingress-nginx-controller --patch '{"data":{"allow-snippet-annotations":"true","annotation-value-word-blocklist":"load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount"}}'
-    kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
-    kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep https-port= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--https-port=${cloud_port:-443}'}]"
-    kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep default-ssl-certificate= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--default-ssl-certificate=sealos-system/wildcard-cert'}]"
+    kubectl -n higress-system patch deploy higress-gateway -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
 
     get_prompt "installing_cloud"
 
@@ -693,7 +823,8 @@ for i in "$@"; do
   --cert-manager-version=*) cert_manager_version="${i#*=}"; shift ;;
   --helm-version=*) helm_version="${i#*=}"; shift ;;
   --openebs-version=*) openebs_version="${i#*=}"; shift ;;
-  --ingress-nginx-version=*) ingress_nginx_version="${i#*=}"; shift ;;
+  --istio-base-version=*) istio_base_version="${i#*=}"; shift ;;
+  --higress-version=*) higress_version="${i#*=}"; shift ;;
   --kubeblocks-version=*) kubeblocks_version="${i#*=}"; shift ;;
   --metrics-server-version=*) metrics_server_version="${i#*=}"; shift ;;
   --cloud-version=*) cloud_version="${i#*=}"; shift ;;
@@ -725,7 +856,8 @@ for i in "$@"; do
   --cert-manager-version | cert-manager-version | \
   --helm-version | helm-version | \
   --openebs-version | openebs-version | \
-  --ingress-nginx-version | ingress-nginx-version | \
+  --istio-base-version | istio-base-version | \
+  --higress-version | higress-version | \
   --kubeblocks-version | kubeblocks-version | \
   --metrics-server-version | metrics-server-version | \
   --cloud-version | cloud-version | \
