@@ -2,6 +2,7 @@ package notification
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -35,6 +36,7 @@ func GetPhoneNumberByNS(ns string) (string, error) {
 }
 
 func SendToSms(namespace, databaseName, clusterName, content string) error {
+	fmt.Println(namespace, databaseName, clusterName, content)
 	smsClient, err := utils.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
 	if err != nil {
 		return err
