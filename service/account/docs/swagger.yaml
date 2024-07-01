@@ -57,6 +57,9 @@ definitions:
       startTime:
         example: "2021-01-01T00:00:00Z"
         type: string
+      userID:
+        example: admin
+        type: string
     required:
     - kubeConfig
     - owner
@@ -66,6 +69,9 @@ definitions:
       kubeConfig:
         type: string
       owner:
+        example: admin
+        type: string
+      userID:
         example: admin
         type: string
     required:
@@ -112,6 +118,9 @@ definitions:
           @Description Type of the request (optional)
           @JSONSchema
         type: integer
+      userID:
+        example: admin
+        type: string
     required:
     - kubeConfig
     - owner
@@ -144,6 +153,9 @@ definitions:
         items:
           type: string
         type: array
+      userID:
+        example: admin
+        type: string
     required:
     - kubeConfig
     - owner
@@ -170,8 +182,15 @@ definitions:
           @JSONSchema required
         example: admin
         type: string
+      transferAll:
+        description: |-
+          @Summary Transfer all
+          @Description Transfer all amount
+        type: boolean
+      userID:
+        example: admin
+        type: string
     required:
-    - amount
     - kubeConfig
     - owner
     - toUser
@@ -188,6 +207,9 @@ definitions:
         type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
         type: string
     required:
     - kubeConfig

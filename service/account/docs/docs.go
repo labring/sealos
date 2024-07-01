@@ -731,6 +731,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
@@ -745,6 +749,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userID": {
                     "type": "string",
                     "example": "admin"
                 }
@@ -807,6 +815,10 @@ const docTemplate = `{
                 "type": {
                     "description": "@Summary Type of the request (optional)\n@Description Type of the request (optional)\n@JSONSchema",
                     "type": "integer"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
@@ -850,13 +862,16 @@ const docTemplate = `{
                         "[\"payment-id-1\"",
                         "\"payment-id-2\"]"
                     ]
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
         "helper.TransferAmountReq": {
             "type": "object",
             "required": [
-                "amount",
                 "kubeConfig",
                 "owner",
                 "toUser"
@@ -876,6 +891,14 @@ const docTemplate = `{
                 },
                 "toUser": {
                     "description": "@Summary To user\n@Description To user\n@JSONSchema required",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "transferAll": {
+                    "description": "@Summary Transfer all\n@Description Transfer all amount",
+                    "type": "boolean"
+                },
+                "userID": {
                     "type": "string",
                     "example": "admin"
                 }
@@ -902,6 +925,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         }
