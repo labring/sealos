@@ -125,7 +125,6 @@ func (a ContainerdChecker) Check(cluster *v2.Cluster, _ string) error {
 		return err
 	}
 	return checkContainerd(execer, ipList)
-
 }
 
 // Check whether the containerd is installed
