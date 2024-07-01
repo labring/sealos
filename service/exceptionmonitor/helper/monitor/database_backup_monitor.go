@@ -66,19 +66,19 @@ func processBackup(backup unstructured.Unstructured) {
 	//handleBackupStatus(backupName, namespace, status, startTime, backupPolicyName)
 }
 
-func handleBackupStatus(backupName, namespace, status, startTime, backupPolicyName string) {
-	//if status == "Completed" {
-	//	handleBackupCompletion(backupName, namespace, status, startTime)
-	//	return
-	//}
-	//if CheckackupFailure(backupName, namespace, status, backupPolicyName) {
-	//	err := api.DynamicClient.Resource(backupGVR).Namespace(namespace).Delete(context.Background(), backupName, metav1.DeleteOptions{})
-	//	if err != nil {
-	//		log.Printf("Failed to delete%s in ns %s:%v", backupName, namespace, err)
-	//	}
-	//}
-
-}
+//func handleBackupStatus(backupName, namespace, status, startTime, backupPolicyName string) {
+//	//if status == "Completed" {
+//	//	handleBackupCompletion(backupName, namespace, status, startTime)
+//	//	return
+//	//}
+//	//if CheckackupFailure(backupName, namespace, status, backupPolicyName) {
+//	//	err := api.DynamicClient.Resource(backupGVR).Namespace(namespace).Delete(context.Background(), backupName, metav1.DeleteOptions{})
+//	//	if err != nil {
+//	//		log.Printf("Failed to delete%s in ns %s:%v", backupName, namespace, err)
+//	//	}
+//	//}
+//
+//}
 
 //func handleBackupCompletion(backupName, namespace, status, startTime string) {
 //	if _, ok := api.LastBackupStatusMap[backupName]; ok {
