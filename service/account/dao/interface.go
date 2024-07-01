@@ -325,6 +325,9 @@ func NewAccountInterface(mongoURI, globalCockRoachURI, localCockRoachURI string)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect cockroach: %v", err)
 	}
+	if err = ck.InitTables(); err != nil {
+		return nil, fmt.Errorf("failed to init tables: %v", err)
+	}
 	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{ck: ck}}
 	return account, nil
 }

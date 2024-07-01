@@ -784,6 +784,10 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 		to.UID = user.UID
 		to.ID = user.ID
 	}
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("failed to generate transfer id: %w", err)
+	}
 	err = c.DB.Transaction(func(tx *gorm.DB) error {
 		sender, err := c.GetAccount(&types.UserQueryOpts{UID: from.UID})
 		if err != nil {
@@ -807,6 +811,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 			return fmt.Errorf("failed to update receiver balance: %w", err)
 		}
 		if err = c.DB.Create(&types.Transfer{
+			ID:          id,
 			FromUserUID: from.UID,
 			FromUserID:  from.ID,
 			ToUserUID:   to.UID,
