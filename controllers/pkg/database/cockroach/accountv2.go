@@ -198,6 +198,7 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 		end = time.Now().UTC()
 	}
 
+	fmt.Printf("start: %v, end: %v\n", start, end)
 	var (
 		transfers []types.Transfer
 		count     int64

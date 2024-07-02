@@ -65,12 +65,13 @@ func TestCockroach_GetTransfer(t *testing.T) {
 		UserQueryOpts: &types.UserQueryOpts{
 			Owner: "q0xeg9z1",
 		},
+		Type: 0,
 		LimitRep: types.LimitRep{
 			Page:     1,
 			PageSize: 10,
 			TimeRange: types.TimeRange{
-				StartTime: time.Now().Add(-24 * time.Hour * 30),
-				EndTime:   time.Now(),
+				StartTime: time.Now().UTC().Add(-1*time.Hour - 30*time.Minute),
+				EndTime:   time.Now().UTC(),
 			},
 		},
 	})
@@ -78,5 +79,9 @@ func TestCockroach_GetTransfer(t *testing.T) {
 		t.Fatalf("GetTransfer() error = %v", err)
 		return
 	}
-	t.Logf("transfer = %+v", transfer)
+	t.Logf("timerange = %+v", types.TimeRange{
+		StartTime: time.Now().UTC().Add(-30*time.Hour - 30*time.Minute),
+		EndTime:   time.Now().UTC(),
+	})
+	t.Logf("transfer = %+v", transfer.LimitResp)
 }
