@@ -100,11 +100,14 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
+		monitorMap[UID] = true
+		if performanceType != "磁盘" {
+			return
+		}
 		ZNThreshold := NumberToChinese(int(threshold))
 		if err := notification.SendToSms(info.Namespace, info.DatabaseClusterName, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
 			log.Printf("Failed to send Sms: %v", err)
 		}
-		monitorMap[UID] = true
 	} else if usage < threshold && monitorMap[UID] {
 		info.NotificationType = "recovery"
 		alertMessage := notification.GetNotificationMessage(info)
