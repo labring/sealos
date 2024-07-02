@@ -158,9 +158,11 @@
   "Remaining Quota": "剩余",
   "Receipts And Disbursements": "收支",
   "APP Name": "应用名称",
-  "All APP": "所有应用",
+
   "APP Type": "应用类型",
+	"Transfer Type": "转账类型",
   "Details": "详情",
   "Handle": "操作",
-  "currencyUnit": "金额单位"
+  "currencyUnit": "金额单位",
+	"Trader ID": "交易用户"
 }
