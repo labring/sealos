@@ -23,6 +23,9 @@ function prepare {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
+  # kubectl apply default desktop apps
+  kubectl apply -f manifests/default_apps.yaml
+
   # gen mongodb uri
   gen_mongodbUri
 
