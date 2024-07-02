@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -50,4 +51,32 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 		return
 	}
 	t.Logf("appCosts = %+v", appCosts)
+}
+
+func TestCockroach_GetTransfer(t *testing.T) {
+	os.Setenv("LOCAL_REGION", "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a")
+
+	db, err := NewAccountInterface("", "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	transfer, err := db.GetTransfer(&types.GetTransfersReq{
+		UserQueryOpts: &types.UserQueryOpts{
+			Owner: "q0xeg9z1",
+		},
+		LimitRep: types.LimitRep{
+			Page:     1,
+			PageSize: 10,
+			TimeRange: types.TimeRange{
+				StartTime: time.Now().Add(-24 * time.Hour * 30),
+				EndTime:   time.Now(),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("GetTransfer() error = %v", err)
+		return
+	}
+	t.Logf("transfer = %+v", transfer)
 }

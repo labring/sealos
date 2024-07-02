@@ -192,81 +192,74 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 	if pageSize < 1 {
 		pageSize = 10
 	}
-	var (
-		resp       types.GetTransfersResp
-		transfers  []types.Transfer
-		count      int64
-		start, end = ops.StartTime, ops.EndTime
-		userID     = ops.ID
-	)
 
+	start, end := ops.StartTime, ops.EndTime
 	if end.IsZero() {
 		end = time.Now().UTC()
 	}
+
+	var (
+		transfers []types.Transfer
+		count     int64
+	)
+
+	err := c.performTransferQuery(ops, pageSize, (page-1)*pageSize, start, end, &transfers, &count)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := types.GetTransfersResp{
+		Transfers: transfers,
+		LimitResp: types.LimitResp{
+			Total:     count,
+			TotalPage: (count + int64(pageSize) - 1) / int64(pageSize),
+		}}
+	return &resp, nil
+}
+
+func (c *Cockroach) performTransferQuery(ops *types.GetTransfersReq, limit, offset int, start, end time.Time, transfers *[]types.Transfer, count *int64) error {
+	var err error
+	query := c.DB.Limit(limit).Offset(offset).
+		Where("created_at BETWEEN ? AND ?", start, end)
+	countQuery := c.DB.Model(&types.Transfer{}).
+		Where("created_at BETWEEN ? AND ?", start, end)
+
+	userCondition := "1 = 1"
+	args := []interface{}{}
 	if ops.TransferID != "" {
-		if err := c.DB.Where(types.Transfer{ID: ops.TransferID}).Find(&transfers).Error; err != nil {
-			return nil, fmt.Errorf("failed to get transfer: %v", err)
-		}
-		count = 1
+		query = c.DB.Where(types.Transfer{ID: ops.TransferID})
 	} else {
 		switch ops.Type {
-		default:
-			err := c.DB.Limit(pageSize).Offset((page-1)*pageSize).
-				Where(types.Transfer{FromUserUID: ops.UID, FromUserID: userID}).
-				Or(types.Transfer{ToUserUID: ops.UID, ToUserID: userID}).
-				Where("created_at BETWEEN ? AND ?", start, end).
-				Find(&transfers).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to get all transfer: %v", err)
-			}
-			err = c.DB.Model(&types.Transfer{}).
-				Where(types.Transfer{FromUserUID: ops.UID, FromUserID: userID}).
-				Or(types.Transfer{ToUserUID: ops.UID, ToUserID: userID}).
-				Where("created_at BETWEEN ? AND ?", start, end).
-				Count(&count).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to get all transfer total: %v", err)
-			}
 		case types.TypeTransferIn:
-			err := c.DB.Limit(pageSize).Offset((page-1)*pageSize).
-				Where(types.Transfer{ToUserUID: ops.UID, ToUserID: userID}).
-				Where("created_at BETWEEN ? AND ?", start, end).
-				Find(&transfers).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to get in transfer: %v", err)
-			}
-			err = c.DB.Model(&types.Transfer{}).
-				Where(types.Transfer{ToUserUID: ops.UID, ToUserID: userID}).
-				Where("created_at BETWEEN ? AND ?", start, end).
-				Count(&count).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to get in transfer total: %v", err)
-			}
+			userCondition = `"toUserUid" = ? AND "toUserId" = ?`
+			args = append(args, ops.UID, ops.ID)
 		case types.TypeTransferOut:
-			err := c.DB.Limit(pageSize).Offset((page-1)*pageSize).
-				Where(types.Transfer{FromUserUID: ops.UID, FromUserID: userID}).
-				Where("created_at BETWEEN ? AND ?", start, end).
-				Find(&transfers).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to get out transfer: %v", err)
-			}
-			err = c.DB.Model(&types.Transfer{}).
-				Where(types.Transfer{FromUserUID: ops.UID, FromUserID: userID}).
-				Where("created_at BETWEEN ? AND ?", start, end).
-				Count(&count).Error
-			if err != nil {
-				return nil, fmt.Errorf("failed to get out transfer total: %v", err)
-			}
+			userCondition = `"fromUserUid" = ? AND "fromUserId" = ?`
+			args = append(args, ops.UID, ops.ID)
+		default:
+			userCondition = `("fromUserUid" = ? AND "fromUserId" = ?) OR ("toUserUid" = ? AND "toUserId" = ?)`
+			args = append(args, ops.UID, ops.ID, ops.UID, ops.ID)
 		}
 	}
-	resp.Transfers = transfers
-	resp.Total = count
-	if count%int64(pageSize) == 0 {
-		resp.TotalPage = count / int64(pageSize)
-	} else {
-		resp.TotalPage = count/int64(pageSize) + 1
+
+	query = query.Where(userCondition, args...)
+	countQuery = countQuery.Where(userCondition, args...)
+
+	err = query.Find(transfers).Error
+	if err != nil {
+		return fmt.Errorf("failed to get transfer: %v", err)
 	}
-	return &resp, nil
+
+	if ops.TransferID == "" {
+		err = countQuery.Count(count).Error
+		if err != nil {
+			return fmt.Errorf("failed to get transfer count: %v", err)
+		}
+	} else {
+		*count = 1
+	}
+
+	return nil
 }
 
 func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error) {
