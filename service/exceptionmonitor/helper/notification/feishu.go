@@ -28,6 +28,14 @@ type Info struct {
 func GetNotificationMessage(notificationInfo Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
+	usage := ""
+	if notificationInfo.PerformanceType == "CPU" {
+		usage = notificationInfo.CPUUsage
+	} else if notificationInfo.PerformanceType == "内存" {
+		usage = notificationInfo.MemUsage
+	} else if notificationInfo.PerformanceType == "磁盘" {
+		usage = notificationInfo.DiskUsage
+	}
 	var elements []map[string]interface{}
 
 	commonElements := []map[string]interface{}{
@@ -61,27 +69,6 @@ func GetNotificationMessage(notificationInfo Info) string {
 		},
 	}
 
-	if notificationInfo.ExceptionType == "阀值" {
-		usage := ""
-		if notificationInfo.PerformanceType == "CPU" {
-			usage = notificationInfo.CPUUsage
-		} else if notificationInfo.PerformanceType == "内存" {
-			usage = notificationInfo.MemUsage
-		} else if notificationInfo.PerformanceType == "磁盘" {
-			usage = notificationInfo.DiskUsage
-		}
-		exceptionElements := []map[string]interface{}{
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
-					"tag":     "lark_md",
-				},
-			},
-		}
-		commonElements = append(commonElements, exceptionElements...)
-	}
-
 	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
 		exceptionElements := []map[string]interface{}{
 			{
@@ -107,11 +94,36 @@ func GetNotificationMessage(notificationInfo Info) string {
 			},
 		}
 		elements = append(commonElements, exceptionElements...)
+	} else if notificationInfo.ExceptionType == "阀值" {
+		exceptionElements := []map[string]interface{}{
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
+					"tag":     "lark_md",
+				},
+			},
+		}
+		elements = append(commonElements, exceptionElements...)
 	}
+
 	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
+
 		elements = commonElements
+		if notificationInfo.ExceptionType == "阀值" {
+			exceptionElements := []map[string]interface{}{
+				{
+					"tag": "div",
+					"text": map[string]string{
+						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
+						"tag":     "lark_md",
+					},
+				},
+			}
+			elements = append(commonElements, exceptionElements...)
+		}
 	}
 	card := map[string]interface{}{
 		"config": map[string]bool{
