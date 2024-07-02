@@ -61,6 +61,27 @@ func GetNotificationMessage(notificationInfo Info) string {
 		},
 	}
 
+	if notificationInfo.ExceptionType == "阀值" {
+		usage := ""
+		if notificationInfo.PerformanceType == "CPU" {
+			usage = notificationInfo.CPUUsage
+		} else if notificationInfo.PerformanceType == "内存" {
+			usage = notificationInfo.MemUsage
+		} else if notificationInfo.PerformanceType == "磁盘" {
+			usage = notificationInfo.DiskUsage
+		}
+		exceptionElements := []map[string]interface{}{
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
+					"tag":     "lark_md",
+				},
+			},
+		}
+		commonElements = append(commonElements, exceptionElements...)
+	}
+
 	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
 		exceptionElements := []map[string]interface{}{
 			{
@@ -81,25 +102,6 @@ func GetNotificationMessage(notificationInfo Info) string {
 				"tag": "div",
 				"text": map[string]string{
 					"content": fmt.Sprintf("告警原因：%s", notificationInfo.Reason),
-					"tag":     "lark_md",
-				},
-			},
-		}
-		elements = append(commonElements, exceptionElements...)
-	} else if notificationInfo.ExceptionType == "阀值" {
-		usage := ""
-		if notificationInfo.PerformanceType == "CPU" {
-			usage = notificationInfo.CPUUsage
-		} else if notificationInfo.PerformanceType == "内存" {
-			usage = notificationInfo.MemUsage
-		} else if notificationInfo.PerformanceType == "磁盘" {
-			usage = notificationInfo.DiskUsage
-		}
-		exceptionElements := []map[string]interface{}{
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
 					"tag":     "lark_md",
 				},
 			},

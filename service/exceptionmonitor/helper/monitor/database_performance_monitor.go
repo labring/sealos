@@ -101,7 +101,7 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 			log.Printf("Failed to send notification: %v", err)
 		}
 		ZNThreshold := NumberToChinese(int(threshold))
-		if err := notification.SendToSms(info.Namespace, info.DatabaseClusterName, api.ClusterName, "数据库"+performanceType+"超过"+ZNThreshold); err != nil {
+		if err := notification.SendToSms(info.Namespace, info.DatabaseClusterName, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
 			log.Printf("Failed to send Sms: %v", err)
 		}
 		monitorMap[UID] = true
