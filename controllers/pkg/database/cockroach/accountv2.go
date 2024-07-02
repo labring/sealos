@@ -754,20 +754,20 @@ var ErrInsufficientBalance = errors.New("insufficient balance")
 
 func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64, transferAll bool) (err error) {
 	if from.UID == uuid.Nil || from.ID == "" {
-		user, err := c.GetUser(from)
+		userFrom, err := c.GetUser(from)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		from.UID = user.UID
-		from.ID = user.ID
+		from.UID = userFrom.UID
+		from.ID = userFrom.ID
 	}
 	if to.UID == uuid.Nil || to.ID == "" {
-		user, err := c.GetUser(to)
+		userTo, err := c.GetUser(to)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		to.UID = user.UID
-		to.ID = user.ID
+		to.UID = userTo.UID
+		to.ID = userTo.ID
 	}
 	id, err := gonanoid.New(12)
 	if err != nil {
