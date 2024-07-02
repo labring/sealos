@@ -58,6 +58,28 @@ export interface AppListItemType {
   labels: { [key: string]: string };
 }
 
+export interface ProbeType {
+  use: boolean;
+  initialDelaySeconds?: number;
+  periodSeconds?: number;
+  timeoutSeconds?: number;
+  successThreshold?: number;
+  failureThreshold?: number;
+  exec?: {
+    command: string[];
+  };
+  httpGet?: {
+    path: string;
+    port: number;
+    host?: string;
+    scheme?: string;
+    httpHeaders?: { name: string; value: string }[];
+  };
+  tcpSocket?: {
+    port: number;
+  };
+}
+
 export interface AppEditType {
   appName: string;
   imageName: string;
@@ -103,6 +125,9 @@ export interface AppEditType {
     path: string;
     value: number;
   }[];
+  livenessProbe: ProbeType;
+  readinessProbe: ProbeType;
+  startupProbe: ProbeType;
 }
 
 export interface AppDetailType extends AppEditType {

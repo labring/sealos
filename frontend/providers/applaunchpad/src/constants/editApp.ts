@@ -61,7 +61,10 @@ export const defaultEditVal: AppEditType = {
     manufacturers: 'nvidia',
     type: '',
     amount: 1
-  }
+  },
+  livenessProbe: { use: false },
+  readinessProbe: { use: false },
+  startupProbe: { use: false }
 };
 
 export const GpuAmountMarkList = [

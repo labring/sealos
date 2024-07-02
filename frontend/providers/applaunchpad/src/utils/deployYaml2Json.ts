@@ -94,7 +94,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       containerPort: item.port,
       name: item.portName
     })),
-    imagePullPolicy: 'Always'
+    imagePullPolicy: 'Always',
+    ...(data.livenessProbe.use ? { livenessProbe: { ...data.livenessProbe, use: undefined } } : {}),
+    ...(data.readinessProbe.use
+      ? { readinessProbe: { ...data.readinessProbe, use: undefined } }
+      : {}),
+    ...(data.startupProbe.use ? { startupProbe: { ...data.startupProbe, use: undefined } } : {})
   };
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: pathToNameFormat(item.mountPath),

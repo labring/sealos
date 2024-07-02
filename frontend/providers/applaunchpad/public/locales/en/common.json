@@ -252,5 +252,14 @@
   "Remind": "Remind",
   "Confirm to go": "Confirm to go",
   "Delete anyway": "Delete anyway",
-  "Delete Template App Tip": "To fully remove this app and all its components, please uninstall it directly from the App Store."
+  "Delete Template App Tip": "To fully remove this app and all its components, please uninstall it directly from the App Store.",
+  "Liveness Probe": "Liveness Probe",
+  "Readiness Probe": "Readiness Probe",
+  "Startup Probe": "Startup Probe",
+  "Enable Probe": "Enable Probe",
+  "Edit livenessProbe": "Edit Liveness Probe",
+  "Edit readinessProbe": "Edit Readiness Probe",
+  "Edit startupProbe": "Edit Startup Probe",
+  "initialDelaySeconds": "Initial Delay Seconds",
+  "periodSeconds": "Period Seconds"
 }

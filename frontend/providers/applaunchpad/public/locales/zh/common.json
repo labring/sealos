@@ -252,5 +252,14 @@
   "Remind": "提醒",
   "Confirm to go": "确认前往",
   "Delete anyway": "仍要删除",
-  "Delete Template App Tip": "该应用是通过应用商店部署的，如果您想完全卸载该应用并清理所有相关的组件，请到应用商店中将整个应用删除。"
+  "Delete Template App Tip": "该应用是通过应用商店部署的，如果您想完全卸载该应用并清理所有相关的组件，请到应用商店中将整个应用删除。",
+  "Liveness Probe": "活跃度探针",
+  "Readiness Probe": "就绪性探针",
+  "Startup Probe": "启动探针",
+  "Enable Probe": "启用探针",
+  "Edit livenessProbe": "编辑活跃度探针",
+  "Edit readinessProbe": "编辑就绪性探针",
+  "Edit startupProbe": "编辑启动探针",
+  "initialDelaySeconds": "初始延迟秒数",
+  "periodSeconds": "检测间隔秒数"
 }
