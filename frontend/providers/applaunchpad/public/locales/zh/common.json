@@ -261,5 +261,14 @@
   "Edit readinessProbe": "编辑就绪性探针",
   "Edit startupProbe": "编辑启动探针",
   "initialDelaySeconds": "初始延迟秒数",
-  "periodSeconds": "检测间隔秒数"
+  "periodSeconds": "检测间隔秒数",
+  "timeoutSeconds": "超时时间（秒）",
+  "successThreshold": "成功阈值",
+  "failureThreshold": "失败阈值",
+  "Exec Command": "执行命令",
+  "HTTP Get Path": "HTTP Get 路径",
+  "HTTP Get Port": "HTTP Get 端口",
+  "TCP Socket Port": "TCP Socket 端口",
+  "Value must be greater than or equal to 0": "值必须大于或等于0",
+  "Probe Type": "探针类型"
 }

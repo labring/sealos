@@ -46,6 +46,7 @@ import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import EditProbe from './EditProbe';
+import ProbeInfo from './ProbeInfo';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -1175,9 +1176,8 @@ const Form = ({
 
                   <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
-                  {/* 探针配置 */}
                   <Box>
-                    <HStack spacing={4} mb={4}>
+                    <HStack mb={4}>
                       <Label className={styles.formSecondTitle}>{t('Liveness Probe')}</Label>
                       <EditProbe
                         probeType="livenessProbe"
@@ -1185,19 +1185,9 @@ const Form = ({
                         onSuccess={(data) => setValue('livenessProbe', data)}
                       />
                     </HStack>
-                    {getValues('livenessProbe.use') && (
-                      <Box pl={`${labelWidth}px`} mb={4}>
-                        <Text fontSize="sm" color="gray.500">
-                          {/* 显示当前探针信息 */}
-                          {t('initialDelaySeconds')}:{' '}
-                          {getValues('livenessProbe.initialDelaySeconds') || 0},&nbsp;
-                          {t('periodSeconds')}: {getValues('livenessProbe.periodSeconds') || 0}
-                          {/* 显示其他探针信息 */}
-                        </Text>
-                      </Box>
-                    )}
+                    <ProbeInfo probe={getValues('livenessProbe')} />
 
-                    <HStack spacing={4} mb={4}>
+                    <HStack mb={4}>
                       <Label className={styles.formSecondTitle}>{t('Readiness Probe')}</Label>
                       <EditProbe
                         probeType="readinessProbe"
@@ -1205,19 +1195,9 @@ const Form = ({
                         onSuccess={(data) => setValue('readinessProbe', data)}
                       />
                     </HStack>
-                    {getValues('readinessProbe.use') && (
-                      <Box pl={`${labelWidth}px`} mb={4}>
-                        <Text fontSize="sm" color="gray.500">
-                          {/* 显示当前探针信息 */}
-                          {t('initialDelaySeconds')}:{' '}
-                          {getValues('readinessProbe.initialDelaySeconds') || 0},&nbsp;
-                          {t('periodSeconds')}: {getValues('readinessProbe.periodSeconds') || 0}
-                          {/* 显示其他探针信息 */}
-                        </Text>
-                      </Box>
-                    )}
+                    <ProbeInfo probe={getValues('readinessProbe')} />
 
-                    <HStack spacing={4} mb={4}>
+                    <HStack mb={4}>
                       <Label className={styles.formSecondTitle}>{t('Startup Probe')}</Label>
                       <EditProbe
                         probeType="startupProbe"
@@ -1225,17 +1205,7 @@ const Form = ({
                         onSuccess={(data) => setValue('startupProbe', data)}
                       />
                     </HStack>
-                    {getValues('startupProbe.use') && (
-                      <Box pl={`${labelWidth}px`} mb={4}>
-                        <Text fontSize="sm" color="gray.500">
-                          {/* 显示当前探针信息 */}
-                          {t('initialDelaySeconds')}:{' '}
-                          {getValues('startupProbe.initialDelaySeconds') || 0},&nbsp;
-                          {t('periodSeconds')}: {getValues('startupProbe.periodSeconds') || 0}
-                          {/* 显示其他探针信息 */}
-                        </Text>
-                      </Box>
-                    )}
+                    <ProbeInfo probe={getValues('startupProbe')} />
                   </Box>
                 </AccordionPanel>
               </AccordionItem>

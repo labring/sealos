@@ -261,5 +261,14 @@
   "Edit readinessProbe": "Edit Readiness Probe",
   "Edit startupProbe": "Edit Startup Probe",
   "initialDelaySeconds": "Initial Delay Seconds",
-  "periodSeconds": "Period Seconds"
+  "periodSeconds": "Period Seconds",
+  "timeoutSeconds": "Timeout Seconds",
+  "successThreshold": "Success Threshold",
+  "failureThreshold": "Failure Threshold",
+  "Exec Command": "Exec Command",
+  "HTTP Get Path": "HTTP Get Path",
+  "HTTP Get Port": "HTTP Get Port",
+  "TCP Socket Port": "TCP Socket Port",
+  "Value must be greater than or equal to 0": "Value must be greater than or equal to 0",
+  "Probe Type": "Probe Type"
 }
