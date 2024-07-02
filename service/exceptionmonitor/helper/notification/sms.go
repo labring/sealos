@@ -3,7 +3,6 @@ package notification
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/labring/sealos/controllers/account/controllers/utils"
@@ -47,7 +46,6 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(namespace, databaseName, clusterName, content, phoneNumbers)
 	err = utils.SendSms(smsClient, &client.SendSmsRequest{
 		PhoneNumbers: tea.String(phoneNumbers),
 		SignName:     tea.String(os.Getenv("SMS_SIGN_NAME")),
