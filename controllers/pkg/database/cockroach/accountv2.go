@@ -102,9 +102,14 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	queryUser := &types.User{}
 	if ops.UID != uuid.Nil {
 		queryUser.UID = ops.UID
-	}
-	if ops.ID != "" {
+	} else if ops.ID != "" {
 		queryUser.ID = ops.ID
+	} else if ops.Owner != "" {
+		userCr, err := c.GetUserCr(ops)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		queryUser.UID = userCr.UserUID
 	}
 	var user types.User
 	if err := c.DB.Where(queryUser).First(&user).Error; err != nil {
