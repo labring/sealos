@@ -21,7 +21,9 @@ import {
   Text,
   Textarea,
   useDisclosure,
-  VStack
+  VStack,
+  Radio,
+  RadioGroup
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { ProbeType } from '@/types/app';
@@ -86,14 +88,20 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
       ) {
         newErrors.terminationGracePeriodSeconds = t('Value must be greater than or equal to 1');
       }
-      if (probe.httpGet?.port !== undefined && probe.httpGet.port < 0) {
-        newErrors.httpGetPort = t('Value must be greater than or equal to 0');
+      if (probe.httpGet?.port !== undefined && (probe.httpGet.port < 1 || probe.httpGet.port > 65535)) {
+        newErrors.httpGetPort = t('Value must be between 1 and 65535');
       }
-      if (probe.tcpSocket?.port !== undefined && probe.tcpSocket.port < 0) {
-        newErrors.tcpSocketPort = t('Value must be greater than or equal to 0');
+      if (probe.tcpSocket?.port !== undefined && (probe.tcpSocket.port < 1 || probe.tcpSocket.port > 65535)) {
+        newErrors.tcpSocketPort = t('Value must be between 1 and 65535');
       }
-      if (probe.grpc?.port !== undefined && probe.grpc.port < 0) {
-        newErrors.grpcPort = t('Value must be greater than or equal to 0');
+      if (probe.grpc?.port !== undefined && (probe.grpc.port < 1 || probe.grpc.port > 65535)) {
+        newErrors.grpcPort = t('Value must be between 1 and 65535');
+      }
+      if (probe.httpGet?.scheme && !['HTTP', 'HTTPS'].includes(probe.httpGet.scheme)) {
+        newErrors.httpGetScheme = t('Scheme must be either HTTP or HTTPS');
+      }
+      if (probe.exec?.command.length === 0) {
+        newErrors.execCommand = t('Command cannot be empty');
       }
     }
 
@@ -130,7 +138,6 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
 
   const handleHttpGetChange = (
     field: keyof NonNullable<ProbeType['httpGet']>,
-    // 获取value的所有type
     value: ValueOf<NonNullable<ProbeType['httpGet']>>
   ) => {
     setProbe((prevProbe) => ({
@@ -349,27 +356,34 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       <option value="grpc">{t('gRPC')}</option>
                     </Select>
                     {probe.exec && (
-                      <FormControl>
+                      <FormControl isInvalid={!!errors.execCommand}>
                         <FormLabel>{t('Command')}</FormLabel>
                         <Textarea
                           value={probe.exec.command.join(' ')}
                           onChange={(e) => handleExecChange(e.target.value.split(' '))}
                         />
+                        {errors.execCommand && (
+                          <FormErrorMessage>{errors.execCommand}</FormErrorMessage>
+                        )}
                       </FormControl>
                     )}
                     {probe.httpGet && (
                       <VStack spacing={4} align="start">
-                        <FormControl>
+                        <FormControl isInvalid={!!errors.httpGetPort}>
                           <FormLabel>{t('Port')}</FormLabel>
                           <NumberInput
                             value={probe.httpGet.port}
                             onChange={(valueString) =>
                               handleHttpGetChange('port', Number(valueString))
                             }
-                            min={0}
+                            min={1}
+                            max={65535}
                           >
                             <NumberInputField />
                           </NumberInput>
+                          {errors.httpGetPort && (
+                            <FormErrorMessage>{errors.httpGetPort}</FormErrorMessage>
+                          )}
                         </FormControl>
                         <FormControl>
                           <FormLabel>{t('Path')}</FormLabel>
@@ -387,13 +401,20 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                             onChange={(e) => handleHttpGetChange('host', e.target.value)}
                           />
                         </FormControl>
-                        <FormControl>
+                        <FormControl isInvalid={!!errors.httpGetScheme}>
                           <FormLabel>{t('Scheme')}</FormLabel>
-                          <Input
-                            w="100%"
-                            value={probe.httpGet.scheme || ''}
-                            onChange={(e) => handleHttpGetChange('scheme', e.target.value)}
-                          />
+                          <RadioGroup
+                            value={probe.httpGet.scheme || 'HTTP'}
+                            onChange={(value) => handleHttpGetChange('scheme', value)}
+                          >
+                            <HStack spacing="24px">
+                              <Radio value="HTTP">HTTP</Radio>
+                              <Radio value="HTTPS">HTTPS</Radio>
+                            </HStack>
+                          </RadioGroup>
+                          {errors.httpGetScheme && (
+                            <FormErrorMessage>{errors.httpGetScheme}</FormErrorMessage>
+                          )}
                         </FormControl>
                         <FormControl>
                           <FormLabel>{t('HTTP Headers')}</FormLabel>
@@ -418,17 +439,21 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                     )}
                     {probe.tcpSocket && (
                       <VStack spacing={4} align="start">
-                        <FormControl>
+                        <FormControl isInvalid={!!errors.tcpSocketPort}>
                           <FormLabel>{t('Port')}</FormLabel>
                           <NumberInput
                             value={probe.tcpSocket.port}
                             onChange={(valueString) =>
                               handleTcpSocketChange('port', Number(valueString))
                             }
-                            min={0}
+                            min={1}
+                            max={65535}
                           >
                             <NumberInputField />
                           </NumberInput>
+                          {errors.tcpSocketPort && (
+                            <FormErrorMessage>{errors.tcpSocketPort}</FormErrorMessage>
+                          )}
                         </FormControl>
                         <FormControl>
                           <FormLabel>{t('Host')}</FormLabel>
@@ -442,17 +467,21 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                     )}
                     {probe.grpc && (
                       <VStack spacing={4} align="start">
-                        <FormControl>
+                        <FormControl isInvalid={!!errors.grpcPort}>
                           <FormLabel>{t('Port')}</FormLabel>
                           <NumberInput
                             value={probe.grpc.port}
                             onChange={(valueString) =>
                               handleGrpcChange('port', Number(valueString))
                             }
-                            min={0}
+                            min={1}
+                            max={65535}
                           >
                             <NumberInputField />
                           </NumberInput>
+                          {errors.grpcPort && (
+                            <FormErrorMessage>{errors.grpcPort}</FormErrorMessage>
+                          )}
                         </FormControl>
                         <FormControl>
                           <FormLabel>{t('Service')}</FormLabel>
