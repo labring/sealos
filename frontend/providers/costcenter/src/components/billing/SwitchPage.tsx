@@ -47,7 +47,9 @@ export default function SwitchPage({
   return (
     <Flex minW="370px" h="32px" align={'center'} mt={'20px'} {...props}>
       <Text>{t('Total')}:</Text>
-      <Flex w="40px">{totalItem}</Flex>
+      <Flex minW="40px" mr="5px">
+        {totalItem}
+      </Flex>
       <Flex gap={'8px'}>
         <Button
           {...switchStyle}

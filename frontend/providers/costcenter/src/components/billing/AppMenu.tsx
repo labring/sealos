@@ -30,7 +30,8 @@ export default function AppMenu({
   const { setAppType } = useBillingStore();
   const { isOpen, onClose, onOpen } = useDisclosure();
   const { t } = useTranslation();
-  const appList: string[] = [t('All APP'), ...(data?.data?.appList || [])];
+  const { t: appT } = useTranslation('applist');
+  const appList: string[] = ['All APP', ...(data?.data?.appList || [])].map((v) => appT(v));
   return (
     <Flex align={'center'} ml="28px" {...props}>
       <Popover onClose={onClose} onOpen={onOpen} isOpen={isOpen}>
@@ -91,9 +92,6 @@ export default function AppMenu({
                 setAppType(idx === 0 ? '' : appList[idx]);
                 onClose();
               }}
-              // _hover={{
-              //   bg: ''
-              // }}
             >
               {v}
             </Button>

@@ -5,7 +5,11 @@ export enum BillingType {
   RECEIVE,
   TRANSFER
 }
-
+export enum TransferType {
+  ALL,
+  RECEIVE,
+  TRANSFER
+}
 export type BillingSpec =
   | {
       page: number; //给定结果数据的page页
@@ -84,4 +88,21 @@ export type RechargeBillingItem = {
 };
 export type RechargeBillingData = {
   payment: RechargeBillingItem[];
+};
+
+export type TransferBillingData = {
+  transfers: TransferBilling[];
+  totalPage: number;
+  total: number;
+};
+export type TransferBilling = {
+  UID: string;
+  FromUserUID: string;
+  ToUserUID: string;
+  Amount: number;
+  Remark: string;
+  CreatedAt: string;
+  ID: string;
+  FromUserID: string;
+  ToUserID: string;
 };
