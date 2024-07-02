@@ -1,10 +1,11 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
-# 卸载对象存储
+# Uninstall Object Storage
 
-安装「对象存储」失败，可以使用脚本清理残留资源，卸载「对象存储」也可以使用脚本清理。
+Installation of the Object Storage failed, you can use the script to clean up the remaining resources. Uninstalling the
+Object Storage can also be done using the script to clean up.
 
 ```bash
 #!/usr/bin/env bash
