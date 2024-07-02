@@ -181,10 +181,16 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 		ops.ID = user.ID
 	}
 	page, pageSize := ops.Page, ops.PageSize
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
 	var (
 		resp       types.GetTransfersResp
 		transfers  []types.Transfer
-		pageTotal  int64
+		count      int64
 		start, end = ops.StartTime, ops.EndTime
 		userID     = ops.ID
 	)
@@ -196,7 +202,7 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 		if err := c.DB.Where(types.Transfer{ID: ops.TransferID}).Find(&transfers).Error; err != nil {
 			return nil, fmt.Errorf("failed to get transfer: %v", err)
 		}
-		pageTotal = 1
+		count = 1
 	} else {
 		switch ops.Type {
 		default:
@@ -212,7 +218,7 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 				Where(types.Transfer{FromUserUID: ops.UID, FromUserID: userID}).
 				Or(types.Transfer{ToUserUID: ops.UID, ToUserID: userID}).
 				Where("created_at BETWEEN ? AND ?", start, end).
-				Count(&pageTotal).Error
+				Count(&count).Error
 			if err != nil {
 				return nil, fmt.Errorf("failed to get all transfer total: %v", err)
 			}
@@ -227,7 +233,7 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 			err = c.DB.Model(&types.Transfer{}).
 				Where(types.Transfer{ToUserUID: ops.UID, ToUserID: userID}).
 				Where("created_at BETWEEN ? AND ?", start, end).
-				Count(&pageTotal).Error
+				Count(&count).Error
 			if err != nil {
 				return nil, fmt.Errorf("failed to get in transfer total: %v", err)
 			}
@@ -242,42 +248,21 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 			err = c.DB.Model(&types.Transfer{}).
 				Where(types.Transfer{FromUserUID: ops.UID, FromUserID: userID}).
 				Where("created_at BETWEEN ? AND ?", start, end).
-				Count(&pageTotal).Error
+				Count(&count).Error
 			if err != nil {
 				return nil, fmt.Errorf("failed to get out transfer total: %v", err)
 			}
 		}
 	}
 	resp.Transfers = transfers
-	resp.Total = pageTotal
-	resp.TotalPage = pageTotal / int64(pageSize)
+	resp.Total = count
+	if count%int64(pageSize) == 0 {
+		resp.TotalPage = count / int64(pageSize)
+	} else {
+		resp.TotalPage = count/int64(pageSize) + 1
+	}
 	return &resp, nil
 }
-
-// unused
-//func (c *Cockroach) GetTransferTo(ops *types.UserQueryOpts) ([]types.Transfer, error) {
-//	userUID, err := c.GetUserUID(ops)
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to get user uid: %v", err)
-//	}
-//	var transfers []types.Transfer
-//	if err := c.DB.Where(types.Transfer{ToUserUID: userUID}).Find(&transfers).Error; err != nil {
-//		return nil, fmt.Errorf("failed to get transfer: %v", err)
-//	}
-//	return transfers, nil
-//}
-//
-//func (c *Cockroach) GetTransferFrom(ops *types.UserQueryOpts) ([]types.Transfer, error) {
-//	userUID, err := c.GetUserUID(ops)
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to get user uid: %v", err)
-//	}
-//	var transfers []types.Transfer
-//	if err := c.DB.Where(types.Transfer{FromUserUID: userUID}).Find(&transfers).Error; err != nil {
-//		return nil, fmt.Errorf("failed to get transfer: %v", err)
-//	}
-//	return transfers, nil
-//}
 
 func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
