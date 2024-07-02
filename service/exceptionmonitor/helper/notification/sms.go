@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
@@ -9,7 +10,7 @@ import (
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/dao"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/monitor"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 )
@@ -41,7 +42,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 		return err
 	}
 	name := strings.ReplaceAll(databaseName, "-", ".")
-	owner, _ := monitor.GetNSOwner(namespace)
+	owner, _ := GetNSOwner(namespace)
 	phoneNumbers, err := GetPhoneNumberByNS(owner)
 	if err != nil {
 		return err
@@ -58,4 +59,13 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 		return err
 	}
 	return nil
+}
+
+func GetNSOwner(namespace string) (string, error) {
+	// find owner debt
+	ns, err := api.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return ns.Labels[api.OwnerLabel], nil
 }

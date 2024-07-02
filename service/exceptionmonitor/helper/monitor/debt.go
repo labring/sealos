@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"strings"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
@@ -37,19 +38,10 @@ func getAccountNameByNamespace(namespace string) string {
 }
 
 func checkOwnerDebt(namespace string) (bool, string, error) {
-	owner, err := GetNSOwner(namespace)
+	owner, err := notification.GetNSOwner(namespace)
 	if err != nil {
 		return false, "", err
 	}
 	ownerNamespace := "ns-" + owner
 	return checkDebt(ownerNamespace)
-}
-
-func GetNSOwner(namespace string) (string, error) {
-	// find owner debt
-	ns, err := api.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	return ns.Labels[api.OwnerLabel], nil
 }
