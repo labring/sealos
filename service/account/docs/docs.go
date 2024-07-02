@@ -418,12 +418,12 @@ const docTemplate = `{
                 "summary": "Get transfer",
                 "parameters": [
                     {
-                        "description": "auth request",
+                        "description": "Get transfer request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.Auth"
+                            "$ref": "#/definitions/helper.GetTransferRecordReq"
                         }
                     }
                 ],
@@ -787,6 +787,54 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/common.PropertyQuery"
                     }
+                }
+            }
+        },
+        "helper.GetTransferRecordReq": {
+            "type": "object",
+            "required": [
+                "kubeConfig",
+                "owner"
+            ],
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer",
+                    "example": 10
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "transferID": {
+                    "description": "@Summary Transfer ID\n@Description Transfer ID",
+                    "type": "string",
+                    "example": "transfer-id-1"
+                },
+                "type": {
+                    "description": "0: all, 1: in, 2: out\n@Summary Type of the request\n@Description Type of the request: 0: all, 1: transfer in, 2: transfer out",
+                    "type": "integer",
+                    "example": 0
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },

@@ -358,7 +358,7 @@ func TransferAmount(c *gin.Context) {
 // @Tags Transfer
 // @Accept json
 // @Produce json
-// @Param request body helper.Auth true "auth request"
+// @Param request body helper.GetTransferRecordReq true "Get transfer request"
 // @Success 200 {object} map[string]interface{} "successfully get transfer"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get transfer"

@@ -99,6 +99,51 @@ definitions:
           $ref: '#/definitions/common.PropertyQuery'
         type: array
     type: object
+  helper.GetTransferRecordReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        example: 1
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        example: 10
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      transferID:
+        description: |-
+          @Summary Transfer ID
+          @Description Transfer ID
+        example: transfer-id-1
+        type: string
+      type:
+        description: |-
+          0: all, 1: in, 2: out
+          @Summary Type of the request
+          @Description Type of the request: 0: all, 1: transfer in, 2: transfer out
+        example: 0
+        type: integer
+      userID:
+        example: admin
+        type: string
+    required:
+    - kubeConfig
+    - owner
+    type: object
   helper.NamespaceBillingHistoryReq:
     properties:
       endTime:
@@ -491,12 +536,12 @@ paths:
       - application/json
       description: Get transfer
       parameters:
-      - description: auth request
+      - description: Get transfer request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.Auth'
+          $ref: '#/definitions/helper.GetTransferRecordReq'
       produces:
       - application/json
       responses:
