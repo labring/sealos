@@ -265,6 +265,7 @@
   "timeoutSeconds": "超时时间（秒）",
   "successThreshold": "成功阈值",
   "failureThreshold": "失败阈值",
+  "terminationGracePeriodSeconds": "终止延迟秒数",
   "Exec Command": "执行命令",
   "HTTP Get Path": "HTTP Get 路径",
   "HTTP Get Port": "HTTP Get 端口",

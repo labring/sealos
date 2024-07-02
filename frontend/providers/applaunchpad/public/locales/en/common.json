@@ -265,6 +265,7 @@
   "timeoutSeconds": "Timeout Seconds",
   "successThreshold": "Success Threshold",
   "failureThreshold": "Failure Threshold",
+  "terminationGracePeriodSeconds": "Termination Grace Period Seconds",
   "Exec Command": "Exec Command",
   "HTTP Get Path": "HTTP Get Path",
   "HTTP Get Port": "HTTP Get Port",

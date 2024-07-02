@@ -62,6 +62,7 @@ export interface ProbeType {
   use: boolean;
   initialDelaySeconds?: number;
   periodSeconds?: number;
+  terminationGracePeriodSeconds?: number;
   timeoutSeconds?: number;
   successThreshold?: number;
   failureThreshold?: number;
@@ -69,14 +70,19 @@ export interface ProbeType {
     command: string[];
   };
   httpGet?: {
-    path: string;
     port: number;
+    path?: string;
     host?: string;
     scheme?: string;
     httpHeaders?: { name: string; value: string }[];
   };
   tcpSocket?: {
     port: number;
+    host?: string;
+  };
+  grpc?: {
+    port: number;
+    service?: string;
   };
 }
 

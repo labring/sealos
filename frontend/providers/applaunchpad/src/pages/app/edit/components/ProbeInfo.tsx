@@ -10,15 +10,31 @@ const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
     return null;
   }
 
+  const getProbeType = () => {
+    if (probe.exec) return 'Exec';
+    if (probe.httpGet) return 'HTTP Get';
+    if (probe.tcpSocket) return 'TCP Socket';
+    if (probe.grpc) return 'gRPC';
+    return 'None';
+  };
+
   return (
     <Box pl="120px" mb={4}>
       <VStack align="start" spacing={2}>
+        <Text fontSize="sm" color="gray.500">
+          {t('Probe Type')}: {t(getProbeType())}
+        </Text>
         <Text fontSize="sm" color="gray.500">
           {t('initialDelaySeconds')}: {probe.initialDelaySeconds || 0}
         </Text>
         <Text fontSize="sm" color="gray.500">
           {t('periodSeconds')}: {probe.periodSeconds || 0}
         </Text>
+        {probe.terminationGracePeriodSeconds !== undefined && (
+          <Text fontSize="sm" color="gray.500">
+            {t('terminationGracePeriodSeconds')}: {probe.terminationGracePeriodSeconds}
+          </Text>
+        )}
         <Text fontSize="sm" color="gray.500">
           {t('timeoutSeconds')}: {probe.timeoutSeconds || 0}
         </Text>
@@ -28,7 +44,7 @@ const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
         <Text fontSize="sm" color="gray.500">
           {t('failureThreshold')}: {probe.failureThreshold || 0}
         </Text>
-        {probe.exec && (
+        {probe.exec && probe.exec.command.length > 0 && (
           <Text fontSize="sm" color="gray.500">
             {t('Exec Command')}: {probe.exec.command.join(' ')}
           </Text>
@@ -36,17 +52,56 @@ const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
         {probe.httpGet && (
           <>
             <Text fontSize="sm" color="gray.500">
-              {t('HTTP Get Path')}: {probe.httpGet.path}
-            </Text>
-            <Text fontSize="sm" color="gray.500">
               {t('HTTP Get Port')}: {probe.httpGet.port}
             </Text>
+            {probe.httpGet.path && (
+              <Text fontSize="sm" color="gray.500">
+                {t('HTTP Get Path')}: {probe.httpGet.path}
+              </Text>
+            )}
+            {probe.httpGet.host && (
+              <Text fontSize="sm" color="gray.500">
+                {t('HTTP Get Host')}: {probe.httpGet.host}
+              </Text>
+            )}
+            {probe.httpGet.scheme && (
+              <Text fontSize="sm" color="gray.500">
+                {t('HTTP Get Scheme')}: {probe.httpGet.scheme}
+              </Text>
+            )}
+            {probe.httpGet.httpHeaders && probe.httpGet.httpHeaders.length > 0 && (
+              <Text fontSize="sm" color="gray.500">
+                {t('HTTP Get Headers')}:{' '}
+                {probe.httpGet.httpHeaders
+                  .map((header) => `${header.name}: ${header.value}`)
+                  .join(', ')}
+              </Text>
+            )}
           </>
         )}
         {probe.tcpSocket && (
-          <Text fontSize="sm" color="gray.500">
-            {t('TCP Socket Port')}: {probe.tcpSocket.port}
-          </Text>
+          <>
+            <Text fontSize="sm" color="gray.500">
+              {t('TCP Socket Port')}: {probe.tcpSocket.port}
+            </Text>
+            {probe.tcpSocket.host && (
+              <Text fontSize="sm" color="gray.500">
+                {t('TCP Socket Host')}: {probe.tcpSocket.host}
+              </Text>
+            )}
+          </>
+        )}
+        {probe.grpc && (
+          <>
+            <Text fontSize="sm" color="gray.500">
+              {t('gRPC Port')}: {probe.grpc.port}
+            </Text>
+            {probe.grpc.service && (
+              <Text fontSize="sm" color="gray.500">
+                {t('gRPC Service')}: {probe.grpc.service}
+              </Text>
+            )}
+          </>
         )}
       </VStack>
     </Box>
