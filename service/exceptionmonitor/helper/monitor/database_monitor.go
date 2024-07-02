@@ -87,9 +87,13 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 		// No action needed
 		break
 	case api.StatusUnknown:
-		alertMessage, feishuWebHook := prepareAlertMessage(databaseClusterName, namespace, status, "", "status is empty", 0)
-		if err := sendAlert(alertMessage, feishuWebHook, databaseClusterName); err != nil {
-			log.Printf("Failed to send feishu %s in ns %s: %v", databaseClusterName, namespace, err)
+		if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok {
+			api.LastDatabaseClusterStatus[databaseClusterName] = status
+			api.ExceptionDatabaseMap[databaseClusterName] = true
+			alertMessage, feishuWebHook := prepareAlertMessage(databaseClusterName, namespace, status, "", "status is empty", 0)
+			if err := sendAlert(alertMessage, feishuWebHook, databaseClusterName); err != nil {
+				log.Printf("Failed to send feishu %s in ns %s: %v", databaseClusterName, namespace, err)
+			}
 		}
 	default:
 		handleClusterException(databaseClusterName, namespace, databaseType, status)
