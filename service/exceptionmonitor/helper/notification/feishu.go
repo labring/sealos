@@ -122,7 +122,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 					},
 				},
 			}
-			elements = append(commonElements, exceptionElements...)
+			elements = append(elements, exceptionElements...)
 		}
 	}
 	card := map[string]interface{}{
