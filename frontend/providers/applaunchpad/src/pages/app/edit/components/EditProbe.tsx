@@ -41,7 +41,16 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    setProbe(defaultProbe || { use: false });
+    setProbe(
+      defaultProbe || {
+        use: false,
+        initialDelaySeconds: 0,
+        periodSeconds: 10,
+        timeoutSeconds: 1,
+        successThreshold: 1,
+        failureThreshold: 3
+      }
+    );
   }, [defaultProbe]);
 
   const validate = () => {
@@ -51,17 +60,23 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
       if (probe.initialDelaySeconds !== undefined && probe.initialDelaySeconds < 0) {
         newErrors.initialDelaySeconds = t('Value must be greater than or equal to 0');
       }
-      if (probe.periodSeconds !== undefined && probe.periodSeconds < 0) {
-        newErrors.periodSeconds = t('Value must be greater than or equal to 0');
+      if (
+        probe.periodSeconds !== undefined &&
+        (probe.periodSeconds < 1 || probe.periodSeconds > 3600)
+      ) {
+        newErrors.periodSeconds = t('Value must be between 1 and 3600');
       }
-      if (probe.timeoutSeconds !== undefined && probe.timeoutSeconds < 0) {
-        newErrors.timeoutSeconds = t('Value must be greater than or equal to 0');
+      if (
+        probe.timeoutSeconds !== undefined &&
+        (probe.timeoutSeconds < 1 || probe.timeoutSeconds > 3600)
+      ) {
+        newErrors.timeoutSeconds = t('Value must be between 1 and 3600');
       }
-      if (probe.successThreshold !== undefined && probe.successThreshold < 0) {
-        newErrors.successThreshold = t('Value must be greater than or equal to 0');
+      if (probe.successThreshold !== undefined && probe.successThreshold < 1) {
+        newErrors.successThreshold = t('Value must be greater than or equal to 1');
       }
-      if (probe.failureThreshold !== undefined && probe.failureThreshold < 0) {
-        newErrors.failureThreshold = t('Value must be greater than or equal to 0');
+      if (probe.failureThreshold !== undefined && probe.failureThreshold < 1) {
+        newErrors.failureThreshold = t('Value must be greater than or equal to 1');
       }
       if (probe.httpGet?.port !== undefined && probe.httpGet.port < 0) {
         newErrors.httpGetPort = t('Value must be greater than or equal to 0');
@@ -109,7 +124,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
       ...prevProbe,
       httpGet: {
         path: prevProbe.httpGet?.path || '',
-        port: prevProbe.httpGet?.port || 0,
+        port: prevProbe.httpGet?.port || 80,
         [field]: value
       },
       exec: undefined,
@@ -178,7 +193,8 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       onChange={(valueString) =>
                         handleInputChange('periodSeconds', Number(valueString))
                       }
-                      min={0}
+                      min={1}
+                      max={3600}
                     >
                       <NumberInputField />
                     </NumberInput>
@@ -193,7 +209,8 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       onChange={(valueString) =>
                         handleInputChange('timeoutSeconds', Number(valueString))
                       }
-                      min={0}
+                      min={1}
+                      max={3600}
                     >
                       <NumberInputField />
                     </NumberInput>
@@ -208,7 +225,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       onChange={(valueString) =>
                         handleInputChange('successThreshold', Number(valueString))
                       }
-                      min={0}
+                      min={1}
                     >
                       <NumberInputField />
                     </NumberInput>
@@ -223,7 +240,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       onChange={(valueString) =>
                         handleInputChange('failureThreshold', Number(valueString))
                       }
-                      min={0}
+                      min={1}
                     >
                       <NumberInputField />
                     </NumberInput>
@@ -238,10 +255,10 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                         probe.exec
                           ? 'exec'
                           : probe.httpGet
-                            ? 'httpGet'
-                            : probe.tcpSocket
-                              ? 'tcpSocket'
-                              : ''
+                          ? 'httpGet'
+                          : probe.tcpSocket
+                          ? 'tcpSocket'
+                          : ''
                       }
                       onChange={(e) => {
                         if (

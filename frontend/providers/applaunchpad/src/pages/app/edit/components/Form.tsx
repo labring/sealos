@@ -1181,7 +1181,6 @@ const Form = ({
                       <Label className={styles.formSecondTitle}>{t('Liveness Probe')}</Label>
                       <EditProbe
                         probeType="livenessProbe"
-                        defaultProbe={getValues('livenessProbe')}
                         onSuccess={(data) => setValue('livenessProbe', data)}
                       />
                     </HStack>
@@ -1191,7 +1190,6 @@ const Form = ({
                       <Label className={styles.formSecondTitle}>{t('Readiness Probe')}</Label>
                       <EditProbe
                         probeType="readinessProbe"
-                        defaultProbe={getValues('readinessProbe')}
                         onSuccess={(data) => setValue('readinessProbe', data)}
                       />
                     </HStack>
@@ -1201,7 +1199,6 @@ const Form = ({
                       <Label className={styles.formSecondTitle}>{t('Startup Probe')}</Label>
                       <EditProbe
                         probeType="startupProbe"
-                        defaultProbe={getValues('startupProbe')}
                         onSuccess={(data) => setValue('startupProbe', data)}
                       />
                     </HStack>
