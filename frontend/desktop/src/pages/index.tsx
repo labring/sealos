@@ -13,7 +13,7 @@ import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 import useCallbackStore from '@/stores/callback';
 import FloatButton from '@/components/floating_button';
-import 'react-contexify/dist/ReactContexify.css';
+// import 'react-contexify/dist/ReactContexify.css';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -124,7 +124,12 @@ export async function getServerSideProps({ req, res, locales }: any) {
 
   return {
     props: {
-      ...(await serverSideTranslations(local, ['common', 'cloudProviders'], null, locales || [])),
+      ...(await serverSideTranslations(
+        local,
+        ['common', 'cloudProviders', 'error'],
+        null,
+        locales || []
+      )),
       sealos_cloud_domain
     }
   };

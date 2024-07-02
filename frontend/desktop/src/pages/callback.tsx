@@ -1,89 +1,118 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
-import request from '@/services/request';
+import { useCallback, useEffect } from 'react';
 import useSessionStore from '@/stores/session';
-import { ApiResp } from '@/types';
+import { ApiResp, AppClientConfigType } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { uploadConvertData } from '@/api/platform';
-import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
-import { getRegionToken, UserInfo } from '@/api/auth';
-import { AccessTokenPayload } from '@/types/token';
+import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
 import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
-
-const Callback: NextPage = () => {
+import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
+import { ProviderType } from 'prisma/global/generated/client';
+import axios from 'axios';
+import request from '@/services/request';
+import { BIND_STATUS } from '@/types/response/bind';
+import { MERGE_USER_READY } from '@/types/response/utils';
+export default function Callback() {
   const router = useRouter();
-  const setSession = useSessionStore((s) => s.setSession);
   const setProvider = useSessionStore((s) => s.setProvider);
   const setToken = useSessionStore((s) => s.setToken);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
+  const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
   useEffect(() => {
     if (!router.isReady) return;
+    console.log('hellow', router.isReady);
     let isProxy: boolean = false;
+    console.log('hellow', router.isReady, isProxy);
     (async () => {
       try {
-        if (!provider || !['github', 'wechat', 'google', 'oauth2'].includes(provider))
+        if (!provider || !['GITHUB', 'WECHAT', 'GOOGLE', 'OAUTH2'].includes(provider))
           throw new Error('provider error');
         const { code, state } = router.query;
         if (!isString(code) || !isString(state)) throw new Error('failed to get code and state');
-        console.log(encodeURIComponent(state), code, state);
-        if (!compareState(state)) throw new Error('invalid state');
-        // proxy oauth2.0
-        const _url = state;
-        await new Promise<URL>((resolve, reject) => {
-          resolve(new URL(_url));
-        })
-          .then(async (url) => {
-            const result = (await (
-              await fetch(`/api/auth/canProxy?domain=${url.host}`)
-            ).json()) as ApiResp<{ containDomain: boolean }>;
-            isProxy = true;
-            if (result.data?.containDomain) {
-              url.searchParams.append('code', code);
-              console.log(url);
-              await router.replace(url.toString());
-            }
+        const compareResult = compareState(state);
+        // console.log(compareResult);
+        if (!compareResult.isSuccess) throw new Error('invalid state');
+        if (compareResult.action === 'PROXY') {
+          // proxy oauth2.0, PROXY_URL_[ACTION]_STATE
+          const [_url, ...ret] = compareResult.statePayload;
+          await new Promise<URL>((resolve, reject) => {
+            resolve(new URL(decodeURIComponent(_url)));
           })
-          .catch(() => {
-            Promise.resolve();
-          });
-        if (isProxy) {
-          // prevent once token
-          setProvider();
-          isProxy = false;
-          return;
-        }
-
-        const data = await request.post<
-          any,
-          ApiResp<{
-            token: string;
-            realUser: {
-              realUserUid: string;
-            };
-          }>
-        >('/api/auth/oauth/' + provider, { code, inviterId: getInviterId() });
-        setProvider();
-        if (data.code === 200 && data.data?.token) {
-          const token = data.data?.token;
-          setToken(token);
-          const regionTokenRes = await getRegionToken();
-          if (regionTokenRes?.data) {
-            await sessionConfig(regionTokenRes.data);
-            uploadConvertData([3]).then(
-              (res) => {
-                console.log(res);
-              },
-              (err) => {
-                console.log(err);
+            .then(async (url) => {
+              const result = (await request(`/api/auth/canProxy?domain=${url.host}`)) as ApiResp<{
+                containDomain: boolean;
+              }>;
+              console.log(result, url);
+              isProxy = true;
+              if (result.data?.containDomain) {
+                url.searchParams.append('code', code);
+                url.searchParams.append('state', ret.join('_'));
+                await router.replace(url.toString());
               }
-            );
-            await router.replace('/');
+            })
+            .catch(() => {
+              Promise.resolve();
+            });
+          if (isProxy) {
+            // prevent once token
+            setProvider();
+            isProxy = false;
+            return;
           }
         } else {
-          throw new Error();
+          const { statePayload, action } = compareResult;
+          // return
+          if (action === 'LOGIN') {
+            const data = await signInRequest(provider)({ code, inviterId: getInviterId()! });
+            setProvider();
+            if (data.code === 200 && data.data?.token) {
+              const token = data.data?.token;
+              setToken(token);
+              const regionTokenRes = await getRegionToken();
+              if (regionTokenRes?.data) {
+                await sessionConfig(regionTokenRes.data);
+                uploadConvertData([3]).then(
+                  (res) => {
+                    console.log(res);
+                  },
+                  (err) => {
+                    console.log(err);
+                  }
+                );
+                await router.replace('/');
+              }
+            } else {
+              throw new Error();
+            }
+          } else if (action === 'BIND') {
+            const response = await bindRequest(provider)({ code });
+            if (response.message === BIND_STATUS.RESULT_SUCCESS) {
+              setProvider();
+              await router.replace('/');
+            } else if (response.message === MERGE_USER_READY.MERGE_USER_CONTINUE) {
+              const code = response.data?.code;
+              if (!code) return;
+              setMergeUserData({
+                providerType: provider as ProviderType,
+                code
+              });
+              setMergeUserStatus(MergeUserStatus.CANMERGE);
+              setProvider();
+              await router.replace('/');
+            } else if (response.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
+              setMergeUserData();
+              setMergeUserStatus(MergeUserStatus.CONFLICT);
+              setProvider();
+              await router.replace('/');
+            }
+          } else if (action === 'UNBIND') {
+            await unBindRequest(provider)({ code });
+            setProvider();
+            await router.replace('/');
+          }
         }
       } catch (error) {
         console.error(error);
@@ -96,5 +125,4 @@ const Callback: NextPage = () => {
       <Spinner size="xl" />
     </Flex>
   );
-};
-export default Callback;
+}

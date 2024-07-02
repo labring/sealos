@@ -1,6 +1,7 @@
 generator globalClient {
-  provider = "prisma-client-js"
-  output   = "./generated/client"
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -24,11 +25,12 @@ model OauthProvider {
 }
 
 model Region {
-  uid         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  uid         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   displayName String
   location    String
   domain      String
   description String?
+  txDetail    TransactionDetail[]
 }
 
 model Account {
@@ -40,6 +42,18 @@ model Account {
   create_region_id        String
   balance                 BigInt?
   deduction_balance       BigInt?
+}
+
+model AccountTransaction {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type              String
+  userUid           String    @db.Uuid
+  deduction_balance BigInt
+  balance           BigInt
+  message           String?
+  created_at        DateTime @default(now()) @db.Timestamptz(3)
+  updated_at        DateTime @default(now()) @db.Timestamptz(3)
+  billing_id        String    @db.Uuid
 }
 
 model ErrorPaymentCreate {
@@ -75,14 +89,27 @@ model Payment {
 }
 
 model User {
-  uid           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
-  avatarUri     String
-  nickname      String
-  id            String          @unique
-  name          String          @unique
-  oauthProvider OauthProvider[]
+  uid                         String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                   DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                   @updatedAt @db.Timestamptz(3)
+  avatarUri                   String
+  nickname                    String
+  id                          String                     @unique
+  name                        String                     @unique
+  oauthProvider               OauthProvider[]
+  oldMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("oldUser")
+  newMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("newUser")
+  DeleteUserTransactionInfo   DeleteUserTransactionInfo?
+  deleteUserLog               DeleteUserLog?
+}
+
+model Transfer {
+  uid         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromUserUid String   @db.Uuid
+  toUserUid   String   @db.Uuid
+  amount      BigInt
+  remark      String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
 }
 
 model ErrorAccountCreate {
@@ -101,6 +128,96 @@ model ErrorAccountCreate {
   message                 String
 }
 
+model CommitTransactionSet {
+  createdAt               DateTime             @default(now()) @db.Timestamptz(3)
+  precommitTransactionUid String               @unique @db.Uuid
+  precommitTransaction    PrecommitTransaction @relation(fields: [precommitTransactionUid], references: [uid])
+}
+
+model PrecommitTransaction {
+  uid                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  transactionType           TransactionType
+  infoUid                   String
+  status                    TransactionStatus
+  transactionDetail         TransactionDetail[]
+  commitTransactionSet      CommitTransactionSet?
+  errorPreCommitTransaction ErrorPreCommitTransaction?
+
+  @@unique([infoUid, transactionType])
+}
+
+model ErrorPreCommitTransaction {
+  uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionUid       String               @unique @db.Uuid
+  reason               String?
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  precommitTransaction PrecommitTransaction @relation(fields: [transactionUid], references: [uid])
+}
+
+model TransactionDetail {
+  uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @db.Timestamptz(3)
+  status               TransactionStatus
+  regionUid            String
+  transactionUid       String
+  region               Region               @relation(fields: [regionUid], references: [uid])
+  precommitTransaction PrecommitTransaction @relation(fields: [transactionUid], references: [uid])
+
+  @@unique([transactionUid, regionUid])
+  @@index([regionUid])
+}
+
+model MergeUserTransactionInfo {
+  uid          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mergeUserUid String @unique
+  userUid      String
+  mergeUser    User?  @relation("oldUser", fields: [mergeUserUid], references: [uid])
+  user         User?  @relation("newUser", fields: [userUid], references: [uid])
+
+  @@index([userUid])
+}
+
+model DeleteUserTransactionInfo {
+  uid     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid String @unique
+  user    User?  @relation(fields: [userUid], references: [uid])
+}
+
+model DeleteUserLog {
+  userUid   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userUid], references: [uid])
+}
+
+model AuditLog {
+  uid            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityUid      String
+  entityName     String
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  action         AuditAction
+  auditLogDetail AuditLogDetail[]
+}
+
+model AuditLogDetail {
+  auditLogUid String   @id
+  key         String
+  preValue    String
+  newValue    String
+  auditLog    AuditLog @relation(fields: [auditLogUid], references: [uid])
+}
+
+model InviteReward {
+  payment_id     String   @id
+  userUid        String   @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz(3)
+  payment_amount BigInt
+  reward_amount  BigInt
+  inviteFrom     String   @db.Uuid
+}
+
 enum ProviderType {
   PHONE
   GITHUB
@@ -108,4 +225,24 @@ enum ProviderType {
   GOOGLE
   PASSWORD
   OAUTH2
+  EMAIL
+}
+
+enum TransactionStatus {
+  READY
+  RUNNING
+  FINISH
+  COMMITED
+  ERROR
+}
+
+enum TransactionType {
+  MERGE_USER
+  DELETE_USER
+}
+
+enum AuditAction {
+  UPDATE
+  DELETE
+  CREATE
 }

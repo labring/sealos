@@ -20,8 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     }
-    // const userRes = await findUser({realUserUid: payload.realUserUid})
-    // const passwordProvider = userRes?.oauthProvider.find(val=>val.providerType === ProviderType.PASSWORD)
     const isExist = await globalPrisma.oauthProvider.findUnique({
       where: {
         providerId_providerType: {

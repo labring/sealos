@@ -52,3 +52,23 @@ export const getRemainingTime = (expirationTime: number) => {
   const formattedTime = `${hours}小时${minutes}分钟`;
   return formattedTime;
 };
+
+export function maskEmail(email: string): string {
+  const atIndex = email.indexOf('@');
+  if (atIndex === -1) {
+    return email;
+  }
+
+  const username = email.substring(0, atIndex);
+  const domain = email.substring(atIndex);
+
+  if (username.length <= 3) {
+    return username + '****' + domain;
+  }
+
+  const maskedUsername =
+    username.substring(0, 3) +
+    '*'.repeat(username.length - 4) +
+    username.substring(username.length - 1);
+  return maskedUsername + domain;
+}

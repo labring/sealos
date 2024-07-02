@@ -23,7 +23,10 @@ desktop:
       keywords: "Sealos Cloud"
       scripts: []
     common:
-      githubStarEnabled: "false"
+      githubStarEnabled: 'false'
+      workorderEnabled: true
+      accountSettingEnabled: true
+      docsUrl: "https://sealos.run/docs/Intro/"
   auth:
     proxyAddress: ""
     callbackURL: "https://127.0.0.1.nip.io/callback"

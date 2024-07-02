@@ -1,6 +1,6 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import { modifyBinding, modifyTeamRole } from '@/services/backend/team';
+import { modifyBinding, modifyWorkspaceRole } from '@/services/backend/team';
 import { UserRole } from '@/types/team';
 import { isUserRole, roleToUserRole, vaildManage } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (roleToUserRole(targetUser.role) === tRole)
       return jsonRes(res, { code: 200, message: 'Successfully' });
 
-    await modifyTeamRole({
+    await modifyWorkspaceRole({
       k8s_username: targetUser.userCr.crName,
       role: tRole,
       action: 'Modify',
@@ -71,6 +71,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (e) {
     console.log(e);
-    jsonRes(res, { code: 500, message: 'fail to remove team member' });
+    jsonRes(res, { code: 500, message: 'fail to modify member role' });
   }
 }

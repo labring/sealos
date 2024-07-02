@@ -118,6 +118,7 @@ async function signUp({
       user
     };
   } catch (e) {
+    console.log(e);
     return null;
   }
 }
@@ -180,14 +181,14 @@ export async function findUser({ userUid }: { userUid: string }) {
 }
 export const getGlobalToken = async ({
   provider,
-  id,
+  providerId,
   name,
   avatar_url,
   password,
   inviterId
 }: {
   provider: ProviderType;
-  id: string;
+  providerId: string;
   name: string;
   avatar_url: string;
   password?: string;
@@ -199,7 +200,7 @@ export const getGlobalToken = async ({
     where: {
       providerId_providerType: {
         providerType: provider,
-        providerId: id
+        providerId
       }
     }
   });
@@ -210,7 +211,7 @@ export const getGlobalToken = async ({
     if (!_user) {
       if (!enableSignUp()) throw new Error('Failed to signUp user');
       const result = await signUpByPassword({
-        id,
+        id: providerId,
         name,
         avatar_url,
         password
@@ -225,7 +226,7 @@ export const getGlobalToken = async ({
       }
     } else {
       const result = await signInByPassword({
-        id,
+        id: providerId,
         password
       });
       // password is wrong
@@ -237,7 +238,7 @@ export const getGlobalToken = async ({
       if (!enableSignUp()) throw new Error('Failed to signUp user');
       const result = await signUp({
         provider,
-        id,
+        id: providerId,
         name,
         avatar_url
       });
@@ -252,7 +253,7 @@ export const getGlobalToken = async ({
     } else {
       const result = await signIn({
         provider,
-        id
+        id: providerId
       });
       result && (user = result.user);
     }

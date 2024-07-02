@@ -1,6 +1,10 @@
 import { InvitedStatus, UserNsStatus, UserRole } from '@/types/team';
 import dayjs from 'dayjs';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
+import { Prisma as GlobalPrisma } from 'prisma/global/generated/client';
+import { OauthProvider } from '@/types/user';
+import { Prisma } from '@prisma/client/extension';
+import { globalPrisma } from '@/services/backend/db/init';
 
 export const validateNumber = (num: number) => typeof num === 'number' && isFinite(num) && num > 0;
 
@@ -15,6 +19,7 @@ export function appWaitSeconds(ms: number) {
     }, ms);
   });
 }
+
 export async function getBase64FromRemote(url: string) {
   try {
     const res = await fetch(url);
@@ -99,10 +104,27 @@ export const joinStatusToNStatus = (js: JoinStatus): InvitedStatus => {
 export const NStatusToJoinStatus = (ns: InvitedStatus): JoinStatus => {
   return [JoinStatus.INVITED, JoinStatus.IN_WORKSPACE, JoinStatus.NOT_IN_WORKSPACE][ns];
 };
+
 export function compareFirstLanguages(acceptLanguageHeader: string) {
   const indexOfZh = acceptLanguageHeader.indexOf('zh');
   const indexOfEn = acceptLanguageHeader.indexOf('en');
   if (indexOfZh === -1) return 'en';
   if (indexOfEn === -1 || indexOfZh < indexOfEn) return 'zh';
   return 'en';
+}
+
+type TOauthProviders = Prisma.Result<
+  typeof globalPrisma.oauthProvider,
+  GlobalPrisma.OauthProviderDefaultArgs,
+  'findMany'
+>;
+
+export function userCanMerge(
+  mergeUserOauthProviders: TOauthProviders,
+  userOauthProviders: TOauthProviders
+) {
+  const curTypeList = userOauthProviders.map((o) => o.providerType);
+  const mergeTypeSet = new Set(mergeUserOauthProviders.map((o) => o.providerType));
+  const canMerge = curTypeList.every((t) => !mergeTypeSet.has(t));
+  return canMerge;
 }

@@ -1,5 +1,5 @@
 import { jsonRes } from '@/services/backend/response';
-import { modifyTeamRole } from '@/services/backend/team';
+import { modifyWorkspaceRole } from '@/services/backend/team';
 import { UserRole } from '@/types/team';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/services/backend/db/init';
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!target || target.status !== JoinStatus.IN_WORKSPACE)
       return jsonRes(res, { code: 404, message: 'The targetUser is not in namespace' });
     // modify K8S
-    await modifyTeamRole({
+    await modifyWorkspaceRole({
       action: 'Change',
       pre_k8s_username: payload.userCrUid,
       k8s_username: target.userCr.crName,
