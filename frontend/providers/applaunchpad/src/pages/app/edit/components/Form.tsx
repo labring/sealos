@@ -1176,7 +1176,7 @@ const Form = ({
 
                   <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
-                  <Box>
+                  <Box w={'100%'} maxW={'600px'}>
                     <HStack mb={4}>
                       <Label className={styles.formSecondTitle}>{t('Liveness Probe')}</Label>
                       <EditProbe

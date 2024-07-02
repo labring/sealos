@@ -26,6 +26,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import { ProbeType } from '@/types/app';
 import React, { useEffect, useState } from 'react';
+import MyIcon from '@/components/Icon';
 
 interface EditProbeProps {
   probeType: 'livenessProbe' | 'readinessProbe' | 'startupProbe';
@@ -127,7 +128,15 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
 
   return (
     <>
-      <Button onClick={onOpen}>{t(`Edit ${probeType}`)}</Button>
+      <Button
+        w={'100%'}
+        variant={'outline'}
+        fontSize={'base'}
+        leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
+        onClick={onOpen}
+      >
+        {t(`Edit ${probeType}`)}
+      </Button>
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
