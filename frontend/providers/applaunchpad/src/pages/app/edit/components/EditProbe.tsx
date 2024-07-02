@@ -140,7 +140,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent maxW="500px">
           <ModalHeader>{t(`Edit ${probeType}`)}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
@@ -155,7 +155,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                 />
               </FormControl>
               {probe.use && (
-                <VStack spacing={4} align="start">
+                <VStack spacing={4} align="start" w="100%">
                   <FormControl isInvalid={!!errors.initialDelaySeconds}>
                     <FormLabel>{t('initialDelaySeconds')}</FormLabel>
                     <NumberInput
@@ -238,10 +238,10 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                         probe.exec
                           ? 'exec'
                           : probe.httpGet
-                          ? 'httpGet'
-                          : probe.tcpSocket
-                          ? 'tcpSocket'
-                          : ''
+                            ? 'httpGet'
+                            : probe.tcpSocket
+                              ? 'tcpSocket'
+                              : ''
                       }
                       onChange={(e) => {
                         if (
@@ -285,6 +285,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                         <FormControl>
                           <FormLabel>{t('Path')}</FormLabel>
                           <Input
+                            w="100%"
                             value={probe.httpGet.path}
                             onChange={(e) => handleHttpGetChange('path', e.target.value)}
                           />
