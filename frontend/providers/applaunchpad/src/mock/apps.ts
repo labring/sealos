@@ -440,5 +440,8 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     serverAddress: ''
   },
   storeList: [],
-  labels: {}
+  labels: {},
+  livenessProbe: { use: false },
+  readinessProbe: { use: false },
+  startupProbe: { use: false }
 };
