@@ -3,9 +3,8 @@ package notification
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"log"
 )
 
 const ExceptionType = "exception"

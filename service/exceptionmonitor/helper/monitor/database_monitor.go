@@ -128,12 +128,13 @@ func handleClusterException(databaseClusterName, namespace, databaseType, status
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
 		api.ExceptionDatabaseMap[databaseClusterName] = true
-	}
-	if status != "Running" && status != "Stopped" && !api.DebtNamespaceMap[namespace] {
 		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
 			log.Printf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
 		}
 	}
+	//if !api.DebtNamespaceMap[namespace] && !api.ExceptionDatabaseMap[databaseClusterName] {
+	//
+	//}
 }
 
 func processClusterException(databaseClusterName, namespace, databaseType, status string) error {
@@ -145,6 +146,7 @@ func processClusterException(databaseClusterName, namespace, databaseType, statu
 			if err != nil {
 				return err
 			}
+
 			alertMessage, feishuWebHook := prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, databaseEvents, maxUsage)
 			if err := sendAlert(alertMessage, feishuWebHook, databaseClusterName); err != nil {
 				return err
