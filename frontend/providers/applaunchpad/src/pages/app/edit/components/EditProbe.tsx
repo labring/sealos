@@ -18,10 +18,10 @@ import {
   Select,
   Stack,
   Switch,
-  Text,
   Textarea,
   useDisclosure,
   VStack,
+  SimpleGrid,
   Radio,
   RadioGroup
 } from '@chakra-ui/react';
@@ -42,20 +42,6 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [probe, setProbe] = useState<ProbeType>(defaultProbe || { use: false });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  useEffect(() => {
-    setProbe(
-      defaultProbe || {
-        use: false,
-        initialDelaySeconds: 0,
-        periodSeconds: 10,
-        timeoutSeconds: 1,
-        successThreshold: 1,
-        failureThreshold: 3,
-        terminationGracePeriodSeconds: 30
-      }
-    );
-  }, [defaultProbe]);
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
@@ -88,10 +74,16 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
       ) {
         newErrors.terminationGracePeriodSeconds = t('Value must be greater than or equal to 1');
       }
-      if (probe.httpGet?.port !== undefined && (probe.httpGet.port < 1 || probe.httpGet.port > 65535)) {
+      if (
+        probe.httpGet?.port !== undefined &&
+        (probe.httpGet.port < 1 || probe.httpGet.port > 65535)
+      ) {
         newErrors.httpGetPort = t('Value must be between 1 and 65535');
       }
-      if (probe.tcpSocket?.port !== undefined && (probe.tcpSocket.port < 1 || probe.tcpSocket.port > 65535)) {
+      if (
+        probe.tcpSocket?.port !== undefined &&
+        (probe.tcpSocket.port < 1 || probe.tcpSocket.port > 65535)
+      ) {
         newErrors.tcpSocketPort = t('Value must be between 1 and 65535');
       }
       if (probe.grpc?.port !== undefined && (probe.grpc.port < 1 || probe.grpc.port > 65535)) {
@@ -201,11 +193,11 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent maxW="500px">
+        <ModalContent maxW="600px">
           <ModalHeader>{t(`Edit ${probeType}`)}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <VStack spacing={4} align="start">
+            <VStack spacing={4} align="start" w="100%">
               <FormControl>
                 <FormLabel>{t('Enable Probe')}</FormLabel>
                 <Switch
@@ -216,100 +208,102 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                 />
               </FormControl>
               {probe.use && (
-                <VStack spacing={4} align="start" w="100%">
-                  <FormControl isInvalid={!!errors.initialDelaySeconds}>
-                    <FormLabel>{t('initialDelaySeconds')}</FormLabel>
-                    <NumberInput
-                      value={probe.initialDelaySeconds || ''}
-                      onChange={(valueString) =>
-                        handleInputChange('initialDelaySeconds', Number(valueString))
-                      }
-                      min={0}
-                    >
-                      <NumberInputField />
-                    </NumberInput>
-                    {errors.initialDelaySeconds && (
-                      <FormErrorMessage>{errors.initialDelaySeconds}</FormErrorMessage>
-                    )}
-                  </FormControl>
-                  <FormControl isInvalid={!!errors.periodSeconds}>
-                    <FormLabel>{t('periodSeconds')}</FormLabel>
-                    <NumberInput
-                      value={probe.periodSeconds || ''}
-                      onChange={(valueString) =>
-                        handleInputChange('periodSeconds', Number(valueString))
-                      }
-                      min={1}
-                      max={3600}
-                    >
-                      <NumberInputField />
-                    </NumberInput>
-                    {errors.periodSeconds && (
-                      <FormErrorMessage>{errors.periodSeconds}</FormErrorMessage>
-                    )}
-                  </FormControl>
-                  <FormControl isInvalid={!!errors.timeoutSeconds}>
-                    <FormLabel>{t('timeoutSeconds')}</FormLabel>
-                    <NumberInput
-                      value={probe.timeoutSeconds || ''}
-                      onChange={(valueString) =>
-                        handleInputChange('timeoutSeconds', Number(valueString))
-                      }
-                      min={1}
-                      max={3600}
-                    >
-                      <NumberInputField />
-                    </NumberInput>
-                    {errors.timeoutSeconds && (
-                      <FormErrorMessage>{errors.timeoutSeconds}</FormErrorMessage>
-                    )}
-                  </FormControl>
-                  <FormControl isInvalid={!!errors.successThreshold}>
-                    <FormLabel>{t('successThreshold')}</FormLabel>
-                    <NumberInput
-                      value={probe.successThreshold || ''}
-                      onChange={(valueString) =>
-                        handleInputChange('successThreshold', Number(valueString))
-                      }
-                      min={1}
-                    >
-                      <NumberInputField />
-                    </NumberInput>
-                    {errors.successThreshold && (
-                      <FormErrorMessage>{errors.successThreshold}</FormErrorMessage>
-                    )}
-                  </FormControl>
-                  <FormControl isInvalid={!!errors.failureThreshold}>
-                    <FormLabel>{t('failureThreshold')}</FormLabel>
-                    <NumberInput
-                      value={probe.failureThreshold || ''}
-                      onChange={(valueString) =>
-                        handleInputChange('failureThreshold', Number(valueString))
-                      }
-                      min={1}
-                    >
-                      <NumberInputField />
-                    </NumberInput>
-                    {errors.failureThreshold && (
-                      <FormErrorMessage>{errors.failureThreshold}</FormErrorMessage>
-                    )}
-                  </FormControl>
-                  <FormControl isInvalid={!!errors.terminationGracePeriodSeconds}>
-                    <FormLabel>{t('terminationGracePeriodSeconds')}</FormLabel>
-                    <NumberInput
-                      value={probe.terminationGracePeriodSeconds || ''}
-                      onChange={(valueString) =>
-                        handleInputChange('terminationGracePeriodSeconds', Number(valueString))
-                      }
-                      min={1}
-                    >
-                      <NumberInputField />
-                    </NumberInput>
-                    {errors.terminationGracePeriodSeconds && (
-                      <FormErrorMessage>{errors.terminationGracePeriodSeconds}</FormErrorMessage>
-                    )}
-                  </FormControl>
-                  <FormControl as={Stack} spacing={4}>
+                <>
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="100%">
+                    <FormControl isInvalid={!!errors.initialDelaySeconds}>
+                      <FormLabel>{t('initialDelaySeconds')}</FormLabel>
+                      <NumberInput
+                        value={probe.initialDelaySeconds || ''}
+                        onChange={(valueString) =>
+                          handleInputChange('initialDelaySeconds', Number(valueString))
+                        }
+                        min={0}
+                      >
+                        <NumberInputField />
+                      </NumberInput>
+                      {errors.initialDelaySeconds && (
+                        <FormErrorMessage>{errors.initialDelaySeconds}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isInvalid={!!errors.periodSeconds}>
+                      <FormLabel>{t('periodSeconds')}</FormLabel>
+                      <NumberInput
+                        value={probe.periodSeconds || ''}
+                        onChange={(valueString) =>
+                          handleInputChange('periodSeconds', Number(valueString))
+                        }
+                        min={1}
+                        max={3600}
+                      >
+                        <NumberInputField />
+                      </NumberInput>
+                      {errors.periodSeconds && (
+                        <FormErrorMessage>{errors.periodSeconds}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isInvalid={!!errors.timeoutSeconds}>
+                      <FormLabel>{t('timeoutSeconds')}</FormLabel>
+                      <NumberInput
+                        value={probe.timeoutSeconds || ''}
+                        onChange={(valueString) =>
+                          handleInputChange('timeoutSeconds', Number(valueString))
+                        }
+                        min={1}
+                        max={3600}
+                      >
+                        <NumberInputField />
+                      </NumberInput>
+                      {errors.timeoutSeconds && (
+                        <FormErrorMessage>{errors.timeoutSeconds}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isInvalid={!!errors.successThreshold}>
+                      <FormLabel>{t('successThreshold')}</FormLabel>
+                      <NumberInput
+                        value={probe.successThreshold || ''}
+                        onChange={(valueString) =>
+                          handleInputChange('successThreshold', Number(valueString))
+                        }
+                        min={1}
+                      >
+                        <NumberInputField />
+                      </NumberInput>
+                      {errors.successThreshold && (
+                        <FormErrorMessage>{errors.successThreshold}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isInvalid={!!errors.failureThreshold}>
+                      <FormLabel>{t('failureThreshold')}</FormLabel>
+                      <NumberInput
+                        value={probe.failureThreshold || ''}
+                        onChange={(valueString) =>
+                          handleInputChange('failureThreshold', Number(valueString))
+                        }
+                        min={1}
+                      >
+                        <NumberInputField />
+                      </NumberInput>
+                      {errors.failureThreshold && (
+                        <FormErrorMessage>{errors.failureThreshold}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                    <FormControl isInvalid={!!errors.terminationGracePeriodSeconds}>
+                      <FormLabel>{t('terminationGracePeriodSeconds')}</FormLabel>
+                      <NumberInput
+                        value={probe.terminationGracePeriodSeconds || ''}
+                        onChange={(valueString) =>
+                          handleInputChange('terminationGracePeriodSeconds', Number(valueString))
+                        }
+                        min={1}
+                      >
+                        <NumberInputField />
+                      </NumberInput>
+                      {errors.terminationGracePeriodSeconds && (
+                        <FormErrorMessage>{errors.terminationGracePeriodSeconds}</FormErrorMessage>
+                      )}
+                    </FormControl>
+                  </SimpleGrid>
+                  <FormControl as={Stack} spacing={4} w="100%">
                     <FormLabel>{t('Probe Type')}</FormLabel>
                     <Select
                       value={
@@ -368,7 +362,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       </FormControl>
                     )}
                     {probe.httpGet && (
-                      <VStack spacing={4} align="start">
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="100%">
                         <FormControl isInvalid={!!errors.httpGetPort}>
                           <FormLabel>{t('Port')}</FormLabel>
                           <NumberInput
@@ -416,7 +410,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                             <FormErrorMessage>{errors.httpGetScheme}</FormErrorMessage>
                           )}
                         </FormControl>
-                        <FormControl>
+                        <FormControl gridColumn={{ base: 'span 1', md: 'span 2' }}>
                           <FormLabel>{t('HTTP Headers')}</FormLabel>
                           <Textarea
                             value={
@@ -429,16 +423,16 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                                 'httpHeaders',
                                 e.target.value.split('\n').map((line) => {
                                   const [name, value] = line.split(': ');
-                                  return { name, value };
+                                  return { name, value: value || '' };
                                 })
                               )
                             }
                           />
                         </FormControl>
-                      </VStack>
+                      </SimpleGrid>
                     )}
                     {probe.tcpSocket && (
-                      <VStack spacing={4} align="start">
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="100%">
                         <FormControl isInvalid={!!errors.tcpSocketPort}>
                           <FormLabel>{t('Port')}</FormLabel>
                           <NumberInput
@@ -463,10 +457,10 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                             onChange={(e) => handleTcpSocketChange('host', e.target.value)}
                           />
                         </FormControl>
-                      </VStack>
+                      </SimpleGrid>
                     )}
                     {probe.grpc && (
-                      <VStack spacing={4} align="start">
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="100%">
                         <FormControl isInvalid={!!errors.grpcPort}>
                           <FormLabel>{t('Port')}</FormLabel>
                           <NumberInput
@@ -491,10 +485,10 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                             onChange={(e) => handleGrpcChange('service', e.target.value)}
                           />
                         </FormControl>
-                      </VStack>
+                      </SimpleGrid>
                     )}
                   </FormControl>
-                </VStack>
+                </>
               )}
             </VStack>
           </ModalBody>

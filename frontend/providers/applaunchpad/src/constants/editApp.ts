@@ -22,6 +22,16 @@ export const editModeMap = (isEdit: boolean) => {
   };
 };
 
+const defaultProbe = {
+  use: false,
+  initialDelaySeconds: 0,
+  periodSeconds: 10,
+  timeoutSeconds: 1,
+  successThreshold: 1,
+  failureThreshold: 3,
+  terminationGracePeriodSeconds: 30
+};
+
 export const defaultEditVal: AppEditType = {
   appName: 'hello-world',
   imageName: 'nginx',
@@ -62,9 +72,9 @@ export const defaultEditVal: AppEditType = {
     type: '',
     amount: 1
   },
-  livenessProbe: { use: false },
-  readinessProbe: { use: false },
-  startupProbe: { use: false }
+  livenessProbe: defaultProbe,
+  readinessProbe: defaultProbe,
+  startupProbe: defaultProbe
 };
 
 export const GpuAmountMarkList = [

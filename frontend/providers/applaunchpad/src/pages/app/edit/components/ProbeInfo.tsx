@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text, VStack } from '@chakra-ui/react';
+import { Box, Text, SimpleGrid } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { ProbeType } from '@/types/app';
 
@@ -20,7 +20,7 @@ const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
 
   return (
     <Box pl="120px" mb={4}>
-      <VStack align="start" spacing={2}>
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
         <Text fontSize="sm" color="gray.500">
           {t('Probe Type')}: {t(getProbeType())}
         </Text>
@@ -103,7 +103,7 @@ const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
             )}
           </>
         )}
-      </VStack>
+      </SimpleGrid>
     </Box>
   );
 };
