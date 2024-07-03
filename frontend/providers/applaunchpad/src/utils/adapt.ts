@@ -49,9 +49,9 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
   // compute store amount
   const storeAmount = app.spec?.volumeClaimTemplates
     ? app.spec?.volumeClaimTemplates.reduce(
-        (sum, item) => sum + Number(item?.metadata?.annotations?.value),
-        0
-      )
+      (sum, item) => sum + Number(item?.metadata?.annotations?.value),
+      0
+    )
     : 0;
 
   const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
@@ -279,46 +279,46 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           openPublicDomain: !!ingress,
           ...(domain.endsWith(SEALOS_DOMAIN)
             ? {
-                publicDomain: domain.split('.')[0],
-                customDomain: ''
-              }
+              publicDomain: domain.split('.')[0],
+              customDomain: ''
+            }
             : {
-                publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
-                customDomain: domain
-              })
+              publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
+              customDomain: domain
+            })
         };
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
       ? {
-          use: true,
-          target:
-            (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
-              ?.name as HpaTarget) || 'cpu',
-          value: deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
-            ?.averageUtilization
-            ? deployKindsMap.HorizontalPodAutoscaler.spec.metrics[0].resource.target
-                .averageUtilization / 10
-            : 50,
-          minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.minReplicas || 3,
-          maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.maxReplicas || 10
-        }
+        use: true,
+        target:
+          (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
+            ?.name as HpaTarget) || 'cpu',
+        value: deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
+          ?.averageUtilization
+          ? deployKindsMap.HorizontalPodAutoscaler.spec.metrics[0].resource.target
+            .averageUtilization / 10
+          : 50,
+        minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.minReplicas || 3,
+        maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.maxReplicas || 10
+      }
       : defaultEditVal.hpa,
     configMapList: deployKindsMap.ConfigMap?.data
       ? Object.entries(deployKindsMap.ConfigMap.data).map(([key, value], i) => ({
-          mountPath:
-            appDeploy?.spec?.template.spec?.containers[0].volumeMounts?.find(
-              (item) => item.name === key
-            )?.mountPath || key,
-          value
-        }))
+        mountPath:
+          appDeploy?.spec?.template.spec?.containers[0].volumeMounts?.find(
+            (item) => item.name === key
+          )?.mountPath || key,
+        value
+      }))
       : [],
     secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
     storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
       ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
-          name: item.metadata?.name || '',
-          path: item.metadata?.annotations?.path || '',
-          value: Number(item.metadata?.annotations?.value || 0)
-        }))
+        name: item.metadata?.name || '',
+        path: item.metadata?.annotations?.path || '',
+        value: Number(item.metadata?.annotations?.value || 0)
+      }))
       : [],
     livenessProbe: {
       ...appDeploy.spec?.template?.spec?.containers?.[0]?.livenessProbe,
@@ -350,7 +350,10 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'configMapList',
     'secret',
     'storeList',
-    'gpu'
+    'gpu',
+    "livenessProbe",
+    "readinessProbe",
+    "startupProbe",
   ];
   const res: Record<string, any> = {};
 
@@ -397,10 +400,10 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
     memory: memoryStr ? memoryFormatToMi(memoryStr) : undefined,
     accessExternal: deployKindsMap?.Ingress
       ? {
-          use: true,
-          outDomain: domain?.split('.')[0],
-          selfDomain: domain
-        }
+        use: true,
+        outDomain: domain?.split('.')[0],
+        selfDomain: domain
+      }
       : undefined,
     containerOutPort:
       deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort,
@@ -411,47 +414,47 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
       })) || undefined,
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
       ? {
-          use: true,
-          target:
-            (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
-              ?.name as HpaTarget) || 'cpu',
-          value:
-            deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
-              ?.averageUtilization || 50,
-          minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.maxReplicas,
-          maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.minReplicas
-        }
+        use: true,
+        target:
+          (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
+            ?.name as HpaTarget) || 'cpu',
+        value:
+          deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
+            ?.averageUtilization || 50,
+        minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.maxReplicas,
+        maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.minReplicas
+      }
       : undefined,
     configMapList: deployKindsMap?.ConfigMap?.data
       ? Object.entries(deployKindsMap?.ConfigMap.data).map(([key, value]) => ({
-          mountPath: key,
-          value
-        }))
+        mountPath: key,
+        value
+      }))
       : undefined,
     secret: deployKindsMap.Secret
       ? {
-          ...defaultEditVal.secret,
-          use: true
-        }
+        ...defaultEditVal.secret,
+        use: true
+      }
       : undefined,
     livenessProbe: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.livenessProbe
       ? {
-          ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.livenessProbe,
-          use: true
-        }
+        ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.livenessProbe,
+        use: true
+      }
       : undefined,
     readinessProbe: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]
       ?.readinessProbe
       ? {
-          ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.readinessProbe,
-          use: true
-        }
+        ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.readinessProbe,
+        use: true
+      }
       : undefined,
     startupProbe: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.startupProbe
       ? {
-          ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.startupProbe,
-          use: true
-        }
+        ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.startupProbe,
+        use: true
+      }
       : undefined
   };
 
