@@ -91,6 +91,10 @@
   "Environment Variables": "环境变量",
   "Export": "导出",
   "Export Domain": "出口域名",
+  "Exec": "Exec",
+  "HTTP Get": "HTTP Get",
+  "TCP Socket": "TCP Socket",
+  "gRPC": "gRPC",
   "file": "文件",
   "File is too large tip": "文件 {{name}} 过大，无法上传。",
   "File Management": "文件管理",
@@ -271,5 +275,9 @@
   "HTTP Get Port": "HTTP Get 端口",
   "TCP Socket Port": "TCP Socket 端口",
   "Value must be greater than or equal to 0": "值必须大于或等于0",
-  "Probe Type": "探针类型"
+  "Value must be greater than or equal to 1": "值必须大于或等于 1",
+  "Probe Type": "探针类型",
+  "Value must be between 1 and 3600": "值必须介于 1 和 3600 之间",
+  "Value must be between 1 and 65535": "值必须介于 1 和 65535 之间",
+  "Scheme must be either HTTP or HTTPS": "协议必须为 HTTP 或 HTTPS"
 }
