@@ -433,6 +433,25 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
           ...defaultEditVal.secret,
           use: true
         }
+      : undefined,
+    livenessProbe: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.livenessProbe
+      ? {
+          ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.livenessProbe,
+          use: true
+        }
+      : undefined,
+    readinessProbe: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]
+      ?.readinessProbe
+      ? {
+          ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.readinessProbe,
+          use: true
+        }
+      : undefined,
+    startupProbe: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.startupProbe
+      ? {
+          ...deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.startupProbe,
+          use: true
+        }
       : undefined
   };
 

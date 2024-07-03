@@ -95,11 +95,15 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       name: item.portName
     })),
     imagePullPolicy: 'Always',
-    ...(data.livenessProbe && data.livenessProbe.use ? { livenessProbe: { ...data.livenessProbe, use: undefined } } : {}),
+    ...(data.livenessProbe && data.livenessProbe.use
+      ? { livenessProbe: { ...data.livenessProbe, use: undefined } }
+      : {}),
     ...(data.readinessProbe && data.readinessProbe.use
       ? { readinessProbe: { ...data.readinessProbe, use: undefined } }
       : {}),
-    ...(data.startupProbe && data.startupProbe.use ? { startupProbe: { ...data.startupProbe, use: undefined } } : {})
+    ...(data.startupProbe && data.startupProbe.use
+      ? { startupProbe: { ...data.startupProbe, use: undefined } }
+      : {})
   };
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: pathToNameFormat(item.mountPath),
