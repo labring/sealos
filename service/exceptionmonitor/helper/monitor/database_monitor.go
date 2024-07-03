@@ -126,6 +126,7 @@ func cleanClusterStatus(databaseClusterName string) {
 
 func handleClusterException(databaseClusterName, namespace, databaseType, status string) {
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
+		fmt.Println(111)
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
 		api.ExceptionDatabaseMap[databaseClusterName] = true
 		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
