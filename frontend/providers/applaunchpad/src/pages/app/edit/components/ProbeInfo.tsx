@@ -3,10 +3,10 @@ import { Box, Text, SimpleGrid } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { ProbeType } from '@/types/app';
 
-const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
+const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe = { use: false } }) => {
   const { t } = useTranslation();
 
-  if (!probe.use) {
+  if (!probe || !probe.use) {
     return null;
   }
 
