@@ -319,7 +319,19 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           path: item.metadata?.annotations?.path || '',
           value: Number(item.metadata?.annotations?.value || 0)
         }))
-      : []
+      : [],
+    livenessProbe: {
+      ...appDeploy.spec?.template?.spec?.containers?.[0]?.livenessProbe,
+      use: appDeploy.spec?.template?.spec?.containers?.[0]?.livenessProbe ? true : false
+    },
+    readinessProbe: {
+      ...appDeploy.spec?.template?.spec?.containers?.[0]?.readinessProbe,
+      use: appDeploy.spec?.template?.spec?.containers?.[0]?.readinessProbe ? true : false
+    },
+    startupProbe: {
+      ...appDeploy.spec?.template?.spec?.containers?.[0]?.startupProbe,
+      use: appDeploy.spec?.template?.spec?.containers?.[0]?.startupProbe ? true : false
+    }
   };
 };
 

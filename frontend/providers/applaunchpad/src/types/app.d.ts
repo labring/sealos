@@ -67,17 +67,17 @@ export interface ProbeType {
   successThreshold?: number;
   failureThreshold?: number;
   exec?: {
-    command: string[];
+    command?: string[];
   };
   httpGet?: {
-    port: number;
+    port: number | string;
     path?: string;
     host?: string;
     scheme?: string;
     httpHeaders?: { name: string; value: string }[];
   };
   tcpSocket?: {
-    port: number;
+    port: number | string;
     host?: string;
   };
   grpc?: {

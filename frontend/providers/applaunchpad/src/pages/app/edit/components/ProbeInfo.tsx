@@ -44,9 +44,9 @@ const ProbeInfo: React.FC<{ probe: ProbeType }> = ({ probe }) => {
         <Text fontSize="sm" color="gray.500">
           {t('failureThreshold')}: {probe.failureThreshold || 0}
         </Text>
-        {probe.exec && probe.exec.command.length > 0 && (
+        {probe.exec && probe.exec.command && (
           <Text fontSize="sm" color="gray.500">
-            {t('Exec Command')}: {probe.exec.command.join(' ')}
+            {t('Exec Command')}: {probe.exec.command.join(' ') || ''}
           </Text>
         )}
         {probe.httpGet && (

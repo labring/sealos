@@ -75,14 +75,14 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
         newErrors.terminationGracePeriodSeconds = t('Value must be greater than or equal to 1');
       }
       if (
-        probe.httpGet?.port !== undefined &&
-        (probe.httpGet.port < 1 || probe.httpGet.port > 65535)
+        probe.httpGet &&
+        ((probe.httpGet.port as number) < 1 || (probe.httpGet.port as number) > 65535)
       ) {
         newErrors.httpGetPort = t('Value must be between 1 and 65535');
       }
       if (
-        probe.tcpSocket?.port !== undefined &&
-        (probe.tcpSocket.port < 1 || probe.tcpSocket.port > 65535)
+        probe.tcpSocket &&
+        ((probe.tcpSocket.port as number) < 1 || (probe.tcpSocket.port as number) > 65535)
       ) {
         newErrors.tcpSocketPort = t('Value must be between 1 and 65535');
       }
@@ -91,9 +91,6 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
       }
       if (probe.httpGet?.scheme && !['HTTP', 'HTTPS'].includes(probe.httpGet.scheme)) {
         newErrors.httpGetScheme = t('Scheme must be either HTTP or HTTPS');
-      }
-      if (probe.exec?.command.length === 0) {
-        newErrors.execCommand = t('Command cannot be empty');
       }
     }
 
@@ -353,7 +350,7 @@ const EditProbe: React.FC<EditProbeProps> = ({ probeType, defaultProbe, onSucces
                       <FormControl isInvalid={!!errors.execCommand}>
                         <FormLabel>{t('Command')}</FormLabel>
                         <Textarea
-                          value={probe.exec.command.join(' ')}
+                          value={probe.exec.command?.join(' ') || ''}
                           onChange={(e) => handleExecChange(e.target.value.split(' '))}
                         />
                         {errors.execCommand && (
