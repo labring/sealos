@@ -46,10 +46,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   };
   const imagePullSecrets = data.secret.use
     ? [
-        {
-          name: data.appName
-        }
-      ]
+      {
+        name: data.appName
+      }
+    ]
     : undefined;
   const commonContainer = {
     name: data.appName,
@@ -57,10 +57,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     env:
       data.envs.length > 0
         ? data.envs.map((env) => ({
-            name: env.key,
-            value: env.valueFrom ? undefined : env.value,
-            valueFrom: env.valueFrom
-          }))
+          name: env.key,
+          value: env.valueFrom ? undefined : env.value,
+          valueFrom: env.valueFrom
+        }))
         : [],
     resources: {
       requests: {
@@ -95,11 +95,11 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       name: item.portName
     })),
     imagePullPolicy: 'Always',
-    ...(data.livenessProbe.use ? { livenessProbe: { ...data.livenessProbe, use: undefined } } : {}),
-    ...(data.readinessProbe.use
+    ...(data.livenessProbe && data.livenessProbe.use ? { livenessProbe: { ...data.livenessProbe, use: undefined } } : {}),
+    ...(data.readinessProbe && data.readinessProbe.use
       ? { readinessProbe: { ...data.readinessProbe, use: undefined } }
       : {}),
-    ...(data.startupProbe.use ? { startupProbe: { ...data.startupProbe, use: undefined } } : {})
+    ...(data.startupProbe && data.startupProbe.use ? { startupProbe: { ...data.startupProbe, use: undefined } } : {})
   };
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: pathToNameFormat(item.mountPath),
@@ -141,12 +141,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   // gpu node selector
   const gpuMap = !!data.gpu?.type
     ? {
-        restartPolicy: 'Always',
-        runtimeClassName: 'nvidia',
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
-        }
+      restartPolicy: 'Always',
+      runtimeClassName: 'nvidia',
+      nodeSelector: {
+        [gpuNodeSelectorKey]: data.gpu.type
       }
+    }
     : {};
 
   const template = {
