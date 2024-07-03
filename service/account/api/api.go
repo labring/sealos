@@ -379,6 +379,10 @@ func GetTransfer(c *gin.Context) {
 		LimitRep: types.LimitRep{
 			Page:     req.Page,
 			PageSize: req.PageSize,
+			TimeRange: types.TimeRange{
+				StartTime: req.TimeRange.StartTime,
+				EndTime:   req.TimeRange.EndTime,
+			},
 		},
 		TransferID: req.TransferID,
 	}
