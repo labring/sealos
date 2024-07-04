@@ -115,3 +115,81 @@
     list-style-type: none;
   }
 }
+
+.input-slider {
+  --c: white; /* active color */
+  --g: 0px; /* the gap */
+  --l: 5px; /* line thickness*/
+  --s: 14px; /* thumb size*/
+
+  width: 100%;
+  height: var(--s); /* needed for Firefox*/
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+
+  &:focus-visible,
+  &:hover {
+    --p: 25%;
+  }
+  &:active,
+  &:focus-visible {
+    --_b: var(--s);
+  }
+
+  /* chromium */
+  &[type='range' i]::-webkit-slider-thumb {
+    height: var(--s);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    box-shadow: 0 0 0 var(--s) inset var(--c);
+    border-image: linear-gradient(90deg, var(--c) 50%, #f4f4f71a 0) 0 1 / calc(50% - var(--l) / 2)
+      100vw/0 calc(100vw + var(--g));
+    -webkit-appearance: none;
+    appearance: none;
+    transition: 0.3s;
+  }
+  /* Firefox */
+  &[type='range']::-moz-range-thumb {
+    height: var(--s);
+    width: var(--s);
+    background: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 var(--s) inset var(--c);
+    border-image: linear-gradient(90deg, var(--c) 50%, #f4f4f71a 0) 0 1 / calc(50% - var(--l) / 2)
+      100vw/0 calc(100vw + var(--g));
+    -moz-appearance: none;
+    appearance: none;
+    transition: 0.3s;
+  }
+}
+
+.input-number {
+  width: 145px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid rgba(232, 235, 240, 0.1);
+  background: rgba(247, 248, 250, 0.1);
+  color: white;
+  font-size: 12px;
+  font-weight: 400;
+  &:focus {
+    outline: none;
+  }
+  padding-left: 12px;
+}
+
+.custom-border-left {
+  border-left: 1px solid rgba(232, 235, 240, 0.05);
+  border-top: 1px solid rgba(232, 235, 240, 0.05);
+}
+
+.input-select {
+  padding-left: 12px;
+  padding-right: 12px;
+  appearance: none;
+}
