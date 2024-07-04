@@ -24,13 +24,13 @@ func DatabasePerformanceMonitor() {
 }
 
 func checkDatabasePerformance(namespaces []string) error {
-	if api.MonitorType == "all" {
-		if err := checkDatabasesInNamespace(""); err != nil {
+	if api.MonitorType == api.MonitorTypeALL {
+		if err := checkDatabasePerformanceInNamespace(""); err != nil {
 			return err
 		}
 	} else {
 		for _, ns := range namespaces {
-			if err := checkDatabasesInNamespace(ns); err != nil {
+			if err := checkDatabasePerformanceInNamespace(ns); err != nil {
 				return err
 			}
 		}
@@ -41,7 +41,7 @@ func checkDatabasePerformance(namespaces []string) error {
 func checkDatabasePerformanceInNamespace(namespace string) error {
 	var clusters *unstructured.UnstructuredList
 	var err error
-	if api.MonitorType == "all" {
+	if api.MonitorType == api.MonitorTypeALL {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	} else {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})

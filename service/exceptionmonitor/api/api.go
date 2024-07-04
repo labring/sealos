@@ -30,6 +30,7 @@ const (
 	StatusRunning  = "Running"
 	StatusUpdating = "Updating"
 	StatusUnknown  = ""
+	MonitorTypeALL = "all"
 )
 
 var (
@@ -119,7 +120,7 @@ func GetENV() error {
 func getEnvWithCheck(key string, missingEnvVars *[]string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		if MonitorType == "all" && key == "ClusterNS" {
+		if MonitorType == MonitorTypeALL && key == "ClusterNS" {
 			return value
 		}
 		*missingEnvVars = append(*missingEnvVars, key)

@@ -43,7 +43,7 @@ func DatabaseExceptionMonitor() {
 }
 
 func checkDatabases(namespaces []string) error {
-	if api.MonitorType == "all" {
+	if api.MonitorType == api.MonitorTypeALL {
 		if err := checkDatabasesInNamespace(""); err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func checkDatabases(namespaces []string) error {
 func checkDatabasesInNamespace(namespace string) error {
 	var clusters *metav1unstructured.UnstructuredList
 	var err error
-	if api.MonitorType == "all" {
+	if api.MonitorType == api.MonitorTypeALL {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
 	} else {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
