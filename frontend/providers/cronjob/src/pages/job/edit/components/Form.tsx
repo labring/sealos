@@ -19,17 +19,19 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  Switch,
-  Text
+  Text,
+  Button,
+  useDisclosure
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, UseFormReturn } from 'react-hook-form';
+import { Controller, UseFormReturn, useFieldArray } from 'react-hook-form';
 import Cron from './Cron';
 import Label from './Label';
+import EditEnvs from './EditEnvs';
 
 const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) => {
   if (!formHook) return null;
@@ -38,6 +40,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   const { name } = router.query as QueryType;
   const isEdit = useMemo(() => !!name, [name]);
   const { data: launchpadApps, refetch } = useQuery(['getLaunchpadApps'], getMyApps);
+  const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
 
   const {
     register,
@@ -54,6 +57,11 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
       icon: 'formInfo'
     }
   ];
+
+  const { fields: envs, replace: replaceEnvs } = useFieldArray({
+    control,
+    name: 'envs'
+  });
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
 
@@ -349,7 +357,26 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     />
                   </Box>
                 </FormControl>
+                <Box pl="80px" mb={'18px'}>
+                  <Label w={80}>{t('Form.Environment Variables')}</Label>
+                  <Button
+                    w={'300px'}
+                    variant={'outline'}
+                    fontSize={'base'}
+                    leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
+                    onClick={onOpenEditEnvs}
+                  >
+                    {t('Edit Environment Variables')}
+                  </Button>
+                </Box>
               </>
+            )}
+            {isEditEnvs && (
+              <EditEnvs
+                defaultEnv={envs}
+                onClose={onCloseEditEnvs}
+                successCb={(e) => replaceEnvs(e)}
+              />
             )}
             {/* cronjob type Launchpad */}
             {getValues('jobType') === 'launchpad' && (

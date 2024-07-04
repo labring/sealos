@@ -85,7 +85,7 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	// the order doesn't matter
 	ips = append(ips, cluster.GetMasterIPAndPortList()...)
 	ips = append(ips, cluster.GetNodeIPAndPortList()...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(ips)}, cluster, checker.PhasePre))
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
