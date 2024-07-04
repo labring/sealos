@@ -34,7 +34,7 @@ type GetTransfersReq struct {
 
 	// 0: all, 1: in, 2: out
 	Type     TransferType `json:"type"`
-	LimitRep `json:",inline"`
+	LimitReq `json:",inline"`
 }
 
 type TransferType int
@@ -55,7 +55,7 @@ type GetTransfersResp struct {
 	LimitResp `json:",inline"`
 }
 
-type LimitRep struct {
+type LimitReq struct {
 	Page      int `json:"page"`
 	PageSize  int `json:"pageSize"`
 	TimeRange `json:",inline"`

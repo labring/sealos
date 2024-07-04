@@ -66,7 +66,7 @@ func TestCockroach_GetTransfer(t *testing.T) {
 			Owner: "q0xeg9z1",
 		},
 		Type: 0,
-		LimitRep: types.LimitRep{
+		LimitReq: types.LimitReq{
 			Page:     1,
 			PageSize: 10,
 			TimeRange: types.TimeRange{

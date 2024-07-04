@@ -376,7 +376,7 @@ func GetTransfer(c *gin.Context) {
 	ops := types.GetTransfersReq{
 		UserQueryOpts: &types.UserQueryOpts{Owner: req.Auth.Owner},
 		Type:          types.TransferType(req.Type),
-		LimitRep: types.LimitRep{
+		LimitReq: types.LimitReq{
 			Page:     req.Page,
 			PageSize: req.PageSize,
 			TimeRange: types.TimeRange{
