@@ -1635,6 +1635,9 @@ importers:
       '@next/font':
         specifier: 13.1.6
         version: 13.1.6
+      '@sealos/ui':
+        specifier: workspace:^
+        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)
@@ -1650,6 +1653,9 @@ importers:
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
+      decimal.js:
+        specifier: ^10.4.3
+        version: 10.4.3
       echarts:
         specifier: ^5.4.3
         version: 5.4.3
@@ -1668,6 +1674,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.2
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -1735,6 +1744,9 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.6
         version: 4.0.9
+      '@types/jsonwebtoken':
+        specifier: ^9.0.3
+        version: 9.0.5
       '@types/lodash':
         specifier: ^4.14.199
         version: 4.14.202

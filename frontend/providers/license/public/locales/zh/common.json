@@ -12,5 +12,7 @@
   "Activation Successful": "激活成功",
   "Failed to obtain cluster ID, contact administrator": "获取集群id失败, 联系管理员",
   "Cluster ID": "集群 ID: {{id}}",
-  "Purchase Tip": "激活 / 购买"
+  "Purchase Tip": "激活 / 购买",
+  "cluster_info": "集群信息",
+  "expire_date": "到期时间"
 }
