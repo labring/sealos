@@ -1,4 +1,4 @@
-import SigninComponent from '@/components/Signin';
+import SigninComponent from '@/components/login-module';
 import useRouteParamsStore from '@/stores/routeParams';
 import useSessionStore from '@/stores/session';
 import { ClusterType } from '@/types';
@@ -13,15 +13,9 @@ export default function SigninPage() {
   const { isUserLogin } = useSessionStore();
 
   useEffect(() => {
-    const { clusterType, external } = router.query;
-    console.log(clusterType, external, '--------');
-    if (external && clusterType) {
-      setRouteParams(external as string, clusterType as ClusterType);
-    }
     if (isUserLogin()) {
       router.push('/pricing');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // handle baidu id

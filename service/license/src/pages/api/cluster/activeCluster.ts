@@ -1,15 +1,15 @@
+import { freeClusterForm } from '@/constant/product';
 import { authSession } from '@/services/backend/auth';
 import {
   findClusterByUIDAndClusterID,
   isKubeSystemIDBound,
-  updateCluster,
   updateClusterIdAndIssueLicense
 } from '@/services/backend/db/cluster';
-import { generateLicenseToken, hasIssuedLicense } from '@/services/backend/db/license';
+import { ExpiredTime, generateLicenseToken, hasIssuedLicense } from '@/services/backend/db/license';
 import { getPaymentByID } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { LicenseRecordPayload } from '@/types';
-import { result } from 'lodash';
+import { calculatePrice } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type ActiveClusterParams = {
@@ -41,8 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       clusterId: clusterId
     });
 
-    console.log(existingCluster, 'existingCluster');
-
     if (existingCluster?.kubeSystemID) {
       return jsonRes(res, {
         code: 400,
@@ -50,29 +48,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const handleEnterpriseAndLicense = async () => {
+    const handleScaledStandard = async () => {
       if (!existingCluster?.orderID) return;
       const payment = await getPaymentByID({
         uid: userInfo.uid,
         orderID: existingCluster.orderID
       });
       if (!payment) {
-        return jsonRes(res, { code: 400, message: 'No order found' });
+        return { message: 'No order found' };
       }
-
       const issuedLicense = await hasIssuedLicense({
         uid: userInfo.uid,
         orderID: existingCluster.orderID
       });
       if (issuedLicense) {
-        return jsonRes(res, { code: 400, message: 'orderID cannot be reused' });
+        return { message: 'orderID cannot be reused' };
       }
 
-      const _token = generateLicenseToken({
-        type: 'Account',
-        clusterID: kubeSystemID,
-        data: { amount: payment.amount }
-      });
+      const expiredTime = parseInt(existingCluster.months || freeClusterForm.months) * ExpiredTime;
+      const _token = generateLicenseToken(
+        {
+          type: 'Cluster',
+          clusterID: kubeSystemID,
+          data: {
+            nodeCount: 99,
+            totalCPU: existingCluster.cpu || freeClusterForm.cpu,
+            totalMemory: existingCluster.memory || freeClusterForm.memory
+          }
+        },
+        expiredTime
+      );
 
       const record: LicenseRecordPayload = {
         uid: userInfo.uid,
@@ -81,8 +86,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         orderID: existingCluster.orderID,
         quota: payment.amount,
         payMethod: payment.payMethod,
-        type: 'Account',
-        clusterId: clusterId
+        type: 'Cluster',
+        clusterId: clusterId,
+        cpu: existingCluster.cpu,
+        memory: existingCluster.memory,
+        months: existingCluster.months,
+        expiredTime
       };
 
       const result = await updateClusterIdAndIssueLicense({
@@ -95,52 +104,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return result;
     };
 
-    const handleStandardAndLicense = async () => {
-      const _token = generateLicenseToken({
-        type: 'Account',
-        clusterID: kubeSystemID,
-        data: { amount: 299 }
-      });
+    const handleStandard = async () => {
+      const expiredTime = parseInt(freeClusterForm.months) * ExpiredTime;
+
+      const _token = generateLicenseToken(
+        {
+          type: 'Cluster',
+          clusterID: kubeSystemID,
+          data: {
+            nodeCount: 99,
+            totalCPU: freeClusterForm.cpu,
+            totalMemory: freeClusterForm.memory
+          }
+        },
+        expiredTime
+      );
+
       const record: LicenseRecordPayload = {
         uid: userInfo.uid,
-        amount: 299,
+        amount: 0,
         token: _token,
         orderID: '',
-        quota: 299,
+        quota: 0,
         payMethod: 'stripe',
-        type: 'Account',
-        clusterId: clusterId
+        type: 'Cluster',
+        clusterId: clusterId,
+        cpu: freeClusterForm.cpu,
+        memory: freeClusterForm.memory,
+        months: freeClusterForm.months,
+        expiredTime
       };
+
       const result = await updateClusterIdAndIssueLicense({
         uid: userInfo.uid,
         clusterId: clusterId,
         kubeSystemID: kubeSystemID,
         licensePayload: record
       });
-      return result;
-    };
 
-    const handleActive = async () => {
-      return await updateCluster({
-        uid: userInfo.uid,
-        clusterId: clusterId,
-        updates: {
-          kubeSystemID: kubeSystemID,
-          kubeSystemUpdateAt: new Date()
-        }
-      });
+      return result;
     };
 
     let activeResult;
-    if (existingCluster?.orderID === null && existingCluster?.licenseID === null) {
-      activeResult = await handleActive();
-    } else if (existingCluster?.orderID === null && !existingCluster?.licenseID) {
-      activeResult = await handleStandardAndLicense();
-    } else if (existingCluster?.orderID !== null && !existingCluster?.licenseID) {
-      activeResult = await handleEnterpriseAndLicense();
+    if (existingCluster?.orderID) {
+      activeResult = await handleScaledStandard();
     } else {
-      activeResult = await handleActive();
-      console.log('其他情况');
+      activeResult = await handleStandard();
     }
 
     return jsonRes(res, {

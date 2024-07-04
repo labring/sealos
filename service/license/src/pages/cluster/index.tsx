@@ -7,7 +7,7 @@ import {
 import { EmptyIcon } from '@/components/Icon';
 import Layout from '@/components/Layout';
 import useClusterDetail from '@/stores/cluster';
-import { ClusterResult } from '@/types';
+import { ClusterDB } from '@/types';
 import { compareFirstLanguages } from '@/utils/tools';
 import {
   Button,
@@ -35,7 +35,7 @@ import Tutorial, { TutorialProps } from './components/Tutorial';
 // Cluster recharge callback clusterId
 export default function MyCluster({ ossFileUrl, customBasePatch }: TutorialProps) {
   const { t } = useTranslation();
-  const { clusterDetail, setClusterDetail, clearClusterDetail } = useClusterDetail();
+  const { clusterDetail, setClusterDetail } = useClusterDetail();
   const [isLargerThanLG] = useMediaQuery(['(min-width: 992px)', '(display-mode: browser)']);
   const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -56,7 +56,7 @@ export default function MyCluster({ ossFileUrl, customBasePatch }: TutorialProps
       enabled: !clusterDetail?.clusterId && !router.query?.clusterId,
       onSuccess(data) {
         console.log(data);
-        if (!clusterDetail?.clusterId && !router.query?.clusterIds) {
+        if (!clusterDetail?.clusterId && !router.query?.clusterId) {
           console.log(data?.records?.[0], 'init cluster list');
           setClusterDetail(data?.records?.[0]);
         }
@@ -100,7 +100,7 @@ export default function MyCluster({ ossFileUrl, customBasePatch }: TutorialProps
     }
   };
 
-  function findStandardRecordWithoutClusterId(records: ClusterResult[], type: string) {
+  function findStandardRecordWithoutClusterId(records: ClusterDB[], type: string) {
     records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     for (const record of records) {
       if (record.type === type && !record?.kubeSystemID) {
@@ -115,18 +115,15 @@ export default function MyCluster({ ossFileUrl, customBasePatch }: TutorialProps
     if (router.query?.systemId) {
       const systemId = router.query.systemId as string;
       isKubeSystemIDBound(systemId).then((res) => {
-        console.log(res);
         if (!res.isBound) {
-          onOpen();
+          router.push('/pricing');
         } else {
           findClusterBySystemId({ systemId }).then((res) => {
-            console.log(res, 11);
             setClusterDetail(res);
           });
         }
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isSuccess && data?.total === 0) {
