@@ -57,25 +57,18 @@ function Akkordion({ items }) {
               </Disclosure.Button>
               <Transition
                 show={open}
-                // className="overflow-hidden"
-                // enter="transition transition-[max-height] duration-200 ease-in"
-                // enterFrom="transform max-h-0"
-                // enterTo="transform max-h-screen"
-                // leave="transition transition-[max-height] duration-400 ease-out"
-                // leaveFrom="transform max-h-screen"
-                // leaveTo="transform max-h-0"
-                enter="transition duration-200 ease-out"
-                enterFrom="transform scale-95 opacity-0"
-                enterTo="transform scale-100 opacity-100"
-                leave="transition duration-200 ease-out"
-                leaveFrom="transform scale-100 opacity-100"
-                leaveTo="transform scale-95 opacity-0"
+                enter="transition-all duration-300 ease-out"
+                enterFrom="transform max-h-0 opacity-0"
+                enterTo="transform max-h-[16rem] opacity-100"
+                leave="transition-all duration-300 ease-in"
+                leaveFrom="transform max-h-[16rem] opacity-100"
+                leaveTo="transform max-h-0 opacity-0"
               >
                 <Disclosure.Panel
                   static
                   className={`${
                     open ? ' bg-white bg-opacity-5' : ''
-                  } px-8 pt-2 pb-6 rounded-b-xl  lg:text-xs`}
+                  } px-8 pt-2 pb-6 rounded-b-xl overflow-hidden lg:text-xs`}
                 >
                   {item.value}
                 </Disclosure.Panel>
