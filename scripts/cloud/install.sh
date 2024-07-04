@@ -549,7 +549,7 @@ volumeBindingMode: WaitForFirstConsumer
 EOF
 
     # TODO use sealos run to install cockroachdb-operator
-    sealos run "${image_registry}/${image_repository}/cockroach:latest"
+    sealos run "${image_registry}/${image_repository}/cockroach:v2.12.0"
 
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"

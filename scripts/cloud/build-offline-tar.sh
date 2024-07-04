@@ -21,7 +21,7 @@ images=(
   docker.io/labring/kubeblocks-mongodb:v0.8.2
   docker.io/labring/kubeblocks-postgresql:v0.8.2
   docker.io/labring/kubeblocks-apecloud-mysql:v0.8.2
-  docker.io/labring/cockroach:latest
+  docker.io/labring/cockroach:v2.12.0
   docker.io/labring/metrics-server:v0.6.4
 )
 
