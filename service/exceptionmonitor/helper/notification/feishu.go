@@ -1,12 +1,10 @@
 package notification
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"log"
 )
 
 const ExceptionType = "exception"
@@ -149,46 +147,46 @@ func GetNotificationMessage(notificationInfo Info) string {
 }
 
 func SendFeishuNotification(message, feishuWebHook string) error {
-	//log.Print(message, feishuWebHook)
-	if api.MonitorType != "all" {
-		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
-	}
-
-	// Create a map to hold the POST request body
-	bodyMap := map[string]interface{}{
-		"msg_type": "interactive",
-		"card":     message,
-	}
-
-	// Convert the map to a JSON byte slice
-	bodyBytes, err := json.Marshal(bodyMap)
-	if err != nil {
-		return err
-	}
-
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return err
-	}
-
-	// Set the request header
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request using the default client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Print the status and response body
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return err
-	}
+	log.Print(message, feishuWebHook)
+	//if api.MonitorType != "all" {
+	//	feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+	//}
+	//
+	//// Create a map to hold the POST request body
+	//bodyMap := map[string]interface{}{
+	//	"msg_type": "interactive",
+	//	"card":     message,
+	//}
+	//
+	//// Convert the map to a JSON byte slice
+	//bodyBytes, err := json.Marshal(bodyMap)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//// Create a new HTTP request
+	//req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//// Set the request header
+	//req.Header.Set("Content-Type", "application/json")
+	//
+	//// Send the request using the default client
+	//client := &http.Client{}
+	//resp, err := client.Do(req)
+	//if err != nil {
+	//	return err
+	//}
+	//defer resp.Body.Close()
+	//
+	//// Print the status and response body
+	//buf := new(bytes.Buffer)
+	//_, err = buf.ReadFrom(resp.Body)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
