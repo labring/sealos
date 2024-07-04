@@ -16,15 +16,36 @@ var numToChinese = []string{"零", "一", "二", "三", "四", "五", "六", "�
 
 func DatabasePerformanceMonitor() {
 	for {
-		if err := checkDatabasePerformance(); err != nil {
+		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
 		time.Sleep(10 * time.Minute)
 	}
 }
 
-func checkDatabasePerformance() error {
-	clusters, err := api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
+func checkDatabasePerformance(namespaces []string) error {
+	if api.MonitorType == "all" {
+		if err := checkDatabasesInNamespace(""); err != nil {
+			return err
+		}
+	} else {
+		for _, ns := range namespaces {
+			if err := checkDatabasesInNamespace(ns); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func checkDatabasePerformanceInNamespace(namespace string) error {
+	var clusters *unstructured.UnstructuredList
+	var err error
+	if api.MonitorType == "all" {
+		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
+	} else {
+		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
+	}
 	if err != nil {
 		return err
 	}

@@ -35,7 +35,6 @@ var (
 
 func DatabaseExceptionMonitor() {
 	for api.DatabaseMonitor {
-		fmt.Println(api.MonitorType, api.ClusterNS)
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Printf("Failed to check databases: %v", err)
 		}
