@@ -21,6 +21,7 @@
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
     "@tanstack/react-query": "^4.35.3",
+    "@sealos/ui": "workspace:^",
     "ansi_up": "^5.2.1",
     "axios": "^1.5.1",
     "cron-parser": "^4.9.0",
