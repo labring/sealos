@@ -43,9 +43,7 @@ import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 4);
-const nanoidUpper = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
-const nanoidNumber = customAlphabet('0123456789', 4);
+import { generateRandomPassword } from '@/utils/tools';
 
 const tabPanelStyles: TabPanelsProps = {
   padding: '0px',
@@ -839,9 +837,8 @@ export default function Form({
                   setValue('autoPassword', false);
                   setValue('password', '');
                 } else {
-                  const randomStr = nanoid() + nanoidUpper() + nanoidNumber();
                   setValue('autoPassword', true);
-                  setValue('password', randomStr);
+                  setValue('password', generateRandomPassword());
                 }
               }}
             />
@@ -918,7 +915,7 @@ export default function Form({
 
         <Flex alignItems={'center'} mb={'24px'} flex={1}>
           <Label>
-            <Text>{t('Login Method')}</Text>
+            <Text>{t('Counts')}</Text>
           </Label>
           <Box>
             <RangeInput
