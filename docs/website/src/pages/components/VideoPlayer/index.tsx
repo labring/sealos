@@ -9,7 +9,7 @@ const VideoPlayer = ({ url }: { url: string }) => {
     <div className="video-box">
       <img
         draggable="false"
-        src={require('@site/static/illustrations/video.png').default}
+        src={require('@site/static/illustrations/video.jpg').default}
       />
       <img
         draggable="false"
