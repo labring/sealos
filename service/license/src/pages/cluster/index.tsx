@@ -116,7 +116,10 @@ export default function MyCluster({ ossFileUrl, customBasePatch }: TutorialProps
       const systemId = router.query.systemId as string;
       isKubeSystemIDBound(systemId).then((res) => {
         if (!res.isBound) {
-          router.push('/pricing');
+          router.push({
+            pathname: '/pricing',
+            query: router.query
+          });
         } else {
           findClusterBySystemId({ systemId }).then((res) => {
             setClusterDetail(res);

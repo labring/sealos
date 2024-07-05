@@ -85,7 +85,7 @@ const RechargeComponent = forwardRef(function RechargeComponent(
     ref,
     () => {
       return {
-        onOpen() {
+        onOpen(form?: ClusterFormType) {
           onOpen();
           if (isLicensePay) {
             formHook.reset({
@@ -95,12 +95,20 @@ const RechargeComponent = forwardRef(function RechargeComponent(
               months: clusterDetail?.months ?? defaulClustertForm.months
             });
           } else {
-            formHook.reset(defaulClustertForm);
+            formHook.reset(form ? form : defaulClustertForm);
           }
         }
       };
     },
-    [onOpen, clusterDetail, defaulClustertForm, isLicensePay]
+    [
+      onOpen,
+      isLicensePay,
+      formHook,
+      clusterDetail?.cpu,
+      clusterDetail?.memory,
+      clusterDetail?.displayName,
+      clusterDetail?.months
+    ]
   );
 
   const handleSubmit = (payType: TPayMethod) => {

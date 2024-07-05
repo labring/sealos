@@ -7,11 +7,13 @@ import { Button, Flex, Text } from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import ServicePackage from './ServicePackage';
+import { useRouter } from 'next/router';
 
 export default function Product() {
   const [clusterType, setClusterType] = useState<ClusterType>(ClusterType.ScaledStandard);
   const [price, setPrice] = useState(0);
-  const rechargeRef = useRef<{ onOpen: () => void; isOpen: boolean }>();
+  const rechargeRef = useRef<{ onOpen: (form?: ClusterFormType) => void; isOpen: boolean }>();
+  const router = useRouter();
 
   const formHook = useForm<ClusterFormType>({
     defaultValues: defaulClustertForm
@@ -42,6 +44,22 @@ export default function Product() {
       );
     }
   };
+
+  useEffect(() => {
+    if (router.query?.systemId) {
+      const { systemId, nodeCount, totalCpu, totalMemory } = router.query as unknown as {
+        systemId: string;
+        nodeCount: number;
+        totalCpu: number;
+        totalMemory: number;
+      };
+      rechargeRef.current?.onOpen({
+        cpu: totalCpu,
+        memory: totalMemory,
+        months: '3'
+      });
+    }
+  }, []);
 
   return (
     <>
