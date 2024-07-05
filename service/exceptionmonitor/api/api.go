@@ -58,6 +58,7 @@ var (
 	FeishuWebhookURLMap               = make(map[string]string)
 	ClusterRegionMap                  = make(map[string]string)
 	BaseURL                           string
+	LOCALREGION                       string
 	DatabaseMonitor                   bool
 	DiskMonitor                       bool
 	CPUMemMonitor                     bool
@@ -75,6 +76,7 @@ func GetENV() error {
 	ClusterName = getEnvWithCheck("ClusterName", &missingEnvVars)
 	MonitorType = getEnvWithCheck("MonitorType", &missingEnvVars)
 	clusterNS := getEnvWithCheck("ClusterNS", &missingEnvVars)
+	LOCALREGION = getEnvWithCheck("LOCALREGION", &missingEnvVars)
 	DatabaseMonitor, _ = strconv.ParseBool(getEnvWithCheck("DatabaseMonitor", &missingEnvVars))
 	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
@@ -104,11 +106,11 @@ func GetENV() error {
 
 	// Get ClusterRegionMap
 	getEnvMapWithCheck([]string{
-		"REGION_IO",
-		"REGION_BJA",
-		"REGION_HZH",
-		"REGION_GZG",
-		"REGION_TOP",
+		"io",
+		"bja",
+		"hzh",
+		"gzg",
+		"top",
 	}, ClusterRegionMap, &missingEnvVars)
 
 	if len(missingEnvVars) > 0 {

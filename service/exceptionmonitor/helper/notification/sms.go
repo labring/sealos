@@ -3,6 +3,7 @@ package notification
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -41,7 +42,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 	if err != nil {
 		return err
 	}
-	name := strings.ReplaceAll(databaseName, "-", ".")
+	name := strings.ReplaceAll(databaseName, "-", "/")
 	owner, _ := GetNSOwner(namespace)
 	phoneNumbers, err := GetPhoneNumberByNS(owner)
 	if err != nil {
@@ -54,6 +55,7 @@ func SendToSms(namespace, databaseName, clusterName, content string) error {
 		// user_id:, oweAmount
 		TemplateParam: tea.String("{\"type\":\"" + "数据库" + "\",\"name\":\"" + name + "\",\"region\":\"" + api.ClusterRegionMap[clusterName] + "\",\"content\":\"" + content + "\"}"),
 	})
+	fmt.Println(tea.String(phoneNumbers), name, api.ClusterRegionMap[clusterName], content)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,7 @@ import (
 )
 
 func InitClient() error {
+	//TODO Get kubernetes.client through k8s.io/client-go/rest.InClusterConfig()
 	kubeconfigPath := "/home/nonroot/kubeconfig/kubeconfig"
 
 	kubeconfig, err := os.ReadFile(kubeconfigPath)

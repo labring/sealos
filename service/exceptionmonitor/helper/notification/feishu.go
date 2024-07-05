@@ -43,7 +43,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("集群环境：%s", api.ClusterRegionMap[api.ClusterName]),
+				"content": fmt.Sprintf("集群环境：%s", api.ClusterName),
 				"tag":     "lark_md",
 			},
 		},
@@ -222,7 +222,7 @@ func createCard(headerTemplate, headerTitle string, elements []map[string]string
 
 func createElements(namespace, backupName, status, startTime, reason string, includeReason bool) []map[string]string {
 	elements := []map[string]string{
-		{"label": "集群环境", "value": api.ClusterRegionMap[api.ClusterName]},
+		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": namespace},
 		{"label": "备份名", "value": backupName},
 		{"label": "备份状态", "value": status},
