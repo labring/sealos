@@ -107,7 +107,7 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 	}
 
 	upgradeConfigName := "kubeadm-upgrade.yaml"
-	upgradeConfigPath := path.Join(k.pathResolver.TmpPath(), upgradeConfigName)
+	upgradeConfigPath := path.Join(k.pathResolver.EtcPath(), upgradeConfigName)
 
 	err = k.sshCmdAsync(master0ip,
 		//install kubeadm:{version} at master0
