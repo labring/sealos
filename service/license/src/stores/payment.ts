@@ -11,6 +11,7 @@ type PaymentDataState = {
     months: string;
     clusterId?: string;
     name?: string;
+    systemId?: string;
   };
   setPaymentData: (data: {
     orderId: string;
@@ -19,6 +20,7 @@ type PaymentDataState = {
     months: string;
     clusterId?: string;
     name?: string;
+    systemId?: string;
   }) => void;
   deletePaymentData: () => void;
   isExpired: () => boolean;

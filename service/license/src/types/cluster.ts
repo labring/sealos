@@ -68,4 +68,5 @@ export type ClusterFormType = {
   memory: number;
   months: string;
   name?: string;
+  systemId?: string;
 };

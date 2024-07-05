@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (isBound) {
       return jsonRes(res, {
         code: 400,
-        message: 'clusterID is already bound to another cluster'
+        message: 'ID is already bound to another cluster'
       });
     }
 

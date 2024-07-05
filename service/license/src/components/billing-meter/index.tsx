@@ -263,7 +263,8 @@ const BillingMeter = forwardRef(
                   cpu: freeClusterForm.cpu,
                   memory: freeClusterForm.memory,
                   months: freeClusterForm.months,
-                  name: getValues('name')
+                  name: getValues('name'),
+                  systemId: getValues('systemId')
                 });
               }}
             >

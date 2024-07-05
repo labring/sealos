@@ -56,7 +56,8 @@ export default function Product() {
       rechargeRef.current?.onOpen({
         cpu: totalCpu,
         memory: totalMemory,
-        months: '3'
+        months: '3',
+        systemId: systemId
       });
     }
   }, []);

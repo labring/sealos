@@ -1,4 +1,4 @@
-import { createCluster, findClusterById } from '@/api/cluster';
+import { activeClusterBySystemId, createCluster, findClusterById } from '@/api/cluster';
 import { createLicense } from '@/api/license';
 import { checkWechatPay, createPayment, handlePaymentResult } from '@/api/payment';
 import { getSystemEnv, uploadConvertData } from '@/api/system';
@@ -259,8 +259,20 @@ const RechargeComponent = forwardRef(function RechargeComponent(
 
   // create cluster
   const clusterMutation = useMutation((payload: CreateClusterParams) => createCluster(payload), {
-    onSuccess(data) {
-      getCluster(data.clusterId);
+    async onSuccess(data) {
+      let cluster;
+      cluster = await findClusterById({
+        clusterId: data.clusterId
+      });
+
+      const systemId = formHook.getValues('systemId') || paymentData?.systemId;
+      if (systemId) {
+        cluster = await activeClusterBySystemId({
+          clusterId: cluster.clusterId,
+          kubeSystemID: systemId
+        });
+      }
+      setClusterDetail(cluster);
       toast({
         status: 'success',
         title: '集群创建成功, 请前往我的集群查看',
@@ -268,6 +280,7 @@ const RechargeComponent = forwardRef(function RechargeComponent(
         position: 'top'
       });
       queryClient.invalidateQueries(['getClusterList']);
+      queryClient.invalidateQueries({ queryKey: ['getLicenseByClusterId'] });
       deletePaymentData();
       onClosePayment();
     },
@@ -294,6 +307,7 @@ const RechargeComponent = forwardRef(function RechargeComponent(
       const months = paymentData?.months;
       const memory = paymentData?.memory;
       const clusterName = paymentData?.name;
+      const systemId = paymentData?.systemId;
 
       if (!cpu || !memory || !months) {
         return toast({
@@ -326,7 +340,8 @@ const RechargeComponent = forwardRef(function RechargeComponent(
             cpu,
             memory,
             months,
-            name: clusterName
+            name: clusterName,
+            systemId
           });
         }
         uploadConvertData([90])
@@ -359,6 +374,7 @@ const RechargeComponent = forwardRef(function RechargeComponent(
         const cpu = paymentData?.cpu;
         const months = paymentData?.months;
         const memory = paymentData?.memory;
+        const systemId = paymentData?.systemId;
 
         if (!clusterDetail?.clusterId || !cpu || !memory || !months) {
           return toast({
@@ -381,7 +397,8 @@ const RechargeComponent = forwardRef(function RechargeComponent(
             type: ClusterType.ScaledStandard,
             cpu,
             memory,
-            months
+            months,
+            systemId
           });
         }
       }
