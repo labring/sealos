@@ -258,21 +258,29 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	// since app type images are only sent to the first master, in
 	// cluster scaling scenario we don't need to sent app images repeatedly.
 	// so filter out rootfs/patch type
-	fs, err := rootfs.NewRootfsMounter(filterNoneApplicationMounts(cluster.Status.Mounts))
+	mounts, err := sortAndFilterNoneApplicationMounts(cluster)
+	if err != nil {
+		return err
+	}
+	fs, err := rootfs.NewRootfsMounter(mounts)
 	if err != nil {
 		return err
 	}
 	return fs.MountRootfs(cluster, hosts)
 }
 
-func filterNoneApplicationMounts(images []v2.MountImage) []v2.MountImage {
+func sortAndFilterNoneApplicationMounts(cluster *v2.Cluster) ([]v2.MountImage, error) {
 	ret := make([]v2.MountImage, 0)
-	for i := range images {
-		if images[i].Type != v2.AppImage {
-			ret = append(ret, images[i])
+	for _, img := range cluster.Spec.Image {
+		idx := getIndexOfContainerInMounts(cluster.Status.Mounts, img)
+		if idx == -1 {
+			return ret, fmt.Errorf("image %s not mount", img)
+		}
+		if cluster.Status.Mounts[idx].Type != v2.AppImage {
+			ret = append(ret, cluster.Status.Mounts[idx])
 		}
 	}
-	return ret
+	return ret, nil
 }
 
 func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
