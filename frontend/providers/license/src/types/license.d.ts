@@ -62,7 +62,8 @@ export type LicenseCR = {
   status: {
     activationTime: string;
     expirationTime: string;
-    phase: string;
+    phase: 'Active' | 'Failed';
+    reason: string;
   };
 };
 
