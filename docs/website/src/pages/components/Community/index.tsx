@@ -16,8 +16,7 @@ const Community = ({ isPc }: { isPc: boolean }) => {
     joinCommunity: <Translate>Join Sealos Community</Translate>,
     joinCommunityIntroduce: (
       <Translate>
-        Experience the latest version of Sealos for the first time and
-        communicate with developers and users in Discord!
+        Get early access to the latest Sealos versions and stay connected with developers and users on Discord.
       </Translate>
     ),
   }

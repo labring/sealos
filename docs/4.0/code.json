@@ -592,31 +592,31 @@
   "Equally effective in both public and private cloud, enabling a seamless transition of traditional applications to the cloud.": {
     "message": "即是公有云也是私有云，支持传统应用无缝迁移到云环境。"
   },
-  "Why Sealos": {
+  "Why Choose Sealos?": {
     "message": "为什么选择 Sealos"
   },
-  "Efficient & Economical": {
+  "Efficient & Cost-Effective": {
     "message": "高效 & 经济"
   },
-  "User Friendly": {
+  "Universal & User-Friendly": {
     "message": "通用性强，无心智负担"
   },
-  "Agility & Security": {
+  "Flexible & Secure": {
     "message": "灵活 & 安全"
   },
-  "Pay solely for the containers you utilize; automatic scaling prevents resource squandering and substantially reduces costs.": {
+  "Pay only for the containers you use. Auto-scaling prevents wasted resources, saving you a lot of money.": {
     "message": "仅需为容器付费，自动伸缩杜绝资源浪费，大幅度节省成本。"
   },
-  "Concentrate on your core business activities without worrying about system complexities; negligible learning costs involved.": {
+  "Focus on your business without worrying about complexity. There is almost no learning curve.": {
     "message": "专注于业务本身，无需担心复杂性，几乎没有学习成本。"
   },
-  "The distinctive multi-tenancy sharing model ensures both effective resource segmentation and collaboration, all under a secure framework.": {
+  "The multi-tenant sharing mechanism ensures security while providing resource isolation and efficient collaboration.": {
     "message": "多租户共享机制在确保安全的同时，实现资源隔离与高效协作。"
   },
-  "Join Sealos Community, Experience the latest version of Sealos for the first time and communicate with developers and users in Discord!": {
+  "Get early access to the latest Sealos versions and stay connected with developers and users on Discord.": {
     "message": "加入 Sealos 社区，在这里您可以在第一时间体验 Sealos 的最新版本，以及在 Discord 或微信群与开发者和用户保持沟通"
   },
-  "Who is Using Sealos": {
+  "Who are Using Sealos": {
     "message": "谁在使用 Sealos"
   },
   "Join Sealos Community": {
@@ -642,5 +642,8 @@
   },
   "Blog": {
     "message": "博客"
+  },
+  "App Store": {
+    "message": "应用商店"
   }
 }

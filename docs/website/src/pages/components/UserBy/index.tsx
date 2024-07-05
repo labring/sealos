@@ -11,7 +11,7 @@ const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
           <CometIcon />
         </div>
         <div className="user-by-title">
-          <Translate>Who is Using Sealos</Translate>
+          <Translate>Who are Using Sealos</Translate>
         </div>
         {/* 品牌商滚动 */}
         <div className="scroll-brand">
@@ -36,7 +36,7 @@ const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
         <CometIcon />
       </div>
       <div className="user-by-title">
-        <Translate>Who is Using Sealos</Translate>
+        <Translate>Who are Using Sealos</Translate>
       </div>
       {/* 品牌商滚动 */}
       <div className="scroll-brand">

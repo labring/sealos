@@ -5,7 +5,7 @@ description: 本教程探讨了 Meilisearch 的核心特性、安装配置过程
 authors: [Carson Yang]
 tags: [Developer Tools, Sealos, Meilisearch, Flarum]
 keywords: [Meilisearch, 搜索引擎, 搜索, 开源, Flarum, Elasticsearch 替代, 搜索引擎对比]
-image: images/feature.jpg
+image: ./images/feature.jpg
 date: 2024-07-01T10:00
 ---
 
