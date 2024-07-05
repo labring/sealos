@@ -347,7 +347,13 @@ export default function Form({
   });
 
   const { data: systemImage } = useQuery(['getCloudServerImage'], getCloudServerImage, {
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    onSuccess(data) {
+      if (data['ubuntu']) {
+        formHook.setValue('systemImageId', data['ubuntu'].images[0].id);
+        formHook.setValue('system', 'ubuntu');
+      }
+    }
   });
 
   const { data: serverTypeData } = useQuery(
@@ -679,6 +685,7 @@ export default function Form({
                           })}
                       onClick={() => {
                         setValue('system', key);
+                        setValue('systemImageId', systemImage[key].images[0].id);
                       }}
                     >
                       <Image
@@ -830,6 +837,7 @@ export default function Form({
               onChange={(val) => {
                 if (val === 'self') {
                   setValue('autoPassword', false);
+                  setValue('password', '');
                 } else {
                   const randomStr = nanoid() + nanoidUpper() + nanoidNumber();
                   setValue('autoPassword', true);
@@ -907,6 +915,38 @@ export default function Form({
             </Box>
           </Flex>
         )}
+
+        <Flex alignItems={'center'} mb={'24px'} flex={1}>
+          <Label>
+            <Text>{t('Login Method')}</Text>
+          </Label>
+          <Box>
+            <RangeInput
+              inputStyle={{ fontSize: 'base' }}
+              w={142}
+              value={getValues('counts')}
+              min={1}
+              max={12}
+              hoverText={t('Quantity tips', { amount1: 1, amount2: 12 }) || ''}
+              setVal={(val) => {
+                register('counts', {
+                  required:
+                    t('The number of instances cannot be empty') ||
+                    'The number of instances cannot be empty',
+                  min: {
+                    value: 1,
+                    message: t('The minimum number of instances is 1')
+                  },
+                  max: {
+                    value: 12,
+                    message: t('The maximum number of instances is 12')
+                  }
+                });
+                setValue('counts', isNaN(val) ? 1 : val);
+              }}
+            />
+          </Box>
+        </Flex>
       </Box>
     </Flex>
   );

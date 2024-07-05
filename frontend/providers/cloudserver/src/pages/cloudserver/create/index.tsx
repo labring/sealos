@@ -15,6 +15,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
 import Header, { CostTipContent } from './components/Header';
+import { customAlphabet } from 'nanoid';
 
 export default function EditOrder() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -26,6 +27,11 @@ export default function EditOrder() {
   const { lastRoute } = useGlobalStore();
   const [instanceType, setInstanceType] = useState<CloudServerType>();
 
+  const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 4);
+  const nanoidUpper = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
+  const nanoidNumber = customAlphabet('0123456789', 4);
+  const password = nanoid() + nanoidUpper() + nanoidNumber();
+
   // form
   const formHook = useForm<EditForm>({
     defaultValues: {
@@ -35,12 +41,15 @@ export default function EditOrder() {
       storages: [
         {
           use: 'SystemDisk',
-          size: 20,
+          size: 50,
           amount: 1
         }
       ],
       systemImageId: '',
-      period: '1'
+      period: '1',
+      counts: 1,
+      autoPassword: true,
+      password: password
       // chargeType: CVMChargeType.postPaidByHour,
       // zone: 'Guangzhou-6',
       // virtualMachineArch: 'x86_64',

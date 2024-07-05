@@ -12,6 +12,7 @@
   "Type": "机型",
   "Disk Size": "磁盘大小",
   "Login Method": "登录方式",
+  "Counts": "数量",
   "Set Password": "设置密码",
   "Auto Generate Password": "自动生成密码",
   "Assign Public IP": "分配公网IP",
