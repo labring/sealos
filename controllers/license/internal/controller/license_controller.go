@@ -102,7 +102,17 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name, "reason", valid)
 		_ = r.Status().Update(ctx, license)
 		return requeueRes, nil
+	case licensev1.ValidationError:
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		license.Status.ValidationCode = valid
+		license.Status.Reason = "failed to validate license"
+		r.Logger.V(1).Info("failed to validate license", "license", license.Namespace+"/"+license.Name)
+		_ = r.Status().Update(ctx, license)
+		return requeueRes, nil
+	case licensev1.ValidationSuccess:
+		// do nothing
 	default:
+		r.Logger.V(1).Info("unknown validation code", "code", valid)
 	}
 
 	if license.Spec.Type == licensev1.AccountLicenseType && license.Status.Phase == licensev1.LicenseStatusPhaseActive {
