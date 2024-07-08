@@ -102,15 +102,16 @@ export default function LicenseApp() {
   };
 
   const maxExpTime = useMemo(() => {
+    const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     if (data && data.length > 0) {
       const maxItem = data.reduce((item, license) => {
-        const maxTime = decodeJWT(item.spec.token)?.exp || 0;
-        const currentTime = decodeJWT(license.spec.token)?.exp || 0;
+        const maxTime = decodeJWT(item.spec.token)?.exp || currentTimeInSeconds;
+        const currentTime = decodeJWT(license.spec.token)?.exp || currentTimeInSeconds;
         return currentTime > maxTime ? license : item;
       });
-      return decodeJWT(maxItem.spec.token)?.exp || 0;
+      return decodeJWT(maxItem.spec.token)?.exp || currentTimeInSeconds;
     } else {
-      return 0;
+      return currentTimeInSeconds;
     }
   }, [data]);
 
