@@ -152,6 +152,7 @@
   "Manual Backup Tip": "Tip: Backup during off-peak hours. Avoid DDL operations to prevent locking. Be patient if data size is large. Backup starts 1 min after confirmation.",
   "Max Replicas": "Max Replicas: ",
   "Max Storage": "Max Storage: ",
+  "memory": "Memory",
   "Memory": "Memory",
   "migrate": {
     "Incremental migration prompt information": "Enable \\\"Continuous Migration\\\" for incremental DB sync (disabled by default).",
@@ -243,6 +244,7 @@
   "Start Up": "Launch",
   "Starting": "Starting",
   "Status": "Status",
+  "storage": "Storage",
   "Storage": "Storage",
   "Storage Cannot Empty": "Please specify storage size",
   "Storage Range": "Storage capacity:",
