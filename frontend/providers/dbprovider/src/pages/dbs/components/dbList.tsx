@@ -3,6 +3,7 @@ import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
+import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
@@ -27,6 +28,7 @@ const DBList = ({
   const { message: toast } = useMessage();
   const theme = useTheme();
   const router = useRouter();
+  const { SystemEnv } = useEnvStore();
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -271,16 +273,18 @@ const DBList = ({
           ( {dbList.length} )
         </Box>
         <Box flex={1}></Box>
-        <Button
-          variant={'outline'}
-          minW={'156px'}
-          h={'40px'}
-          mr={'16px'}
-          leftIcon={<MyIcon name={'docs'} w={'16px'} />}
-          onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
-        >
-          {t('Use Docs')}
-        </Button>
+        {SystemEnv?.SHOW_DOCUMENT && (
+          <Button
+            variant={'outline'}
+            minW={'156px'}
+            h={'40px'}
+            mr={'16px'}
+            leftIcon={<MyIcon name={'docs'} w={'16px'} />}
+            onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
+          >
+            {t('Use Docs')}
+          </Button>
+        )}
         <Button
           minW={'156px'}
           h={'40px'}

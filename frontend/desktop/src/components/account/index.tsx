@@ -126,13 +126,15 @@ export default function Account() {
           </Center>
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
-          <Center
-            cursor={'pointer'}
-            {...baseItemStyle}
-            onClick={() => window.open(layoutConfig?.common?.docsUrl)}
-          >
-            <DocsIcon />
-          </Center>
+          {layoutConfig?.common.docsUrl && (
+            <Center
+              cursor={'pointer'}
+              {...baseItemStyle}
+              onClick={() => window.open(layoutConfig?.common?.docsUrl)}
+            >
+              <DocsIcon />
+            </Center>
+          )}
           <LangSelectSimple {...baseItemStyle} />
           {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
           <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>

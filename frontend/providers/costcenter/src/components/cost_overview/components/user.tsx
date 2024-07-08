@@ -4,6 +4,7 @@ import { displayMoney, formatMoney } from '@/utils/format';
 import {
   Box,
   Button,
+  Center,
   Flex,
   Image,
   Img,
@@ -98,15 +99,18 @@ export default memo(function UserCard() {
           <Flex alignItems={'center'}>
             <Text>{session?.user?.name}</Text>
 
-            <Image
-              ml="auto"
-              src={session?.user?.avatar}
-              fallbackSrc="/sealos.svg"
-              alt="user"
-              width={'36px'}
-              height={'36px'}
-              borderRadius={'50%'}
-            />
+            <Center ml={'auto'} width={'36px'} height={'36px'} bg={'white'} borderRadius="full">
+              <Image
+                width={session?.user?.avatar ? 'full' : '20px'}
+                height={session?.user?.avatar ? 'full' : '20px'}
+                objectFit={'cover'}
+                borderRadius="full"
+                src={session?.user?.avatar || ''}
+                fallbackSrc={'/default-user.svg'}
+                alt="user avator"
+                draggable={'false'}
+              />
+            </Center>
           </Flex>
           <Box fontSize="12px" fontWeight="400" alignSelf={'center'} mt="6px !important">
             {t('Balance')}

@@ -19,4 +19,5 @@ export type EnvResponse = {
   TEMPLATE_REPO_URL: string;
   SEALOS_NAMESPACE: string;
   SEALOS_SERVICE_ACCOUNT: string;
+  SHOW_AUTHOR: string;
 };
