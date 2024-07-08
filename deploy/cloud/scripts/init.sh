@@ -23,9 +23,6 @@ function prepare {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
-  # kubectl apply default desktop apps
-  kubectl apply -f manifests/default_apps.yaml
-
   # gen mongodb uri
   gen_mongodbUri
 
@@ -193,6 +190,9 @@ function sealos_run_controller {
 
   # run app controller
   sealos run tars/app.tar
+
+  # kubectl apply default desktop apps
+  retry_kubectl_apply "manifests/default_apps.yaml"
 
   # run resources monitoring controller
   sealos run tars/monitoring.tar \
