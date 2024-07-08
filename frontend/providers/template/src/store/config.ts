@@ -1,14 +1,17 @@
-import { getSystemConfig, getTemplates } from '@/api/platform';
+import { getPlatformEnv, getSystemConfig, getTemplates } from '@/api/platform';
+import { EnvResponse } from '@/types';
 import { ApplicationType, SideBarMenuType, SystemConfigType } from '@/types/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
+  envs?: EnvResponse;
   systemConfig: SystemConfigType | undefined;
   menuKeys: string;
   sideBarMenu: SideBarMenuType[];
   initSystemConfig: () => Promise<SystemConfigType>;
+  initSystemEnvs: () => Promise<EnvResponse>;
   setSideBarMenu: (data: SideBarMenuType[]) => void;
 };
 
@@ -44,6 +47,13 @@ export const useSystemConfigStore = create<State>()(
           state.systemConfig = data;
         });
         return data;
+      },
+      async initSystemEnvs() {
+        const envs = await getPlatformEnv();
+        set((state) => {
+          state.envs = envs;
+        });
+        return envs;
       },
       setSideBarMenu(data) {
         set((state) => {

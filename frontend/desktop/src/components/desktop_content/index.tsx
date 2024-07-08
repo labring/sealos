@@ -42,6 +42,7 @@ export default function Desktop(props: any) {
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { message } = useMessage();
   const [showAccount, setShowAccount] = useState(false);
+  const { layoutConfig } = useConfigStore();
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -153,7 +154,7 @@ export default function Desktop(props: any) {
           }}
           gap={'8px'}
         >
-          <Assistant />
+          {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
           <Monitor />
           <Warn />
         </Flex>
@@ -162,7 +163,7 @@ export default function Desktop(props: any) {
         <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
           <Flex zIndex={2} flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
             <Box display={{ base: 'block', xl: 'none' }}>
-              <Assistant />
+              {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
             </Box>
             <SearchBox />
             <TriggerAccountModule showAccount={showAccount} setShowAccount={setShowAccount} />
