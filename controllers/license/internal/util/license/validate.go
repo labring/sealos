@@ -73,7 +73,7 @@ func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clust
 	}
 	// if clusterID is empty, it means this license is a super license.
 	if claims.ClusterID != "" && claims.ClusterID != clusterID {
-		return licensev1.ValidationError, nil
+		return licensev1.ValidationClusterIDMismatch, nil
 	}
 
 	if claims.Type == licensev1.ClusterLicenseType {
