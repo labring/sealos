@@ -8,7 +8,6 @@ require (
 	github.com/alibabacloud-go/tea v1.2.1
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.4
 	github.com/astaxie/beego v1.12.3
-	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/go-logr/logr v1.2.4
 	github.com/google/uuid v1.6.0
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
@@ -18,6 +17,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.8
 	github.com/volcengine/volc-sdk-golang v1.0.159
+	github.com/wneessen/go-mail v0.4.2
 	go.mongodb.org/mongo-driver v1.12.1
 	golang.org/x/sync v0.6.0
 	gorm.io/gorm v1.25.5
@@ -127,8 +127,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
 	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
-	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

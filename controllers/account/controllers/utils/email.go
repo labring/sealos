@@ -14,7 +14,11 @@
 
 package utils
 
-import "github.com/go-gomail/gomail"
+import (
+	"fmt"
+
+	"github.com/wneessen/go-mail"
+)
 
 type SMTPConfig struct {
 	ServerHost string
@@ -25,11 +29,20 @@ type SMTPConfig struct {
 }
 
 func (c *SMTPConfig) SendEmail(emailBody, to string) error {
-	m := gomail.NewMessage()
-	m.SetHeader("To", to)
-	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
-	m.SetHeader("Subject", c.EmailTitle)
-	m.SetBody("text/html", emailBody)
-	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.FromEmail, c.Passwd)
-	return d.DialAndSend(m)
+	msg := mail.NewMsg()
+	if err := msg.To(to); err != nil {
+		return fmt.Errorf("failed to set mail TO address: %w", err)
+	}
+	if err := msg.FromFormat(c.EmailTitle, c.FromEmail); err != nil {
+		return fmt.Errorf("failed to set mail FROM address: %w", err)
+	}
+	msg.Subject(c.EmailTitle)
+	msg.SetBodyString(mail.TypeTextHTML, emailBody)
+
+	client, err := mail.NewClient(c.ServerHost, mail.WithPort(c.ServerPort),
+		mail.WithUsername(c.FromEmail), mail.WithPassword(c.Passwd))
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	return client.DialAndSend(msg)
 }
