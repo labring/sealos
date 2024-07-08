@@ -99,7 +99,6 @@ const listNotifications = async (namespace: string): Promise<NotificationCR[]> =
 
     return notifications;
   } catch (err) {
-    console.error('Error listing notifications:', err);
     throw err;
   }
 };
@@ -119,7 +118,6 @@ const deleteNotification = async (namespace: string, name: string) => {
       name
     );
   } catch (err) {
-    console.error(`Error deleting notification ${name}:`, err);
     throw err;
   }
 };
