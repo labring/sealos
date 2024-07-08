@@ -8,14 +8,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (process.env.NODE_ENV !== 'production' && !hasAddedCron) {
     hasAddedCron = true;
-    cron.schedule('0 10 * * *', async () => {
-      try {
-        const result = await (await fetch(`${baseurl}/api/license/checkLicenses`)).json();
-        console.log(result);
-      } catch (error) {
-        console.log(error);
+    cron.schedule(
+      '0 10 * * *',
+      async () => {
+        try {
+          const result = await (await fetch(`${baseurl}/api/license/checkLicenses`)).json();
+          console.log(result);
+        } catch (error) {
+          console.log(error);
+        }
+      },
+      {
+        scheduled: true,
+        timezone: 'Asia/Shanghai'
       }
-    });
+    );
   }
 
   jsonRes(res, {

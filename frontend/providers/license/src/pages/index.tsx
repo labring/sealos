@@ -12,7 +12,7 @@ import { Box, Center, Divider, Flex, Image, Text } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function LicenseApp() {
   const { t } = useTranslation();
@@ -21,6 +21,12 @@ export default function LicenseApp() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [purchaseLink, setPurchaseLink] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const queryClient = useQueryClient();
 
   const licenseMutation = useMutation(['licenseMutation'], {
@@ -152,7 +158,7 @@ export default function LicenseApp() {
             </Text>
 
             <Text fontSize={'12px'}>
-              {t('expire_date')}: {formatTime(maxExpTime * 1000)}
+              {t('expire_date')}: {isClient && formatTime(maxExpTime * 1000)}
             </Text>
 
             <Divider my={'28px'} borderColor={'rgba(255, 255, 255, 0.05)'} />
