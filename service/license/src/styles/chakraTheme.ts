@@ -22,11 +22,11 @@ const Button = defineStyleConfig({
   },
   variants: {
     primary: {
-      bg: '#3E3B3B',
+      bg: '#111824',
       _hover: {
-        bg: '#3E3B3B',
+        bg: '#111824',
         _disabled: {
-          bg: '#3E3B3B'
+          bg: '#111824'
         }
       },
       color: '#FEFEFE'
@@ -148,6 +148,13 @@ const Switch = SwitchHelper.defineMultiStyleConfig({
 export const theme = extendTheme({
   initialColorMode: 'light',
   colors: ThemeColors,
+  styles: {
+    global: {
+      'html, body': {
+        fontFamily: 'PingFang SC'
+      }
+    }
+  },
   components: {
     Button,
     Input,

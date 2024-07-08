@@ -1695,6 +1695,9 @@ importers:
       next-i18next:
         specifier: ^13.3.0
         version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+      node-cron:
+        specifier: ^3.0.3
+        version: 3.0.3
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0

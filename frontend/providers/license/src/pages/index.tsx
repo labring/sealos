@@ -1,4 +1,4 @@
-import { applyLicense, getLicenseRecord } from '@/api/license';
+import { applyLicense, checkLicenses, getLicenseByName, getLicenseRecord } from '@/api/license';
 import { getClusterId, getPlatformEnv } from '@/api/platform';
 import FileSelect, { FileItemType } from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
@@ -12,7 +12,7 @@ import { Box, Center, Divider, Flex, Image, Text } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function LicenseApp() {
   const { t } = useTranslation();
@@ -20,22 +20,41 @@ export default function LicenseApp() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const { copyData } = useCopyData();
   const [purchaseLink, setPurchaseLink] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const queryClient = useQueryClient();
 
-  const licenseMutation = useMutation({
-    mutationFn: (yamlList: string[]) => applyLicense(yamlList, 'create'),
-    onSuccess(data) {
-      console.log(data, 'data');
-      toast({
-        title: t('Activation Successful'),
-        status: 'success'
-      });
+  const licenseMutation = useMutation(['licenseMutation'], {
+    mutationFn: () => {
+      const licenseFile = files[0].text;
+      const licenseStr = json2License(licenseFile).yamlStr;
+      return applyLicense([licenseStr], 'create');
+    },
+    async onSuccess() {
+      const licenseFile = files[0].text;
+      const licenseObj = json2License(licenseFile).yamlObj;
+      const result = await getLicenseByName({ name: licenseObj.metadata.name });
+
+      if (result.status.phase !== 'Active') {
+        toast({
+          title: result.status.reason,
+          status: 'error'
+        });
+      } else {
+        await checkLicenses();
+        toast({
+          title: t('Activation Successful'),
+          status: 'success'
+        });
+      }
       queryClient.invalidateQueries(['getLicenseActive']);
     },
     onError(error: { message?: string }) {
-      console.log(error);
       if (error?.message && typeof error?.message === 'string') {
         toast({
           title: error.message,
@@ -81,8 +100,7 @@ export default function LicenseApp() {
         status: 'error'
       });
     }
-    const yamlList = files.map((item) => json2License(item.text));
-    licenseMutation.mutate(yamlList);
+    licenseMutation.mutate();
   }, 500);
 
   const downloadToken = (token: string) => {
@@ -91,15 +109,16 @@ export default function LicenseApp() {
   };
 
   const maxExpTime = useMemo(() => {
-    if (data) {
+    const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+    if (data && data.length > 0) {
       const maxItem = data.reduce((item, license) => {
-        const maxTime = decodeJWT(item.spec.token)?.exp || 0;
-        const currentTime = decodeJWT(license.spec.token)?.exp || 0;
+        const maxTime = decodeJWT(item.spec.token)?.exp || currentTimeInSeconds;
+        const currentTime = decodeJWT(license.spec.token)?.exp || currentTimeInSeconds;
         return currentTime > maxTime ? license : item;
       });
-      return decodeJWT(maxItem.spec.token)?.exp || 0;
+      return decodeJWT(maxItem.spec.token)?.exp || currentTimeInSeconds;
     } else {
-      return 0;
+      return currentTimeInSeconds;
     }
   }, [data]);
 
@@ -140,7 +159,7 @@ export default function LicenseApp() {
             </Text>
 
             <Text fontSize={'12px'}>
-              {t('expire_date')}: {formatTime(maxExpTime * 1000)}
+              {t('expire_date')}: {isClient && formatTime(maxExpTime * 1000)}
             </Text>
 
             <Divider my={'28px'} borderColor={'rgba(255, 255, 255, 0.05)'} />
@@ -178,7 +197,7 @@ export default function LicenseApp() {
         <Text color={'#262A32'} fontSize={'24px'} fontWeight={600}>
           {t('Activate License')}
         </Text>
-        <FileSelect fileExtension={'.yaml'} files={files} setFiles={setFiles} />
+        <FileSelect multiple={false} fileExtension={'.yaml'} files={files} setFiles={setFiles} />
         <Flex
           userSelect={'none'}
           ml={'auto'}
