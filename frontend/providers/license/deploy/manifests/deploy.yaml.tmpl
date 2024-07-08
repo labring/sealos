@@ -127,6 +127,15 @@ spec:
           # do not modify this image, it is used for CI/CD
           image: ghcr.io/labring/sealos-license-frontend:latest
           imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              path: /api/cronjob/init
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
           volumeMounts:
             - name: license-frontend-volume
               mountPath: /config.yaml

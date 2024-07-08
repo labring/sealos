@@ -1,3 +1,4 @@
+import { LicenseFrontendKey } from '@/constants/key';
 import { LicenseYaml, NotificationCR } from '@/types';
 import yaml from 'js-yaml';
 
@@ -29,7 +30,8 @@ export const json2Notification = ({
     kind: 'Notification',
     metadata: {
       labels: {
-        isRead: 'false'
+        isRead: 'false',
+        [LicenseFrontendKey]: name
       },
       name: name,
       namespace: namespace

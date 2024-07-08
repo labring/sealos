@@ -1,4 +1,4 @@
-import { applyLicense, getLicenseByName, getLicenseRecord } from '@/api/license';
+import { applyLicense, checkLicenses, getLicenseByName, getLicenseRecord } from '@/api/license';
 import { getClusterId, getPlatformEnv } from '@/api/platform';
 import FileSelect, { FileItemType } from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
@@ -46,6 +46,7 @@ export default function LicenseApp() {
           status: 'error'
         });
       } else {
+        await checkLicenses();
         toast({
           title: t('Activation Successful'),
           status: 'success'

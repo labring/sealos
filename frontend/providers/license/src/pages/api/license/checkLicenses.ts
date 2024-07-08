@@ -1,6 +1,7 @@
+import { LicenseFrontendKey } from '@/constants/key';
 import { K8sApiDefault, createYaml } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { LicenseCR } from '@/types';
+import { LicenseCR, NotificationCR } from '@/types';
 import { decodeJWT } from '@/utils/crypto';
 import { json2Notification } from '@/utils/json2Yaml';
 import { formatTimeToDay } from '@/utils/tools';
@@ -29,7 +30,26 @@ const createLicenseNotification = (licenses: LicenseCR[], timeUntilExpiration: n
   }
 
   const daysUntilExpiration = Math.ceil(timeUntilExpiration / (24 * 60 * 60));
-  if (daysUntilExpiration <= 30) {
+
+  if (timeUntilExpiration <= 0) {
+    return json2Notification({
+      namespace: 'sealos',
+      name: `license-notification-${Date.now()}`,
+      desktopPopup: true,
+      i18ns: {
+        zh: {
+          from: 'License',
+          title: '许可证已过期',
+          message: '您的许可证已过期。请立即续期。'
+        },
+        en: {
+          from: 'License',
+          title: 'License Expired',
+          message: 'Your license has expired. Please renew it immediately.'
+        }
+      }
+    });
+  } else if (daysUntilExpiration <= 30) {
     return json2Notification({
       namespace: 'sealos',
       name: `license-notification-${Date.now()}`,
@@ -52,6 +72,58 @@ const createLicenseNotification = (licenses: LicenseCR[], timeUntilExpiration: n
   return null;
 };
 
+const listNotifications = async (namespace: string): Promise<NotificationCR[]> => {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+
+  const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
+
+  try {
+    const response = (await k8sApi.listNamespacedCustomObject(
+      'notification.sealos.io',
+      'v1',
+      namespace,
+      'notifications',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${LicenseFrontendKey}`
+    )) as {
+      body: {
+        items: NotificationCR[];
+      };
+    };
+
+    const notifications = response.body.items;
+
+    return notifications;
+  } catch (err) {
+    console.error('Error listing notifications:', err);
+    throw err;
+  }
+};
+
+const deleteNotification = async (namespace: string, name: string) => {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+
+  const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
+
+  try {
+    await k8sApi.deleteNamespacedCustomObject(
+      'notification.sealos.io',
+      'v1',
+      namespace,
+      'notifications',
+      name
+    );
+  } catch (err) {
+    console.error(`Error deleting notification ${name}:`, err);
+    throw err;
+  }
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const defaultKc = K8sApiDefault();
@@ -64,6 +136,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       };
     };
     const licenses = response.body.items.filter((item) => item.status.phase === 'Active');
+
+    // Delete Old Notifications
+    const notifications = await listNotifications('sealos');
+    for (const notification of notifications) {
+      await deleteNotification(notification.metadata.namespace, notification.metadata.name);
+    }
 
     if (licenses.length === 0) {
       const noLicenseNotification = createLicenseNotification(licenses, 0);
