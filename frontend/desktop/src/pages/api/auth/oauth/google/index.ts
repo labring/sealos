@@ -25,7 +25,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         )(res, async ({ id, name, avatar_url }) => {
           const presistAvatarUrl =
             (await persistImage(avatar_url, 'avatar/' + ProviderType.GOOGLE + '/' + id)) || '';
-          getGlobalTokenByGoogleSvc(presistAvatarUrl, id, name, inviterId);
+          await getGlobalTokenByGoogleSvc(presistAvatarUrl, id, name, inviterId)(res);
         });
       })
   );

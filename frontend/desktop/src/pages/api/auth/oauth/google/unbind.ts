@@ -5,7 +5,7 @@ import {
   OauthCodeFilter,
   googleOAuthEnvFilter,
   googleOAuthGuard,
-  unbindGithubGuard
+  unbindGoogleGuard
 } from '@/services/backend/middleware/oauth';
 import { unbindGoogleSvc } from '@/services/backend/svc/bindProvider';
 import { ErrorHandler } from '@/services/backend/middleware/error';
@@ -23,7 +23,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
           code,
           callbackURL
         )(res, ({ name, id, avatar_url }) =>
-          unbindGithubGuard(id, userUid)(res, () => unbindGoogleSvc(id, userUid)(res))
+          unbindGoogleGuard(id, userUid)(res, () => unbindGoogleSvc(id, userUid)(res))
         );
       });
     });
