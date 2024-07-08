@@ -40,3 +40,41 @@ export type LicenseYaml = {
     token: string;
   };
 };
+
+export type LicenseCR = {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    annotations: {
+      [key: string]: string;
+    };
+    creationTimestamp: string;
+    generation: number;
+    name: string;
+    namespace: string;
+    resourceVersion: string;
+    uid: string;
+  };
+  spec: {
+    token: string;
+    type: string;
+  };
+  status: {
+    activationTime: string;
+    expirationTime: string;
+    phase: string;
+  };
+};
+
+export type LicenseToken = {
+  iss: string;
+  iat: number;
+  exp: number;
+  type: string;
+  clusterID: string;
+  data: {
+    nodeCount: number;
+    totalCPU: number;
+    totalMemory: number;
+  };
+};

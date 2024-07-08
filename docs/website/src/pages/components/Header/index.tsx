@@ -17,6 +17,11 @@ const navbar = [
     to: '/docs/Intro'
   },
   {
+    key: 'appstore',
+    label: <Translate>App Store</Translate>,
+    to: 'https://template.cloud.sealos.io'
+  },
+  {
     key: 'community',
     label: <Translate>Community</Translate>,
     to: 'https://forum.laf.run/'

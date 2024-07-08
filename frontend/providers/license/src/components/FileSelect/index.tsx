@@ -160,12 +160,12 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
     <Flex
       mt="24px"
       position={'relative'}
-      bg={'#f4f6f8'}
+      bg={'white'}
       justifyContent={'center'}
       alignItems={'center'}
       h="132px"
-      borderRadius={'4px'}
-      border={'1px solid #DEE0E2'}
+      borderRadius={'8px'}
+      border={'1px dashed #C4CBD7'}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragEnter}
       onDragLeave={handleDragLeave}

@@ -255,7 +255,7 @@ init() {
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
-    pull_image "cockroach" "latest"
+    pull_image "cockroach" "v2.12.0"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "victoria-metrics-k8s-stack" "v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -549,7 +549,7 @@ volumeBindingMode: WaitForFirstConsumer
 EOF
 
     # TODO use sealos run to install cockroachdb-operator
-    sealos run "${image_registry}/${image_repository}/cockroach:latest"
+    sealos run "${image_registry}/${image_repository}/cockroach:v2.12.0"
 
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"

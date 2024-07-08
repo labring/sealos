@@ -32,7 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       virtualMachineType: form.virtualMachineType,
       virtualMachineArch: form.virtualMachineArch,
       chargeType: form.chargeType,
-      period: parseInt(form.period)
+      period: parseInt(form.period),
+      counts: form.counts
     };
 
     const result = await POST('/action/get-price', payload, {

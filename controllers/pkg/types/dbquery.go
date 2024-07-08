@@ -14,11 +14,54 @@
 
 package types
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserQueryOpts struct {
 	UID         uuid.UUID
 	ID          string
 	Owner       string
 	IgnoreEmpty bool
+}
+
+type GetTransfersReq struct {
+	*UserQueryOpts
+	// can be empty to get all transfers
+	TransferID string `json:"transferID"`
+
+	// 0: all, 1: in, 2: out
+	Type     TransferType `json:"type"`
+	LimitReq `json:",inline"`
+}
+
+type TransferType int
+
+const (
+	TypeTransferAll TransferType = iota
+	TypeTransferIn
+	TypeTransferOut
+)
+
+type TimeRange struct {
+	StartTime time.Time `json:"startTime" bson:"startTime" example:"2021-01-01T00:00:00Z"`
+	EndTime   time.Time `json:"endTime" bson:"endTime" example:"2021-12-01T00:00:00Z"`
+}
+
+type GetTransfersResp struct {
+	Transfers []Transfer `json:"transfers"`
+	LimitResp `json:",inline"`
+}
+
+type LimitReq struct {
+	Page      int `json:"page"`
+	PageSize  int `json:"pageSize"`
+	TimeRange `json:",inline"`
+}
+
+type LimitResp struct {
+	Total     int64 `json:"total"`
+	TotalPage int64 `json:"totalPage"`
 }

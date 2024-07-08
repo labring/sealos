@@ -23,12 +23,14 @@ import {
   Button,
   useDisclosure
 } from '@chakra-ui/react';
+import { MyTooltip } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, UseFormReturn, useFieldArray } from 'react-hook-form';
+import styles from './index.module.scss';
 import Cron from './Cron';
 import Label from './Label';
 import EditEnvs from './EditEnvs';
@@ -368,6 +370,36 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   >
                     {t('Edit Environment Variables')}
                   </Button>
+                  <Box mt={3} w={'300px'}>
+                    <table className={'table-cross'}>
+                      <tbody>
+                        {envs.map((env) => {
+                          const valText = env.value
+                            ? env.value
+                            : env.valueFrom
+                            ? 'value from | ***'
+                            : '';
+                          return (
+                            <tr key={env.id}>
+                              <th>{env.key}</th>
+                              <th>
+                                <MyTooltip label={valText}>
+                                  <Box
+                                    className={styles.textEllipsis}
+                                    style={{
+                                      userSelect: 'auto'
+                                    }}
+                                  >
+                                    {valText}
+                                  </Box>
+                                </MyTooltip>
+                              </th>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </Box>
                 </Box>
               </>
             )}

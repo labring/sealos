@@ -64,6 +64,10 @@ func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
 	k.kubeadmConfig.SetAPIVersion(apiVersion)
 }
 
+func (k *KubeadmRuntime) setInitConfigurationPullPolicy(policy v1.PullPolicy) {
+	k.kubeadmConfig.InitConfiguration.NodeRegistration.ImagePullPolicy = policy
+}
+
 // GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
 // The support matrix will look something like this now and in the future:
 // v1.22: v1beta2 read-only, writes only v1beta3 Config. Errors if the user tries to use v1beta1 and older
