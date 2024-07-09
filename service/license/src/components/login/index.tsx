@@ -1,11 +1,10 @@
 import { getSystemEnv, uploadConvertData } from '@/api/system';
-import useAuthList from '@/components/signin/auth/useAuthList';
-import useCustomError from '@/components/signin/auth/useCustomError';
-import Language from '@/components/signin/auth/useLanguage';
-import usePassword from '@/components/signin/auth/usePassword';
-import useProtocol from '@/components/signin/auth/useProtocol';
-import useSms from '@/components/signin/auth/useSms';
-import useSessionStore from '@/stores/session';
+import useAuthList from '@/components/login/auth/useAuthList';
+import useCustomError from '@/components/login/auth/useCustomError';
+import Language from '@/components/login/auth/useLanguage';
+import usePassword from '@/components/login/auth/usePassword';
+import useProtocol from '@/components/login/auth/useProtocol';
+import useSms from '@/components/login/auth/useSms';
 import { LoginType } from '@/types';
 import {
   Box,
