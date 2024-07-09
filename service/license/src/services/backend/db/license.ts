@@ -118,7 +118,22 @@ export function generateLicenseToken(payload: LicenseToken, time: number) {
     iss: 'Sealos',
     iat: nowInSeconds,
     exp: expirationTime,
-    ...payload
+    type: payload.type,
+    clusterID: payload.clusterID,
+    data: {
+      totalCPU:
+        typeof payload.data.totalCPU === 'number'
+          ? payload.data.totalCPU
+          : parseInt(payload.data.totalCPU),
+      totalMemory:
+        typeof payload.data.totalMemory === 'number'
+          ? payload.data.totalMemory
+          : parseInt(payload.data.totalMemory),
+      nodeCount:
+        typeof payload.data.nodeCount === 'number'
+          ? payload.data.nodeCount
+          : parseInt(payload.data.nodeCount)
+    }
   };
 
   const token = sign(_payload, base64Decode(privateKey), { algorithm: 'RS256' });

@@ -1,5 +1,6 @@
 import { KubeConfig } from '@kubernetes/client-node';
 import { APPTYPE, displayType } from './app';
+import { LicenseFrontendKey } from '@/constants/account';
 
 export type CRDMeta = {
   group: string; // group
@@ -102,6 +103,7 @@ export type NotificationItem = {
     creationTimestamp: string;
     labels: {
       isRead: string;
+      [LicenseFrontendKey]?: string;
     };
     name: string;
     namespace: string;
