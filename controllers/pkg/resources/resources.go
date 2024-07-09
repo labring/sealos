@@ -100,6 +100,7 @@ type Billing struct {
 	//UsedAmount Used        `json:"used_amount" bson:"used_amount"`
 
 	AppCosts []AppCost `json:"app_costs,omitempty" bson:"app_costs,omitempty"`
+	AppName  string    `json:"app_name,omitempty" bson:"app_name,omitempty"`
 	AppType  uint8     `json:"app_type,omitempty" bson:"app_type,omitempty"`
 
 	Amount int64  `json:"amount" bson:"amount,omitempty"`

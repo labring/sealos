@@ -393,7 +393,7 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	minutes := endTime.Sub(startTime).Minutes()
 
 	groupStage := bson.D{
-		primitive.E{Key: "_id", Value: bson.D{{Key: "type", Value: "$type"}, {Key: "name", Value: "$name"}, {Key: "category", Value: "$category"}}},
+		primitive.E{Key: "_id", Value: bson.D{{Key: "type", Value: "$type"}, {Key: "name", Value: "$name"}, {Key: "category", Value: "$category"}, {Key: "parent_type", Value: "$parent_type"}, {Key: "parent_name", Value: "$parent_name"}}},
 		primitive.E{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 	}
 
@@ -532,18 +532,20 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 				return nil, 0, fmt.Errorf("generate billing id error: %v", err)
 			}
 			// tp = ns/type/parentName && parentName not contain "/"
-			appType := 0
+			appType, appName := 0, ""
 			switch strings.Count(tp, "/") {
 			case 1:
 				appType, _ = strconv.Atoi(strings.Split(tp, "/")[1])
 			case 2:
-				appType, _ = strconv.Atoi(strings.Split(tp, "/")[2])
+				appType, _ = strconv.Atoi(strings.Split(tp, "/")[1])
+				appName = strings.Split(tp, "/")[2]
 			}
 			billing := resources.Billing{
 				OrderID:   id,
 				Type:      accountv1.Consumption,
 				Namespace: ns,
 				AppType:   uint8(appType),
+				AppName:   appName,
 				AppCosts:  appCost,
 				Amount:    amountt,
 				Owner:     owner,
