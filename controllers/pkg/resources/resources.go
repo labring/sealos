@@ -339,8 +339,9 @@ const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
 const ResourceNetwork = "network"
 
 const (
-	ResourceRequestGpu corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
-	ResourceLimitGpu   corev1.ResourceName = "limits." + gpu.NvidiaGpuKey
+	ResourceRequestGpu        corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
+	ResourceLimitGpu          corev1.ResourceName = "limits." + gpu.NvidiaGpuKey
+	ResourceObjectStorageSize corev1.ResourceName = "objectstorage/size"
 )
 
 func NewGpuResource(product string) corev1.ResourceName {
@@ -378,19 +379,21 @@ func GetDefaultLimitRange(ns, name string) *corev1.LimitRange {
 }
 
 const (
-	QuotaLimitsCPU       = "QUOTA_LIMITS_CPU"
-	QuotaLimitsMemory    = "QUOTA_LIMITS_MEMORY"
-	QuotaLimitsStorage   = "QUOTA_LIMITS_STORAGE"
-	QuotaLimitsGPU       = "QUOTA_LIMITS_GPU"
-	QuotaLimitsNodePorts = "QUOTA_LIMITS_NODE_PORTS"
+	QuotaLimitsCPU         = "QUOTA_LIMITS_CPU"
+	QuotaLimitsMemory      = "QUOTA_LIMITS_MEMORY"
+	QuotaLimitsStorage     = "QUOTA_LIMITS_STORAGE"
+	QuotaLimitsGPU         = "QUOTA_LIMITS_GPU"
+	QuotaLimitsNodePorts   = "QUOTA_LIMITS_NODE_PORTS"
+	QuotaObjectStorageSize = "QUOTA_OBJECT_STORAGE_SIZE"
 )
 
 const (
-	DefaultQuotaLimitsCPU       = "16"
-	DefaultQuotaLimitsMemory    = "64Gi"
-	DefaultQuotaLimitsStorage   = "100Gi"
-	DefaultQuotaLimitsGPU       = "8"
-	DefaultQuotaLimitsNodePorts = "3"
+	DefaultQuotaLimitsCPU         = "16"
+	DefaultQuotaLimitsMemory      = "64Gi"
+	DefaultQuotaLimitsStorage     = "100Gi"
+	DefaultQuotaLimitsGPU         = "8"
+	DefaultQuotaLimitsNodePorts   = "3"
+	DefaultQuotaObjectStorageSize = "10Gi"
 )
 
 func DefaultResourceQuotaHard() corev1.ResourceList {
@@ -402,6 +405,7 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 		corev1.ResourceRequestsStorage:        resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
 		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
 		corev1.ResourceServicesNodePorts:      resource.MustParse(env.GetEnvWithDefault(QuotaLimitsNodePorts, DefaultQuotaLimitsNodePorts)),
+		ResourceObjectStorageSize:             resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageSize, DefaultQuotaObjectStorageSize)),
 		//TODO storage.diskio.read, storage.diskio.write
 	}
 }

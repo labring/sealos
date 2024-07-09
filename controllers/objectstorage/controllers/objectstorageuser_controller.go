@@ -34,6 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -82,6 +83,7 @@ const (
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	username := req.Name
@@ -202,7 +204,15 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Logger.V(1).Info("[user] user info", "name", user.Name, "quota", user.Status.Quota, "size", size, "objectsCount", user.Status.ObjectsCount)
 
-	if r.QuotaEnabled && size > user.Status.Quota {
+	quota := &corev1.ResourceQuota{}
+	if err := r.Get(ctx, client.ObjectKey{Name: "quota-" + userNamespace, Namespace: userNamespace}, quota); err != nil {
+		r.Logger.Error(err, "failed to get resource quota", "name", "quota"+userNamespace, "namespace", userNamespace)
+	}
+
+	quotaSize := quota.Spec.Hard.Name("objectstorage/size", resource.BinarySI)
+	r.Logger.V(1).Info("-------------", "quotaSiez", quotaSize, "value:", quotaSize.Value())
+
+	if r.QuotaEnabled && size > quotaSize.Value() {
 		if err := r.addUserToGroup(ctx, accessKey, UserDenyWriteGroup); err != nil {
 			r.Logger.Error(err, "failed to add user to userDenyWrite group")
 			return ctrl.Result{}, err
