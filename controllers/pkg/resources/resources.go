@@ -129,6 +129,7 @@ type Transfer struct {
 }
 
 type AppCost struct {
+	Type       uint8       `json:"type" bson:"type"`
 	Used       EnumUsedMap `json:"used" bson:"used"`
 	UsedAmount EnumUsedMap `json:"used_amount" bson:"used_amount"`
 	Amount     int64       `json:"amount" bson:"amount,omitempty"`
