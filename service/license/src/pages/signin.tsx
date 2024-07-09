@@ -1,4 +1,4 @@
-import SigninComponent from '@/components/login-module';
+import SigninComponent from '@/components/signin';
 import useRouteParamsStore from '@/stores/routeParams';
 import useSessionStore from '@/stores/session';
 import { ClusterType } from '@/types';
