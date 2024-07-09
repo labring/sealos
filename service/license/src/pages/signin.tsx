@@ -1,4 +1,4 @@
-import SigninComponent from '@/components/signin';
+import LoginComponent from '@/components/login';
 import useRouteParamsStore from '@/stores/routeParams';
 import useSessionStore from '@/stores/session';
 import { ClusterType } from '@/types';
@@ -27,7 +27,7 @@ export default function SigninPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <SigninComponent />;
+  return <LoginComponent />;
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
