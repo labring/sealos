@@ -82,6 +82,13 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 			return err
 		}
 	}
+
+	if gte(sver, V1270) {
+		if err := k.changeKubeletExtraArgs(master0ip); err != nil {
+			return err
+		}
+	}
+
 	master0Name, err := k.remoteUtil.Hostname(master0ip)
 	if err != nil {
 		return err
@@ -139,6 +146,13 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 				return err
 			}
 		}
+
+		if gte(sver, V1270) {
+			if err := k.changeKubeletExtraArgs(ip); err != nil {
+				return err
+			}
+		}
+
 		nodename, err := k.remoteUtil.Hostname(ip)
 		if err != nil {
 			return err
@@ -287,6 +301,14 @@ func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
 	return k.sshCmdAsync(ip,
 		"sed -i \"s/v1alpha2/v1/\" /etc/image-cri-shim.yaml",
 		"systemctl restart image-cri-shim",
+		"systemctl restart kubelet",
+	)
+}
+
+func (k *KubeadmRuntime) changeKubeletExtraArgs(ip string) error {
+	return k.sshCmdAsync(ip,
+		`FILE="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf" && [ -f "$FILE" ] && sed -i 's/\(--container-runtime=\|--pod-infra-container-image=\)\([^ ]*\)\?//g' "$FILE"`,
+		"systemctl daemon-reload",
 		"systemctl restart kubelet",
 	)
 }
