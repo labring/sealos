@@ -84,25 +84,17 @@ rules:
   - list
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - app.sealos.io
   resources:
-  - infras
+  - instances
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - app.sealos.io
   resources:
-  - infras/finalizers
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - infra.sealos.io
-  resources:
-  - infras/status
+  - instances/status
   verbs:
   - get
   - list
