@@ -25,6 +25,9 @@ import (
 	"sync"
 	"time"
 
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -299,12 +302,15 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 	timeStamp := time.Now().UTC()
 	resUsed := map[string]map[corev1.ResourceName]*quantity{}
 	resNamed := make(map[string]*resources.ResourceNamed)
-
-	if err := r.monitorPodResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+	instances, err := r.getInstances(namespace.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get instances: %v", err)
+	}
+	if err := r.monitorPodResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
 		return fmt.Errorf("failed to monitor pod resource usage: %v", err)
 	}
 
-	if err := r.monitorPVCResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+	if err := r.monitorPVCResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
 		return fmt.Errorf("failed to monitor PVC resource usage: %v", err)
 	}
 
@@ -312,7 +318,7 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to monitor backup resource usage: %v", err)
 	}
 
-	if err := r.monitorServiceResourceUsage(namespace.Name, resUsed, resNamed); err != nil {
+	if err := r.monitorServiceResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
 		return fmt.Errorf("failed to monitor service resource usage: %v", err)
 	}
 
@@ -328,17 +334,36 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 			continue
 		}
 		monitors = append(monitors, &resources.Monitor{
-			Category: namespace.Name,
-			Used:     used,
-			Time:     timeStamp,
-			Type:     resNamed[name].Type(),
-			Name:     resNamed[name].Name(),
+			Category:   namespace.Name,
+			Used:       used,
+			Time:       timeStamp,
+			Type:       resNamed[name].Type(),
+			Name:       resNamed[name].Name(),
+			ParentType: resNamed[name].ParentType(),
+			ParentName: resNamed[name].ParentName(),
 		})
 	}
 	return r.DBClient.InsertMonitor(context.Background(), monitors...)
 }
 
-func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+func (r *MonitorReconciler) getInstances(namespace string) (map[string]struct{}, error) {
+	instances := make(map[string]struct{})
+	insList := metav1.PartialObjectMetadataList{}
+	insList.SetGroupVersionKind(appv1.GroupVersion.WithKind("InstanceList"))
+	if err := r.List(context.Background(), &insList, client.InNamespace(namespace)); err != nil {
+		return nil, fmt.Errorf("failed to list instances: %v", err)
+	}
+	for i := range insList.Items {
+		name := insList.Items[i].Labels[resources.AppStoreDeployLabelKey]
+		if name == "" {
+			name = insList.Items[i].Name
+		}
+		instances[name] = struct{}{}
+	}
+	return instances, nil
+}
+
+func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed, instances map[string]struct{}) error {
 	podList := &corev1.PodList{}
 	if err := r.List(context.Background(), podList, &client.ListOptions{
 		Namespace: namespace,
@@ -352,6 +377,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed ma
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(pod)
+		podResNamed.SetInstanceParent(instances)
 		resNamed[podResNamed.String()] = podResNamed
 		if resUsed[podResNamed.String()] == nil {
 			resUsed[podResNamed.String()] = initResources()
@@ -383,7 +409,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed ma
 	return nil
 }
 
-func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed, instances map[string]struct{}) error {
 	pvcList := &corev1.PersistentVolumeClaimList{}
 	if err := r.List(context.Background(), pvcList, &client.ListOptions{
 		Namespace:     namespace,
@@ -397,6 +423,7 @@ func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed ma
 			continue
 		}
 		pvcRes := resources.NewResourceNamed(pvc)
+		pvcRes.SetInstanceParent(instances)
 		if resUsed[pvcRes.String()] == nil {
 			resNamed[pvcRes.String()] = pvcRes
 			resUsed[pvcRes.String()] = initResources()
@@ -424,7 +451,8 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed
 	return nil
 }
 
-func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+// instance is the app instance name
+func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed, instances map[string]struct{}) error {
 	svcList := &corev1.ServiceList{}
 	if err := r.List(context.Background(), svcList, &client.ListOptions{
 		Namespace:     namespace,
@@ -442,6 +470,7 @@ func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUse
 			port[svcPort.NodePort] = struct{}{}
 		}
 		svcRes := resources.NewResourceNamed(svc)
+		svcRes.SetInstanceParent(instances)
 		if resUsed[svcRes.String()] == nil {
 			resNamed[svcRes.String()] = svcRes
 			resUsed[svcRes.String()] = initResources()

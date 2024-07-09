@@ -30,6 +30,8 @@ import (
 	"github.com/labring/sealos/controllers/pkg/objectstorage"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
+
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -51,6 +53,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(appv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

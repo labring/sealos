@@ -79,11 +79,13 @@ type Price struct {
 type Monitor struct {
 	Time time.Time `json:"time" bson:"time"`
 	// equal namespace
-	Category string      `json:"category" bson:"category"`
-	Type     uint8       `json:"type" bson:"type"`
-	Name     string      `json:"name" bson:"name"`
-	Used     EnumUsedMap `json:"used" bson:"used"`
-	Property string      `json:"property,omitempty" bson:"property,omitempty"`
+	Category   string      `json:"category" bson:"category"`
+	Type       uint8       `json:"type" bson:"type"`
+	ParentType uint8       `json:"parent_type" bson:"parent_type"`
+	ParentName string      `json:"parent_name" bson:"parent_name"`
+	Name       string      `json:"name" bson:"name"`
+	Used       EnumUsedMap `json:"used" bson:"used"`
+	Property   string      `json:"property,omitempty" bson:"property,omitempty"`
 }
 
 type BillingType int
@@ -162,6 +164,7 @@ const (
 	other
 	objectStorage
 	cvm
+	appStore
 )
 
 const (
@@ -172,14 +175,15 @@ const (
 	OTHER         = "OTHER"
 	ObjectStorage = "OBJECT-STORAGE"
 	CVM           = "CLOUD-VM"
+	AppStore      = "APP-STORE"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore,
 }
 
 // resource consumption
