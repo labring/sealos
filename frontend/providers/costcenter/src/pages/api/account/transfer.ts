@@ -1,13 +1,5 @@
-import { generateTransferCrd } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
-import {
-  ApplyYaml,
-  GetUserDefaultNameSpace,
-  watchClusterObject
-} from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
-import { TransferState } from '@/types/Transfer';
-import { getTime } from 'date-fns';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -15,7 +7,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!global.AppConfig.costCenter.transferEnabled) {
       throw new Error('transfer is not enabled');
     }
-
+    // console.log(global)
     const { amount, to: toUser } = req.body;
     const kc = await authSession(req.headers);
 
@@ -44,7 +36,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         'Content-Type': 'application/json'
       }
     });
-
     if (!response.ok || response.status !== 200) {
       return jsonRes(resp, {
         code: 409,

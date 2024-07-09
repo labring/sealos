@@ -1,6 +1,14 @@
 import useOverviewStore from '@/stores/overview';
 import { useContext, useEffect, useState } from 'react';
-import { BillingData, BillingSpec, BillingType } from '@/types';
+import {
+  ApiResp,
+  BillingData,
+  BillingSpec,
+  BillingType,
+  TransferBilling,
+  TransferBillingData,
+  TransferType
+} from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { formatISO } from 'date-fns';
 import request from '@/service/request';
@@ -17,7 +25,7 @@ import useBillingStore from '@/stores/billing';
 export default function TransferTabPanel() {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
-  const [selectType, setType] = useState<BillingType>(BillingType.ALL);
+  const [selectType, setType] = useState<TransferType>(TransferType.ALL);
   const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
@@ -28,7 +36,7 @@ export default function TransferTabPanel() {
     setcurrentPage(1);
   }, [startTime, endTime, selectType, namespace]);
   const { data, isFetching, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime, orderID, selectType, namespace }],
+    ['billing', { currentPage, startTime, endTime, orderID, selectType, namespace, pageSize }],
     () => {
       const spec = {
         page: currentPage,
@@ -38,25 +46,23 @@ export default function TransferTabPanel() {
         // startTime,
         endTime: formatISO(endTime, { representation: 'complete' }),
         // endTime,
-        namespace,
+        // orderID
         orderID
       };
-      return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
+      return request<any, ApiResp<TransferBillingData>>('/api/billing/transfer', {
         method: 'POST',
-        data: {
-          spec
-        }
+        data: spec
       });
     },
     {
       onSuccess(data) {
-        const totalPage = data.data.status.pageLength;
+        const totalPage = data.data?.totalPage || 0;
         if (totalPage === 0) {
           // 搜索时的bug
           setTotalPage(1);
           setTotalItem(1);
         } else {
-          setTotalItem(data.data.status.totalCount);
+          setTotalItem(data.data?.total || 0);
           setTotalPage(totalPage);
         }
         if (totalPage < currentPage) setcurrentPage(1);
@@ -65,7 +71,7 @@ export default function TransferTabPanel() {
     }
   );
   const { t } = useTranslation();
-  const tableResult = data?.data?.status?.item || [];
+  const tableResult = data?.data?.transfers || [];
   return (
     <TabPanel p="0" flex={1} display={'flex'} flexDirection={'column'}>
       <Flex alignItems={'center'} flexWrap={'wrap'}>
@@ -79,22 +85,13 @@ export default function TransferTabPanel() {
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
             {t('Type')}
           </Text>
-          <TypeMenu
-            selectType={selectType}
-            setType={setType}
-            isDisabled={isFetching}
-            optional={[BillingType.ALL, BillingType.RECEIVE, BillingType.TRANSFER]}
-          />
+          <TypeMenu selectType={selectType} setType={setType} isDisabled={isFetching} />
         </Flex>
         <SearchBox isDisabled={isFetching} setOrderID={setOrderID} />
       </Flex>
       {isSuccess && tableResult.length > 0 ? (
         <>
-          <TransferBillingTable
-            data={tableResult.filter((x) =>
-              [BillingType.RECEIVE, BillingType.TRANSFER].includes(x.type)
-            )}
-          />
+          <TransferBillingTable data={tableResult} />
           <Flex justifyContent={'flex-end'}>
             <SwitchPage
               totalPage={totalPage}
