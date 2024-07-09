@@ -70,6 +70,7 @@
   "Copy Failed": "复制失败",
   "Copy Success": "复制成功",
   "Covering Risks": "覆盖风险",
+  "cpu": "CPU",
   "CPU": "CPU",
   "Create DB": "新建数据库",
   "Creating": "创建中",
@@ -152,6 +153,7 @@
   "Manual Backup Tip": "建议在业务低峰期备份实例。备份期间，请勿执行DDL操作，避免锁表导致备份失败。若数据量较大，花费的时问可能较长，请耐心等待。点击 [开始备份] 后，将在1分钟后开始备份。",
   "Max Replicas": "实例数最大为: ",
   "Max Storage": "磁盘容量最大为: ",
+  "memory": "内存",
   "Memory": "内存",
   "migrate": {
     "Incremental migration prompt information": "如果需要数据库增量同步，可以开启\"持续迁移\"，默认是关闭。",
@@ -244,6 +246,7 @@
   "Start Up": "启动",
   "Starting": "启动中",
   "Status": "状态",
+  "storage": "磁盘",
   "Storage": "磁盘",
   "Storage Cannot Empty": "容量不能为空",
   "Storage Range": "容量范围: ",
