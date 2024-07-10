@@ -138,7 +138,15 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	updated := r.initObjectStorageUser(user, username)
+	quota := &corev1.ResourceQuota{}
+	if err := r.Get(ctx, client.ObjectKey{Name: "quota-" + userNamespace, Namespace: userNamespace}, quota); err != nil {
+		r.Logger.Error(err, "failed to get resource quota", "name", "quota"+userNamespace, "namespace", userNamespace)
+	}
+
+	quotaSize := quota.Spec.Hard.Name("objectstorage/size", resource.BinarySI)
+	r.Logger.V(1).Info("-------------", "quotaSiez", quotaSize, "value:", quotaSize.Value())
+
+	updated := r.initObjectStorageUser(user, username, quotaSize.Value())
 
 	accessKey := user.Status.AccessKey
 	secretKey := user.Status.SecretKey
@@ -204,15 +212,7 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Logger.V(1).Info("[user] user info", "name", user.Name, "quota", user.Status.Quota, "size", size, "objectsCount", user.Status.ObjectsCount)
 
-	quota := &corev1.ResourceQuota{}
-	if err := r.Get(ctx, client.ObjectKey{Name: "quota-" + userNamespace, Namespace: userNamespace}, quota); err != nil {
-		r.Logger.Error(err, "failed to get resource quota", "name", "quota"+userNamespace, "namespace", userNamespace)
-	}
-
-	quotaSize := quota.Spec.Hard.Name("objectstorage/size", resource.BinarySI)
-	r.Logger.V(1).Info("-------------", "quotaSiez", quotaSize, "value:", quotaSize.Value())
-
-	if r.QuotaEnabled && size > quotaSize.Value() {
+	if r.QuotaEnabled && size > user.Status.Quota {
 		if err := r.addUserToGroup(ctx, accessKey, UserDenyWriteGroup); err != nil {
 			r.Logger.Error(err, "failed to add user to userDenyWrite group")
 			return ctrl.Result{}, err
@@ -347,11 +347,11 @@ func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(ctx context.Contex
 	return nil
 }
 
-func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev1.ObjectStorageUser, username string) bool {
+func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev1.ObjectStorageUser, username string, quota int64) bool {
 	var updated = false
 
-	if user.Status.Quota != r.DefaultQuota {
-		user.Status.Quota = r.DefaultQuota
+	if user.Status.Quota != quota {
+		user.Status.Quota = quota
 		updated = true
 	}
 
