@@ -2,6 +2,8 @@ import { setUserDelete } from '../kubernetes/admin';
 import { globalPrisma, prisma } from '../db/init';
 import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
 import { CronJobStatus } from '@/services/backend/cronjob/index';
+import { DeleteUserEvent } from '@/types/db/event';
+import { getRegionUid } from '@/services/enable';
 
 export class DeleteUserCrJob implements CronJobStatus {
   private userUid = '';
@@ -27,6 +29,17 @@ export class DeleteUserCrJob implements CronJobStatus {
       where: { userUid }
     });
     if (!userCr) {
+      await globalPrisma.eventLog.create({
+        data: {
+          eventName: DeleteUserEvent['<DELETE_USER>_DELETE_USERCR'],
+          mainId: userUid,
+          data: JSON.stringify({
+            userUid,
+            regionUid: getRegionUid(),
+            message: `Because the userCR is not found, deleting user success`
+          })
+        }
+      });
       return;
       // throw new Error('the userCR not found');
     }
@@ -35,7 +48,18 @@ export class DeleteUserCrJob implements CronJobStatus {
     if (!deleteResult) {
       throw new Error(`delete User not Success`);
     }
-    prisma.userWorkspace.deleteMany({
+    await globalPrisma.eventLog.create({
+      data: {
+        eventName: DeleteUserEvent['<DELETE_USER>_DELETE_USERCR'],
+        mainId: userUid,
+        data: JSON.stringify({
+          userUid,
+          regionUid: getRegionUid(),
+          message: `delete user success`
+        })
+      }
+    });
+    await prisma.userWorkspace.deleteMany({
       where: {
         userCrUid: userCr.uid
       }
@@ -57,6 +81,16 @@ export class DeleteUserCrJob implements CronJobStatus {
       globalPrisma.deleteUserLog.create({
         data: {
           userUid
+        }
+      }),
+      globalPrisma.eventLog.create({
+        data: {
+          eventName: DeleteUserEvent['<DELETE_USER>_COMMIT'],
+          mainId: userUid,
+          data: JSON.stringify({
+            userUid,
+            message: `delete user success`
+          })
         }
       }),
       globalPrisma.precommitTransaction.findUniqueOrThrow({

@@ -1,12 +1,13 @@
 import { globalPrisma, prisma } from '../db/init';
-import { $Enums, TransactionStatus, TransactionType } from 'prisma/global/generated/client';
+import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
 import { JoinStatus } from 'prisma/region/generated/client';
-import { getBillingUrl, getCvmUrl, getWorkorderUrl } from '@/services/enable';
+import { getBillingUrl, getCvmUrl, getRegionUid, getWorkorderUrl } from '@/services/enable';
 import { CronJobStatus } from '@/services/backend/cronjob/index';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { mergeUserModifyBinding, mergeUserWorkspaceRole } from '@/services/backend/team';
 import axios from 'axios';
 import { generateCronJobToken } from '../auth';
+import { MergeUserEvent } from '@/types/db/event';
 
 /**
  * |											|	user is exist | user is not exist 			|
@@ -41,6 +42,18 @@ export class MergeUserCrJob implements CronJobStatus {
 
     if (!mergeUserCr) {
       // the mergeUser is not exist in the current region
+      await globalPrisma.eventLog.create({
+        data: {
+          eventName: MergeUserEvent['<MERGE_USER>_MERGE_WORKSPACE'],
+          mainId: userUid,
+          data: JSON.stringify({
+            mergeUserUid,
+            userUid,
+            regionUid: getRegionUid(),
+            message: `Because the mergeUserCR is not found, merge workspace success`
+          })
+        }
+      });
       return;
       // throw new Error('the mergeUserCR is not found');
     }
@@ -56,6 +69,18 @@ export class MergeUserCrJob implements CronJobStatus {
         },
         data: {
           userUid
+        }
+      });
+      await globalPrisma.eventLog.create({
+        data: {
+          eventName: MergeUserEvent['<MERGE_USER>_MERGE_WORKSPACE'],
+          mainId: userUid,
+          data: JSON.stringify({
+            mergeUserUid,
+            userUid,
+            regionUid: getRegionUid(),
+            message: `Because the userCR is not found, merge workspace success`
+          })
         }
       });
     } else {
@@ -85,6 +110,23 @@ export class MergeUserCrJob implements CronJobStatus {
         mergeUserWorkspaceList.map(async ({ role: mergeUserRole, workspaceUid, workspace }) => {
           try {
             const userWorkspace = userWorkspaceList.find((r) => r.workspaceUid === workspaceUid);
+            await globalPrisma.eventLog.create({
+              data: {
+                eventName: MergeUserEvent['<MERGE_USER>_MERGE_WORKSPACE'],
+                mainId: userUid,
+                data: JSON.stringify({
+                  mergeUserCrName: mergeUserCr.crName,
+                  userCrName: userCr.crName,
+                  workspaceId: workspace.id,
+                  userUid,
+                  mergeUserUid,
+                  mergeUserRole,
+                  regionUid: getRegionUid(),
+                  userRole: userWorkspace?.role,
+                  message: `merge workspace`
+                })
+              }
+            });
             // modify k8s resource, the handle is idempotent
             await mergeUserWorkspaceRole({
               mergeUserRole,
@@ -180,6 +222,7 @@ export class MergeUserCrJob implements CronJobStatus {
     ) {
       throw new Error('commit Error');
     }
+    const eventName = MergeUserEvent['<MERGE_USER>_COMMIT'];
     await globalPrisma.$transaction([
       globalPrisma.commitTransactionSet.create({
         data: {
@@ -189,6 +232,19 @@ export class MergeUserCrJob implements CronJobStatus {
       globalPrisma.deleteUserLog.create({
         data: {
           userUid: mergeUserUid
+        }
+      }),
+      globalPrisma.eventLog.create({
+        data: {
+          eventName,
+          mainId: this.userUid,
+          data: JSON.stringify({
+            userUid,
+            mergeUserUid,
+            regionUid: getRegionUid(),
+            message: `from ${mergeUser.id} to ${user.id}, 
+							merge workorder, cloud vm and balance success`
+          })
         }
       }),
       globalPrisma.precommitTransaction.update({

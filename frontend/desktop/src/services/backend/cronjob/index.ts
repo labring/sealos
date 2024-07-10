@@ -76,41 +76,16 @@ export const runTransactionjob = async () => {
   if (!transactionDetail) {
     return;
   }
-  const transactionUid = transactionDetail.transactionUid;
   const transaction = transactionDetail.precommitTransaction;
 
   const job = getJob(transaction);
   if (!job) return;
 
   // startingRunning
-  if (transaction.status === TransactionStatus.READY) {
-    await globalPrisma.$transaction([
-      globalPrisma.transactionDetail.findUniqueOrThrow({
-        where: {
-          uid: transactionDetail.uid,
-          status: TransactionStatus.READY
-        }
-      }),
-      globalPrisma.transactionDetail.update({
-        where: {
-          uid: transactionDetail.uid,
-          status: TransactionStatus.READY
-        },
-        data: {
-          status: TransactionStatus.RUNNING
-        }
-      }),
-      globalPrisma.precommitTransaction.update({
-        where: {
-          uid: transactionUid,
-          status: TransactionStatus.READY
-        },
-        data: {
-          status: TransactionStatus.RUNNING
-        }
-      })
-    ]);
-  } else if (transaction.status === TransactionStatus.RUNNING) {
+  if (
+    transaction.status === TransactionStatus.RUNNING ||
+    transaction.status === TransactionStatus.READY
+  ) {
     if (isTimeoutTransactionDetail) {
       await globalPrisma.$transaction([
         // make sure it is not running
@@ -173,7 +148,9 @@ export const finishTransactionJob = async () => {
   const regionList = await globalPrisma.region.findMany({});
   const transactionList = await globalPrisma.precommitTransaction.findMany({
     where: {
-      status: TransactionStatus.RUNNING
+      status: {
+        in: [TransactionStatus.RUNNING, TransactionStatus.READY]
+      }
     },
     include: {
       transactionDetail: {
@@ -194,7 +171,9 @@ export const finishTransactionJob = async () => {
 
   await globalPrisma.precommitTransaction.updateMany({
     where: {
-      status: TransactionStatus.RUNNING,
+      status: {
+        in: [TransactionStatus.RUNNING, TransactionStatus.READY]
+      },
       uid: {
         in: needFinishTransactionList
       }

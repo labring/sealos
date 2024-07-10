@@ -4,6 +4,7 @@ import { globalPrisma } from '../db/init';
 import { v4 } from 'uuid';
 import { TransactionType, TransactionStatus, AuditAction } from 'prisma/global/generated/client';
 import { USER_MERGE_STATUS } from '@/types/response/merge';
+import { MergeUserEvent } from '@/types/db/event';
 
 export const mergeUserSvc =
   (userUid: string, mergeUserUid: string) => async (res: NextApiResponse) => {
@@ -49,20 +50,19 @@ export const mergeUserSvc =
             userUid
           }
         });
-        await tx.auditLog.create({
+        const eventName = MergeUserEvent['<MERGE_USER>_MERGE_OAUTH_PROVIDER'];
+        const _data = {
+          mergeUserUid,
+          userUid,
+          providerType: oauthProvider.providerType,
+          providerId: oauthProvider.providerId,
+          message: `${oauthProvider.providerType}: ${oauthProvider.providerId}, update`
+        };
+        await tx.eventLog.create({
           data: {
-            action: AuditAction.UPDATE,
-            entityUid: oauthProvider.uid,
-            entityName: 'oauthProvider',
-            auditLogDetail: {
-              create: [
-                {
-                  key: 'userUid',
-                  preValue: mergeUserUid,
-                  newValue: userUid
-                }
-              ]
-            }
+            eventName,
+            mainId: userUid,
+            data: JSON.stringify(_data)
           }
         });
       }
@@ -72,6 +72,15 @@ export const mergeUserSvc =
           status: TransactionStatus.READY,
           infoUid,
           transactionType: TransactionType.MERGE_USER
+        }
+      });
+      await tx.eventLog.create({
+        data: {
+          eventName: MergeUserEvent['<MERGE_USER>_PUB_TRANSACTION'],
+          mainId: userUid,
+          data: JSON.stringify({
+            message: `${userUid} publish merge user transaction`
+          })
         }
       });
       await tx.mergeUserTransactionInfo.create({

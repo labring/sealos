@@ -45,15 +45,15 @@ model Account {
 }
 
 model AccountTransaction {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type              String
-  userUid           String    @db.Uuid
+  userUid           String   @db.Uuid
   deduction_balance BigInt
   balance           BigInt
   message           String?
   created_at        DateTime @default(now()) @db.Timestamptz(3)
   updated_at        DateTime @default(now()) @db.Timestamptz(3)
-  billing_id        String    @db.Uuid
+  billing_id        String   @db.Uuid
 }
 
 model ErrorPaymentCreate {
@@ -207,6 +207,15 @@ model AuditLogDetail {
   preValue    String
   newValue    String
   auditLog    AuditLog @relation(fields: [auditLogUid], references: [uid])
+}
+
+model EventLog {
+  uid       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  mainId    String
+  eventName String
+  // json 
+  data      String
 }
 
 model InviteReward {

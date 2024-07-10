@@ -4,6 +4,7 @@ import { globalPrisma, prisma } from '../db/init';
 import { v4 } from 'uuid';
 import { TransactionType, TransactionStatus, AuditAction } from 'prisma/global/generated/client';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { DeleteUserEvent } from '@/types/db/event';
 
 export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) => {
   const user = await globalPrisma.user.findUnique({
@@ -38,23 +39,30 @@ export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) =
           uid: oauthProvider.uid
         }
       });
-      await tx.auditLog.create({
+      const eventName = DeleteUserEvent['<DELETE_USER>_DELETE_OAUTH_PROVIDER'];
+      const _data = {
+        userUid,
+        providerType: oauthProvider.providerType,
+        providerId: oauthProvider.providerId,
+        message: `${oauthProvider.providerType}:${oauthProvider.providerId}, delete`
+      };
+      await tx.eventLog.create({
         data: {
-          action: AuditAction.DELETE,
-          entityUid: oauthProvider.uid,
-          entityName: 'oauthProvider',
-          auditLogDetail: {
-            create: [
-              {
-                key: 'userUid',
-                preValue: userUid,
-                newValue: ''
-              }
-            ]
-          }
+          eventName,
+          mainId: userUid,
+          data: JSON.stringify(_data)
         }
       });
     }
+    await tx.eventLog.create({
+      data: {
+        eventName: DeleteUserEvent['<DELETE_USER>_PUB_TRANSACTION'],
+        mainId: userUid,
+        data: JSON.stringify({
+          message: `${userUid} publish delete user transaction`
+        })
+      }
+    });
     await tx.precommitTransaction.create({
       data: {
         uid: txUid,
