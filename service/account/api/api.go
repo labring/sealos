@@ -36,7 +36,7 @@ func GetBillingHistoryNamespaceList(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse namespace billing history request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -102,7 +102,7 @@ func GetConsumptionAmount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user consumption amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -134,7 +134,7 @@ func GetPayment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user payment request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -166,7 +166,7 @@ func GetRechargeAmount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user recharge amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -198,7 +198,7 @@ func GetPropertiesUsedAmount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user properties used amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -238,7 +238,7 @@ func GetCosts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -270,7 +270,7 @@ func GetAccount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -302,7 +302,7 @@ func SetPaymentInvoice(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse set payment invoice request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -333,7 +333,7 @@ func TransferAmount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse transfer amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -369,7 +369,7 @@ func GetTransfer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get transfer amount request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -414,7 +414,7 @@ func GetAPPCosts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get app cost request: %v", err)})
 		return
 	}
-	if err := helper.Authenticate(req.Auth); err != nil {
+	if err := CheckAuth(req.Auth); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
@@ -426,4 +426,48 @@ func GetAPPCosts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"app_costs": cost,
 	})
+}
+
+// CheckPermission
+// @Summary Check permission
+// @Description Check permission
+// @Tags Permission
+// @Accept json
+// @Produce json
+// @Param request body helper.CheckPermissionReq true "Check permission request"
+// @Success 200 {object} map[string]interface{} "successfully check permission"
+// @Failure 400 {object} map[string]interface{} "failed to parse check permission request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to check permission"
+// @Router /account/v1alpha1/check-permission [post]
+func CheckPermission(c *gin.Context) {
+	req, err := helper.ParseUserBaseReq(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("failed to parse check permission request: %v", err)})
+		return
+	}
+	if err = CheckAuth(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "successfully check permission",
+	})
+}
+
+func CheckAuth(auth helper.Auth) error {
+	if err := helper.Authenticate(auth); err != nil {
+		return fmt.Errorf("authenticate error : %v", err)
+	}
+	if auth.UserID != "" {
+		userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{Owner: auth.Owner})
+		if err != nil {
+			return fmt.Errorf("get user id error: %v", err)
+		}
+		if userID != auth.UserID {
+			return fmt.Errorf("user id is invalid")
+		}
+	}
+	return nil
 }

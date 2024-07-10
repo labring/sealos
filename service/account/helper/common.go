@@ -14,6 +14,7 @@ const (
 	GetUserCosts         = "/costs"
 	SetTransfer          = "/transfer"
 	GetTransfer          = "/get-transfer"
+	CheckPermission      = "/check-permission"
 )
 
 // env

@@ -37,6 +37,7 @@ type Interface interface {
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
 	Transfer(req *helper.TransferAmountReq) error
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
+	GetUserID(ops types.UserQueryOpts) (string, error)
 }
 
 type Account struct {
@@ -62,6 +63,14 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
 	return account, nil
+}
+
+func (g *Cockroach) GetUserID(ops types.UserQueryOpts) (string, error) {
+	user, err := g.ck.GetUser(&ops)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user: %v", err)
+	}
+	return user.ID, nil
 }
 
 func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
