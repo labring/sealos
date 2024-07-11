@@ -38,7 +38,7 @@ export const inviteHandler = ({
   const secretKey = conf.invite?.lafSecretKey || '';
   const baseUrl = conf.invite?.lafBaseURL || '';
 
-  if (inviteEnabled || !baseUrl || inviterId === inviteeId) return;
+  if (!inviteEnabled || !baseUrl || inviterId === inviteeId) return;
 
   const payload = {
     inviterId,

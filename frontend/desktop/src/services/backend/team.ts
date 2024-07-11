@@ -12,7 +12,6 @@ import { prisma } from '@/services/backend/db/init';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 import { roleToUserRole, UserRoleToRole, vaildManage } from '@/utils/tools';
 import { createHash } from 'node:crypto';
-import { StatusCR } from '@/types';
 
 const _applyRoleRequest =
   (kc: KubeConfig, nsid: string, idempotent: boolean = false) =>
@@ -26,31 +25,8 @@ const _applyRoleRequest =
       role: ROLE_LIST[role]
     };
     let name = '';
-    // if (idempotent) {
-    // 	hash.update(JSON.stringify(props));
-    // 	name = hash.digest('hex');
-    // 	try {
-    // 		const result = await GetCRD(kc,
-    // 			{ group: 'user.sealos.io', version: "v1", namespace: nsid, plural: 'operationrequests' },
-    // 			name)
-    // 		console.log('merge is exist op', result)
-    // 		return
-    // 	} catch (res: any) {
-    // 		console.log("merge , isn't exist op", res)
-    // 		const body = res.body as V1Status;
-    // 		if (
-    // 			!(body &&
-    // 				body.kind === 'Status' &&
-    // 				res.body.reason === 'NotFound' &&
-    // 				res.body.code === 404)
-    // 		) {
-    // 			return Promise.reject();
-    // 		}
-    // 	}
-    // } else {
     hash.update(JSON.stringify(props) + new Date().getTime());
     name = hash.digest('hex');
-    // }
     const createCR = () =>
       ApplyYaml(
         kc,

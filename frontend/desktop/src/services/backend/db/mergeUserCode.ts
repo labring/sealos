@@ -49,22 +49,6 @@ export async function addOrUpdateCode({
   );
   return result;
 }
-// checkCode
-// export async function checkSendable({ providerId, providerType }: {
-// 	providerId: string;
-// 	providerType: ProviderType;
-// }) {
-// 	const codes = await connectToCollection();
-// 	const result = await codes.findOne({
-// 		providerId,
-// 		providerType,
-// 		createdAt: {
-// 			$gt: new Date(new Date().getTime() - 60 * 1000)
-// 		}
-// 	});
-// 	return !result;
-// }
-// checkCode
 export async function checkCode({
   providerType,
   code
@@ -82,13 +66,6 @@ export async function checkCode({
   });
   return result;
 }
-// export async function getInfoByUid({ uid }: { uid: string }) {
-// 	const codes = await connectToCollection();
-// 	const result = await codes.findOne({
-// 		uid
-// 	});
-// 	return result;
-// }
 export async function deleteByUid({ uid }: { uid: string }) {
   const codes = await connectToCollection();
   const result = await codes.deleteOne({

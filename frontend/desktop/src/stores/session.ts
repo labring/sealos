@@ -55,11 +55,6 @@ const useSessionStore = create<SessionState>()(
       // [LOGIN/UNBIND/BIND]_STATE
       // PROXY_DOMAINSTATE, DOMAINSTATE = URL_[LOGIN/UNBIND/BIND]_STATE
       generateState: (action = 'LOGIN', domainState) => {
-        // const stateObj ={ rad: new Date().getTime().toString(), action } satisfies StatePayload;
-        // if (!!domainState && action === 'PROXY') {
-        //   stateObj.rad = domainState;
-        // }
-        // const state = JSON.stringify(stateObj);
         let state = action as string;
         if (domainState && action === 'PROXY') {
           state = state + '_' + domainState;
