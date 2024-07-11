@@ -18,6 +18,6 @@ ARG TARGETARCH
 WORKDIR /
 USER 65532:65532
 
-COPY bin/controller-admission-$TARGETARCH /manager
+COPY bin/webhook-admission-$TARGETARCH /manager
 
 ENTRYPOINT ["/manager"]

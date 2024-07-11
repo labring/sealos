@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/labring/sealos-admission-controller:latest
+IMG ?= ghcr.io/labring/sealos-admission-webhook:latest
 TARGETARCH ?= amd64
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -73,8 +73,8 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: test build ## Build docker image with the manager.
-	mv bin/manager bin/controller-admission-${TARGETARCH}
-	chmod +x bin/controller-admission-${TARGETARCH}
+	mv bin/manager bin/webhook-admission-${TARGETARCH}
+	chmod +x bin/webhook-admission-${TARGETARCH}
 	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
