@@ -77,6 +77,9 @@ const (
 	OSKeySecretInternal  = "internal"
 	OSKeySecretExternal  = "external"
 	OSKeySecretBucket    = "bucket"
+
+	ResourceQuotaPrefix       = "quota-"
+	ResourceObjectStorageSize = "objectstorage/size"
 )
 
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers,verbs=get;list;watch;create;update;patch;delete
@@ -138,15 +141,14 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	quota := &corev1.ResourceQuota{}
-	if err := r.Get(ctx, client.ObjectKey{Name: "quota-" + userNamespace, Namespace: userNamespace}, quota); err != nil {
-		r.Logger.Error(err, "failed to get resource quota", "name", "quota"+userNamespace, "namespace", userNamespace)
+	resourceQuota := &corev1.ResourceQuota{}
+	if err := r.Get(ctx, client.ObjectKey{Name: ResourceQuotaPrefix + userNamespace, Namespace: userNamespace}, resourceQuota); err != nil {
+		r.Logger.Error(err, "failed to get resource quota", "name", ResourceQuotaPrefix+userNamespace, "namespace", userNamespace)
 	}
 
-	quotaSize := quota.Spec.Hard.Name("objectstorage/size", resource.BinarySI)
-	r.Logger.V(1).Info("-------------", "quotaSiez", quotaSize, "value:", quotaSize.Value())
+	quota := resourceQuota.Spec.Hard.Name(ResourceObjectStorageSize, resource.BinarySI)
 
-	updated := r.initObjectStorageUser(user, username, quotaSize.Value())
+	updated := r.initObjectStorageUser(user, username, quota.Value())
 
 	accessKey := user.Status.AccessKey
 	secretKey := user.Status.SecretKey
