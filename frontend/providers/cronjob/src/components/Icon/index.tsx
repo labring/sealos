@@ -29,7 +29,8 @@ const map = {
   connection: require('./icons/connection.svg').default,
   info: require('./icons/info.svg').default,
   restore: require('./icons/restore.svg').default,
-  download: require('./icons/download.svg').default
+  download: require('./icons/download.svg').default,
+  edit: require('./icons/edit.svg').default
 };
 
 const MyIcon = ({

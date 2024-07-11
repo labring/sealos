@@ -102,10 +102,13 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	//if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-	//	setupLog.Error(err, "problem running manager")
-	//	os.Exit(1)
-	//}
+
+	err = controllers.InitIndexField(mgr)
+	if err != nil {
+		setupLog.Error(err, "failed to init index field")
+		os.Exit(1)
+	}
+
 	go func() {
 		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 			setupLog.Error(err, "problem running manager")

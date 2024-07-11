@@ -30,7 +30,7 @@ import (
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 	master0 := k.getMaster0IPAndPort()
-	if err := k.imagePull(master0); err != nil {
+	if err := k.imagePull(master0, ""); err != nil {
 		return err
 	}
 	cmdInit := k.Command(InitMaster)
@@ -44,8 +44,11 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	return k.copyMasterKubeConfig(master0)
 }
 
-func (k *KubeadmRuntime) imagePull(hostAndPort string) error {
-	imagePull := fmt.Sprintf("kubeadm config images pull --cri-socket unix://%s  --kubernetes-version %s %s", k.cluster.GetImageEndpoint(), k.getKubeVersion(), vlogToStr(k.klogLevel))
+func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
+	if version == "" {
+		version = k.getKubeVersion()
+	}
+	imagePull := fmt.Sprintf("kubeadm config images pull --cri-socket unix://%s  --kubernetes-version %s %s", k.cluster.GetImageEndpoint(), version, vlogToStr(k.klogLevel))
 	err := k.sshCmdAsync(hostAndPort, imagePull)
 	if err != nil {
 		return fmt.Errorf("master pull image failed, error: %s", err.Error())
@@ -123,7 +126,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	}
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
-		if err = k.imagePull(master); err != nil {
+		if err = k.imagePull(master, ""); err != nil {
 			return err
 		}
 		logger.Debug("start to generate cert for master %s", master)

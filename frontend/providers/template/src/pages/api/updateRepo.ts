@@ -74,17 +74,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const branch = process.env.TEMPLATE_REPO_BRANCH || 'main';
 
     try {
-      execAsync('git config --global --add safe.directory /app/providers/template/templates');
-      const timeoutPromise = new Promise((resolve, reject) => {
-        setTimeout(() => {
-          reject(new Error('operation timed out'));
-        }, 60 * 1000);
-      });
-      const gitOperationPromise = !fs.existsSync(targetPath)
-        ? execAsync(`git clone -b ${branch} ${repoHttpUrl} ${targetPath} --depth=1`)
-        : execAsync(`cd ${targetPath} && git pull --depth=1 --rebase`);
+      const gitConfigResult = await execAsync(
+        'git config --global --add safe.directory /app/providers/template/templates',
+        { timeout: 10000 }
+      );
 
-      await Promise.race([gitOperationPromise, timeoutPromise]);
+      console.log('git config:', gitConfigResult);
+
+      const gitCommand = !fs.existsSync(targetPath)
+        ? `git clone -b ${branch} ${repoHttpUrl} ${targetPath} --depth=1`
+        : `cd ${targetPath} && git pull --depth=1 --rebase`;
+
+      const result = await execAsync(gitCommand, { timeout: 60000 });
+
+      console.log('git operation:', result);
     } catch (error) {
       console.log('git operation timed out: \n', error);
     }

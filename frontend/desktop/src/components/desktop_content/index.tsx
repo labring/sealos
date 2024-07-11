@@ -1,12 +1,13 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
 // import useDriver from '@/hooks/useDriver';
+import { LicenseFrontendKey } from '@/constants/account';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { TApp, WindowSize } from '@/types';
-import { Box, Center, Flex, Text } from '@chakra-ui/react';
-import { WarnTriangleIcon, useMessage } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
+import { Box, Flex } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { MouseEvent, useCallback, useEffect, useState } from 'react';
@@ -20,7 +21,6 @@ import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
 import Monitor from './monitor';
 import SearchBox from './searchBox';
-import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import Warn from './warn';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 
@@ -42,6 +42,7 @@ export default function Desktop(props: any) {
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { message } = useMessage();
   const [showAccount, setShowAccount] = useState(false);
+  const { layoutConfig } = useConfigStore();
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -105,22 +106,34 @@ export default function Desktop(props: any) {
 
   // const { UserGuide, showGuide } = useDriver({ openDesktopApp });
 
-  useQuery(['getGlobalNotification'], getGlobalNotification, {
-    onSuccess(data) {
+  useEffect(() => {
+    const globalNotification = async () => {
+      const data = await getGlobalNotification();
       const newID = data.data?.metadata?.uid;
-      if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
-      localStorage.setItem('GlobalNotification', newID);
+
       const title =
         i18n.language === 'zh' && data.data?.spec?.i18ns?.zh?.message
           ? data.data?.spec?.i18ns?.zh?.message
           : data.data?.spec?.message;
-      message({
-        title: title,
-        status: 'info',
-        duration: null
-      });
-    }
-  });
+
+      if (data.data?.metadata?.labels?.[LicenseFrontendKey]) {
+        message({
+          title: title,
+          status: 'info',
+          duration: null
+        });
+      } else {
+        if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
+        localStorage.setItem('GlobalNotification', newID);
+        message({
+          title: title,
+          status: 'info',
+          duration: null
+        });
+      }
+    };
+    globalNotification();
+  }, []);
 
   return (
     <Box
@@ -153,7 +166,7 @@ export default function Desktop(props: any) {
           }}
           gap={'8px'}
         >
-          <Assistant />
+          {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
           <Monitor />
           <Warn />
         </Flex>
@@ -162,7 +175,7 @@ export default function Desktop(props: any) {
         <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
           <Flex zIndex={2} flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
             <Box display={{ base: 'block', xl: 'none' }}>
-              <Assistant />
+              {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
             </Box>
             <SearchBox />
             <TriggerAccountModule showAccount={showAccount} setShowAccount={setShowAccount} />

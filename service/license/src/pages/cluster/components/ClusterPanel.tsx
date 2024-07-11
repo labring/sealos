@@ -39,7 +39,6 @@ export default function TutorialPanel() {
           kubeSystemID: id
         });
       }
-      console.log('active cluster', result);
       setClusterDetail(result);
       queryClient.invalidateQueries({ queryKey: ['getClusterList'] });
       queryClient.invalidateQueries({ queryKey: ['getLicenseByClusterId'] });

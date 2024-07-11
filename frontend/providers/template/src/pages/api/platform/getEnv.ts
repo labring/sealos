@@ -24,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       TEMPLATE_REPO_URL:
         process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
       SEALOS_NAMESPACE: user_namespace || '',
-      SEALOS_SERVICE_ACCOUNT: user_namespace.replace('ns-', '')
+      SEALOS_SERVICE_ACCOUNT: user_namespace.replace('ns-', ''),
+      SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false'
     }
   });
 }

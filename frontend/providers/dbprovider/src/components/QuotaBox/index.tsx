@@ -63,7 +63,7 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
             <Flex alignItems={'center'}>
               <Box flex={'0 0 60px'} textTransform={'capitalize'}>
-                {t(item.type === 'cpu' ? 'CPU' : item.type)}
+                {t(item.type)}
               </Box>
               <Progress
                 flex={'1 0 0'}

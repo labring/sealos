@@ -23,7 +23,7 @@ export default function History() {
   );
 
   const downloadToken = (token: string) => {
-    download('license.yaml', json2License({ token: token, type: 'Account' }));
+    download('license.yaml', json2License({ token: token, type: 'Cluster' }));
   };
 
   return (

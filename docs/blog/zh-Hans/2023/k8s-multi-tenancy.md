@@ -5,7 +5,7 @@ description: 本文深入探讨了 K8s 多租户的概念、其在现代企业�
 authors: [fanux]
 tags: [Kubernetes, Sealos, 多租户]
 keywords: [云操作系统, Sealos, K8s, 云原生, 多租户, 隔离, 命名空间]
-image: https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-17-36-fBsk9p.jpg
+image: https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-17-36-fBsk9p.jpg
 date: 2023-11-29T10:00
 ---
 
@@ -19,7 +19,7 @@ date: 2023-11-29T10:00
 
 “多租户”是一种软件架构的设计方式，允许多个用户（租户）共享相同的系统或程序组件，同时保持各自数据的隔离性和安全性。在 K8s 环境中，实现有效的多租户机制意味着能够在同一 K8s 集群中运行多个独立的租户工作负载，而无需担心资源冲突、数据泄露或安全问题。
 
-![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-rLPyaY.jpg)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-rLPyaY.jpg)
 
 ### 没有多租户支持的挑战
 
@@ -33,7 +33,7 @@ date: 2023-11-29T10:00
 
 4. **规模扩展受限：**在一个单一租户的环境下，集群难以支持多样化的业务需求，限制了企业的扩展能力。
 
-![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-yua4G3.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-yua4G3.png)
 
 ### 多租户架构的优势
 
@@ -61,7 +61,7 @@ date: 2023-11-29T10:00
 
 K8s 本身不具备原生的用户管理系统。因此，需要通过扩展功能来构建用户概念，与第三方用户系统对接，为每个用户生成独立的 kubeconfig 认证文件或 token。此外，需要建立用户与命名空间 (namespace) 之间的多对多关系，并为用户分配适当的权限。
 
-![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-Dfn5xa.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-Dfn5xa.png)
 
 Sealos 的设计允许管理员将用户加入特定的命名空间，并对其角色进行管理，从而有效地控制权限。这样管理员就可以细粒度地管理用户权限，确保每个用户只能访问和修改他们被授权的资源。
 
@@ -75,13 +75,13 @@ Sealos 的设计允许管理员将用户加入特定的命名空间，并对其�
 
 Sealos 采用 eBPF 技术来监控网络流量，并通过控制器将流量数据与租户信息相关联，存储到数据库中。这样可以与计量计费系统对接，实现对资源使用的准确计费。对于计算和存储资源的监控，Sealos 同样采用了控制器来收集和管理这些信息。
 
-![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-36-HsycaI.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-36-HsycaI.png)
 
 ## Sealos 多租户的挑战
 
 如果说上面的这些问题很难解决，那么 **Sealos 的场景是在上述难度上乘以了 10 倍**，因为 Sealos 选择了在公网这个不可信的环境中解决多租户问题，意味着给任意的开发者公开注册，然后一起共享一个 K8s 集群。
 
-![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-54-kbCMsN.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-54-kbCMsN.png)
 
 公网环境的不可信性和开放性使得实现多租户变得尤为复杂。在这种环境下，任何开发者都可以注册并共享同一个 K8s 集群，这就带来了巨大的安全和稳定性挑战。但是，如果能够成功实现，其好处也是显而易见的：
 

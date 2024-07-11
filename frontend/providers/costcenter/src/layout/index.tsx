@@ -35,10 +35,9 @@ export default function Layout({ children }: any) {
       w="100vw"
       h="100vh"
       position="relative"
-      background="frostyNightfall.200"
+      background="#EAEBF0"
       pt={'4px'}
       pb="10px"
-      backdropFilter="blur(150px)"
       alignItems={'center'}
       justifyContent={'center'}
     >

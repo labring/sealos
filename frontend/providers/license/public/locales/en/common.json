@@ -12,5 +12,7 @@
   "Activation Successful": "Activation Successful",
   "Failed to obtain cluster ID, contact administrator": "Failed to obtain cluster ID, contact administrator",
   "Cluster ID": "Cluster ID: {{id}}",
-  "Purchase Tip": "Activate / Purchase"
+  "Purchase Tip": "Activate / Purchase",
+  "cluster_info": "Cluster Info",
+  "expire_date": "Expire Date"
 }

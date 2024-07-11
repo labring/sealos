@@ -3,7 +3,7 @@ import { base64Decode } from '@/utils/tools';
 import { sign } from 'jsonwebtoken';
 import { connectToDatabase } from './mongodb';
 
-const ExpiredTime = 30 * 24 * 60 * 60;
+export const ExpiredTime = 30 * 24 * 60 * 60;
 
 async function connectLicenseCollection() {
   const client = await connectToDatabase();
@@ -19,7 +19,11 @@ export async function createLicenseRecord({
   quota,
   payMethod,
   type,
-  clusterId
+  clusterId,
+  cpu,
+  memory,
+  months,
+  expiredTime = ExpiredTime
 }: LicenseRecordPayload) {
   const collection = await connectLicenseCollection();
 
@@ -34,12 +38,15 @@ export async function createLicenseRecord({
       quota: quota
     },
     iat: now, // Store the current timestamp as iat
-    exp: now + ExpiredTime, // Set expiration to one day from now (in seconds)
+    exp: now + expiredTime, // Set expiration to one day from now (in seconds)
     amount: amount,
     type: type,
     createdAt: new Date(),
     updatedAt: new Date(),
-    clusterId: clusterId
+    clusterId: clusterId,
+    cpu,
+    memory,
+    months
   };
 
   const result = await collection.insertOne(record);
@@ -99,7 +106,7 @@ export async function getLicenseRecordsByUid({
   return result;
 }
 
-export function generateLicenseToken(payload: LicenseToken, time = ExpiredTime) {
+export function generateLicenseToken(payload: LicenseToken, time: number) {
   const privateKey = process.env.LICENSE_PRIVATE_KEY;
   if (!privateKey) {
     throw new Error('LICENSE PRIVATE KEY IS MISSING');
@@ -111,7 +118,22 @@ export function generateLicenseToken(payload: LicenseToken, time = ExpiredTime) 
     iss: 'Sealos',
     iat: nowInSeconds,
     exp: expirationTime,
-    ...payload
+    type: payload.type,
+    clusterID: payload.clusterID,
+    data: {
+      totalCPU:
+        typeof payload.data.totalCPU === 'number'
+          ? payload.data.totalCPU
+          : parseInt(payload.data.totalCPU),
+      totalMemory:
+        typeof payload.data.totalMemory === 'number'
+          ? payload.data.totalMemory
+          : parseInt(payload.data.totalMemory),
+      nodeCount:
+        typeof payload.data.nodeCount === 'number'
+          ? payload.data.nodeCount
+          : parseInt(payload.data.nodeCount)
+    }
   };
 
   const token = sign(_payload, base64Decode(privateKey), { algorithm: 'RS256' });
