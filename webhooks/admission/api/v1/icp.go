@@ -20,7 +20,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/patrickmn/go-cache"
 	"golang.org/x/net/publicsuffix"
 	netv1 "k8s.io/api/networking/v1"
 )
