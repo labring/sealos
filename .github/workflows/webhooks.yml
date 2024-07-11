@@ -65,9 +65,9 @@ jobs:
 
   image-build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module: [ whitelist ]
+    # strategy:
+    #   matrix:
+    #     module: [ whitelist ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
