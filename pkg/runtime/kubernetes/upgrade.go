@@ -33,8 +33,8 @@ import (
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply --config %s --yes"
-	upradeNodeCmd   = "kubeadm upgrade node --skip-phases preflight"
+	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --config %s --yes"
+	upradeNodeCmd   = "kubeadm upgrade node --certificate-renewal=false --skip-phases preflight"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
 	uncordonNodeCmd = "kubectl uncordon %s"
