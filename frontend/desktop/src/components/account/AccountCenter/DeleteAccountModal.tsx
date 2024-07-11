@@ -21,7 +21,7 @@ import {
 import { InfoCircleIcon, WarnTriangeIcon } from '@sealos/ui';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { SettingInput } from './SettingInput';
 import { SettingInputGroup } from './SettingInputGroup';
 import { useRouter } from 'next/router';

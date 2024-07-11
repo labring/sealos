@@ -16,7 +16,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ROLE_LIST, teamMessageDto } from '@/types/team';
 import { reciveAction, verifyInviteRequest } from '@/api/namespace';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 export default function ReciveMessage({
   message,
   CloseTipHandler,

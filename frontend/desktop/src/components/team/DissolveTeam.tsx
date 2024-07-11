@@ -19,7 +19,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteTeamRequest } from '@/api/namespace';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { DeleteIcon } from '@sealos/ui';
 export default function DissolveTeam({
   nsid,

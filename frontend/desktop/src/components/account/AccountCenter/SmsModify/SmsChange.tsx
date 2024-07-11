@@ -12,7 +12,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { useForm } from 'react-hook-form';
 import { SettingInput } from '../SettingInput';
 import { MouseEventHandler, useState } from 'react';

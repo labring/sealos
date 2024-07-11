@@ -19,7 +19,7 @@ import {
 import { type FC, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { SettingIcon, LeftArrowIcon, GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
 import LangSelectList from '@/components/LangSelect';
 import { UserInfo } from '@/api/auth';

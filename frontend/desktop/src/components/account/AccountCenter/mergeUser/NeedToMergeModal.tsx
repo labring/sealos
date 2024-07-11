@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { WarnTriangeIcon } from '@sealos/ui';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { mergeUserRequest } from '@/api/auth';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { useEffect, useState } from 'react';

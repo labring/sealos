@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { useForm } from 'react-hook-form';
 import { getSmsBindCodeRequest, verifySmsBindRequest } from '@/api/auth';
 import { SettingInput } from '../SettingInput';

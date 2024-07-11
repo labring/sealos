@@ -1,5 +1,5 @@
 import { ButtonProps, Button, forwardRef } from '@chakra-ui/react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 export enum BINDING_STATE_MODIFY_BEHAVIOR {
   BINDING,
   UNBINDING,
