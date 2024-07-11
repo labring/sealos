@@ -12,7 +12,7 @@ images=(
   docker.io/labring/kubernetes:v1.27.11
   docker.io/labring/helm:v3.14.1
   docker.io/labring/cilium:v1.14.8
-  docker.io/labring/cert-manager:v1.14.4
+  docker.io/labring/cert-manager:v1.14.6
   docker.io/labring/openebs:v3.10.0
   docker.io/labring/victoria-metrics-k8s-stack:v1.96.0
   docker.io/labring/ingress-nginx:v1.9.4
