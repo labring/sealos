@@ -23,7 +23,7 @@ on:
       - "!**/*.yaml"
 env:
   # Common versions
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.22"
   DEFAULT_OWNER: "labring"
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ whitelist ]
+        module: [ admission ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
