@@ -210,19 +210,13 @@ export class MergeUserCrJob implements CronJobStatus {
         })
       })
     ]);
-    if (
-      !transferResult ||
-      transferResult.status !== 200 ||
-      !workorderResult ||
-      workorderResult.status !== 200 ||
-      workorderResult.data.code !== 200 ||
-      !cvmResult ||
-      cvmResult.status !== 200 ||
-      cvmResult.data.data !== 'ok'
-    ) {
+    const transferMergeSuccess = transferResult && transferResult.status === 200;
+    const workorderMergeSuccess =
+      workorderResult && workorderResult.status === 200 && workorderResult.data.code === 200;
+    const cvmMergeSuccess = cvmResult && cvmResult.status === 200 && cvmResult.data.data === 'ok';
+    if (!transferMergeSuccess || !workorderMergeSuccess || !cvmMergeSuccess) {
       throw new Error('commit Error');
     }
-    const eventName = MergeUserEvent['<MERGE_USER>_COMMIT'];
     await globalPrisma.$transaction([
       globalPrisma.commitTransactionSet.create({
         data: {
@@ -236,7 +230,7 @@ export class MergeUserCrJob implements CronJobStatus {
       }),
       globalPrisma.eventLog.create({
         data: {
-          eventName,
+          eventName: MergeUserEvent['<MERGE_USER>_COMMIT'],
           mainId: this.userUid,
           data: JSON.stringify({
             userUid,

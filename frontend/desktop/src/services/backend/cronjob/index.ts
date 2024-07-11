@@ -202,7 +202,7 @@ export const commitTransactionjob = async () => {
   // if timeout, mark error
   const currentTime = new Date().getTime();
   // the record will be updated when status is updated
-  if (currentTime - unCommitedTransaction.updatedAt.getTime() > job.COMMIT_TIMEOUT)
+  if (currentTime - unCommitedTransaction.updatedAt.getTime() > job.COMMIT_TIMEOUT) {
     await globalPrisma.$transaction([
       globalPrisma.commitTransactionSet.create({
         data: {
@@ -231,6 +231,9 @@ export const commitTransactionjob = async () => {
         }
       })
     ]);
-  if (!job.canCommit()) return;
+    return;
+  }
+  const canCommit = job.canCommit();
+  if (!canCommit) return;
   else await job.commit();
 };
