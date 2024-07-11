@@ -37,7 +37,7 @@ done
 # get and save cli
 mkdir -p output/cli
 
-VERSION="v5.0.0-beta5"
+VERSION="v5.0.0"
 
 wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_${ARCH}.tar.gz \
    && tar zxvf sealos_${VERSION#v}_linux_${ARCH}.tar.gz sealos && chmod +x sealos && mv sealos output/cli
