@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/code"
+	"github.com/labring/sealos/webhook/admission/pkg/code"
 
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"

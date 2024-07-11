@@ -6,7 +6,7 @@ domain: sealos.io
 layout:
 - go.kubebuilder.io/v4
 projectName: admission
-repo: github.com/labring/sealos/controllers/admission
+repo: github.com/labring/sealos/webhook/admission
 resources:
 - group: core
   kind: Namespace
