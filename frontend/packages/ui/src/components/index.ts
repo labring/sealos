@@ -50,7 +50,7 @@ import useMessage from './Message/index';
 import EditTabs from './EditTabs';
 import YamlCode from './YamlCode';
 import ProviderIcon from './icons/ProviderIcon';
-
+import WarnTriangeIcon from './icons/line/WarnTriange';
 export { SealosMenu } from './Menu';
 export { Tabs } from './Tabs';
 export { MyRangeSlider } from './RangeSlider';
@@ -115,5 +115,6 @@ export {
   SortPolygonUpIcon,
   SortPolygonDownIcon,
   ProviderIcon,
-  WebHostIcon
+  WebHostIcon,
+  WarnTriangeIcon
 };

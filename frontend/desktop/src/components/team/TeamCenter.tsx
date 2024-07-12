@@ -31,9 +31,8 @@ import { InvitedStatus, NSType, UserRole, teamMessageDto } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import ReciveMessage from './ReciveMessage';
 import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
-import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import NsListItem from '@/components/team/NsListItem';
 
 export default function TeamCenter(props: StackProps) {

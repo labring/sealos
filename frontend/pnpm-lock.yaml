@@ -102,6 +102,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
+      croner:
+        specifier: ^8.0.2
+        version: 8.0.2
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
@@ -156,6 +159,9 @@ importers:
       next-pwa:
         specifier: ^5.6.0
         version: 5.6.0(@babel/core@7.23.5)(next@13.3.0)(webpack@5.89.0)
+      nodemailer:
+        specifier: ^6.9.13
+        version: 6.9.13
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -232,6 +238,9 @@ importers:
       '@types/node':
         specifier: 18.15.11
         version: 18.15.11
+      '@types/nodemailer':
+        specifier: ^6.4.15
+        version: 6.4.15
       '@types/nprogress':
         specifier: ^0.2.1
         version: 0.2.3
@@ -9851,6 +9860,12 @@ packages:
     resolution: {integrity: sha512-EhcH/wvidPy1WeML3TtYFGR83UzjxeWRen9V402T8aUGYsCHOmfoisV3ZSg03gAFIbLq8TnWOJ0f4cALtnSEUg==}
     dev: true
 
+  /@types/nodemailer@6.4.15:
+    resolution: {integrity: sha512-0EBJxawVNjPkng1zm2vopRctuWVCxk34JcIlRuXSf54habUWdz1FB7wHDqOqvDa8Mtpt0Q3LTXQkAs2LNyK5jQ==}
+    dependencies:
+      '@types/node': 20.10.0
+    dev: true
+
   /@types/nprogress@0.2.3:
     resolution: {integrity: sha512-k7kRA033QNtC+gLc4VPlfnue58CM1iQLgn1IMAU8VPHGOj7oIHPp9UlhedEnD/Gl8evoCjwkZjlBORtZ3JByUA==}
     dev: true
@@ -11735,6 +11750,11 @@ packages:
     engines: {node: '>=12.0.0'}
     dependencies:
       luxon: 3.4.4
+    dev: false
+
+  /croner@8.0.2:
+    resolution: {integrity: sha512-HgSdlSUX8mIgDTTiQpWUP4qY4IFRMsduPCYdca34Pelt8MVdxdaDOzreFtCscA6R+cRZd7UbD1CD3uyx6J3X1A==}
+    engines: {node: '>=18.0'}
     dev: false
 
   /croner@8.1.0:
@@ -17886,6 +17906,11 @@ packages:
     resolution: {integrity: sha512-TkCET/3rr9mUuRp+CpO7qfgT++aAxfDRaalQhwPFzI9BY/2rCDn6OfpZOVggi1AXfTPpfkTrg5f5WQx5G1uLxA==}
     deprecated: Use uuid module instead
     hasBin: true
+    dev: false
+
+  /nodemailer@6.9.13:
+    resolution: {integrity: sha512-7o38Yogx6krdoBf3jCAqnIN4oSQFx+fMa0I7dK1D+me9kBxx12D+/33wSb+fhOCtIxvYJ+4x4IMEhmhCKfAiOA==}
+    engines: {node: '>=6.0.0'}
     dev: false
 
   /normalize-path@3.0.0:

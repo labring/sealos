@@ -20,7 +20,7 @@ import useSessionStore from '@/stores/session';
 import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { AddIcon, GroupAddIcon } from '@sealos/ui';
 export default function CreateTeam({ textButton = false }: { textButton?: boolean }) {
   const { onOpen, isOpen, onClose } = useDisclosure();

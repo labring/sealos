@@ -47,19 +47,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       teamName: workspace.displayName,
       nstype: NSType.Team
     };
-    const users = queryResult.map<TeamUserDto>((x) => {
-      const user = userResult.find((user) => user.uid === x.userCr.userUid)!;
-      return {
-        uid: x.userCr.userUid,
-        crUid: x.userCrUid,
-        k8s_username: x.userCr.crName,
-        avatarUrl: user.avatarUri,
-        nickname: user.nickname,
-        createdTime: x.userCr.createdAt.toString(),
-        joinTime: x.joinAt || undefined,
-        role: roleToUserRole(x.role),
-        status: joinStatusToNStatus(x.status)
-      };
+    const users = queryResult.flatMap<TeamUserDto>((x) => {
+      const user = userResult.find((user) => user.uid === x.userCr.userUid);
+      // when the user is deleting
+      if (!user) return [];
+      return [
+        {
+          uid: x.userCr.userUid,
+          crUid: x.userCrUid,
+          k8s_username: x.userCr.crName,
+          avatarUrl: user.avatarUri,
+          nickname: user.nickname,
+          createdTime: x.userCr.createdAt.toString(),
+          joinTime: x.joinAt || undefined,
+          role: roleToUserRole(x.role),
+          status: joinStatusToNStatus(x.status)
+        }
+      ];
     });
     jsonRes(res, {
       code: 200,

@@ -1,7 +1,7 @@
 import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { bindingRole, modifyTeamRole } from '@/services/backend/team';
+import { bindingRole, modifyWorkspaceRole } from '@/services/backend/team';
 import { getTeamLimit } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -19,7 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!teamName) return jsonRes(res, { code: 400, message: 'teamName is required' });
     const currentNamespaces = await prisma.userWorkspace.findMany({
       where: {
-        userCrUid: payload.userCrUid
+        userCrUid: payload.userCrUid,
+        status: 'IN_WORKSPACE'
       },
       include: {
         workspace: {
@@ -65,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       direct: true
     });
     if (!utnResult) throw new Error(`fail to binding namesapce: ${workspace.id}`);
-    await modifyTeamRole({
+    await modifyWorkspaceRole({
       role: UserRole.Owner,
       action: 'Create',
       workspaceId,

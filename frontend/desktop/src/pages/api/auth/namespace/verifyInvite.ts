@@ -1,6 +1,6 @@
 import { reciveAction } from '@/api/namespace';
 import { jsonRes } from '@/services/backend/response';
-import { acceptInvite, modifyTeamRole, unbindingRole } from '@/services/backend/team';
+import { acceptInvite, modifyWorkspaceRole, unbindingRole } from '@/services/backend/team';
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/services/backend/db/init';
@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     if (!queryStatus) return jsonRes(res, { code: 404, message: "You're not invited" });
     if (action === reciveAction.Accepte) {
-      await modifyTeamRole({
+      await modifyWorkspaceRole({
         k8s_username: queryStatus.userCr.crName,
         role: roleToUserRole(queryStatus.role),
         workspaceId: queryStatus.workspace.id,

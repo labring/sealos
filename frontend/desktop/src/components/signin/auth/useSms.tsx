@@ -53,7 +53,7 @@ export default function useSms({
           const result1 = await request.post<any, ApiResp<{ token: string }>>(
             '/api/auth/phone/verify',
             {
-              phoneNumbers: data.phoneNumber,
+              id: data.phoneNumber,
               code: data.verifyCode,
               inviterId: getInviterId()
             }
@@ -116,7 +116,7 @@ export default function useSms({
       try {
         const cfToken = getCfToken?.();
         const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
-          phoneNumbers: getValues('phoneNumber'),
+          id: getValues('phoneNumber'),
           cfToken
         });
         if (res.code !== 200 || res.message !== 'successfully') {

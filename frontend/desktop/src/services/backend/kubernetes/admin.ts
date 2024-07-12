@@ -212,7 +212,33 @@ async function removeUserTeam(kc: k8s.KubeConfig, k8s_username: string) {
   );
   return k8s_username;
 }
-
+async function removeUser(kc: k8s.KubeConfig, k8s_username: string) {
+  const group = 'user.sealos.io';
+  const version = 'v1';
+  const plural = 'users';
+  const updateTime = k8sFormatTime(new Date());
+  const client = kc.makeApiClient(k8s.CustomObjectsApi);
+  const patchs = [
+    { op: 'add', path: '/metadata/labels/user.sealos.io~1status', value: 'Deleted' },
+    { op: 'replace', path: '/metadata/labels/updateTime', value: updateTime }
+  ];
+  await client.patchClusterCustomObject(
+    group,
+    version,
+    plural,
+    k8s_username,
+    patchs,
+    undefined,
+    undefined,
+    undefined,
+    {
+      headers: {
+        'Content-Type': 'application/json-patch+json'
+      }
+    }
+  );
+  return k8s_username;
+}
 export const getUserCr = async (kc: KubeConfig, name: string) => {
   const resourceKind = 'User';
   const group = 'user.sealos.io';
@@ -294,4 +320,31 @@ export const setUserTeamDelete = async (k8s_username: string) => {
     name: k8s_username
   });
   return body;
+};
+export const setUserDelete = async (k8s_username: string) => {
+  const kc = K8sApiDefault();
+  const group = 'user.sealos.io';
+  const version = 'v1';
+  const plural = 'users';
+  try {
+    const userCr = await getUserCr(kc, k8s_username);
+    // @ts-ignore
+    if (userCr.metadata?.labels?.['user.sealos.io/status'] === 'Deleted') return true;
+  } catch (e) {
+    return true;
+  }
+  await removeUser(kc, k8s_username);
+
+  const body = await watchCustomClusterObject({
+    kc,
+    group,
+    version,
+    plural,
+    fn(_, cur) {
+      return cur?.metadata?.labels?.['user.sealos.io/status'] === 'Deleted';
+    },
+    name: k8s_username,
+    interval: 100
+  });
+  return !!body;
 };

@@ -27,7 +27,6 @@ export default function WorkspaceToggle() {
     async onSuccess(data) {
       if (data.code === 200 && !!data.data && session) {
         const payload = jwtDecode<AccessTokenPayload>(data.data.token);
-        console.log(payload, session);
         await sessionConfig({
           ...data.data,
           kubeconfig: switchKubeconfigNamespace(session.kubeconfig, payload.workspaceId)

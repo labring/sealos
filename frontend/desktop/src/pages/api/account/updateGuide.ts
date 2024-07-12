@@ -30,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes(res, { data: reuslt?.body });
   } catch (error) {
-    console.log(error, 'get user account err');
     jsonRes(res, { code: 500, data: error });
   }
 }
