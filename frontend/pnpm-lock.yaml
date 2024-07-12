@@ -2248,6 +2248,9 @@ importers:
       axios:
         specifier: ^1.5.1
         version: 1.6.2
+      croner:
+        specifier: ^8.1.0
+        version: 8.1.0
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -11732,6 +11735,11 @@ packages:
     engines: {node: '>=12.0.0'}
     dependencies:
       luxon: 3.4.4
+    dev: false
+
+  /croner@8.1.0:
+    resolution: {integrity: sha512-sz990XOUPR8dG/r5BRKMBd15MYDDUu8oeSaxFD5DqvNgHSZw8Psd1s689/IGET7ezxRMiNlCIyGeY1Gvxp/MLg==}
+    engines: {node: '>=18.0'}
     dev: false
 
   /cronstrue@2.44.0:
