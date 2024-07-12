@@ -48,7 +48,7 @@ vet: ## Run go vet against code.
 
 .PHONY: build
 build: fmt vet ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux  go build -o bin/heartbeat-${GOARCH} cmd/main.go && chmod +x bin/heartbeat-${GOARCH} && cp bin/heartbeat-${GOARCH} bin/manager
+	CGO_ENABLED=0 GOOS=linux  go build -ldflags "-s -w" -trimpath -o bin/heartbeat-${GOARCH} cmd/main.go && chmod +x bin/heartbeat-${GOARCH} && cp bin/heartbeat-${GOARCH} bin/manager
 
 
 .PHONY: run
