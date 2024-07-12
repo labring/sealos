@@ -59,7 +59,7 @@ spec:
               githubStarEnabled: false
               workorderEnabled: false
               accountSettingEnabled: true
-              docsUrl: ""
+              docsUrl: "https://sealos.run/docs/Intro/"
               aiAssistantEnabled: false
           auth:
             proxyAddress: ""
