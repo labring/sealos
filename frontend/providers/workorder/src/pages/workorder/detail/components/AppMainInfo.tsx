@@ -97,6 +97,7 @@ const AppMainInfo = ({
   isManuallyHandled: boolean;
 }) => {
   const textareaMinH = '50px';
+  const [isLoading, setIsloading] = useState(false);
   const { session } = useSessionStore();
   const { t } = useTranslation();
   const [text, setText] = useState('');
@@ -282,6 +283,7 @@ const AppMainInfo = ({
 
   const handleTransferToHuman = async () => {
     try {
+      setIsloading(true);
       await FeishuNotification({
         type: app.type,
         description: app.description,
@@ -298,6 +300,7 @@ const AppMainInfo = ({
         status: 'error'
       });
     }
+    setIsloading(false);
     refetchWorkOrder();
   };
 
@@ -409,7 +412,7 @@ const AppMainInfo = ({
                       {isURL(item.content) ? (
                         <Image alt="img" src={item.content} onLoad={() => scrollToBottom()}></Image>
                       ) : (
-                        <Box whiteSpace={'pre-line'} fontWeight={400}>
+                        <Box fontWeight={400}>
                           <Markdown source={item.content} />
                         </Box>
                       )}
@@ -418,6 +421,7 @@ const AppMainInfo = ({
                       !session?.user.isAdmin &&
                       !app?.manualHandling?.isManuallyHandled && (
                         <Button
+                          isLoading={isLoading}
                           h="28px"
                           onClick={handleTransferToHuman}
                           fontSize={'12px'}
