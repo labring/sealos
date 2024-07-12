@@ -828,14 +828,6 @@ const Form = ({
                             publicDomain: network.publicDomain || nanoid()
                           });
                         }}
-                        __css={{
-                          '& .chakra-switch__track': {
-                            backgroundColor: '#E2E8F0'
-                          },
-                          '&[data-checked] .chakra-switch__thumb': {
-                            backgroundColor: '#yourColorHere' // Replace with your desired color
-                          }
-                        }}
                       />
                     </Flex>
                   </Box>
