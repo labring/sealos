@@ -55,8 +55,6 @@ export default function PasswordModify(
             mutation.mutate({ oldPassword, newPassword });
           },
           (errors) => {
-            console.log(formState);
-            console.log(errors);
             if (errors.oldPassword) return toast({ title: t('currentPasswordRequired') });
             if (errors.newPassword) return toast({ title: t('password tips') });
             if (errors.againPassword) return toast({ title: t('passwordMismatch') });

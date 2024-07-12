@@ -23,9 +23,7 @@ export default function Callback() {
   const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
   useEffect(() => {
     if (!router.isReady) return;
-    console.log('hellow', router.isReady);
     let isProxy: boolean = false;
-    console.log('hellow', router.isReady, isProxy);
     (async () => {
       try {
         if (!provider || !['GITHUB', 'WECHAT', 'GOOGLE', 'OAUTH2'].includes(provider))
@@ -33,7 +31,6 @@ export default function Callback() {
         const { code, state } = router.query;
         if (!isString(code) || !isString(state)) throw new Error('failed to get code and state');
         const compareResult = compareState(state);
-        // console.log(compareResult);
         if (!compareResult.isSuccess) throw new Error('invalid state');
         if (compareResult.action === 'PROXY') {
           // proxy oauth2.0, PROXY_URL_[ACTION]_STATE
@@ -45,7 +42,6 @@ export default function Callback() {
               const result = (await request(`/api/auth/canProxy?domain=${url.host}`)) as ApiResp<{
                 containDomain: boolean;
               }>;
-              console.log(result, url);
               isProxy = true;
               if (result.data?.containDomain) {
                 url.searchParams.append('code', code);

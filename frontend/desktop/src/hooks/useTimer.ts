@@ -7,7 +7,6 @@ export const useTimer = ({ duration, step }: { duration: number; step: number })
     if (!start) return;
     const interval = setInterval(() => {
       // autoClear
-      console.log(seconds, duration);
       if (seconds >= duration || !start) {
         setSeconds(0);
         setStart(false);

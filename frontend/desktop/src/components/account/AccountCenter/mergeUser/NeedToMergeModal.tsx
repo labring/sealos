@@ -122,7 +122,6 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
                           status: 'error',
                           title: 'Unknow Error'
                         });
-                      console.log(mergeUserData, 'merge request');
                       mutation.mutate(mergeUserData);
                     }}
                     variant={'unstyled'}

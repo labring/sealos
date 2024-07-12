@@ -62,7 +62,6 @@ const smsBindGen = (smsType: SmsType) =>
     const remainTime = 60 - seconds;
     const getCode: MouseEventHandler = async (e) => {
       e.preventDefault();
-      console.log(isRunning, seconds);
       if (isRunning) {
         toast({
           status: 'error',
