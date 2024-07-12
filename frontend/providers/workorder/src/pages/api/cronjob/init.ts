@@ -2,6 +2,8 @@ import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Cron } from 'croner';
 
+const adminToken = process.env.ADMIN_API_TOKEN;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { action } = req.query;
@@ -11,7 +13,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       global.cronJobWorkOrders = new Cron(
         process.env.NODE_ENV === 'production' ? '0,30 10-17 * * 1-5' : '* * * * *',
         async () => {
-          const result = await (await fetch(`${baseurl}/api/workorder/check`)).json();
+          const result = await (
+            await fetch(`${baseurl}/api/workorder/check`, {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              }
+            })
+          ).json();
           const now = new Date();
           console.log(
             `Cron Job Run at: ${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
