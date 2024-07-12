@@ -16,7 +16,7 @@ package confirm
 
 import (
 	"errors"
-	"os/exec"
+	"os"
 
 	"github.com/manifoldco/promptui"
 
@@ -25,8 +25,8 @@ import (
 
 // Confirm is send the prompt and get result
 func Confirm(prompt, cancel string) (bool, error) {
-	var hostname = getHostname()
-	promptLabel := "Do you want to continue on " + hostname + " ? Input " + hostname + " to continue: "
+	var hostname, _ = os.Hostname()
+	promptLabel := "Do you want to continue on '" + hostname + "' cluster? Input '" + hostname + "' to continue"
 	logger.Info(prompt)
 
 	validate := func(input string) error {
@@ -51,15 +51,6 @@ func Confirm(prompt, cancel string) (bool, error) {
 	}
 	logger.Warn(cancel)
 	return false, nil
-}
-
-func getHostname() string {
-	hostname, err := exec.Command("hostname").Output()
-	if err != nil {
-		logger.Error("Failed to get hostname: %v\n", err)
-		return ""
-	}
-	return string(hostname)
 }
 
 func PasswordInput(promptInput string) string {
