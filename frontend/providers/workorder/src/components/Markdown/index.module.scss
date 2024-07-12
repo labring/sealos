@@ -10,7 +10,6 @@
 
 .animation {
   height: 20px;
-
   &::after {
     display: inline-block;
     content: '';
@@ -21,6 +20,7 @@
     animation: blink 0.6s infinite;
   }
 }
+
 @keyframes blink {
   from,
   to {

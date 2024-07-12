@@ -23,6 +23,7 @@
     "@types/multer": "^1.4.10",
     "ansi_up": "^5.2.1",
     "axios": "^1.5.1",
+    "croner": "^8.1.0",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",

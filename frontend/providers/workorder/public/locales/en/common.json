@@ -61,5 +61,6 @@
   "api is error": "api is error",
   "region": "region",
   "userId": "userId",
-  "other": "other"
+  "other": "other",
+  "fastgpt": "FastGPT"
 }

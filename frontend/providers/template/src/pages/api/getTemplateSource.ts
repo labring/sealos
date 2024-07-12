@@ -72,7 +72,8 @@ export async function GetTemplateByName({
     TEMPLATE_REPO_URL:
       process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
     SEALOS_NAMESPACE: namespace || '',
-    SEALOS_SERVICE_ACCOUNT: namespace.replace('ns-', '')
+    SEALOS_SERVICE_ACCOUNT: namespace.replace('ns-', ''),
+    SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false'
   };
 
   const originalPath = process.cwd();

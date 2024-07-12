@@ -1,17 +1,18 @@
-go 1.20
+go 1.22
+
+toolchain go1.22.3
 
 use (
 	./account
-	./admission
 	./app
 	./db/adminer
-	./terminal
-	./node
-	./user
-	./resources
-	./license
-	./job/init
 	./job/heartbeat
-	./pkg
+	./job/init
+	./license
+	./node
 	./objectstorage
+	./pkg
+	./resources
+	./terminal
+	./user
 )

@@ -223,7 +223,8 @@
     "Expansion and Contraction Launchpad": "扩缩容 Launchpad",
     "App Name": "App 名称",
     "Replicas": "副本数",
-    "JobNamePlaceholder": "以字母开头，只能包含小写字母、数字和连字符 (-)"
+    "JobNamePlaceholder": "以字母开头，只能包含小写字母、数字和连字符 (-)",
+    "Environment Variables": "环境变量"
   },
   "every five minutes": "每五分钟",
   "per hour": "每小时",
@@ -239,5 +240,8 @@
   "Failures": "失败数",
   "Log": "日志",
   "Username for the image registry": "用户名",
-  "The password cannot be empty": "密码不能为空"
+  "The password cannot be empty": "密码不能为空",
+  "Env Placeholder": "环境变量，每行一个，可用冒号或等号分隔，例如：\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test",
+  "Edit Environment Variables": "编辑环境变量",
+  "Environment Variables": "环境变量"
 }

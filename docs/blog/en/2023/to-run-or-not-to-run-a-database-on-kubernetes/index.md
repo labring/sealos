@@ -5,7 +5,7 @@ description: This article thoroughly examines the advantages of using Kubernetes
 authors: [fanux]
 tags: [Kubernetes, Sealos, Database]
 keywords: [Cloud Operating System, Sealos, K8s, Cloud Native, Cloud Computing, Cloud OS, PaaS, Database, Container]
-image: images/feature.jpg
+image: ./images/feature.jpg
 date: 2023-12-06T10:00
 ---
 

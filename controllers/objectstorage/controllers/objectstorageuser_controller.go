@@ -55,6 +55,8 @@ type ObjectStorageUserReconciler struct {
 	InternalEndpoint  string
 	ExternalEndpoint  string
 	OSUDetectionCycle time.Duration
+	QuotaEnabled      bool
+	DefaultQuota      int64
 }
 
 const (
@@ -200,7 +202,7 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	r.Logger.V(1).Info("[user] user info", "name", user.Name, "quota", user.Status.Quota, "size", size, "objectsCount", user.Status.ObjectsCount)
 
-	if size > user.Status.Quota {
+	if r.QuotaEnabled && size > user.Status.Quota {
 		if err := r.addUserToGroup(ctx, accessKey, UserDenyWriteGroup); err != nil {
 			r.Logger.Error(err, "failed to add user to userDenyWrite group")
 			return ctrl.Result{}, err
@@ -338,9 +340,8 @@ func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(ctx context.Contex
 func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev1.ObjectStorageUser, username string) bool {
 	var updated = false
 
-	if user.Status.Quota == 0 {
-		// 1073741824Byte = 1G
-		user.Status.Quota = 1073741824
+	if user.Status.Quota != r.DefaultQuota {
+		user.Status.Quota = r.DefaultQuota
 		updated = true
 	}
 
@@ -416,6 +417,12 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if internalEndpoint == "" || externalEndpoint == "" || oSNamespace == "" || oSAdminSecret == "" {
 		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
+
+	quotaEnabled := env.GetBoolWithDefault("quotaEnabled", true)
+	r.QuotaEnabled = quotaEnabled
+
+	defaultQuota := env.GetInt64EnvWithDefault("defaultQuota", 107374182400)
+	r.DefaultQuota = defaultQuota
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&objectstoragev1.ObjectStorageUser{}).

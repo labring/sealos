@@ -14,11 +14,64 @@ definitions:
         example: 10000
         type: number
     type: object
+  helper.AppCostsReq:
+    properties:
+      appName:
+        description: |-
+          @Summary App Name
+          @Description App Name
+        example: app
+        type: string
+      appType:
+        description: |-
+          @Summary App type
+          @Description App type
+        example: app
+        type: string
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      namespace:
+        description: |-
+          @Summary Namespace
+          @Description Namespace
+        example: ns-admin
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        example: 1
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        example: 10
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
+        type: string
+    required:
+    - kubeConfig
+    - owner
+    type: object
   helper.Auth:
     properties:
       kubeConfig:
         type: string
       owner:
+        example: admin
+        type: string
+      userID:
         example: admin
         type: string
     required:
@@ -46,6 +99,51 @@ definitions:
           $ref: '#/definitions/common.PropertyQuery'
         type: array
     type: object
+  helper.GetTransferRecordReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        example: 1
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        example: 10
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      transferID:
+        description: |-
+          @Summary Transfer ID
+          @Description Transfer ID
+        example: transfer-id-1
+        type: string
+      type:
+        description: |-
+          0: all, 1: in, 2: out
+          @Summary Type of the request
+          @Description Type of the request: 0: all, 1: transfer in, 2: transfer out
+        example: 0
+        type: integer
+      userID:
+        example: admin
+        type: string
+    required:
+    - kubeConfig
+    - owner
+    type: object
   helper.NamespaceBillingHistoryReq:
     properties:
       endTime:
@@ -65,6 +163,9 @@ definitions:
           @Description Type of the request (optional)
           @JSONSchema
         type: integer
+      userID:
+        example: admin
+        type: string
     required:
     - kubeConfig
     - owner
@@ -97,6 +198,9 @@ definitions:
         items:
           type: string
         type: array
+      userID:
+        example: admin
+        type: string
     required:
     - kubeConfig
     - owner
@@ -123,8 +227,15 @@ definitions:
           @JSONSchema required
         example: admin
         type: string
+      transferAll:
+        description: |-
+          @Summary Transfer all
+          @Description Transfer all amount
+        type: boolean
+      userID:
+        example: admin
+        type: string
     required:
-    - amount
     - kubeConfig
     - owner
     - toUser
@@ -141,6 +252,9 @@ definitions:
         type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
         type: string
     required:
     - kubeConfig
@@ -226,6 +340,44 @@ paths:
       summary: Get user costs
       tags:
       - Costs
+  /account/v1alpha1/costs/app:
+    post:
+      consumes:
+      - application/json
+      description: Get app costs within a specified time range
+      parameters:
+      - description: App costs request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AppCostsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved app costs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get app cost request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get app cost
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get app costs
+      tags:
+      - AppCosts
   /account/v1alpha1/costs/consumption:
     post:
       consumes:
@@ -384,12 +536,12 @@ paths:
       - application/json
       description: Get transfer
       parameters:
-      - description: auth request
+      - description: Get transfer request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.Auth'
+          $ref: '#/definitions/helper.GetTransferRecordReq'
       produces:
       - application/json
       responses:

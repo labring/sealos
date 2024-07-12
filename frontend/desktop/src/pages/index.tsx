@@ -104,6 +104,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       <Head>
         <title>{layoutConfig?.meta.title}</title>
         <meta name="description" content={layoutConfig?.meta.description} />
+        <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
+        <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />w{' '}
       </Head>
       {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;

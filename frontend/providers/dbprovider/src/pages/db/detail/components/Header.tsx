@@ -12,7 +12,6 @@ import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
 
 const DelModal = dynamic(() => import('./DelModal'));
-const BackupModal = dynamic(() => import('./BackupModal'));
 
 const Header = ({
   db = defaultDBDetail,

@@ -1,7 +1,6 @@
-import { ClusterDB, ClusterRecordPayload, ClusterType, LicenseRecordPayload } from '@/types';
+import { ClusterDB, ClusterRecordPayload, LicenseRecordPayload } from '@/types';
 import { v4 as uuid } from 'uuid';
 import { connectToDatabase } from './mongodb';
-import { getOssUrl } from './oss';
 import { createLicenseRecord } from './license';
 import { ObjectId } from 'mongodb';
 
@@ -15,16 +14,12 @@ async function connectClusterCollection() {
 
 export async function createClusterRecord(payload: ClusterRecordPayload) {
   const collection = await connectClusterCollection();
-  const now = new Date();
-  const expirationTime = new Date(now.getTime() + 30 * 60000); // 30 minutes in milliseconds
-  const tarUrl = await getOssUrl({ fileName: 'sealos-cloud-dev.tar.gz' });
-  const md5Url = await getOssUrl({ fileName: 'sealos-cloud-dev.tar.gz.md5' });
+  // const now = new Date();
+  // const expirationTime = new Date(now.getTime() + 30 * 60000); // 30 minutes in milliseconds
+  // const tarUrl = await getOssUrl({ fileName: 'sealos-cloud-dev.tar.gz' });
+  // const md5Url = await getOssUrl({ fileName: 'sealos-cloud-dev.tar.gz.md5' });
 
-  let orderID;
-
-  if (payload.type === ClusterType.Enterprise) {
-    orderID = payload.orderID;
-  }
+  let orderID = payload.orderID;
 
   const record: ClusterDB = {
     clusterId: uuid(),
@@ -32,11 +27,15 @@ export async function createClusterRecord(payload: ClusterRecordPayload) {
     orderID: orderID, // order ID
     type: payload.type,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    cpu: payload.cpu,
+    memory: payload.memory,
+    months: payload.months,
+    displayName: payload.name
   };
 
-  const result = await collection.insertOne(record);
-  return result;
+  await collection.insertOne(record);
+  return record;
 }
 
 export async function getClusterRecordsByUid({

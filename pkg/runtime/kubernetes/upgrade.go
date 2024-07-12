@@ -17,10 +17,12 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
@@ -31,8 +33,8 @@ import (
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply --yes %s"
-	upradeNodeCmd   = "kubeadm upgrade node"
+	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --config %s --yes"
+	upradeNodeCmd   = "kubeadm upgrade node --certificate-renewal=false --skip-phases preflight"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
 	uncordonNodeCmd = "kubectl uncordon %s"
@@ -42,16 +44,21 @@ const (
 	installKubeadmCmd = "cp -rf %s/kubeadm /usr/bin"
 	installKubeletCmd = "cp -rf %s/kubelet /usr/bin"
 	installKubectlCmd = "cp -rf %s/kubectl /usr/bin"
+
+	writeKubeadmConfig = `cat > %s << EOF
+%s
+EOF`
 )
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	logger.Info("Change ClusterConfiguration up to newVersion if need.")
-	if err := k.autoUpdateConfig(version); err != nil {
+	conversion, err := k.autoUpdateConfig(version)
+	if err != nil {
 		return err
 	}
 	//upgrade master0
 	logger.Info("start to upgrade master0")
-	err := k.upgradeMaster0(version)
+	err = k.upgradeMaster0(conversion, version)
 	if err != nil {
 		return err
 	}
@@ -67,7 +74,7 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	return k.upgradeOtherNodes(upgradeNodes, version)
 }
 
-func (k *KubeadmRuntime) upgradeMaster0(version string) error {
+func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig, version string) error {
 	master0ip := k.getMaster0IP()
 	sver := semver.MustParse(version)
 	if gte(sver, V1260) {
@@ -75,6 +82,13 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 			return err
 		}
 	}
+
+	if gte(sver, V1270) {
+		if err := k.changeKubeletExtraArgs(master0ip); err != nil {
+			return err
+		}
+	}
+
 	master0Name, err := k.remoteUtil.Hostname(master0ip)
 	if err != nil {
 		return err
@@ -86,11 +100,29 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	if err = k.pingAPIServer(); err != nil {
 		return err
 	}
+
+	// force cri to pull the image
+	err = k.imagePull(master0ip, version)
+	if err != nil {
+		logger.Warn("image pull pre-upgrade failed: %s", err.Error())
+	}
+
+	config, err := yaml.MarshalConfigs(&conversion.InitConfiguration, &conversion.ClusterConfiguration)
+	if err != nil {
+		logger.Error("kubeadm config marshal failed: %s", err.Error())
+		return err
+	}
+
+	upgradeConfigName := "kubeadm-upgrade.yaml"
+	upgradeConfigPath := path.Join(k.pathResolver.EtcPath(), upgradeConfigName)
+
 	err = k.sshCmdAsync(master0ip,
 		//install kubeadm:{version} at master0
 		fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
+		// write kubeadm config to file
+		fmt.Sprintf(writeKubeadmConfig, upgradeConfigPath, string(config)),
 		//execute  kubeadm upgrade apply {version} at master0
-		fmt.Sprintf(upgradeApplyCmd, version),
+		fmt.Sprintf(upgradeApplyCmd, upgradeConfigPath),
 		//kubectl cordon <node-to-cordon>
 		fmt.Sprintf(cordonNodeCmd, master0Name),
 		//install kubelet:{version},kubectl{version} at master0
@@ -114,6 +146,13 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 				return err
 			}
 		}
+
+		if gte(sver, V1270) {
+			if err := k.changeKubeletExtraArgs(ip); err != nil {
+				return err
+			}
+		}
+
 		nodename, err := k.remoteUtil.Hostname(ip)
 		if err != nil {
 			return err
@@ -125,6 +164,13 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 		if err = k.pingAPIServer(); err != nil {
 			return err
 		}
+
+		// force cri to pull the image
+		err = k.imagePull(ip, version)
+		if err != nil {
+			logger.Error("image pull pre-upgrade failed: %s", err.Error())
+		}
+
 		logger.Info("upgrade node %s", nodename)
 		err = k.sshCmdAsync(ip,
 			//install kubeadm:{version} at the node
@@ -150,19 +196,19 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
+func (k *KubeadmRuntime) autoUpdateConfig(version string) (*types.ConvertedKubeadmConfig, error) {
 	exp, err := k.getKubeExpansion()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	ctx := context.Background()
 	clusterCfg, err := exp.FetchKubeadmConfig(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	kubeletCfg, err := exp.FetchKubeletConfig(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logger.Debug("get cluster configmap data:\n%s", clusterCfg)
 	logger.Debug("get kubelet configmap data:\n%s", kubeletCfg)
@@ -170,7 +216,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	defaultKubeadmConfig, err := types.LoadKubeadmConfigs(allConfig, false, decode.CRDFromString)
 	if err != nil {
 		logger.Error("failed to decode cluster kubeadm config: %s", err)
-		return err
+		return nil, err
 	}
 	defaultKubeadmConfig.InitConfiguration = kubeadm.InitConfiguration{
 		TypeMeta: metaV1.TypeMeta{
@@ -183,36 +229,37 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	}
 	kk.setKubeVersion(version)
 	kk.setFeatureGatesConfiguration()
+	kk.setInitConfigurationPullPolicy(v1.PullNever)
 
 	conversion, err := kk.kubeadmConfig.ToConvertedKubeadmConfig()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	newClusterData, err := yaml.MarshalConfigs(&conversion.ClusterConfiguration)
 	if err != nil {
 		logger.Error("failed to encode ClusterConfiguration: %s", err)
-		return err
+		return nil, err
 	}
 	logger.Debug("update cluster config:\n%s", string(newClusterData))
 	err = exp.UpdateKubeadmConfig(ctx, string(newClusterData))
 	if err != nil {
 		logger.Error("failed to update kubeadm-config with k8s-client: %s", err)
-		return err
+		return nil, err
 	}
 
 	newKubeletData, err := yaml.MarshalConfigs(&conversion.KubeletConfiguration)
 	if err != nil {
 		logger.Error("failed to encode KubeletConfiguration: %s", err)
-		return err
+		return nil, err
 	}
 	logger.Debug("update kubelet config:\n%s", string(newKubeletData))
 	err = exp.UpdateKubeletConfig(ctx, string(newKubeletData))
 	if err != nil {
 		logger.Error("failed to update kubelet-config with k8s-client: %s", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return conversion, nil
 }
 
 func (k *KubeadmRuntime) pingAPIServer() error {
@@ -254,6 +301,14 @@ func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
 	return k.sshCmdAsync(ip,
 		"sed -i \"s/v1alpha2/v1/\" /etc/image-cri-shim.yaml",
 		"systemctl restart image-cri-shim",
+		"systemctl restart kubelet",
+	)
+}
+
+func (k *KubeadmRuntime) changeKubeletExtraArgs(ip string) error {
+	return k.sshCmdAsync(ip,
+		`FILE="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf" && [ -f "$FILE" ] && sed -i 's/\(--container-runtime=\|--pod-infra-container-image=\)\([^ ]*\)\?//g' "$FILE"`,
+		"systemctl daemon-reload",
 		"systemctl restart kubelet",
 	)
 }

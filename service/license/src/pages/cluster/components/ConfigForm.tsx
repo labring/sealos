@@ -100,7 +100,6 @@ export default function CommandForm({
     () =>
       debounce((data: CommandFormType) => {
         try {
-          console.log(2, data);
           generateBashScript({ data, basePath, cloudVersion, enterprise });
         } catch (error) {
           console.log(error);

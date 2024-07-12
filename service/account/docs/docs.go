@@ -123,6 +123,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/costs/app": {
+            "post": {
+                "description": "Get app costs within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AppCosts"
+                ],
+                "summary": "Get app costs",
+                "parameters": [
+                    {
+                        "description": "App costs request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AppCostsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved app costs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get app cost request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get app cost",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/costs/consumption": {
             "post": {
                 "description": "Get user consumption amount within a specified time range",
@@ -362,12 +418,12 @@ const docTemplate = `{
                 "summary": "Get transfer",
                 "parameters": [
                     {
-                        "description": "auth request",
+                        "description": "Get transfer request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.Auth"
+                            "$ref": "#/definitions/helper.GetTransferRecordReq"
                         }
                     }
                 ],
@@ -629,6 +685,59 @@ const docTemplate = `{
                 }
             }
         },
+        "helper.AppCostsReq": {
+            "type": "object",
+            "required": [
+                "kubeConfig",
+                "owner"
+            ],
+            "properties": {
+                "appName": {
+                    "description": "@Summary App Name\n@Description App Name",
+                    "type": "string",
+                    "example": "app"
+                },
+                "appType": {
+                    "description": "@Summary App type\n@Description App type",
+                    "type": "string",
+                    "example": "app"
+                },
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "@Summary Namespace\n@Description Namespace",
+                    "type": "string",
+                    "example": "ns-admin"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer",
+                    "example": 10
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
         "helper.Auth": {
             "type": "object",
             "required": [
@@ -640,6 +749,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userID": {
                     "type": "string",
                     "example": "admin"
                 }
@@ -677,6 +790,54 @@ const docTemplate = `{
                 }
             }
         },
+        "helper.GetTransferRecordReq": {
+            "type": "object",
+            "required": [
+                "kubeConfig",
+                "owner"
+            ],
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer",
+                    "example": 1
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer",
+                    "example": 10
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "transferID": {
+                    "description": "@Summary Transfer ID\n@Description Transfer ID",
+                    "type": "string",
+                    "example": "transfer-id-1"
+                },
+                "type": {
+                    "description": "0: all, 1: in, 2: out\n@Summary Type of the request\n@Description Type of the request: 0: all, 1: transfer in, 2: transfer out",
+                    "type": "integer",
+                    "example": 0
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
             "required": [
@@ -702,6 +863,10 @@ const docTemplate = `{
                 "type": {
                     "description": "@Summary Type of the request (optional)\n@Description Type of the request (optional)\n@JSONSchema",
                     "type": "integer"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
@@ -745,13 +910,16 @@ const docTemplate = `{
                         "[\"payment-id-1\"",
                         "\"payment-id-2\"]"
                     ]
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
         "helper.TransferAmountReq": {
             "type": "object",
             "required": [
-                "amount",
                 "kubeConfig",
                 "owner",
                 "toUser"
@@ -771,6 +939,14 @@ const docTemplate = `{
                 },
                 "toUser": {
                     "description": "@Summary To user\n@Description To user\n@JSONSchema required",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "transferAll": {
+                    "description": "@Summary Transfer all\n@Description Transfer all amount",
+                    "type": "boolean"
+                },
+                "userID": {
                     "type": "string",
                     "example": "admin"
                 }
@@ -797,6 +973,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         }

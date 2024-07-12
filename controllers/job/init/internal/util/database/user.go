@@ -137,6 +137,9 @@ func PresetAdminUser() error {
 	if _, err = v2Account.NewAccount(&types.UserQueryOpts{Owner: adminUserName}); err != nil {
 		return fmt.Errorf("failed to create account: %v", err)
 	}
+	if err = v2Account.AddBalance(&types.UserQueryOpts{Owner: adminUserName}, 9999999_000_000); err != nil {
+		return fmt.Errorf("failed to add balance: %v", err)
+	}
 	return nil
 }
 

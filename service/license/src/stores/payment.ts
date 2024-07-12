@@ -6,8 +6,22 @@ type PaymentDataState = {
   paymentData?: {
     orderId: string;
     expirationTime: number;
+    cpu: number;
+    memory: number;
+    months: string;
+    clusterId?: string;
+    name?: string;
+    systemId?: string;
   };
-  setPaymentData: (orderId: string) => void;
+  setPaymentData: (data: {
+    orderId: string;
+    cpu: number;
+    memory: number;
+    months: string;
+    clusterId?: string;
+    name?: string;
+    systemId?: string;
+  }) => void;
   deletePaymentData: () => void;
   isExpired: () => boolean;
 };
@@ -16,12 +30,12 @@ export const usePaymentDataStore = create(
   persist(
     immer<PaymentDataState>((set, get) => ({
       paymentData: undefined,
-      setPaymentData: (id) => {
-        const currentTime = new Date().getTime(); // 获取当前时间戳
-        const expirationTime = currentTime + 5 * 60000; // 10 minutes in milliseconds
+      setPaymentData: (data) => {
+        const currentTime = new Date().getTime();
+        const expirationTime = currentTime + 5 * 60000;
         set({
           paymentData: {
-            orderId: id,
+            ...data,
             expirationTime: expirationTime
           }
         });

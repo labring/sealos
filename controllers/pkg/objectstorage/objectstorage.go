@@ -240,3 +240,41 @@ func isUsageBytesTargetMetric(name string) bool {
 func getUserWithBucket(bucket string) string {
 	return strings.Split(bucket, "-")[0]
 }
+
+/*
+/pvc-03392f69-a7b0-4a52-a839-82d9c586d96f/ns-eemtkfj3/halo-faxdridb-pg-bd87bb8c-a128-44cc-b076-6228593b16ee/postgresql/halo-faxdridb-pg-yhxnjm/halo-faxdridb-pg-yhxnjm.tar.gz
+	1/pvc-03392f69-a7b0-4a52-a839-82d9c586d96f
+		2/pvc-03392f69-a7b0-4a52-a839-82d9c586d96f
+		2/ns-eemtkfj3
+			3/ns-eemtkfj3
+			3/halo-faxdridb-pg-bd87bb8c-a128-44cc-b076-6228593b16ee
+				4/halo-faxdridb-pg-bd87bb8c-a128-44cc-b076-6228593b16ee
+				4/postgresql
+					5/postgresql
+					5/halo-faxdridb-pg-yhxnjm
+						6/halo-faxdridb-pg-yhxnjm
+						6/halo-faxdridb-pg-yhxnjm.tar.gz
+*/
+
+func GetUserBakFileSize(client *minio.Client) map[string]int64 {
+	bucket := "file-backup"
+	userUsageMap := make(map[string]int64)
+	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
+	for object := range objectsCh {
+		user := extractNamespace(object.Key)
+		if user != "" {
+			userUsageMap[user] += object.Size
+		}
+	}
+
+	return userUsageMap
+}
+
+func extractNamespace(input string) string {
+	re := regexp.MustCompile(`ns-(\w+)`)
+	matches := re.FindStringSubmatch(input)
+	if len(matches) < 2 {
+		return ""
+	}
+	return matches[1]
+}

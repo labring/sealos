@@ -21,6 +21,8 @@ const { definePartsStyle: numInputPart, defineMultiStyleConfig: numInputMultiSty
 const { definePartsStyle: checkboxPart, defineMultiStyleConfig: checkboxStyle } =
   createMultiStyleConfigHelpers(checkboxAnatomy.keys);
 
+import { theme as sealosTheme } from '@sealos/ui';
+
 const Button = defineStyleConfig({
   baseStyle: {
     _active: {
@@ -226,116 +228,16 @@ const Checkbox = checkboxStyle({
   })
 });
 
-export const theme = extendTheme({
+export const theme = extendTheme(sealosTheme, {
   styles: {
     global: {
       'html, body': {
         color: 'myGray.900',
         fontSize: 'md',
         height: '100%',
-        fontWeight: 400
+        fontWeight: 400,
+        bg: '#F4F4F7'
       }
     }
-  },
-  breakpoints: {
-    sm: '1024px',
-    md: '1280px',
-    lg: '1500px',
-    xl: '1800px',
-    '2xl': '2100px'
-  },
-  fontSizes: {
-    xs: '10px',
-    sm: '12px',
-    md: '14px',
-    lg: '16px',
-    xl: '16px',
-    '2xl': '18px',
-    '3xl': '20px'
-  },
-  colors: {
-    divider: {
-      100: '#E5E7E9'
-    },
-    hover: {
-      blue: '#0884DD',
-      iconBlue: '#219BF4'
-    },
-    myGray: {
-      100: '#EFF0F1',
-      200: '#DEE0E2',
-      300: '#BDC1C5',
-      400: '#9CA2A8',
-      500: '#7B838B',
-      600: '#5A646E',
-      700: '#485058',
-      800: '#363C42',
-      900: '#24282C',
-      1000: '#121416'
-    },
-    myWhite: {
-      100: '#FEFEFE',
-      200: '#FDFDFE',
-      300: '#FBFBFC',
-      400: '#F8FAFB',
-      500: '#F6F8F9',
-      600: '#F4F6F8',
-      700: '#C3C5C6',
-      800: '#929495',
-      900: '#626263',
-      1000: '#313132'
-    },
-    myBlue: {
-      100: '#EBF7FD',
-      200: '#D7EFFC',
-      300: '#AFDEF9',
-      400: '#86CEF5',
-      500: '#5EBDF2',
-      600: '#36ADEF',
-      700: '#2B8ABF',
-      800: '#20688F',
-      900: '#164560',
-      1000: '#0B2330'
-    },
-    myRed: {
-      100: '#FFEBED',
-      200: '#FFD6DB',
-      300: '#FFADB7',
-      400: '#FF8492',
-      500: '#FF5B6E',
-      600: '#FF324A',
-      700: '#CC283B',
-      800: '#991E2C',
-      900: '#66141E',
-      1000: '#330A0F'
-    }
-  },
-  borders: {
-    sm: '1px solid #EFF0F1',
-    base: '1px solid #DEE0E2',
-    md: '1px solid #BDC1C5'
-  },
-  shadows: {
-    outline: ''
-  },
-  radii: {
-    xs: '1px',
-    sm: '2px',
-    base: '2px',
-    md: '4px',
-    lg: '6px'
-  },
-  fontWeights: {
-    bold: 500
-  },
-  components: {
-    Button,
-    Input,
-    Tooltip,
-    Select,
-    Switch,
-    Textarea,
-    NumberInput,
-    Checkbox
   }
 });

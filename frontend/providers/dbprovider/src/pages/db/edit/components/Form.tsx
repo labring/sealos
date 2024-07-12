@@ -321,7 +321,7 @@ const Form = ({
                     {...register('dbName', {
                       required: t('DataBase Name Empty') || '',
                       pattern: {
-                        value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
+                        value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/g,
                         message: t('DataBase Name Regex Error')
                       }
                     })}

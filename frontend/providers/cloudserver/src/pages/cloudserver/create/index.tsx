@@ -15,6 +15,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
 import Header, { CostTipContent } from './components/Header';
+import { generateRandomPassword } from '@/utils/tools';
 
 export default function EditOrder() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -35,12 +36,15 @@ export default function EditOrder() {
       storages: [
         {
           use: 'SystemDisk',
-          size: 20,
+          size: 50,
           amount: 1
         }
       ],
       systemImageId: '',
-      period: '1'
+      period: '1',
+      counts: 1,
+      autoPassword: true,
+      password: generateRandomPassword()
       // chargeType: CVMChargeType.postPaidByHour,
       // zone: 'Guangzhou-6',
       // virtualMachineArch: 'x86_64',

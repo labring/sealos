@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/service/account/common"
@@ -336,6 +338,12 @@ func TransferAmount(c *gin.Context) {
 		return
 	}
 	if err := dao.DBClient.Transfer(req); err != nil {
+		if err == cockroach.ErrInsufficientBalance {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "insufficient balance, skip transfer",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to transfer amount : %v", err)})
 		return
 	}
@@ -350,13 +358,13 @@ func TransferAmount(c *gin.Context) {
 // @Tags Transfer
 // @Accept json
 // @Produce json
-// @Param request body helper.Auth true "auth request"
+// @Param request body helper.GetTransferRecordReq true "Get transfer request"
 // @Success 200 {object} map[string]interface{} "successfully get transfer"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get transfer"
 // @Router /account/v1alpha1/get-transfer [post]
 func GetTransfer(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParseGetTransferRecordReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get transfer amount request: %v", err)})
 		return
@@ -365,12 +373,57 @@ func GetTransfer(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	transfer, err := dao.DBClient.GetTransfer(&types.UserQueryOpts{Owner: req.Auth.Owner})
+	ops := types.GetTransfersReq{
+		UserQueryOpts: &types.UserQueryOpts{Owner: req.Auth.Owner},
+		Type:          types.TransferType(req.Type),
+		LimitReq: types.LimitReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+			TimeRange: types.TimeRange{
+				StartTime: req.TimeRange.StartTime,
+				EndTime:   req.TimeRange.EndTime,
+			},
+		},
+		TransferID: req.TransferID,
+	}
+	transferResp, err := dao.DBClient.GetTransfer(&ops)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get transfer amount : %v", err)})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"transfer": transfer,
+		"data": transferResp,
+	})
+}
+
+// GetAPPCosts
+// @Summary Get app costs
+// @Description Get app costs within a specified time range
+// @Tags AppCosts
+// @Accept json
+// @Produce json
+// @Param request body helper.AppCostsReq true "App costs request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved app costs"
+// @Failure 400 {object} map[string]interface{} "failed to parse get app cost request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get app cost"
+// @Router /account/v1alpha1/costs/app [post]
+func GetAPPCosts(c *gin.Context) {
+	req, err := helper.ParseAppCostsReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get app cost request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	cost, err := dao.DBClient.GetAppCosts(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app cost : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"app_costs": cost,
 	})
 }

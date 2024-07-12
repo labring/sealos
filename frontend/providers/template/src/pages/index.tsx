@@ -2,6 +2,7 @@ import { getTemplates } from '@/api/platform';
 import Banner from '@/components/Banner';
 import MyIcon from '@/components/Icon';
 import { useCachedStore } from '@/store/cached';
+import { useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
 import { SystemConfigType, TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
@@ -33,6 +34,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
   const { setInsideCloud } = useCachedStore();
+  const { envs } = useSystemConfigStore();
 
   const { data } = useQuery(['listTemplate'], getTemplates, {
     refetchInterval: 5 * 60 * 1000,
@@ -145,9 +147,11 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                         <Text fontSize={'18px'} fontWeight={600} color={'#111824'}>
                           {item?.spec?.title}
                         </Text>
-                        <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
-                          By {item?.spec?.author}
-                        </Text>
+                        {envs?.SHOW_AUTHOR === 'true' && (
+                          <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
+                            By {item?.spec?.author}
+                          </Text>
+                        )}
                       </Flex>
                       {item.spec?.deployCount && item.spec?.deployCount > 6 && (
                         <Tooltip

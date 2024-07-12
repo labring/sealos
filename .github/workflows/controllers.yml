@@ -44,7 +44,7 @@ on:
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.22"
   DEFAULT_OWNER: "labring"
   CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
@@ -99,7 +99,6 @@ jobs:
           - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
           - { name: node, path: node }
-          - { name: admission, path: admission }
           - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
@@ -202,7 +201,6 @@ jobs:
           - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
           - { name: node, path: node }
-          - { name: admission, path: admission }
           - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout

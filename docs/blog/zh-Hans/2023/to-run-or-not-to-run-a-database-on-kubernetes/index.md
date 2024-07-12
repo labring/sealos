@@ -5,7 +5,7 @@ description: 本文深入分析了 K8s 在数据库管理上的优势，包括�
 authors: [fanux]
 tags: [Kubernetes, Sealos, 数据库]
 keywords: [云操作系统, Sealos, K8s, 云原生, 数据库, 容器,]
-image: images/feature.jpg
+image: ./images/feature.jpg
 date: 2023-12-06T10:00
 ---
 
