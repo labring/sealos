@@ -7,6 +7,8 @@ action:
     actionName: Release
     allowOps:
       - cuisongliu
+      - lingdie
+      - zzjin
 bot:
   prefix: /
   spe: _

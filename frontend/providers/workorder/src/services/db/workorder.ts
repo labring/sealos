@@ -186,3 +186,15 @@ export async function migrateWorkOrders({
     return { success: false, message: 'Error migrating work orders' };
   }
 }
+
+export async function fetchProcessingOrders() {
+  const collection = await connectOrderCollection();
+
+  const orders = await collection
+    .find({
+      status: WorkOrderStatus.Processing
+    })
+    .toArray();
+
+  return orders;
+}

@@ -4,7 +4,7 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.0-beta5"
+SEALOS_VERSION="v5.0.0"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=

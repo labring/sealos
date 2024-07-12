@@ -4,6 +4,5 @@ use (
 	.
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
-	./webhooks/whitelist
 	./test/e2e
 )

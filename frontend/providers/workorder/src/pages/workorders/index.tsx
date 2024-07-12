@@ -11,11 +11,11 @@ import { serviceSideProps } from '@/utils/i18n';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import router from 'next/router';
 import { useState } from 'react';
 import List from './components/List';
 import useSessionStore from '@/store/session';
 import useStore from '@/hooks/useStore';
+import { useRouter } from 'next/router';
 
 function Home() {
   const { Loading } = useLoading();
@@ -23,7 +23,11 @@ function Home() {
   const [initialized, setInitialized] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [orderStatus, setOrderStatus] = useState<WorkOrderStatus>(WorkOrderStatus.All);
+  const router = useRouter();
+  const [orderStatus, setOrderStatus] = useState<WorkOrderStatus>(
+    (router.query?.status as WorkOrderStatus) || WorkOrderStatus.All
+  );
+
   const [orderType, setOrderType] = useState<WorkOrderType>(WorkOrderType.All);
   const [startTime, setStartTime] = useState(() => {
     const currentDate = new Date();
@@ -117,6 +121,11 @@ function Home() {
           }
           activeId={orderStatus}
           onChange={(id: any) => {
+            router.push({
+              query: {
+                status: id
+              }
+            });
             setPage(1);
             setOrderStatus(id);
           }}
