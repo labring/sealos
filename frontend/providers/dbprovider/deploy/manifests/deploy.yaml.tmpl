@@ -58,6 +58,8 @@ spec:
               value: {{ .minioBucketName }}
             - name: BACKUP_ENABLED
               value: "false"
+            - name: SHOW_DOCUMENT
+              value: "true"
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

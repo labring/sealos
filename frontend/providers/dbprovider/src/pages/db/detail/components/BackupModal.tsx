@@ -288,6 +288,12 @@ const BackupModal = ({
                       <Flex mt={7} alignItems={'center'}>
                         <Box flex={'0 0 80px'}>{t('Remark')}</Box>
                         <Input width={'328px'} maxW={'328px'} {...manualRegister('remark')} />
+                        <Tip
+                          ml={'12px'}
+                          icon={<InfoOutlineIcon fontSize={'16px'} />}
+                          size="sm"
+                          text={t('remark_tip')}
+                        />
                       </Flex>
                     </Box>
                     <Box textAlign={'end'}>

@@ -109,7 +109,7 @@ export default function Tutorial({ ossFileUrl, customBasePatch }: TutorialProps)
       }),
     {
       async onSuccess(data) {
-        if (data?.orderID && data.type === ClusterType.Enterprise) {
+        if (data?.orderID && data.type !== ClusterType.Standard) {
           const _link = await getFileByName(ossFileUrl);
           setOssLink(_link);
         }
@@ -180,7 +180,7 @@ export default function Tutorial({ ossFileUrl, customBasePatch }: TutorialProps)
                 </AccordionPanel>
               </AccordionItem>
 
-              {clusterDetail?.type === ClusterType.Enterprise && (
+              {clusterDetail?.type !== ClusterType.Standard && (
                 <AccordionItem
                   bg="#fff"
                   border={'1px solid #E8EBF0'}

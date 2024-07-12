@@ -4,7 +4,7 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.0-beta5"
+SEALOS_VERSION="v5.0.0"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -255,7 +255,7 @@ init() {
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
-    pull_image "cockroach" "latest"
+    pull_image "cockroach" "v2.12.0"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "victoria-metrics-k8s-stack" "v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -495,7 +495,7 @@ stringData:
     if [[ $k8s_installed == "n" ]]; then
       $sealos_gen_cmd
       # Modify Clusterfile with sed
-      sed -e '/InitConfiguration/a skipPhases:\n  addon/kube-proxy' -i $CLOUD_DIR/Clusterfile
+      sed -e '/InitConfiguration/a skipPhases:\n  - addon/kube-proxy' -i $CLOUD_DIR/Clusterfile
       sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
       sed -i "s|10.96.0.0/22|${service_cidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
     fi
@@ -549,7 +549,7 @@ volumeBindingMode: WaitForFirstConsumer
 EOF
 
     # TODO use sealos run to install cockroachdb-operator
-    sealos run "${image_registry}/${image_repository}/cockroach:latest"
+    sealos run "${image_registry}/${image_repository}/cockroach:v2.12.0"
 
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"

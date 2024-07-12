@@ -74,6 +74,10 @@ spec:
               value: {{ .certSecretName }}
             - name: TEMPLATE_REPO_URL
               value: {{ .templateRepoUrl }}
+            - name: TEMPLATE_REPO_BRANCH
+              value: "main"
+            - name: SHOW_AUTHOR
+              value: "false"
           image: ghcr.io/labring/sealos-template-frontend:latest
           imagePullPolicy: Always
           volumeMounts:

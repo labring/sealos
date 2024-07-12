@@ -76,7 +76,7 @@ const Home = () => {
           <Capability isPc={isPc} />
           <Introduce isPc={isPc} />
           <Community isPc={isPc} />
-          <HomeUserBy isPc={isPc} />
+          {/* <HomeUserBy isPc={isPc} /> */}
           <HomeFooter isPc={isPc} />
         </div>
       </Layout>

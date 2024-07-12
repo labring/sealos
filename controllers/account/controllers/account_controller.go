@@ -416,9 +416,9 @@ func (r *AccountReconciler) BillingCVM() error {
 	if err != nil {
 		return fmt.Errorf("get pending state instance failed: %v", err)
 	}
-	for userInfo, cvms := range cvmMap {
-		fmt.Println("billing cvm", userInfo, cvms)
-		userUID, namespace := strings.Split(userInfo, "/")[0], strings.Split(userInfo, "/")[1]
+	for userUID, cvms := range cvmMap {
+		fmt.Println("billing cvm", userUID, cvms)
+		//userUID, namespace := strings.Split(userInfo, "/")[0], strings.Split(userInfo, "/")[1]
 		appCosts := make([]resources.AppCost, len(cvms))
 		cvmTotalAmount := 0.0
 		cvmIDs := make([]primitive.ObjectID, len(cvms))
@@ -449,7 +449,7 @@ func (r *AccountReconciler) BillingCVM() error {
 			OrderID:   id,
 			AppCosts:  appCosts,
 			Type:      accountv1.Consumption,
-			Namespace: namespace,
+			Namespace: "ns-" + user.CrName,
 			AppType:   resources.AppType[resources.CVM],
 			Amount:    int64(cvmTotalAmount * BaseUnit),
 			Owner:     user.CrName,

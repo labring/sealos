@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alibabacloud-go/tea/tea"
+
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
@@ -42,8 +44,6 @@ import (
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 
@@ -432,23 +432,27 @@ const (
 	trueStatus       = "true"
 )
 
-var NoticeTemplateEN map[int]string
+var (
+	TitleTemplateZH = map[int]string{
+		WarningNotice:             "欠费告警",
+		ApproachingDeletionNotice: "资源暂停告警",
+		ImminentDeletionNotice:    "资源释放告警",
+		FinalDeletionNotice:       "资源已释放告警",
+	}
+	TitleTemplateEN = map[int]string{
+		WarningNotice:             "Debt Warning",
+		ApproachingDeletionNotice: "Resource Suspension Warning",
+		ImminentDeletionNotice:    "Resource Release Warning",
+		FinalDeletionNotice:       "Resource Release Warning",
+	}
+)
 
-var TitleTemplateZH = map[int]string{
-	WarningNotice:             "欠费告警",
-	ApproachingDeletionNotice: "资源暂停告警",
-	ImminentDeletionNotice:    "资源释放告警",
-	FinalDeletionNotice:       "资源已释放告警",
-}
-
-var TitleTemplateEN = map[int]string{
-	WarningNotice:             "Debt Warning",
-	ApproachingDeletionNotice: "Resource Suspension Warning",
-	ImminentDeletionNotice:    "Resource Release Warning",
-	FinalDeletionNotice:       "Resource Release Warning",
-}
-
-var NoticeTemplateZH map[int]string
+var (
+	EmailTemplateEN  map[int]string
+	EmailTemplateZH  map[int]string
+	NoticeTemplateEN map[int]string
+	NoticeTemplateZH map[int]string
+)
 
 var (
 	forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
@@ -456,7 +460,7 @@ var (
 )
 
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
-	if r.SmsConfig == nil {
+	if r.SmsConfig == nil && r.VmsConfig == nil && r.smtpConfig == nil {
 		return nil
 	}
 	outh, err := r.AccountV2.GetUserOauthProvider(&pkgtypes.UserQueryOpts{Owner: user})
@@ -471,31 +475,30 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 			email = outh[i].ProviderID
 		}
 	}
-	if phone == "" && email == "" {
-		r.Logger.Info("user phone && email is not set, skip sms notification", "user", user)
-		return nil
-	}
-	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-		PhoneNumbers: tea.String(phone),
-		SignName:     tea.String(r.SmsConfig.SmsSignName),
-		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
-		// ｜ownAmount/1_000_000｜
-		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to send sms notice: %w", err)
-	}
-	if noticeType == WarningNotice {
-		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
-		if err != nil {
-			return fmt.Errorf("failed to send vms notice: %w", err)
-		}
-		if r.smtpConfig != nil {
-			err = r.smtpConfig.SendEmail(NoticeTemplateZH[noticeType], email)
+	if phone != "" {
+		if r.SmsConfig != nil && r.SmsConfig.SmsCode[noticeType] != "" {
+			oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
+			err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+				PhoneNumbers: tea.String(phone),
+				SignName:     tea.String(r.SmsConfig.SmsSignName),
+				TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
+				// ｜ownAmount/1_000_000｜
+				TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
+			})
 			if err != nil {
-				return fmt.Errorf("failed to send email notice: %w", err)
+				return fmt.Errorf("failed to send sms notice: %w", err)
 			}
+		}
+		if r.VmsConfig != nil && noticeType == WarningNotice && r.VmsConfig.TemplateCode[noticeType] != "" {
+			err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+			if err != nil {
+				return fmt.Errorf("failed to send vms notice: %w", err)
+			}
+		}
+	}
+	if r.smtpConfig != nil && email != "" {
+		if err = r.smtpConfig.SendEmail(EmailTemplateZH[noticeType]+"\n"+EmailTemplateEN[noticeType], email); err != nil {
+			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
 	return nil
@@ -690,7 +693,7 @@ func (r *DebtReconciler) setupSMTPConfig() error {
 		ServerPort: serverPort,
 		FromEmail:  os.Getenv(SMTPFromEnv),
 		Passwd:     os.Getenv(SMTPPasswordEnv),
-		EmailTitle: SMTPTitleEnv,
+		EmailTitle: os.Getenv(SMTPTitleEnv),
 	}
 	return nil
 }
@@ -754,6 +757,12 @@ func setDefaultDebtPeriodWaitSecond() {
 		ApproachingDeletionNotice: fmt.Sprintf("Your account balance is not enough to pay this month's bill, and your resources will be released after %2.f hours or when the arrears exceed the recharge amount. Please recharge in time to avoid affecting your normal use.", math.Ceil(float64(DebtConfig[accountv1.ImminentDeletionPeriod])/3600)),
 		ImminentDeletionNotice:    fmt.Sprintf("Your container instance resources have been suspended, and the system will completely release the resources after %2.f hours, which cannot be recovered. Please recharge in time to avoid affecting your normal use.", math.Ceil(float64(DebtConfig[accountv1.FinalDeletionPeriod])/3600)),
 		FinalDeletionNotice:       "The system will completely release all your resources at any time. Please recharge in time to avoid affecting your normal use.",
+	}
+	domain := os.Getenv("DOMAIN")
+	EmailTemplateEN, EmailTemplateZH = make(map[int]string), make(map[int]string)
+	for _, i := range []int{WarningNotice, ApproachingDeletionNotice, ImminentDeletionNotice, FinalDeletionNotice} {
+		EmailTemplateEN[i] = TitleTemplateEN[i] + "：" + NoticeTemplateEN[i] + "(" + domain + ")"
+		EmailTemplateZH[i] = TitleTemplateZH[i] + "：" + NoticeTemplateZH[i] + "(" + domain + ")"
 	}
 }
 

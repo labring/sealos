@@ -41,7 +41,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
   const { setScreenWidth, setLastRoute } = useGlobalStore();
-  const { initSystemConfig } = useSystemConfigStore();
+  const { initSystemConfig, initSystemEnvs } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
@@ -120,13 +120,14 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const setupInternalAppCallListener = async () => {
       try {
-        const envs = await getPlatformEnv();
+        const envs = await initSystemEnvs();
         const event = async (
           e: MessageEvent<{
             name: string;
             type: string;
           }>
         ) => {
+          console.log(e, envs, 'template app');
           const whitelist = [`https://${envs.SEALOS_CLOUD_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;

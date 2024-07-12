@@ -176,7 +176,8 @@
     "Expansion and Contraction Launchpad": "Expansion and Contraction Launchpad",
     "App Name": "App Name",
     "Replicas": "Replicas",
-    "JobNamePlaceholder": "Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)"
+    "JobNamePlaceholder": "Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)",
+    "Environment Variables": "Environment Variables"
   },
   "every five minutes": "every five minutes",
   "per hour": "per hour",
@@ -194,5 +195,7 @@
   "Basic": "Basic",
   "Username for the image registry": "Username for the image registry'",
   "The password cannot be empty": "The password cannot be empty",
-  "Deploy": "Deploy"
+  "Deploy": "Deploy",
+  "Env Placeholder": "one per line, key and value separated by colon or equals sign, e.g.:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
+  "Environment Variables": "Environment Variables"
 }

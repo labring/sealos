@@ -288,3 +288,13 @@ export const formatTimeToDay = (seconds: number): { time: string; unit: string }
     };
   }
 };
+
+export function encodeToHex(input: string) {
+  const encoded = Buffer.from(input).toString('hex');
+  return encoded;
+}
+
+export function decodeFromHex(encoded: string) {
+  const decoded = Buffer.from(encoded, 'hex').toString('utf-8');
+  return decoded;
+}

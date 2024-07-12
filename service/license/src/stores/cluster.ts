@@ -1,11 +1,11 @@
-import { ClusterResult } from '@/types';
+import { ClusterDB } from '@/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type clusterDetailState = {
-  clusterDetail: ClusterResult | undefined;
-  setClusterDetail: (data: ClusterResult) => void;
+  clusterDetail: ClusterDB | undefined;
+  setClusterDetail: (data: ClusterDB) => void;
   clearClusterDetail: () => void;
 };
 

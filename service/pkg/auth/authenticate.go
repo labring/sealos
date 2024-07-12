@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +21,8 @@ var (
 	ErrNilNs        = errors.New("namespace not found")
 	ErrNoAuth       = errors.New("no permission for this namespace")
 	ErrNoSealosHost = errors.New("unable to get the sealos host")
+
+	whiteListKubernetesHosts []string
 )
 
 func Authenticate(ns, kc string) error {
@@ -31,11 +34,12 @@ func Authenticate(ns, kc string) error {
 		log.Printf("kubeconfig failed (%s)\n", kc)
 		return fmt.Errorf("kubeconfig failed  %v", err)
 	}
-
-	if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
-		config.Host = k8shost
-	} else {
-		return ErrNoSealosHost
+	if !IsWhitelistKubernetesHost(config.Host) {
+		if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
+			config.Host = k8shost
+		} else {
+			return ErrNoSealosHost
+		}
 	}
 
 	client, err := kubernetes.NewForConfig(config)
@@ -62,6 +66,15 @@ func Authenticate(ns, kc string) error {
 	}
 
 	return nil
+}
+
+func IsWhitelistKubernetesHost(host string) bool {
+	for _, h := range whiteListKubernetesHosts {
+		if h == host {
+			return true
+		}
+	}
+	return false
 }
 
 func GetKubernetesHostFromEnv() string {
@@ -94,4 +107,9 @@ func CheckResourceAccess(client *kubernetes.Clientset, namespace, verb, resource
 		return ErrNoAuth
 	}
 	return nil
+}
+
+func init() {
+	whiteListKubernetesHosts = strings.Split(os.Getenv("WHITELIST_KUBERNETES_HOSTS"), ",")
+	fmt.Println("WHITELIST_KUBERNETES_HOSTS", whiteListKubernetesHosts)
 }
