@@ -7,7 +7,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 const feishuUrl = process.env.ADMIN_FEISHU_URL;
 const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
-const adminToken = process.env.ADMIN_API_TOKEN;
 const MINUTES_IN_A_WEEK = 7 * 24 * 60;
 
 const getFeishuForm = ({
@@ -95,6 +94,7 @@ const getFeishuForm = ({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const adminToken = req.headers['authorization']?.split(' ')[1];
     if (!adminToken) {
       return jsonRes(res, {
         code: 401,
