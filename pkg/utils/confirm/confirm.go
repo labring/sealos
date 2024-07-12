@@ -16,7 +16,7 @@ package confirm
 
 import (
 	"errors"
-	"regexp"
+	"os/exec"
 
 	"github.com/manifoldco/promptui"
 
@@ -25,14 +25,13 @@ import (
 
 // Confirm is send the prompt and get result
 func Confirm(prompt, cancel string) (bool, error) {
-	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
-	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")
-	promptLabel := "Yes [y/yes], No [n/no]"
+	var hostname = getHostname()
+	promptLabel := "Do you want to continue on " + hostname + " ? Input " + hostname + " to continue: "
 	logger.Info(prompt)
 
 	validate := func(input string) error {
-		if !yesRx.MatchString(input) && !noRx.MatchString(input) {
-			return errors.New("invalid input, please enter 'y', 'yes', 'n', or 'no'")
+		if input != hostname {
+			return errors.New("invalid input, please enter " + hostname + " to continue")
 		}
 		return nil
 	}
@@ -47,11 +46,20 @@ func Confirm(prompt, cancel string) (bool, error) {
 		return false, err
 	}
 
-	if yesRx.MatchString(result) {
+	if result == hostname {
 		return true, nil
 	}
 	logger.Warn(cancel)
 	return false, nil
+}
+
+func getHostname() string {
+	hostname, err := exec.Command("hostname").Output()
+	if err != nil {
+		logger.Error("Failed to get hostname: %v\n", err)
+		return ""
+	}
+	return string(hostname)
 }
 
 func PasswordInput(promptInput string) string {
