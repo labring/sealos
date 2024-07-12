@@ -15,7 +15,8 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "./scripts/**/*.ts",
-    "./prisma/**/*.ts"
+    "./prisma/**/*.ts",
+    "src/types/i18next.d.ts"
   ],
   "extends": "../tsconfig.web.json"
 }
