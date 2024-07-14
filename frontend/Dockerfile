@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM node:20.4.0-alpine As base
+FROM --platform= node:20.4.0-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 WORKDIR /app
@@ -59,8 +59,9 @@ RUN if [ "$name" = "desktop" ]; then \
     cp -r ./desktop/prisma/global/migrations desktop/.next/standalone/desktop/prisma/global/migrations; \
     cp -r ./desktop/prisma/region/migrations desktop/.next/standalone/desktop/prisma/region/migrations; \
 fi
+
 # Production image, copy all the files and run next
-FROM base AS runner
+FROM --platform=$TARGETPLATFORM base AS runner
 
 ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
