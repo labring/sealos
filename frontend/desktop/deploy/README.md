@@ -56,7 +56,11 @@ spec:
               keywords: "Sealos Cloud"
               scripts: []
             common:
-              githubStarEnabled: "false"
+              githubStarEnabled: false
+              workorderEnabled: false
+              accountSettingEnabled: true
+              docsUrl: "https://sealos.run/docs/Intro/"
+              aiAssistantEnabled: false
           auth:
             proxyAddress: ""
             callbackURL: "https://127.0.0.1.nip.io/callback"
