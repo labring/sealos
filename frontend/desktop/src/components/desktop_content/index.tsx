@@ -139,7 +139,7 @@ export default function Desktop(props: any) {
     <Box
       id="desktop"
       className={styles.desktop}
-      backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
+      backgroundImage={`url(${backgroundImage || '/images/bg-blue.svg'})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
       position={'relative'}
