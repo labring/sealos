@@ -6,6 +6,7 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { useEffect } from 'react';
+import { useTranslation } from 'next-i18next';
 
 export default function SigninPage() {
   const { layoutConfig } = useConfigStore();

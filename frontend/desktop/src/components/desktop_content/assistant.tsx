@@ -22,7 +22,7 @@ export default function Assistant() {
       gap={'8px'}
       onClick={() => {
         message({
-          title: t('Under active development')
+          title: t('common:under_active_development')
         });
       }}
     >
@@ -47,7 +47,7 @@ export default function Assistant() {
           🤖
         </text>
       </Icon>
-      <Text display={{ base: 'none', md: 'block' }}>{t('Sealos Copilot')}</Text>
+      <Text display={{ base: 'none', md: 'block' }}>{t('common:sealos_copilot')}</Text>
     </Flex>
   );
 }

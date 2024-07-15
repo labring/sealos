@@ -323,7 +323,7 @@ export default function FloatingButton() {
                 onClick={toggleShape}
                 borderRadius={'4px'}
               >
-                {t('Toggle App Bar')}
+                {t('common:toggle_app_bar')}
                 <div className={dockStyles.arrow}></div>
               </Box>
             </>

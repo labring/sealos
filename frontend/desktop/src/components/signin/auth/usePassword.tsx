@@ -32,7 +32,7 @@ export default function usePassword({
 
   const login = async () => {
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('common:submit_error');
       if (!!obj.message) {
         return obj.message;
       }
@@ -96,7 +96,7 @@ export default function usePassword({
             }
           } catch (error: any) {
             console.log(error);
-            showError(t('Invalid username or password'));
+            showError(t('common:invalid_username_or_password'));
           } finally {
             setIsLoading(false);
           }
@@ -136,7 +136,7 @@ export default function usePassword({
           </InputLeftAddon>
           <Input
             type="text"
-            placeholder={t('Username') || ''}
+            placeholder={t('common:username') || ''}
             pl={'12px'}
             variant={'unstyled'}
             fontSize="14px"
@@ -170,7 +170,7 @@ export default function usePassword({
           </InputLeftAddon>
           <Input
             type="password"
-            placeholder={t('Password') || ''}
+            placeholder={t('common:password') || ''}
             pl={'12px'}
             variant={'unstyled'}
             fontSize="14px"
@@ -210,7 +210,7 @@ export default function usePassword({
             alt="Vector"
             onClick={() => setPageState(0)}
           />
-          <Text color={'#FFFFFF'}>{t('Verify password')}</Text>
+          <Text color={'#FFFFFF'}>{t('common:verify_password')}</Text>
         </Flex>
         <InputGroup
           variant={'unstyled'}
@@ -227,7 +227,7 @@ export default function usePassword({
           </InputLeftAddon>
           <Input
             type="password"
-            placeholder={t('Verify password') || 'Verify password'}
+            placeholder={t('common:verify_password') || 'Verify password'}
             pl={'12px'}
             fontSize="14px"
             id="repassword"

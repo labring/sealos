@@ -27,6 +27,7 @@ import { SettingInputGroup } from './SettingInputGroup';
 import { useRouter } from 'next/router';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
 import { deleteUserRequest } from '@/api/auth';
+import { I18nErrorKey } from '@/types/i18next';
 enum PageStatus {
   IDLE,
   REMAIN_OTHER_REGION_RESOURCE,
@@ -39,14 +40,13 @@ enum PageStatus {
 }
 export default function DeleteAccount({ ...props }: ButtonProps) {
   const { onOpen, isOpen, onClose } = useDisclosure();
-  const t = useTranslation().t;
-  const errorT = useTranslation('error').t;
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const { delSession, setToken, session } = useSessionStore();
   const [pagestatus, setPagestatus] = useState(PageStatus.IDLE);
   const [nickname, setnickname] = useState('');
-  const verifyWords = t('deleteMyAccount');
+  const verifyWords = t('common:deletemyaccount');
   const router = useRouter();
   const [verifyValue, setVerifyValue] = useState('');
   const mutation = useMutation({
@@ -76,7 +76,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
         return setPagestatus(PageStatus.REMAIN_WORKSPACE);
       } else {
         setPagestatus(PageStatus.IDLE);
-        toast({ title: errorT(message) });
+        toast({ title: t(message as I18nErrorKey, { ns: 'error' }) });
       }
     }
   });
@@ -95,7 +95,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
           color={'red.600'}
           {...props}
         >
-          {t('Delete Account Button')}
+          {t('common:delete_account_button')}
         </Button>
       }
       <Modal isOpen={isOpen} onClose={deleteModalOnClose} isCentered>
@@ -110,7 +110,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
           <ModalCloseButton right={'24px'} top="24px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0" display={'flex'} gap={'10px'}>
             <WarnTriangeIcon boxSize={'24px'} fill={'yellow.500'} />
-            <Text>{t('Delete Account Title')}</Text>
+            <Text>{t('common:delete_account_title')}</Text>
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
@@ -118,7 +118,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
             <ModalBody h="100%" w="100%" p="0" mt="22px" fontSize={'14px'}>
               {pagestatus === PageStatus.IDLE ? (
                 <VStack alignItems={'stretch'} gap={'0'}>
-                  <Text mb={'12px'}>{t('DeleteAccountTitle')}</Text>
+                  <Text mb={'12px'}>{t('common:deleteaccounttitle')}</Text>
                   <HStack
                     color={'red.500'}
                     bgColor={'red.50'}
@@ -127,14 +127,14 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                     gap={'4px'}
                   >
                     <InfoCircleIcon boxSize={'14px'}></InfoCircleIcon>
-                    <Text fontSize={'11px'}>{t('IrreversibleActionTips')}</Text>
+                    <Text fontSize={'11px'}>{t('common:irreversibleactiontips')}</Text>
                   </HStack>
                   <Divider h={'1px'} bgColor={'grayModern.200'} my={'24px'} />
                   <FormControl isInvalid={nickname !== session?.user.name} mb={'12px'}>
                     <HStack fontWeight={400} mb={'10px'}>
-                      <Text>{t('Enter')}</Text>
+                      <Text>{t('common:enter')}</Text>
                       <Text fontWeight={500}>{session?.user.name}</Text>
-                      <Text>{t('Confirm')}</Text>
+                      <Text>{t('common:confirm')}</Text>
                     </HStack>
                     <SettingInputGroup>
                       <SettingInput
@@ -148,9 +148,9 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                   </FormControl>
                   <FormControl isInvalid={verifyValue !== verifyWords}>
                     <HStack mb={'12px'}>
-                      <Text>{t('Enter')}</Text>
+                      <Text>{t('common:enter')}</Text>
                       <Text fontWeight={500}>{verifyWords}</Text>
-                      <Text>{t('Confirm')}</Text>
+                      <Text>{t('common:confirm')}</Text>
                     </HStack>
                     <SettingInputGroup>
                       <SettingInput
@@ -172,7 +172,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                       color={'grayModern.600'}
                       {...props}
                     >
-                      {t('Cancel')}
+                      {t('common:cancel')}
                     </Button>
                     <Button
                       onClick={() => {
@@ -184,26 +184,26 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                       color={'white'}
                       {...props}
                     >
-                      {t('Delete Account Button')}
+                      {t('common:delete_account_button')}
                     </Button>
                   </HStack>
                 </VStack>
               ) : (
                 <VStack alignItems={'stretch'} gap={'0'}>
                   {pagestatus === PageStatus.INSUFFICIENT_BALANCE ? (
-                    <Text>{t('INSUFFICIENT_BALANCE_tips')}</Text>
+                    <Text>{t('common:insufficient_balance_tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_APP ? (
-                    <Text>{t('Remain App Tips')}</Text>
+                    <Text>{t('common:remain_app_tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_TEMPLATE ? (
-                    <Text>{t('Remain Template Tips')}</Text>
+                    <Text>{t('common:remain_template_tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_OBJECT_STORAGE ? (
-                    <Text>{t('Remain ObjectStorage Tips')}</Text>
+                    <Text>{t('common:remain_objectstorage_tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_DATABASE ? (
-                    <Text>{t('Remain Database Tips')}</Text>
+                    <Text>{t('common:remain_database_tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_WORKSPACE ? (
-                    <Text>{t('Remain Workspace Tips')}</Text>
+                    <Text>{t('common:remain_workspace_tips')}</Text>
                   ) : pagestatus === PageStatus.REMAIN_OTHER_REGION_RESOURCE ? (
-                    <Text>{t('Remain Other Region Resource Tips')}</Text>
+                    <Text>{t('common:remain_other_region_resource_tips')}</Text>
                   ) : null}
                   <HStack
                     color={'red.500'}
@@ -220,7 +220,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                       pagestatus === PageStatus.REMAIN_TEMPLATE ||
                       pagestatus === PageStatus.REMAIN_WORKSPACE ||
                       pagestatus === PageStatus.REMAIN_OTHER_REGION_RESOURCE) && (
-                      <Text fontSize={'11px'}>{t('Delete Account Caution')}</Text>
+                      <Text fontSize={'11px'}>{t('common:delete_account_caution')}</Text>
                     )}
                   </HStack>
                   <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
@@ -233,10 +233,10 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                       color={'grayModern.600'}
                       {...props}
                     >
-                      {t('Cancel')}
+                      {t('common:cancel')}
                     </Button>
                     <Button onClick={deleteModalOnClose} variant={'primary'} {...props}>
-                      {t('Confirm')}
+                      {t('common:confirm')}
                     </Button>
                   </HStack>
                 </VStack>

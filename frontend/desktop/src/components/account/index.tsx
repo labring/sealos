@@ -112,7 +112,7 @@ export default function Account() {
           >
             <LogoutIcon boxSize={'14px'} fill={'white'} />
             <Text ml="4px" color={'white'} fontSize={'12px'} fontWeight={500} onClick={logout}>
-              {t('Log Out')}
+              {t('common:log_out')}
             </Text>
           </Center>
         </Flex>
@@ -149,7 +149,7 @@ export default function Account() {
             py={'12px'}
             px={'16px'}
           >
-            <Text>{t('Account Settings')}</Text>
+            <Text>{t('common:account_settings')}</Text>
             <AccountCenter variant={'white-bg-icon'} p="4px" />
           </Flex>
         )}
@@ -164,7 +164,7 @@ export default function Account() {
             py={'12px'}
             px={'16px'}
           >
-            <Text>{t('Work Order')}</Text>
+            <Text>{t('common:work_order')}</Text>
             <IconButton
               variant={'white-bg-icon'}
               p="4px"

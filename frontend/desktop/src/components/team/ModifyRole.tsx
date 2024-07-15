@@ -137,7 +137,7 @@ export default function ModifyRole({
                   submit();
                 }}
               >
-                {t('Confirm')}
+                {t('common:confirm')}
               </Button>
             </ModalBody>
           )}

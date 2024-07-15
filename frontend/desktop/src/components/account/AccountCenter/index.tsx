@@ -71,11 +71,11 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
     infoData.refetch();
   };
   const modalTitle = useMemo(() => {
-    if (pageState === PageState.INDEX) return t('Account Settings');
-    else if (pageState === PageState.PASSWORD) return t('changePassword');
+    if (pageState === PageState.INDEX) return t('common:account_settings');
+    else if (pageState === PageState.PASSWORD) return t('common:changepassword');
     else if (Object.values(PhoneState).includes(pageState as PhoneState))
-      return t('changePhone'); // bind or unbind
-    else if (Object.values(EmailState).includes(pageState as EmailState)) return t('changeEmail');
+      return t('common:changephone'); // bind or unbind
+    else if (Object.values(EmailState).includes(pageState as EmailState)) return t('common:changeemail');
     else return '';
   }, [t, pageState]);
   const queryClient = useQueryClient();
@@ -187,7 +187,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                 >
                   {/* <ConfigItem/> */}
                   <HStack>
-                    <Text w={'120px'}>{t('Avatar')}</Text>
+                    <Text w={'120px'}>{t('common:avatar')}</Text>
                     <Flex flex={1}>
                       <Center boxSize={'48px'} bg={'grayModern.150'} borderRadius="full">
                         <Image
@@ -202,7 +202,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     </Flex>
                   </HStack>
                   <HStack>
-                    <Text w={'120px'}>{t('Nickname')}</Text>
+                    <Text w={'120px'}>{t('common:nickname')}</Text>
                     <Flex flex={1}>{infoData.data.nickname}</Flex>
                   </HStack>
                   <HStack>
@@ -211,7 +211,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                   </HStack>
                   {providerState.PASSWORD.isBinding && (
                     <ConfigItem
-                      LeftElement={<Text>{t('Password')}</Text>}
+                      LeftElement={<Text>{t('common:password')}</Text>}
                       RightElement={
                         <>
                           <Text>*********</Text>
@@ -226,13 +226,13 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     />
                   )}
                   <ConfigItem
-                    LeftElement={<Text>{t('Phone')}</Text>}
+                    LeftElement={<Text>{t('common:phone')}</Text>}
                     RightElement={
                       <>
                         <Text>
                           {providerState.PHONE.isBinding
                             ? providerState.PHONE.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
-                            : t('Unbound')}
+                            : t('common:unbound')}
                         </Text>
                         <Flex gap={'5px'}>
                           <BindingModifyButton
@@ -260,13 +260,13 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     }
                   />
                   <ConfigItem
-                    LeftElement={<Text>{t('Email')}</Text>}
+                    LeftElement={<Text>{t('common:email')}</Text>}
                     RightElement={
                       <>
                         <Text>
                           {providerState.EMAIL.isBinding
                             ? providerState.EMAIL.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
-                            : t('Unbound')}
+                            : t('common:unbound')}
                         </Text>
                         <Flex gap={'5px'}>
                           <BindingModifyButton
@@ -301,10 +301,10 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     WECHATIsBinding={providerState.WECHAT.isBinding}
                   />
                   <ConfigItem
-                    LeftElement={<Text>{t('Delete account')}</Text>}
+                    LeftElement={<Text>{t('common:delete_account')}</Text>}
                     RightElement={
                       <>
-                        <Text>{t('Delete Account Tips')}</Text>
+                        <Text>{t('common:delete_account_tips')}</Text>
                         <DeleteAccount />
                       </>
                     }

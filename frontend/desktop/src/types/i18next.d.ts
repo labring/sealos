@@ -12,6 +12,10 @@ export interface I18nNamespaces {
 
 export type I18nNsType = (keyof I18nNamespaces)[];
 
+export type I18nCommonKey = keyof I18nNamespaces['common'];
+export type I18nCloudProvidersKey = keyof I18nNamespaces['cloudProviders'];
+export type I18nErrorKey = keyof I18nNamespaces['error'];
+
 declare module 'i18next' {
   interface CustomTypeOptions {
     returnNull: false;

@@ -62,7 +62,7 @@ export function AuthModifyList({
     const result = [];
     if (conf.idp.github.enabled)
       result.push({
-        title: t('Github'),
+        title: t('common:github'),
         isBinding: GITHUBIsBinding,
         actionCb(action: Exclude<OauthAction, 'LOGIN' | 'PROXY'>) {
           const githubConf = conf.idp.github;
@@ -76,7 +76,7 @@ export function AuthModifyList({
 
     if (conf.idp.wechat.enabled)
       result.push({
-        title: t('Wechat'),
+        title: t('common:wechat'),
         isBinding: WECHATIsBinding,
         actionCb(action: Exclude<OauthAction, 'LOGIN'>) {
           const wechatConf = conf.idp.wechat;
@@ -89,7 +89,7 @@ export function AuthModifyList({
       });
     if (conf.idp.google.enabled)
       result.push({
-        title: t('Google'),
+        title: t('common:google'),
         isBinding: GOOGLEIsBinding,
         actionCb(action: Exclude<OauthAction, 'LOGIN'>) {
           const googleConf = conf.idp.google;
@@ -124,7 +124,7 @@ export function AuthModifyList({
                 />
               </Center>
             ) : (
-              <Text>{t('Unbound')}</Text>
+              <Text>{t('common:unbound')}</Text>
             )}
             {(!auth.isBinding || !isOnlyOne) && (
               <BindingModifyButton

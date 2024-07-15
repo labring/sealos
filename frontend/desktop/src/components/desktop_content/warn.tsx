@@ -19,7 +19,7 @@ export default function Warn() {
         <Flex alignItems={'center'} gap={'6px'}>
           <WarnTriangleIcon />
           <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-            {t('Alerts')}
+            {t('common:alerts')}
           </Text>
         </Flex>
         <Center flex={1}>

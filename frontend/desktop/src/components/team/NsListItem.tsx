@@ -61,7 +61,7 @@ const NsListItem = ({
             : {})}
           textTransform={'capitalize'}
         >
-          {isPrivate ? t('Default Team') : teamName}
+          {isPrivate ? t('common:default_team') : teamName}
         </Text>
       </HStack>
     </Flex>

@@ -39,7 +39,7 @@ export default function useSms({
 
   const login = async () => {
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('common:submit_error');
       if (!!obj.message) {
         return obj.message;
       }
@@ -75,7 +75,7 @@ export default function useSms({
             await router.replace('/');
           }
         } catch (error) {
-          showError(t('Invalid verification code') || 'Invalid verification code');
+          showError(t('common:invalid_verification_code') || 'Invalid verification code');
         } finally {
           setIsLoading(false);
         }
@@ -107,7 +107,7 @@ export default function useSms({
       e.preventDefault();
 
       if (!(await trigger('phoneNumber'))) {
-        showError(t('Invalid phone number') || 'Invalid phone number');
+        showError(t('common:invalid_phone_number') || 'Invalid phone number');
         return;
       }
       setRemainTime(60);
@@ -123,7 +123,7 @@ export default function useSms({
           throw new Error('Get code failed');
         }
       } catch (err) {
-        showError(t('Get code failed') || 'Get code failed');
+        showError(t('common:get_code_failed') || 'Get code failed');
         setRemainTime(0);
         _remainTime.current = 0;
       } finally {
@@ -152,7 +152,7 @@ export default function useSms({
 
           <Input
             type="tel"
-            placeholder={t('phone number tips') || ''}
+            placeholder={t('common:phone_number_tips') || ''}
             mx={'12px'}
             variant={'unstyled'}
             bg={'transparent'}
@@ -179,7 +179,7 @@ export default function useSms({
           >
             {remainTime <= 0 ? (
               <Link as={NextLink} href="" onClick={getCode}>
-                {t('Get Code')}
+                {t('common:get_code')}
               </Link>
             ) : (
               <Text>{remainTime} s</Text>
@@ -202,7 +202,7 @@ export default function useSms({
           </InputLeftAddon>
           <Input
             type="text"
-            placeholder={t('verify code tips') || ''}
+            placeholder={t('common:verify_code_tips') || ''}
             pl={'12px'}
             variant={'unstyled'}
             id="verifyCode"

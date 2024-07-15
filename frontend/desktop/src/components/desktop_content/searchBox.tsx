@@ -6,6 +6,7 @@ import { SearchIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import { blurBackgroundStyles } from './index';
+import { I18nCommonKey } from '@/types/i18next';
 
 export default function SearchBox() {
   const { t, i18n } = useTranslation();
@@ -60,7 +61,7 @@ export default function SearchBox() {
           w={'full'}
           outline={'none'}
           type="text"
-          placeholder={t('Search Apps') || 'Search Apps'}
+          placeholder={t('common:search_apps') || 'Search Apps'}
           bg={'transparent'}
           outlineOffset={''}
           border={'none'}
@@ -127,7 +128,7 @@ export default function SearchBox() {
 
                 {app?.i18n?.[i18n?.language]?.name
                   ? app?.i18n?.[i18n?.language]?.name
-                  : t(app?.name)}
+                  : t(app?.name as I18nCommonKey)}
               </Flex>
             ))
           ) : (
@@ -137,7 +138,7 @@ export default function SearchBox() {
               fontWeight={500}
               color={'rgba(255, 255, 255, 0.90)'}
             >
-              {t('No Apps Found') || 'No Apps Found'}
+              {t('common:no_apps_found') || 'No Apps Found'}
             </Flex>
           )}
         </Flex>
