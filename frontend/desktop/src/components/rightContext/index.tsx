@@ -1,3 +1,4 @@
+import { I18nCommonKey } from '@/types/i18next';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, ReactElement, ReactNode, useState } from 'react';
@@ -79,7 +80,7 @@ export default function RightContext({ children }: { children: ReactNode }) {
                 <Icon fill={'#5A646E'} w={'16px'} h="16px" viewBox="0 0 16 16">
                   {item.icon}
                 </Icon>
-                <Text pl="8px">{t(item.value)}</Text>
+                <Text pl="8px">{t(item.value as I18nCommonKey)}</Text>
               </Flex>
             );
           })}

@@ -10,6 +10,7 @@ import { useTranslation } from 'next-i18next';
 
 export default function SigninPage() {
   const { layoutConfig } = useConfigStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');

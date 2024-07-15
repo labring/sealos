@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import warnIcon from 'public/icons/warning.svg';
 import closeIcon from 'public/icons/close_white.svg';
 import { useTranslation } from 'next-i18next';
+import { I18nCommonKey } from '@/types/i18next';
 
 const useCustomError = () => {
   const { t } = useTranslation();
@@ -42,7 +43,7 @@ const useCustomError = () => {
         p="10px"
       >
         <Img src={warnIcon.src} mr={'8px'} />
-        <Text color={'#fff'}>{t(error)}</Text>
+        <Text color={'#fff'}>{t(error as I18nCommonKey)}</Text>
         <Button
           variant={'unstyled'}
           ml={'auto'}
