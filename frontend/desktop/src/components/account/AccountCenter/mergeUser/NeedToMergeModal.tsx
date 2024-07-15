@@ -84,7 +84,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
               <Text mb={'12px'}>
                 {mergeUserStatus === MergeUserStatus.CONFLICT
                   ? t('common:mergeaccounttips1')
-                  : t('common:deleteaccounttips2')}
+                  : t('common:delete_account_tips2')}
               </Text>
               {mergeUserStatus === MergeUserStatus.CONFLICT ? (
                 <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>

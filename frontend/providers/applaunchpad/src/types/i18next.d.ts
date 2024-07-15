@@ -7,11 +7,3 @@ export interface I18nNamespaces {
 }
 
 export type I18nNsType = (keyof I18nNamespaces)[];
-
-// declare module 'i18next' {
-//   interface CustomTypeOptions {
-//     returnNull: false;
-//     defaultNS: 'common';
-//     resources: I18nNamespaces;
-//   }
-// }
