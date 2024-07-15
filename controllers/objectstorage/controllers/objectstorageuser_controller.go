@@ -57,7 +57,6 @@ type ObjectStorageUserReconciler struct {
 	ExternalEndpoint  string
 	OSUDetectionCycle time.Duration
 	QuotaEnabled      bool
-	DefaultQuota      int64
 }
 
 const (
@@ -70,6 +69,7 @@ const (
 	OSExternalEndpointEnv = "OSExternalEndpoint"
 	OSNamespace           = "OSNamespace"
 	OSAdminSecret         = "OSAdminSecret"
+	QuotaEnabled          = "QuotaEnabled"
 
 	OSKeySecret          = "object-storage-key"
 	OSKeySecretAccessKey = "accessKey"
@@ -431,11 +431,8 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
 
-	quotaEnabled := env.GetBoolWithDefault("quotaEnabled", true)
+	quotaEnabled := env.GetBoolWithDefault(QuotaEnabled, true)
 	r.QuotaEnabled = quotaEnabled
-
-	defaultQuota := env.GetInt64EnvWithDefault("defaultQuota", 107374182400)
-	r.DefaultQuota = defaultQuota
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&objectstoragev1.ObjectStorageUser{}).
