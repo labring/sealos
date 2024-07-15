@@ -7,7 +7,6 @@ import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
 import { useTranslation } from 'next-i18next';
 import { useConfigStore } from '@/stores/config';
-import { I18nCommonKey } from '@/types/i18next';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -121,7 +120,7 @@ export default function AppWindow(props: {
             <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
               {wnapp?.i18n?.[i18n?.language]?.name
                 ? wnapp.i18n?.[i18n?.language]?.name
-                : t(wnapp?.name as I18nCommonKey)}
+                : wnapp?.name}
             </Box>
             {wnapp.menuData?.helpDocs && (
               <Text

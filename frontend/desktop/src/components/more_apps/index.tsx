@@ -8,7 +8,6 @@ import styles from './index.module.scss';
 import clsx from 'clsx';
 import { useTranslation } from 'next-i18next';
 import { useConfigStore } from '@/stores/config';
-import { I18nCommonKey } from '@/types/i18next';
 
 export default function Index() {
   const { t, i18n } = useTranslation();
@@ -121,7 +120,7 @@ export default function Index() {
                 >
                   {item?.i18n?.[i18n?.language]?.name
                     ? item?.i18n?.[i18n?.language]?.name
-                    : t(item?.name as I18nCommonKey)}
+                    : item?.name}
                 </Text>
               </GridItem>
             ))}
