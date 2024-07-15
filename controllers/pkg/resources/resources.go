@@ -393,7 +393,7 @@ const (
 	DefaultQuotaLimitsStorage     = "100Gi"
 	DefaultQuotaLimitsGPU         = "8"
 	DefaultQuotaLimitsNodePorts   = "3"
-	DefaultQuotaObjectStorageSize = "10Gi"
+	DefaultQuotaObjectStorageSize = "100Gi"
 )
 
 func DefaultResourceQuotaHard() corev1.ResourceList {
