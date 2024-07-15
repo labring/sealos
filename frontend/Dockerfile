@@ -58,7 +58,7 @@ ARG path
 COPY ${path} ${path}
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --frozen-lockfile --filter=$name install && pnpm --filter=$name run build
-RUN if [ "$name" == "desktop" ]; then \
+RUN if [ "$name" = "desktop" ]; then \
     cp -r ./desktop/prisma/global/migrations desktop/.next/standalone/desktop/prisma/global/migrations; \
     cp -r ./desktop/prisma/region/migrations desktop/.next/standalone/desktop/prisma/region/migrations; \
 fi
@@ -81,10 +81,10 @@ ARG name
 ARG path
 
 # Install Git and OpenSSH client if $name is equal to template
-RUN if [ "$name" == "template" ]; then \
+RUN if [ "$name" = "template" ]; then \
     apk add --no-cache git openssh-client; \
 fi
-RUN if [ "$name" == "desktop" ]; then \
+RUN if [ "$name" = "desktop" ]; then \
     npm install -g prisma; \
 fi
 USER nextjs
