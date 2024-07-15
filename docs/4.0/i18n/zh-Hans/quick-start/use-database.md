@@ -22,7 +22,7 @@ sidebar_position: 4
 
 ![](./images/database-more.png)
 
-4. 点击一键连接，就可以直接打开「[终端](../../platform-components/terminal/terminal.md)」应用进入数据库的命令行终端。
+4. 点击一键连接，就可以直接打开「[终端](../../guides/terminal/terminal.md)」应用进入数据库的命令行终端。
 
 ![](./images/database-connect.png)
 
