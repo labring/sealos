@@ -13,11 +13,11 @@ export const BindingModifyButton = forwardRef<
   return (
     <Button variant={'ghost'} bgColor={'grayModern.150'} p={'8px 14px'} {...props} ref={ref}>
       {modifyBehavior === BINDING_STATE_MODIFY_BEHAVIOR.BINDING
-        ? t('Bind')
+        ? t('common:bind')
         : modifyBehavior === BINDING_STATE_MODIFY_BEHAVIOR.UNBINDING
-        ? t('Unbind')
+        ? t('common:unbind')
         : modifyBehavior === BINDING_STATE_MODIFY_BEHAVIOR.CHANGE_BINDING
-        ? t('Change')
+        ? t('common:change')
         : null}
     </Button>
   );

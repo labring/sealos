@@ -34,7 +34,7 @@ export default function PasswordModify(
       if (data.code === 200) {
         toast({
           status: 'success',
-          title: t('passwordChangeSuccess')
+          title: t('common:passwordchangesuccess')
         });
         reset();
         props.onClose?.();
@@ -55,9 +55,9 @@ export default function PasswordModify(
             mutation.mutate({ oldPassword, newPassword });
           },
           (errors) => {
-            if (errors.oldPassword) return toast({ title: t('currentPasswordRequired') });
-            if (errors.newPassword) return toast({ title: t('password tips') });
-            if (errors.againPassword) return toast({ title: t('passwordMismatch') });
+            if (errors.oldPassword) return toast({ title: t('common:currentpasswordrequired') });
+            if (errors.newPassword) return toast({ title: t('common:password_tips') });
+            if (errors.againPassword) return toast({ title: t('common:password_mis_match') });
           }
         )}
       >
@@ -71,7 +71,7 @@ export default function PasswordModify(
         >
           <FormControl isInvalid={!!formState.errors.oldPassword}>
             <HStack>
-              <FormLabel w={'120px'}>{t('currentPassword')}</FormLabel>
+              <FormLabel w={'120px'}>{t('common:currentpassword')}</FormLabel>
               <SettingInputGroup>
                 <SettingInput
                   {...register('oldPassword', {
@@ -85,7 +85,7 @@ export default function PasswordModify(
           </FormControl>
           <FormControl isInvalid={!!formState.errors.newPassword}>
             <HStack>
-              <FormLabel w={'120px'}>{t('newPassword')}</FormLabel>
+              <FormLabel w={'120px'}>{t('common:newpassword')}</FormLabel>
               <SettingInputGroup>
                 <SettingInput
                   {...register('newPassword', {
@@ -100,7 +100,7 @@ export default function PasswordModify(
           </FormControl>
           <FormControl isInvalid={!!formState.errors.againPassword}>
             <HStack>
-              <FormLabel w={'120px'}>{t('confirmNewPassword')}</FormLabel>
+              <FormLabel w={'120px'}>{t('common:confirmnewpassword')}</FormLabel>
               <SettingInputGroup>
                 <SettingInput
                   {...register('againPassword', {
@@ -116,7 +116,7 @@ export default function PasswordModify(
             </HStack>
           </FormControl>
           <Button variant={'primary'} ml="auto" type="submit" maxW={'72px'}>
-            {t('Confirm')}
+            {t('common:confirm')}
           </Button>
         </VStack>
       </form>

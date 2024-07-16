@@ -132,7 +132,7 @@ export default function SigninComponent() {
         });
     } else {
       setIsInvalid(true);
-      showError(t('Read and agree'));
+      showError(t('common:read_and_agree'));
     }
   }, 500);
   return (
@@ -195,14 +195,14 @@ export default function SigninComponent() {
                 gap={'20px'}
               >
                 <Tab px="0" _selected={{ color: 'white' }}>
-                  {t('Verification Code Login')}
+                  {t('common:verification_code_login')}
                 </Tab>
                 <Tab px="0" _selected={{ color: 'white' }}>
-                  {t('Password Login')}
+                  {t('common:password_login')}
                 </Tab>
                 {conf.authConfig?.idp.wechat.enabled && (
                   <Tab px="0" _selected={{ color: 'white' }}>
-                    {t('Official account login')}
+                    {t('common:official_account_login')}
                   </Tab>
                 )}
               </TabList>
@@ -243,7 +243,9 @@ export default function SigninComponent() {
                 p="10px"
                 onClick={handleLogin}
               >
-                {isLoading ? (t('Loading') || 'Loading') + '...' : t('Log In') || 'Log In'}
+                {isLoading
+                  ? (t('common:loading') || 'Loading') + '...'
+                  : t('common:log_in') || 'Log In'}
               </Button>
               <AuthList />
             </>

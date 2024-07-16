@@ -90,7 +90,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
       {...props}
     >
       <Text color={'#FFF'} fontSize={'13px'} fontWeight={500}>
-        {t('Click on any shadow to skip')}
+        {t('common:click_on_any_shadow_to_skip')}
       </Text>
       <Icon
         xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'}>
-                {t('Quick application switching floating ball')}
+                {t('common:quick_application_switching_floating_ball')}
               </Text>
               <PopoverBodyInfo />
             </Flex>
@@ -144,7 +144,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'}>
-                {t('You can use the kubectl command directly from the terminal')}
+                {t('common:you_can_use_the_kubectl_command_directly_from_the_terminal')}
               </Text>
               <PopoverBodyInfo />
             </Flex>
@@ -161,7 +161,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'}>
-                {t('Help you enable high availability database')}
+                {t('common:help_you_enable_high_availability_database')}
               </Text>
               <PopoverBodyInfo />
             </Flex>
@@ -178,7 +178,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'}>
-                {t('Launch various third-party applications with one click')}
+                {t('common:launch_various_third-party_applications_with_one_click')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
             </Flex>
@@ -195,7 +195,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'}>
-                {t('You can view fees through the fee center')}
+                {t('common:you_can_view_fees_through_the_fee_center')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
             </Flex>
@@ -222,17 +222,17 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
               <Flex gap={'6px'}>
                 <DriverStarIcon />
                 <Text fontSize={'16px'} fontWeight={'600'}>
-                  {t('deploy an application')}
+                  {t('common:deploy_an_application')}
                 </Text>
               </Flex>
               <Box fontSize={'13px'} fontWeight={500} mt="12px">
-                {t('spend')}
+                {t('common:spend')}
                 <Text color={'#219BF4'} display={'inline'} px="2px">
                   30s
                 </Text>
-                {t('Completed the deployment of an nginx for the first time')}
+                {t('common:completed_the_deployment_of_an_nginx_for_the_first_time')}
                 <Text color={'#219BF4'} display={'inline'} px="2px">
-                  {t('gift amount', { amount: giftAmount })}
+                  {t('common:gift_amount', { amount: giftAmount })}
                 </Text>
               </Box>
               <Flex mt="20px">
@@ -249,7 +249,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
                     driverObj.destroy();
                   }}
                 >
-                  {t('Next time')}
+                  {t('common:next_time')}
                 </Button>
                 <Button
                   ml="12px"
@@ -264,7 +264,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
                     openDesktopApp({ appKey: 'system-applaunchpad', pathname: '/app/edit' });
                   }}
                 >
-                  {t('start immediately')}
+                  {t('common:start_immediately')}
                 </Button>
               </Flex>
             </Box>
@@ -304,7 +304,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
         transform="translate(-50%, -50%)"
       >
         <Box fontSize={'32px'} fontWeight={500}>
-          {t('Hello, welcome')}
+          {t('common:hello_welcome')}
           <Text display={'inline'} color={'#0884DD'} px="8px">
             Sealos
           </Text>
@@ -336,7 +336,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             startGuide();
           }}
         >
-          {t('Start your Sealos journey')}
+          {t('common:start_your_sealos_journey')}
         </Button>
       </Flex>
     </Box>
