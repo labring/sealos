@@ -1,8 +1,9 @@
 import { verifyDesktopToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { getUserById } from '@/services/db/user';
-import { fetchProcessingOrders, updateOrder } from '@/services/db/workorder';
+import { fetchPendingOrders, fetchProcessingOrders, updateOrder } from '@/services/db/workorder';
 import { WorkOrderDB, WorkOrderStatus } from '@/types/workorder';
+import { WithId } from 'mongodb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 const feishuUrl = process.env.ADMIN_FEISHU_URL;
@@ -10,13 +11,13 @@ const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
 const MINUTES_IN_A_WEEK = 7 * 24 * 60;
 
 const getFeishuForm = ({
-  recentUnresponded,
+  pendings,
   overdueAutoCloseIn7Days
 }: {
-  recentUnresponded: WorkOrderDB[];
+  pendings: WorkOrderDB[];
   overdueAutoCloseIn7Days: WorkOrderDB[];
 }) => {
-  const content1 = recentUnresponded
+  const content1 = pendings
     .map((item) => `- [${item.orderId}](${feishuCallBackUrl}?orderId=${item.orderId})`)
     .join('\n');
 
@@ -32,7 +33,7 @@ const getFeishuForm = ({
         zh_cn: [
           {
             tag: 'markdown',
-            content: '**收到用户消息，超过30分钟的工单**',
+            content: '**待处理工单**',
             text_align: 'left',
             text_size: 'normal',
             icon: {
@@ -124,7 +125,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!order.dialogs || order.dialogs.length === 0) return;
       let lastDialog = order.dialogs[order.dialogs.length - 1];
       if (lastDialog.userId === 'robot') return;
-
       const lastDialogTime = new Date(lastDialog.time);
       const timeDiff = Math.ceil((currentTime.getTime() - lastDialogTime.getTime()) / 1000 / 60);
       if (!lastDialog.isAdmin && timeDiff > 30) {
@@ -136,28 +136,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    if (recentUnresponded.length === 0 && overdueAutoCloseIn7Days.length === 0) {
-      return jsonRes(res, {
-        code: 204,
-        message: 'No content to send'
-      });
-    }
+    await Promise.all([
+      ...overdueAutoCloseIn7Days.map((order) =>
+        updateOrder({
+          orderId: order.orderId,
+          userId: payload.userId,
+          updates: { status: WorkOrderStatus.Completed }
+        })
+      ),
+      ...recentUnresponded.map((order) =>
+        updateOrder({
+          orderId: order.orderId,
+          userId: payload.userId,
+          updates: { status: WorkOrderStatus.Pending }
+        })
+      )
+    ]);
 
-    if (overdueAutoCloseIn7Days.length > 0) {
-      try {
-        for (const order of overdueAutoCloseIn7Days) {
-          await updateOrder({
-            orderId: order.orderId,
-            userId: payload.userId,
-            updates: {
-              status: WorkOrderStatus.Completed
-            }
-          });
-        }
-      } catch (error) {}
-    }
+    const pendingOrders = await fetchPendingOrders();
 
-    const form = getFeishuForm({ overdueAutoCloseIn7Days, recentUnresponded });
+    const form = getFeishuForm({
+      overdueAutoCloseIn7Days,
+      pendings: pendingOrders
+    });
 
     if (!feishuUrl) {
       return jsonRes(res, {

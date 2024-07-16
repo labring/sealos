@@ -198,3 +198,15 @@ export async function fetchProcessingOrders() {
 
   return orders;
 }
+
+export async function fetchPendingOrders() {
+  const collection = await connectOrderCollection();
+
+  const orders = await collection
+    .find({
+      status: WorkOrderStatus.Pending
+    })
+    .toArray();
+
+  return orders;
+}
