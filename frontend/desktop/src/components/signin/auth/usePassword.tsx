@@ -9,11 +9,12 @@ import { useForm } from 'react-hook-form';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
+import { I18nCommonKey } from '@/types/i18next';
 
 export default function usePassword({
   showError
 }: {
-  showError: (errorMessage: string, duration?: number) => void;
+  showError: (errorMessage: I18nCommonKey, duration?: number) => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -31,8 +32,8 @@ export default function usePassword({
   }>();
 
   const login = async () => {
-    const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('common:submit_error');
+    const deepSearch = (obj: any): I18nCommonKey => {
+      if (!obj || typeof obj !== 'object') return 'submit_error';
       if (!!obj.message) {
         return obj.message;
       }
@@ -63,7 +64,7 @@ export default function usePassword({
               setPageState(1);
               if (!!data?.confimPassword) {
                 if (data?.password !== data?.confimPassword) {
-                  showError('password not match');
+                  showError('password_mis_match');
                 } else {
                   const regionResult = await passwordLoginRequest({
                     user: data.username,

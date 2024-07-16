@@ -20,11 +20,12 @@ import { jwtDecode } from 'jwt-decode';
 import { uploadConvertData } from '@/api/platform';
 import { AccessTokenPayload } from '@/types/token';
 import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
+import { I18nCommonKey } from '@/types/i18next';
 
 export default function useSms({
   showError
 }: {
-  showError: (errorMessage: string, duration?: number) => void;
+  showError: (errorMessage: I18nCommonKey, duration?: number) => void;
 }) {
   const { t } = useTranslation();
   const _remainTime = useRef(0);
@@ -38,8 +39,8 @@ export default function useSms({
   }>();
 
   const login = async () => {
-    const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('common:submit_error');
+    const deepSearch = (obj: any): I18nCommonKey => {
+      if (!obj || typeof obj !== 'object') return 'submit_error';
       if (!!obj.message) {
         return obj.message;
       }

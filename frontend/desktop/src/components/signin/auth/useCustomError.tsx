@@ -7,17 +7,17 @@ import { I18nCommonKey } from '@/types/i18next';
 
 const useCustomError = () => {
   const { t } = useTranslation();
-  const [error, setError] = useState('');
+  const [error, setError] = useState<I18nCommonKey | null>();
 
-  const showError = (errorMessage: string, duration = 5000) => {
+  const showError = (errorMessage: I18nCommonKey, duration = 5000) => {
     setError(errorMessage);
     setTimeout(() => {
-      setError('');
+      setError(null);
     }, duration);
   };
 
   const closeError = () => {
-    setError('');
+    setError(null);
   };
 
   const ErrorComponent = () => {
@@ -43,7 +43,7 @@ const useCustomError = () => {
         p="10px"
       >
         <Img src={warnIcon.src} mr={'8px'} />
-        <Text color={'#fff'}>{t(error as I18nCommonKey)}</Text>
+        <Text color={'#fff'}>{t(error)}</Text>
         <Button
           variant={'unstyled'}
           ml={'auto'}

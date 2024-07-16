@@ -57,7 +57,7 @@ export default function PasswordModify(
           (errors) => {
             if (errors.oldPassword) return toast({ title: t('common:currentpasswordrequired') });
             if (errors.newPassword) return toast({ title: t('common:password_tips') });
-            if (errors.againPassword) return toast({ title: t('common:passwordmismatch') });
+            if (errors.againPassword) return toast({ title: t('common:password_mis_match') });
           }
         )}
       >

@@ -125,7 +125,7 @@
   "password_login": "with Password",
   "password_tips": "Password must be 8 characters or more",
   "passwordchangesuccess": "Password changed successfully",
-  "passwordmismatch": "Passwords do not match",
+  "password_mis_match": "Passwords do not match",
   "pay_with_stripe": "Pay With Stripe",
   "pay_with_wechat": "Pay With Wechat",
   "payment_result": "Payment Result",

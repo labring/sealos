@@ -121,7 +121,7 @@
   "password_login": "密码登录",
   "password_tips": "密码为8位以上字符",
   "passwordchangesuccess": "密码修改成功",
-  "passwordmismatch": "密码不一致",
+  "password_mis_match": "密码不一致",
   "pay_with_stripe": "Stripe 支付",
   "pay_with_wechat": "微信支付",
   "payment_result": "支付结果",
