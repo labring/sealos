@@ -18,7 +18,10 @@ const getFeishuForm = ({
   overdueAutoCloseIn7Days: WorkOrderDB[];
 }) => {
   const content1 = pendings
-    .map((item) => `- [${item.orderId}](${feishuCallBackUrl}?orderId=${item.orderId})`)
+    .map(
+      (item) =>
+        `- [${item.orderId}](${feishuCallBackUrl}?orderId=${item.orderId})\n${item.description}`
+    )
     .join('\n');
 
   const content2 = overdueAutoCloseIn7Days
