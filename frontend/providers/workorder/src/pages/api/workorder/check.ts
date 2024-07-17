@@ -139,6 +139,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    if (recentUnresponded.length === 0 && overdueAutoCloseIn7Days.length === 0) {
+      return jsonRes(res, {
+        code: 204,
+        message: 'No content to send'
+      });
+    }
+
     await Promise.all([
       ...overdueAutoCloseIn7Days.map((order) =>
         updateOrder({
