@@ -23,7 +23,6 @@ export default function Document() {
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5" />
-        <link rel="shortcut icon" href="/favicon.ico" />
       </Head>
       <body>
         <ColorModeScript initialColorMode={theme.config.initialColorMode} />

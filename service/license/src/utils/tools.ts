@@ -1,4 +1,21 @@
+import { cpuPriceMonth, memoryPriceMonth } from '@/constant/product';
+import { ClusterFormType } from '@/types';
 import dayjs from 'dayjs';
+
+export const calculatePrice = (form: ClusterFormType, freeValues: ClusterFormType): number => {
+  const { cpu, memory, months } = form;
+
+  const cpuTotalPrice = cpuPriceMonth * cpu;
+  const memoryTotalPrice = memoryPriceMonth * memory;
+
+  const totalPrice = (cpuTotalPrice + memoryTotalPrice) * parseInt(months);
+
+  if (cpu <= freeValues.cpu && memory <= freeValues.memory && months === freeValues.months) {
+    return 0;
+  } else {
+    return totalPrice;
+  }
+};
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);

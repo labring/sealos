@@ -200,7 +200,6 @@ async function pullUserData() {
         }
         // make sure provider sucessfully!!!
 
-        console.log('provider', providerInsertData);
         if (providerInsertData.length > 0)
           await globalPrisma.oauthProvider
             .createMany({

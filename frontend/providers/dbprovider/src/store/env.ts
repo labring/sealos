@@ -18,7 +18,8 @@ const useEnvStore = create<EnvState>()(
       env_storage_className: '',
       migrate_file_image: '',
       minio_url: '',
-      BACKUP_ENABLED: false
+      BACKUP_ENABLED: false,
+      SHOW_DOCUMENT: true
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();

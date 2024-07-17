@@ -1,7 +1,5 @@
 import { TableHeaderID } from '@/constants/billing';
-import { BillingItem, BillingType, RechargeBillingItem } from '@/types/billing';
-import lineDown from '@/assert/lineDown.svg';
-import lineUp from '@/assert/lineUp.svg';
+import { BillingItem, BillingType, RechargeBillingItem, TransferBilling } from '@/types/billing';
 import {
   Box,
   Flex,
@@ -32,7 +30,9 @@ import {
 } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import Amount from '@/components/billing/AmountTableHeader';
-
+import useSessionStore from '@/stores/session';
+import lineUp from '@/assert/lineUp.svg';
+import lineDown from '@/assert/lineDown.svg';
 export function CommonBillingTable({
   data,
   isOverview = false,
@@ -172,13 +172,16 @@ export function CommonBillingTable({
   return <BaseTable table={table} {...styles} />;
 }
 
-export function TransferBillingTable({ data }: { data: BillingItem[] }) {
+export function TransferBillingTable({ data }: { data: TransferBilling[] }) {
   const { t } = useTranslation();
   const currency = useEnvStore((s) => s.currency);
+  const { session } = useSessionStore();
+  const user = session.user;
+
   const columns = useMemo(() => {
-    const columnHelper = createColumnHelper<BillingItem>();
+    const columnHelper = createColumnHelper<TransferBilling>();
     const customTh = (needCurrency?: boolean) =>
-      function CustomTh({ header }: HeaderContext<BillingItem, unknown>) {
+      function CustomTh({ header }: HeaderContext<TransferBilling, unknown>) {
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
@@ -191,25 +194,21 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         );
       };
     return [
-      columnHelper.accessor((row) => row.order_id, {
+      columnHelper.accessor((row) => row.ID, {
         header: customTh(),
         id: TableHeaderID.OrderNumber,
-        enablePinning: true,
         cell(props) {
           const item = props.row.original;
           return (
             <Box>
               <Text color={'#24282C'} fontSize={'12px'}>
-                {item.order_id}
-              </Text>
-              <Text fontSize={'10px'} color={'#5A646E'}>
-                {item.namespace}
+                {item.ID}
               </Text>
             </Box>
           );
         }
       }),
-      columnHelper.accessor((row) => row.time, {
+      columnHelper.accessor((row) => row.CreatedAt, {
         header: customTh(),
         id: TableHeaderID.TransactionTime,
         enablePinning: true,
@@ -217,18 +216,29 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
           return format(parseISO(props.cell.getValue()), 'MM-dd HH:mm');
         }
       }),
-      columnHelper.accessor((row) => row.appType, {
-        id: TableHeaderID.APPType,
+      columnHelper.accessor((row) => [row.FromUserID, row.ToUserID], {
+        header: customTh(),
+        id: TableHeaderID.TraderID,
+        cell(props) {
+          const item = props.row.original;
+          const traderId = item.ToUserID === user.id ? item.FromUserID : item.ToUserID;
+          return traderId;
+        }
+      }),
+      columnHelper.accessor((row) => [row.ToUserID, row.FromUserID], {
+        id: TableHeaderID.TransferType,
         header: customTh(),
         cell(props) {
           const item = props.row.original;
+          const billingType =
+            item.ToUserID === user.id ? BillingType.RECEIVE : BillingType.TRANSFER;
           return (
             <Flex align={'center'} width={'full'} height={'full'}>
               <Flex
                 px={'12px'}
                 py={'4px'}
                 minW={'max-content'}
-                {...(item.type === BillingType.RECEIVE
+                {...(billingType === BillingType.RECEIVE
                   ? {
                       bg: '#E6F6F6',
                       color: '#00A9A6'
@@ -242,43 +252,31 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
                 justify={'space-evenly'}
               >
                 <Img
-                  src={item.type === BillingType.TRANSFER ? lineDown.src : lineUp.src}
+                  src={billingType === BillingType.TRANSFER ? lineDown.src : lineUp.src}
                   w="13.14px"
                   mr={'6px'}
                 ></Img>
-                <Text>{item.type === BillingType.RECEIVE ? t('Recipient') : t('Transfer')}</Text>
+                <Text>{billingType === BillingType.RECEIVE ? t('Recipient') : t('Transfer')}</Text>
               </Flex>
             </Flex>
           );
         }
       }),
-      columnHelper.accessor((row) => row.amount, {
+      columnHelper.accessor((row) => row.Amount, {
         header: customTh(true),
         id: TableHeaderID.TotalAmount,
         cell(props) {
-          const original = props.row.original;
-          return <Amount total={true} type={original.type} amount={props.cell.getValue()} />;
-        }
-      }),
-      columnHelper.accessor((row) => row.namespace, {
-        id: TableHeaderID.Namespace,
-        header: customTh(),
-        cell(props) {
-          const item = props.cell.getValue();
-          return <span>{item}</span>;
+          const item = props.row.original;
+          const billingType =
+            item.ToUserID === user.id ? BillingType.RECEIVE : BillingType.TRANSFER;
+          return <Amount total={true} type={billingType} amount={props.cell.getValue()} />;
         }
       })
     ];
-  }, [useEnvStore.getState().gpuEnabled, t, currency]);
+  }, [useEnvStore.getState().gpuEnabled, t, currency, user]);
 
   const table = useReactTable({
     data,
-    state: {
-      columnPinning: {
-        left: [TableHeaderID.OrderNumber],
-        right: [TableHeaderID.Namespace]
-      }
-    },
     columns,
     getCoreRowModel: getCoreRowModel()
   });

@@ -44,7 +44,7 @@ export default function Index() {
           textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}
           lineHeight={'140%'}
         >
-          {t('More Apps')}
+          {t('common:more_apps')}
         </Text>
       </Flex>
       <Flex alignItems={'center'}>
@@ -120,7 +120,7 @@ export default function Index() {
                 >
                   {item?.i18n?.[i18n?.language]?.name
                     ? item?.i18n?.[i18n?.language]?.name
-                    : t(item?.name)}
+                    : item?.name}
                 </Text>
               </GridItem>
             ))}

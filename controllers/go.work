@@ -4,7 +4,6 @@ toolchain go1.22.3
 
 use (
 	./account
-	./admission
 	./app
 	./db/adminer
 	./job/heartbeat

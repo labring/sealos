@@ -5,7 +5,7 @@ description: Discover how Meilisearch, the lightning-fast open-source search eng
 authors: [Carson Yang]
 tags: [Developer Tools, Sealos, Meilisearch, Flarum]
 keywords: [Meilisearch, search engine, fast search, open-source, Flarum, Meilisearch vs Elasticsearch, search engine comparison]
-image: images/feature.jpg
+image: ./images/feature.jpg
 date: 2024-07-01T10:00
 ---
 

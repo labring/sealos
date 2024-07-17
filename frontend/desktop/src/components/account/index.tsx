@@ -4,14 +4,7 @@ import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import { Box, Center, Flex, IconButton, Image, Text, useDisclosure } from '@chakra-ui/react';
-import {
-  CopyIcon,
-  DocsIcon,
-  DownloadIcon,
-  LogoutIcon,
-  NotificationIcon,
-  SettingIcon
-} from '@sealos/ui';
+import { CopyIcon, DocsIcon, DownloadIcon, LogoutIcon, NotificationIcon } from '@sealos/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -20,10 +13,10 @@ import LangSelectSimple from '../LangSelect/simple';
 import { blurBackgroundStyles } from '../desktop_content';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
-import PasswordModify from './PasswordModify';
 import GithubComponent from './github';
 import { ArrowIcon } from '../icons';
 import useAppStore from '@/stores/app';
+import AccountCenter from './AccountCenter';
 
 const baseItemStyle = {
   w: '52px',
@@ -39,8 +32,6 @@ const baseItemStyle = {
 export default function Account() {
   const { layoutConfig } = useConfigStore();
   const [showId, setShowId] = useState(true);
-  const passwordEnabled = useConfigStore().authConfig?.idp?.password?.enabled;
-
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -121,18 +112,20 @@ export default function Account() {
           >
             <LogoutIcon boxSize={'14px'} fill={'white'} />
             <Text ml="4px" color={'white'} fontSize={'12px'} fontWeight={500} onClick={logout}>
-              {t('Log Out')}
+              {t('common:log_out')}
             </Text>
           </Center>
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
-          <Center
-            cursor={'pointer'}
-            {...baseItemStyle}
-            onClick={() => window.open(layoutConfig?.common?.docsUrl)}
-          >
-            <DocsIcon />
-          </Center>
+          {layoutConfig?.common.docsUrl && (
+            <Center
+              cursor={'pointer'}
+              {...baseItemStyle}
+              onClick={() => window.open(layoutConfig?.common?.docsUrl)}
+            >
+              <DocsIcon />
+            </Center>
+          )}
           <LangSelectSimple {...baseItemStyle} />
           {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
           <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
@@ -156,14 +149,8 @@ export default function Account() {
             py={'12px'}
             px={'16px'}
           >
-            <Text>{t('Account Settings')}</Text>
-            <IconButton
-              variant={'white-bg-icon'}
-              p="4px"
-              // onClick={() => kubeconfig && copyData(kubeconfig)}
-              icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
-              aria-label={'setting'}
-            />
+            <Text>{t('common:account_settings')}</Text>
+            <AccountCenter variant={'white-bg-icon'} p="4px" />
           </Flex>
         )}
         {layoutConfig?.common.workorderEnabled && (
@@ -177,7 +164,7 @@ export default function Account() {
             py={'12px'}
             px={'16px'}
           >
-            <Text>{t('Work Order')}</Text>
+            <Text>{t('common:work_order')}</Text>
             <IconButton
               variant={'white-bg-icon'}
               p="4px"
@@ -223,20 +210,6 @@ export default function Account() {
             />
           </Flex>
         </Flex>
-        {/* {passwordEnabled && (
-          <Flex
-            color={'white'}
-            fontSize={'base'}
-            fontWeight={'bold'}
-            justifyContent={'space-between'}
-            alignItems={'center'}
-            py={'12px'}
-            px={'16px'}
-          >
-            <Text>{t('changePassword')}</Text>
-            <PasswordModify mr="0" />
-          </Flex>
-        )} */}
       </Flex>
       <Box
         id="blur-background"

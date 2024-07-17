@@ -1,5 +1,6 @@
+import { _ACCOUNT_STATUS, RESPONSE_MESSAGE } from './response/utils';
 import { InvitedStatus, UserRole } from './team';
-
+import { ProviderType } from 'prisma/global/generated/client';
 export type TgithubToken = {
   access_token: string;
   expires_in: number;
@@ -63,19 +64,32 @@ export type TgithubUser = {
   created_at: string;
   updated_at: string;
 };
+export type TgoogleUser = {
+  iss: string;
+  azp: string;
+  aud: string;
+  sub: string;
+  at_hash: string;
+  name: string;
+  picture: string;
+  given_name: string;
+  family_name: string;
+  locale: string;
+  iat: number;
+  exp: number;
+};
 // if default, uid
 export const PROVIDERS = [
-  'github',
-  'wechat',
-  'phone',
-  'uid',
-  'password_user',
-  'google',
-  'wechat_open',
-  'oauth2'
+  'GITHUB',
+  'WECHAT',
+  'PHONE',
+  'PASSWORD',
+  'GOOGLE',
+  'WECHAT_OPEN',
+  'OAUTH2',
+  'EMAIL'
 ] as const;
-export type Provider = (typeof PROVIDERS)[number];
-export type OauthProvider = Exclude<Provider, 'uid' | 'password_user' | 'phone'>;
+export type OauthProvider = Exclude<ProviderType, 'PASSWORD' | 'PHONE' | 'EMAIL'>;
 export type TUserExist = { user: string; exist: boolean };
 
 export type K8s_user = {

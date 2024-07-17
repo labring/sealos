@@ -86,7 +86,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             );
           })}
         </Flex>
-        {/* <LangSelectSimple /> */}
         <Box ml="auto"></Box>
         <Account />
       </Flex>

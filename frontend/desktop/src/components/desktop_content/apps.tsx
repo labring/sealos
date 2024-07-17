@@ -85,7 +85,7 @@ export default function Apps() {
       zIndex={1}
     >
       <Box height={'20px'} color={'rgba(255, 255, 255, 0.90)'} fontSize={'md'} fontWeight={'bold'}>
-        {t('All Apps')}
+        {t('common:all_apps')}
       </Box>
       <Flex width={'full'} height={'full'} id="apps-container" overflow={'auto'}>
         {totalPages !== 1 && (
@@ -152,7 +152,7 @@ export default function Apps() {
                 >
                   {item?.i18n?.[i18n?.language]?.name
                     ? item?.i18n?.[i18n?.language]?.name
-                    : t(item?.name)}
+                    : item?.name}
                 </Text>
               </Flex>
             ))}

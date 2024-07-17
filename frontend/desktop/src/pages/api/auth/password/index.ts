@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const data = await getGlobalToken({
       provider: ProviderType.PASSWORD,
-      id: name,
+      providerId: name,
       avatar_url: '',
       password,
       name,

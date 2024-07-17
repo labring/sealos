@@ -18,7 +18,7 @@ import { vaildManage } from '@/utils/tools';
 import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { useConfigStore } from '@/stores/config';
 
 export default function UserTable({
@@ -33,8 +33,8 @@ export default function UserTable({
   nsid: string;
 }) {
   const { t } = useTranslation();
-  const headList = [t('User Name'), t('Access'), t('In Time'), t('Status'), t('Operating')];
-  const status = [t('Waiting'), t('Added')];
+  const headList = [t('common:user_name'), t('common:access'), t('common:in_time'), t('common:status'), t('common:operating')];
+  const status = [t('common:waiting'), t('common:added')];
   const session = useSessionStore((s) => s.session);
   const userCrUid = session?.user.userCrUid;
   const k8s_username = session?.user.k8s_username;

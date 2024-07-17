@@ -76,54 +76,13 @@ export default function Product() {
         </div>
       </div>
 
-      <div className="flex mt-24 gap-9 flex-wrap">
-        <div className="flex min-h-[840px] lg:min-h-[540px] flex-col pt-10 px-12 rounded-lg border border-opacity-5 border-white bg-opacity-5 bg-white flex-1">
-          <div className="text-teal-200 text-2xl lg:text-base font-semibold leading-[140%]">
+      <div className="flex justify-center mt-24 gap-9 flex-wrap">
+        <div className="flex min-h-[840px] max-w-[460px] lg:min-h-[540px] flex-col pt-10 px-12 rounded-lg border border-opacity-5 border-white bg-opacity-5 bg-white flex-1">
+          <div className="text-[#7BBCF9] text-2xl lg:text-base font-semibold leading-[140%]">
             标准版
           </div>
-          <div className="flex mt-4">
-            <div className="text-white text-5xl lg:text-4xl font-semibold leading-[140%] self-stretch max-md:text-4xl">
-              ¥0
-            </div>
-            <div className="bg-[#00A9B41A] ml-6 flex items-center justify-center w-32 max-w-full flex-col my-auto rounded-bl-none rounded-2xl py-1 text-white text-xl lg:text-base font-medium leading-[140%]">
-              赠 ¥299
-            </div>
-          </div>
-          <div className="text-white text-opacity-80 text-lg lg:text-sm font-semibold leading-[140%] mt-4">
-            适合开发者测试，或 POC demo
-          </div>
-          <div
-            className="sealos_price_btn"
-            onClick={() =>
-              window.open(
-                `https://license.sealos.io/signin?external=true&clusterType=Standard&bd_vid=${bd_vid}`
-              )
-            }
-          >
-            一键安装
-          </div>
-          <div className="sealos_divid_line"></div>
-          {standard.map((i) => (
-            <div key={i} className="sealos_service_item">
-              <CheckIcon />
-              <span>{i}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex min-h-[840px] lg:min-h-[540px] flex-col pt-10 px-12 rounded-lg border border-opacity-5 border-white bg-opacity-5 bg-white flex-1">
-          <div className="text-[#7BBCF9] text-2xl lg:text-base font-semibold leading-[140%]">
-            企业版
-          </div>
-          <div className="flex mt-4">
-            <div className="text-white text-5xl lg:text-4xl font-semibold leading-[140%] self-stretch max-md:text-4xl">
-              ¥599
-            </div>
-            <div className="bg-[#366BA94D] ml-6 flex items-center justify-center w-32 max-w-full flex-col my-auto rounded-bl-none rounded-2xl py-1 text-white text-xl lg:text-base font-medium leading-[140%]">
-              赠 ¥599
-            </div>
-          </div>
-          <div className="text-white text-opacity-80 text-lg lg:text-sm font-semibold leading-[140%] mt-4">
-            适合企业生产环境
+          <div className="text-white text-opacity-80 text-[28px] lg:text-sm font-medium leading-[140%] mt-8">
+            适合开发者测试， POC demo，企业生产环境
           </div>
           <div
             className="sealos_price_btn"
@@ -132,12 +91,10 @@ export default function Product() {
               color: '#03080C'
             }}
             onClick={() =>
-              window.open(
-                `https://license.sealos.io/signin?external=true&clusterType=Enterprise&bd_vid=${bd_vid}`
-              )
+              window.open(`https://license.sealos.io/signin?external=true&bd_vid=${bd_vid}`)
             }
           >
-            购买
+            获取
           </div>
           <div className="sealos_divid_line"></div>
           <div className="sealos_service_item">
@@ -151,18 +108,18 @@ export default function Product() {
             </div>
           ))}
         </div>
-        <div className="flex min-h-[840px] lg:min-h-[540px] flex-col pt-10 px-12 rounded-lg border border-opacity-5 border-white bg-opacity-5 bg-white flex-1">
+        <div className="flex min-h-[840px] max-w-[460px] lg:min-h-[540px] flex-col pt-10 px-12 rounded-lg border border-opacity-5 border-white bg-opacity-5 bg-white flex-1">
           <div className="text-teal-200 text-2xl lg:text-base font-semibold leading-[140%]">
             定制版
           </div>
-          <div className="text-white text-opacity-80 text-2xl font-semibold leading-[140%] mt-10 w-[200px] h-20">
+          <div className="text-white text-opacity-80 text-[28px] font-medium leading-[140%] mt-10 w-[200px] h-20">
             适合大规模集群
             <br />
             与大型企业客户
           </div>
           <div
             className="sealos_price_btn contact"
-            style={{ marginTop: '46px' }}
+            style={{ marginTop: '32px' }}
             onClick={() =>
               window.open(
                 'https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad'

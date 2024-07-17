@@ -60,7 +60,7 @@ export default function CommandForm({
         path: '/root/.ssh/id_rsa',
         password: ''
       },
-      k8sVersion: '1.25.6',
+      k8sVersion: '1.27.11',
       podSubnet: '100.64.0.0/10',
       serviceSubnet: '10.96.0.0/22',
       selfSigned: true,
@@ -100,7 +100,6 @@ export default function CommandForm({
     () =>
       debounce((data: CommandFormType) => {
         try {
-          console.log(2, data);
           generateBashScript({ data, basePath, cloudVersion, enterprise });
         } catch (error) {
           console.log(error);

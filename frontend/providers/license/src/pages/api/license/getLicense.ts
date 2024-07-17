@@ -1,6 +1,7 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { LicenseCR } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
@@ -20,15 +21,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined
     )) as {
       body: {
-        items: [];
+        items: LicenseCR[];
       };
     };
 
+    const result = response.body.items.filter((item) => item.status.phase === 'Active');
+
     jsonRes(res, {
-      data: response.body.items
+      data: result
     });
   } catch (err) {
-    console.log(err, 'getlicense----');
     jsonRes(res, {
       code: 500,
       error: err

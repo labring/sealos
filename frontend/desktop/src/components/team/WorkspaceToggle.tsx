@@ -27,7 +27,6 @@ export default function WorkspaceToggle() {
     async onSuccess(data) {
       if (data.code === 200 && !!data.data && session) {
         const payload = jwtDecode<AccessTokenPayload>(data.data.token);
-        console.log(payload, session);
         await sessionConfig({
           ...data.data,
           kubeconfig: switchKubeconfigNamespace(session.kubeconfig, payload.workspaceId)
@@ -77,7 +76,7 @@ export default function WorkspaceToggle() {
       >
         <CubeIcon />
         <Text>
-          {namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName}
+          {namespace?.nstype === NSType.Private ? t('common:default_team') : namespace?.teamName}
         </Text>
         <DesktopExchangeIcon ml={'auto'} />
       </HStack>

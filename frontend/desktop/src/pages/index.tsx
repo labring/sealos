@@ -13,7 +13,7 @@ import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 import useCallbackStore from '@/stores/callback';
 import FloatButton from '@/components/floating_button';
-import 'react-contexify/dist/ReactContexify.css';
+// import 'react-contexify/dist/ReactContexify.css';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -104,6 +104,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       <Head>
         <title>{layoutConfig?.meta.title}</title>
         <meta name="description" content={layoutConfig?.meta.description} />
+        <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
+        <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />w{' '}
       </Head>
       {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
@@ -124,7 +126,12 @@ export async function getServerSideProps({ req, res, locales }: any) {
 
   return {
     props: {
-      ...(await serverSideTranslations(local, ['common', 'cloudProviders'], null, locales || [])),
+      ...(await serverSideTranslations(
+        local,
+        ['common', 'cloudProviders', 'error'],
+        null,
+        locales || []
+      )),
       sealos_cloud_domain
     }
   };

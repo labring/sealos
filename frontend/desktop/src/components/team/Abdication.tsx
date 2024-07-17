@@ -81,7 +81,7 @@ export default function Abdication({
         {...props}
       >
         <ExchangeIcon boxSize="16px" mr="4px" />
-        <Text fontSize={'12px'}>{t('Abdication')}</Text>
+        <Text fontSize={'12px'}>{t('common:abdication')}</Text>
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
@@ -94,7 +94,7 @@ export default function Abdication({
         >
           <ModalCloseButton right={'24px'} top="16px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0">
-            {t('Abdication')}
+            {t('common:abdication')}
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
@@ -170,7 +170,7 @@ export default function Abdication({
                   submit();
                 }}
               >
-                {t('Confirm')}
+                {t('common:confirm')}
               </Button>
             </ModalBody>
           )}

@@ -12,8 +12,17 @@ export type CommonConfigType = {
   apiEnabled: boolean;
   rechargeEnabled: boolean;
   cfSiteKey?: string;
+  templateUrl?: string;
+  objectstorageUrl: string;
+  applaunchpadUrl: string;
+  dbproviderUrl: string;
 };
-export type CommonClientConfigType = DeepRequired<OmitPath<CommonConfigType, 'apiEnabled'>>;
+export type CommonClientConfigType = DeepRequired<
+  Omit<
+    CommonConfigType,
+    'apiEnabled' | 'objectstorageUrl' | 'applaunchpadUrl' | 'dbproviderUrl' | 'templateUrl'
+  >
+>;
 export type DatabaseConfigType = {
   mongodbURI: string;
   globalCockroachdbURI: string;
@@ -55,6 +64,7 @@ export type LayoutConfigType = {
     workorderEnabled: boolean;
     accountSettingEnabled: boolean;
     docsUrl?: string;
+    aiAssistantEnabled: boolean;
   };
 };
 
@@ -65,6 +75,8 @@ export type AuthConfigType = {
   baiduToken?: string;
   jwt: JwtConfigType;
   billingUrl?: string;
+  workorderUrl?: string;
+  cloudVitrualMachineUrl: string;
   invite?: {
     enabled: boolean;
     lafSecretKey: string;
@@ -100,6 +112,13 @@ export type AuthConfigType = {
         accessKeyID: string;
         accessKeySecret?: string;
       };
+      email?: {
+        enabled: boolean;
+        host: string;
+        port: number;
+        user: string;
+        password: string;
+      };
     };
     oauth2?: {
       enabled: boolean;
@@ -125,9 +144,12 @@ export type AuthClientConfigType = DeepRequired<
       'idp.wechat.clientSecret',
       'idp.google.clientSecret',
       'idp.sms.ali',
+      'idp.sms.email',
       'idp.oauth2.clientSecret',
       'jwt',
-      'billingUrl'
+      'billingUrl',
+      'workorderUrl',
+      'cloudVitrualMachineUrl'
     ]
   >
 >;
@@ -195,7 +217,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   common: {
     githubStarEnabled: false,
     workorderEnabled: false,
-    accountSettingEnabled: false
+    accountSettingEnabled: false,
+    aiAssistantEnabled: false
   }
 };
 

@@ -28,9 +28,10 @@ interface Props extends BoxProps {
   fileExtension: string;
   files: FileItemType[];
   setFiles: React.Dispatch<React.SetStateAction<FileItemType[]>>;
+  multiple: boolean;
 }
 
-const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
+const FileSelect = ({ fileExtension, setFiles, files, multiple, ...props }: Props) => {
   const { Loading: FileSelectLoading } = useLoading();
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -39,7 +40,7 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
 
   const { File, onOpen } = useSelectFile({
     fileType: fileExtension,
-    multiple: true
+    multiple: multiple
   });
 
   const onSelectFile = useCallback(
@@ -49,8 +50,6 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
         // Parse file by file
         let promise = Promise.resolve<FileItemType[]>([]);
         files.forEach((file) => {
-          console.log(file, 'fiel');
-
           promise = promise.then(async (result) => {
             const extension = file?.name?.split('.')?.pop()?.toLowerCase();
 
