@@ -63,7 +63,7 @@
   "Prompt": "Prompt",
   "jump_prompt": "Jump prompt",
   "jump_message": "This application cannot be used independently. Please click 'OK' to proceed to Sealos Desktop.",
-  "pause_message": "The resources occupied by storage will continue to be charged.",
+  "pause_message": "Pausing the service will stop the calculation of charges for CPU and memory, but charges for storage and external network ports will still apply. Would you like to pause now?",
   "Confirm to restart this application?": "Confirm to restart this application?",
   "You haven't created any application yet.": "You haven't created any application yet.",
   "Confirm deletion": "Confirm deletion",
