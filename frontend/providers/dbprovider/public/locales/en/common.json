@@ -198,7 +198,7 @@
   "Password": "Password",
   "Pause": "Pause",
   "Pause Error": "Failed to pause the database",
-  "Pause Hint": "Please note that the database cannot be modified while paused, but storage fees will still apply. Please confirm to proceed.",
+  "Pause Hint": "Pausing the service will stop the calculation of charges for CPU and memory, but charges for storage and external network ports will still apply. Would you like to pause now?",
   "Pause Success": "Database paused",
   "Paused": "Paused",
   "Pausing": "Pausing",
