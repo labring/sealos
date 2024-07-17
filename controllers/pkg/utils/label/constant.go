@@ -29,3 +29,7 @@ const (
 const (
 	DefaultManagedBy = "sealos"
 )
+
+const (
+	TerminalPartOf = "terminal"
+)

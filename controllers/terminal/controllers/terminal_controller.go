@@ -49,10 +49,6 @@ const (
 )
 
 const (
-	TerminalPartOf = "terminal"
-)
-
-const (
 	DefaultDomain          = "cloud.sealos.io"
 	DefaultPort            = ""
 	DefaultSecretName      = "wildcard-cert"
@@ -128,7 +124,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      terminal.Name,
 		ManagedBy: label.DefaultManagedBy,
-		PartOf:    TerminalPartOf,
+		PartOf:    label.TerminalPartOf,
 	})
 
 	var hostname string
@@ -375,23 +371,6 @@ func (r *TerminalReconciler) getPort() string {
 	}
 	return ":" + r.CtrConfig.Global.CloudPort
 }
-
-//func NewCache() cache.NewCacheFunc {
-//	cacheLabelSelector := cache.ObjectSelector{
-//		Label: labels.SelectorFromSet(labels.Set{
-//			label.AppManagedBy: label.DefaultManagedBy,
-//			label.AppPartOf:    TerminalPartOf,
-//		}),
-//	}
-//
-//	return cache.BuilderWithOptions(cache.Options{
-//		SelectorsByObject: cache.SelectorsByObject{
-//			&appsv1.Deployment{}:    cacheLabelSelector,
-//			&corev1.Service{}:       cacheLabelSelector,
-//			&networkingv1.Ingress{}: cacheLabelSelector,
-//		},
-//	})
-//}
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
