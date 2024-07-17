@@ -62,5 +62,6 @@
   "region": "region",
   "userId": "userId",
   "other": "other",
-  "fastgpt": "FastGPT"
+  "fastgpt": "FastGPT",
+  "account_center": "Account Center"
 }

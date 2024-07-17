@@ -62,5 +62,6 @@
   "region": "可用区",
   "userId": "用户ID",
   "other": "其他",
-  "fastgpt": "FastGPT"
+  "fastgpt": "FastGPT",
+  "account_center": "账号中心"
 }

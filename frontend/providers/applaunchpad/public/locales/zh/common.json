@@ -158,7 +158,7 @@
   "Password": "密码",
   "Password for the image registry": "镜像仓库密码",
   "Pause": "暂停",
-  "pause_message": "暂停状态下无法变更应用，并且如果您使用了存储卷，存储费用仍会继续计费，请确认！",
+  "pause_message": "暂停服务将停止计算 CPU 和内存等费用，但存储和外网端口仍将产生费用。是否现在暂停？",
   "Paused": "已暂停",
   "Perday": "每日",
   "Please confirm to restart the Pod?": "请确认是否重启 Pod ？",
