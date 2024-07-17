@@ -32,4 +32,5 @@ const (
 
 const (
 	TerminalPartOf = "terminal"
+	AdminerPartOf  = "adminer"
 )
