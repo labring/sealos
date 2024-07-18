@@ -29,7 +29,3 @@ const (
 const (
 	DefaultManagedBy = "sealos"
 )
-
-const (
-	AdminerPartOf = "adminer"
-)
