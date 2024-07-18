@@ -73,7 +73,7 @@ func main() {
 
 	cacheObjLabelSelector := labels.SelectorFromSet(labels.Set{
 		label.AppManagedBy: label.DefaultManagedBy,
-		label.AppPartOf:    label.AdminerPartOf,
+		label.AppPartOf:    controllers.AdminerPartOf,
 	})
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

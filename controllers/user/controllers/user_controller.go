@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -532,6 +533,49 @@ func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) 
 	user.Status.KubeConfig = string(kubeData)
 	userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.HashToString(user.Status.KubeConfig))
 	return ctx
+}
+
+func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
+	var apiConfig *api.Config
+	var err error
+	var event *string
+	if user.Status.KubeConfig != "" && user.Spec.CSRExpirationSeconds == user.Status.ObservedCSRExpirationSeconds {
+		apiConfig, err = clientcmd.Load([]byte(user.Status.KubeConfig))
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, ctx := range apiConfig.Contexts {
+			if ctx.Namespace == "" {
+				apiConfig = nil
+				ev := fmt.Sprintf("User %s Namespace is empty", user.Name)
+				event = &ev
+				return apiConfig, event, err
+			}
+		}
+		if info, ok := apiConfig.AuthInfos[user.Name]; ok {
+			if info != nil {
+				if info.Token == "" {
+					apiConfig = nil
+					ev := fmt.Sprintf("User %s Token is empty", user.Name)
+					event = &ev
+					return apiConfig, event, err
+				}
+				if info.ClientCertificateData == nil {
+					return apiConfig, event, err
+				}
+				cert, err := kubeconfig.DecodeX509CertificateBytes(info.ClientCertificateData)
+				if err != nil {
+					return nil, nil, err
+				}
+				if cert.NotAfter.Before(time.Now()) {
+					apiConfig = nil
+					ev := fmt.Sprintf("ClientCertificateData %s is expired", user.Name)
+					event = &ev
+				}
+			}
+		}
+	}
+	return apiConfig, event, err
 }
 
 func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User) context.Context {

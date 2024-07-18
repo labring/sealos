@@ -24,6 +24,8 @@ require (
 	github.com/labring/sealos/controllers/user v0.0.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/minio/madmin-go/v3 v3.0.35
+	github.com/onsi/ginkgo v1.16.2
+	github.com/onsi/gomega v1.30.0
 	github.com/volcengine/volc-sdk-golang v1.0.159
 	go.mongodb.org/mongo-driver v1.12.1
 	golang.org/x/sync v0.6.0
@@ -86,6 +88,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.6.6 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
@@ -132,6 +135,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.5.4 // indirect

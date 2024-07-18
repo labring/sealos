@@ -31,6 +31,5 @@ const (
 )
 
 const (
-	TerminalPartOf = "terminal"
-	AdminerPartOf  = "adminer"
+	AdminerPartOf = "adminer"
 )

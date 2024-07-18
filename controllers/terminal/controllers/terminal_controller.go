@@ -40,6 +40,8 @@ import (
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
+const TerminalPartOf = "terminal"
+
 const (
 	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
@@ -124,7 +126,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      terminal.Name,
 		ManagedBy: label.DefaultManagedBy,
-		PartOf:    label.TerminalPartOf,
+		PartOf:    TerminalPartOf,
 	})
 
 	var hostname string
