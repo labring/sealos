@@ -302,6 +302,44 @@ paths:
       summary: Get user account
       tags:
       - Account
+  /account/v1alpha1/check-permission:
+    post:
+      consumes:
+      - application/json
+      description: Check permission
+      parameters:
+      - description: Check permission request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserBaseReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully check permission
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse check permission request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to check permission
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check permission
+      tags:
+      - Permission
   /account/v1alpha1/costs:
     post:
       consumes:
@@ -665,6 +703,27 @@ paths:
       summary: Get properties
       tags:
       - Properties
+  /account/v1alpha1/regions:
+    get:
+      consumes:
+      - application/json
+      description: Get regions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get regions
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get regions
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get regions
+      tags:
+      - Regions
   /account/v1alpha1/transfer:
     post:
       consumes:

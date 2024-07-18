@@ -20,10 +20,18 @@ func AuthenticateWithBind(c *gin.Context) error {
 }
 
 func Authenticate(auth Auth) error {
-	if auth.KubeConfig == "" || auth.Owner == "" {
-		return fmt.Errorf("kubeconfig and owner must be set")
+	if auth.KubeConfig == "" {
+		return fmt.Errorf("kubeconfig must be set")
 	}
-	userNamespace := auth.Owner
+	kcConfig, err := auth2.GetKcConfig(auth.KubeConfig)
+	if err != nil {
+		return fmt.Errorf("kubeconfig failed  %v", err)
+	}
+	if err := auth2.CheckK8sHost(kcConfig.Host); err != nil {
+		return fmt.Errorf("failed to check k8s host: %v", err)
+	}
+	auth.Owner = kcConfig.Username
+	userNamespace := kcConfig.Username
 	if !strings.HasPrefix(userNamespace, "ns-") {
 		userNamespace = "ns-" + userNamespace
 	}

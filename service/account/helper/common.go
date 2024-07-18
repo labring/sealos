@@ -14,11 +14,13 @@ const (
 	GetUserCosts         = "/costs"
 	SetTransfer          = "/transfer"
 	GetTransfer          = "/get-transfer"
+	GetRegions           = "/regions"
 	CheckPermission      = "/check-permission"
 )
 
 // env
 const (
+	ConfigPath         = "/config/config.json"
 	EnvMongoURI        = "MONGO_URI"
 	ENVGlobalCockroach = "GLOBAL_COCKROACH_URI"
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"

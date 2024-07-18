@@ -38,6 +38,8 @@ type Interface interface {
 	Transfer(req *helper.TransferAmountReq) error
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 	GetUserID(ops types.UserQueryOpts) (string, error)
+	GetRegions() ([]types.Region, error)
+	GetLocalRegion() types.Region
 }
 
 type Account struct {
@@ -90,6 +92,14 @@ func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
 
 func (g *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error) {
 	return g.ck.GetTransfer(ops)
+}
+
+func (g *Cockroach) GetRegions() ([]types.Region, error) {
+	return g.ck.GetRegions()
+}
+
+func (g *Cockroach) GetLocalRegion() types.Region {
+	return g.ck.GetLocalRegion()
 }
 
 func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error) {

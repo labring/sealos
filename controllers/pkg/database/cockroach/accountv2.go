@@ -618,6 +618,18 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 	})
 }
 
+func (c *Cockroach) GetRegions() ([]types.Region, error) {
+	var regions []types.Region
+	if err := c.DB.Find(&regions).Error; err != nil {
+		return nil, fmt.Errorf("failed to get regions: %v", err)
+	}
+	return regions, nil
+}
+
+func (c *Cockroach) GetLocalRegion() types.Region {
+	return *c.LocalRegion
+}
+
 func (c *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
 	userUID, err := c.GetUserUID(ops)
 	if err != nil {

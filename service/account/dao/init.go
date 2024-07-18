@@ -4,10 +4,28 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/goccy/go-json"
+
 	"github.com/labring/sealos/service/account/helper"
 )
 
-var DBClient Interface
+type Config struct {
+	LocalRegionDomain string            `json:"localRegionDomain"`
+	Regions           map[string]Region `json:"regions"`
+}
+
+type Region struct {
+	Domain     string `json:"domain"`
+	AccountSvc string `json:"accountSvc"`
+	UID        string `json:"uid"`
+	// zh: region name, en: region name
+	Name map[string]string `json:"name"`
+}
+
+var (
+	DBClient Interface
+	Cfg      *Config
+)
 
 func InitDB() error {
 	var err error
@@ -23,13 +41,48 @@ func InitDB() error {
 	if mongoURI == "" {
 		return fmt.Errorf("empty mongo uri, please check env: %s", helper.EnvMongoURI)
 	}
-	fmt.Println("cockroachStr: ", globalCockroach)
-	fmt.Println("localRegionStr: ", localCockroach)
-	fmt.Println("mongoURI: ", mongoURI)
 	DBClient, err = NewAccountInterface(mongoURI, globalCockroach, localCockroach)
 	if err != nil {
 		return err
 	}
-	_, err = DBClient.GetProperties()
-	return err
+	if _, err = DBClient.GetProperties(); err != nil {
+		return fmt.Errorf("get properties error: %v", err)
+	}
+
+	file := helper.ConfigPath
+	if _, err := os.Stat(file); err == nil {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("read config file error: %v", err)
+		}
+		fmt.Printf("config file found, use config file: \n%s\n", file)
+
+		Cfg = &Config{}
+		// json marshal
+		if err = json.Unmarshal(data, Cfg); err != nil {
+			return fmt.Errorf("unmarshal config file error: %v", err)
+		}
+	} else {
+		fmt.Println("config file not found, use default config")
+		regions, err := DBClient.GetRegions()
+		if err != nil {
+			return fmt.Errorf("get regions error: %v", err)
+		}
+		Cfg = &Config{
+			Regions: make(map[string]Region),
+		}
+		for i := range regions {
+			Cfg.Regions[regions[i].Domain] = Region{
+				Domain:     regions[i].Domain,
+				AccountSvc: "account-api." + regions[i].Domain,
+				UID:        regions[i].UID.String(),
+				Name: map[string]string{
+					"zh": regions[i].DisplayName,
+					"en": regions[i].DisplayName,
+				},
+			}
+		}
+	}
+	Cfg.LocalRegionDomain = DBClient.GetLocalRegion().Domain
+	return nil
 }

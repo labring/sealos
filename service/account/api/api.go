@@ -434,7 +434,7 @@ func GetAPPCosts(c *gin.Context) {
 // @Tags Permission
 // @Accept json
 // @Produce json
-// @Param request body helper.CheckPermissionReq true "Check permission request"
+// @Param request body helper.UserBaseReq true "Check permission request"
 // @Success 200 {object} map[string]interface{} "successfully check permission"
 // @Failure 400 {object} map[string]interface{} "failed to parse check permission request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
@@ -453,6 +453,21 @@ func CheckPermission(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "successfully check permission",
+	})
+}
+
+// GetRegions
+// @Summary Get regions
+// @Description Get regions
+// @Tags Regions
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "successfully get regions"
+// @Failure 500 {object} map[string]interface{} "failed to get regions"
+// @Router /account/v1alpha1/regions [get]
+func GetRegions(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"regions": dao.Cfg.Regions,
 	})
 }
 

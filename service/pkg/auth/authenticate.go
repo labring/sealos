@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 
+	"k8s.io/client-go/rest"
+
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -24,6 +26,27 @@ var (
 
 	whiteListKubernetesHosts []string
 )
+
+func GetKcConfig(kc string) (*rest.Config, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
+	if err != nil {
+		return nil, fmt.Errorf("kubeconfig failed  %v", err)
+	}
+	return config, nil
+}
+
+func CheckK8sHost(host string) error {
+	if !IsWhitelistKubernetesHost(host) {
+		if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
+			if k8shost != host {
+				return fmt.Errorf("k8s host not match, expect %s, got %s", k8shost, host)
+			}
+		} else {
+			return ErrNoSealosHost
+		}
+	}
+	return nil
+}
 
 func Authenticate(ns, kc string) error {
 	if ns == "" {
@@ -60,7 +83,7 @@ func Authenticate(ns, kc string) error {
 		return fmt.Errorf("ping apiserver is no ok: %v", string(res))
 	}
 
-	if err := CheckResourceAccess(client, ns, "get", "pods"); err != nil {
+	if err := CheckResourceAccess(client, ns, "update", "pods"); err != nil {
 		// fmt.Println(err.Error())
 		return fmt.Errorf("check resource access error: %v", err)
 	}
