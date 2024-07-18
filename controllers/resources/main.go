@@ -21,25 +21,17 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"time"
-
-	"github.com/labring/sealos/controllers/pkg/objectstorage"
-
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/labring/sealos/controllers/pkg/database/mongo"
-
-	"github.com/labring/sealos/controllers/pkg/database"
-
-	"github.com/labring/sealos/controllers/pkg/resources"
-
-	"github.com/labring/sealos/controllers/resources/controllers"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
+	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
+	"github.com/labring/sealos/controllers/pkg/objectstorage"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/controllers/resources/controllers"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,6 +40,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
 )
 
