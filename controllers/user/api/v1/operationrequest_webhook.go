@@ -24,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -65,10 +66,10 @@ type ReqValidator struct {
 	client.Client
 }
 
-func (r ReqValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (r ReqValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	req, ok := obj.(*Operationrequest)
 	if !ok {
-		return errors.New("obj convert Operationrequest is error")
+		return admission.Warnings{"obj convert Operationrequest is error"}, errors.New("obj convert Operationrequest is error")
 	}
 
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
@@ -78,34 +79,34 @@ func (r ReqValidator) ValidateCreate(ctx context.Context, obj runtime.Object) er
 	err := r.List(ctx, &reqList, client.InNamespace(req.Namespace), client.MatchingLabels{UserLabelOwnerKey: req.Spec.User})
 	if client.IgnoreNotFound(err) != nil {
 		operationrequestlog.Error(err, "list operationrequest error")
-		return err
+		return admission.Warnings{"list operationrequest error"}, err
 	}
 
 	for _, item := range reqList.Items {
 		if item.Status.Phase != RequestCompleted {
 			operationrequestlog.Info("there is a request not completed, can not create new request", "name", item.Name, "phase", item.Status.Phase)
-			return errors.New("there is a request not completed, can not create new request")
+			return admission.Warnings{"there is a request not completed, can not create new request"}, errors.New("there is a request not completed, can not create new request")
 		}
 	}
-	return nil
+	return admission.Warnings{}, nil
 }
 
-func (r ReqValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) error {
+func (r ReqValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
 	oldReq, ok := oldObj.(*Operationrequest)
 	if !ok {
-		return errors.New("obj convert Operationrequest error")
+		return admission.Warnings{"obj convert Operationrequest error"}, errors.New("obj convert Operationrequest error")
 	}
 	newReq, ok := newObj.(*Operationrequest)
 	if !ok {
-		return errors.New("obj convert Operationrequest error")
+		return admission.Warnings{"obj convert Operationrequest error"}, errors.New("obj convert Operationrequest error")
 	}
 	if oldReq.Spec != newReq.Spec {
-		return errors.New("operation request spec do not support update")
+		return admission.Warnings{"operation request spec do not support update"}, errors.New("operation request spec do not support update")
 	}
-	return nil
+	return admission.Warnings{}, nil
 }
 
-func (r ReqValidator) ValidateDelete(_ context.Context, _ runtime.Object) error {
-	return nil
+func (r ReqValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }
