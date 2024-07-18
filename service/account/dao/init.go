@@ -10,8 +10,8 @@ import (
 )
 
 type Config struct {
-	LocalRegionDomain string            `json:"localRegionDomain"`
-	Regions           map[string]Region `json:"regions"`
+	LocalRegionDomain string   `json:"localRegionDomain"`
+	Regions           []Region `json:"regions"`
 }
 
 type Region struct {
@@ -69,10 +69,10 @@ func InitDB() error {
 			return fmt.Errorf("get regions error: %v", err)
 		}
 		Cfg = &Config{
-			Regions: make(map[string]Region),
+			Regions: make([]Region, 0),
 		}
 		for i := range regions {
-			Cfg.Regions[regions[i].Domain] = Region{
+			Cfg.Regions = append(Cfg.Regions, Region{
 				Domain:     regions[i].Domain,
 				AccountSvc: "account-api." + regions[i].Domain,
 				UID:        regions[i].UID.String(),
@@ -80,7 +80,7 @@ func InitDB() error {
 					"zh": regions[i].DisplayName,
 					"en": regions[i].DisplayName,
 				},
-			}
+			})
 		}
 	}
 	Cfg.LocalRegionDomain = DBClient.GetLocalRegion().Domain
