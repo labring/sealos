@@ -1,0 +1,106 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.docSidebar.category.Examples": {
+    "message": "案例",
+    "description": "The label for category Examples in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.ai-applications": {
+    "message": "AI 应用",
+    "description": "The label for category ai-applications in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Quick Start": {
+    "message": "快速开始",
+    "description": "The label for category Quick Start in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.App Deployments": {
+    "message": "部署应用",
+    "description": "The label for category App Deployments in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.How-to Guides": {
+    "message": "使用指南",
+    "description": "The label for category How-to Guides in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Master Services Agreement": {
+    "message": "服务政策",
+    "description": "The label for category Master Services Agreement in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Self Hosting": {
+    "message": "私有化部署",
+    "description": "The label for the doc item Self Hosting in sidebar docSidebar, linking to the doc Community"
+  },
+  "sidebar.docSidebar.category.Sealos": {
+    "message": "Sealos 私有云",
+    "description": "The label for category Sealos Self Hosting in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Kubernetes Lifecycle Management": {
+    "message": "K8s 集群生命周期管理",
+    "description": "The label for category Kubernetes Lifecycle Management in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.doc.Community": {
+    "message": "社区",
+    "description": "The label for the doc item Community in sidebar docSidebar, linking to the doc Community"
+  },
+  "sidebar.docSidebar.category.Operations": {
+    "message": "操作说明",
+    "description": "The label for category Operations in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Advanced Guide": {
+    "message": "进阶指南",
+    "description": "The label for category Advanced Guide in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Reference": {
+    "message": "参考",
+    "description": "The label for category Reference in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Sealctl 使用指南": {
+    "message": "Sealctl 使用指南",
+    "description": "The label for category Sealctl 使用指南 in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Sealos 使用指南": {
+    "message": "Sealos 使用指南",
+    "description": "The label for category Sealos 使用指南 in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Sealos 集群镜像构建": {
+    "message": "Sealos 集群镜像构建",
+    "description": "The label for category Sealos 集群镜像构建 in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Sealos 镜像仓库": {
+    "message": "Sealos 镜像仓库",
+    "description": "The label for category Sealos 镜像仓库 in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Sealos 集群镜像运行": {
+    "message": "Sealos 集群镜像运行",
+    "description": "The label for category Sealos 集群镜像运行 in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Sealos 命令说明": {
+    "message": "Sealos 命令说明",
+    "description": "The label for category Sealos 命令说明 in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.baas": {
+    "message": "后端即服务",
+    "description": "The label for category baas in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.low-code-platform": {
+    "message": "低代码平台",
+    "description": "The label for category low-code-platform in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.dial-testing-system": {
+    "message": "拨测系统",
+    "description": "The label for category dial-testing-system in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.blog-platform": {
+    "message": "博客平台",
+    "description": "The label for category blog-platform in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.social-communication": {
+    "message": " IM 应用",
+    "description": "The label for category social-communication in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.programming-languages": {
+    "message": "常用语言案例",
+    "description": "The label for category programming-languages in sidebar docSidebar"
+  }
+}
