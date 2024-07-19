@@ -198,7 +198,7 @@
   "Password": "密码",
   "Pause": "暂停",
   "Pause Error": "数据库暂停失败",
-  "Pause Hint": "请注意，暂停状态下无法变更数据库，并且存储券仍会收费，请确认！",
+  "Pause Hint": "暂停服务将停止计算 CPU 和内存等费用，但存储和外网端口仍将产生费用。是否现在暂停？",
   "Pause Success": "数据库已暂停",
   "Paused": "已暂停",
   "Pausing": "暂停中",

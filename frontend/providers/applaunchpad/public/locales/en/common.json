@@ -158,7 +158,7 @@
   "Password": "Password",
   "Password for the image registry": "Image Registry Password",
   "Pause": "Pause",
-  "pause_message": "App update is not allowed while paused. Storage fees will still apply if storage is in use. Please confirm.",
+  "pause_message": "Pausing the service will stop the calculation of charges for CPU and memory, but charges for storage and external network ports will still apply. Would you like to pause now?",
   "Paused": "Paused",
   "Perday": "\/day",
   "Please confirm to restart the Pod?": "Are you sure you want to restart this pod?",

@@ -63,7 +63,7 @@
   "Prompt": "提示",
   "jump_prompt": "跳转提示",
   "jump_message": "该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。",
-  "pause_message": "请注意，暂停状态下无法变更应用，并且如果您使用了存储卷，存储券仍会收费，请确认！",
+  "pause_message": "暂停服务将停止计算 CPU 和内存等费用，但存储和外网端口仍将产生费用。是否现在暂停？",
   "Confirm to restart this application?": "确认重启该应用？",
   "You haven't created any application yet.": "您还没有新建应用。",
   "Confirm deletion": "确认删除",

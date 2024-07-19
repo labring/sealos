@@ -78,9 +78,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         'git config --global --add safe.directory /app/providers/template/templates',
         { timeout: 10000 }
       );
-
-      console.log('git config:', gitConfigResult);
-
       const gitCommand = !fs.existsSync(targetPath)
         ? `git clone -b ${branch} ${repoHttpUrl} ${targetPath} --depth=1`
         : `cd ${targetPath} && git pull --depth=1 --rebase`;

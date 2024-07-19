@@ -405,26 +405,28 @@ export default function Notification(props: TNotification) {
             >
               {t('common:detail')}
             </Button>
-            <Button
-              w="78px"
-              h="32px"
-              variant={'unstyled'}
-              bg={'white'}
-              color={'grayModern.900'}
-              borderRadius={'4px'}
-              onClick={() => {
-                const temp = MessageConfig.popupMessage;
-                setMessageConfig(
-                  produce((draft) => {
-                    draft.popupMessage = undefined;
-                  })
-                );
-                readMsgMutation.mutate([temp?.metadata?.name || '']);
-                handleCharge();
-              }}
-            >
-              {t('common:charge')}
-            </Button>
+            {MessageConfig.msgDetail?.spec?.from === 'Debt-System' && (
+              <Button
+                w="78px"
+                h="32px"
+                variant={'unstyled'}
+                bg={'white'}
+                color={'grayModern.900'}
+                borderRadius={'4px'}
+                onClick={() => {
+                  const temp = MessageConfig.popupMessage;
+                  setMessageConfig(
+                    produce((draft) => {
+                      draft.popupMessage = undefined;
+                    })
+                  );
+                  readMsgMutation.mutate([temp?.metadata?.name || '']);
+                  handleCharge();
+                }}
+              >
+                {t('common:charge')}
+              </Button>
+            )}
           </Flex>
         </Box>
       )}
