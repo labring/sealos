@@ -1,9 +1,7 @@
-import { verifyDesktopToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { getUserById } from '@/services/db/user';
 import { fetchPendingOrders, fetchProcessingOrders, updateOrder } from '@/services/db/workorder';
 import { WorkOrderDB, WorkOrderStatus } from '@/types/workorder';
-import { WithId } from 'mongodb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 const feishuUrl = process.env.ADMIN_FEISHU_URL;
@@ -98,21 +96,18 @@ const getFeishuForm = ({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const adminToken = req.headers['authorization']?.split(' ')[1];
-    if (!adminToken) {
+    const { adminId } = req.query as {
+      adminId: string;
+    };
+
+    if (!adminId) {
       return jsonRes(res, {
         code: 401,
         message: "'token is invaild'"
       });
     }
-    const payload = await verifyDesktopToken(adminToken);
-    if (!payload?.userId) {
-      return jsonRes(res, {
-        code: 401,
-        message: "'token is invaild'"
-      });
-    }
-    const user = await getUserById(payload?.userId);
+
+    const user = await getUserById(adminId);
     if (!user?.isAdmin) {
       return jsonRes(res, {
         code: 403,
@@ -139,18 +134,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    if (recentUnresponded.length === 0 && overdueAutoCloseIn7Days.length === 0) {
+      return jsonRes(res, {
+        code: 204,
+        message: 'No content to send'
+      });
+    }
+
     await Promise.all([
       ...overdueAutoCloseIn7Days.map((order) =>
         updateOrder({
           orderId: order.orderId,
-          userId: payload.userId,
+          userId: user.userId,
           updates: { status: WorkOrderStatus.Completed }
         })
       ),
       ...recentUnresponded.map((order) =>
         updateOrder({
           orderId: order.orderId,
-          userId: payload.userId,
+          userId: user.userId,
           updates: { status: WorkOrderStatus.Pending }
         })
       )

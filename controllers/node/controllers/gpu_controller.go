@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type GpuReconciler struct {
@@ -279,7 +278,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return useGPU(event.Object)
 			},
 		})).
-		Watches(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
+		Watches(&corev1.Node{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(event event.CreateEvent) bool {
 				return hasGPU(event.Object)
 			},

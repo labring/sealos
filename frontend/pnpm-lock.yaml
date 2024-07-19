@@ -2006,6 +2006,9 @@ importers:
       cron-parser:
         specifier: ^4.9.0
         version: 4.9.0
+      croner:
+        specifier: ^8.1.0
+        version: 8.1.0
       cronstrue:
         specifier: ^2.32.0
         version: 2.44.0
@@ -2048,9 +2051,6 @@ importers:
       next-i18next:
         specifier: ^15.3.0
         version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
-      node-cron:
-        specifier: ^3.0.3
-        version: 3.0.3
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0

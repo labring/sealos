@@ -6,8 +6,7 @@ import { parseGithubUrl } from '@/utils/tools';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
-const cron = require('node-cron');
-let hasAddCron = false;
+import { Cron } from 'croner';
 
 export function replaceRawWithCDN(url: string, cdnUrl: string) {
   let parsedUrl = parseGithubUrl(url);
@@ -58,12 +57,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const menuCount = Number(process.env.SIDEBAR_MENU_COUNT) || 10;
 
   try {
-    if (!hasAddCron) {
-      hasAddCron = true;
-      cron.schedule('*/5 * * * *', async () => {
-        const result = await (await fetch(`${baseurl}/api/updateRepo`)).json();
-        console.log(`scheduling cron`);
-      });
+    if (!global.updateRepoCronJob) {
+      global.updateRepoCronJob = new Cron(
+        '*/5 * * * *',
+        async () => {
+          const result = await (await fetch(`${baseurl}/api/updateRepo`)).json();
+          const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+          console.log(`[${now}] updateRepoCronJob`);
+        },
+        {
+          timezone: 'Asia/Shanghai'
+        }
+      );
     }
 
     if (!fs.existsSync(jsonPath)) {

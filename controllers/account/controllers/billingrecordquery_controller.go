@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // BillingRecordQueryReconciler reconciles a BillingRecordQuery object
@@ -137,7 +136,7 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOp
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.BillingRecordQuery{}).
-		Watches(&source.Kind{Type: &accountv1.PriceQuery{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&accountv1.PriceQuery{}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"log"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
@@ -26,5 +27,6 @@ func initialize() error {
 	if err := client.InitClient(); err != nil {
 		return err
 	}
+	notification.InitFeishuClient()
 	return dao.InitCockroachDB()
 }

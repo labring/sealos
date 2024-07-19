@@ -71,7 +71,8 @@ RUN adduser --system --uid 1001 nextjs
 
 RUN apk add curl \
   && apk add ca-certificates \
-  && update-ca-certificates
+  && update-ca-certificates \
+  && apk add --no-cache dumb-init
 
 ARG name
 ARG path
@@ -99,4 +100,4 @@ ENV PORT 3000
 
 ENV launchpath=./${path}/server.js
 
-ENTRYPOINT ["sh","-c","node ${launchpath}"]
+ENTRYPOINT ["dumb-init", "sh", "-c", "node ${launchpath}"]
