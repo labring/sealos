@@ -1,12 +1,12 @@
 go 1.20
 
 use (
-	.
-	./account
 	./database
-	./exceptionmonitor
-	./launchpad
 	./pay
+	./account
+	./launchpad
+	./exceptionmonitor
+	.
 )
 
 replace (
