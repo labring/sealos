@@ -6,6 +6,7 @@
   "RESULT_SUCCESS": "响应成功",
   "INTERNAL_SERVER_ERROR": "内部服务器错误",
   "INSUFFICENT_BALANCE": "余额不足",
+	"MERGET_USER_INSUFFICENT_BALANCE": "被合并的账户余额不足",
   "ACCOUNT_NOT_FOUND": "未找到账户",
   "USER_CR_NOT_FOUND": "未找到用户CR",
   "OAUTHPROVIDER_NOT_FOUND": "未找到OAuth提供程序",

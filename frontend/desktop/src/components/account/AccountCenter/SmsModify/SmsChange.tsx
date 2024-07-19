@@ -256,7 +256,8 @@ function NewSms({
       if (data.code === 200) {
         toast({
           status: 'success',
-          title: smsType === 'phone' ? t('common:phonechangesuccess') : t('common:emailchangesuccess')
+          title:
+            smsType === 'phone' ? t('common:phonechangesuccess') : t('common:emailchangesuccess')
         });
         reset();
         onClose?.();

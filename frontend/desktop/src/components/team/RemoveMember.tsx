@@ -60,7 +60,9 @@ export default function RemoveMember({
       ? t('common:quit')
       : t('common:remove');
   const removeTips =
-    selfUserCrUid === targetUserCrUid ? t('common:quit_workspace_tips') : t('common:remove_member_tips');
+    selfUserCrUid === targetUserCrUid
+      ? t('common:quit_workspace_tips')
+      : t('common:remove_member_tips');
   return (
     <>
       <Button

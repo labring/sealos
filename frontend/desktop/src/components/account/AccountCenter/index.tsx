@@ -75,7 +75,8 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
     else if (pageState === PageState.PASSWORD) return t('common:changepassword');
     else if (Object.values(PhoneState).includes(pageState as PhoneState))
       return t('common:changephone'); // bind or unbind
-    else if (Object.values(EmailState).includes(pageState as EmailState)) return t('common:changeemail');
+    else if (Object.values(EmailState).includes(pageState as EmailState))
+      return t('common:changeemail');
     else return '';
   }, [t, pageState]);
   const queryClient = useQueryClient();

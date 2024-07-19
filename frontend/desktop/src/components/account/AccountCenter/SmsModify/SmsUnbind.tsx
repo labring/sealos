@@ -132,7 +132,9 @@ const smsUnBindGen = (smsType: SmsType) =>
           >
             <FormControl isInvalid={!!formState.errors.id}>
               <HStack>
-                <FormLabel w={'120px'}>{smsType === 'phone' ? t('common:phone') : t('common:email')}</FormLabel>
+                <FormLabel w={'120px'}>
+                  {smsType === 'phone' ? t('common:phone') : t('common:email')}
+                </FormLabel>
                 <SettingInputGroup>
                   <SettingInput
                     {...register('id', smsIdValid(smsType))}
