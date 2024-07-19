@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         process.env.NODE_ENV === 'production' ? '0,30 10-17 * * 1-5' : '* * * * *',
         async () => {
           const result = await (
-            await fetch(`${baseurl}/api/workorder/check`, {
+            await fetch(`${baseurl}/api/workorder/check?adminId=${adminToken}`, {
               method: 'GET',
               headers: {
                 Authorization: `Bearer ${adminToken}`,
