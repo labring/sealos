@@ -38,6 +38,9 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/larksuite/oapi-sdk-go/v3 v3.2.9 // indirect
+    golang.org/x/crypto v0.21.0 // indirect
+    github.com/jackc/pgx/v5 v5.4.3 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
