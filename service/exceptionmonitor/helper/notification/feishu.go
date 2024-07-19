@@ -1,15 +1,22 @@
 package notification
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	lark "github.com/larksuite/oapi-sdk-go/v3"
+	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
+	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
+	"log"
+	"regexp"
 )
 
 const ExceptionType = "exception"
+
+var (
+	feiShuClient *lark.Client
+)
 
 type Info struct {
 	DatabaseClusterName string
@@ -24,6 +31,10 @@ type Info struct {
 	MemUsage            string
 	PerformanceType     string
 	ExceptionType       string
+}
+
+func InitFeishuClient() {
+	feiShuClient = lark.NewClient(api.APPID, api.APPSECRET)
 }
 
 func GetNotificationMessage(notificationInfo Info) string {
@@ -148,48 +159,84 @@ func GetNotificationMessage(notificationInfo Info) string {
 	return string(databaseMessage)
 }
 
-func SendFeishuNotification(message, feishuWebHook string) error {
-	//log.Print(message, feishuWebHook)
+func SendFeishuNotification(notification Info, message, feishuWebHook string) error {
 	if api.MonitorType != "all" {
 		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
 
-	// Create a map to hold the POST request body
-	bodyMap := map[string]interface{}{
-		"msg_type": "interactive",
-		"card":     message,
+	messageIDMap := getMessageIDMap(notification.PerformanceType)
+
+	if messageID, ok := messageIDMap[notification.DatabaseClusterName]; ok {
+		if err := updateFeishuNotification(messageID, message); err != nil {
+			return err
+		}
+		delete(messageIDMap, notification.DatabaseClusterName)
+	} else {
+		if err := createFeishuNotification(notification.DatabaseClusterName, message, feishuWebHook, messageIDMap); err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
-	// Convert the map to a JSON byte slice
-	bodyBytes, err := json.Marshal(bodyMap)
-	if err != nil {
-		return err
+func getMessageIDMap(performanceType string) map[string]string {
+	switch performanceType {
+	case "磁盘":
+		return api.DatabaseDiskMessageIDMap
+	case "内存":
+		return api.DatabaseMemMessageIDMap
+	case "CPU":
+		return api.DatabaseCPUMessageIDMap
+	default:
+		return api.DatabaseStatusMessageIDMap
 	}
+}
 
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return err
-	}
+func updateFeishuNotification(messageID, message string) error {
+	req := larkim.NewPatchMessageReqBuilder().
+		MessageId(messageID).
+		Body(larkim.NewPatchMessageReqBodyBuilder().
+			Content(message).Build()).Build()
 
-	// Set the request header
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request using the default client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Print the status and response body
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
+	resp, err := feiShuClient.Im.Message.Patch(context.Background(), req)
+	if err != nil || !resp.Success() {
+		log.Println("Error:", resp.Code, resp.Msg, resp.RequestId())
 		return err
 	}
 	return nil
+}
+
+func createFeishuNotification(databaseClusterName, message, feishuWebHook string, messageIDMap map[string]string) error {
+	req := larkim.NewCreateMessageReqBuilder().
+		ReceiveIdType("chat_id").
+		Body(larkim.NewCreateMessageReqBodyBuilder().
+			ReceiveId(feishuWebHook).
+			MsgType("interactive").
+			Content(message).Build()).Build()
+
+	resp, err := feiShuClient.Im.Message.Create(context.Background(), req)
+	if err != nil || !resp.Success() {
+		log.Println("Error:", resp.Code, resp.Msg, resp.RequestId())
+		return err
+	}
+
+	respStr := larkcore.Prettify(resp)
+	messageID := extractAndPrintMessageId(respStr)
+	if messageID == "" {
+		log.Printf("send databaseName %s feishu notification, return no messageID", databaseClusterName)
+	} else {
+		messageIDMap[databaseClusterName] = messageID
+	}
+	return nil
+}
+
+func extractAndPrintMessageId(str string) string {
+	re := regexp.MustCompile(`MessageId:\s*"([^"]+)"`)
+	match := re.FindStringSubmatch(str)
+	if len(match) > 1 {
+		return match[1]
+	}
+	return ""
 }
 
 func createCard(headerTemplate, headerTitle string, elements []map[string]string) map[string]interface{} {
