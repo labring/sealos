@@ -10,28 +10,27 @@ import { produce } from 'immer';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
-import { TNotification } from '@/types';
-import { listNotification } from '@/api/platform';
+import { NotificationItem } from '@/types';
 
-type NotificationProps = {
+type TNotification = {
   disclosure: UseDisclosureReturn;
   onAmount: (amount: number) => void;
 };
 
-export default function Notification(props: NotificationProps) {
+export default function Notification(props: TNotification) {
   const { t, i18n } = useTranslation();
   const { disclosure, onAmount } = props;
   const { installedApps, openApp } = useAppStore();
-  const [readNotes, setReadNotes] = useState<TNotification[]>([]);
-  const [unReadNotes, setUnReadNotes] = useState<TNotification[]>([]);
+  const [readNotes, setReadNotes] = useState<NotificationItem[]>([]);
+  const [unReadNotes, setUnReadNotes] = useState<NotificationItem[]>([]);
   const { message } = useMessage();
   const isForbiddenRef = useRef(false);
 
   const [MessageConfig, setMessageConfig] = useState<{
     activeTab: 'read' | 'unread';
     activePage: 'index' | 'detail';
-    msgDetail?: TNotification;
-    popupMessage?: TNotification;
+    msgDetail?: NotificationItem;
+    popupMessage?: NotificationItem;
   }>({
     activeTab: 'unread',
     activePage: 'index',
@@ -39,26 +38,35 @@ export default function Notification(props: NotificationProps) {
     popupMessage: undefined
   });
 
-  const { refetch } = useQuery(['getNotifications'], () => listNotification(), {
-    onSuccess: (data) => {
-      if (data.data) {
-        handleNotificationData(data.data);
-      }
-    },
-    refetchInterval: 5 * 60 * 1000,
-    staleTime: 5 * 60 * 1000
-  });
+  const { refetch } = useQuery(
+    ['getNotifications'],
+    () => request('/api/notification/listNotification'),
+    {
+      onSuccess: (data) => {
+        const messages = data?.data?.items as NotificationItem[];
+        if (messages) {
+          handleNotificationData(messages);
+        }
+      },
+      refetchInterval: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000
+    }
+  );
 
-  const compareByTimestamp = (a: TNotification, b: TNotification) => b?.timestamp - a?.timestamp;
+  const handleNotificationData = (data: NotificationItem[]) => {
+    const parseIsRead = (item: NotificationItem) =>
+      JSON.parse(item?.metadata?.labels?.isRead || 'false');
 
-  const handleNotificationData = (data: TNotification[]) => {
-    const unReadMessage = data.filter((item) => !item.isRead);
-    const readMessage = data.filter((item) => item.isRead);
+    const unReadMessage = data.filter((item) => !parseIsRead(item));
+    const readMessage = data.filter(parseIsRead);
+
+    const compareByTimestamp = (a: NotificationItem, b: NotificationItem) =>
+      b?.spec?.timestamp - a?.spec?.timestamp;
 
     unReadMessage.sort(compareByTimestamp);
     readMessage.sort(compareByTimestamp);
 
-    if (unReadMessage?.[0]?.desktopPopup && !isForbiddenRef.current) {
+    if (unReadMessage?.[0]?.spec?.desktopPopup && !isForbiddenRef.current) {
       setMessageConfig(
         produce((draft) => {
           draft.popupMessage = unReadMessage[0];
@@ -93,9 +101,9 @@ export default function Notification(props: NotificationProps) {
     }
   });
 
-  const goMsgDetail = (item: TNotification) => {
+  const goMsgDetail = (item: NotificationItem) => {
     if (MessageConfig.activeTab === 'unread') {
-      readMsgMutation.mutate([item?.name]);
+      readMsgMutation.mutate([item?.metadata?.name]);
     }
     setMessageConfig(
       produce((draft) => {
@@ -107,7 +115,7 @@ export default function Notification(props: NotificationProps) {
   };
 
   const markAllAsRead = () => {
-    const names = unReadNotes?.map((item: TNotification) => item?.name);
+    const names = unReadNotes?.map((item: NotificationItem) => item?.metadata?.name);
     readMsgMutation.mutate(names);
     setMessageConfig(
       produce((draft) => {
@@ -170,7 +178,9 @@ export default function Notification(props: NotificationProps) {
           <Text>
             {MessageConfig.activePage === 'index'
               ? t('common:message_center')
-              : MessageConfig.msgDetail?.i18n[i18n.language]?.title}
+              : i18n.language === 'zh' && MessageConfig.msgDetail?.spec?.i18ns?.zh?.title
+              ? MessageConfig.msgDetail?.spec?.i18ns?.zh?.title
+              : MessageConfig.msgDetail?.spec?.title}
           </Text>
         </Flex>
         {MessageConfig.activePage === 'index' ? (
@@ -213,18 +223,24 @@ export default function Notification(props: NotificationProps) {
               </Button>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
-              {notifications?.map((item: TNotification) => {
+              {notifications?.map((item: NotificationItem) => {
                 return (
                   <Flex
                     mt={'8px'}
                     direction={'column'}
                     className={clsx(styles.message)}
-                    key={item?.uid}
+                    key={item?.metadata?.uid}
                     onClick={() => goMsgDetail(item)}
                   >
-                    <Text className={styles.title}>{item.i18n[i18n.language]?.title}</Text>
+                    <Text className={styles.title}>
+                      {i18n.language === 'zh' && item.spec?.i18ns?.zh?.title
+                        ? item.spec?.i18ns?.zh?.title
+                        : item?.spec?.title}
+                    </Text>
                     <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
-                      {item.i18n[i18n.language]?.message}
+                      {i18n.language === 'zh' && item.spec?.i18ns?.zh?.message
+                        ? item.spec?.i18ns?.zh?.message
+                        : item?.spec?.message}
                     </Text>
                     <Flex
                       mt="4px"
@@ -232,9 +248,15 @@ export default function Notification(props: NotificationProps) {
                       className={clsx(styles.desc, styles.footer)}
                     >
                       <Text>
-                        {t('common:from')}「{item.i18n[i18n.language]?.from}」
+                        {t('common:from')}「
+                        {i18n.language === 'zh' && item.spec?.i18ns?.zh?.from
+                          ? item.spec?.i18ns?.zh?.from
+                          : item?.spec?.from}
+                        」
                       </Text>
-                      <Text>{formatTime((item?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}</Text>
+                      <Text>
+                        {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
+                      </Text>
                     </Flex>
                   </Flex>
                 );
@@ -257,10 +279,17 @@ export default function Notification(props: NotificationProps) {
               fontWeight="400"
             >
               <Text>
-                {t('common:from')}「{MessageConfig.msgDetail?.i18n[i18n.language]?.from}」
+                {t('common:from')}「
+                {i18n.language === 'zh' && MessageConfig.msgDetail?.spec?.i18ns?.zh?.from
+                  ? MessageConfig.msgDetail?.spec?.i18ns?.zh?.from
+                  : MessageConfig.msgDetail?.spec?.from}
+                」
               </Text>
               <Box display={'inline-block'} ml={'auto'}>
-                {formatTime((MessageConfig.msgDetail?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
+                {formatTime(
+                  (MessageConfig.msgDetail?.spec?.timestamp || 0) * 1000,
+                  'YYYY-MM-DD HH:mm'
+                )}
               </Box>
             </Flex>
             <Text
@@ -272,9 +301,11 @@ export default function Notification(props: NotificationProps) {
               h="300px"
               overflowY="auto"
             >
-              {MessageConfig.msgDetail?.i18n[i18n.language]?.message}
+              {i18n.language === 'zh' && MessageConfig.msgDetail?.spec?.i18ns?.zh?.message
+                ? MessageConfig.msgDetail?.spec?.i18ns?.zh?.message
+                : MessageConfig.msgDetail?.spec?.message}
             </Text>
-            {MessageConfig.msgDetail?.i18n['en']?.from === 'Debt-System' && (
+            {MessageConfig.msgDetail?.spec?.from === 'Debt-System' && (
               <Flex justifyContent={'center'} mt="26px">
                 <Button
                   w="159px"
@@ -318,7 +349,9 @@ export default function Notification(props: NotificationProps) {
           <Flex alignItems={'center'}>
             <WarnIcon />
             <Text fontSize={'16px'} fontWeight={600} ml="10px">
-              {MessageConfig.popupMessage?.i18n[i18n.language]?.title}
+              {i18n.language === 'zh' && MessageConfig.popupMessage?.spec?.i18ns?.zh?.title
+                ? MessageConfig.popupMessage?.spec?.i18ns?.zh?.title
+                : MessageConfig.popupMessage?.spec?.title}
             </Text>
             <CloseIcon
               ml="auto"
@@ -331,7 +364,7 @@ export default function Notification(props: NotificationProps) {
                     draft.popupMessage = undefined;
                   })
                 );
-                readMsgMutation.mutate([temp?.name || '']);
+                readMsgMutation.mutate([temp?.metadata?.name || '']);
               }}
             />
           </Flex>
@@ -344,7 +377,9 @@ export default function Notification(props: NotificationProps) {
             noOfLines={2}
             height={'36px'}
           >
-            {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
+            {i18n.language === 'zh' && MessageConfig.popupMessage?.spec?.i18ns?.zh?.message
+              ? MessageConfig.popupMessage?.spec?.i18ns?.zh?.message
+              : MessageConfig.popupMessage?.spec?.message}
           </Text>
 
           <Flex alignItems={'center'} justifyContent={'end'} mt="18px" gap="8px">
@@ -364,13 +399,13 @@ export default function Notification(props: NotificationProps) {
                     draft.popupMessage = undefined;
                   })
                 );
-                readMsgMutation.mutate([temp?.name || '']);
+                readMsgMutation.mutate([temp?.metadata?.name || '']);
                 disclosure.onOpen();
               }}
             >
               {t('common:detail')}
             </Button>
-            {MessageConfig.msgDetail?.i18n['en']?.from === 'Debt-System' && (
+            {MessageConfig.msgDetail?.spec?.from === 'Debt-System' && (
               <Button
                 w="78px"
                 h="32px"
@@ -385,7 +420,7 @@ export default function Notification(props: NotificationProps) {
                       draft.popupMessage = undefined;
                     })
                   );
-                  readMsgMutation.mutate([temp?.name || '']);
+                  readMsgMutation.mutate([temp?.metadata?.name || '']);
                   handleCharge();
                 }}
               >

@@ -134,12 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    const _pending = await fetchPendingOrders();
-    if (
-      recentUnresponded.length === 0 &&
-      overdueAutoCloseIn7Days.length === 0 &&
-      _pending.length === 0
-    ) {
+    if (recentUnresponded.length === 0 && overdueAutoCloseIn7Days.length === 0) {
       return jsonRes(res, {
         code: 204,
         message: 'No content to send'
@@ -151,7 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updateOrder({
           orderId: order.orderId,
           userId: user.userId,
-          updates: { status: WorkOrderStatus.Completed, closedBy: 'auto' }
+          updates: { status: WorkOrderStatus.Completed }
         })
       ),
       ...recentUnresponded.map((order) =>
@@ -184,9 +179,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify(form)
     });
     const result = await data.json();
-
     jsonRes(res, {
-      data: 'success'
+      data: result
     });
   } catch (error) {
     console.log(error);
