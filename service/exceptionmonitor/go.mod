@@ -1,6 +1,6 @@
 module github.com/labring/sealos/service/exceptionmonitor
 
-go 1.20
+go 1.22
 
 require (
 	github.com/alibabacloud-go/dysmsapi-20170525/v3 v3.0.6
