@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labring/sealos/controllers/pkg/resources"
+
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
 	"github.com/labring/sealos/controllers/pkg/types"
@@ -464,7 +466,7 @@ func CheckPermission(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "successfully get regions"
 // @Failure 500 {object} map[string]interface{} "failed to get regions"
-// @Router /account/v1alpha1/regions [get]
+// @Router /account/v1alpha1/regions [post]
 func GetRegions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"regions": dao.Cfg.Regions,
@@ -532,6 +534,21 @@ func GetCostAppList(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": apps,
+	})
+}
+
+// GetAppTypeList
+// @Summary Get app type list
+// @Description Get app type list
+// @Tags AppTypeList
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "successfully get app type list"
+// @Failure 500 {object} map[string]interface{} "failed to get app type list"
+// @Router /account/v1alpha1/app-type-list [post]
+func GetAppTypeList(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"data": resources.AppTypeReverse,
 	})
 }
 

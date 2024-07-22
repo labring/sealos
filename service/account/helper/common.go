@@ -17,6 +17,7 @@ const (
 	GetRegions           = "/regions"
 	GetOverview          = "/cost-overview"
 	GetAppList           = "/cost-app-list"
+	GetAppTypeList       = "/cost-app-type-list"
 	CheckPermission      = "/check-permission"
 )
 

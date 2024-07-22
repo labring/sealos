@@ -67,6 +67,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/app-type-list": {
+            "post": {
+                "description": "Get app type list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AppTypeList"
+                ],
+                "summary": "Get app type list",
+                "responses": {
+                    "200": {
+                        "description": "successfully get app type list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get app type list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/check-permission": {
             "post": {
                 "description": "Check permission",
@@ -773,7 +804,7 @@ const docTemplate = `{
             }
         },
         "/account/v1alpha1/regions": {
-            "get": {
+            "post": {
                 "description": "Get regions",
                 "consumes": [
                     "application/json"

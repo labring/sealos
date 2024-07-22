@@ -431,6 +431,27 @@ paths:
       summary: Get user account
       tags:
       - Account
+  /account/v1alpha1/app-type-list:
+    post:
+      consumes:
+      - application/json
+      description: Get app type list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get app type list
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get app type list
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get app type list
+      tags:
+      - AppTypeList
   /account/v1alpha1/check-permission:
     post:
       consumes:
@@ -907,7 +928,7 @@ paths:
       tags:
       - Properties
   /account/v1alpha1/regions:
-    get:
+    post:
       consumes:
       - application/json
       description: Get regions
