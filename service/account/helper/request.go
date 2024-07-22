@@ -260,3 +260,116 @@ func ParseGetTransferRecordReq(c *gin.Context) (*GetTransferRecordReq, error) {
 	transferReq.Owner = strings.TrimPrefix(transferReq.Owner, "ns-")
 	return transferReq, nil
 }
+
+func ParseGetCostAppListReq(c *gin.Context) (*GetCostAppListReq, error) {
+	costAppList := &GetCostAppListReq{}
+	if err := c.ShouldBindJSON(costAppList); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if costAppList.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
+		costAppList.StartTime = time.Now().Add(-6 * humanize.Month)
+	}
+	if costAppList.EndTime.After(time.Now()) {
+		costAppList.EndTime = time.Now()
+	}
+	return costAppList, nil
+}
+
+type CostOverviewResp struct {
+	// @Summary Cost overview
+	// @Description Cost overview
+	Overviews []CostOverview `json:"overviews" bson:"overviews"`
+
+	// @Summary Limit response
+	// @Description Limit response
+	LimitResp `json:",inline" bson:",inline"`
+}
+
+type CostOverview struct {
+	// @Summary Amount
+	// @Description Amount
+	Amount int64 `json:"amount" bson:"amount"`
+
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace" bson:"namespace"`
+
+	// @Summary Region domain
+	// @Description Region domain
+	RegionDomain string `json:"regionDomain" bson:"regionDomain" example:"region-domain-1"`
+
+	// @Summary App type
+	// @Description App type
+	AppType uint8  `json:"appType" bson:"appType"`
+	AppName string `json:"appName" bson:"appName"`
+}
+
+type GetCostAppListReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	Auth `json:",inline" bson:",inline"`
+
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace" bson:"namespace"`
+
+	// @Summary App type
+	// @Description App type
+	AppType string `json:"appType" bson:"appType"`
+
+	// @Summary App Name
+	// @Description App Name
+	AppName string `json:"appName" bson:"appName"`
+
+	// @Summary Limit request
+	// @Description Limit request
+	LimitReq `json:",inline" bson:",inline"`
+}
+
+type CostAppListResp struct {
+	// @Summary Cost app list
+	// @Description Cost app list
+	Apps []CostApp `json:"apps" bson:"apps"`
+
+	// @Summary Limit response
+	// @Description Limit response
+	LimitResp `json:",inline" bson:",inline"`
+}
+
+type CostApp struct {
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace" bson:"namespace"`
+
+	// @Summary App type
+	// @Description App type
+	AppType uint8 `json:"appType" bson:"appType"`
+
+	// @Summary App Name
+	// @Description App Name
+	AppName string `json:"appName" bson:"appName"`
+}
+
+type LimitReq struct {
+	// @Summary Page
+	// @Description Page
+	Page int `json:"page" bson:"page"`
+
+	// @Summary Page Size
+	// @Description Page Size
+	PageSize int `json:"pageSize" bson:"pageSize"`
+
+	// @Summary Time range
+	// @Description Time range
+	TimeRange `json:",inline" bson:",inline"`
+}
+
+type LimitResp struct {
+	// @Summary Total
+	// @Description Total
+	Total int64 `json:"total" bson:"total"`
+
+	// @Summary Total page
+	// @Description Total page
+	TotalPage int64 `json:"totalPage" bson:"totalPage"`
+}

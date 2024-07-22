@@ -471,6 +471,70 @@ func GetRegions(c *gin.Context) {
 	})
 }
 
+// GetCostOverview
+// @Summary Get cost overview
+// @Description Get cost overview
+// @Tags CostOverview
+// @Accept json
+// @Produce json
+// @Param request body helper.GetCostAppListReq true "Cost overview request"
+// @Success 200 {object} helper.CostOverviewResp "successfully get cost overview"
+// @Failure 400 {object} map[string]interface{} "failed to parse cost overview request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get cost overview"
+// @Router /account/v1alpha1/cost-overview [post]
+func GetCostOverview(c *gin.Context) {
+	req, err := helper.ParseGetCostAppListReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse cost overview request: %v", err)})
+		return
+	}
+	if err := CheckAuth(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	overview, err := dao.DBClient.GetCostOverview(*req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost overview : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": overview,
+	})
+}
+
+// GetCostAppList
+// @Summary Get cost app list
+// @Description Get cost app list
+// @Tags CostAppList
+// @Accept json
+// @Produce json
+// @Param request body helper.GetCostAppListReq true "Cost app list request"
+// @Success 200 {object} helper.CostAppListResp "successfully get cost app list"
+// @Failure 400 {object} map[string]interface{} "failed to parse cost app list request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get cost app list"
+// @Router /account/v1alpha1/cost-app-list [post]
+func GetCostAppList(c *gin.Context) {
+	req, err := helper.ParseGetCostAppListReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse cost app list request: %v", err)})
+		return
+	}
+	if err := CheckAuth(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	apps, err := dao.DBClient.GetCostAppList(*req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost app list : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": apps,
+	})
+}
+
 func CheckAuth(auth helper.Auth) error {
 	if err := helper.Authenticate(auth); err != nil {
 		return fmt.Errorf("authenticate error : %v", err)

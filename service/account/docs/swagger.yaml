@@ -78,11 +78,140 @@ definitions:
     - kubeConfig
     - owner
     type: object
+  helper.CostApp:
+    properties:
+      appName:
+        description: |-
+          @Summary App Name
+          @Description App Name
+        type: string
+      appType:
+        description: |-
+          @Summary App type
+          @Description App type
+        type: integer
+      namespace:
+        description: |-
+          @Summary Namespace
+          @Description Namespace
+        type: string
+    type: object
+  helper.CostAppListResp:
+    properties:
+      apps:
+        description: |-
+          @Summary Cost app list
+          @Description Cost app list
+        items:
+          $ref: '#/definitions/helper.CostApp'
+        type: array
+      total:
+        description: |-
+          @Summary Total
+          @Description Total
+        type: integer
+      totalPage:
+        description: |-
+          @Summary Total page
+          @Description Total page
+        type: integer
+    type: object
+  helper.CostOverview:
+    properties:
+      amount:
+        description: |-
+          @Summary Amount
+          @Description Amount
+        type: integer
+      appName:
+        type: string
+      appType:
+        description: |-
+          @Summary App type
+          @Description App type
+        type: integer
+      namespace:
+        description: |-
+          @Summary Namespace
+          @Description Namespace
+        type: string
+      regionDomain:
+        description: |-
+          @Summary Region domain
+          @Description Region domain
+        example: region-domain-1
+        type: string
+    type: object
+  helper.CostOverviewResp:
+    properties:
+      overviews:
+        description: |-
+          @Summary Cost overview
+          @Description Cost overview
+        items:
+          $ref: '#/definitions/helper.CostOverview'
+        type: array
+      total:
+        description: |-
+          @Summary Total
+          @Description Total
+        type: integer
+      totalPage:
+        description: |-
+          @Summary Total page
+          @Description Total page
+        type: integer
+    type: object
   helper.ErrorMessage:
     properties:
       error:
         example: authentication failure
         type: string
+    type: object
+  helper.GetCostAppListReq:
+    properties:
+      appName:
+        description: |-
+          @Summary App Name
+          @Description App Name
+        type: string
+      appType:
+        description: |-
+          @Summary App type
+          @Description App type
+        type: string
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      namespace:
+        description: |-
+          @Summary Namespace
+          @Description Namespace
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
+        type: string
+    required:
+    - kubeConfig
+    - owner
     type: object
   helper.GetPropertiesResp:
     properties:
@@ -340,6 +469,80 @@ paths:
       summary: Check permission
       tags:
       - Permission
+  /account/v1alpha1/cost-app-list:
+    post:
+      consumes:
+      - application/json
+      description: Get cost app list
+      parameters:
+      - description: Cost app list request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetCostAppListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get cost app list
+          schema:
+            $ref: '#/definitions/helper.CostAppListResp'
+        "400":
+          description: failed to parse cost app list request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get cost app list
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cost app list
+      tags:
+      - CostAppList
+  /account/v1alpha1/cost-overview:
+    post:
+      consumes:
+      - application/json
+      description: Get cost overview
+      parameters:
+      - description: Cost overview request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetCostAppListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get cost overview
+          schema:
+            $ref: '#/definitions/helper.CostOverviewResp'
+        "400":
+          description: failed to parse cost overview request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get cost overview
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cost overview
+      tags:
+      - CostOverview
   /account/v1alpha1/costs:
     post:
       consumes:

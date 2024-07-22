@@ -29,6 +29,9 @@ type Interface interface {
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
+	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
+	GetCostAppList(req helper.GetCostAppListReq) (helper.CostAppListResp, error)
+	Disconnect(ctx context.Context) error
 	GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error)
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
@@ -238,6 +241,282 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 
 func (m *MongoDB) GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error) {
 	return m.getAmountWithType(0, user, namespace, appType, startTime, endTime)
+}
+
+func (m *MongoDB) GetCostOverview(req helper.GetCostAppListReq) (resp helper.CostOverviewResp, rErr error) {
+	appResp, err := m.getAppStoreList(req)
+	if err != nil {
+		rErr = fmt.Errorf("failed to get app store list: %w", err)
+		return
+	}
+	resp.LimitResp = appResp.LimitResp
+	for _, app := range appResp.Apps {
+		totalAmount, err := m.GetTotalAppCost(req.Owner, app.Namespace, app.AppName, app.AppType)
+		if err != nil {
+			rErr = fmt.Errorf("failed to get total app cost: %w", err)
+			return
+		}
+		resp.Overviews = append(resp.Overviews, helper.CostOverview{
+			Amount:    totalAmount,
+			Namespace: app.Namespace,
+			AppType:   app.AppType,
+			AppName:   app.AppName,
+		})
+	}
+	return
+}
+
+func (m *MongoDB) GetTotalAppCost(owner string, namespace string, appName string, appType uint8) (int64, error) {
+	var pipeline mongo.Pipeline
+
+	if appType == resources.AppType[resources.AppStore] {
+		// If appType is 8, match app_name and app_type directly
+		pipeline = mongo.Pipeline{
+			{{Key: "$match", Value: bson.D{
+				{Key: "owner", Value: owner},
+				{Key: "namespace", Value: namespace},
+				{Key: "app_name", Value: appName},
+				{Key: "app_type", Value: appType},
+			}}},
+			{{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key: "totalAmount", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+			}}},
+		}
+	} else {
+		// Otherwise, match inside app_costs
+		pipeline = mongo.Pipeline{
+			{{Key: "$match", Value: bson.D{
+				{Key: "owner", Value: owner},
+				{Key: "namespace", Value: namespace},
+				{Key: "app_costs.name", Value: appName},
+				{Key: "type", Value: appType},
+			}}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+			{{Key: "$match", Value: bson.D{
+				{Key: "app_costs.name", Value: appName},
+			}}},
+			{{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key: "totalAmount", Value: bson.D{{Key: "$sum", Value: "$app_costs.amount"}}},
+			}}},
+		}
+	}
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute aggregate query: %w", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var result struct {
+		TotalAmount int64 `bson:"totalAmount"`
+	}
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, fmt.Errorf("failed to decode aggregate result: %w", err)
+		}
+	} else {
+		return 0, fmt.Errorf("no records found")
+	}
+
+	return result.TotalAmount, nil
+}
+
+func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.CostAppListResp, rErr error) {
+	var (
+		result []helper.CostApp
+	)
+	if strings.ToUpper(req.AppType) != resources.AppStore {
+		match := bson.M{
+			"owner": req.Owner,
+			// Exclude app store
+			"app_type": bson.M{"$ne": resources.AppType[resources.AppStore]},
+		}
+		if req.Namespace != "" {
+			match["namespace"] = req.Namespace
+		}
+		if req.AppType != "" {
+			match["app_type"] = resources.AppType[strings.ToUpper(req.AppType)]
+		}
+		if req.AppName != "" {
+			match["app_costs.name"] = req.AppName
+		}
+		if req.StartTime.IsZero() {
+			req.StartTime = time.Now().UTC().Add(-time.Hour * 24 * 30)
+			req.EndTime = time.Now().UTC()
+		}
+		match["time"] = bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		}
+
+		pipeline := mongo.Pipeline{
+			{{Key: "$match", Value: match}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+			{{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: bson.D{
+					{Key: "app_type", Value: "$app_type"},
+					{Key: "app_name", Value: "$app_costs.name"},
+				}},
+				{Key: "namespace", Value: bson.D{{Key: "$first", Value: "$namespace"}}},
+				{Key: "owner", Value: bson.D{{Key: "$first", Value: "$owner"}}},
+			}}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "_id", Value: 0},
+				{Key: "namespace", Value: 1},
+				{Key: "appType", Value: "$_id.app_type"},
+				{Key: "owner", Value: 1},
+				{Key: "appName", Value: "$_id.app_name"},
+			}}},
+		}
+		page := req.Page
+		pageSize := req.PageSize
+		if pageSize <= 0 {
+			pageSize = 10
+		}
+		if page <= 0 {
+			page = 1
+		}
+		limitPipeline := append(pipeline, bson.D{{Key: "$skip", Value: (page - 1) * pageSize}}, bson.D{{Key: "$limit", Value: pageSize}})
+
+		countPipeline := append(pipeline, bson.D{{Key: "$count", Value: "total"}})
+
+		countCursor, err := m.getBillingCollection().Aggregate(context.Background(), countPipeline)
+		if err != nil {
+			rErr = fmt.Errorf("failed to execute count aggregate query: %w", err)
+			return
+		}
+		defer countCursor.Close(context.Background())
+
+		if countCursor.Next(context.Background()) {
+			var countResult struct {
+				Total int64 `bson:"total"`
+			}
+			if err := countCursor.Decode(&countResult); err != nil {
+				rErr = fmt.Errorf("failed to decode count result: %w", err)
+				return
+			}
+			resp.Total = countResult.Total
+		}
+
+		cursor, err := m.getBillingCollection().Aggregate(context.Background(), limitPipeline)
+		if err != nil {
+			rErr = fmt.Errorf("failed to execute aggregate query: %w", err)
+			return
+		}
+		defer cursor.Close(context.Background())
+
+		if err := cursor.All(context.Background(), &result); err != nil {
+			rErr = fmt.Errorf("failed to decode all billing record: %w", err)
+			return
+		}
+	}
+
+	// If the app type is empty or app store, get the app store list
+	if req.AppType == "" || strings.ToUpper(req.AppType) == resources.AppStore {
+		appStoreResp, err := m.getAppStoreList(req)
+		if err != nil {
+			rErr = fmt.Errorf("failed to get app store list: %w", err)
+			return
+		}
+		result = append(result, appStoreResp.Apps...)
+		resp.Total += appStoreResp.Total
+	}
+	resp.TotalPage = (resp.Total + int64(req.PageSize) - 1) / int64(req.PageSize)
+	resp.Apps = result
+	return resp, nil
+}
+
+func (m *MongoDB) getAppStoreList(req helper.GetCostAppListReq) (resp helper.CostAppListResp, rErr error) {
+	match := bson.M{
+		"owner":    req.Owner,
+		"app_type": resources.AppType[resources.AppStore],
+	}
+	if req.Namespace != "" {
+		match["namespace"] = req.Namespace
+	}
+	if req.AppName != "" {
+		match["app_name"] = req.AppName
+	}
+	if !req.StartTime.IsZero() {
+		match["time"] = bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		}
+	}
+
+	pipeline := []bson.M{
+		{"$match": match},
+		{"$unwind": "$app_costs"},
+		{"$group": bson.M{
+			"_id": bson.M{
+				"namespace": "$namespace",
+				"app_type":  "$app_type",
+				"owner":     "$owner",
+				"app_name":  "$app_name",
+			},
+		}},
+		{"$project": bson.M{
+			"_id":       0,
+			"namespace": "$_id.namespace",
+			"appType":   "$_id.app_type",
+			"owner":     "$_id.owner",
+			"appName":   "$_id.app_name",
+		}},
+	}
+	page := req.Page
+	pageSize := req.PageSize
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	if page <= 0 {
+		page = 1
+	}
+	skipStage := bson.M{"$skip": (page - 1) * pageSize}
+	limitStage := bson.M{"$limit": pageSize}
+	limitPipeline := append(pipeline, skipStage, limitStage)
+
+	countPipeline := append(pipeline, bson.M{"$count": "total"})
+
+	countCursor, err := m.getBillingCollection().Aggregate(context.Background(), countPipeline)
+	if err != nil {
+		rErr = fmt.Errorf("failed to execute count aggregate query: %w", err)
+		return
+	}
+	defer countCursor.Close(context.Background())
+
+	if countCursor.Next(context.Background()) {
+		var countResult struct {
+			Total int64 `bson:"total"`
+		}
+		if err := countCursor.Decode(&countResult); err != nil {
+			rErr = fmt.Errorf("failed to decode count result: %w", err)
+			return
+		}
+		resp.Total = countResult.Total
+		resp.TotalPage = (countResult.Total + int64(req.PageSize) - 1) / int64(req.PageSize)
+	}
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), limitPipeline)
+	if err != nil {
+		rErr = fmt.Errorf("failed to execute aggregate query: %w", err)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	var result []helper.CostApp
+	if err = cursor.All(context.Background(), &result); err != nil {
+		rErr = fmt.Errorf("failed to decode all billing record: %w", err)
+		return
+	}
+	resp.Apps = result
+	return
+}
+
+func (m *MongoDB) Disconnect(ctx context.Context) error {
+	return m.Client.Disconnect(ctx)
 }
 
 func (m *MongoDB) getAmountWithType(_type int64, user, namespace, _appType string, startTime, endTime time.Time) (int64, error) {

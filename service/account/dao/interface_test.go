@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -84,4 +85,68 @@ func TestCockroach_GetTransfer(t *testing.T) {
 		EndTime:   time.Now().UTC(),
 	})
 	t.Logf("transfer = %+v", transfer.LimitResp)
+}
+
+func TestMongoDB_GetCostAppList(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := NewAccountInterface("", "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := helper.GetCostAppListReq{
+		Auth: helper.Auth{
+			Owner: "hwhbg4vf",
+		},
+		//Namespace: "ns-hwhbg4vf",
+		AppType: "APP-STORE",
+		//AppName: "cronicle-ldokpaus",
+		LimitReq: helper.LimitReq{
+			Page:     1,
+			PageSize: 5,
+		},
+	}
+	appList, err := m.GetCostAppList(req)
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("len costAppList: %v", len(appList.Apps))
+	t.Logf("costAppList: %#+v", appList)
+}
+
+func TestMongoDB_GetCostOverview(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := NewAccountInterface("", "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := helper.GetCostAppListReq{
+		Auth: helper.Auth{
+			Owner: "hwhbg4vf",
+		},
+		//Namespace: "ns-hwhbg4vf",
+		AppType: "APP-STORE",
+		//AppName: "cronicle-ldokpaus",
+		LimitReq: helper.LimitReq{
+			Page:     1,
+			PageSize: 5,
+		},
+	}
+	appList, err := m.GetCostOverview(req)
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("len costAppList: %v", len(appList.Overviews))
+	t.Logf("costAppList: %#+v", appList)
 }

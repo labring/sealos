@@ -15,6 +15,8 @@ const (
 	SetTransfer          = "/transfer"
 	GetTransfer          = "/get-transfer"
 	GetRegions           = "/regions"
+	GetOverview          = "/cost-overview"
+	GetAppList           = "/cost-app-list"
 	CheckPermission      = "/check-permission"
 )
 
