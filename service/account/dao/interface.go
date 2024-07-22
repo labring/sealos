@@ -328,6 +328,12 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 	var (
 		result []helper.CostApp
 	)
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	if req.Page <= 0 {
+		req.Page = 1
+	}
 	if strings.ToUpper(req.AppType) != resources.AppStore {
 		match := bson.M{
 			"owner": req.Owner,
@@ -371,15 +377,8 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 				{Key: "appName", Value: "$_id.app_name"},
 			}}},
 		}
-		page := req.Page
-		pageSize := req.PageSize
-		if pageSize <= 0 {
-			pageSize = 10
-		}
-		if page <= 0 {
-			page = 1
-		}
-		limitPipeline := append(pipeline, bson.D{{Key: "$skip", Value: (page - 1) * pageSize}}, bson.D{{Key: "$limit", Value: pageSize}})
+
+		limitPipeline := append(pipeline, bson.D{{Key: "$skip", Value: (req.Page - 1) * req.PageSize}}, bson.D{{Key: "$limit", Value: req.PageSize}})
 
 		countPipeline := append(pipeline, bson.D{{Key: "$count", Value: "total"}})
 
