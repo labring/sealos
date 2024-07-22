@@ -224,7 +224,7 @@ func createFeishuNotification(notification Info, message, feishuWebHook string, 
 	}
 
 	respStr := larkcore.Prettify(resp)
-	messageID := extractAndPrintMessageId(respStr)
+	messageID := extractAndPrintMessageID(respStr)
 	if notification.DatabaseClusterName == "Backup" {
 		return nil
 	}
@@ -236,7 +236,7 @@ func createFeishuNotification(notification Info, message, feishuWebHook string, 
 	return nil
 }
 
-func extractAndPrintMessageId(str string) string {
+func extractAndPrintMessageID(str string) string {
 	re := regexp.MustCompile(`MessageId:\s*"([^"]+)"`)
 	match := re.FindStringSubmatch(str)
 	if len(match) > 1 {
