@@ -130,8 +130,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           {currentLocale === 'en' ? (
             <h3>
               Sealos is the cloud OS for deploying, managing and scaling your applications&nbsp;
-              <span className="txt-title">in seconds</span>
-              , not minutes, not hours.&nbsp;
+              <span className="txt-title">in seconds</span>, not minutes, not hours.&nbsp;
               <span className="txt-title">Use Sealos as easily as your own PC!</span>
             </h3>
           ) : (
@@ -220,8 +219,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
         {currentLocale === 'en' ? (
           <h3>
             Sealos is the cloud OS for deploying, managing and scaling your applications&nbsp;
-            <span className="txt-title">in seconds</span>
-            , not minutes, not hours.&nbsp;
+            <span className="txt-title">in seconds</span>, not minutes, not hours.&nbsp;
             <span className="txt-title">Use Sealos as easily as your own PC!</span>
           </h3>
         ) : (
@@ -232,7 +230,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           </h3>
         )}
 
-        <VideoPlayer url={'https://itceb8-video.oss.laf.run/sealos-website.mp4'}></VideoPlayer>
+        <VideoPlayer url={'https://oss.laf.run/itceb8-video/sealos-web.mp4'}></VideoPlayer>
       </main>
     </div>
   );
