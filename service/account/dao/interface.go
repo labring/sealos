@@ -244,7 +244,7 @@ func (m *MongoDB) GetConsumptionAmount(user, namespace, appType string, startTim
 }
 
 func (m *MongoDB) GetCostOverview(req helper.GetCostAppListReq) (resp helper.CostOverviewResp, rErr error) {
-	appResp, err := m.getAppStoreList(req)
+	appResp, err := m.GetCostAppList(req)
 	if err != nil {
 		rErr = fmt.Errorf("failed to get app store list: %w", err)
 		return
@@ -290,7 +290,7 @@ func (m *MongoDB) GetTotalAppCost(owner string, namespace string, appName string
 				{Key: "owner", Value: owner},
 				{Key: "namespace", Value: namespace},
 				{Key: "app_costs.name", Value: appName},
-				{Key: "type", Value: appType},
+				{Key: "app_type", Value: appType},
 			}}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$match", Value: bson.D{
