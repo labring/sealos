@@ -1,261 +1,159 @@
-package notification
+package monitor
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"context"
+	"log"
+	"strconv"
+	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-const ExceptionType = "exception"
+var numToChinese = []string{"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"}
 
-type Info struct {
-	DatabaseClusterName string
-	Namespace           string
-	Status              string
-	DebtLevel           string
-	Events              string
-	Reason              string
-	NotificationType    string
-	DiskUsage           string
-	CPUUsage            string
-	MemUsage            string
-	PerformanceType     string
-	ExceptionType       string
+func DatabasePerformanceMonitor() {
+	for {
+		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
+			log.Printf("Failed to check database performance: %v", err)
+		}
+		time.Sleep(10 * time.Minute)
+	}
 }
 
-func GetNotificationMessage(notificationInfo Info) string {
-	headerTemplate := "red"
-	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
-	usage := ""
-	if notificationInfo.PerformanceType == "CPU" {
-		usage = notificationInfo.CPUUsage
-	} else if notificationInfo.PerformanceType == "内存" {
-		usage = notificationInfo.MemUsage
-	} else if notificationInfo.PerformanceType == "磁盘" {
-		usage = notificationInfo.DiskUsage
-	}
-	var elements []map[string]interface{}
-
-	commonElements := []map[string]interface{}{
-		{
-			"tag": "div",
-			"text": map[string]string{
-				"content": fmt.Sprintf("集群环境：%s", api.ClusterName),
-				"tag":     "lark_md",
-			},
-		},
-		{
-			"tag": "div",
-			"text": map[string]string{
-				"content": fmt.Sprintf("命名空间：%s", notificationInfo.Namespace),
-				"tag":     "lark_md",
-			},
-		},
-		{
-			"tag": "div",
-			"text": map[string]string{
-				"content": fmt.Sprintf("数据库名：%s", notificationInfo.DatabaseClusterName),
-				"tag":     "lark_md",
-			},
-		},
-		{
-			"tag": "div",
-			"text": map[string]string{
-				"content": fmt.Sprintf("数据库状态：%s", notificationInfo.Status),
-				"tag":     "lark_md",
-			},
-		},
-	}
-
-	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
-		exceptionElements := []map[string]interface{}{
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("欠费级别：%s", notificationInfo.DebtLevel),
-					"tag":     "lark_md",
-				},
-			},
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("事件信息：%s", notificationInfo.Events),
-					"tag":     "lark_md",
-				},
-			},
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("告警原因：%s", notificationInfo.Reason),
-					"tag":     "lark_md",
-				},
-			},
+func checkDatabasePerformance(namespaces []string) error {
+	if api.MonitorType == api.MonitorTypeALL {
+		if err := checkDatabasePerformanceInNamespace(""); err != nil {
+			return err
 		}
-		elements = append(commonElements, exceptionElements...)
-	} else if notificationInfo.ExceptionType == "阀值" {
-		exceptionElements := []map[string]interface{}{
-			{
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
-					"tag":     "lark_md",
-				},
-			},
-		}
-		elements = append(commonElements, exceptionElements...)
-	}
-
-	if notificationInfo.NotificationType == "recovery" {
-		headerTemplate = "blue"
-		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
-
-		elements = commonElements
-		if notificationInfo.ExceptionType == "阀值" {
-			exceptionElements := []map[string]interface{}{
-				{
-					"tag": "div",
-					"text": map[string]string{
-						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
-						"tag":     "lark_md",
-					},
-				},
+	} else {
+		for _, ns := range namespaces {
+			if err := checkDatabasePerformanceInNamespace(ns); err != nil {
+				return err
 			}
-			elements = append(elements, exceptionElements...)
 		}
-	}
-	card := map[string]interface{}{
-		"config": map[string]bool{
-			"wide_screen_mode": true,
-		},
-		"elements": elements,
-		"header": map[string]interface{}{
-			"template": headerTemplate,
-			"title": map[string]string{
-				"content": titleContent,
-				"tag":     "plain_text",
-			},
-		},
-	}
-
-	databaseMessage, err := json.Marshal(card)
-	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
-		return ""
-	}
-	return string(databaseMessage)
-}
-
-func SendFeishuNotification(message, feishuWebHook string) error {
-	//log.Print(message, feishuWebHook)
-	if api.MonitorType != "all" {
-		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
-	}
-
-	// Create a map to hold the POST request body
-	bodyMap := map[string]interface{}{
-		"msg_type": "interactive",
-		"card":     message,
-	}
-
-	// Convert the map to a JSON byte slice
-	bodyBytes, err := json.Marshal(bodyMap)
-	if err != nil {
-		return err
-	}
-
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return err
-	}
-
-	// Set the request header
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request using the default client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Print the status and response body
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return err
 	}
 	return nil
 }
 
-func createCard(headerTemplate, headerTitle string, elements []map[string]string) map[string]interface{} {
-	card := map[string]interface{}{
-		"config": map[string]bool{
-			"wide_screen_mode": true,
-		},
-		"elements": make([]map[string]interface{}, len(elements)),
-		"header": map[string]interface{}{
-			"template": headerTemplate,
-			"title": map[string]string{
-				"content": headerTitle,
-				"tag":     "plain_text",
-			},
-		},
+func checkDatabasePerformanceInNamespace(namespace string) error {
+	var clusters *unstructured.UnstructuredList
+	var err error
+	if api.MonitorType == api.MonitorTypeALL {
+		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
+	} else {
+		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
 	}
+	if err != nil {
+		return err
+	}
+	for _, cluster := range clusters.Items {
+		monitorCluster(cluster)
+	}
+	return nil
+}
 
-	for i, element := range elements {
-		card["elements"].([]map[string]interface{})[i] = map[string]interface{}{
-			"tag": "div",
-			"text": map[string]string{
-				"content": fmt.Sprintf("%s：%s", element["label"], element["value"]),
-				"tag":     "lark_md",
-			},
+func monitorCluster(cluster unstructured.Unstructured) {
+	databaseClusterName, databaseType, namespace, UID := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
+	status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
+	if err != nil || !found {
+		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
+	}
+	debt, _, _ := checkDebt(namespace)
+	if !debt {
+		return
+	}
+	info := notification.Info{
+		DatabaseClusterName: databaseClusterName,
+		Namespace:           namespace,
+		Status:              status,
+		NotificationType:    "exception",
+		ExceptionType:       "阀值",
+	}
+	switch status {
+	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
+		break
+	default:
+		if api.CPUMemMonitor {
+			handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID, info)
+		}
+		if api.DiskMonitor {
+			handleDiskMonitor(namespace, databaseClusterName, databaseType, UID, info)
 		}
 	}
-
-	return card
 }
 
-func createElements(namespace, backupName, status, startTime, reason string, includeReason bool) []map[string]string {
-	elements := []map[string]string{
-		{"label": "集群环境", "value": api.ClusterName},
-		{"label": "命名空间", "value": namespace},
-		{"label": "备份名", "value": backupName},
-		{"label": "备份状态", "value": status},
-		{"label": "备份开始时间", "value": startTime},
-	}
-	if includeReason {
-		elements = append(elements, map[string]string{"label": "备份异常原因", "value": reason})
-	}
-	return elements
-}
-
-func marshalCard(card map[string]interface{}) (string, error) {
-	databaseMessage, err := json.Marshal(card)
-	if err != nil {
-		return "", fmt.Errorf("error marshaling JSON: %w", err)
-	}
-	return string(databaseMessage), nil
-}
-
-func GetBackupMessage(notificationType, namespace, backupName, status, startTime, reason string) string {
-	var card map[string]interface{}
-	if notificationType == ExceptionType {
-		elements := createElements(namespace, backupName, status, startTime, reason, true)
-		card = createCard("red", "备份异常通知", elements)
+func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
+	if cpuUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "cpu"); err == nil {
+		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, "CPU", UID, info, api.CPUMonitorNamespaceMap)
 	} else {
-		elements := createElements(namespace, backupName, status, startTime, "", false)
-		card = createCard("blue", "备份恢复通知", elements)
+		log.Printf("Failed to monitor CPU: %v", err)
 	}
+	if memUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "memory"); err == nil {
+		processUsage(memUsage, api.DatabaseMemMonitorThreshold, "内存", UID, info, api.MemMonitorNamespaceMap)
+	} else {
+		log.Printf("Failed to monitor Memory: %v", err)
+	}
+}
 
-	databaseMessage, err := marshalCard(card)
-	if err != nil {
-		fmt.Println(err)
-		return ""
+func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
+	if maxUsage, err := checkPerformance(namespace, databaseClusterName, databaseType, "disk"); err == nil {
+		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, "磁盘", UID, info, api.DiskMonitorNamespaceMap)
+	} else {
+		log.Printf("Failed to monitor Disk: %v", err)
 	}
-	return databaseMessage
+}
+
+func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.Info, monitorMap map[string]bool) {
+	info.PerformanceType = performanceType
+	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
+	if performanceType == "CPU" {
+		info.CPUUsage = usageStr
+	} else if performanceType == "内存" {
+		info.MemUsage = usageStr
+	} else if performanceType == "磁盘" {
+		info.DiskUsage = usageStr
+	}
+	if usage >= threshold && !monitorMap[UID] {
+		alertMessage := notification.GetNotificationMessage(info)
+		if err := notification.SendFeishuNotification(info, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+			log.Printf("Failed to send notification: %v", err)
+		}
+		monitorMap[UID] = true
+		if performanceType != "磁盘" {
+			return
+		}
+		ZNThreshold := NumberToChinese(int(threshold))
+		if err := notification.SendToSms(info.Namespace, info.DatabaseClusterName, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
+			log.Printf("Failed to send Sms: %v", err)
+		}
+	} else if usage < threshold && monitorMap[UID] {
+		info.NotificationType = "recovery"
+		alertMessage := notification.GetNotificationMessage(info)
+		if err := notification.SendFeishuNotification(info, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+			log.Printf("Failed to send notification: %v", err)
+		}
+		delete(monitorMap, UID)
+	}
+}
+
+func CPUMemMonitor(namespace, databaseClusterName, databaseType, checkType string) (float64, error) {
+	return checkPerformance(namespace, databaseClusterName, databaseType, checkType)
+}
+
+func NumberToChinese(num int) string {
+	tenDigit := num / 10
+	unitDigit := num % 10
+
+	if tenDigit == 1 && unitDigit == 0 {
+		return "十"
+	} else if tenDigit == 1 {
+		return "十" + numToChinese[unitDigit]
+	} else if unitDigit == 0 {
+		return numToChinese[tenDigit] + "十"
+	} else {
+		return numToChinese[tenDigit] + "十" + numToChinese[unitDigit]
+	}
 }
