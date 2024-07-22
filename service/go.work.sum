@@ -951,3 +951,7 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.1.2/go.mod h1:+qG7ISX
 sigs.k8s.io/controller-runtime v0.15.2 h1:9V7b7SDQSJ08IIsJ6CY1CE85Okhp87dyTMNDG0FS7f4=
 sigs.k8s.io/controller-runtime v0.15.2/go.mod h1:7ngYvp1MLT+9GeZ+6lH3LOlcHkp/+tzA/fmHa4iq9kk=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
+github.com/larksuite/oapi-sdk-go v1.1.48 h1:RHRr5LW68AibBzXVRXObUpkbS6TXapl4TAyhITVvB4w=
+github.com/larksuite/oapi-sdk-go v1.1.48/go.mod h1:7ybKAbVdKBjXuX0YrMTfnWUyCaIe/zeI1wqjNfN9XOk=
+github.com/larksuite/oapi-sdk-go/v3 v3.2.9 h1:9zQAGrzhibNwdaGRkWUP1cAd2k2dJJDpbSffcfK0wPw=
+github.com/larksuite/oapi-sdk-go/v3 v3.2.9/go.mod h1:ZEplY+kwuIrj/nqw5uSCINNATcH3KdxSN7y+UxYY5fI=
