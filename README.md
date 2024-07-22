@@ -42,7 +42,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 </div>
 
-https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d507134
+https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 <p align="center">
   <a href="https://sealos.io/docs/Intro">Docs</a> |
