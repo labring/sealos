@@ -33,7 +33,13 @@ export default function UserTable({
   nsid: string;
 }) {
   const { t } = useTranslation();
-  const headList = [t('common:user_name'), t('common:access'), t('common:in_time'), t('common:status'), t('common:operating')];
+  const headList = [
+    t('common:user_name'),
+    t('common:access'),
+    t('common:in_time'),
+    t('common:status'),
+    t('common:operating')
+  ];
   const status = [t('common:waiting'), t('common:added')];
   const session = useSessionStore((s) => s.session);
   const userCrUid = session?.user.userCrUid;

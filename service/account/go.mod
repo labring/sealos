@@ -1,6 +1,6 @@
 module github.com/labring/sealos/service/account
 
-go 1.20
+go 1.22
 
 replace (
 	github.com/labring/sealos/controllers/pkg => ../../controllers/pkg/

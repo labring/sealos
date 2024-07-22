@@ -34,6 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -56,7 +57,6 @@ type ObjectStorageUserReconciler struct {
 	ExternalEndpoint  string
 	OSUDetectionCycle time.Duration
 	QuotaEnabled      bool
-	DefaultQuota      int64
 }
 
 const (
@@ -69,6 +69,7 @@ const (
 	OSExternalEndpointEnv = "OSExternalEndpoint"
 	OSNamespace           = "OSNamespace"
 	OSAdminSecret         = "OSAdminSecret"
+	QuotaEnabled          = "QuotaEnabled"
 
 	OSKeySecret          = "object-storage-key"
 	OSKeySecretAccessKey = "accessKey"
@@ -76,12 +77,16 @@ const (
 	OSKeySecretInternal  = "internal"
 	OSKeySecretExternal  = "external"
 	OSKeySecretBucket    = "bucket"
+
+	ResourceQuotaPrefix       = "quota-"
+	ResourceObjectStorageSize = "objectstorage/size"
 )
 
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	username := req.Name
@@ -136,7 +141,15 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	updated := r.initObjectStorageUser(user, username)
+	resourceQuota := &corev1.ResourceQuota{}
+	if err := r.Get(ctx, client.ObjectKey{Name: ResourceQuotaPrefix + userNamespace, Namespace: userNamespace}, resourceQuota); err != nil {
+		r.Logger.Error(err, "failed to get resource quota", "name", ResourceQuotaPrefix+userNamespace, "namespace", userNamespace)
+		return ctrl.Result{}, err
+	}
+
+	quota := resourceQuota.Spec.Hard.Name(ResourceObjectStorageSize, resource.BinarySI)
+
+	updated := r.initObjectStorageUser(user, username, quota.Value())
 
 	accessKey := user.Status.AccessKey
 	secretKey := user.Status.SecretKey
@@ -337,11 +350,11 @@ func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(ctx context.Contex
 	return nil
 }
 
-func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev1.ObjectStorageUser, username string) bool {
+func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev1.ObjectStorageUser, username string, quota int64) bool {
 	var updated = false
 
-	if user.Status.Quota != r.DefaultQuota {
-		user.Status.Quota = r.DefaultQuota
+	if user.Status.Quota != quota {
+		user.Status.Quota = quota
 		updated = true
 	}
 
@@ -418,11 +431,8 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
 
-	quotaEnabled := env.GetBoolWithDefault("quotaEnabled", true)
+	quotaEnabled := env.GetBoolWithDefault(QuotaEnabled, true)
 	r.QuotaEnabled = quotaEnabled
-
-	defaultQuota := env.GetInt64EnvWithDefault("defaultQuota", 107374182400)
-	r.DefaultQuota = defaultQuota
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&objectstoragev1.ObjectStorageUser{}).

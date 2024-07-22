@@ -41,6 +41,11 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
       queryClient.clear();
     },
     onError(err: { message: ValueOf<USER_MERGE_STATUS> }) {
+      const errMessage =
+        err.message === USER_MERGE_STATUS.INSUFFICENT_BALANCE
+          ? err.message
+          : 'MERGET_USER_INSUFFICENT_BALANCE';
+
       toast({
         status: 'error',
         title: t(err.message as I18nErrorKey, { ns: 'error' })
@@ -83,8 +88,8 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
             <VStack alignItems={'stretch'} gap={'0'}>
               <Text mb={'12px'}>
                 {mergeUserStatus === MergeUserStatus.CONFLICT
-                  ? t('common:mergeaccounttips1')
-                  : t('common:delete_account_tips2')}
+                  ? t('common:merge_account_tips1')
+                  : t('common:merge_account_tips2')}
               </Text>
               {mergeUserStatus === MergeUserStatus.CONFLICT ? (
                 <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
