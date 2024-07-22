@@ -173,7 +173,7 @@ func SendFeishuNotification(notification Info, message, feishuWebHook string) er
 		}
 		delete(messageIDMap, notification.DatabaseClusterName)
 	} else {
-		if err := createFeishuNotification(notification.DatabaseClusterName, message, feishuWebHook, messageIDMap); err != nil {
+		if err := createFeishuNotification(notification, message, feishuWebHook, messageIDMap); err != nil {
 			return err
 		}
 	}
@@ -188,6 +188,8 @@ func getMessageIDMap(performanceType string) map[string]string {
 		return api.DatabaseMemMessageIDMap
 	case "CPU":
 		return api.DatabaseCPUMessageIDMap
+	case "Backup":
+		return api.DatabaseBackupMessageIDMap
 	default:
 		return api.DatabaseStatusMessageIDMap
 	}
@@ -207,7 +209,7 @@ func updateFeishuNotification(messageID, message string) error {
 	return nil
 }
 
-func createFeishuNotification(databaseClusterName, message, feishuWebHook string, messageIDMap map[string]string) error {
+func createFeishuNotification(notification Info, message, feishuWebHook string, messageIDMap map[string]string) error {
 	req := larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType("chat_id").
 		Body(larkim.NewCreateMessageReqBodyBuilder().
@@ -223,10 +225,13 @@ func createFeishuNotification(databaseClusterName, message, feishuWebHook string
 
 	respStr := larkcore.Prettify(resp)
 	messageID := extractAndPrintMessageId(respStr)
+	if notification.DatabaseClusterName == "Backup" {
+		return nil
+	}
 	if messageID == "" {
-		log.Printf("send databaseName %s feishu notification, return no messageID", databaseClusterName)
+		log.Printf("send databaseName %s feishu notification, return no messageID", notification.DatabaseClusterName)
 	} else {
-		messageIDMap[databaseClusterName] = messageID
+		messageIDMap[notification.DatabaseClusterName] = messageID
 	}
 	return nil
 }

@@ -73,6 +73,7 @@ var (
 	DatabaseDiskMessageIDMap          = make(map[string]string)
 	DatabaseCPUMessageIDMap           = make(map[string]string)
 	DatabaseMemMessageIDMap           = make(map[string]string)
+	DatabaseBackupMessageIDMap        = make(map[string]string)
 )
 
 func GetENV() error {
