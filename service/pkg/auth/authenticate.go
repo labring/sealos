@@ -9,8 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"k8s.io/client-go/rest"
-
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,12 +25,27 @@ var (
 	whiteListKubernetesHosts []string
 )
 
-func GetKcConfig(kc string) (*rest.Config, error) {
+func AddWhiteListKubernetesHosts(host string) {
+	whiteListKubernetesHosts = append(whiteListKubernetesHosts, host)
+}
+
+func GetKcHost(kc string) (string, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
-		return nil, fmt.Errorf("kubeconfig failed  %v", err)
+		return "", fmt.Errorf("kubeconfig failed  %v", err)
 	}
-	return config, nil
+	return config.Host, nil
+}
+
+func GetKcUser(kc string) (string, error) {
+	config, err := clientcmd.Load([]byte(kc))
+	if err != nil {
+		return "", fmt.Errorf("kubeconfig failed  %v", err)
+	}
+	for user := range config.AuthInfos {
+		return user, nil
+	}
+	return "", fmt.Errorf("no user found")
 }
 
 func CheckK8sHost(host string) error {
