@@ -44,7 +44,7 @@ function App({ Component, pageProps }: AppProps) {
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: 'Prompt',
+    title: 'jump_prompt',
     content: 'not_allow_standalone_use'
   });
 
@@ -172,7 +172,7 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <button
+          {/* <button
             onClick={() => {
               const lastLang = getLangStore();
               let lang = lastLang === 'en' ? 'zh' : 'en';
@@ -184,7 +184,7 @@ function App({ Component, pageProps }: AppProps) {
             }}
           >
             changeLanguage
-          </button>
+          </button> */}
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />

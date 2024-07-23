@@ -444,11 +444,11 @@ const Form = ({
                           required: t('storage_cannot_empty') || 'storage_cannot_empty',
                           min: {
                             value: minStorage,
-                            message: `${t('Storage Min')}${minStorage} Gi`
+                            message: `${t('storage_min')}${minStorage} Gi`
                           },
                           max: {
                             value: 300,
-                            message: `${t('Storage Max')}300 Gi`
+                            message: `${t('storage_max')}300 Gi`
                           },
                           valueAsNumber: true
                         })}
