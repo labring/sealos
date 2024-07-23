@@ -54,13 +54,13 @@ const PriceBox = ({
 
     return [
       {
-        label: 'CPU',
+        label: 'cpu',
         color: '#33BABB',
         value: podScale(cp)
       },
-      { label: 'Memory', color: '#36ADEF', value: podScale(mp) },
-      { label: 'Storage', color: '#8172D8', value: podScale(sp) },
-      { label: 'Total Price', color: '#485058', value: podScale(tp) }
+      { label: 'memory', color: '#36ADEF', value: podScale(mp) },
+      { label: 'storage', color: '#8172D8', value: podScale(sp) },
+      { label: 'total_price', color: '#485058', value: podScale(tp) }
     ];
   }, [components]);
 

@@ -140,7 +140,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             label: 'limit_memory',
             value: printMemory(db.memory)
           },
-          { label: 'Storage', value: `${db.storage}Gi` }
+          { label: 'storage', value: `${db.storage}Gi` }
         ]
       }
     ],

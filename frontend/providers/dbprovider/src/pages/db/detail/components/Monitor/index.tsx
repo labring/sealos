@@ -53,7 +53,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
         <Box overflowY={'scroll'} flex={1}>
           <ChartTemplate
             apiUrl="/api/monitor/getMonitorData"
-            chartTitle={'CPU'}
+            chartTitle={'cpu'}
             dbName={dbName}
             dbType={dbType}
             db={db}
@@ -63,7 +63,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
           />
           <ChartTemplate
             apiUrl="/api/monitor/getMonitorData"
-            chartTitle={'Memory'}
+            chartTitle={'memory'}
             dbName={dbName}
             dbType={dbType}
             db={db}

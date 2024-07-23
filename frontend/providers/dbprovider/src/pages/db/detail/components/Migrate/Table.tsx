@@ -107,7 +107,7 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
       render: (item: MigrateItemType) => <>{dayjs(item.startTime).format('YYYY/MM/DD HH:mm')}</>
     },
     {
-      title: 'Operation',
+      title: 'operation',
       key: 'control',
       render: (item: MigrateItemType) => {
         return (

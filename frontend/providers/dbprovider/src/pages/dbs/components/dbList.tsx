@@ -140,22 +140,22 @@ const DBList = ({
       key: 'createTime'
     },
     {
-      title: t('CPU'),
+      title: t('cpu'),
       key: 'cpu',
       render: (item: DBListItemType) => <>{item.cpu / 1000}C</>
     },
     {
-      title: t('Memory'),
+      title: t('memory'),
       key: 'memory',
       render: (item: DBListItemType) => <>{printMemory(item.memory)}</>
     },
     {
-      title: t('Storage'),
+      title: t('storage'),
       key: 'storage',
       dataIndex: 'storage'
     },
     {
-      title: t('Operation'),
+      title: t('operation'),
       key: 'control',
       render: (item: DBListItemType) => (
         <Flex>
@@ -199,7 +199,7 @@ const DBList = ({
                       child: (
                         <>
                           <MyIcon name={'change'} w={'16px'} />
-                          <Box ml={2}>{t('Update')}</Box>
+                          <Box ml={2}>{t('update')}</Box>
                         </>
                       ),
                       onClick: () => router.push(`/db/edit?name=${item.name}`),

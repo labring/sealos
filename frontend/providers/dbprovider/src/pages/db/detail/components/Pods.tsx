@@ -74,17 +74,17 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       render: (item: PodDetailType) => <PodStatus containerStatuses={item.status} />
     },
     {
-      title: 'Restarts',
+      title: 'restarts',
       key: 'restarts',
       dataIndex: 'restarts'
     },
     {
-      title: 'Age',
+      title: 'age',
       key: 'age',
       dataIndex: 'age'
     },
     {
-      title: 'Operation',
+      title: 'operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex alignItems={'center'} gap={'4px'}>

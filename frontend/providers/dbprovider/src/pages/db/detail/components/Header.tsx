@@ -146,7 +146,7 @@ const Header = ({
             router.push(`/db/edit?name=${db.dbName}`);
           }}
         >
-          {t('Update')}
+          {t('update')}
         </Button>
       )}
       {db.status.value === 'Stopped' ? (

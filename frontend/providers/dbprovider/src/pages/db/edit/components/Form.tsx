@@ -346,7 +346,7 @@ const Form = ({
                 </Box>
               </Flex>
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
-                <Label w={100}>{t('Memory')}</Label>
+                <Label w={100}>{t('memory')}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
@@ -426,7 +426,7 @@ const Form = ({
 
               <FormControl isInvalid={!!errors.storage} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={100}>{t('Storage')}</Label>
+                  <Label w={100}>{t('storage')}</Label>
                   <MyTooltip label={`${t('storage_range')}${minStorage}~300 Gi`}>
                     <NumberInput
                       w={'180px'}

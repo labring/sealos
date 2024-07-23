@@ -155,7 +155,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       render: (item: BackupItemType) => <>{t(backupTypeMap[item.type]?.label) || '-'}</>
     },
     {
-      title: 'Operation',
+      title: 'operation',
       key: 'control',
       render: (item: BackupItemType) =>
         item.status.value !== BackupStatusEnum.InProgress ? (
