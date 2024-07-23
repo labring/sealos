@@ -50,9 +50,17 @@ func processBackup(backup unstructured.Unstructured) {
 	if !found || status != "Failed" {
 		return
 	}
+	notificationInfo := notification.Info{
+		DatabaseClusterName: backupName,
+		Namespace:           namespace,
+		Status:              status,
+		ExceptionType:       "备份",
+		PerformanceType:     "Backup",
+		NotificationType:    "exception",
+	}
 	if _, ok := api.LastBackupStatusMap[backupName]; !ok {
 		message := notification.GetBackupMessage("exception", namespace, backupName, status, startTime, "")
-		if err := notification.SendFeishuNotification(message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
+		if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
 			log.Printf("Error sending exception notification:%v", err)
 		}
 	} else {

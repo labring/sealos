@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/dao"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/client"
@@ -20,6 +22,7 @@ func main() {
 }
 
 func initialize() error {
+	notification.InitFeishuClient()
 	if err := api.GetENV(); err != nil {
 		return err
 	}
