@@ -67,10 +67,10 @@
   "advanced_configuration": "Advanced Settings",
   "anticipated_price": "Projected Cost",
   "app": {
-    "Resource Quota": "Resource Limits",
-    "The applied CPU exceeds the quota": "CPU requested exceeds quota. Contact admin.",
-    "The applied memory exceeds the quota": "Memory requested exceeds quota. Contact admin.",
-    "The applied storage exceeds the quota": "Storage requested exceeds quota. Contact admin."
+    "resource_quota": "Resource Limits",
+    "cpu_exceeds_quota": "CPU requested exceeds quota. Contact admin.",
+    "memory_exceeds_quota": "Memory requested exceeds quota. Contact admin.",
+    "storage_exceeds_quota": "Storage requested exceeds quota. Contact admin."
   },
   "app_store": "App Store",
   "application_source": "Application Source",

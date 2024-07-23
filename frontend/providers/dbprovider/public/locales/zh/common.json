@@ -71,10 +71,10 @@
   "advanced_configuration": "高级配置",
   "anticipated_price": "预估价格",
   "app": {
-    "Resource Quota": "资源配额",
-    "The applied CPU exceeds the quota": "申请的 CPU 超出限制，请联系管理员",
-    "The applied memory exceeds the quota": "申请的 '内存' 超出限制，请联系管理员",
-    "The applied storage exceeds the quota": "申请的 '存储' 超出限制，请联系管理员"
+    "resource_quota": "资源配额",
+    "cpu_exceeds_quota": "申请的 CPU 超出限制，请联系管理员",
+    "memory_exceeds_quota": "申请的 '内存' 超出限制，请联系管理员",
+    "storage_exceeds_quota": "申请的 '存储' 超出限制，请联系管理员"
   },
   "app_store": "应用商店",
   "application_source": "应用来源",

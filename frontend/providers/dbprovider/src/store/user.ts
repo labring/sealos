@@ -43,9 +43,9 @@ export const useUserStore = create<State>()(
         }
 
         const overLimitTip: { [key: string]: I18nCommonKey } = {
-          cpu: 'app.The applied CPU exceeds the quota',
-          memory: 'app.The applied memory exceeds the quota',
-          storage: 'app.The applied storage exceeds the quota'
+          cpu: 'app.cpu_exceeds_quota',
+          memory: 'app.memory_exceeds_quota',
+          storage: 'app.storage_exceeds_quota'
         };
 
         const exceedQuota = quote.find((item) => {
@@ -54,9 +54,7 @@ export const useUserStore = create<State>()(
           }
         });
 
-        return exceedQuota?.type
-          ? overLimitTip[exceedQuota.type]
-          : 'app.The applied CPU exceeds the quota';
+        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : 'app.cpu_exceeds_quota';
       }
     }))
   )
