@@ -129,6 +129,9 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		PartOf:    TerminalPartOf,
 	})
 
+	//Note: Fixme: For `Forward Compatibility` usage only, old resource controller need this label.
+	recLabels["TerminalID"] = terminal.Name
+
 	var hostname string
 	if err := r.syncDeployment(ctx, terminal, &hostname, recLabels); err != nil {
 		logger.Error(err, "create deployment failed")
