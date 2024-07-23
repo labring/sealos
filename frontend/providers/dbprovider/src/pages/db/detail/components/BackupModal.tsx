@@ -51,15 +51,15 @@ const BackupModal = ({
   const { message: toast } = useMessage();
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: 'Confirm',
+    title: 'confirm',
     content: 'manual_backup_tip',
     confirmText: 'start_backup'
   });
 
   const { openConfirm: CloseAutoBackup, ConfirmChild: AutoBackupConfirmChild } = useConfirm({
-    title: 'Prompt',
+    title: 'prompt',
     content: 'are_you_sure_you_want_to_turn_off_automatic_backup',
-    confirmText: 'Confirm'
+    confirmText: 'confirm'
   });
 
   const [refresh, setRefresh] = useState(false);

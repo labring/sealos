@@ -109,7 +109,7 @@ const DelModal = ({
                 >
                   {dbName}
                 </Box>
-                {t('Confirm')}
+                {t('confirm')}
               </Box>
             )}
           </Box>

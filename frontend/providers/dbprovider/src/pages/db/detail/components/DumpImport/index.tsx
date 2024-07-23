@@ -246,7 +246,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         <ModalOverlay />
         {migrateStatus === MigrateStatusEnum.Prepare && (
           <ModalContent>
-            <ModalHeader>{t('Prompt')}</ModalHeader>
+            <ModalHeader>{t('prompt')}</ModalHeader>
             <ModalBody>
               <ModalCloseButton top={'10px'} right={'10px'} />
               <Flex mb={'44px'}>
@@ -258,7 +258,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   {t('Cancel')}
                 </Button>
                 <Button ml={3} variant={'solid'} onClick={handleConfirm}>
-                  {t('Confirm')}
+                  {t('confirm')}
                 </Button>
               </Flex>
             </ModalBody>

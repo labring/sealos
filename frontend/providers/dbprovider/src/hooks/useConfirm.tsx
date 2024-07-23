@@ -13,9 +13,9 @@ import { useTranslation } from 'next-i18next';
 import { I18nCommonKey } from '@/types/i18next';
 
 export const useConfirm = ({
-  title = 'Prompt',
+  title = 'prompt',
   content,
-  confirmText = 'Confirm'
+  confirmText = 'confirm'
 }: {
   title?: I18nCommonKey;
   content: I18nCommonKey;
