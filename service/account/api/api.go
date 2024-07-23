@@ -545,7 +545,7 @@ func GetCostAppList(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "successfully get app type list"
 // @Failure 500 {object} map[string]interface{} "failed to get app type list"
-// @Router /account/v1alpha1/app-type-list [post]
+// @Router /account/v1alpha1/cost-app-type-list [post]
 func GetAppTypeList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": resources.AppTypeReverse,
