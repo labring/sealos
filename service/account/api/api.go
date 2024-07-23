@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+
+	auth2 "github.com/labring/sealos/service/pkg/auth"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
 
@@ -555,28 +558,41 @@ func GetAppTypeList(c *gin.Context) {
 }
 
 func CheckAuth(auth *helper.Auth) error {
-	if err := helper.Authenticate(*auth); err != nil {
+	if err := helper.AuthenticateKC(*auth); err != nil {
 		return fmt.Errorf("authenticate error : %v", err)
 	}
-	if dao.Cfg.LocalRegionDomain != dao.DBClient.GetLocalRegion().Domain {
-		if err := CalibrateRegionAuth(auth); err != nil {
+	host, err := auth2.GetKcHost(auth.KubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to get kc host: %v", err)
+	}
+	host = strings.TrimPrefix(strings.TrimPrefix(host, "https://"), "http://")
+	if !strings.Contains(host, dao.Cfg.LocalRegionDomain) {
+		if err := CalibrateRegionAuth(auth, host); err != nil {
 			return fmt.Errorf("calibrate region auth error: %v", err)
 		}
 	} else {
-		userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{Owner: auth.Owner})
+		user, err := auth2.GetKcUser(auth.KubeConfig)
+		if err != nil {
+			return fmt.Errorf("failed to get kc user: %v", err)
+		}
+		userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{Owner: user})
 		if err != nil {
 			return fmt.Errorf("get user id error: %v", err)
 		}
 		auth.UserID = userID
 	}
+	auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: auth.UserID})
+	if err != nil {
+		return fmt.Errorf("get user cr name error: %v", err)
+	}
 	fmt.Printf("auth: %v\n", auth)
 	return nil
 }
 
-func CalibrateRegionAuth(auth *helper.Auth) error {
+func CalibrateRegionAuth(auth *helper.Auth, kcHost string) error {
 	for i := range dao.Cfg.Regions {
 		reg := dao.Cfg.Regions[i]
-		if reg.Domain != dao.DBClient.GetLocalRegion().Domain {
+		if !strings.Contains(kcHost, reg.Domain) {
 			continue
 		}
 		svcURL := fmt.Sprintf("https://%s%s%s", reg.AccountSvc, helper.GROUP, helper.CheckPermission)
@@ -603,11 +619,15 @@ func CalibrateRegionAuth(auth *helper.Auth) error {
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("failed to check permission: %v, error: %s", resp, respMap["error"])
 		}
-		newAuth := &helper.Auth{}
-		if err = json.Unmarshal(responseBody.Bytes(), newAuth); err != nil {
-			return fmt.Errorf("failed to unmarshal response body: %v", err)
+		_userID, ok := respMap["userID"]
+		if !ok {
+			return fmt.Errorf("failed to get userID from response: %v", respMap)
 		}
-		*auth = *newAuth
+		userID, ok := _userID.(string)
+		if !ok {
+			return fmt.Errorf("failed to convert userID to string: %v", _userID)
+		}
+		auth.UserID = userID
 		return nil
 	}
 	return fmt.Errorf("failed to calibrate region auth")

@@ -15,10 +15,10 @@ func AuthenticateWithBind(c *gin.Context) error {
 	if err != nil {
 		return fmt.Errorf("bind json error : %v", err)
 	}
-	return Authenticate(*auth)
+	return AuthenticateKC(*auth)
 }
 
-func Authenticate(auth Auth) error {
+func AuthenticateKC(auth Auth) error {
 	if auth.KubeConfig == "" {
 		return fmt.Errorf("kubeconfig must be set")
 	}
@@ -35,7 +35,6 @@ func Authenticate(auth Auth) error {
 		return fmt.Errorf("failed to get user: %v", err)
 	}
 
-	auth.Owner = user
 	userNamespace := "ns-" + user
 	// Identity authentication
 	if err := auth2.Authenticate(userNamespace, auth.KubeConfig); err != nil {

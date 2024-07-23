@@ -916,8 +916,7 @@ const docTemplate = `{
         "helper.AppCostsReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "appName": {
@@ -969,8 +968,7 @@ const docTemplate = `{
         "helper.Auth": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "kubeConfig": {
@@ -1080,8 +1078,7 @@ const docTemplate = `{
         "helper.GetCostAppListReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "appName": {
@@ -1151,8 +1148,7 @@ const docTemplate = `{
         "helper.GetTransferRecordReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "endTime": {
@@ -1199,8 +1195,7 @@ const docTemplate = `{
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "endTime": {
@@ -1247,7 +1242,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "kubeConfig",
-                "owner",
                 "paymentIDList"
             ],
             "properties": {
@@ -1279,7 +1273,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "kubeConfig",
-                "owner",
                 "toUser"
             ],
             "properties": {
@@ -1313,8 +1306,7 @@ const docTemplate = `{
         "helper.UserBaseReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "endTime": {

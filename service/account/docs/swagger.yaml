@@ -62,7 +62,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     type: object
   helper.Auth:
     properties:
@@ -76,7 +75,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     type: object
   helper.CostApp:
     properties:
@@ -211,7 +209,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     type: object
   helper.GetPropertiesResp:
     properties:
@@ -271,7 +268,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     type: object
   helper.NamespaceBillingHistoryReq:
     properties:
@@ -297,7 +293,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     type: object
   helper.NamespaceBillingHistoryRespData:
     properties:
@@ -332,7 +327,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     - paymentIDList
     type: object
   helper.TransferAmountReq:
@@ -366,7 +360,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     - toUser
     type: object
   helper.UserBaseReq:
@@ -387,7 +380,6 @@ definitions:
         type: string
     required:
     - kubeConfig
-    - owner
     type: object
 host: localhost:2333
 info:

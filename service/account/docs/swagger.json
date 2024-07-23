@@ -909,8 +909,7 @@
         "helper.AppCostsReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "appName": {
@@ -962,8 +961,7 @@
         "helper.Auth": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "kubeConfig": {
@@ -1073,8 +1071,7 @@
         "helper.GetCostAppListReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "appName": {
@@ -1144,8 +1141,7 @@
         "helper.GetTransferRecordReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "endTime": {
@@ -1192,8 +1188,7 @@
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "endTime": {
@@ -1240,7 +1235,6 @@
             "type": "object",
             "required": [
                 "kubeConfig",
-                "owner",
                 "paymentIDList"
             ],
             "properties": {
@@ -1272,7 +1266,6 @@
             "type": "object",
             "required": [
                 "kubeConfig",
-                "owner",
                 "toUser"
             ],
             "properties": {
@@ -1306,8 +1299,7 @@
         "helper.UserBaseReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner"
+                "kubeConfig"
             ],
             "properties": {
                 "endTime": {

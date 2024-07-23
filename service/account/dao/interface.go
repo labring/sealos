@@ -41,6 +41,7 @@ type Interface interface {
 	Transfer(req *helper.TransferAmountReq) error
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 	GetUserID(ops types.UserQueryOpts) (string, error)
+	GetUserCrName(ops types.UserQueryOpts) (string, error)
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
 }
@@ -76,6 +77,14 @@ func (g *Cockroach) GetUserID(ops types.UserQueryOpts) (string, error) {
 		return "", fmt.Errorf("failed to get user: %v", err)
 	}
 	return user.ID, nil
+}
+
+func (g *Cockroach) GetUserCrName(ops types.UserQueryOpts) (string, error) {
+	user, err := g.ck.GetUserCr(&ops)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user: %v", err)
+	}
+	return user.CrName, nil
 }
 
 func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {

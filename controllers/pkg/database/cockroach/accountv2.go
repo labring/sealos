@@ -107,7 +107,7 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	} else if ops.Owner != "" {
 		userCr, err := c.GetUserCr(ops)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
+			return nil, fmt.Errorf("failed to get user cr: %v", err)
 		}
 		queryUser.UID = userCr.UserUID
 	}
@@ -627,6 +627,17 @@ func (c *Cockroach) GetRegions() ([]types.Region, error) {
 }
 
 func (c *Cockroach) GetLocalRegion() types.Region {
+	if c.LocalRegion.Domain == "" {
+		regions, err := c.GetRegions()
+		if err == nil {
+			for i := range regions {
+				if regions[i].UID == c.LocalRegion.UID {
+					c.LocalRegion = &regions[i]
+					return *c.LocalRegion
+				}
+			}
+		}
+	}
 	return *c.LocalRegion
 }
 
