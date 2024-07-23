@@ -62,8 +62,8 @@ func InitDB() error {
 		if err = json.Unmarshal(data, Cfg); err != nil {
 			return fmt.Errorf("unmarshal config file error: %v", err)
 		}
-	} else {
-		fmt.Println("config file not found, use default config")
+	}
+	if len(Cfg.Regions) == 0 {
 		regions, err := DBClient.GetRegions()
 		if err != nil {
 			return fmt.Errorf("get regions error: %v", err)
@@ -84,5 +84,6 @@ func InitDB() error {
 		}
 	}
 	Cfg.LocalRegionDomain = DBClient.GetLocalRegion().Domain
+	fmt.Println("region-info: ", Cfg)
 	return nil
 }
