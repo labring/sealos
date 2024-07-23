@@ -1,3 +1,4 @@
+import { I18nCommonKey } from '@/types/i18next';
 import { useMessage } from '@sealos/ui';
 import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
@@ -15,7 +16,7 @@ export const useCopyData = () => {
   const { t } = useTranslation();
 
   return {
-    copyData: (data: string, title: string = 'Copy Success') => {
+    copyData: (data: string, title: I18nCommonKey = 'copy_success') => {
       try {
         const textarea = document.createElement('textarea');
         textarea.value = data;
@@ -31,7 +32,7 @@ export const useCopyData = () => {
       } catch (error) {
         console.error(error);
         toast({
-          title: t('Copy Failed'),
+          title: t('copy_failed'),
           status: 'error'
         });
       }
@@ -266,7 +267,7 @@ export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => 
 };
 
 // formatTime second to day, hour or minute
-export const formatTimeToDay = (seconds: number): { time: string; unit: string } => {
+export const formatTimeToDay = (seconds: number): { time: string; unit: I18nCommonKey } => {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(seconds / 3600);
   const days = Math.floor(seconds / (3600 * 24));
@@ -283,7 +284,7 @@ export const formatTimeToDay = (seconds: number): { time: string; unit: string }
     };
   } else {
     return {
-      unit: 'Start Minute',
+      unit: 'start_minute',
       time: (seconds / 60).toFixed(1)
     };
   }

@@ -31,10 +31,10 @@ const Header = ({
     onClose: onCloseDelModal
   } = useDisclosure();
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: t('Confirm Restart')
+    content: t('confirm_restart')
   });
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: t('Pause Hint')
+    content: t('pause_hint')
   });
 
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ const Header = ({
       setLoading(true);
       await restartDB(db);
       toast({
-        title: 'Restart Success',
+        title: 'restart_success',
         status: 'success'
       });
     } catch (error: any) {
@@ -52,7 +52,7 @@ const Header = ({
         title:
           typeof error === 'string'
             ? error
-            : error.message || t('Restart Error') || 'Restart Error',
+            : error.message || t('restart_error') || 'restart_error',
         status: 'error'
       });
       console.error(error);
@@ -65,13 +65,13 @@ const Header = ({
       setLoading(true);
       await pauseDBByName(db);
       toast({
-        title: t('Pause Success') || 'Pause Success',
+        title: t('pause_success') || 'pause_success',
         status: 'success'
       });
     } catch (error: any) {
       toast({
         title:
-          typeof error === 'string' ? error : error.message || t('Pause Error') || 'Pause Error',
+          typeof error === 'string' ? error : error.message || t('pause_error') || 'pause_error',
         status: 'error'
       });
       console.error(error);
@@ -84,13 +84,13 @@ const Header = ({
       setLoading(true);
       await startDBByName(db);
       toast({
-        title: t('Start Success') || 'Start Success',
+        title: t('start_success') || 'start_success',
         status: 'success'
       });
     } catch (error: any) {
       toast({
         title:
-          typeof error === 'string' ? error : error.message || t('Start Error') || 'Start Error',
+          typeof error === 'string' ? error : error.message || t('start_error') || 'start_error',
         status: 'error'
       });
       console.error(error);

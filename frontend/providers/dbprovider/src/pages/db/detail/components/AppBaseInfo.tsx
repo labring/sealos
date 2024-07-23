@@ -10,6 +10,7 @@ import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail, templateDeployKey } from 
 import useEnvStore from '@/store/env';
 import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
 import {
@@ -111,10 +112,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const appInfoTable = useMemo<
     {
-      name: string;
+      name: I18nCommonKey;
       iconName: string;
       items: {
-        label: string;
+        label: I18nCommonKey;
         value?: string;
         copy?: string;
       }[];
@@ -125,18 +126,18 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         name: 'Basic',
         iconName: 'info',
         items: [
-          { label: 'Creation Time', value: db.createTime },
-          { label: 'DataBase Type', value: db.dbType },
+          { label: 'creation_time', value: db.createTime },
+          { label: 'database_type', value: db.dbType },
           { label: 'Version', value: db.dbVersion }
         ]
       },
       {
-        name: 'Config Info',
+        name: 'config_info',
         iconName: 'settings',
         items: [
-          { label: 'Limit CPU', value: `${db.cpu / 1000} Core` },
+          { label: 'limit_cpu', value: `${db.cpu / 1000} Core` },
           {
-            label: 'Limit Memory',
+            label: 'limit_memory',
             value: printMemory(db.memory)
           },
           { label: 'Storage', value: `${db.storage}Gi` }
@@ -202,12 +203,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       await delDBServiceByName(`${db.dbName}-export`);
       setIsChecked(false);
       toast({
-        title: t('Successfully closed external network access'),
+        title: t('successfully_closed_external_network_access'),
         status: 'success'
       });
     } catch (error) {
       toast({
-        title: typeof error === 'string' ? error : t('Service Deletion Failed'),
+        title: typeof error === 'string' ? error : t('service_deletion_failed'),
         status: 'error'
       });
     }
@@ -219,7 +220,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         <Box fontSize={'base'}>
           <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
             <MyIcon w={'16px'} name={'target'}></MyIcon>
-            <Box>{t('Application Source')}</Box>
+            <Box>{t('application_source')}</Box>
           </Flex>
           <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
             <Flex
@@ -239,9 +240,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               }}
             >
               <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                {t('App Store')}
+                {t('app_store')}
               </Box>
-              <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
+              <Box color={'grayModern.600'}>{t('manage_all_resources')}</Box>
               <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
             </Flex>
           </Box>
@@ -305,7 +306,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             color={'grayModern.600'}
           >
             <MyIcon w={'16px'} name={'connection'}></MyIcon>
-            <Box fontWeight={'bold'}>{t('Connection Info')}</Box>
+            <Box fontWeight={'bold'}>{t('connection_info')}</Box>
             <Center
               h="28px"
               w="28px"
@@ -336,10 +337,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   }}
                 >
                   <MyIcon name="terminal" w="16px" h="16px" />
-                  {t('Direct Connection')}
+                  {t('direct_connection')}
                 </Center>
                 <Center ml="auto">
-                  <Text color={'grayModern.900'}> {t('External Network')} </Text>
+                  <Text color={'grayModern.900'}> {t('external_network')} </Text>
                   <Switch
                     ml="12px"
                     size="md"
@@ -382,7 +383,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             position={'relative'}
             fontSize={'base'}
           >
-            <Text color={'grayModern.900'}>{t('Intranet Address')}</Text>
+            <Text color={'grayModern.900'}>{t('intranet_address')}</Text>
             <Divider my="12px" borderColor={'rgb(226, 232, 240)'} />
             {Object.entries(otherSecret).map(([name, value]) => (
               <Box
@@ -409,7 +410,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               position={'relative'}
               fontSize={'base'}
             >
-              <Text color={'grayModern.900'}>{t('External Address')}</Text>
+              <Text color={'grayModern.900'}>{t('external_address')}</Text>
               <Divider my="12px" />
               {Object.entries(externalNetWork).map(([name, value]) => (
                 <Box
@@ -432,7 +433,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
             <ModalOverlay />
             <ModalContent minW={'430px'}>
-              <ModalHeader height={'48px'}>{t('Enable external network access')}</ModalHeader>
+              <ModalHeader height={'48px'}>{t('enable_external_network_access')}</ModalHeader>
               <ModalCloseButton top={'10px'} right={'10px'} />
               <Flex
                 alignItems={'center'}
@@ -443,7 +444,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 px="40px"
               >
                 <Text fontSize={'14px'} fontWeight={500} color={'grayModern.500'}>
-                  {t('Billing Standards')}
+                  {t('billing_standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
                   {SOURCE_PRICE.nodeports}
@@ -457,7 +458,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   variant={'solid'}
                   onClick={openNetWorkService}
                 >
-                  {t('Turn On')}
+                  {t('turn_on')}
                 </Button>
               </Flex>
             </ModalContent>

@@ -54,12 +54,12 @@ const RunningTime = ({
           border={'1px solid #CCEEED'}
           backgroundColor={'rgba(0, 169, 166, 0.07)'}
         >
-          {t('Running Time')}
+          {t('running_time')}
           <Box mx={'24px'} w={'1px'} h={'38px'} backgroundColor={'#CCEEED'}></Box>
           <Text fontSize={'40'} color={'#00A9A6'} mr="16px">
             {MaxTime?.time}
           </Text>
-          <Text fontSize={'15px'}>{t(MaxTime?.unit || '')}</Text>
+          <Text fontSize={'15px'}>{t(MaxTime?.unit || 'start_minute')}</Text>
         </Flex>
         <Flex
           w="48%"
@@ -75,7 +75,7 @@ const RunningTime = ({
           border={'1px solid #D7EFFC'}
           backgroundColor={'rgba(94, 189, 242, 0.10)'}
         >
-          {t('InnoDB Buffer Pool')}
+          {t('innodb_buffer_pool')}
           <Box mx={'24px'} w={'1px'} h={'38px'} backgroundColor={'#CCEEED'}></Box>
           <Text fontSize={'40'} color={'#36ADEF'} mr="16px">
             {MysqlInnoDB?.result?.value}
@@ -99,12 +99,12 @@ const RunningTime = ({
       border={'1px solid #CCEEED'}
       backgroundColor={'rgba(0, 169, 166, 0.07)'}
     >
-      {t('Running Time')}
+      {t('running_time')}
       <Box mx={'24px'} w={'1px'} h={'38px'} backgroundColor={'#CCEEED'}></Box>
       <Text fontSize={'40'} color={'#00A9A6'} mr="16px">
         {MaxTime?.time}
       </Text>
-      <Text fontSize={'15px'}>{t(MaxTime?.unit || '')}</Text>
+      <Text fontSize={'15px'}>{t(MaxTime?.unit || 'start_minute')}</Text>
     </Flex>
   );
 };

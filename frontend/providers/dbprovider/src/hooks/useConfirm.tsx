@@ -10,15 +10,16 @@ import {
   Button
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { I18nCommonKey } from '@/types/i18next';
 
 export const useConfirm = ({
   title = 'Prompt',
   content,
   confirmText = 'Confirm'
 }: {
-  title?: string;
+  title?: I18nCommonKey;
   content: string;
-  confirmText?: string;
+  confirmText?: I18nCommonKey;
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { t } = useTranslation();

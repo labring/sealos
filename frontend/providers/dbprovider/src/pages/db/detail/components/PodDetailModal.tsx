@@ -164,7 +164,7 @@ const Logs = ({
         title:
           typeof err === 'string'
             ? err
-            : err?.message || t('Event Analyze Error') || 'Event Analyze Error',
+            : err?.message || t('event_analyze_error') || 'event_analyze_error',
         status: 'warning',
         duration: 5000,
         isClosable: true
@@ -238,7 +238,7 @@ const Logs = ({
             >
               <RenderItem label="Restarts">{pod.restarts}</RenderItem>
               <RenderItem label="Age">{pod.age}</RenderItem>
-              <RenderItem label="Pod Name">{pod.podName}</RenderItem>
+              <RenderItem label="pod_name">{pod.podName}</RenderItem>
               <RenderItem label="Controlled By">{`${pod.metadata?.ownerReferences?.[0].kind}/${pod.metadata?.ownerReferences?.[0].name}`}</RenderItem>
               <Box>
                 <Box mb={'12px'} color={'grayModern.900'} fontSize={'base'}>
@@ -279,7 +279,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  {t('Event Analyze')}
+                  {t('event_analyze')}
                 </Button>
               )} */}
             </Flex>
