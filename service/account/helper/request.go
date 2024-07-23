@@ -21,7 +21,7 @@ type NamespaceBillingHistoryReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	Auth `json:",inline" bson:",inline"`
+	*Auth `json:",inline" bson:",inline"`
 
 	// @Summary Type of the request (optional)
 	// @Description Type of the request (optional)
@@ -38,7 +38,7 @@ type SetPaymentInvoiceReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	Auth `json:",inline" bson:",inline"`
+	*Auth `json:",inline" bson:",inline"`
 }
 
 type TransferAmountReq struct {
@@ -55,7 +55,7 @@ type TransferAmountReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	Auth `json:",inline" bson:",inline"`
+	*Auth `json:",inline" bson:",inline"`
 
 	// @Summary Transfer all
 	// @Description Transfer all amount
@@ -76,7 +76,7 @@ type ConsumptionRecordReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	Auth `json:",inline" bson:",inline"`
+	*Auth `json:",inline" bson:",inline"`
 
 	// @Summary App type
 	// @Description App type
@@ -169,7 +169,7 @@ type UserBaseReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	Auth `json:",inline" bson:",inline"`
+	*Auth `json:",inline" bson:",inline"`
 }
 
 func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
@@ -307,7 +307,7 @@ type CostOverview struct {
 type GetCostAppListReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
-	Auth `json:",inline" bson:",inline"`
+	*Auth `json:",inline" bson:",inline"`
 
 	// @Summary Namespace
 	// @Description Namespace

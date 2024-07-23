@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -552,18 +554,61 @@ func GetAppTypeList(c *gin.Context) {
 	})
 }
 
-func CheckAuth(auth helper.Auth) error {
-	if err := helper.Authenticate(auth); err != nil {
+func CheckAuth(auth *helper.Auth) error {
+	if err := helper.Authenticate(*auth); err != nil {
 		return fmt.Errorf("authenticate error : %v", err)
 	}
-	if auth.UserID != "" {
+	if dao.Cfg.LocalRegionDomain != dao.DBClient.GetLocalRegion().Domain {
+		if err := CalibrateRegionAuth(auth); err != nil {
+			return fmt.Errorf("calibrate region auth error: %v", err)
+		}
+	} else {
 		userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{Owner: auth.Owner})
 		if err != nil {
 			return fmt.Errorf("get user id error: %v", err)
 		}
-		if userID != auth.UserID {
-			return fmt.Errorf("user id is invalid")
-		}
+		auth.UserID = userID
 	}
+	fmt.Printf("auth: %v\n", auth)
 	return nil
+}
+
+func CalibrateRegionAuth(auth *helper.Auth) error {
+	for i := range dao.Cfg.Regions {
+		reg := dao.Cfg.Regions[i]
+		if reg.Domain != dao.DBClient.GetLocalRegion().Domain {
+			continue
+		}
+		svcURL := fmt.Sprintf("https://%s%s%s", reg.AccountSvc, helper.GROUP, helper.CheckPermission)
+
+		authBody, err := json.Marshal(auth)
+		if err != nil {
+			return fmt.Errorf("failed to marshal auth: %v", err)
+		}
+		resp, err := http.Post(svcURL, "application/json", bytes.NewBuffer(authBody))
+		if err != nil {
+			return fmt.Errorf("failed to post request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		responseBody := new(bytes.Buffer)
+		_, err = responseBody.ReadFrom(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read response body: %v", err)
+		}
+		var respMap map[string]interface{}
+		if err = json.Unmarshal(responseBody.Bytes(), &respMap); err != nil {
+			return fmt.Errorf("failed to unmarshal response body: %v", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to check permission: %v, error: %s", resp, respMap["error"])
+		}
+		newAuth := &helper.Auth{}
+		if err = json.Unmarshal(responseBody.Bytes(), newAuth); err != nil {
+			return fmt.Errorf("failed to unmarshal response body: %v", err)
+		}
+		*auth = *newAuth
+		return nil
+	}
+	return fmt.Errorf("failed to calibrate region auth")
 }

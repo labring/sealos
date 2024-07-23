@@ -37,7 +37,7 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 				StartTime: time.Now().Add(-24 * time.Hour * 30),
 				EndTime:   time.Now(),
 			},
-			Auth: helper.Auth{
+			Auth: &helper.Auth{
 				Owner: "xxx",
 			},
 		},
@@ -100,7 +100,7 @@ func TestMongoDB_GetCostAppList(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: helper.Auth{
+		Auth: &helper.Auth{
 			Owner: "hwhbg4vf",
 		},
 		//Namespace: "ns-hwhbg4vf",
@@ -132,7 +132,7 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: helper.Auth{
+		Auth: &helper.Auth{
 			Owner: "hwhbg4vf",
 		},
 		//Namespace: "ns-hwhbg4vf",
