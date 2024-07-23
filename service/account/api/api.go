@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -459,6 +460,7 @@ func CheckPermission(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
+		"userID":  req.Auth.UserID,
 		"message": "successfully check permission",
 	})
 }
@@ -601,7 +603,11 @@ func CalibrateRegionAuth(auth *helper.Auth, kcHost string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal auth: %v", err)
 		}
-		resp, err := http.Post(svcURL, "application/json", bytes.NewBuffer(authBody))
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+		resp, err := client.Post(svcURL, "application/json", bytes.NewBuffer(authBody))
 		if err != nil {
 			return fmt.Errorf("failed to post request: %v", err)
 		}
