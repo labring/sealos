@@ -1,20 +1,24 @@
-export const editModeMap = (isEdit: boolean) => {
+import { I18nCommonKey } from '@/types/i18next';
+
+export const editModeMap: (isEdit: boolean) => {
+  [key: string]: I18nCommonKey;
+} = (isEdit: boolean) => {
   if (isEdit) {
     return {
-      title: 'Update DataBase',
-      applyBtnText: 'Update',
-      applyMessage: 'Confirm Update DataBase?',
-      applySuccess: 'Update Successful',
-      applyError: 'Update Failed'
+      title: 'update_database',
+      applyBtnText: 'update',
+      applyMessage: 'confirm_update_database',
+      applySuccess: 'update_successful',
+      applyError: 'update_failed'
     };
   }
 
   return {
-    title: 'Deploy DataBase',
-    applyBtnText: 'Deploy',
-    applyMessage: 'Confirm Deploy DataBase?',
-    applySuccess: 'Deployment Successful',
-    applyError: 'Deployment Failed'
+    title: 'deploy_database',
+    applyBtnText: 'deploy',
+    applyMessage: 'confirm_deploy_database',
+    applySuccess: 'deployment_successful',
+    applyError: 'deployment_failed'
   };
 };
 

@@ -17,6 +17,7 @@ import Header from './components/Header';
 import MigrateTable from './components/Migrate/Table';
 import Monitor from './components/Monitor';
 import Pods from './components/Pods';
+import { I18nCommonKey } from '@/types/i18next';
 
 enum TabEnum {
   pod = 'pod',
@@ -48,12 +49,12 @@ const AppDetail = ({
       SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [
-      { label: 'Monitor List', value: TabEnum.monitor },
-      { label: 'Replicas List', value: TabEnum.pod },
-      ...(BackupSupported ? [{ label: 'Backup List', value: TabEnum.backup }] : []),
-      ...(PublicNetMigration ? [{ label: 'Online Import', value: TabEnum.InternetMigration }] : []),
+      { label: 'monitor_list', value: TabEnum.monitor },
+      { label: 'replicas_list', value: TabEnum.pod },
+      ...(BackupSupported ? [{ label: 'backup_list', value: TabEnum.backup }] : []),
+      ...(PublicNetMigration ? [{ label: 'online_import', value: TabEnum.InternetMigration }] : []),
       ...(PublicNetMigration && !!SystemEnv.minio_url
-        ? [{ label: 'Import Through File', value: TabEnum.DumpImport }]
+        ? [{ label: 'import_through_file', value: TabEnum.DumpImport }]
         : [])
     ];
 
@@ -144,7 +145,7 @@ const AppDetail = ({
                         )
                     })}
               >
-                {t(item.label)}
+                {t(item.label as I18nCommonKey)}
               </Box>
             ))}
             <Box flex={1}></Box>

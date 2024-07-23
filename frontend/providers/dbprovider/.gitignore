@@ -35,7 +35,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /public/trainData/
-/.vscode/
+/local/
 platform.json
 .yalc/
 yalc.lock

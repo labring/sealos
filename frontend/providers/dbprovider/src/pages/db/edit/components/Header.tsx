@@ -8,6 +8,7 @@ import { downLoadBold } from '@/utils/tools';
 import dayjs from 'dayjs';
 import { useGlobalStore } from '@/store/global';
 import { useTranslation } from 'next-i18next';
+import { I18nCommonKey } from '@/types/i18next';
 
 const Header = ({
   dbName,
@@ -17,10 +18,10 @@ const Header = ({
   applyBtnText
 }: {
   dbName: string;
-  title: string;
+  title: I18nCommonKey;
   yamlList: YamlItemType[];
   applyCb: () => void;
-  applyBtnText: string;
+  applyBtnText: I18nCommonKey;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();

@@ -44,8 +44,8 @@ function App({ Component, pageProps }: AppProps) {
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: '跳转提示',
-    content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
+    title: 'jump_prompt',
+    content: 'not_allow_standalone_use'
   });
 
   useEffect(() => {

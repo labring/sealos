@@ -136,7 +136,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('submit_error');
       if (!!obj.message) {
         return obj.message;
       }

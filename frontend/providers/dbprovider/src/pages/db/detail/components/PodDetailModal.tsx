@@ -161,10 +161,7 @@ const Logs = ({
       });
     } catch (err: any) {
       toast({
-        title:
-          typeof err === 'string'
-            ? err
-            : err?.message || t('Event Analyze Error') || 'Event Analyze Error',
+        title: typeof err === 'string' ? err : err?.message || t('event_analyze_error'),
         status: 'warning',
         duration: 5000,
         isClosable: true
@@ -279,7 +276,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  {t('Event Analyze')}
+                  {t('event_analyze')}
                 </Button>
               )} */}
             </Flex>

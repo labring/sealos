@@ -50,7 +50,7 @@ const FileSelect = ({ fileExtension, setFiles, multiple = false, files, ...props
     >
       <MyIcon name="upload" width={'24px'} color={'#219BF4'}></MyIcon>
       <Text mt={'8px'} color={'grayModern.500'} fontSize={'base'} fontWeight={'bold'}>
-        {t('Upload dump file')}
+        {t('upload_dump_file')}
       </Text>
       <Box
         w={'auto'}
@@ -93,7 +93,7 @@ const FileSelect = ({ fileExtension, setFiles, multiple = false, files, ...props
             if (e.target.files.length > 10) {
               return toast({
                 status: 'warning',
-                title: t('Select a maximum of 10 files')
+                title: t('select_a_maximum_of_10_files')
               });
             }
             onSelectFile(Array.from(e.target.files));

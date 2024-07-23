@@ -31,6 +31,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import PriceBox from '@/components/PriceBox';
+import { I18nCommonKey } from '@/types/i18next';
 
 const Form = ({
   formHook,
@@ -55,10 +56,10 @@ const Form = ({
     formState: { errors }
   } = formHook;
 
-  const navList = [
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
     {
       id: 'baseInfo',
-      label: t('Basic'),
+      label: 'basic',
       icon: 'formInfo'
     }
   ];
@@ -143,8 +144,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: t('Config Form') },
-              { id: 'yaml', label: t('YAML File') }
+              { id: 'form', label: t('config_form') },
+              { id: 'yaml', label: t('yaml_file') }
             ]}
             activeId={'form'}
             onChange={() =>
@@ -237,7 +238,7 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {t('Basic')}
+              {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Flex alignItems={'center'} mb={7}>
@@ -297,11 +298,11 @@ const Form = ({
                 </Flex>
               </Flex>
               <Flex alignItems={'center'} mb={7}>
-                <Label w={100}>{t('Version')}</Label>
+                <Label w={100}>{t('version')}</Label>
 
                 <MySelect
                   width={'200px'}
-                  placeholder={`${t('DataBase')} ${t('Version')}`}
+                  placeholder={`${t('DataBase')} ${t('version')}`}
                   value={getValues('dbVersion')}
                   list={DBVersionMap[getValues('dbType')].map((i) => ({
                     label: i.label,
@@ -315,14 +316,14 @@ const Form = ({
                   <Label w={100}>{t('Name')}</Label>
                   <Input
                     disabled={isEdit}
-                    title={isEdit ? t('Cannot Change Name') || '' : ''}
+                    title={isEdit ? t('cannot_change_name') : ''}
                     autoFocus={true}
-                    placeholder={t('DataBase Name Regex') || ''}
+                    placeholder={t('database_name_regex')}
                     {...register('dbName', {
-                      required: t('DataBase Name Empty') || '',
+                      required: t('database_name_empty'),
                       pattern: {
                         value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/g,
-                        message: t('DataBase Name Regex Error')
+                        message: t('database_name_regex_error')
                       }
                     })}
                   />
@@ -345,7 +346,7 @@ const Form = ({
                 </Box>
               </Flex>
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
-                <Label w={100}>{t('Memory')}</Label>
+                <Label w={100}>{t('memory')}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
@@ -372,14 +373,14 @@ const Form = ({
                   }
                   setVal={(val) => {
                     register('replicas', {
-                      required: t('Replicas Cannot Empty') || '',
+                      required: t('replicas_cannot_empty'),
                       min: {
                         value: 1,
-                        message: `${t('Min Replicas')}1`
+                        message: `${t('min_replicas')}1`
                       },
                       max: {
                         value: 20,
-                        message: `${t('Max Replicas')}20`
+                        message: `${t('max_replicas')}20`
                       }
                     });
                     const dbType = getValues('dbType');
@@ -394,7 +395,7 @@ const Form = ({
                   <Tip
                     ml={4}
                     icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
-                    text="The Single-node database is only suitable for development testing"
+                    text={t('single_node_tip')}
                     size="sm"
                     borderRadius={'md'}
                   />
@@ -403,7 +404,7 @@ const Form = ({
                   <Tip
                     ml={4}
                     icon={<InfoOutlineIcon />}
-                    text="The multi-replica Redis includes High Availability (HA) nodes, Please note, the anticipated price already encompasses the cost for the HA nodes"
+                    text={t('multi_replica_redis_tip')}
                     size="sm"
                     borderRadius={'md'}
                   />
@@ -414,7 +415,7 @@ const Form = ({
                     <Tip
                       ml={4}
                       icon={<InfoOutlineIcon />}
-                      text={t('db instances tip', {
+                      text={t('db_instances_tip', {
                         db: getValues('dbType')
                       })}
                       size="sm"
@@ -425,8 +426,8 @@ const Form = ({
 
               <FormControl isInvalid={!!errors.storage} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={100}>{t('Storage')}</Label>
-                  <MyTooltip label={`${t('Storage Range')}${minStorage}~300 Gi`}>
+                  <Label w={100}>{t('storage')}</Label>
+                  <MyTooltip label={`${t('storage_range')}${minStorage}~300 Gi`}>
                     <NumberInput
                       w={'180px'}
                       max={300}
@@ -440,14 +441,14 @@ const Form = ({
                     >
                       <NumberInputField
                         {...register('storage', {
-                          required: t('Storage Cannot Empty') || 'Storage Cannot Empty',
+                          required: t('storage_cannot_empty'),
                           min: {
                             value: minStorage,
-                            message: `${t('Storage Min')}${minStorage} Gi`
+                            message: `${t('storage_min')}${minStorage} Gi`
                           },
                           max: {
                             value: 300,
-                            message: `${t('Storage Max')}300 Gi`
+                            message: `${t('storage_max')}300 Gi`
                           },
                           valueAsNumber: true
                         })}

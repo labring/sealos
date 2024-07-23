@@ -56,7 +56,7 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
         color={'grayModern.900'}
         fontWeight={500}
       >
-        {t('app.Resource Quota')}
+        {t('app.resource_quota')}
       </Box>
       <Flex flexDirection={'column'} gap={'14px'} py={'16px'} px={'20px'}>
         {quotaList.map((item) => (

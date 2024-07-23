@@ -55,14 +55,14 @@ const DelModal = ({
       setLoading(true);
       await delDBByName(dbName);
       toast({
-        title: t('Delete successful'),
+        title: t('delete_successful'),
         status: 'success'
       });
       onSuccess();
       onClose();
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || t('Delete Failed'),
+        title: typeof error === 'string' ? error : error.message || t('delete_failed'),
         status: 'error'
       });
       console.error(error);
@@ -89,28 +89,34 @@ const DelModal = ({
         <ModalHeader>
           <Flex alignItems={'center'} gap={'10px'}>
             <MyIcon name="warning" width={'20px'} h={'20px'} />
-            {activePage === Page.REMINDER ? t('Remind') : t('Delete Warning')}
+            {activePage === Page.REMINDER ? t('remind') : t('delete_warning')}
           </Flex>
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody pb={4}>
           <Box color={'grayModern.600'}>
-            {activePage === Page.REMINDER ? t('Delete Template App Tip') : t('Delete Hint')}
+            {activePage === Page.REMINDER ? t('delete_template_app_tip') : t('delete_hint')}
 
             {activePage === Page.DELETION_WARNING && (
               <Box my={3}>
-                {t('Please Enter')}
-                <Box as={'span'} color={'grayModern.900'} fontWeight={'bold'} userSelect={'all'}>
+                {t('please_enter')}
+                <Box
+                  as={'span'}
+                  px={1}
+                  color={'grayModern.900'}
+                  fontWeight={'bold'}
+                  userSelect={'all'}
+                >
                   {dbName}
                 </Box>
-                {t('Confirm')}
+                {t('confirm')}
               </Box>
             )}
           </Box>
 
           {activePage === Page.DELETION_WARNING && (
             <Input
-              placeholder={`${t('Please Enter')}：${dbName}`}
+              placeholder={`${t('please_enter')}：${dbName}`}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
             />
@@ -130,7 +136,7 @@ const DelModal = ({
                 pageManuallyChangedRef.current = true;
               }}
             >
-              {t('Delete anyway')}
+              {t('delete_anyway')}
             </Button>
           )}
 
@@ -141,7 +147,7 @@ const DelModal = ({
             isLoading={loading}
             onClick={activePage === Page.REMINDER ? openTemplateApp : handleDelApp}
           >
-            {activePage === Page.REMINDER ? t('Confirm to go') : t('Confirm Delete')}
+            {activePage === Page.REMINDER ? t('confirm_to_go') : t('confirm_delete')}
           </Button>
         </ModalFooter>
       </ModalContent>
