@@ -95,7 +95,7 @@ const RestoreModal = ({
                   <Box flex={'0 0 120px'}>{t('database_name')}</Box>
                   <Input
                     {...register('databaseName', {
-                      required: t('database_name_cannot_empty') || 'database_name_cannot_empty'
+                      required: t('database_name_cannot_empty')
                     })}
                   />
                 </Flex>

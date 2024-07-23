@@ -60,7 +60,7 @@ const PriceBox = ({
       },
       { label: 'Memory', color: '#36ADEF', value: podScale(mp) },
       { label: 'Storage', color: '#8172D8', value: podScale(sp) },
-      { label: 'total_price', color: '#485058', value: podScale(tp) }
+      { label: 'Total Price', color: '#485058', value: podScale(tp) }
     ];
   }, [components]);
 

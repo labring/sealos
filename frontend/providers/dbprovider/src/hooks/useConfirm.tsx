@@ -18,7 +18,7 @@ export const useConfirm = ({
   confirmText = 'Confirm'
 }: {
   title?: I18nCommonKey;
-  content: string;
+  content: I18nCommonKey;
   confirmText?: I18nCommonKey;
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -47,7 +47,7 @@ export const useConfirm = ({
                 {t(title)}
               </AlertDialogHeader>
 
-              <AlertDialogBody>{content}</AlertDialogBody>
+              <AlertDialogBody>{t(content)}</AlertDialogBody>
 
               <AlertDialogFooter>
                 <Button

@@ -74,9 +74,9 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             if (!e.progress) return;
             const percent = Math.round(e.progress * 100);
             if (percent < 100) {
-              setFileProgressText(t('file.Uploading', { percent }) || '');
+              setFileProgressText(t('file.Uploading', { percent }));
             } else {
-              setFileProgressText(t('file.Upload Success') || '');
+              setFileProgressText(t('file.Upload Success'));
             }
           });
 
@@ -217,7 +217,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
               maxW={'400px'}
               isInvalid={!!formHook.formState?.errors?.databaseName}
               {...formHook.register('databaseName', {
-                required: t('database_name_empty') || ''
+                required: t('database_name_empty')
               })}
             />
           </Flex>

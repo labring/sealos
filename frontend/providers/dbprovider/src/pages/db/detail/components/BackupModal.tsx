@@ -52,13 +52,13 @@ const BackupModal = ({
 
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'Confirm',
-    content: t('manual_backup_tip'),
+    content: 'manual_backup_tip',
     confirmText: 'start_backup'
   });
 
   const { openConfirm: CloseAutoBackup, ConfirmChild: AutoBackupConfirmChild } = useConfirm({
     title: 'Prompt',
-    content: t('are_you_sure_you_want_to_turn_off_automatic_backup'),
+    content: 'are_you_sure_you_want_to_turn_off_automatic_backup',
     confirmText: 'Confirm'
   });
 
@@ -282,7 +282,7 @@ const BackupModal = ({
                           width={'328px'}
                           maxW={'328px'}
                           {...manualRegister('backupName', {
-                            required: t('backup_name_cannot_empty') || 'backup_name_cannot_empty'
+                            required: t('backup_name_cannot_empty')
                           })}
                         />
                       </Flex>

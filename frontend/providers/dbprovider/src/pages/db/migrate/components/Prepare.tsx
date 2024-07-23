@@ -35,13 +35,13 @@ export default function PrepareBox({
           "show variables like '%row_im%';  ",
           "set binlog_row_image ='FULL';  "
         ],
-        checkboxLabel: t('i_have_read_and_completed_migration_preparations'),
+        checkboxLabel: t('migration_preparations'),
         permissionCheck: `source account: REPLICATION SLAVE、REPLICATION CLIENT、SELECT \nsink account: SELECT、INSERT、UPDATE、DELETE、CREATE、ALTER、DROP`,
         title: 'MySQL'
       },
       mongodb: {
         codeList: [t('migrate.mongodb.stepOne'), t('migrate.mongodb.stepTwo')],
-        checkboxLabel: t('i_have_read_and_completed_migration_preparations'),
+        checkboxLabel: t('migration_preparations'),
         permissionCheck: t('migrate.mongo.check'),
         title: 'Monogo'
       },
@@ -52,7 +52,7 @@ export default function PrepareBox({
           `ALTER SYSTEM SET wal_level = 'logical';`,
           t('migrate.postgresql.stepTwo')
         ],
-        checkboxLabel: t('i_have_read_and_completed_migration_preparations'),
+        checkboxLabel: t('migration_preparations'),
         permissionCheck: t('migrate.postgresql.check'),
         title: 'PostgreSQL'
       }

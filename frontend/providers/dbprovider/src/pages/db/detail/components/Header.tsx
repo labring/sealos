@@ -49,10 +49,7 @@ const Header = ({
       });
     } catch (error: any) {
       toast({
-        title:
-          typeof error === 'string'
-            ? error
-            : error.message || t('restart_error') || 'restart_error',
+        title: typeof error === 'string' ? error : error.message || t('restart_error'),
         status: 'error'
       });
       console.error(error);
@@ -65,13 +62,12 @@ const Header = ({
       setLoading(true);
       await pauseDBByName(db);
       toast({
-        title: t('pause_success') || 'pause_success',
+        title: t('pause_success'),
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title:
-          typeof error === 'string' ? error : error.message || t('pause_error') || 'pause_error',
+        title: typeof error === 'string' ? error : error.message || t('pause_error'),
         status: 'error'
       });
       console.error(error);
@@ -84,13 +80,12 @@ const Header = ({
       setLoading(true);
       await startDBByName(db);
       toast({
-        title: t('start_success') || 'start_success',
+        title: t('start_success'),
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title:
-          typeof error === 'string' ? error : error.message || t('start_error') || 'start_error',
+        title: typeof error === 'string' ? error : error.message || t('start_error'),
         status: 'error'
       });
       console.error(error);

@@ -59,7 +59,7 @@ const Form = ({
   const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
     {
       id: 'baseInfo',
-      label: 'Basic',
+      label: 'basic',
       icon: 'formInfo'
     }
   ];
@@ -238,7 +238,7 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {t('Basic')}
+              {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Flex alignItems={'center'} mb={7}>
@@ -298,11 +298,11 @@ const Form = ({
                 </Flex>
               </Flex>
               <Flex alignItems={'center'} mb={7}>
-                <Label w={100}>{t('Version')}</Label>
+                <Label w={100}>{t('version')}</Label>
 
                 <MySelect
                   width={'200px'}
-                  placeholder={`${t('DataBase')} ${t('Version')}`}
+                  placeholder={`${t('DataBase')} ${t('version')}`}
                   value={getValues('dbVersion')}
                   list={DBVersionMap[getValues('dbType')].map((i) => ({
                     label: i.label,
@@ -316,11 +316,11 @@ const Form = ({
                   <Label w={100}>{t('Name')}</Label>
                   <Input
                     disabled={isEdit}
-                    title={isEdit ? t('cannot_change_name') || '' : ''}
+                    title={isEdit ? t('cannot_change_name') : ''}
                     autoFocus={true}
-                    placeholder={t('database_name_regex') || ''}
+                    placeholder={t('database_name_regex')}
                     {...register('dbName', {
-                      required: t('database_name_empty') || '',
+                      required: t('database_name_empty'),
                       pattern: {
                         value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/g,
                         message: t('database_name_regex_error')
@@ -373,7 +373,7 @@ const Form = ({
                   }
                   setVal={(val) => {
                     register('replicas', {
-                      required: t('replicas_cannot_empty') || '',
+                      required: t('replicas_cannot_empty'),
                       min: {
                         value: 1,
                         message: `${t('min_replicas')}1`
@@ -395,7 +395,7 @@ const Form = ({
                   <Tip
                     ml={4}
                     icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
-                    text="the_single-node_database_is_only_suitable_for_development_testing"
+                    text={t('single_node_tip')}
                     size="sm"
                     borderRadius={'md'}
                   />
@@ -404,7 +404,7 @@ const Form = ({
                   <Tip
                     ml={4}
                     icon={<InfoOutlineIcon />}
-                    text="multi_replica_redis_tip"
+                    text={t('multi_replica_redis_tip')}
                     size="sm"
                     borderRadius={'md'}
                   />
@@ -441,7 +441,7 @@ const Form = ({
                     >
                       <NumberInputField
                         {...register('storage', {
-                          required: t('storage_cannot_empty') || 'storage_cannot_empty',
+                          required: t('storage_cannot_empty'),
                           min: {
                             value: minStorage,
                             message: `${t('storage_min')}${minStorage} Gi`

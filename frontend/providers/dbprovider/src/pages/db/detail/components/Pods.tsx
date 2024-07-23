@@ -34,7 +34,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: t('confirm_restart_pod') || 'confirm_restart_pod'
+    content: t('confirm_restart_pod')
   });
   const { intervalLoadPods, dbPods } = useDBStore();
 
@@ -64,7 +64,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     render?: (item: PodDetailType, i: number) => JSX.Element | string;
   }[] = [
     {
-      title: 'pod_name',
+      title: 'Pod Name',
       key: 'podName',
       render: (item: PodDetailType) => <Box fontWeight={'bold'}>{item.podName}</Box>
     },

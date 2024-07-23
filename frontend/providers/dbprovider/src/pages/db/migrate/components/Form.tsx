@@ -60,7 +60,7 @@ const Form = ({
     },
     {
       id: 'baseInfo',
-      label: t('Basic'),
+      label: t('basic'),
       icon: 'formInfo'
     },
     {
@@ -229,7 +229,7 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {t('Basic')}
+              {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
@@ -239,9 +239,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('database_host')}</Label>
                   <Input
-                    placeholder={t('database_host') || ''}
+                    placeholder={t('database_host')}
                     {...register('sourceHost', {
-                      required: t('database_host_empty') || ''
+                      required: t('database_host_empty')
                     })}
                   />
                 </Flex>
@@ -250,9 +250,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Port')}</Label>
                   <Input
-                    placeholder={t('Port') || ''}
+                    placeholder={t('Port')}
                     {...register('sourcePort', {
-                      required: t('database_port_empty') || ''
+                      required: t('database_port_empty')
                     })}
                   />
                 </Flex>
@@ -261,9 +261,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Username')}</Label>
                   <Input
-                    placeholder={t('Username') || ''}
+                    placeholder={t('Username')}
                     {...register('sourceUsername', {
-                      required: t('database_username_empty') || ''
+                      required: t('database_username_empty')
                     })}
                   />
                 </Flex>
@@ -272,9 +272,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Password')}</Label>
                   <Input
-                    placeholder={t('Password') || ''}
+                    placeholder={t('Password')}
                     {...register('sourcePassword', {
-                      required: t('database_password_empty') || ''
+                      required: t('database_password_empty')
                     })}
                   />
                 </Flex>
@@ -283,9 +283,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('db_name')}</Label>
                   <Input
-                    placeholder={t('db_name') || ''}
+                    placeholder={t('db_name')}
                     {...register('sourceDatabase', {
-                      required: t('database_name_empty') || ''
+                      required: t('database_name_empty')
                     })}
                   />
                 </Flex>
@@ -304,7 +304,7 @@ const Form = ({
               <FormControl mt={'16px'} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Remark')}</Label>
-                  <Input placeholder={t('Remark') || ''} {...register('remark')} />
+                  <Input placeholder={t('Remark')} {...register('remark')} />
                 </Flex>
               </FormControl>
             </Box>

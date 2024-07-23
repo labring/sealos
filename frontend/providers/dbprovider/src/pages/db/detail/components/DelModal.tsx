@@ -89,7 +89,7 @@ const DelModal = ({
         <ModalHeader>
           <Flex alignItems={'center'} gap={'10px'}>
             <MyIcon name="warning" width={'20px'} h={'20px'} />
-            {activePage === Page.REMINDER ? t('Remind') : t('delete_warning')}
+            {activePage === Page.REMINDER ? t('remind') : t('delete_warning')}
           </Flex>
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />

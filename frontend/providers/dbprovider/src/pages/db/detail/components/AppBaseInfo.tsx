@@ -123,12 +123,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   >(
     () => [
       {
-        name: 'Basic',
+        name: 'basic',
         iconName: 'info',
         items: [
           { label: 'creation_time', value: db.createTime },
           { label: 'database_type', value: db.dbType },
-          { label: 'Version', value: db.dbVersion }
+          { label: 'version', value: db.dbVersion }
         ]
       },
       {
