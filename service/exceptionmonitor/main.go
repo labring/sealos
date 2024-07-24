@@ -22,12 +22,12 @@ func main() {
 }
 
 func initialize() error {
-	notification.InitFeishuClient()
 	if err := api.GetENV(); err != nil {
 		return err
 	}
 	if err := client.InitClient(); err != nil {
 		return err
 	}
+	notification.InitFeishuClient()
 	return dao.InitCockroachDB()
 }

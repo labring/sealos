@@ -48,6 +48,7 @@ var (
 	MemMonitorNamespaceMap            = make(map[string]bool)
 	LastBackupStatusMap               = make(map[string]string)
 	IsSendBackupStatusMap             = make(map[string]string)
+	DatabaseNamespaceMap              = make(map[string]string)
 	ExceededQuotaException            = "exceeded quota"
 	DiskException                     = "Writing to log file failed"
 	OwnerLabel                        = "user.sealos.io/owner"

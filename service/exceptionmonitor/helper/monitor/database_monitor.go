@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,10 +37,20 @@ var (
 
 func DatabaseExceptionMonitor() {
 	for api.DatabaseMonitor {
+		checkDeletedDatabases()
 		if err := checkDatabases(api.ClusterNS); err != nil {
 			log.Printf("Failed to check databases: %v", err)
 		}
 		time.Sleep(5 * time.Minute)
+	}
+}
+
+func checkDeletedDatabases() {
+	for databaseName := range api.LastDatabaseClusterStatus {
+		cluster, err := api.DynamicClient.Resource(databaseClusterGVR).Namespace(api.DatabaseNamespaceMap[databaseName]).Get(context.Background(), databaseName, metav1.GetOptions{})
+		if cluster == nil && errors.IsNotFound(err) {
+			handleClusterRecovery(databaseName, "", "Deleted")
+		}
 	}
 }
 
@@ -89,6 +101,7 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	case api.StatusUnknown:
 		if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok {
 			api.LastDatabaseClusterStatus[databaseClusterName] = status
+			api.DatabaseNamespaceMap[databaseClusterName] = namespace
 			api.ExceptionDatabaseMap[databaseClusterName] = true
 			alertMessage, feishuWebHook, notification := prepareAlertMessage(databaseClusterName, namespace, status, "", "status is empty", 0)
 			if err := sendAlert(alertMessage, feishuWebHook, notification); err != nil {
@@ -122,11 +135,13 @@ func cleanClusterStatus(databaseClusterName string) {
 	delete(api.DiskFullNamespaceMap, databaseClusterName)
 	delete(api.FeishuWebHookMap, databaseClusterName)
 	delete(api.ExceptionDatabaseMap, databaseClusterName)
+	delete(api.DatabaseNamespaceMap, databaseClusterName)
 }
 
 func handleClusterException(databaseClusterName, namespace, databaseType, status string) {
 	if _, ok := api.LastDatabaseClusterStatus[databaseClusterName]; !ok && !api.DebtNamespaceMap[namespace] {
 		api.LastDatabaseClusterStatus[databaseClusterName] = status
+		api.DatabaseNamespaceMap[databaseClusterName] = namespace
 		api.ExceptionDatabaseMap[databaseClusterName] = true
 		if err := processClusterException(databaseClusterName, namespace, databaseType, status); err != nil {
 			log.Printf("Failed to process cluster %s exception in ns %s: %v", databaseClusterName, namespace, err)
@@ -206,7 +221,7 @@ func prepareAlertMessage(databaseClusterName, namespace, status, debtLevel, data
 			feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
 			notificationInfo.Reason = "disk is full"
 			alertMessage = notification.GetNotificationMessage(notificationInfo)
-			notification.CreateNotification(namespace, databaseClusterName, status, "disk is full")
+			notification.CreateNotification(namespace, databaseClusterName, status, "disk is full", "磁盘满了")
 		}
 		api.DiskFullNamespaceMap[databaseClusterName] = true
 	}
@@ -229,6 +244,6 @@ func notifyQuotaExceeded(databaseClusterName, namespace, status, debtLevel strin
 		NotificationType:    "exception",
 	}
 	alertMessage := notification.GetNotificationMessage(notificationInfo)
-	notification.CreateNotification(namespace, databaseClusterName, status, api.ExceededQuotaException)
+	notification.CreateNotification(namespace, databaseClusterName, status, api.ExceededQuotaException, "Quato满了")
 	return notification.SendFeishuNotification(notificationInfo, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLOther"])
 }

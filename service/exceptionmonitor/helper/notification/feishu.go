@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	lark "github.com/larksuite/oapi-sdk-go/v3"
@@ -137,6 +138,16 @@ func GetNotificationMessage(notificationInfo Info) string {
 			}
 			elements = append(elements, exceptionElements...)
 		}
+		exceptionElements := []map[string]interface{}{
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("数据库恢复时间：%s", time.Now().Add(8*time.Hour).Format("2006-01-02 15:04:05")),
+					"tag":     "lark_md",
+				},
+			},
+		}
+		elements = append(elements, exceptionElements...)
 	}
 	card := map[string]interface{}{
 		"config": map[string]bool{
@@ -201,8 +212,14 @@ func updateFeishuNotification(messageID, message string) error {
 		Body(larkim.NewPatchMessageReqBodyBuilder().
 			Content(message).Build()).Build()
 
+	fmt.Println(messageID)
 	resp, err := feiShuClient.Im.Message.Patch(context.Background(), req)
-	if err != nil || !resp.Success() {
+	if err != nil {
+		log.Println("Error:", err)
+		return err
+	}
+
+	if !resp.Success() {
 		log.Println("Error:", resp.Code, resp.Msg, resp.RequestId())
 		return err
 	}
@@ -219,8 +236,12 @@ func createFeishuNotification(notification Info, message, feishuWebHook string, 
 
 	resp, err := feiShuClient.Im.Message.Create(context.Background(), req)
 
-	if err != nil || !resp.Success() {
-		fmt.Println(111)
+	if err != nil {
+		log.Println("Error:", err)
+		return err
+	}
+
+	if !resp.Success() {
 		log.Println("Error:", resp.Code, resp.Msg, resp.RequestId())
 		return err
 	}
@@ -235,6 +256,7 @@ func createFeishuNotification(notification Info, message, feishuWebHook string, 
 	} else {
 		messageIDMap[notification.DatabaseClusterName] = messageID
 	}
+	fmt.Println(messageIDMap)
 	return nil
 }
 
