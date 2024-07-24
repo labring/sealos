@@ -1,5 +1,5 @@
-import { adapterMongoHaConfig, applyYamlList, createDB } from '@/api/db';
-import { defaultDBEditValue } from '@/constants/db';
+import { adapterMongoHaConfig, applyYamlList, createDB, getConfigByName } from '@/api/db';
+import { DBTypeConfigMap, defaultDBEditValue } from '@/constants/db';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
@@ -11,7 +11,12 @@ import type { YamlItemType } from '@/types';
 import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
-import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
+import {
+  json2Account,
+  json2CreateCluster,
+  json2Reconfigure,
+  limitRangeYaml
+} from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -24,6 +29,8 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import { compareDBConfig, flattenObject, parseConfig } from '@/utils/tools';
+import { getUserNamespace } from '@/utils/user';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -40,7 +47,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [minStorage, setMinStorage] = useState(1);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
-  const { loadDBDetail } = useDBStore();
+  const { loadDBDetail, dbDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
   const { checkQuotaAllow } = useUserStore();
 
@@ -99,7 +106,29 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     setForceUpdate(!forceUpdate);
   });
 
+  const handleReconfigure = async (formData: DBEditType) => {
+    const reconfigureType = DBTypeConfigMap[formData.dbType].type;
+    const differences = compareDBConfig({
+      oldConfig: oldDBEditData.current?.config || '',
+      newConfig: formData.config,
+      type: reconfigureType
+    });
+
+    if (differences.length > 0) {
+      const reconfigureYaml = json2Reconfigure(
+        formData.dbName,
+        formData.dbType,
+        dbDetail.id,
+        differences.map((item) => ({ key: item.path, value: item.newValue }))
+      );
+      console.log(differences.map((item) => ({ key: item.path, value: item.newValue })));
+      await applyYamlList([reconfigureYaml], 'create');
+    }
+  };
+
   const submitSuccess = async (formData: DBEditType) => {
+    console.log(formData, oldDBEditData.current);
+
     const needMongoAdapter =
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);
@@ -119,13 +148,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           isClosable: true
         });
       }
+      await handleReconfigure(formData);
       await createDB({ dbForm: formData, isEdit });
-
       toast({
         title: t(applySuccess),
         status: 'success'
       });
-      router.push(lastRoute);
+      // router.push(lastRoute);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));
@@ -168,7 +197,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         return null;
       }
       setIsLoading(true);
-      return loadDBDetail(dbName);
+      return loadDBDetail(dbName, true);
     },
     {
       onSuccess(res) {

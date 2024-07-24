@@ -14,6 +14,9 @@ export const getMyDBList = () =>
 export const getDBByName = (name: string) =>
   GET(`/api/getDBByName?name=${name}`).then(adaptDBDetail);
 
+export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
+  GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
+
 export const createDB = (payload: {
   dbForm: DBEditType;
   isEdit: boolean;

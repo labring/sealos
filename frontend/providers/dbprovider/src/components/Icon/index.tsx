@@ -38,6 +38,7 @@ const map = {
   infoCircle: require('./icons/infoCircle.svg').default,
   upperRight: require('./icons/upperRight.svg').default,
   arrowUp: require('./icons/arrowUp.svg').default,
+  edit: require('./icons/edit.svg').default,
   book: require('./icons/book.svg').default,
   export: require('./icons/export.svg').default,
   pods: require('./icons/pods.svg').default,

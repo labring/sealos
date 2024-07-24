@@ -1,4 +1,4 @@
-import { DBEditType, DBDetailType, PodDetailType } from '@/types/db';
+import { DBEditType, DBDetailType, PodDetailType, DBType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
@@ -222,7 +222,8 @@ export const defaultDBEditValue: DBEditType = {
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
-  storage: 3
+  storage: 3,
+  config: ''
 };
 
 export const defaultDBDetail: DBDetailType = {
@@ -232,7 +233,8 @@ export const defaultDBDetail: DBDetailType = {
   status: dbStatusMap.Creating,
   conditions: [],
   isDiskSpaceOverflow: false,
-  labels: {}
+  labels: {},
+  config: ''
 };
 
 export const defaultPod: PodDetailType = {
@@ -291,5 +293,79 @@ export const DBTypeSecretMap = {
   },
   milvus: {
     connectKey: 'milvus'
+  }
+};
+
+export const DBTypeConfigMap: {
+  [key in DBType]: {
+    configMapKey: string;
+    configMapName: string;
+    type: 'yaml' | 'ini';
+    reconfigureName: string;
+    reconfigureKey: string;
+  };
+} = {
+  postgresql: {
+    configMapName: '-postgresql-pgbouncer-configuration',
+    configMapKey: 'pgbouncer.ini',
+    type: 'ini',
+    reconfigureName: 'postgresql-configuration',
+    reconfigureKey: 'postgresql.conf'
+  },
+  mongodb: {
+    type: 'yaml',
+    configMapName: '-mongodb-mongodb-config',
+    configMapKey: 'mongodb.conf',
+    reconfigureName: 'mongodb-config',
+    reconfigureKey: 'mongodb.conf'
+  },
+  'apecloud-mysql': {
+    type: 'ini',
+    configMapName: '-mysql-mysql-consensusset-config',
+    configMapKey: 'my.cnf',
+    reconfigureName: 'mysql-consensusset-config',
+    reconfigureKey: 'my.cnf'
+  },
+  redis: {
+    type: 'ini',
+    configMapName: '-redis-sentinel-redis-replication-config',
+    configMapKey: 'redis.conf',
+    reconfigureName: 'redis-replication-config',
+    reconfigureKey: 'redis.conf'
+  },
+  kafka: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  qdrant: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  nebula: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  weaviate: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  milvus: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
   }
 };

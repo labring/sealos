@@ -17,9 +17,11 @@ export type DBType = `${DBTypeEnum}`;
 
 export type SupportMigrationDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
 
-export type SupportConnectDBType = Extract<
+export type SupportConnectDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
+
+export type SupportReconfigureDBType = Extract<
   DBType,
-  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'mongodb'
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'redis'
 >;
 
 export type DeployKindsType =
@@ -63,6 +65,7 @@ export interface DBEditType {
   cpu: number;
   memory: number;
   storage: number;
+  config: string;
 }
 
 export interface DBDetailType extends DBEditType {

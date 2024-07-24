@@ -3,6 +3,8 @@ import { useMessage } from '@sealos/ui';
 import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
+import yaml from 'js-yaml';
+import ini from 'ini';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
@@ -299,3 +301,103 @@ export function decodeFromHex(encoded: string) {
   const decoded = Buffer.from(encoded, 'hex').toString('utf-8');
   return decoded;
 }
+
+export const parseConfig = ({
+  type,
+  configString
+}: {
+  type: 'ini' | 'yaml';
+  configString: string;
+}): Object => {
+  if (type === 'ini') {
+    return ini.parse(configString);
+  } else if (type === 'yaml') {
+    return yaml.load(configString) as Object;
+  } else {
+    throw new Error(`Unsupported config type: ${type}`);
+  }
+};
+
+export const flattenObject = (ob: any, prefix: string = ''): { key: string; value: string }[] => {
+  const result: { key: string; value: string }[] = [];
+
+  for (const i in ob) {
+    const key = prefix ? `${prefix}.${i}` : i;
+    if (typeof ob[i] === 'object' && ob[i] !== null) {
+      result.push(...flattenObject(ob[i], key));
+    } else {
+      result.push({ key, value: String(ob[i]) });
+    }
+  }
+
+  return result;
+};
+
+export const getDifferences = (
+  obj1: object,
+  obj2: object
+): {
+  path: string;
+  oldValue: any;
+  newValue: any;
+}[] => {
+  const differences: {
+    path: string;
+    oldValue: any;
+    newValue: any;
+  }[] = [];
+
+  const findDifferences = (prefix: string, obj1: any, obj2: any): void => {
+    const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    keys.forEach((key) => {
+      const fullPath = prefix ? `${prefix}.${key}` : key;
+      const oldValue = obj1[key];
+      const newValue = obj2[key];
+
+      if (
+        oldValue !== null &&
+        typeof oldValue === 'object' &&
+        !Array.isArray(oldValue) &&
+        newValue !== null &&
+        typeof newValue === 'object' &&
+        !Array.isArray(newValue)
+      ) {
+        findDifferences(fullPath, oldValue, newValue);
+      } else if (Array.isArray(oldValue) && Array.isArray(newValue)) {
+        if (
+          oldValue.length !== newValue.length ||
+          !oldValue.every((val, index) => val === newValue[index])
+        ) {
+          differences.push({
+            path: fullPath,
+            oldValue,
+            newValue
+          });
+        }
+      } else if (oldValue !== newValue) {
+        differences.push({
+          path: fullPath,
+          oldValue,
+          newValue
+        });
+      }
+    });
+  };
+
+  findDifferences('', obj1, obj2);
+  return differences;
+};
+
+export const compareDBConfig = ({
+  oldConfig,
+  newConfig,
+  type
+}: {
+  oldConfig: string;
+  newConfig: string;
+  type: 'ini' | 'yaml';
+}) => {
+  const oldObj = parseConfig({ type, configString: oldConfig });
+  const newObj = parseConfig({ type, configString: newConfig });
+  return getDifferences(oldObj, newObj);
+};

@@ -26,7 +26,10 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, storage, replicas }, usedData): I18nCommonKey | undefined => {
+      checkQuotaAllow: (
+        { cpu, memory, storage, replicas },
+        usedData
+      ): I18nCommonKey | undefined => {
         const quote = get().userQuota;
 
         const request = {

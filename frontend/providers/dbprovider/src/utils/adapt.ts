@@ -58,7 +58,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     ),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
-    labels: db.metadata.labels || {}
+    labels: db.metadata.labels || {},
+    config: ''
   };
 };
 
@@ -101,7 +102,8 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     cpu: 1,
     memory: 1,
     replicas: 1,
-    storage: 1
+    storage: 1,
+    config: ''
   };
   const form: any = {};
 

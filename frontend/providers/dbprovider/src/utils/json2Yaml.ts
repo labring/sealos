@@ -2,6 +2,7 @@ import { BACKUP_LABEL_KEY, BACKUP_REMARK_LABEL_KEY } from '@/constants/backup';
 import {
   CloudMigraionLabel,
   DBComponentNameMap,
+  DBTypeConfigMap,
   DBTypeEnum,
   MigrationRemark,
   RedisHAConfig,
@@ -1095,5 +1096,59 @@ export const json2NetworkService = ({
     }
   };
 
+  return yaml.dump(template);
+};
+
+export const json2Reconfigure = (
+  dbName: string,
+  dbType: DBType,
+  dbUid: string,
+  configParams: { key: string; value: string }[]
+) => {
+  const namespace = getUserNamespace();
+  const template = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      finalizers: ['opsrequest.kubeblocks.io/finalizer'],
+      generateName: `${dbName}-reconfiguring-`,
+      generation: 2,
+      labels: {
+        'app.kubernetes.io/instance': dbName,
+        'app.kubernetes.io/managed-by': 'kubeblocks',
+        'ops.kubeblocks.io/ops-type': 'Reconfiguring',
+        ...configParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {})
+      },
+      namespace: namespace,
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          name: dbName,
+          uid: dbUid
+        }
+      ]
+    },
+    spec: {
+      clusterRef: dbName,
+      reconfigure: {
+        componentName: dbType === 'apecloud-mysql' ? 'mysql' : dbType,
+        configurations: [
+          {
+            keys: [
+              {
+                key: DBTypeConfigMap[dbType].reconfigureKey,
+                parameters: configParams
+              }
+            ],
+            name: DBTypeConfigMap[dbType].reconfigureName
+          }
+        ]
+      },
+      ttlSecondsBeforeAbort: 0,
+      type: 'Reconfiguring'
+    }
+  };
+  console.log('Reconfigure Yaml', template);
   return yaml.dump(template);
 };

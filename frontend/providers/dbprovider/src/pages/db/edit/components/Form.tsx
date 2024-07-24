@@ -1,5 +1,6 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
+import PriceBox from '@/components/PriceBox';
 import QuotaBox from '@/components/QuotaBox';
 import Tip from '@/components/Tip';
 import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
@@ -7,31 +8,33 @@ import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import type { DBEditType } from '@/types/db';
-import { InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
+import { I18nCommonKey } from '@/types/i18next';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Button,
+  Center,
   Flex,
-  Image,
   FormControl,
   Grid,
+  Image,
   Input,
   NumberDecrementStepper,
   NumberIncrementStepper,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  useTheme,
-  Center,
-  Text
+  Text,
+  useDisclosure,
+  useTheme
 } from '@chakra-ui/react';
-import { MySelect, Tabs, MySlider, RangeInput, MyTooltip } from '@sealos/ui';
+import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import PriceBox from '@/components/PriceBox';
-import { I18nCommonKey } from '@/types/i18next';
+import EditConfig from './EditConfig';
 
 const Form = ({
   formHook,
@@ -55,6 +58,11 @@ const Form = ({
     getValues,
     formState: { errors }
   } = formHook;
+  const {
+    isOpen: isEditConfig,
+    onOpen: onOpenEditConfig,
+    onClose: onCloseEditConfig
+  } = useDisclosure();
 
   const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
     {
@@ -490,8 +498,37 @@ const Form = ({
                   </MyTooltip>
                 </Flex>
               </FormControl>
+
+              {getValues('config') && (
+                <FormControl>
+                  <Flex mt={'32px'} alignItems={'center'}>
+                    <Label w={100}>{t('database_config')}</Label>
+                    <Button
+                      w={'100%'}
+                      height={'32px'}
+                      variant={'outline'}
+                      fontSize={'base'}
+                      leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
+                      onClick={onOpenEditConfig}
+                    >
+                      {t('database_edit_config')}
+                    </Button>
+                  </Flex>
+                </FormControl>
+              )}
             </Box>
           </Box>
+
+          {isEditConfig && (
+            <EditConfig
+              dbType={getValues('dbType')}
+              defaultConfig={getValues('config')}
+              onClose={onCloseEditConfig}
+              successCb={(e) => {
+                setValue('config', e);
+              }}
+            />
+          )}
         </Box>
       </Grid>
     </>

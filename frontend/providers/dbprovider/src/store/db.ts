@@ -2,14 +2,20 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
-import { getMyDBList, getPodsByDBName, getDBByName, getMonitorData } from '@/api/db';
+import {
+  getMyDBList,
+  getPodsByDBName,
+  getDBByName,
+  getMonitorData,
+  getConfigByName
+} from '@/api/db';
 import { defaultDBDetail } from '@/constants/db';
 
 type State = {
   dbList: DBListItemType[];
   setDBList: () => Promise<DBListItemType[]>;
   dbDetail: DBDetailType;
-  loadDBDetail: (name: string, init?: boolean) => Promise<DBDetailType>;
+  loadDBDetail: (name: string, isEdit?: boolean) => Promise<DBDetailType>;
   dbPods: PodDetailType[];
   intervalLoadPods: (dbName: string) => Promise<null>;
 };
@@ -52,18 +58,25 @@ export const useDBStore = create<State>()(
         return res;
       },
       dbDetail: defaultDBDetail,
-      async loadDBDetail(name: string) {
+      async loadDBDetail(name: string, isEdit = false) {
         try {
           const res = await getDBByName(name);
+          let config = '';
+          try {
+            if (isEdit) {
+              config = await getConfigByName({ name: res.dbName, dbType: res.dbType });
+            }
+          } catch (error) {}
+
           if (res.status.value === 'Updating') {
             const isDiskOverflow = await getDiskOverflowStatus(res.dbName, res.dbType);
             res.isDiskSpaceOverflow = isDiskOverflow;
           }
 
           set((state) => {
-            state.dbDetail = res;
+            state.dbDetail = { ...res, config: config };
           });
-          return res;
+          return { ...res, config: config };
         } catch (error) {
           return Promise.reject(error);
         }
