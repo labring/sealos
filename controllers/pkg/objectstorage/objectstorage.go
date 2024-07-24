@@ -16,7 +16,10 @@ package objectstorage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/prometheus/prom2json"
 
@@ -277,4 +280,121 @@ func extractNamespace(input string) string {
 		return ""
 	}
 	return matches[1]
+}
+
+type LogEntry struct {
+	Authority                string `json:"authority"`
+	BytesReceived            string `json:"bytes_received"`
+	BytesSent                string `json:"bytes_sent"`
+	DownstreamLocalAddress   string `json:"downstream_local_address"`
+	DownstreamRemoteAddress  string `json:"downstream_remote_address"`
+	Duration                 string `json:"duration"`
+	IstioPolicy              string `json:"istio_policy_status"`
+	Log                      string `json:"log"`
+	LogTag                   string `json:"logtag"`
+	Method                   string `json:"method"`
+	Path                     string `json:"path"`
+	Protocol                 string `json:"protocol"`
+	RequestID                string `json:"request_id"`
+	RequestedServerName      string `json:"requested_server_name"`
+	ResponseCode             string `json:"response_code"`
+	ResponseFlags            string `json:"response_flags"`
+	RouteName                string `json:"route_name"`
+	StartTime                string `json:"start_time"`
+	TraceID                  string `json:"trace_id"`
+	UpstreamCluster          string `json:"upstream_cluster"`
+	UpstreamHost             string `json:"upstream_host"`
+	UpstreamLocalAddress     string `json:"upstream_local_address"`
+	UpstreamServiceTime      string `json:"upstream_service_time"`
+	UpstreamTransportFailure string `json:"upstream_transport_failure_reason"`
+	UserAgent                string `json:"user_agent"`
+	XForwardedFor            string `json:"x_forwarded_for"`
+}
+
+type LogData struct {
+	Stream map[string]interface{} `json:"stream"`
+	Values [][]interface{}        `json:"values"`
+}
+
+type LogResponse struct {
+	Data struct {
+		Result []LogData `json:"result"`
+	} `json:"data"`
+	Stats  map[string]interface{} `json:"stats"`
+	Status string                 `json:"status"`
+}
+
+func GetUserExternalFlow(lokiUrl, authority string, startTime, endTime time.Time) (map[string]int64, error) {
+	query := "{namespace=\"higress-system\"}|=\"" + authority + "\""
+	url := lokiUrl + "?start=" + strconv.FormatInt(startTime.Unix(), 10) + "&end=" + strconv.FormatInt(endTime.Unix(), 10) + "&query=" + query
+
+	fmt.Println("url:", url)
+
+	userBytesMap := make(map[string]int64)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("", err)
+		return userBytesMap, err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("", err)
+		return userBytesMap, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("", err)
+		return userBytesMap, err
+	}
+
+	var logResponse LogResponse
+	err = json.Unmarshal(body, &logResponse)
+	if err != nil {
+		fmt.Println("", err)
+		return userBytesMap, err
+	}
+
+	if logResponse.Status != "success" {
+		return userBytesMap, fmt.Errorf("failed to get loki log")
+	}
+
+	for _, result := range logResponse.Data.Result {
+		for _, values := range result.Values {
+			var logEntry LogEntry
+			err := json.Unmarshal([]byte(values[1].(string)), &logEntry)
+			if err != nil {
+				return userBytesMap, err
+			}
+
+			if logEntry.Authority != authority {
+				continue
+			}
+
+			username := extractUsername(logEntry.Path)
+
+			bytesReceived, _ := strconv.ParseInt(logEntry.BytesReceived, 10, 64)
+			bytesSent, _ := strconv.ParseInt(logEntry.BytesSent, 10, 64)
+
+			userBytesMap[username] += bytesReceived + bytesSent
+		}
+	}
+
+	return userBytesMap, err
+}
+
+func extractUsername(path string) string {
+	start := strings.Index(path, "/") + 1
+	end := strings.Index(path, "-")
+	if start < 0 || end < 0 || end <= start {
+		return ""
+	}
+	return path[start:end]
 }
