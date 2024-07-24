@@ -39,6 +39,8 @@ export enum WorkOrderType {
   CloudServer = 'cloudserver',
   ObjectStorage = 'objectstorage',
   FunctionServer = 'functionserver',
+  FastGPT = 'fastgpt',
+  AccountCenter = 'account_center',
   Other = 'other'
 }
 

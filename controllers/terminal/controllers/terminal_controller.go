@@ -26,14 +26,12 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -42,16 +40,14 @@ import (
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
+const TerminalPartOf = "terminal"
+
 const (
 	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
 	HostnameLength      = 8
 	KeepaliveAnnotation = "lastUpdateTime"
 	LetterBytes         = "abcdefghijklmnopqrstuvwxyz0123456789"
-)
-
-const (
-	TerminalPartOf = "terminal"
 )
 
 const (
@@ -132,6 +128,9 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		ManagedBy: label.DefaultManagedBy,
 		PartOf:    TerminalPartOf,
 	})
+
+	//Note: Fixme: For `Forward Compatibility` usage only, old resource controller need this label.
+	recLabels["TerminalID"] = terminal.Name
 
 	var hostname string
 	if err := r.syncDeployment(ctx, terminal, &hostname, recLabels); err != nil {
@@ -376,23 +375,6 @@ func (r *TerminalReconciler) getPort() string {
 		return ""
 	}
 	return ":" + r.CtrConfig.Global.CloudPort
-}
-
-func NewCache() cache.NewCacheFunc {
-	cacheLabelSelector := cache.ObjectSelector{
-		Label: labels.SelectorFromSet(labels.Set{
-			label.AppManagedBy: label.DefaultManagedBy,
-			label.AppPartOf:    TerminalPartOf,
-		}),
-	}
-
-	return cache.BuilderWithOptions(cache.Options{
-		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:    cacheLabelSelector,
-			&corev1.Service{}:       cacheLabelSelector,
-			&networkingv1.Ingress{}: cacheLabelSelector,
-		},
-	})
 }
 
 // SetupWithManager sets up the controller with the Manager.

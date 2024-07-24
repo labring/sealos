@@ -56,14 +56,14 @@ ${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
         color={'grayModern.900'}
         fontWeight={500}
       >
-        {t('app.Resource Quota')}
+        {t('app.resource_quota')}
       </Box>
       <Flex flexDirection={'column'} gap={'14px'} py={'16px'} px={'20px'}>
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
             <Flex alignItems={'center'}>
               <Box flex={'0 0 60px'} textTransform={'capitalize'}>
-                {t(item.type === 'cpu' ? 'CPU' : item.type)}
+                {t(item.type)}
               </Box>
               <Progress
                 flex={'1 0 0'}

@@ -34,10 +34,8 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/pay"
 
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	"gorm.io/gorm"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
@@ -730,7 +728,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		"accountSystemNamespace", r.accountSystemNamespace)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{}))).
-		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&accountv1.Payment{}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
 }

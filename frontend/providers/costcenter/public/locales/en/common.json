@@ -158,9 +158,11 @@
   "Remaining Quota": "remaining",
   "Receipts And Disbursements": "Receipts And Disbursements",
   "APP Name": "App name",
-  "All APP": "all",
   "APP Type": "App type",
   "Details": "Details",
+	"Transfer Type":"Transfer Type",
   "Handle": "Handle",
-  "currencyUnit": "Currency Unit"
+  "currencyUnit": "Currency Unit",
+	"Trader ID":"Trader"
+
 }

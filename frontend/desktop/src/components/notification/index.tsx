@@ -177,7 +177,7 @@ export default function Notification(props: TNotification) {
           </Box>
           <Text>
             {MessageConfig.activePage === 'index'
-              ? t('Message Center')
+              ? t('common:message_center')
               : i18n.language === 'zh' && MessageConfig.msgDetail?.spec?.i18ns?.zh?.title
               ? MessageConfig.msgDetail?.spec?.i18ns?.zh?.title
               : MessageConfig.msgDetail?.spec?.title}
@@ -196,7 +196,7 @@ export default function Notification(props: TNotification) {
                   )
                 }
               >
-                {t('Unread')} ({unReadNotes?.length || 0})
+                {t('common:unread')} ({unReadNotes?.length || 0})
               </Box>
               <Box
                 ml={'12px'}
@@ -209,7 +209,7 @@ export default function Notification(props: TNotification) {
                   )
                 }
               >
-                {t('Have Read')}
+                {t('common:have_read')}
               </Box>
               <Button
                 ml={'auto'}
@@ -219,7 +219,7 @@ export default function Notification(props: TNotification) {
                 iconSpacing="4px"
                 borderRadius={'4px'}
               >
-                <Text className={styles.tab}>{t('Read All')}</Text>
+                <Text className={styles.tab}>{t('common:read_all')}</Text>
               </Button>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
@@ -248,7 +248,7 @@ export default function Notification(props: TNotification) {
                       className={clsx(styles.desc, styles.footer)}
                     >
                       <Text>
-                        {t('From')}「
+                        {t('common:from')}「
                         {i18n.language === 'zh' && item.spec?.i18ns?.zh?.from
                           ? item.spec?.i18ns?.zh?.from
                           : item?.spec?.from}
@@ -279,7 +279,7 @@ export default function Notification(props: TNotification) {
               fontWeight="400"
             >
               <Text>
-                {t('From')}「
+                {t('common:from')}「
                 {i18n.language === 'zh' && MessageConfig.msgDetail?.spec?.i18ns?.zh?.from
                   ? MessageConfig.msgDetail?.spec?.i18ns?.zh?.from
                   : MessageConfig.msgDetail?.spec?.from}
@@ -320,7 +320,7 @@ export default function Notification(props: TNotification) {
                     handleCharge();
                   }}
                 >
-                  {t('Charge')}
+                  {t('common:charge')}
                 </Button>
               </Flex>
             )}
@@ -403,28 +403,30 @@ export default function Notification(props: TNotification) {
                 disclosure.onOpen();
               }}
             >
-              {t('Detail')}
+              {t('common:detail')}
             </Button>
-            <Button
-              w="78px"
-              h="32px"
-              variant={'unstyled'}
-              bg={'white'}
-              color={'grayModern.900'}
-              borderRadius={'4px'}
-              onClick={() => {
-                const temp = MessageConfig.popupMessage;
-                setMessageConfig(
-                  produce((draft) => {
-                    draft.popupMessage = undefined;
-                  })
-                );
-                readMsgMutation.mutate([temp?.metadata?.name || '']);
-                handleCharge();
-              }}
-            >
-              {t('Charge')}
-            </Button>
+            {MessageConfig.msgDetail?.spec?.from === 'Debt-System' && (
+              <Button
+                w="78px"
+                h="32px"
+                variant={'unstyled'}
+                bg={'white'}
+                color={'grayModern.900'}
+                borderRadius={'4px'}
+                onClick={() => {
+                  const temp = MessageConfig.popupMessage;
+                  setMessageConfig(
+                    produce((draft) => {
+                      draft.popupMessage = undefined;
+                    })
+                  );
+                  readMsgMutation.mutate([temp?.metadata?.name || '']);
+                  handleCharge();
+                }}
+              >
+                {t('common:charge')}
+              </Button>
+            )}
           </Flex>
         </Box>
       )}

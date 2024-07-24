@@ -34,7 +34,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -52,7 +51,7 @@ func TestAPIs(t *testing.T) {
 
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Webhook Suite",
-		[]Reporter{printer.NewlineReporter{}})
+		[]Reporter{})
 }
 
 var _ = BeforeSuite(func() {
@@ -95,12 +94,12 @@ var _ = BeforeSuite(func() {
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme,
-		Host:               webhookInstallOptions.LocalServingHost,
-		Port:               webhookInstallOptions.LocalServingPort,
-		CertDir:            webhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+		Scheme: scheme,
+		//Host:               webhookInstallOptions.LocalServingHost,
+		//Port:               webhookInstallOptions.LocalServingPort,
+		//CertDir:            webhookInstallOptions.LocalServingCertDir,
+		LeaderElection: false,
+		//MetricsBindAddress: "0",
 	})
 	Expect(err).NotTo(HaveOccurred())
 

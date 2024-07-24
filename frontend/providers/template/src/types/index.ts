@@ -1,3 +1,9 @@
+import Cron from 'croner';
+
+declare global {
+  var updateRepoCronJob: Cron;
+}
+
 export type QueryType = {
   name: string;
   templateName: string;

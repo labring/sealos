@@ -63,7 +63,9 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux go build $(shell [ -n "${CRYPTOKEY}"  ] && echo "-ldflags '-X github.com/labring/sealos/controllers/pkg/crypto.encryptionKey=${CRYPTOKEY} -X github.com/labring/sealos/controllers/pkg/database.cryptoKey=${CRYPTOKEY}'") -o bin/manager main.go
+	LD_FLAGS="-s -w"; \
+	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+=" -X github.com/labring/sealos/controllers/pkg/crypto.encryptionKey=${CRYPTOKEY} -X github.com/labring/sealos/controllers/pkg/database.cryptoKey=${CRYPTOKEY}"; \
+	CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

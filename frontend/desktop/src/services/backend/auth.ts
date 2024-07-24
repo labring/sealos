@@ -1,7 +1,7 @@
 import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
 import { JWTPayload } from '@/types';
-import { AuthenticationTokenPayload, AccessTokenPayload } from '@/types/token';
+import { AuthenticationTokenPayload, AccessTokenPayload, CronJobTokenPayload } from '@/types/token';
 
 const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 const grobalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
@@ -17,7 +17,6 @@ const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
     const payload = await verifyJWT<T>(token);
     return payload;
   } catch (err) {
-    console.error(err);
     return null;
   }
 };
@@ -41,7 +40,6 @@ export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => 
     const payload = await verifyJWT<AuthenticationTokenPayload>(token, grobalJwtSecret());
     return payload;
   } catch (err) {
-    console.error(err);
     return null;
   }
 };
@@ -50,10 +48,9 @@ export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?
     if (!token) return resolve(null);
     verify(token, secret || regionalJwtSecret(), (err, payload) => {
       if (err) {
-        console.log(err);
+        // console.log(err);
         resolve(null);
       } else if (!payload) {
-        console.log('payload is null');
         resolve(null);
       } else {
         resolve(payload as T);
@@ -66,3 +63,6 @@ export const generateAppToken = (props: AccessTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '7d' });
 export const generateAuthenticationToken = (props: AuthenticationTokenPayload) =>
   sign(props, grobalJwtSecret(), { expiresIn: '60000' });
+
+export const generateCronJobToken = (props: CronJobTokenPayload) =>
+  sign(props, internalJwtSecret(), { expiresIn: '60000' });

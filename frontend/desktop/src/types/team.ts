@@ -1,3 +1,5 @@
+import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
+import * as k8s from '@kubernetes/client-node';
 import { UUID, createHash } from 'crypto';
 import * as yaml from 'js-yaml';
 export type RoleAction = 'Grant' | 'Deprive' | 'Change' | 'Create' | 'Modify';
@@ -30,21 +32,14 @@ type CRD = {
     role: RoleType;
   };
 };
-export enum watchEventType {
-  ADDED = 'ADDED',
-  MODIFIED = 'MODIFIED',
-  DELETED = 'DELETED',
-  BOOKMARK = 'BOOKMARK'
-}
-export const generateRequestCrd = (props: CRD['spec'] & { namespace: string }) => {
-  const hash = createHash('sha256');
-  hash.update(JSON.stringify(props) + new Date().getTime());
-  const name = hash.digest('hex');
+export const generateRequestCrd = ({
+  ...props
+}: CRD['spec'] & { namespace: string; name: string }) => {
   const requestCrd: CRD = {
     apiVersion: 'user.sealos.io/v1',
     kind: 'Operationrequest',
     metadata: {
-      name,
+      name: props.name,
       namespace: props.namespace
     },
     spec: {
@@ -53,7 +48,6 @@ export const generateRequestCrd = (props: CRD['spec'] & { namespace: string }) =
       role: props.role
     }
   };
-
   try {
     const result = yaml.dump(requestCrd);
     return result;

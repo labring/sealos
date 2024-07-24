@@ -84,7 +84,7 @@ const TagTextarea = ({ defaultValues, onUpdate, ...props }: Props) => {
           </Tag>
         ))}
         <Input
-          placeholder={t('Enter Save') || ''}
+          placeholder={t('enter_save')}
           ref={InputRef}
           variant={'unstyled'}
           display={'inline-block'}

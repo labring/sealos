@@ -131,7 +131,13 @@ const OrderList = ({
               leftIcon={<MyIcon name={'detail'} w={'16px'} h="16px" />}
               px={'8px'}
               onClick={() => {
-                router.push(`/workorder/detail?orderId=${item.orderId}`);
+                router.push({
+                  pathname: `/workorder/detail`,
+                  query: {
+                    ...router.query,
+                    orderId: item.orderId
+                  }
+                });
               }}
             >
               {t('Details')}

@@ -1,6 +1,6 @@
 module github.com/labring/sealos/service/database
 
-go 1.20
+go 1.22
 
 require (
 	github.com/labring/sealos/service v0.0.0-00010101000000-000000000000

@@ -17,6 +17,6 @@ Sealos 上的应用采用前后端分离的架构，同时前端能够提供 `SS
 对于 Sealos 上的各种应用而言，它们可以直接与 `Kubernetes` 的服务进行交互，也可以与各种 CRD Controller 比如 Terminal Controller 和 Ingress-Nginx Controller 等等进行交互。
 应用之间也可以互相调用，比如用户在**数据库**应用中新建的数据库,可以直接唤起**终端**应用并自动连接上数据库进行调试。
 
-详细信息可以点击 [链接](../../platform-components) 文档了解更多。
+详细信息可以点击 [链接](../../guides) 文档了解更多。
 
 ![Application](./images/application_light.png#gh-light-mode-only)![Application](./images/application_dark.png#gh-dark-mode-only)

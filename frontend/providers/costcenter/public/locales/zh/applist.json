@@ -1,0 +1,10 @@
+{
+	"TERMINAL": "终端",
+	"JOB":"任务",
+	"OTHER": "其他",
+	"OBJECT-STORAGE": "对象存储",
+	"CLOUD-VM":"云主机",
+	"DB": "数据库",
+	"APP": "应用",
+	"All APP": "所有应用"
+}

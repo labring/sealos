@@ -3,20 +3,21 @@ import React, { useState, useEffect } from 'react';
 import warnIcon from 'public/icons/warning.svg';
 import closeIcon from 'public/icons/close_white.svg';
 import { useTranslation } from 'next-i18next';
+import { I18nCommonKey } from '@/types/i18next';
 
 const useCustomError = () => {
   const { t } = useTranslation();
-  const [error, setError] = useState('');
+  const [error, setError] = useState<I18nCommonKey | null>();
 
-  const showError = (errorMessage: string, duration = 5000) => {
+  const showError = (errorMessage: I18nCommonKey, duration = 5000) => {
     setError(errorMessage);
     setTimeout(() => {
-      setError('');
+      setError(null);
     }, duration);
   };
 
   const closeError = () => {
-    setError('');
+    setError(null);
   };
 
   const ErrorComponent = () => {

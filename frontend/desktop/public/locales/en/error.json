@@ -1,0 +1,23 @@
+{
+	"NOT_SUPPORT": "Not supported",
+	"OAUTH_PROVIDER_NOT_FOUND": "Current OAuth provider not found",
+	"EXIST_SAME_OAUTH_PROVIDER": "Same OAuth provider already exists",
+	"USER_NOT_FOUND": "User not found",
+	"RESULT_SUCCESS": "Success response",
+	"INTERNAL_SERVER_ERROR": "Internal server error",
+	"INSUFFICENT_BALANCE": "Insufficient balance",
+	"ACCOUNT_NOT_FOUND": "Account not found",
+	"MERGET_USER_INSUFFICENT_BALANCE":"Insufficient balance in the merged account",
+	"USER_CR_NOT_FOUND": "User CR not found",
+	"OAUTHPROVIDER_NOT_FOUND": "OAuth provider not found",
+	"PRIVATE_WORKSPACE_NOT_FOUND": "Private workspace not found",
+	"GET_RESOURCE_ERROR": "Get resource error",
+	"REMAIN_OTHER_REGION_RESOURCE": "Remaining resources in other region",
+	"REMAIN_WORKSACE_OWNER": "Remaining workspace owner in current region",
+	"REMAIN_CVM": "Remaining cloud virtual machine in current region",
+	"REMAIN_APP": "Remaining applications in current region",
+	"REMAIN_TEMPLATE": "Remaining templates in current region",
+	"REMAIN_OBJECT_STORAGE": "Remaining object storage in current region",
+	"REMAIN_DATABASE": "Remaining databases in current region",
+	"KUBECONFIG_NOT_FOUND": "Kubeconfig not found"
+}

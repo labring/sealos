@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
+import { ProviderType } from 'prisma/global/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -20,6 +21,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       globalPrisma.user.findUnique({
         where: {
           uid: regionUser.userUid
+        },
+        include: {
+          oauthProvider: {
+            select: {
+              providerType: true,
+              providerId: true
+            }
+          }
         }
       })
     ]);
@@ -28,14 +37,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 404,
         message: 'Not found'
       });
-    else
-      return jsonRes(res, {
-        code: 200,
-        message: 'Successfully',
-        data: {
-          info: globalData
-        }
-      });
+    const info = {
+      ...globalData,
+      oauthProvider: globalData.oauthProvider.map((o) => ({
+        providerType: o.providerType,
+        providerId: (
+          [ProviderType.PHONE, ProviderType.PASSWORD, ProviderType.EMAIL] as ProviderType[]
+        ).includes(o.providerType)
+          ? o.providerId
+          : ''
+      }))
+    };
+    return jsonRes(res, {
+      code: 200,
+      message: 'Successfully',
+      data: {
+        info
+      }
+    });
   } catch (err) {
     console.log(err);
     return jsonRes(res, {

@@ -20,18 +20,24 @@ import (
 	"flag"
 	"os"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	configpkg "github.com/labring/sealos/controllers/pkg/config"
+	"github.com/labring/sealos/controllers/pkg/utils/label"
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 	"github.com/labring/sealos/controllers/terminal/controllers"
 	//+kubebuilder:scaffold:imports
@@ -67,10 +73,16 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	cacheObjLabelSelector := labels.SelectorFromSet(labels.Set{
+		label.AppManagedBy: label.DefaultManagedBy,
+		label.AppPartOf:    controllers.TerminalPartOf,
+	})
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "50686b4e.sealos.io",
@@ -87,7 +99,14 @@ func main() {
 		// LeaderElectionReleaseOnCancel: true,
 
 		// add custom cache for memory footprint optimization
-		NewCache: controllers.NewCache(),
+		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+			opts.ByObject = map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}:    {Label: cacheObjLabelSelector},
+				&corev1.Service{}:       {Label: cacheObjLabelSelector},
+				&networkingv1.Ingress{}: {Label: cacheObjLabelSelector},
+			}
+			return cache.New(config, opts)
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

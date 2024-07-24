@@ -1,0 +1,10 @@
+{
+	"TERMINAL": "TERMINAL",
+	"JOB":"JOB",
+	"OTHER": "OTHER",
+	"OBJECT-STORAGE": "OBJECT-STORAGE",
+	"CLOUD-VM":"CLOUD-VM",
+	"DB": "DATABASE",
+	"APP": "APP",
+	"All APP": "ALL"
+}

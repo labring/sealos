@@ -58,7 +58,7 @@ const EditApp = ({
   const { Loading, setIsLoading } = useLoading();
   const { checkQuotaAllow, balance } = useUserStore();
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: t('Are you sure to perform database migration')
+    content: t('are_you_sure_to_perform_database_migration')
   });
   const { loadDBDetail } = useDBStore();
   const { screenWidth, lastRoute } = useGlobalStore();
@@ -121,7 +121,7 @@ const EditApp = ({
       }
       await applyYamlList(yamlList, 'create');
       toast({
-        title: t('Migration task created successfully'),
+        title: t('migration_task_created_successfully'),
         status: 'success'
       });
       router.push({
@@ -140,13 +140,13 @@ const EditApp = ({
 
   const submitError = useCallback(() => {
     const deepSearch = (obj: any, depth: number = 2): string => {
-      if (!obj || depth === 0) return t('Submit Error');
+      if (!obj || depth === 0) return t('submit_error');
       if (!!obj.message) {
         return obj.message;
       }
       const values = Object.values(obj);
       if (values.length === 0 || typeof values[0] !== 'object') {
-        return t('Submit Error');
+        return t('submit_error');
       }
       return deepSearch(values[0], depth - 1);
     };
@@ -214,8 +214,8 @@ const EditApp = ({
         <Header
           dbName={dbName}
           dbType={dbType}
-          title={'Data Migration Config'}
-          applyBtnText={'Migrate Now'}
+          title={'data_migration_config'}
+          applyBtnText={'migrate_now'}
           applyCb={() =>
             formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
           }

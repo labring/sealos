@@ -213,7 +213,7 @@ export default function AppDock() {
             onClick={toggleShape}
             borderRadius={'4px'}
           >
-            {t('Switching Disc')}
+            {t('common:switching_disc')}
           </Box>
           <div className={styles.arrow}></div>
         </>

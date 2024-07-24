@@ -120,7 +120,7 @@ export default function AppWindow(props: {
             <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
               {wnapp?.i18n?.[i18n?.language]?.name
                 ? wnapp.i18n?.[i18n?.language]?.name
-                : t(wnapp?.name)}
+                : wnapp?.name}
             </Box>
             {wnapp.menuData?.helpDocs && (
               <Text
@@ -131,7 +131,7 @@ export default function AppWindow(props: {
                     window.open(wnapp.menuData?.helpDocs);
                 }}
               >
-                {t('Doc')}
+                {t('common:doc')}
               </Text>
             )}
           </Flex>

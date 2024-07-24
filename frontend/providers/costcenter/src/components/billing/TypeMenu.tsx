@@ -1,5 +1,5 @@
-import { LIST_TYPE } from '@/constants/billing';
-import { BillingType } from '@/types';
+import { TRANSFER_LIST_TYPE } from '@/constants/billing';
+import { TransferType } from '@/types';
 import { Button, Popover, PopoverContent, PopoverTrigger, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { Dispatch, SetStateAction } from 'react';
@@ -7,13 +7,11 @@ import { Dispatch, SetStateAction } from 'react';
 export default function TypeMenu({
   isDisabled,
   selectType,
-  setType,
-  optional
+  setType
 }: {
-  optional: BillingType[];
   isDisabled: boolean;
-  selectType: BillingType;
-  setType: Dispatch<SetStateAction<BillingType>>;
+  selectType: TransferType;
+  setType: Dispatch<SetStateAction<TransferType>>;
 }) {
   const { isOpen, onClose, onOpen } = useDisclosure();
   const { t } = useTranslation();
@@ -41,7 +39,7 @@ export default function TypeMenu({
           }}
           borderRadius={'2px'}
         >
-          {t(LIST_TYPE[selectType + 1].title)}
+          {t(TRANSFER_LIST_TYPE[selectType].title)}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -51,7 +49,7 @@ export default function TypeMenu({
         shadow={'0px 0px 1px 0px #798D9F40, 0px 2px 4px 0px #A1A7B340'}
         border={'none'}
       >
-        {LIST_TYPE.filter((x) => optional.includes(x.value)).map((v) => (
+        {TRANSFER_LIST_TYPE.map((v) => (
           <Button
             variant={'white-bg-icon'}
             key={v.value}

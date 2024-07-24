@@ -1,0 +1,23 @@
+{
+  "NOT_SUPPORT": "不支持",
+  "OAUTH_PROVIDER_NOT_FOUND": "当前绑定的登录方式不存在",
+  "EXIST_SAME_OAUTH_PROVIDER": "已存在相同的绑定的登录方式",
+  "USER_NOT_FOUND": "未找到用户",
+  "RESULT_SUCCESS": "响应成功",
+  "INTERNAL_SERVER_ERROR": "内部服务器错误",
+  "INSUFFICENT_BALANCE": "余额不足",
+	"MERGET_USER_INSUFFICENT_BALANCE": "被合并的账户余额不足",
+  "ACCOUNT_NOT_FOUND": "未找到账户",
+  "USER_CR_NOT_FOUND": "未找到用户CR",
+  "OAUTHPROVIDER_NOT_FOUND": "未找到OAuth提供程序",
+  "PRIVATE_WORKSPACE_NOT_FOUND": "未找到私有工作空间",
+  "GET_RESOURCE_ERROR": "获取资源错误",
+  "REMAIN_OTHER_REGION_RESOURCE": "其他可用区残留资源",
+  "REMAIN_WORKSACE_OWNER": "当前可用区残留工作空间",
+  "REMAIN_CVM": "当前可用区残留云主机",
+  "REMAIN_APP": "当前可用区残留应用",
+  "REMAIN_TEMPLATE": "当前可用区残留模板",
+  "REMAIN_OBJECT_STORAGE": "当前可用区残留对象存储",
+  "REMAIN_DATABASE": "当前可用区残留数据库",
+  "KUBECONFIG_NOT_FOUND": "未找到Kubeconfig"
+}

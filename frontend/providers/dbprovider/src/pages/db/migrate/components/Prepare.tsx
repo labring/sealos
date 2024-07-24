@@ -35,13 +35,13 @@ export default function PrepareBox({
           "show variables like '%row_im%';  ",
           "set binlog_row_image ='FULL';  "
         ],
-        checkboxLabel: t('I have read and completed migration preparations'),
+        checkboxLabel: t('migration_preparations'),
         permissionCheck: `source account: REPLICATION SLAVE、REPLICATION CLIENT、SELECT \nsink account: SELECT、INSERT、UPDATE、DELETE、CREATE、ALTER、DROP`,
         title: 'MySQL'
       },
       mongodb: {
         codeList: [t('migrate.mongodb.stepOne'), t('migrate.mongodb.stepTwo')],
-        checkboxLabel: t('I have read and completed migration preparations'),
+        checkboxLabel: t('migration_preparations'),
         permissionCheck: t('migrate.mongo.check'),
         title: 'Monogo'
       },
@@ -52,7 +52,7 @@ export default function PrepareBox({
           `ALTER SYSTEM SET wal_level = 'logical';`,
           t('migrate.postgresql.stepTwo')
         ],
-        checkboxLabel: t('I have read and completed migration preparations'),
+        checkboxLabel: t('migration_preparations'),
         permissionCheck: t('migrate.postgresql.check'),
         title: 'PostgreSQL'
       }
@@ -64,7 +64,7 @@ export default function PrepareBox({
   return (
     <Box>
       <Text fontSize={'16px'} fontWeight={500} color={'#24282C'}>
-        {content.title} {t('Migrate Config')}
+        {content.title} {t('migrate_config')}
       </Text>
       <CodeBlock
         flexStyle={{
@@ -73,16 +73,16 @@ export default function PrepareBox({
         codeList={content.codeList}
       />
       <Text mt="20px" fontSize={'16px'} fontWeight={500} color={'#24282C'}>
-        {content.title} {t('Migration Permission Check')}
+        {content.title} {t('migration_permission_check')}
       </Text>
       <Text mt="14px" fontSize={'12px'} fontWeight={400} color={'#24282C'} whiteSpace={'pre'}>
         {content.permissionCheck}
       </Text>
       <Text mt="20px" fontSize={'16px'} fontWeight={500} color={'#24282C'}>
-        {t('Covering Risks')}
+        {t('covering_risks')}
       </Text>
       <Text mt="14px" fontSize={'12px'} fontWeight={400} color={'#24282C'}>
-        {t('Important tips for migrating')}
+        {t('important_tips_for_migrating')}
       </Text>
 
       <Checkbox

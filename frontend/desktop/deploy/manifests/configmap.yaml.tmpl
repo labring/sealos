@@ -31,6 +31,10 @@ data:
           scripts: []
         common:
           githubStarEnabled: true
+          workorderEnabled: false
+          accountSettingEnabled: true
+          docsUrl: "https://sealos.run/docs/Intro/"
+          aiAssistantEnabled: false
       auth:
         proxyAddress: ""
         callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"

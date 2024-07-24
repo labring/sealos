@@ -60,7 +60,7 @@ function genResAuthClientConfig(conf: AuthConfigType) {
 
 export async function getAuthClientConfig(): Promise<AuthClientConfigType> {
   try {
-    if (!global.AppConfig) {
+    if (process.env.NODE_ENV === 'development' || !global.AppConfig) {
       const filename =
         process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
       global.AppConfig = yaml.load(readFileSync(filename, 'utf-8')) as AppConfigType;

@@ -80,5 +80,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: [ ]
-  storedVersions: [ ]
+  conditions: []
+  storedVersions: []

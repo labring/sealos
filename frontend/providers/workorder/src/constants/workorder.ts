@@ -37,6 +37,10 @@ export const OrderTypeList: {
     label: 'functionserver'
   },
   {
+    id: WorkOrderType.AccountCenter,
+    label: 'account_center'
+  },
+  {
     id: WorkOrderType.Other,
     label: 'other'
   }

@@ -9,3 +9,8 @@ export type AccessTokenPayload = {
   workspaceUid: string;
   workspaceId: string;
 } & AuthenticationTokenPayload;
+
+export type CronJobTokenPayload = {
+  mergeUserUid: string;
+  userUid: string;
+};

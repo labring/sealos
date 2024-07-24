@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (global.AppConfig.common.guideEnabled) return jsonRes(res, { data: null });
+    if (!global.AppConfig.common.guideEnabled) return jsonRes(res, { data: null });
     const kubeconfig = await authSession(req.headers);
     const domain = global.AppConfig.cloud.domain;
 

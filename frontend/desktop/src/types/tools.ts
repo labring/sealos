@@ -29,3 +29,16 @@ export type OmitPathArr<Obj, Paths extends unknown[]> = Paths extends [infer Hea
     ? OmitPathArr<OmitPath<Obj, Head>, Rest>
     : never
   : Obj;
+export type ValueOf<T extends object> = T[keyof T];
+export type AsyncResult<
+  TData extends unknown,
+  StatusUnion extends unknown,
+  SuccessStatus extends StatusUnion
+> = [TData] extends [never]
+  ? { status: StatusUnion }
+  :
+      | {
+          status: SuccessStatus;
+          data: TData;
+        }
+      | { status: Exclude<StatusUnion, SuccessStatus> };

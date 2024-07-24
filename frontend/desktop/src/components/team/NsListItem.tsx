@@ -1,6 +1,6 @@
 import { Box, Flex, FlexProps, HStack, Text, VStack } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 const NsListItem = ({
   isSelected,
@@ -61,7 +61,7 @@ const NsListItem = ({
             : {})}
           textTransform={'capitalize'}
         >
-          {isPrivate ? t('Default Team') : teamName}
+          {isPrivate ? t('common:default_team') : teamName}
         </Text>
       </HStack>
     </Flex>

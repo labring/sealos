@@ -29,7 +29,7 @@ const Home = () => {
         document.head.appendChild(script1);
 
         const scriptBaidu = document.createElement('script');
-        scriptBaidu.src = 'https://hm.baidu.com/hm.js?508769a0373e6443cbdf6fa135104b4b';
+        scriptBaidu.src = 'https://hm.baidu.com/hm.js?d8e8ecf669c47dc2512d3f1417e761f9';
         scriptBaidu.async = true;
         document.head.appendChild(scriptBaidu);
       } else {
@@ -76,7 +76,7 @@ const Home = () => {
           <Capability isPc={isPc} />
           <Introduce isPc={isPc} />
           <Community isPc={isPc} />
-          <HomeUserBy isPc={isPc} />
+          {/* <HomeUserBy isPc={isPc} /> */}
           <HomeFooter isPc={isPc} />
         </div>
       </Layout>
