@@ -25,6 +25,7 @@ type Region struct {
 var (
 	DBClient Interface
 	Cfg      *Config
+	Debug    bool
 )
 
 func InitDB() error {
@@ -41,6 +42,7 @@ func InitDB() error {
 	if mongoURI == "" {
 		return fmt.Errorf("empty mongo uri, please check env: %s", helper.EnvMongoURI)
 	}
+	Debug = os.Getenv("DEBUG") == "true"
 	DBClient, err = NewAccountInterface(mongoURI, globalCockroach, localCockroach)
 	if err != nil {
 		return err
