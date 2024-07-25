@@ -105,3 +105,48 @@ export type KubeBlockBackupPolicyType = {
     };
   };
 };
+
+export type KubeBlockOpsRequestType = {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    creationTimestamp: Date;
+    generation: number;
+    labels: { [key: string]: string };
+    name: string;
+    namespace: string;
+    uid: string;
+  };
+  spec: {
+    clusterRef: string;
+    reconfigure: {
+      componentName: string;
+      configurations: {
+        keys: {
+          key: string;
+          parameters: {
+            key: string;
+            value: string;
+          }[];
+        }[];
+        name: string;
+      }[];
+    };
+    ttlSecondsBeforeAbort: number;
+    type: string;
+  };
+  status: {
+    clusterGeneration: number;
+    completionTimestamp: string;
+    conditions: {
+      lastTransitionTime: string;
+      message: string;
+      reason: string;
+      status: string;
+      type: string;
+    }[];
+    phase: string;
+    progress: string;
+    startTimestamp: string;
+  };
+};

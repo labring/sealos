@@ -172,7 +172,7 @@ const DBList = ({
             leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             onClick={() => router.push(`/db/detail?name=${item.name}&dbType=${item.dbType}`)}
           >
-            {t('Details')}
+            {t('details')}
           </Button>
           <SealosMenu
             width={100}

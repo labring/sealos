@@ -338,13 +338,13 @@ export const getDifferences = (
   obj2: object
 ): {
   path: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: string;
+  newValue: string;
 }[] => {
   const differences: {
     path: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: string;
+    newValue: string;
   }[] = [];
 
   const findDifferences = (prefix: string, obj1: any, obj2: any): void => {
@@ -363,22 +363,11 @@ export const getDifferences = (
         !Array.isArray(newValue)
       ) {
         findDifferences(fullPath, oldValue, newValue);
-      } else if (Array.isArray(oldValue) && Array.isArray(newValue)) {
-        if (
-          oldValue.length !== newValue.length ||
-          !oldValue.every((val, index) => val === newValue[index])
-        ) {
-          differences.push({
-            path: fullPath,
-            oldValue,
-            newValue
-          });
-        }
       } else if (oldValue !== newValue) {
         differences.push({
           path: fullPath,
-          oldValue,
-          newValue
+          oldValue: oldValue,
+          newValue: newValue !== undefined ? newValue.toString() : ''
         });
       }
     });
@@ -400,4 +389,22 @@ export const compareDBConfig = ({
   const oldObj = parseConfig({ type, configString: oldConfig });
   const newObj = parseConfig({ type, configString: newConfig });
   return getDifferences(oldObj, newObj);
+};
+
+export const adjustDifferencesForIni = (
+  differences: { path: string; oldValue: any; newValue: any }[],
+  type: 'ini' | 'yaml'
+): { key: string; value: string }[] => {
+  if (type !== 'ini') {
+    return differences.map((item) => ({ key: item.path, value: item.newValue }));
+  }
+
+  return differences.map((diff) => {
+    const pathParts = diff.path.split('.');
+    const adjustedPath = pathParts.slice(1).join('.');
+    return {
+      key: adjustedPath,
+      value: diff.newValue
+    };
+  });
 };

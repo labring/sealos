@@ -178,7 +178,7 @@ const Logs = ({
         <ModalHeader py={'8px'}>
           <Flex alignItems={'center'}>
             <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
-              Pod {t('Details')}
+              Pod {t('details')}
             </Box>
             <Box px={3}>
               <SealosMenu
@@ -221,7 +221,7 @@ const Logs = ({
         >
           <Flex flexDirection={'column'} h={'100%'}>
             <Box fontSize={'md'} fontWeight={'bold'} mb={4} color={'grayModern.600'}>
-              {t('Details')}
+              {t('details')}
             </Box>
             <Box
               flex={'1 0 0'}

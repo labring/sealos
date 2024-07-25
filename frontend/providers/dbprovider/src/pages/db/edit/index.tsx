@@ -29,8 +29,8 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { compareDBConfig, flattenObject, parseConfig } from '@/utils/tools';
-import { getUserNamespace } from '@/utils/user';
+import { adjustDifferencesForIni, compareDBConfig } from '@/utils/tools';
+
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -106,29 +106,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     setForceUpdate(!forceUpdate);
   });
 
-  const handleReconfigure = async (formData: DBEditType) => {
-    const reconfigureType = DBTypeConfigMap[formData.dbType].type;
-    const differences = compareDBConfig({
-      oldConfig: oldDBEditData.current?.config || '',
-      newConfig: formData.config,
-      type: reconfigureType
-    });
-
-    if (differences.length > 0) {
-      const reconfigureYaml = json2Reconfigure(
-        formData.dbName,
-        formData.dbType,
-        dbDetail.id,
-        differences.map((item) => ({ key: item.path, value: item.newValue }))
-      );
-      console.log(differences.map((item) => ({ key: item.path, value: item.newValue })));
-      await applyYamlList([reconfigureYaml], 'create');
-    }
-  };
-
   const submitSuccess = async (formData: DBEditType) => {
     console.log(formData, oldDBEditData.current);
-
     const needMongoAdapter =
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);
@@ -148,13 +127,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           isClosable: true
         });
       }
-      await handleReconfigure(formData);
       await createDB({ dbForm: formData, isEdit });
       toast({
         title: t(applySuccess),
         status: 'success'
       });
-      // router.push(lastRoute);
+      router.push(lastRoute);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));
@@ -197,7 +175,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         return null;
       }
       setIsLoading(true);
-      return loadDBDetail(dbName, true);
+      return loadDBDetail(dbName);
     },
     {
       onSuccess(res) {

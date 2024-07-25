@@ -197,11 +197,6 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   return (
     <Box h={'100%'} position={'relative'}>
       <Flex borderTop={'1px solid #EAEBF0'} h="100%">
-        <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
-          <Box px={'4px'} pt={'14px'}>
-            <QuotaBox showBorder={false} />
-          </Box>
-        </Box>
         <Box flex={1} pt="35px" px="40px" overflowY={'auto'}>
           <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
             {t('upload_dump_file')}

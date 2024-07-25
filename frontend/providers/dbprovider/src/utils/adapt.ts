@@ -1,8 +1,19 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
 import { DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
-import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
-import type { DBDetailType, DBEditType, DBListItemType, PodDetailType, PodEvent } from '@/types/db';
+import type {
+  KbPgClusterType,
+  KubeBlockBackupPolicyType,
+  KubeBlockOpsRequestType
+} from '@/types/cluster';
+import type {
+  DBDetailType,
+  DBEditType,
+  DBListItemType,
+  OpsRequestItemType,
+  PodDetailType,
+  PodEvent
+} from '@/types/db';
 import { InternetMigrationCR, MigrateItemType } from '@/types/migrate';
 import {
   convertCronTime,
@@ -58,8 +69,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     ),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
-    labels: db.metadata.labels || {},
-    config: ''
+    labels: db.metadata.labels || {}
   };
 };
 
@@ -102,8 +112,7 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     cpu: 1,
     memory: 1,
     replicas: 1,
-    storage: 1,
-    config: ''
+    storage: 1
   };
   const form: any = {};
 
@@ -253,5 +262,16 @@ export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => 
     status: item.status?.taskStatus,
     startTime: formatTime(item.metadata?.creationTimestamp || ''),
     remark: item.metadata.labels[MigrationRemark] || '-'
+  };
+};
+
+export const adaptOpsRequest = (item: KubeBlockOpsRequestType): OpsRequestItemType => {
+  return {
+    id: item.metadata.uid,
+    name: item.metadata.name,
+    namespace: item.metadata.namespace,
+    status: item.status.phase,
+    startTime: item.metadata?.creationTimestamp,
+    parameters: item.spec.reconfigure.configurations[0].keys[0].parameters
   };
 };

@@ -8,6 +8,7 @@ export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
@@ -328,10 +329,15 @@ export const DBTypeConfigMap: {
   },
   redis: {
     type: 'ini',
-    configMapName: '-redis-sentinel-redis-replication-config',
-    configMapKey: 'redis.conf',
-    reconfigureName: 'redis-replication-config',
-    reconfigureKey: 'redis.conf'
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+    // type: 'ini',
+    // configMapName: '-redis-sentinel-redis-replication-config',
+    // configMapKey: 'redis.conf',
+    // reconfigureName: 'redis-replication-config',
+    // reconfigureKey: 'redis.conf'
   },
   kafka: {
     type: 'ini',

@@ -15,7 +15,7 @@ type State = {
   dbList: DBListItemType[];
   setDBList: () => Promise<DBListItemType[]>;
   dbDetail: DBDetailType;
-  loadDBDetail: (name: string, isEdit?: boolean) => Promise<DBDetailType>;
+  loadDBDetail: (name: string, isFetchConfigMap?: boolean) => Promise<DBDetailType>;
   dbPods: PodDetailType[];
   intervalLoadPods: (dbName: string) => Promise<null>;
 };
@@ -58,15 +58,9 @@ export const useDBStore = create<State>()(
         return res;
       },
       dbDetail: defaultDBDetail,
-      async loadDBDetail(name: string, isEdit = false) {
+      async loadDBDetail(name: string) {
         try {
           const res = await getDBByName(name);
-          let config = '';
-          try {
-            if (isEdit) {
-              config = await getConfigByName({ name: res.dbName, dbType: res.dbType });
-            }
-          } catch (error) {}
 
           if (res.status.value === 'Updating') {
             const isDiskOverflow = await getDiskOverflowStatus(res.dbName, res.dbType);
@@ -74,9 +68,9 @@ export const useDBStore = create<State>()(
           }
 
           set((state) => {
-            state.dbDetail = { ...res, config: config };
+            state.dbDetail = res;
           });
-          return { ...res, config: config };
+          return res;
         } catch (error) {
           return Promise.reject(error);
         }

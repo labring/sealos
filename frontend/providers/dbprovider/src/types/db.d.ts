@@ -65,7 +65,6 @@ export interface DBEditType {
   cpu: number;
   memory: number;
   storage: number;
-  config: string;
 }
 
 export interface DBDetailType extends DBEditType {
@@ -123,4 +122,13 @@ export interface BackupItemType {
   type: `${BackupTypeEnum}`;
   namespace: string;
   connectionPassword: string;
+}
+
+export interface OpsRequestItemType {
+  id: string;
+  name: string;
+  status: string;
+  startTime: Date;
+  namespace: string;
+  parameters: { key: string; value: string }[];
 }

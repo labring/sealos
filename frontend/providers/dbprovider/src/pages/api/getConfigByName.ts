@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const dbConfig = DBTypeConfigMap[dbType];
     const key = name + dbConfig.configMapName;
-    if (!key) {
+    if (!key || !dbConfig.configMapName) {
       return jsonRes(res, {
         data: null
       });

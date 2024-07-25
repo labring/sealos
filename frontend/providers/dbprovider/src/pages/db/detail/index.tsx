@@ -18,13 +18,15 @@ import MigrateTable from './components/Migrate/Table';
 import Monitor from './components/Monitor';
 import Pods from './components/Pods';
 import { I18nCommonKey } from '@/types/i18next';
+import ReconfigureTable from './components/Reconfigure/index';
 
 enum TabEnum {
   pod = 'pod',
   backup = 'backup',
   monitor = 'monitor',
   InternetMigration = 'InternetMigration',
-  DumpImport = 'DumpImport'
+  DumpImport = 'DumpImport',
+  Reconfigure = 'reconfigure'
 }
 
 const AppDetail = ({
@@ -37,6 +39,7 @@ const AppDetail = ({
   listType: `${TabEnum}`;
 }) => {
   const BackupTableRef = useRef<ComponentRef>(null);
+  const ReconfigureTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
   const { SystemEnv } = useEnvStore();
@@ -51,6 +54,7 @@ const AppDetail = ({
     const listNavValue = [
       { label: 'monitor_list', value: TabEnum.monitor },
       { label: 'replicas_list', value: TabEnum.pod },
+      ...(PublicNetMigration ? [{ label: 'dbconfig.parameter', value: TabEnum.Reconfigure }] : []),
       ...(BackupSupported ? [{ label: 'backup_list', value: TabEnum.backup }] : []),
       ...(PublicNetMigration ? [{ label: 'online_import', value: TabEnum.InternetMigration }] : []),
       ...(PublicNetMigration && !!SystemEnv.minio_url
@@ -178,6 +182,20 @@ const AppDetail = ({
                 </Button>
               </Flex>
             )}
+            {listType === TabEnum.Reconfigure && (
+              <Flex alignItems={'center'}>
+                <Button
+                  ml={3}
+                  height={'32px'}
+                  variant={'solid'}
+                  onClick={() => {
+                    ReconfigureTableRef.current?.openBackup();
+                  }}
+                >
+                  {t('database_edit_config')}
+                </Button>
+              </Flex>
+            )}
           </Flex>
           <Box flex={'1 0 0'} h={0}>
             {listType === TabEnum.pod && <Pods dbName={dbName} dbType={dbDetail.dbType} />}
@@ -187,6 +205,9 @@ const AppDetail = ({
             )}
             {listType === TabEnum.InternetMigration && <MigrateTable dbName={dbName} />}
             {listType === TabEnum.DumpImport && <DumpImport db={dbDetail} />}
+            {listType === TabEnum.Reconfigure && (
+              <ReconfigureTable ref={ReconfigureTableRef} db={dbDetail} />
+            )}
           </Box>
         </Flex>
       </Flex>

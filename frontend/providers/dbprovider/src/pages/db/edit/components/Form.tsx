@@ -34,7 +34,6 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import EditConfig from './EditConfig';
 
 const Form = ({
   formHook,
@@ -499,7 +498,7 @@ const Form = ({
                 </Flex>
               </FormControl>
 
-              {getValues('config') && (
+              {/* {getValues('config') && (
                 <FormControl>
                   <Flex mt={'32px'} alignItems={'center'}>
                     <Label w={100}>{t('database_config')}</Label>
@@ -515,20 +514,9 @@ const Form = ({
                     </Button>
                   </Flex>
                 </FormControl>
-              )}
+              )} */}
             </Box>
           </Box>
-
-          {isEditConfig && (
-            <EditConfig
-              dbType={getValues('dbType')}
-              defaultConfig={getValues('config')}
-              onClose={onCloseEditConfig}
-              successCb={(e) => {
-                setValue('config', e);
-              }}
-            />
-          )}
         </Box>
       </Grid>
     </>
