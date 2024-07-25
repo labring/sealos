@@ -67,6 +67,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/basic-cost-distribution": {
+            "post": {
+                "description": "Get basic cost distribution",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BasicCostDistribution"
+                ],
+                "summary": "Get basic cost distribution",
+                "parameters": [
+                    {
+                        "description": "Basic cost distribution request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetCostAppListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get basic cost distribution",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse basic cost distribution request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get basic cost distribution",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/check-permission": {
             "post": {
                 "description": "Check permission",
@@ -915,9 +971,6 @@ const docTemplate = `{
         },
         "helper.AppCostsReq": {
             "type": "object",
-            "required": [
-                "kubeConfig"
-            ],
             "properties": {
                 "appName": {
                     "description": "@Summary App Name\n@Description App Name",
@@ -967,9 +1020,6 @@ const docTemplate = `{
         },
         "helper.Auth": {
             "type": "object",
-            "required": [
-                "kubeConfig"
-            ],
             "properties": {
                 "kubeConfig": {
                     "type": "string"
@@ -1077,9 +1127,6 @@ const docTemplate = `{
         },
         "helper.GetCostAppListReq": {
             "type": "object",
-            "required": [
-                "kubeConfig"
-            ],
             "properties": {
                 "appName": {
                     "description": "@Summary App Name\n@Description App Name",
@@ -1147,9 +1194,6 @@ const docTemplate = `{
         },
         "helper.GetTransferRecordReq": {
             "type": "object",
-            "required": [
-                "kubeConfig"
-            ],
             "properties": {
                 "endTime": {
                     "type": "string",
@@ -1194,9 +1238,6 @@ const docTemplate = `{
         },
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
-            "required": [
-                "kubeConfig"
-            ],
             "properties": {
                 "endTime": {
                     "type": "string",
@@ -1241,7 +1282,6 @@ const docTemplate = `{
         "helper.SetPaymentInvoiceReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
                 "paymentIDList"
             ],
             "properties": {
@@ -1272,7 +1312,6 @@ const docTemplate = `{
         "helper.TransferAmountReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
                 "toUser"
             ],
             "properties": {
@@ -1305,9 +1344,6 @@ const docTemplate = `{
         },
         "helper.UserBaseReq": {
             "type": "object",
-            "required": [
-                "kubeConfig"
-            ],
             "properties": {
                 "endTime": {
                     "type": "string",

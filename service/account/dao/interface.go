@@ -30,6 +30,7 @@ type Interface interface {
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
+	GetBasicCostDistribution(req helper.GetCostAppListReq) (map[string]int64, error)
 	GetCostAppList(req helper.GetCostAppListReq) (helper.CostAppListResp, error)
 	Disconnect(ctx context.Context) error
 	GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error)
@@ -435,6 +436,117 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 	resp.TotalPage = (resp.Total + int64(req.PageSize) - 1) / int64(req.PageSize)
 	resp.Apps = result
 	return resp, nil
+}
+
+// GetBasicCostDistribution cost: map[string]int64: key: property type (cpu,memory,storage,network,nodeport: 0,1,2,3,4), value: used amount
+func (m *MongoDB) GetBasicCostDistribution(req helper.GetCostAppListReq) (map[string]int64, error) {
+	cost := make(map[string]int64, len(resources.DefaultPropertyTypeLS.EnumMap))
+	for i := range resources.DefaultPropertyTypeLS.EnumMap {
+		cost[strconv.Itoa(int(i))] = 0
+	}
+
+	match := buildMatchCriteria(req)
+	groupStage := buildGroupStage()
+	projectStage := buildProjectStage()
+
+	if req.AppType == "" || strings.ToUpper(req.AppType) != resources.AppStore {
+		if err := aggregateAndUpdateCost(m, match, groupStage, projectStage, req.AppName, cost); err != nil {
+			return nil, err
+		}
+	}
+
+	if req.AppType == "" || strings.ToUpper(req.AppType) == resources.AppStore {
+		match["app_type"] = resources.AppType[resources.AppStore]
+		delete(match, "app_costs.name")
+		if req.AppName != "" {
+			match["app_name"] = req.AppName
+		}
+		if err := aggregateAndUpdateCost(m, match, groupStage, projectStage, "", cost); err != nil {
+			return nil, err
+		}
+	}
+	return cost, nil
+}
+
+func buildMatchCriteria(req helper.GetCostAppListReq) bson.M {
+	match := bson.M{
+		"owner":    req.Owner,
+		"app_type": bson.M{"$ne": resources.AppType[resources.AppStore]},
+	}
+	if req.Namespace != "" {
+		match["namespace"] = req.Namespace
+	}
+	if req.AppType != "" {
+		match["app_type"] = resources.AppType[strings.ToUpper(req.AppType)]
+	}
+	if req.AppName != "" {
+		match["app_costs.name"] = req.AppName
+	}
+	if req.StartTime.IsZero() {
+		req.StartTime = time.Now().UTC().Add(-time.Hour * 24 * 30)
+		req.EndTime = time.Now().UTC()
+	}
+	match["time"] = bson.M{
+		"$gte": req.StartTime,
+		"$lte": req.EndTime,
+	}
+	return match
+}
+
+func buildGroupStage() bson.D {
+	groupFields := bson.D{}
+	for i := range resources.DefaultPropertyTypeLS.EnumMap {
+		key := fmt.Sprintf("used_amount_%d", i)
+		field := fmt.Sprintf("$app_costs.used_amount.%d", i)
+		groupFields = append(groupFields, bson.E{
+			Key: key, Value: bson.D{
+				{Key: "$sum", Value: bson.D{
+					{Key: "$ifNull", Value: bson.A{bson.D{{Key: "$toLong", Value: field}}, 0}},
+				}},
+			},
+		})
+	}
+	return bson.D{{Key: "$group", Value: append(bson.D{{Key: "_id", Value: nil}}, groupFields...)}}
+}
+
+func buildProjectStage() bson.D {
+	projectFields := bson.D{}
+	for i := range resources.DefaultPropertyTypeLS.EnumMap {
+		key := fmt.Sprintf("used_amount.%d", i)
+		field := fmt.Sprintf("$used_amount_%d", i)
+		projectFields = append(projectFields, bson.E{Key: key, Value: field})
+	}
+	return bson.D{{Key: "$project", Value: projectFields}}
+}
+
+func aggregateAndUpdateCost(m *MongoDB, match bson.M, groupStage, projectStage bson.D, appName string, cost map[string]int64) error {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: match}},
+		{{Key: "$unwind", Value: "$app_costs"}},
+	}
+	if appName != "" {
+		pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.M{"app_costs.name": appName}}})
+	}
+	pipeline = append(pipeline, groupStage, projectStage)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return fmt.Errorf("failed to execute aggregate query: %w", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var result struct {
+		UsedAmount map[string]int64 `bson:"used_amount"`
+	}
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return fmt.Errorf("failed to decode aggregate result: %w", err)
+		}
+		for i, v := range result.UsedAmount {
+			cost[i] += v
+		}
+	}
+	return nil
 }
 
 func (m *MongoDB) getAppStoreList(req helper.GetCostAppListReq) (resp helper.CostAppListResp, rErr error) {

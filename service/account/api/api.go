@@ -561,6 +561,38 @@ func GetAppTypeList(c *gin.Context) {
 	})
 }
 
+// GetBasicCostDistribution
+// @Summary Get basic cost distribution
+// @Description Get basic cost distribution
+// @Tags BasicCostDistribution
+// @Accept json
+// @Produce json
+// @Param request body helper.GetCostAppListReq true "Basic cost distribution request"
+// @Success 200 {object} map[string]interface{} "successfully get basic cost distribution"
+// @Failure 400 {object} map[string]interface{} "failed to parse basic cost distribution request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get basic cost distribution"
+// @Router /account/v1alpha1/basic-cost-distribution [post]
+func GetBasicCostDistribution(c *gin.Context) {
+	req, err := helper.ParseGetCostAppListReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse basic cost distribution request: %v", err)})
+		return
+	}
+	if err := CheckAuthAndCalibrate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	costs, err := dao.DBClient.GetBasicCostDistribution(*req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get basic cost distribution : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": costs,
+	})
+}
+
 func CheckAuthAndCalibrate(auth *helper.Auth) (err error) {
 	if !dao.Debug || auth.KubeConfig != "" {
 		if err = checkAuth(auth); err != nil {

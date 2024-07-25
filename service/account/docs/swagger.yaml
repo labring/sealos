@@ -60,8 +60,6 @@ definitions:
       userID:
         example: admin
         type: string
-    required:
-    - kubeConfig
     type: object
   helper.Auth:
     properties:
@@ -73,8 +71,6 @@ definitions:
       userID:
         example: admin
         type: string
-    required:
-    - kubeConfig
     type: object
   helper.CostApp:
     properties:
@@ -207,8 +203,6 @@ definitions:
       userID:
         example: admin
         type: string
-    required:
-    - kubeConfig
     type: object
   helper.GetPropertiesResp:
     properties:
@@ -266,8 +260,6 @@ definitions:
       userID:
         example: admin
         type: string
-    required:
-    - kubeConfig
     type: object
   helper.NamespaceBillingHistoryReq:
     properties:
@@ -291,8 +283,6 @@ definitions:
       userID:
         example: admin
         type: string
-    required:
-    - kubeConfig
     type: object
   helper.NamespaceBillingHistoryRespData:
     properties:
@@ -326,7 +316,6 @@ definitions:
         example: admin
         type: string
     required:
-    - kubeConfig
     - paymentIDList
     type: object
   helper.TransferAmountReq:
@@ -359,7 +348,6 @@ definitions:
         example: admin
         type: string
     required:
-    - kubeConfig
     - toUser
     type: object
   helper.UserBaseReq:
@@ -378,8 +366,6 @@ definitions:
       userID:
         example: admin
         type: string
-    required:
-    - kubeConfig
     type: object
 host: localhost:2333
 info:
@@ -423,6 +409,44 @@ paths:
       summary: Get user account
       tags:
       - Account
+  /account/v1alpha1/basic-cost-distribution:
+    post:
+      consumes:
+      - application/json
+      description: Get basic cost distribution
+      parameters:
+      - description: Basic cost distribution request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetCostAppListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get basic cost distribution
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse basic cost distribution request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get basic cost distribution
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get basic cost distribution
+      tags:
+      - BasicCostDistribution
   /account/v1alpha1/check-permission:
     post:
       consumes:
