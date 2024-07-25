@@ -278,16 +278,6 @@ func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		}
 		return nil, fmt.Errorf("failed to search account from db: %w", err)
 	}
-	balance, err := crypto.DecryptInt64(account.EncryptBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt balance: %v", err)
-	}
-	deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
-	}
-	account.Balance = balance
-	account.DeductionBalance = deductionBalance
 	return &account, nil
 }
 
@@ -333,36 +323,15 @@ func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount 
 }
 
 func (c *Cockroach) updateWithAccount(isDeduction bool, add bool, account *types.Account, amount int64) error {
-	var fieldToUpdate string
+	balancePtr := &account.Balance
 	if isDeduction {
-		fieldToUpdate = account.EncryptDeductionBalance
-	} else {
-		fieldToUpdate = account.EncryptBalance
+		balancePtr = &account.DeductionBalance
 	}
-
-	currentBalance, err := crypto.DecryptInt64(fieldToUpdate)
-	if err != nil {
-		return fmt.Errorf("failed to decrypt balance: %w", err)
-	}
-
 	if add {
-		currentBalance += amount
+		*balancePtr += amount
 	} else {
-		currentBalance -= amount
+		*balancePtr -= amount
 	}
-
-	newEncryptBalance, err := crypto.EncryptInt64(currentBalance)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt balance: %v", err)
-	}
-	if isDeduction {
-		account.EncryptDeductionBalance = *newEncryptBalance
-		account.DeductionBalance = currentBalance
-	} else {
-		account.EncryptBalance = *newEncryptBalance
-		account.Balance = currentBalance
-	}
-
 	return nil
 }
 
