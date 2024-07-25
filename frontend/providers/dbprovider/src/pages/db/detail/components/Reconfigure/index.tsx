@@ -158,7 +158,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
         adjustDifferencesForIni(differences, reconfigureType)
       );
       await applyYamlList([reconfigureYaml], 'create');
-      toast({ title: t('Success') });
+      toast({ title: t('Success'), status: 'success' });
     }
     queryClient.invalidateQueries({ queryKey: ['getOperationList'] });
   };

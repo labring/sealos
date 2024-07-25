@@ -100,7 +100,7 @@ const EditConfig = ({
             </Box>
             <Textarea
               h={'350px'}
-              maxH={'60vh'}
+              maxH={'50vh'}
               maxW={'100%'}
               value={inputVal}
               resize={'both'}
