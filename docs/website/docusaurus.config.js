@@ -1,7 +1,7 @@
 require('dotenv').config()
 
 const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
-const isChinese = process.env.SEALOS_LANG === "zh-Hans"
+const isDomesticSite = process.env.SEALOS_LANG === "zh-Hans"
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -64,9 +64,9 @@ const config = {
       id: 'sealos_tip',
       content: `
       <div class="sealos-banner-box">
-        <div>${isChinese ? 'If you are an international user, please visit 👉' : '如果您是国内用户，请直接访问 👉 '}</div>
-        <div class="sealos-banner-btn" onclick="window.open('${isChinese ? 'https://sealos.io' : 'https://sealos.run'}', '_blank');">
-          ${isChinese ? 'International Site' : '国内官网'}
+        <div>${isDomesticSite ? 'If you are an international user, please visit 👉' : '如果您是国内用户，请直接访问 👉 '}</div>
+        <div class="sealos-banner-btn" onclick="window.open('${isDomesticSite ? 'https://sealos.io' : 'https://sealos.run'}', '_blank');">
+          ${isDomesticSite ? 'International Site' : '国内官网'}
         </div>
         <svg 
           onclick="handleBannerClose()"
@@ -232,7 +232,11 @@ const config = {
     {
       src: "/global.js",
       async: true
-    }
+    },
+    ...(isDomesticSite ? [{
+      src: 'https://hm.baidu.com/hm.js?d8e8ecf669c47dc2512d3f1417e761f9',
+      async: true,
+    }] : [])
   ],
   headTags: [
     {
