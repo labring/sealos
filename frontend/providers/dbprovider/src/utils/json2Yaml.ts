@@ -1152,6 +1152,6 @@ export const json2Reconfigure = (
       type: 'Reconfiguring'
     }
   };
-  console.log('Reconfigure Yaml', template);
+
   return yaml.dump(template);
 };

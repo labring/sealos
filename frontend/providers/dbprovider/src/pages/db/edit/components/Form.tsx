@@ -492,24 +492,6 @@ const Form = ({
                   </MyTooltip>
                 </Flex>
               </FormControl>
-
-              {/* {getValues('config') && (
-                <FormControl>
-                  <Flex mt={'32px'} alignItems={'center'}>
-                    <Label w={100}>{t('database_config')}</Label>
-                    <Button
-                      w={'100%'}
-                      height={'32px'}
-                      variant={'outline'}
-                      fontSize={'base'}
-                      leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
-                      onClick={onOpenEditConfig}
-                    >
-                      {t('database_edit_config')}
-                    </Button>
-                  </Flex>
-                </FormControl>
-              )} */}
             </Box>
           </Box>
         </Box>
