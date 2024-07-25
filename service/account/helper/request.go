@@ -150,12 +150,7 @@ func ParseConsumptionRecordReq(c *gin.Context) (*ConsumptionRecordReq, error) {
 	if err := c.ShouldBindJSON(consumptionRecord); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
-	if consumptionRecord.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
-		consumptionRecord.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
-	}
-	if consumptionRecord.TimeRange.EndTime.After(time.Now()) {
-		consumptionRecord.TimeRange.EndTime = time.Now()
-	}
+	setDefaultTimeRange(&consumptionRecord.TimeRange)
 	return consumptionRecord, nil
 }
 
@@ -177,12 +172,7 @@ func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
 	if err := c.ShouldBindJSON(userCosts); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
-	if userCosts.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
-		userCosts.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
-	}
-	if userCosts.TimeRange.EndTime.After(time.Now()) {
-		userCosts.TimeRange.EndTime = time.Now()
-	}
+	setDefaultTimeRange(&userCosts.TimeRange)
 	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
@@ -215,12 +205,7 @@ func ParseAppCostsReq(c *gin.Context) (*AppCostsReq, error) {
 	if err := c.ShouldBindJSON(userCosts); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
-	if userCosts.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
-		userCosts.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
-	}
-	if userCosts.TimeRange.EndTime.After(time.Now()) {
-		userCosts.TimeRange.EndTime = time.Now()
-	}
+	setDefaultTimeRange(&userCosts.TimeRange)
 	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
@@ -251,12 +236,7 @@ func ParseGetTransferRecordReq(c *gin.Context) (*GetTransferRecordReq, error) {
 	if err := c.ShouldBindJSON(transferReq); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
-	if transferReq.TimeRange.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
-		transferReq.TimeRange.StartTime = time.Now().Add(-6 * humanize.Month)
-	}
-	if transferReq.TimeRange.EndTime.After(time.Now()) {
-		transferReq.TimeRange.EndTime = time.Now()
-	}
+	setDefaultTimeRange(&transferReq.TimeRange)
 	transferReq.Owner = strings.TrimPrefix(transferReq.Owner, "ns-")
 	return transferReq, nil
 }
@@ -266,13 +246,17 @@ func ParseGetCostAppListReq(c *gin.Context) (*GetCostAppListReq, error) {
 	if err := c.ShouldBindJSON(costAppList); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
-	if costAppList.StartTime.Before(time.Now().Add(-6 * humanize.Month)) {
-		costAppList.StartTime = time.Now().Add(-6 * humanize.Month)
-	}
-	if costAppList.EndTime.After(time.Now()) {
-		costAppList.EndTime = time.Now()
-	}
+	setDefaultTimeRange(&costAppList.TimeRange)
 	return costAppList, nil
+}
+
+func setDefaultTimeRange(timeRange *TimeRange) {
+	if timeRange.StartTime.IsZero() {
+		timeRange.StartTime = time.Now().Add(-6 * humanize.Month)
+	}
+	if timeRange.EndTime.IsZero() {
+		timeRange.EndTime = time.Now()
+	}
 }
 
 type CostOverviewResp struct {
