@@ -26,6 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const { body } = await k8sCore.readNamespacedConfigMap(key, namespace);
+
     const configData = body?.data && body?.data[dbConfig.configMapKey];
     if (!configData) {
       return jsonRes(res, {

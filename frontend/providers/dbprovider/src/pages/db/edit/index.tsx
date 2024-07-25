@@ -1,5 +1,5 @@
-import { adapterMongoHaConfig, applyYamlList, createDB, getConfigByName } from '@/api/db';
-import { DBTypeConfigMap, defaultDBEditValue } from '@/constants/db';
+import { adapterMongoHaConfig, applyYamlList, createDB } from '@/api/db';
+import { defaultDBEditValue } from '@/constants/db';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
@@ -11,12 +11,7 @@ import type { YamlItemType } from '@/types';
 import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
-import {
-  json2Account,
-  json2CreateCluster,
-  json2Reconfigure,
-  limitRangeYaml
-} from '@/utils/json2Yaml';
+import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -29,7 +24,6 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { adjustDifferencesForIni, compareDBConfig } from '@/utils/tools';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 

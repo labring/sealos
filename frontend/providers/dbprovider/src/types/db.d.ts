@@ -12,6 +12,7 @@ import type {
   V1StatefulSet,
   V1ContainerStatus
 } from '@kubernetes/client-node';
+import { I18nCommonKey } from './i18next';
 
 export type DBType = `${DBTypeEnum}`;
 
@@ -124,10 +125,16 @@ export interface BackupItemType {
   connectionPassword: string;
 }
 
+export type ReconfigStatusMapType = {
+  label: I18nCommonKey;
+  value: ReconfigStatus;
+  color: string;
+};
+
 export interface OpsRequestItemType {
   id: string;
   name: string;
-  status: string;
+  status: ReconfigStatusMapType;
   startTime: Date;
   namespace: string;
   parameters: { key: string; value: string }[];

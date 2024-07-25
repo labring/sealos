@@ -3,6 +3,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KubeBlockOpsRequestType } from '@/types/cluster';
+import { adaptOpsRequest } from '@/utils/adapt';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -21,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       labelSelector += `,${label}`;
     }
 
-    const data = (await k8sCustomObjects.listNamespacedCustomObject(
+    const opsrequestsList = (await k8sCustomObjects.listNamespacedCustomObject(
       'apps.kubeblocks.io',
       'v1alpha1',
       namespace,
@@ -36,9 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         items: KubeBlockOpsRequestType[];
       };
     };
-
+    const data = opsrequestsList.body.items.map((res) => adaptOpsRequest(res));
     jsonRes(res, {
-      data: data.body.items
+      data: data
     });
   } catch (err: any) {
     jsonRes(res, {

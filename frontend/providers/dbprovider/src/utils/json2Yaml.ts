@@ -16,6 +16,8 @@ import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
 /**
  * Convert data for creating a database cluster to YAML configuration.
@@ -1119,6 +1121,7 @@ export const json2Reconfigure = (
         'ops.kubeblocks.io/ops-type': 'Reconfiguring',
         ...configParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {})
       },
+      name: `${dbName}-reconfiguring-${nanoid()}`,
       namespace: namespace,
       ownerReferences: [
         {

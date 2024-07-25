@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import yaml from 'js-yaml';
 import ini from 'ini';
+import { DBType } from '@/types/db';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
@@ -393,9 +394,14 @@ export const compareDBConfig = ({
 
 export const adjustDifferencesForIni = (
   differences: { path: string; oldValue: any; newValue: any }[],
-  type: 'ini' | 'yaml'
+  type: 'ini' | 'yaml',
+  dbType: DBType
 ): { key: string; value: string }[] => {
   if (type !== 'ini') {
+    return differences.map((item) => ({ key: item.path, value: item.newValue }));
+  }
+
+  if (dbType === 'postgresql') {
     return differences.map((item) => ({ key: item.path, value: item.newValue }));
   }
 

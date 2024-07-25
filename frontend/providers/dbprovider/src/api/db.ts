@@ -1,17 +1,17 @@
 import { GET, POST, DELETE } from '@/services/request';
-import {
-  adaptDBListItem,
-  adaptDBDetail,
-  adaptPod,
-  adaptEvents,
-  adaptOpsRequest
-} from '@/utils/adapt';
-import type { BackupItemType, DBEditType, DBType, PodDetailType } from '@/types/db';
+import { adaptDBListItem, adaptDBDetail, adaptPod, adaptEvents } from '@/utils/adapt';
+import type {
+  BackupItemType,
+  DBEditType,
+  DBType,
+  OpsRequestItemType,
+  PodDetailType
+} from '@/types/db';
 import { json2Restart } from '@/utils/json2Yaml';
 import { json2StartOrStop } from '../utils/json2Yaml';
 import type { SecretResponse } from '@/pages/api/getSecretByName';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
-import { KbPgClusterType, KubeBlockOpsRequestType } from '@/types/cluster';
+import { KbPgClusterType } from '@/types/cluster';
 import { MonitorChartDataResult } from '@/types/monitor';
 
 export const getMyDBList = () =>
@@ -96,6 +96,4 @@ export const getMonitorData = (payload: {
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
 
 export const getOpsRequest = ({ name, label }: { name: string; label: string }) =>
-  GET<KubeBlockOpsRequestType[]>(`/api/opsrequest/list?name=${name}&label=${label}`).then((res) =>
-    res.map(adaptOpsRequest)
-  );
+  GET<OpsRequestItemType[]>(`/api/opsrequest/list?name=${name}&label=${label}`);

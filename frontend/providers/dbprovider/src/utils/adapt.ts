@@ -1,5 +1,5 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
-import { DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
+import { DBReconfigStatusMap, DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type {
   KbPgClusterType,
@@ -270,7 +270,10 @@ export const adaptOpsRequest = (item: KubeBlockOpsRequestType): OpsRequestItemTy
     id: item.metadata.uid,
     name: item.metadata.name,
     namespace: item.metadata.namespace,
-    status: item.status.phase,
+    status:
+      item.status?.phase && DBReconfigStatusMap[item.status.phase]
+        ? DBReconfigStatusMap[item.status.phase]
+        : DBReconfigStatusMap.Creating,
     startTime: item.metadata?.creationTimestamp,
     parameters: item.spec.reconfigure.configurations[0].keys[0].parameters
   };

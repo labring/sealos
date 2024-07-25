@@ -1,4 +1,4 @@
-import { DBStatusEnum, DBTypeEnum, PodStatusEnum } from '@/constants/db';
+import { DBStatusEnum, DBTypeEnum, PodStatusEnum, ReconfigStatus } from '@/constants/db';
 
 export type KbPgClusterType = {
   apiVersion: 'apps.kubeblocks.io/v1alpha1';
@@ -145,7 +145,7 @@ export type KubeBlockOpsRequestType = {
       status: string;
       type: string;
     }[];
-    phase: string;
+    phase: `${ReconfigStatus}`;
     progress: string;
     startTimestamp: string;
   };

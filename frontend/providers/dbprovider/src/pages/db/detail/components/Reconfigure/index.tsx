@@ -59,7 +59,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
     },
     {
       enabled: !!db.dbName,
-      refetchInterval: 60000
+      refetchInterval: 5000
     }
   );
 
@@ -87,7 +87,11 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
     {
       title: 'status',
       key: 'status',
-      render: (item) => <Flex alignItems={'center'}>{item.status}</Flex>
+      render: (item) => (
+        <Flex color={item.status.color} alignItems={'center'}>
+          {t(item.status.label)}
+        </Flex>
+      )
     },
     {
       title: 'creation_time',
@@ -113,26 +117,19 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
     }
   ];
 
-  const { data: config } = useQuery(
-    ['getConfigByName', db.dbName],
-    async () => {
-      return getConfigByName({ name: db.dbName, dbType: db.dbType });
-    },
-    {
-      enabled: !!db.dbName
-    }
-  );
-
   useImperativeHandle(ref, () => ({
     openBackup: async () => {
-      if (config) {
-        setDefaultConfig(config);
-        onOpen();
-      } else {
-        toast({
-          title: t('dbconfig.get_config_err')
-        });
-      }
+      try {
+        const config = await getConfigByName({ name: db.dbName, dbType: db.dbType });
+        if (config) {
+          setDefaultConfig(config);
+          onOpen();
+        } else {
+          toast({
+            title: t('dbconfig.get_config_err')
+          });
+        }
+      } catch (error) {}
     }
   }));
 
@@ -149,13 +146,12 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
       newConfig: newConfig,
       type: reconfigureType
     });
-
     if (differences.length > 0) {
       const reconfigureYaml = json2Reconfigure(
         db.dbName,
         db.dbType,
         db.id,
-        adjustDifferencesForIni(differences, reconfigureType)
+        adjustDifferencesForIni(differences, reconfigureType, db.dbType)
       );
       await applyYamlList([reconfigureYaml], 'create');
       toast({ title: t('Success'), status: 'success' });

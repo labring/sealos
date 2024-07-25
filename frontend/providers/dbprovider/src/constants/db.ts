@@ -1,4 +1,4 @@
-import { DBEditType, DBDetailType, PodDetailType, DBType } from '@/types/db';
+import { DBEditType, DBDetailType, PodDetailType, DBType, ReconfigStatusMapType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
@@ -38,6 +38,37 @@ export enum DBStatusEnum {
   UnKnow = 'UnKnow',
   Deleting = 'Deleting'
 }
+
+export enum ReconfigStatus {
+  Deleting = 'Deleting',
+  Creating = 'Creating',
+  Running = 'Running',
+  Succeed = 'Succeed'
+}
+
+export const DBReconfigStatusMap: Record<`${ReconfigStatus}`, ReconfigStatusMapType> = {
+  [ReconfigStatus.Deleting]: {
+    label: 'Deleting',
+    value: ReconfigStatus.Deleting,
+    color: '#DC6803'
+  },
+  [ReconfigStatus.Creating]: {
+    label: 'Creating',
+    value: ReconfigStatus.Creating,
+    color: '#667085'
+  },
+  [ReconfigStatus.Running]: {
+    label: 'Running',
+    value: ReconfigStatus.Running,
+    color: '#667085'
+  },
+  [ReconfigStatus.Succeed]: {
+    label: 'Success',
+    value: ReconfigStatus.Succeed,
+    color: '#039855'
+  }
+};
+
 export const dbStatusMap = {
   [DBStatusEnum.Creating]: {
     label: 'Creating',
@@ -305,8 +336,8 @@ export const DBTypeConfigMap: {
   };
 } = {
   postgresql: {
-    configMapName: '-postgresql-pgbouncer-configuration',
-    configMapKey: 'pgbouncer.ini',
+    configMapName: '-postgresql-postgresql-configuration',
+    configMapKey: 'postgresql.conf',
     type: 'ini',
     reconfigureName: 'postgresql-configuration',
     reconfigureKey: 'postgresql.conf'
@@ -331,11 +362,6 @@ export const DBTypeConfigMap: {
     configMapKey: '',
     reconfigureName: '',
     reconfigureKey: ''
-    // type: 'ini',
-    // configMapName: '-redis-sentinel-redis-replication-config',
-    // configMapKey: 'redis.conf',
-    // reconfigureName: 'redis-replication-config',
-    // reconfigureKey: 'redis.conf'
   },
   kafka: {
     type: 'ini',
