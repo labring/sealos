@@ -57,11 +57,6 @@ const Form = ({
     getValues,
     formState: { errors }
   } = formHook;
-  const {
-    isOpen: isEditConfig,
-    onOpen: onOpenEditConfig,
-    onClose: onCloseEditConfig
-  } = useDisclosure();
 
   const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
     {
@@ -320,7 +315,7 @@ const Form = ({
               </Flex>
               <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={100}>{t('Name')}</Label>
+                  <Label w={100}>{t('name')}</Label>
                   <Input
                     disabled={isEdit}
                     title={isEdit ? t('cannot_change_name') : ''}

@@ -107,7 +107,7 @@ const DBList = ({
     render?: (item: DBListItemType) => JSX.Element;
   }[] = [
     {
-      title: t('Name'),
+      title: t('name'),
       key: 'name',
       render: (item: DBListItemType) => {
         return (
@@ -128,7 +128,7 @@ const DBList = ({
       )
     },
     {
-      title: t('Status'),
+      title: t('status'),
       key: 'status',
       render: (item: DBListItemType) => (
         <DBStatusTag conditions={item.conditions} status={item.status} />

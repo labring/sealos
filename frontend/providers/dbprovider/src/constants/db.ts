@@ -223,8 +223,7 @@ export const defaultDBEditValue: DBEditType = {
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
-  storage: 3,
-  config: ''
+  storage: 3
 };
 
 export const defaultDBDetail: DBDetailType = {
@@ -234,8 +233,7 @@ export const defaultDBDetail: DBDetailType = {
   status: dbStatusMap.Creating,
   conditions: [],
   isDiskSpaceOverflow: false,
-  labels: {},
-  config: ''
+  labels: {}
 };
 
 export const defaultPod: PodDetailType = {

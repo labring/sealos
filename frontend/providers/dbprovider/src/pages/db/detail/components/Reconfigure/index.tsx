@@ -79,13 +79,13 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
     render?: (item: OpsRequestItemType, i: number) => React.ReactNode | string;
   }[] = [
     {
-      title: 'Name',
+      title: 'name',
       key: 'name',
       dataIndex: 'name'
     },
 
     {
-      title: 'Status',
+      title: 'status',
       key: 'status',
       render: (item) => <Flex alignItems={'center'}>{item.status}</Flex>
     },
@@ -149,7 +149,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
       newConfig: newConfig,
       type: reconfigureType
     });
-    console.log(differences, 'differences');
+
     if (differences.length > 0) {
       const reconfigureYaml = json2Reconfigure(
         db.dbName,

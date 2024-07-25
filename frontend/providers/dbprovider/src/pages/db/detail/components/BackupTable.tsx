@@ -121,17 +121,17 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     render?: (item: BackupItemType, i: number) => React.ReactNode | string;
   }[] = [
     {
-      title: 'Name',
+      title: 'name',
       key: 'name',
       dataIndex: 'name'
     },
     {
-      title: 'Remark',
+      title: 'remark',
       key: 'remark',
       dataIndex: 'remark'
     },
     {
-      title: 'Status',
+      title: 'status',
       key: 'status',
       render: (item: BackupItemType) => (
         <Flex color={item.status.color} alignItems={'center'}>

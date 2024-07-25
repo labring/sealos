@@ -107,7 +107,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   });
 
   const submitSuccess = async (formData: DBEditType) => {
-    console.log(formData, oldDBEditData.current);
     const needMongoAdapter =
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);

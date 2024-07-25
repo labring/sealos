@@ -39,7 +39,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
           w={'280px'}
           list={[
             { id: MonitorType.resources, label: t('Resources') },
-            { id: MonitorType.status, label: t('Status') },
+            { id: MonitorType.status, label: t('status') },
             { id: MonitorType.performance, label: t('Performance') }
           ]}
           activeId={activeId}

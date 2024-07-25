@@ -24,7 +24,7 @@ const EditConfig = ({
   defaultConfig,
   successCb,
   onClose,
-  dbType,
+  dbType = 'postgresql',
   parameters = []
 }: {
   defaultConfig: string;
@@ -35,7 +35,7 @@ const EditConfig = ({
 }) => {
   const { t } = useTranslation();
   const [inputVal, setInputVal] = useState(defaultConfig);
-  const type = DBTypeConfigMap[dbType].type;
+  const type = DBTypeConfigMap[dbType]?.type || 'ini';
   const [isDisabled, setIsDisabled] = useState(false);
 
   const [differences, setDifferences] = useState<
@@ -48,6 +48,7 @@ const EditConfig = ({
 
   const debouncedDiff = useRef(
     debounce((newConfig: string) => {
+      if (parameters.length > 0) return;
       try {
         const diffs = compareDBConfig({
           oldConfig: defaultConfig,
