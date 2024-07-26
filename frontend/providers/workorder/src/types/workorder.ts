@@ -18,6 +18,8 @@ export type WorkOrderDB = {
     handlingTime?: Date;
   };
   userInfo: UserDB;
+  closedBy?: string;
+  deletedBy?: string;
 };
 
 export type WorkOrderDialog = {
