@@ -29,6 +29,7 @@ type Interface interface {
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
+	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
 	GetBasicCostDistribution(req helper.GetCostAppListReq) (map[string]int64, error)
 	GetCostAppList(req helper.GetCostAppListReq) (helper.CostAppListResp, error)
@@ -468,6 +469,84 @@ func (m *MongoDB) GetBasicCostDistribution(req helper.GetCostAppListReq) (map[st
 	return cost, nil
 }
 
+func (m *MongoDB) GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error) {
+	match := buildMatchCriteria(req)
+	delete(match, "time") // Remove time constraint from match criteria
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: match}},
+		{{Key: "$unwind", Value: "$app_costs"}},
+	}
+
+	if req.AppName != "" {
+		pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.M{"app_costs.name": req.AppName}}})
+	}
+
+	pipeline = append(pipeline,
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: nil},
+			{Key: "startTime", Value: bson.D{{Key: "$min", Value: "$time"}}},
+			{Key: "endTime", Value: bson.D{{Key: "$max", Value: "$time"}}},
+		}}},
+	)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return helper.TimeRange{}, fmt.Errorf("failed to execute aggregate query: %w", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var result helper.TimeRange
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return helper.TimeRange{}, fmt.Errorf("failed to decode aggregate result: %w", err)
+		}
+	} else {
+		return helper.TimeRange{}, fmt.Errorf("no records found")
+	}
+
+	// If the app type is empty or app store, also check the app store records
+	if req.AppType == "" || strings.ToUpper(req.AppType) == resources.AppStore {
+		match["app_type"] = resources.AppType[resources.AppStore]
+		delete(match, "app_costs.name")
+		if req.AppName != "" {
+			match["app_name"] = req.AppName
+		}
+
+		pipeline := mongo.Pipeline{
+			{{Key: "$match", Value: match}},
+			{{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key: "startTime", Value: bson.D{{Key: "$min", Value: "$time"}}},
+				{Key: "endTime", Value: bson.D{{Key: "$max", Value: "$time"}}},
+			}}},
+		}
+
+		cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+		if err != nil {
+			return helper.TimeRange{}, fmt.Errorf("failed to execute aggregate query for app store: %w", err)
+		}
+		defer cursor.Close(context.Background())
+
+		var appStoreResult helper.TimeRange
+		if cursor.Next(context.Background()) {
+			if err := cursor.Decode(&appStoreResult); err != nil {
+				return helper.TimeRange{}, fmt.Errorf("failed to decode aggregate result for app store: %w", err)
+			}
+
+			// Update the overall time range if necessary
+			if appStoreResult.StartTime.Before(result.StartTime) {
+				result.StartTime = appStoreResult.StartTime
+			}
+			if appStoreResult.EndTime.After(result.EndTime) {
+				result.EndTime = appStoreResult.EndTime
+			}
+		}
+	}
+
+	return result, nil
+}
+
 func buildMatchCriteria(req helper.GetCostAppListReq) bson.M {
 	match := bson.M{
 		"owner":    req.Owner,
@@ -747,6 +826,39 @@ func NewAccountInterface(mongoURI, globalCockRoachURI, localCockRoachURI string)
 		return nil, fmt.Errorf("failed to init tables: %v", err)
 	}
 	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{ck: ck}}
+	return account, nil
+}
+
+func newAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (Interface, error) {
+	account := &Account{}
+	if mongoURI != "" {
+		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect mongodb: %v", err)
+		}
+		if err = client.Ping(context.Background(), nil); err != nil {
+			return nil, fmt.Errorf("failed to ping mongodb: %v", err)
+		}
+		account.MongoDB = &MongoDB{
+			Client:         client,
+			AccountDBName:  "sealos-resources",
+			BillingConn:    "billing",
+			PropertiesConn: "properties",
+		}
+	} else {
+		fmt.Printf("mongoURI is empty, skip connecting to mongodb\n")
+	}
+	if globalCockRoachURI != "" && localCockRoachURI != "" {
+		ck, err := cockroach.NewCockRoach(globalCockRoachURI, localCockRoachURI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect cockroach: %v", err)
+		}
+		if err = ck.InitTables(); err != nil {
+			return nil, fmt.Errorf("failed to init tables: %v", err)
+		}
+	} else {
+		fmt.Printf("globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n")
+	}
 	return account, nil
 }
 

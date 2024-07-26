@@ -593,6 +593,38 @@ func GetBasicCostDistribution(c *gin.Context) {
 	})
 }
 
+// GetAppCostTimeRange
+// @Summary Get app cost time range
+// @Description Get app cost time range
+// @Tags AppCostTimeRange
+// @Accept json
+// @Produce json
+// @Param request body helper.GetCostAppListReq true "App cost time range request"
+// @Success 200 {object} map[string]interface{} "successfully get app cost time range"
+// @Failure 400 {object} map[string]interface{} "failed to parse app cost time range request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get app cost time range"
+// @Router /account/v1alpha1/cost-app-time-range [post]
+func GetAppCostTimeRange(c *gin.Context) {
+	req, err := helper.ParseGetCostAppListReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse app cost time range request: %v", err)})
+		return
+	}
+	if err := CheckAuthAndCalibrate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	timeRange, err := dao.DBClient.GetAppCostTimeRange(*req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app cost time range : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": timeRange,
+	})
+}
+
 func CheckAuthAndCalibrate(auth *helper.Auth) (err error) {
 	if !dao.Debug || auth.KubeConfig != "" {
 		if err = checkAuth(auth); err != nil {

@@ -48,7 +48,8 @@ func RegisterPayRouter() {
 		POST(helper.GetOverview, api.GetCostOverview).
 		POST(helper.GetAppList, api.GetCostAppList).
 		POST(helper.GetAppTypeList, api.GetAppTypeList).
-		POST(helper.GetBasicCostDistribution, api.GetBasicCostDistribution)
+		POST(helper.GetBasicCostDistribution, api.GetBasicCostDistribution).
+		POST(helper.GetAppCostTimeRange, api.GetAppCostTimeRange)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 

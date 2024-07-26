@@ -19,6 +19,7 @@ const (
 	GetAppList               = "/cost-app-list"
 	GetAppTypeList           = "/cost-app-type-list"
 	GetBasicCostDistribution = "/cost-basic-distribution"
+	GetAppCostTimeRange      = "/cost-app-time-range"
 	CheckPermission          = "/check-permission"
 )
 

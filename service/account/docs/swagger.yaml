@@ -522,6 +522,44 @@ paths:
       summary: Get cost app list
       tags:
       - CostAppList
+  /account/v1alpha1/cost-app-time-range:
+    post:
+      consumes:
+      - application/json
+      description: Get app cost time range
+      parameters:
+      - description: App cost time range request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetCostAppListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get app cost time range
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse app cost time range request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get app cost time range
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get app cost time range
+      tags:
+      - AppCostTimeRange
   /account/v1alpha1/cost-app-type-list:
     post:
       consumes:
