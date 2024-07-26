@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestCockroach_GetPayment(t *testing.T) {
-	db, err := NewAccountInterface("", "", "")
+	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -26,7 +27,7 @@ func TestCockroach_GetPayment(t *testing.T) {
 }
 
 func TestMongoDB_GetAppCosts(t *testing.T) {
-	db, err := NewAccountInterface("", "", "")
+	db, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -57,7 +58,7 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 func TestCockroach_GetTransfer(t *testing.T) {
 	os.Setenv("LOCAL_REGION", "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a")
 
-	db, err := NewAccountInterface("", "", "")
+	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -89,7 +90,7 @@ func TestCockroach_GetTransfer(t *testing.T) {
 
 func TestMongoDB_GetCostAppList(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := NewAccountInterface("", "", "")
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -101,10 +102,10 @@ func TestMongoDB_GetCostAppList(t *testing.T) {
 	}()
 	req := helper.GetCostAppListReq{
 		Auth: &helper.Auth{
-			Owner: "hwhbg4vf",
+			Owner: "5uxfy8jl",
 		},
 		//Namespace: "ns-hwhbg4vf",
-		AppType: "APP-STORE",
+		//AppType: "APP-STORE",
 		//AppName: "cronicle-ldokpaus",
 		LimitReq: helper.LimitReq{
 			Page:     1,
@@ -117,11 +118,16 @@ func TestMongoDB_GetCostAppList(t *testing.T) {
 	}
 	t.Logf("len costAppList: %v", len(appList.Apps))
 	t.Logf("costAppList: %#+v", appList)
+	b, err := json.MarshalIndent(appList, "", "  ")
+	if err != nil {
+		t.Fatalf("failed to marshal cost app list: %v", err)
+	}
+	t.Logf("costAppList json: %s", string(b))
 }
 
 func TestMongoDB_GetCostOverview(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := NewAccountInterface("", "", "")
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
@@ -133,10 +139,10 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 	}()
 	req := helper.GetCostAppListReq{
 		Auth: &helper.Auth{
-			Owner: "hwhbg4vf",
+			Owner: "5uxfy8jl",
 		},
 		//Namespace: "ns-hwhbg4vf",
-		AppType: "APP-STORE",
+		//AppType: "APP-STORE",
 		//AppName: "cronicle-ldokpaus",
 		LimitReq: helper.LimitReq{
 			Page:     1,
@@ -149,4 +155,105 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 	}
 	t.Logf("len costAppList: %v", len(appList.Overviews))
 	t.Logf("costAppList: %#+v", appList)
+
+	// 转json
+	b, err := json.MarshalIndent(appList, "", "  ")
+	if err != nil {
+		t.Fatalf("failed to marshal cost app list: %v", err)
+	}
+	t.Logf("costoverview json: %s", string(b))
+}
+
+func TestUnmarshal_Config(t *testing.T) {
+	cfg := &Config{
+		LocalRegionDomain: "localRegionDomain",
+		Regions: []Region{
+			{
+				Domain:     "192.168.0.55.nip.io",
+				AccountSvc: "account-api.192.168.0.55.nip.io",
+				UID:        "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a",
+				Name: map[string]string{
+					"zh": "区域A",
+					"en": "region-a",
+				},
+			},
+			{
+				Domain:     "192.168.0.75.nip.io",
+				AccountSvc: "account-api.192.168.0.75.nip.io",
+				UID:        "b373c0e9-7bf1-4d64-b863-bc604a4801ad",
+				Name: map[string]string{
+					"zh": "区域B",
+					"en": "region-b",
+				},
+			},
+		},
+	}
+	b, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		t.Fatalf("failed to marshal config: %v", err)
+	}
+	t.Logf("config json: \n%s", string(b))
+}
+
+func TestMongoDB_GetBasicCostDistribution(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := helper.GetCostAppListReq{
+		Auth: &helper.Auth{
+			Owner: "5uxfy8jl",
+		},
+		//Namespace: "ns-hwhbg4vf",
+		AppType: "APP-STORE",
+		//AppName: "cronicle-ldokpaus",
+		LimitReq: helper.LimitReq{
+			Page:     1,
+			PageSize: 5,
+		},
+	}
+	appList, err := m.GetBasicCostDistribution(req)
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("costAppList: %v", appList)
+}
+
+func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := helper.GetCostAppListReq{
+		Auth: &helper.Auth{
+			Owner: "5uxfy8jl",
+		},
+		//Namespace: "ns-hwhbg4vf",
+		//AppType: "APP-STORE",
+		AppType: "DB",
+		AppName: "test",
+		LimitReq: helper.LimitReq{
+			Page:     1,
+			PageSize: 5,
+		},
+	}
+	timeRange, err := m.GetAppCostTimeRange(req)
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("costAppList: %v", timeRange)
 }
