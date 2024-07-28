@@ -63,7 +63,6 @@ PROMPTS_EN=(
     ["k8s_installation"]="Installing Kubernetes cluster."
     ["partner_installation"]="Installing Higress and Kubeblocks."
     ["installing_monitoring"]="Installing kubernetes monitoring."
-    ["patching_ingress"]="Modifying the tolerance of Higress to allow it to run on the master node."
     ["installing_cloud"]="Installing Sealos Cloud."
     ["avx_not_supported"]="CPU does not support AVX instruction set."
     ["ssh_private_key"]="Please enter the ssh private key path (Press enter to use the default value: '/root/.ssh/id_rsa'): "
@@ -133,7 +132,6 @@ PROMPTS_CN=(
     ["k8s_installation"]="正在安装 Kubernetes 集群."
     ["partner_installation"]="正在安装 Higress 和 Kubeblocks."
     ["installing_monitoring"]="正在安装 kubernetes 监控."
-    ["patching_ingress"]="正在修改 Higress 的容忍度, 以允许它在主节点上运行."
     ["installing_cloud"]="正在安装 Sealos Cloud."
     ["avx_not_supported"]="CPU 不支持 AVX 指令集."
     ["ssh_private_key"]="请输入 ssh 私钥路径 (回车使用默认值: '/root/.ssh/id_rsa'): "
@@ -381,12 +379,6 @@ collect_input() {
 }
 
 prepare_configs() {
-    IFS=',' read -r -a cmaster_ips <<< "$master_ips"
-    IFS=',' read -r -a cnode_ips <<< "$node_ips"
-    local num_masters=${#cmaster_ips[@]}
-    local num_nodes=${#cnode_ips[@]}
-    local total_nodes=$((num_masters + num_nodes))
-
     if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
         # Convert certificate and key to base64
         tls_crt_base64=$(cat $cert_path | base64 | tr -d '\n')
@@ -430,7 +422,11 @@ spec:
       hostNetwork: true
       service:
         type: NodePort
-      replicas: ${total_nodes}
+      kind: DaemonSet
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       resources:
         requests:
           cpu: 256m
@@ -438,7 +434,10 @@ spec:
         limits:
           memory: 4Gi
     controller:
-      replicas: ${num_masters}
+      autoscaling:
+        enabled: true
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ''
       resources:
         requests:
           cpu: 256m
@@ -785,9 +784,6 @@ EOF
     kubectl apply -f $CLOUD_DIR/vm-secret.yaml
     kubectl patch vmagent -n vm victoria-metrics-k8s-stack --type merge -p '{"spec":{"additionalScrapeConfigs":{"key":"prometheus-additional.yaml","name":"additional-scrape-configs"}}}'
     kubectl rollout restart deploy -n vm vmagent-victoria-metrics-k8s-stack || true
-
-    get_prompt "patching_ingress"
-    kubectl -n higress-system patch deploy higress-gateway -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
 
     get_prompt "installing_cloud"
 
