@@ -8,6 +8,7 @@ export type CloudConfigType = {
 };
 
 export type CommonConfigType = {
+  realNameAuthEnabled: boolean;
   guideEnabled: boolean;
   apiEnabled: boolean;
   rechargeEnabled: boolean;
@@ -182,6 +183,7 @@ export type AppClientConfigType = {
 };
 
 export const DefaultCommonClientConfig: CommonClientConfigType = {
+  realNameAuthEnabled: false,
   guideEnabled: false,
   rechargeEnabled: false,
   cfSiteKey: ''

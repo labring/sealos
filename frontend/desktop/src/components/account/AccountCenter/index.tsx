@@ -14,26 +14,26 @@ import {
   Image,
   HStack,
   VStack,
-  Center
+  Center,
+  Badge
 } from '@chakra-ui/react';
-import { type FC, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import { useTranslation } from 'next-i18next';
-import { SettingIcon, LeftArrowIcon, GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
-import LangSelectList from '@/components/LangSelect';
+import { SettingIcon, LeftArrowIcon, CloseIcon } from '@sealos/ui';
 import { UserInfo } from '@/api/auth';
 import PasswordModify from '@/components/account/AccountCenter/PasswordModify';
 import { PhoneBind, EmailBind } from './SmsModify/SmsBind';
 import { PhoneUnBind, EmailUnBind } from './SmsModify/SmsUnbind';
-import { useConfigStore } from '@/stores/config';
 import { PhoneChange, EmailChange } from './SmsModify/SmsChange';
 import { BindingModifyButton, BINDING_STATE_MODIFY_BEHAVIOR } from './BindingModifyButton';
 import { ConfigItem } from './ConfigItem';
 import { AuthModifyList } from './AuthModifyList';
-import { useRouter } from 'next/router';
 import DeleteAccount from './DeleteAccountModal';
 import { ValueOf } from '@/types';
+import { RealNameAuthForm } from '../RealNameModal';
+import { useConfigStore } from '@/stores/config';
 enum _PageState {
   INDEX = 0
   // WECHAT_BIND,
@@ -55,12 +55,18 @@ enum EmailState {
   EMAIL_CHANGE_BIND
 }
 
+enum RealNameState {
+  REALNAME_AUTH = 40
+}
+
 const PageState = Object.assign(
   Object.assign({}, _PageState, EmailState, PhoneState),
-  PasswordState
+  PasswordState,
+  RealNameState
 );
 
 export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
+  const { commonConfig } = useConfigStore();
   const { session } = useSessionStore((s) => s);
   const { t } = useTranslation();
   const logo = '/images/default-user.svg';
@@ -77,9 +83,10 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
       return t('common:changephone'); // bind or unbind
     else if (Object.values(EmailState).includes(pageState as EmailState))
       return t('common:changeemail');
+    else if (pageState === PageState.REALNAME_AUTH) return t('common:realName_verification');
     else return '';
   }, [t, pageState]);
-  const queryClient = useQueryClient();
+
   const infoData = useQuery({
     queryFn: UserInfo,
     queryKey: [session?.token, 'UserInfo'],
@@ -210,6 +217,25 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <Text w={'120px'}>{'ID'}</Text>
                     <Flex flex={1}>{infoData.data.id}</Flex>
                   </HStack>
+                  {commonConfig?.realNameAuthEnabled && (
+                    <ConfigItem
+                      LeftElement={<Text>{t('common:realname_info')}</Text>}
+                      RightElement={
+                        session?.user.realName ? (
+                          <Flex flex={1}>{session.user.realName}</Flex>
+                        ) : (
+                          <Badge
+                            cursor="pointer"
+                            _active={{ transform: 'scale(0.95)' }}
+                            colorScheme="red"
+                            onClick={() => setPageState(PageState.REALNAME_AUTH)}
+                          >
+                            {t('common:no_realname_auth')} <CloseIcon boxSize={3} ml={1} />
+                          </Badge>
+                        )
+                      }
+                    />
+                  )}
                   {providerState.PASSWORD.isBinding && (
                     <ConfigItem
                       LeftElement={<Text>{t('common:password')}</Text>}
@@ -334,6 +360,8 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <EmailUnBind onClose={resetPageState} />
                   ) : pageState === PageState.EMAIL_CHANGE_BIND ? (
                     <EmailChange onClose={resetPageState} />
+                  ) : pageState === PageState.REALNAME_AUTH ? (
+                    <RealNameAuthForm onFormSuccess={resetPageState} />
                   ) : null}
                 </VStack>
               )}

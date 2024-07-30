@@ -30,7 +30,6 @@ export default function useSms({
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
-  const setSession = useSessionStore((s) => s.setSession);
   const [isLoading, setIsLoading] = useState(false);
   const setToken = useSessionStore((s) => s.setToken);
   const { register, handleSubmit, trigger, getValues } = useForm<{
