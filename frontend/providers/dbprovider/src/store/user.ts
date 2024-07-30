@@ -10,7 +10,7 @@ type State = {
   balance: number;
   userQuota: UserQuotaItemType[];
   loadUserQuota: () => Promise<null>;
-  checkQuotaAllow: (request: DBEditType, usedData?: DBEditType) => I18nCommonKey;
+  checkQuotaAllow: (request: DBEditType, usedData?: DBEditType) => I18nCommonKey | undefined;
 };
 
 export const useUserStore = create<State>()(
@@ -26,7 +26,7 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, storage, replicas }, usedData): I18nCommonKey => {
+      checkQuotaAllow: ({ cpu, memory, storage, replicas }, usedData): I18nCommonKey | undefined => {
         const quote = get().userQuota;
 
         const request = {
@@ -54,7 +54,7 @@ export const useUserStore = create<State>()(
           }
         });
 
-        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : 'app.cpu_exceeds_quota';
+        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : undefined;
       }
     }))
   )
