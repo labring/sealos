@@ -527,7 +527,9 @@ func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, no
 			} else if err != nil {
 				continue
 			}
-			if ntf.Labels != nil && ntf.Labels[readStatusLabel] == trueStatus {
+			if ntf.Labels == nil {
+				ntf.Labels = make(map[string]string)
+			} else if ntf.Labels[readStatusLabel] == trueStatus {
 				continue
 			}
 			ntf.Labels[readStatusLabel] = trueStatus
