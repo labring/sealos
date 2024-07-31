@@ -154,12 +154,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     async (yamlList: YamlItemType[]) => {
       setIsLoading(true);
       try {
-        const yamls = yamlList.map((item) => item.value);
+        const parsedNewYamlList = yamlList.map((item) => item.value);
+
         if (appName) {
           const patch = patchYamlList({
-            formOldYamlList: formOldYamls.current.map((item) => item.value),
-            newYamlList: yamls,
-            crYamlList: crOldYamls.current
+            parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+            parsedNewYamlList: parsedNewYamlList,
+            originalYamlList: crOldYamls.current
           });
           await putApp({
             patch,
@@ -167,7 +168,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
           });
         } else {
-          await postDeployApp(yamls);
+          await postDeployApp(parsedNewYamlList);
         }
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);

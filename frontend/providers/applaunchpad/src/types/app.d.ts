@@ -58,6 +58,8 @@ export interface AppListItemType {
   labels: { [key: string]: string };
 }
 
+export type ProtocolType = 'HTTP' | 'GRPC' | 'WS';
+
 export interface AppEditType {
   appName: string;
   imageName: string;
@@ -71,7 +73,7 @@ export interface AppEditType {
     networkName: string;
     portName: string;
     port: number;
-    protocol: 'HTTP' | 'GRPC' | 'WS';
+    protocol: ProtocolType;
     openPublicDomain: boolean;
     publicDomain: string; // default domain
     customDomain: string; // custom domain

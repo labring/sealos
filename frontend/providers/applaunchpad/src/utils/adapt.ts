@@ -18,7 +18,8 @@ import type {
   AppDetailType,
   PodMetrics,
   PodEvent,
-  HpaTarget
+  HpaTarget,
+  ProtocolType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -266,16 +267,18 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
         ) as V1Ingress;
         const domain = ingress?.spec?.rules?.[0].host || '';
 
+        const backendProtocol = ingress?.metadata?.annotations?.[
+          'nginx.ingress.kubernetes.io/backend-protocol'
+        ] as ProtocolType;
+
+        const protocol =
+          backendProtocol ?? (item.protocol === 'TCP' ? 'HTTP' : (item.protocol as ProtocolType));
+
         return {
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',
           port: item.port,
-          protocol:
-            (ingress?.metadata?.annotations?.[
-              'nginx.ingress.kubernetes.io/backend-protocol'
-            ] as AppEditType['networks'][0]['protocol']) || item.protocol === 'TCP'
-              ? 'HTTP'
-              : (item.protocol as AppEditType['networks'][number]['protocol']),
+          protocol: protocol,
           openPublicDomain: !!ingress,
           ...(domain.endsWith(SEALOS_DOMAIN)
             ? {
