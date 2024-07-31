@@ -4,7 +4,7 @@ cloud:
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
 common:
-  realNameAuthEnabled: true
+  realNameAuthEnabled: false
   guideEnabled: false
   apiEnabled: false
   rechargeEnabled: false

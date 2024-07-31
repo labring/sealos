@@ -101,7 +101,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { code, data } = await tcloudphone3efVerifyService(phone, name, idCard, config);
 
-    // '-4' 和 '-5' 为收费的接口返回结果，记录其失败次数，以便后续做限制
+    /* '-4' and '-5' are the results of chargeable interfaces, 
+    and the number of failures is recorded for subsequent limitation.
+    */
     if (code === '-4' || code === '-5') {
       await globalPrisma.userRealNameInfo.upsert({
         where: { userUid: payload.userUid },
@@ -179,10 +181,10 @@ async function tcloudphone3efVerifyService(
       secretKey: config.secretKey
     },
     profile: {
-      signMethod: 'HmacSHA256', // 签名方法
+      signMethod: 'HmacSHA256',
       httpProfile: {
-        reqMethod: 'POST', // 请求方法
-        reqTimeout: 30 // 请求超时时间，默认60s
+        reqMethod: 'POST',
+        reqTimeout: 30 // Request timeout, default 60s
       }
     }
   });
