@@ -85,7 +85,9 @@ export default function usePassword({
                         ns_uid: payload.workspaceUid,
                         userCrUid: payload.userCrUid,
                         userId: payload.userId,
-                        userUid: payload.userUid
+                        userUid: payload.userUid,
+                        realName: infoData.data?.info.realName || undefined,
+                        userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined
                       },
                       // @ts-ignore
                       kubeconfig: result.data.kubeconfig

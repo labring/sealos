@@ -4,9 +4,10 @@ cloud:
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
 common:
-  guideEnabled: "false"
-  apiEnabled: "false"
-  rechargeEnabled: "false"
+  realNameAuthEnabled: false
+  guideEnabled: false
+  apiEnabled: false
+  rechargeEnabled: false
   cfSiteKey: ""
 database:
   mongodbURI: "thisismongodburi"

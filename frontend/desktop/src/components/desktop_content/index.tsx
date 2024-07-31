@@ -5,12 +5,12 @@ import { LicenseFrontendKey } from '@/constants/account';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
-import { TApp, WindowSize } from '@/types';
+import { WindowSize } from '@/types';
 import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { MouseEvent, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import Cost from '../account/cost';
 import TriggerAccountModule from '../account/trigger';
@@ -23,6 +23,8 @@ import Monitor from './monitor';
 import SearchBox from './searchBox';
 import Warn from './warn';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
+import { useRealAuthNotification } from '../account/RealNameModal';
+import useSessionStore from '@/stores/session';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -36,20 +38,16 @@ export const blurBackgroundStyles = {
 };
 
 export default function Desktop(props: any) {
-  const { t, i18n } = useTranslation();
-  const { isAppBar, toggleShape } = useDesktopConfigStore();
+  const { i18n } = useTranslation();
+  const { isAppBar } = useDesktopConfigStore();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { message } = useMessage();
+  const { realAuthNotification } = useRealAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
   const { layoutConfig } = useConfigStore();
-
-  const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
-    e.preventDefault();
-    if (item?.name) {
-      openApp(item);
-    }
-  };
+  const { session } = useSessionStore();
+  const { commonConfig } = useConfigStore();
 
   /**
    * Open Desktop Application
@@ -97,12 +95,25 @@ export default function Desktop(props: any) {
   );
 
   useEffect(() => {
-    return createMasterAPP();
+    const cleanup = createMasterAPP();
+    return cleanup;
   }, []);
 
   useEffect(() => {
-    return masterApp?.addEventListen('openDesktopApp', openDesktopApp);
+    const cleanup = masterApp?.addEventListen('openDesktopApp', openDesktopApp);
+    return cleanup;
   }, [openDesktopApp]);
+
+  useEffect(() => {
+    if (!session?.user?.realName && commonConfig?.realNameAuthEnabled) {
+      realAuthNotification({
+        title: '国内可用区需要实名认证，未实名认证将会被限制使用，点击进行实名',
+        status: 'error',
+        duration: null,
+        isClosable: true
+      });
+    }
+  }, [session, commonConfig]);
 
   // const { UserGuide, showGuide } = useDriver({ openDesktopApp });
 

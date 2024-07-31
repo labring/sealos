@@ -19,6 +19,8 @@ export const sessionConfig = async ({
   store.setSession({
     token: appToken,
     user: {
+      userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined,
+      realName: infoData.data?.info.realName || undefined,
       k8s_username: payload.userCrName,
       name: infoData.data?.info.nickname || '',
       avatar: infoData.data?.info.avatarUri || '',

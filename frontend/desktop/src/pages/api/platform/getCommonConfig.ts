@@ -18,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigType {
   return {
+    realNameAuthEnabled: !!common.realNameAuthEnabled,
     guideEnabled: !!common.guideEnabled,
     rechargeEnabled: !!common.rechargeEnabled,
     cfSiteKey: common.cfSiteKey || ''

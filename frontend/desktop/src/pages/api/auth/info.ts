@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'invalid token'
       });
-    const [regionData, globalData] = await Promise.all([
+    const [regionData, globalData, realNameInfo, restrictedUser] = await Promise.all([
       prisma.userCr.findUnique({
         where: {
           uid: regionUser.userCrUid
@@ -30,14 +30,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           }
         }
+      }),
+      globalPrisma.userRealNameInfo.findUnique({
+        where: {
+          userUid: regionUser.userUid
+        }
+      }),
+      globalPrisma.restrictedUser.findUnique({
+        where: {
+          userUid: regionUser.userUid
+        }
       })
     ]);
+
     if (!regionData || !globalData)
       return jsonRes(res, {
         code: 404,
         message: 'Not found'
       });
-    const info = {
+
+    const info: {
+      oauthProvider: { providerType: ProviderType; providerId: string }[];
+      uid: string;
+      createdAt: Date;
+      updatedAt: Date;
+      avatarUri: string;
+      nickname: string;
+      id: string;
+      name: string;
+      realName?: string;
+      userRestrictedLevel?: number;
+    } = {
       ...globalData,
       oauthProvider: globalData.oauthProvider.map((o) => ({
         providerType: o.providerType,
@@ -48,6 +71,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           : ''
       }))
     };
+
+    if (realNameInfo && realNameInfo.isVerified) {
+      info.realName = realNameInfo.realName || undefined;
+    }
+
+    if (restrictedUser) {
+      info.userRestrictedLevel = restrictedUser.restrictedLevel;
+    }
+
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',
