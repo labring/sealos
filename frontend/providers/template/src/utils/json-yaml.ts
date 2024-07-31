@@ -228,7 +228,7 @@ const evaluateExpression = (expression: string, data: {
   }
 };
 
-const yamlIfEndifReg = / *\${{ *?(if|endif)\((.*)\) *?}} */g;
+const yamlIfEndifReg = / *\${{ *?(if|else|endif)\((.*)\) *?}} */g;
 
 export function parseYamlIfEndif(yamlStr: string, data: {
   [key: string]: string | Record<string, string>;
@@ -245,34 +245,48 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
 
   const Matchs = yamlStr.matchAll(yamlIfEndifReg);
   if (!Matchs) {
+    console.log(yamlStr)
     return yamlStr;
   }
   for (const Match of Matchs) {
     const Type = Match[1];
-    if (Type === 'if') {
+    if (Type === 'if' || Type === 'else') {
       stack.push(Match);
       continue;
     }
-    const If = stack.pop();
+    let If: RegExpMatchArray | undefined;
+    let Else: RegExpMatchArray | undefined;
+    If = stack.pop();
     if (!If) {
       throw new Error('ifend without if');
+    }
+    if (If[1] === 'else') {
+      Else = If
+      If = stack.pop();
+      if (!If) {
+        throw new Error('ifend without if');
+      }
     }
     if (stack.length !== 0) {
       continue
     }
     const IfExpression = If[2];
     const IfResult = evaluateExpression(IfExpression);
-    if (IfResult) {
-      const start = yamlStr.substring(0, If.index)
-      const between = yamlStr.substring(If.index! + If[0].length, Match.index);
-      const end = yamlStr.substring(Match.index! + Match[0].length);
-      yamlStr = start + between + end;
+    const start = yamlStr.substring(0, If.index)
+    const end = yamlStr.substring(Match.index! + Match[0].length);
+    let between = '';
+    if (Else) {
+      if (IfResult) {
+        between = yamlStr.substring(If.index! + If[0].length, Else.index!)
+      } else {
+        between = yamlStr.substring(Else.index! + Else[0].length, Match.index)
+      }
     } else {
-      const start = yamlStr.substring(0, If.index)
-      const end = yamlStr.substring(Match.index! + Match[0].length);
-      yamlStr = start + end;
+      if (IfResult) {
+        between = yamlStr.substring(If.index! + If[0].length, Match.index);
+      }
     }
-    return __parseYamlIfEndif(yamlStr, evaluateExpression);
+    return __parseYamlIfEndif(start + between + end, evaluateExpression);
   }
   return yamlStr;
 }
