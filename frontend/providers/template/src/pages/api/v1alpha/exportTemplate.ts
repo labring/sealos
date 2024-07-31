@@ -40,9 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       {}
     );
-    const yamlString = yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
 
-    const generateStr = parseTemplateString(yamlString!, /\$\{\{\s*(.*?)\s*\}\}/g, {
+    const generateStr = parseTemplateString(yamlList?.join('---\n')!, /\$\{\{\s*(.*?)\s*\}\}/g, {
       ...TemplateEnvs,
       defaults: _defaults,
       inputs: { ..._inputs, ...templateForm }

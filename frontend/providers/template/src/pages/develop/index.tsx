@@ -12,7 +12,8 @@ import {
   developGenerateYamlList,
   getTemplateDataSource,
   handleTemplateToInstanceYaml,
-  parseTemplateString
+  parseTemplateString,
+  getYamlSource,
 } from '@/utils/json-yaml';
 import { getTemplateDefaultValues } from '@/utils/template';
 import { downLoadBold } from '@/utils/tools';
@@ -50,40 +51,19 @@ export default function Develop() {
     parseTemplate(value);
   }, 800);
 
-  const getYamlSource = (str: string): TemplateSourceType => {
-    const yamlData = JsYaml.loadAll(str);
-    const templateYaml: TemplateType = yamlData.find(
-      (item: any) => item.kind === 'Template'
-    ) as TemplateType;
-    const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
-    const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
-    const _instanceName = dataSource?.defaults?.app_name?.value || '';
-    const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
-    yamlList.unshift(instanceYaml);
-    const result: TemplateSourceType = {
-      source: {
-        ...dataSource,
-        ...platformEnvs
-      },
-      yamlList: yamlList,
-      templateYaml: templateYaml
-    };
-    return result;
-  };
-
   const generateCorrectYamlList = (
     yamlSource: TemplateSourceType,
-    inputsForm = {}
+    inputs:Record<string, string> = {}
   ): YamlItemType[] => {
-    const yamlString = yamlSource?.yamlList?.map((item) => JsYaml.dump(item)).join('---\n');
     const output = mapValues(yamlSource?.source.defaults, (value) => value.value);
-    const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
+    const data = {
       ...yamlSource?.source,
-      inputs: inputsForm,
+      inputs: inputs,
       defaults: output
-    });
+    };
+    const generateStr = parseTemplateString(yamlSource.yamlList.join('---\n'), /\$\{\{\s*(.*?)\s*\}\}/g, data);
     const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
-    return developGenerateYamlList(generateStr, _instanceName);
+    return developGenerateYamlList(generateStr, _instanceName)
   };
 
   const parseTemplate = (str: string) => {
@@ -96,7 +76,6 @@ export default function Develop() {
       const result = getYamlSource(str);
       const defaultInputes = getTemplateDefaultValues(result);
       const formInputs = formHook.getValues();
-
       setYamlSource(result);
       const correctYamlList = generateCorrectYamlList(result, { ...defaultInputes, ...formInputs });
       setYamlList(correctYamlList);

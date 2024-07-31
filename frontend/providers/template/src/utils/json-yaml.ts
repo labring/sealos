@@ -1,10 +1,11 @@
 import { YamlItemType } from '@/types';
-import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType } from '@/types/app';
+import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType, TemplateSourceType } from '@/types/app';
 import JSYAML from 'js-yaml';
 import { cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { processEnvValue } from './tools';
 import { EnvResponse } from '@/types/index';
+import JsYaml from 'js-yaml';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
@@ -34,6 +35,7 @@ export const parseTemplateString = (
     inputs: Record<string, string>;
   }
 ) => {
+  sourceString = parseYamlIfEndif(sourceString, dataSource)
   // support function list
   const functionHandlers = [
     {
@@ -210,3 +212,116 @@ export const handleTemplateToInstanceYaml = (
     }
   };
 };
+
+const evaluateExpression = (expression: string, data: {
+  [key: string]: string | Record<string, string>;
+  defaults: Record<string, string>;
+  inputs: Record<string, string>;
+}): boolean => {
+  try {
+    // TODO: unsafe
+    const result = new Function('data', `with(data) { return ${expression}; }`)(data);
+    return !!result;
+  } catch (error) {
+    console.error(`Failed to evaluate expression: ${expression}`, error);
+    return false;
+  }
+};
+
+const yamlIfEndifreg = / *\${{ *?(if|endif)\((.*)\) *?}} */g;
+
+export function parseYamlIfEndif(yamlStr: string, data: {
+  [key: string]: string | Record<string, string>;
+  defaults: Record<string, string>;
+  inputs: Record<string, string>;
+}): string {
+  return __parseYamlIfEndif(yamlStr, (exp) => {
+    return evaluateExpression(exp, data)
+  })
+}
+
+const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) => boolean): string => {
+  const stack: RegExpMatchArray[] = [];
+
+  const Matchs = yamlStr.matchAll(yamlIfEndifreg);
+  if (!Matchs) {
+    return yamlStr;
+  }
+  for (const Match of Matchs) {
+    const Type = Match[1];
+    if (Type === 'if') {
+      stack.push(Match);
+      continue;
+    }
+    const If = stack.pop();
+    if (!If) {
+      throw new Error('ifend without if');
+    }
+    const IfExpression = If[2];
+    const IfResult = evaluateExpression(IfExpression);
+    if (IfResult) {
+      const start = yamlStr.substring(0, If.index)
+      const between = yamlStr.substring(If.index! + If[0].length, Match.index);
+      const end = yamlStr.substring(Match.index! + Match[0].length);
+      yamlStr = start + between + end;
+    } else {
+      const start = yamlStr.substring(0, If.index)
+      const end = yamlStr.substring(Match.index! + Match[0].length);
+      yamlStr = start + end;
+    }
+    return __parseYamlIfEndif(yamlStr, evaluateExpression);
+  }
+  return yamlStr;
+}
+
+export function clearYamlIfEndif(yamlStr: string): string {
+  return __parseYamlIfEndif(yamlStr, () => {
+    return false
+  })
+}
+
+export function getYamlSource(str: string, platformEnvs?: EnvResponse): TemplateSourceType {
+  const { yamlList, templateYaml } = getYamlTemplate(str)
+
+  const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
+  const _instanceName = dataSource?.defaults?.app_name?.value || '';
+  const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
+  yamlList.unshift(JsYaml.dump(instanceYaml));
+
+  const result: TemplateSourceType = {
+    source: {
+      ...dataSource,
+      ...platformEnvs!
+    },
+    yamlList: yamlList,
+    templateYaml: templateYaml
+  };
+  return result;
+}
+
+export function getYamlTemplate(str: string): {
+  yamlList: string[];
+  templateYaml: TemplateType;
+} {
+  const yamlStrList = str.split('---\n');
+  let templateYaml: TemplateType | undefined;
+  const otherYamlList: string[] = [];
+
+  for (const yamlStr of yamlStrList) {
+    try {
+      const yamlObj = JsYaml.load(clearYamlIfEndif(yamlStr)) as TemplateType;
+      if (yamlObj && yamlObj.kind === 'Template') {
+        templateYaml = yamlObj;
+        continue
+      }
+      otherYamlList.push(yamlStr);
+    } catch (error) {
+      throw new Error('yaml parse error: ' + error);
+    }
+  }
+
+  return {
+    yamlList: otherYamlList,
+    templateYaml: templateYaml as TemplateType
+  };
+}

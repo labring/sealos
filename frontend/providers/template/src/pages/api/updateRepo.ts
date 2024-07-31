@@ -9,6 +9,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import util from 'util';
 import * as k8s from '@kubernetes/client-node';
+import { getYamlTemplate } from '@/utils/json-yaml';
 const execAsync = util.promisify(exec);
 
 const readFileList = (targetPath: string, fileList: unknown[] = []) => {
@@ -105,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!item) return;
         const fileName = path.basename(item);
         const content = fs.readFileSync(item, 'utf-8');
-        const yamlTemplate = JSYAML.loadAll(content)[0] as TemplateType;
+        const { templateYaml: yamlTemplate } = getYamlTemplate(content)
         if (!!yamlTemplate) {
           const appTitle = yamlTemplate.spec.title.toUpperCase();
           yamlTemplate.spec['deployCount'] = templateStaticMap[appTitle];

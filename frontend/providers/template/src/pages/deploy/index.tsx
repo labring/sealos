@@ -10,7 +10,10 @@ import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
-import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
+import {
+  generateYamlList,
+  parseTemplateString,
+} from '@/utils/json-yaml';
 import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -82,30 +85,24 @@ export default function EditApp({ appName }: { appName?: string }) {
     );
   };
 
-  const formOnchangeDebounce = debounce((data: any) => {
+  const generateYamlData = (templateSource: TemplateSourceType, inputs: Record<string, string>) => {
+    if (!templateSource) return [];
+    const app_name = templateSource?.source?.defaults?.app_name?.value;
+    const defaults = mapValues(templateSource?.source.defaults, (value) => value.value);
+    const data = {
+      ...templateSource?.source,
+      defaults: defaults,
+      inputs: inputs
+    };
+    const generateStr = parseTemplateString(templateSource.yamlList.join('---\n'), /\$\{\{\s*(.*?)\s*\}\}/g, data);
+    return generateYamlList(generateStr, app_name);
+  }
+
+  const formOnchangeDebounce = debounce((inputs: Record<string, string>) => {
     try {
       if (!templateSource) return;
-      const app_name = templateSource?.source?.defaults?.app_name?.value;
-
-      const yamlString = templateSource.yamlList
-        ?.map((item) => {
-          // if (item?.kind === 'Instance') {
-          //   const _temp: TemplateInstanceType = cloneDeep(item);
-          //   _temp.spec.defaults = templateSource?.source?.defaults;
-          //   _temp.spec.inputs = isEmpty(data) ? null : data;
-          //   console.log(_temp, templateSource?.source?.defaults, data);
-          //   return JSYAML.dump(_temp);
-          // }
-          return JSYAML.dump(item);
-        })
-        .join('---\n');
-      const output = mapValues(templateSource?.source.defaults, (value) => value.value);
-      const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
-        ...templateSource?.source,
-        inputs: data,
-        defaults: output
-      });
-      setYamlList(generateYamlList(generateStr, app_name));
+      const list = generateYamlData(templateSource, inputs)
+      setYamlList(list);
     } catch (error) {
       console.log(error);
     }
@@ -177,29 +174,9 @@ export default function EditApp({ appName }: { appName?: string }) {
   const handleTemplateSource = (res: TemplateSourceType) => {
     try {
       setTemplateSource(res);
-      const app_name = res?.source?.defaults?.app_name?.value;
-      const _defaults = mapValues(res?.source.defaults, (value) => value.value);
-      const _inputs = getCachedValue() ? JSON.parse(cached) : getFormDefaultValues(res);
-      const yamlString = res.yamlList
-        ?.map((item) => {
-          // if (item?.kind === 'Instance') {
-          //   const _temp: TemplateInstanceType = cloneDeep(item);
-          //   _temp.spec.defaults = res.source.defaults;
-          //   _temp.spec.inputs = isEmpty(_inputs) ? null : _inputs;
-          //   console.log(_temp, res?.source.defaults, _inputs);
-          //   return JSYAML.dump(_temp);
-          // }
-          return JSYAML.dump(item);
-        })
-        .join('---\n');
-
-      const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
-        ...res?.source,
-        defaults: _defaults,
-        inputs: _inputs
-      });
-      // console.log(generateStr, '------');
-      setYamlList(generateYamlList(generateStr, app_name));
+      const inputs = getCachedValue() ? JSON.parse(cached) : getFormDefaultValues(res);
+      const list = generateYamlData(res, inputs)
+      setYamlList(list);
     } catch (err) {
       console.log(err, 'getTemplateData');
       toast({

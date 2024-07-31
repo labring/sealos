@@ -3,13 +3,18 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
-import { getTemplateDataSource, handleTemplateToInstanceYaml } from '@/utils/json-yaml';
+import {
+  getTemplateDataSource,
+  handleTemplateToInstanceYaml,
+  getYamlTemplate,
+} from '@/utils/json-yaml';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { EnvResponse } from '@/types';
+import JsYaml from 'js-yaml';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -87,10 +92,7 @@ export async function GetTemplateByName({
     ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
     : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
 
-  const yamlData = yaml.loadAll(yamlString);
-  const templateYaml: TemplateType = yamlData.find(
-    (item: any) => item.kind === 'Template'
-  ) as TemplateType;
+  const { yamlList, templateYaml } = getYamlTemplate(yamlString);
   if (!templateYaml) {
     return {
       code: 40000,
@@ -103,7 +105,6 @@ export async function GetTemplateByName({
     templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
   }
 
-  const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
   const dataSource = getTemplateDataSource(templateYaml, TemplateEnvs);
 
   // Convert template to instance
@@ -115,7 +116,7 @@ export async function GetTemplateByName({
     };
   }
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
-  yamlList.unshift(instanceYaml);
+  yamlList.unshift(JsYaml.dump(instanceYaml));
 
   return {
     code: 20000,

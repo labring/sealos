@@ -54,7 +54,7 @@ export type TemplateSourceType = {
     SEALOS_CLOUD_DOMAIN: string;
     SEALOS_NAMESPACE: string;
   };
-  yamlList: any[];
+  yamlList: string[];
   templateYaml: TemplateType;
 };
 
