@@ -685,7 +685,7 @@ func CalibrateRegionAuth(auth *helper.Auth, kcHost string) error {
 			return fmt.Errorf("failed to marshal auth: %v", err)
 		}
 		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: os.Getenv("INSECURE_VERIFY") != "true"},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: os.Getenv("INSECURE_VERIFY") != "true", MinVersion: tls.VersionTLS13},
 		}
 		client := &http.Client{Transport: tr}
 		resp, err := client.Post(svcURL, "application/json", bytes.NewBuffer(authBody))
