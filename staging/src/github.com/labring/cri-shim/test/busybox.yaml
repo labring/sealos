@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: commit-test
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: commit
+  namespace: commit-test
+spec:
+  containers:
+    - name: busybox-1
+      image: busybox:latest
+      command: [ "sleep", "3600000" ]
+      env:
+        # commit on stop
+        - name: SEALOS_COMMIT_ON_STOP
+          value: "true"
+        # commit image name
+        - name: SEALOS_COMMIT_IMAGE_NAME
+          value: "busybox-commit:dev"
+        - name: SEALOS_COMMIT_IMAGE_REGISTRY_REPOSITORY
+          value: "xxx"
+        - name: SEALOS_COMMIT_IMAGE_REGISTRY_USER
+          value: "xxx"
+        - name: SEALOS_COMMIT_IMAGE_REGISTRY_PASSWORD
+          value: "xxx"
+        - name: SEALOS_USER
+          value: "xxx"
+    - name: busybox-2
+      image: busybox:latest
+      command: [ "sleep", "3600000" ]
+      env:
+        - name: SEALOS_COMMIT_ON_STOP
+          value: "false"
