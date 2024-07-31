@@ -175,7 +175,7 @@ export async function replaceYaml(
       });
       succeed.push(response.body);
     } catch (error: any) {
-      console.log('replace error');
+      console.log('replace error:', error);
       // no yaml, create it
       if (error?.body?.code && +error?.body?.code === 404) {
         try {

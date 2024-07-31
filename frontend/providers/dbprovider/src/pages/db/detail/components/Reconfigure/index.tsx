@@ -1,152 +1,98 @@
-import { applyYamlList, getConfigByName, getOpsRequest } from '@/api/db';
+import { applyYamlList, getConfigByName } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import { DBReconfigureKey, DBTypeConfigMap } from '@/constants/db';
-import { useLoading } from '@/hooks/useLoading';
-import type { DBDetailType, OpsRequestItemType } from '@/types/db';
+import { DBReconfigureMap } from '@/constants/db';
+import type { DBDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { json2Reconfigure } from '@/utils/json2Yaml';
-import { adjustDifferencesForIni, compareDBConfig } from '@/utils/tools';
+import { adjustDifferencesForIni, flattenObject, parseConfig } from '@/utils/tools';
 import {
   Box,
   Button,
   Flex,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { MyTooltip, useMessage } from '@sealos/ui';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import dayjs from 'dayjs';
+import { useMessage } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import React, { ForwardedRef, forwardRef, useImperativeHandle, useState } from 'react';
-import EditConfig from './EditConfig';
+import { useRouter } from 'next/router';
+import React, { ForwardedRef, forwardRef, useEffect, useRef, useState } from 'react';
+import ConfigTable, { ConfigTableRef, Difference } from './ConfigTable';
+import History from './History';
 
 export type ComponentRef = {
   openBackup: () => void;
 };
+
+enum SubMenuEnum {
+  Parameter = 'parameter',
+  History = 'history'
+}
 
 const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
   if (!db) return <></>;
 
   const { t } = useTranslation();
   const { message: toast } = useMessage();
-  const { Loading, setIsLoading } = useLoading();
+  const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [parameters, setParameters] = useState<{ key: string; value: string }[]>([]);
-  const [defaultConfig, setDefaultConfig] = useState('');
-  const queryClient = useQueryClient();
+  const [subMenu, setSubMenu] = useState<SubMenuEnum>(SubMenuEnum.Parameter);
+  const configTableRef = useRef<ConfigTableRef>(null);
+  const [differences, setDifferences] = useState<Difference[]>([]);
+  const [hasDifferences, setHasDifferences] = useState(false);
 
-  const {
-    isInitialLoading,
-    data: operationList = [],
-    isSuccess
-  } = useQuery(
-    ['getOperationList', db.dbName],
+  const handleDifferenceChange = (hasDiff: boolean) => {
+    setHasDifferences(hasDiff);
+  };
+
+  const parseSubMenu = (subMenu: string | string[] | undefined): SubMenuEnum => {
+    return subMenu === SubMenuEnum.History ? SubMenuEnum.History : SubMenuEnum.Parameter;
+  };
+
+  useEffect(() => {
+    router.query?.subMenu && setSubMenu(parseSubMenu(router.query.subMenu as string));
+  }, [router.query?.subMenu]);
+
+  const updateSubMenu = (newSubMenu: SubMenuEnum) => {
+    setSubMenu(newSubMenu);
+    router.push({
+      query: { ...router.query, subMenu: newSubMenu }
+    });
+  };
+
+  const { data: config } = useQuery(
+    ['getConfigByName', db.dbName, db.dbType, subMenu],
     async () => {
-      const operationList = await getOpsRequest({
-        name: db.dbName,
-        label: DBReconfigureKey
+      const _config = await getConfigByName({ name: db.dbName, dbType: db.dbType });
+      const temp = parseConfig({
+        configString: _config,
+        type: DBReconfigureMap[db.dbType].type
       });
-      operationList.sort(
-        (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-      );
-      return operationList;
+      const result = flattenObject(temp).map((item, index) => ({
+        ...item,
+        isEditing: false,
+        isEdited: false,
+        originalIndex: index
+      }));
+      return result;
     },
     {
-      enabled: !!db.dbName,
-      refetchInterval: 5000
+      enabled: !!db.dbName
     }
   );
 
-  const operationIconStyles = {
-    w: '18px'
-  };
-
-  const handleOpsRequestDetail = (item: OpsRequestItemType) => {
-    setParameters(item.parameters);
-    onOpen();
-  };
-
-  const columns: {
-    title: I18nCommonKey;
-    dataIndex?: keyof OpsRequestItemType;
-    key: string;
-    render?: (item: OpsRequestItemType, i: number) => React.ReactNode | string;
-  }[] = [
-    {
-      title: 'name',
-      key: 'name',
-      dataIndex: 'name'
-    },
-
-    {
-      title: 'status',
-      key: 'status',
-      render: (item) => (
-        <Flex color={item.status.color} alignItems={'center'}>
-          {t(item.status.label)}
-        </Flex>
-      )
-    },
-    {
-      title: 'creation_time',
-      key: 'creation_time',
-      render: (item) => <>{dayjs(item.startTime).format('YYYY/MM/DD HH:mm')}</>
-    },
-    {
-      title: 'operation',
-      key: 'control',
-      render: (item) => (
-        <Flex>
-          <MyTooltip label={t('details')} autoFocus={false}>
-            <Button
-              variant={'square'}
-              autoFocus={false}
-              onClick={() => handleOpsRequestDetail(item)}
-            >
-              <MyIcon name={'detail'} {...operationIconStyles} />
-            </Button>
-          </MyTooltip>
-        </Flex>
-      )
-    }
-  ];
-
-  useImperativeHandle(ref, () => ({
-    openBackup: async () => {
-      try {
-        const config = await getConfigByName({ name: db.dbName, dbType: db.dbType });
-        if (config) {
-          setDefaultConfig(config);
-          onOpen();
-        } else {
-          toast({
-            title: t('dbconfig.get_config_err')
-          });
-        }
-      } catch (error) {}
-    }
-  }));
-
-  const handleReconfigure = async ({
-    oldConfig,
-    newConfig
-  }: {
-    oldConfig: string;
-    newConfig: string;
-  }) => {
-    const reconfigureType = DBTypeConfigMap[db.dbType].type;
-    const differences = compareDBConfig({
-      oldConfig: oldConfig,
-      newConfig: newConfig,
-      type: reconfigureType
-    });
-    if (differences.length > 0) {
+  const handleReconfigure = async () => {
+    try {
+      const differences = configTableRef.current?.submit();
+      if (!differences) return;
+      const reconfigureType = DBReconfigureMap[db.dbType].type;
       const reconfigureYaml = json2Reconfigure(
         db.dbName,
         db.dbType,
@@ -154,77 +100,175 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
         adjustDifferencesForIni(differences, reconfigureType, db.dbType)
       );
       await applyYamlList([reconfigureYaml], 'create');
+      onClose();
+      router.push({
+        query: {
+          ...router.query,
+          subMenu: SubMenuEnum.History
+        }
+      });
       toast({ title: t('Success'), status: 'success' });
+    } catch (error) {
+      toast({ title: t('have_error'), status: 'error' });
     }
-    queryClient.invalidateQueries({ queryKey: ['getOperationList'] });
+  };
+
+  const SubNavList = [
+    { label: t('dbconfig.parameter'), value: SubMenuEnum.Parameter },
+    { label: t('dbconfig.change_history'), value: SubMenuEnum.History }
+  ];
+
+  const handleSubmit = () => {
+    if (configTableRef.current) {
+      const changedConfigs = configTableRef.current.submit();
+      if (changedConfigs.length === 0) {
+        return toast({
+          title: t('dbconfig.no_changes'),
+          status: 'success'
+        });
+      }
+      setDifferences(changedConfigs);
+      onOpen();
+    }
   };
 
   return (
-    <Flex flexDirection={'column'} h="100%" position={'relative'}>
-      <TableContainer overflowY={'auto'}>
-        <Table variant={'simple'} backgroundColor={'white'}>
-          <Thead>
-            <Tr>
-              {columns.map((item) => (
-                <Th
-                  fontSize={'12px'}
-                  py={4}
-                  key={item.key}
-                  border={'none'}
-                  backgroundColor={'grayModern.50'}
-                  fontWeight={'500'}
-                  color={'grayModern.600'}
+    <Flex flexDirection={'column'} h={'full'} w={'full'} position={'relative'}>
+      <Flex mx={'26px'}>
+        {SubNavList.map((item) => (
+          <Box
+            key={item.label}
+            mr={5}
+            pb={2}
+            borderBottom={'2px solid'}
+            cursor={'pointer'}
+            fontSize={'lg'}
+            {...(item.value === subMenu
+              ? {
+                  color: 'black',
+                  borderBottomColor: 'black'
+                }
+              : {
+                  color: 'grayModern.600',
+                  borderBottomColor: 'transparent',
+                  onClick: () => {
+                    updateSubMenu(item.value);
+                  }
+                })}
+          >
+            {t(item.label as I18nCommonKey)}
+          </Box>
+        ))}
+        {subMenu === SubMenuEnum.Parameter && hasDifferences && (
+          <Flex ml={'auto'}>
+            <Button mr={5} minW={'72px'} h={'36px'} variant={'outline'} onClick={handleSubmit}>
+              {t('dbconfig.commit')}
+            </Button>
+            <Button
+              minW={'72px'}
+              h={'36px'}
+              variant={'outline'}
+              onClick={() => {
+                configTableRef.current?.reset();
+                setHasDifferences(false);
+              }}
+            >
+              {t('Cancel')}
+            </Button>
+          </Flex>
+        )}
+      </Flex>
+
+      <Box mt={'8px'} flex={'1 0 0'} h={'0'}>
+        {subMenu === SubMenuEnum.Parameter && config && (
+          <ConfigTable
+            ref={configTableRef}
+            initialData={config}
+            onDifferenceChange={handleDifferenceChange}
+          />
+        )}
+        {subMenu === SubMenuEnum.History && db && <History db={db} />}
+      </Box>
+
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        lockFocusAcrossFrames={false}
+        closeOnOverlayClick={false}
+      >
+        <ModalOverlay />
+        <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
+          <ModalHeader display={'flex'}>
+            {t('prompt')}
+            {db.dbType === 'mongodb' && (
+              <Flex alignItems={'center'}>
+                <MyIcon
+                  ml={'12px'}
+                  color={'#0884DD'}
+                  name={'warningInfo'}
+                  width={'14px'}
+                  height={'14px'}
+                />
+                <Text fontSize={'base'} ml={'4px'} color={'brightBlue.600'} fontWeight={'bold'}>
+                  {t('dbconfig.updates_tip')}
+                </Text>
+              </Flex>
+            )}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text color={'grayModern.900'} fontSize={'md'} fontWeight={'bold'}>
+              {t('dbconfig.confirm_updates')}
+            </Text>
+            <Box mt={'12px'}>
+              <Flex
+                py={'6px'}
+                gap={'8px'}
+                px={'24px'}
+                color={'grayModern.600'}
+                bg={'grayModern.100'}
+              >
+                <Text flex={1} minW={'220px'}>
+                  {t('dbconfig.parameter_name')}
+                </Text>
+                <Text flex={1}>{t('dbconfig.parameter_value')}</Text>
+                <Text flex={1}>{t('dbconfig.modified_value')}</Text>
+              </Flex>
+              {differences.map((diff, index) => (
+                <Flex
+                  py={'6px'}
+                  px={'24px'}
+                  key={index}
+                  color={diff.newValue ? 'grayModern.600' : 'red'}
+                  fontSize={'md'}
+                  mt={'4px'}
+                  gap={'8px'}
                 >
-                  {t(item.title)}
-                </Th>
+                  <Text flex={1} minW={'220px'} color={'grayModern.900'}>
+                    {diff.path}
+                  </Text>
+                  <Text flex={1}>{diff.oldValue}</Text>
+                  <Text flex={1}>{diff.newValue}</Text>
+                </Flex>
               ))}
-            </Tr>
-          </Thead>
-          <Tbody>
-            {operationList.map((app, i) => (
-              <Tr key={app.id}>
-                {columns.map((col) => (
-                  <Td key={col.key}>
-                    {col.render
-                      ? col.render(app, i)
-                      : col.dataIndex
-                      ? `${app[col.dataIndex]}`
-                      : '-'}
-                  </Td>
-                ))}
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </TableContainer>
-
-      {isSuccess && operationList.length === 0 && (
-        <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
-          <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
-          <Box pt={'8px'}>{t('no_data_available')}</Box>
-        </Flex>
-      )}
-
-      <Loading loading={isInitialLoading} fixed={false} />
-
-      {isOpen && (
-        <EditConfig
-          parameters={parameters}
-          dbType={db.dbType}
-          defaultConfig={defaultConfig}
-          onClose={() => {
-            onClose();
-            setParameters([]);
-            setDefaultConfig('');
-          }}
-          successCb={(e) => {
-            handleReconfigure({
-              oldConfig: defaultConfig,
-              newConfig: e
-            });
-          }}
-        />
-      )}
+            </Box>
+          </ModalBody>
+          <ModalFooter gap={'8px'}>
+            <Button
+              variant={'outline'}
+              w={'80px'}
+              onClick={() => {
+                onClose();
+              }}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button w={'80px'} onClick={handleReconfigure}>
+              {t('confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };

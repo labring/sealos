@@ -95,5 +95,17 @@ export const getMonitorData = (payload: {
   end: number;
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
 
-export const getOpsRequest = ({ name, label }: { name: string; label: string }) =>
-  GET<OpsRequestItemType[]>(`/api/opsrequest/list?name=${name}&label=${label}`);
+export const getOpsRequest = ({
+  name,
+  label,
+  dbType
+}: {
+  name: string;
+  label: string;
+  dbType: DBType;
+}) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, {
+    name,
+    label,
+    dbType
+  });

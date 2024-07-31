@@ -1,5 +1,11 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
-import { DBReconfigStatusMap, DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
+import {
+  DBReconfigStatusMap,
+  DBStatusEnum,
+  DBReconfigureMap,
+  MigrationRemark,
+  dbStatusMap
+} from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type {
   KbPgClusterType,
@@ -10,6 +16,7 @@ import type {
   DBDetailType,
   DBEditType,
   DBListItemType,
+  DBType,
   OpsRequestItemType,
   PodDetailType,
   PodEvent
@@ -265,7 +272,28 @@ export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => 
   };
 };
 
-export const adaptOpsRequest = (item: KubeBlockOpsRequestType): OpsRequestItemType => {
+export const adaptOpsRequest = (
+  item: KubeBlockOpsRequestType,
+  dbType: DBType
+): OpsRequestItemType => {
+  const key = DBReconfigureMap[dbType].configMapKey;
+  const config = item.metadata.annotations?.[key];
+
+  let previousConfigurations: {
+    [key: string]: string;
+  } = {};
+
+  if (config) {
+    try {
+      const confObject = JSON.parse(config.replace(/^`|`$/g, ''));
+      Object.keys(confObject).forEach((key) => {
+        previousConfigurations[key] = confObject[key].replace(/^'|'$/g, '');
+      });
+    } catch (error) {
+      console.error('Error parsing postgresql.conf annotation:', error);
+    }
+  }
+
   return {
     id: item.metadata.uid,
     name: item.metadata.name,
@@ -275,6 +303,12 @@ export const adaptOpsRequest = (item: KubeBlockOpsRequestType): OpsRequestItemTy
         ? DBReconfigStatusMap[item.status.phase]
         : DBReconfigStatusMap.Creating,
     startTime: item.metadata?.creationTimestamp,
-    parameters: item.spec.reconfigure.configurations[0].keys[0].parameters
+    configurations: item.spec.reconfigure.configurations[0].keys[0].parameters.map((param) => ({
+      parameterName: param.key,
+      newValue: param.value,
+      oldValue: previousConfigurations[param.key]
+        ? JSON.parse(previousConfigurations[param.key]).toString()
+        : undefined
+    }))
   };
 };

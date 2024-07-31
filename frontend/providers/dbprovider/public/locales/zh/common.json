@@ -136,9 +136,18 @@
   "db_name": "数据库名字",
   "db_table": "数据库表",
   "dbconfig": {
+    "change_history": "修改历史",
+    "commit": "提交",
+    "confirm_updates": "请确认您修改的参数：",
     "get_config_err": "获取配置文件失败",
+    "modified_value": "修改值",
+    "modify_time": "修改时间",
     "no_changes": "暂无修改",
+    "original_value": "原始值",
     "parameter": "参数配置",
+    "parameter_name": "参数名",
+    "parameter_value": "参数值",
+    "search": "搜索",
     "updates": "修改的参数",
     "updates_tip": "mongo数据库变更配置会导致数据库重启"
   },

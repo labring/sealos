@@ -334,64 +334,6 @@ export const flattenObject = (ob: any, prefix: string = ''): { key: string; valu
   return result;
 };
 
-export const getDifferences = (
-  obj1: object,
-  obj2: object
-): {
-  path: string;
-  oldValue: string;
-  newValue: string;
-}[] => {
-  const differences: {
-    path: string;
-    oldValue: string;
-    newValue: string;
-  }[] = [];
-
-  const findDifferences = (prefix: string, obj1: any, obj2: any): void => {
-    const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-    keys.forEach((key) => {
-      const fullPath = prefix ? `${prefix}.${key}` : key;
-      const oldValue = obj1[key];
-      const newValue = obj2[key];
-
-      if (
-        oldValue !== null &&
-        typeof oldValue === 'object' &&
-        !Array.isArray(oldValue) &&
-        newValue !== null &&
-        typeof newValue === 'object' &&
-        !Array.isArray(newValue)
-      ) {
-        findDifferences(fullPath, oldValue, newValue);
-      } else if (oldValue !== newValue) {
-        differences.push({
-          path: fullPath,
-          oldValue: oldValue,
-          newValue: newValue !== undefined ? newValue.toString() : ''
-        });
-      }
-    });
-  };
-
-  findDifferences('', obj1, obj2);
-  return differences;
-};
-
-export const compareDBConfig = ({
-  oldConfig,
-  newConfig,
-  type
-}: {
-  oldConfig: string;
-  newConfig: string;
-  type: 'ini' | 'yaml';
-}) => {
-  const oldObj = parseConfig({ type, configString: oldConfig });
-  const newObj = parseConfig({ type, configString: newConfig });
-  return getDifferences(oldObj, newObj);
-};
-
 export const adjustDifferencesForIni = (
   differences: { path: string; oldValue: any; newValue: any }[],
   type: 'ini' | 'yaml',

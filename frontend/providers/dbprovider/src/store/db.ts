@@ -2,13 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
-import {
-  getMyDBList,
-  getPodsByDBName,
-  getDBByName,
-  getMonitorData,
-  getConfigByName
-} from '@/api/db';
+import { getMyDBList, getPodsByDBName, getDBByName, getMonitorData } from '@/api/db';
 import { defaultDBDetail } from '@/constants/db';
 
 type State = {

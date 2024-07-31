@@ -2,7 +2,7 @@ import { BACKUP_LABEL_KEY, BACKUP_REMARK_LABEL_KEY } from '@/constants/backup';
 import {
   CloudMigraionLabel,
   DBComponentNameMap,
-  DBTypeConfigMap,
+  DBReconfigureMap,
   DBTypeEnum,
   MigrationRemark,
   RedisHAConfig,
@@ -1140,11 +1140,11 @@ export const json2Reconfigure = (
           {
             keys: [
               {
-                key: DBTypeConfigMap[dbType].reconfigureKey,
+                key: DBReconfigureMap[dbType].reconfigureKey,
                 parameters: configParams
               }
             ],
-            name: DBTypeConfigMap[dbType].reconfigureName
+            name: DBReconfigureMap[dbType].reconfigureName
           }
         ]
       },

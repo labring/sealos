@@ -116,6 +116,9 @@ export type KubeBlockOpsRequestType = {
     name: string;
     namespace: string;
     uid: string;
+    annotations: {
+      [key: string]: string;
+    };
   };
   spec: {
     clusterRef: string;

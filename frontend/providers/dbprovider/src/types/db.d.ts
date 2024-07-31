@@ -137,5 +137,5 @@ export interface OpsRequestItemType {
   status: ReconfigStatusMapType;
   startTime: Date;
   namespace: string;
-  parameters: { key: string; value: string }[];
+  configurations: { parameterName: string; newValue: string; oldValue?: string }[];
 }

@@ -182,20 +182,6 @@ const AppDetail = ({
                 </Button>
               </Flex>
             )}
-            {listType === TabEnum.Reconfigure && (
-              <Flex alignItems={'center'}>
-                <Button
-                  ml={3}
-                  height={'32px'}
-                  variant={'solid'}
-                  onClick={() => {
-                    ReconfigureTableRef.current?.openBackup();
-                  }}
-                >
-                  {t('database_edit_config')}
-                </Button>
-              </Flex>
-            )}
           </Flex>
           <Box flex={'1 0 0'} h={0}>
             {listType === TabEnum.pod && <Pods dbName={dbName} dbType={dbDetail.dbType} />}

@@ -8,6 +8,7 @@ export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+export const DBTypeKey = 'cloud.sealos.io/dbtype';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
 export enum DBTypeEnum {
@@ -326,7 +327,7 @@ export const DBTypeSecretMap = {
   }
 };
 
-export const DBTypeConfigMap: {
+export const DBReconfigureMap: {
   [key in DBType]: {
     configMapKey: string;
     configMapName: string;

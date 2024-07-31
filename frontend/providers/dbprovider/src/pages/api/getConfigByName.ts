@@ -1,4 +1,4 @@
-import { DBTypeConfigMap } from '@/constants/db';
+import { DBReconfigureMap } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const dbConfig = DBTypeConfigMap[dbType];
+    const dbConfig = DBReconfigureMap[dbType];
     const key = name + dbConfig.configMapName;
     if (!key || !dbConfig.configMapName) {
       return jsonRes(res, {

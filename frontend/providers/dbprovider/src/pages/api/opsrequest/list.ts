@@ -3,14 +3,16 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KubeBlockOpsRequestType } from '@/types/cluster';
+import { DBType } from '@/types/db';
 import { adaptOpsRequest } from '@/utils/adapt';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name, label } = req.query as {
+    const { name, label, dbType } = req.query as {
       name: string;
       label: string;
+      dbType: DBType;
     };
 
     const { k8sCustomObjects, namespace } = await getK8s({
@@ -37,7 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         items: KubeBlockOpsRequestType[];
       };
     };
-    const data = opsrequestsList.body.items.map((res) => adaptOpsRequest(res));
+
+    const data = opsrequestsList.body.items.map((res) => adaptOpsRequest(res, dbType));
+
     jsonRes(res, {
       data: data
     });

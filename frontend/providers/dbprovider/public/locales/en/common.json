@@ -136,9 +136,18 @@
   "db_name": "DataBase Name",
   "db_table": "DataBase Table",
   "dbconfig": {
+    "change_history": "Modification history",
+    "commit": "submit",
+    "confirm_updates": "Please confirm the parameters you modified:",
     "get_config_err": "Failed to obtain configuration file",
+    "modified_value": "Modify value",
+    "modify_time": "Modify Time",
     "no_changes": "No modification yet",
+    "original_value": "Original value",
     "parameter": "Parameter Config",
+    "parameter_name": "parameter name",
+    "parameter_value": "Parameter value",
+    "search": "search",
     "updates": "Modified parameters",
     "updates_tip": "Changing the configuration of the mongo database will cause the database to restart"
   },
