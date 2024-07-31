@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	auth2 "github.com/labring/sealos/service/pkg/auth"
@@ -684,7 +685,7 @@ func CalibrateRegionAuth(auth *helper.Auth, kcHost string) error {
 			return fmt.Errorf("failed to marshal auth: %v", err)
 		}
 		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: os.Getenv("INSECURE_VERIFY") != "true"},
 		}
 		client := &http.Client{Transport: tr}
 		resp, err := client.Post(svcURL, "application/json", bytes.NewBuffer(authBody))

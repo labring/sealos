@@ -25,8 +25,9 @@ import (
 	"sync"
 	"time"
 
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 
 	"golang.org/x/sync/errgroup"
 
