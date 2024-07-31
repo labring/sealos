@@ -228,7 +228,7 @@ const evaluateExpression = (expression: string, data: {
   }
 };
 
-const yamlIfEndifreg = / *\${{ *?(if|endif)\((.*)\) *?}} */g;
+const yamlIfEndifReg = / *\${{ *?(if|endif)\((.*)\) *?}} */g;
 
 export function parseYamlIfEndif(yamlStr: string, data: {
   [key: string]: string | Record<string, string>;
@@ -243,7 +243,7 @@ export function parseYamlIfEndif(yamlStr: string, data: {
 const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) => boolean): string => {
   const stack: RegExpMatchArray[] = [];
 
-  const Matchs = yamlStr.matchAll(yamlIfEndifreg);
+  const Matchs = yamlStr.matchAll(yamlIfEndifReg);
   if (!Matchs) {
     return yamlStr;
   }
@@ -256,6 +256,9 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
     const If = stack.pop();
     if (!If) {
       throw new Error('ifend without if');
+    }
+    if (stack.length !== 0) {
+      continue
     }
     const IfExpression = If[2];
     const IfResult = evaluateExpression(IfExpression);
