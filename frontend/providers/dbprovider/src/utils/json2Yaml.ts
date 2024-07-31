@@ -1105,7 +1105,7 @@ export const json2Reconfigure = (
   dbName: string,
   dbType: DBType,
   dbUid: string,
-  configParams: { key: string; value: string }[]
+  configParams: { path: string; newValue: string; oldValue: string }[]
 ) => {
   const namespace = getUserNamespace();
   const template = {
@@ -1119,7 +1119,7 @@ export const json2Reconfigure = (
         'app.kubernetes.io/instance': dbName,
         'app.kubernetes.io/managed-by': 'kubeblocks',
         'ops.kubeblocks.io/ops-type': 'Reconfiguring',
-        ...configParams.reduce((acc, param) => ({ ...acc, [param.key]: param.value }), {})
+        ...configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.newValue }), {})
       },
       name: `${dbName}-reconfiguring-${nanoid()}`,
       namespace: namespace,
@@ -1141,7 +1141,7 @@ export const json2Reconfigure = (
             keys: [
               {
                 key: DBReconfigureMap[dbType].reconfigureKey,
-                parameters: configParams
+                parameters: configParams.map((item) => ({ key: item.path, value: item.newValue }))
               }
             ],
             name: DBReconfigureMap[dbType].reconfigureName

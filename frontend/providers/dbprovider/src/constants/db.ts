@@ -8,7 +8,6 @@ export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
-export const DBTypeKey = 'cloud.sealos.io/dbtype';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
 export enum DBTypeEnum {
@@ -44,7 +43,8 @@ export enum ReconfigStatus {
   Deleting = 'Deleting',
   Creating = 'Creating',
   Running = 'Running',
-  Succeed = 'Succeed'
+  Succeed = 'Succeed',
+  Failed = 'Failed'
 }
 
 export const DBReconfigStatusMap: Record<`${ReconfigStatus}`, ReconfigStatusMapType> = {
@@ -67,6 +67,11 @@ export const DBReconfigStatusMap: Record<`${ReconfigStatus}`, ReconfigStatusMapT
     label: 'Success',
     value: ReconfigStatus.Succeed,
     color: '#039855'
+  },
+  [ReconfigStatus.Failed]: {
+    label: 'Failed',
+    value: ReconfigStatus.Failed,
+    color: '#F04438'
   }
 };
 

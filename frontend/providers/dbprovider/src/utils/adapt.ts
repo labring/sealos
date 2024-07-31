@@ -285,9 +285,10 @@ export const adaptOpsRequest = (
 
   if (config) {
     try {
-      const confObject = JSON.parse(config.replace(/^`|`$/g, ''));
-      Object.keys(confObject).forEach((key) => {
-        previousConfigurations[key] = confObject[key].replace(/^'|'$/g, '');
+      const confObject = JSON.parse(config);
+      Object.entries(confObject).forEach(([key, value]) => {
+        previousConfigurations[key] =
+          typeof value === 'string' ? value.replace(/^['"](.*)['"]$/, '$1') : String(value);
       });
     } catch (error) {
       console.error('Error parsing postgresql.conf annotation:', error);
@@ -307,8 +308,6 @@ export const adaptOpsRequest = (
       parameterName: param.key,
       newValue: param.value,
       oldValue: previousConfigurations[param.key]
-        ? JSON.parse(previousConfigurations[param.key]).toString()
-        : undefined
     }))
   };
 };

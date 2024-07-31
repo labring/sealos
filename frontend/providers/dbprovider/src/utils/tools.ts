@@ -338,21 +338,17 @@ export const adjustDifferencesForIni = (
   differences: { path: string; oldValue: any; newValue: any }[],
   type: 'ini' | 'yaml',
   dbType: DBType
-): { key: string; value: string }[] => {
-  if (type !== 'ini') {
-    return differences.map((item) => ({ key: item.path, value: item.newValue }));
+): { path: string; newValue: string; oldValue: string }[] => {
+  if (type !== 'ini' || dbType === 'postgresql') {
+    return differences;
   }
-
-  if (dbType === 'postgresql') {
-    return differences.map((item) => ({ key: item.path, value: item.newValue }));
-  }
-
   return differences.map((diff) => {
     const pathParts = diff.path.split('.');
     const adjustedPath = pathParts.slice(1).join('.');
     return {
-      key: adjustedPath,
-      value: diff.newValue
+      path: adjustedPath,
+      newValue: diff.newValue,
+      oldValue: diff.oldValue
     };
   });
 };
