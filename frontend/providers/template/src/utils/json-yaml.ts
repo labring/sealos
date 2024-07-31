@@ -238,7 +238,7 @@ export function parseYamlIfEndif(yamlStr: string, data: {
   })
 }
 
-const yamlIfEndifReg = / *\${{ *?(if|elif|else|endif)\((.*?)\) *?}} */g;
+const yamlIfEndifReg = /^\s*\${{\s*?(if|elif|else|endif)\((.*?)\)\s*?}}\s*$/gm;
 
 const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) => boolean): string => {
   const stack: RegExpMatchArray[] = [];
