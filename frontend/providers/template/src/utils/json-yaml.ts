@@ -228,8 +228,6 @@ const evaluateExpression = (expression: string, data: {
   }
 };
 
-const yamlIfEndifReg = / *\${{ *?(if|else|endif)\((.*)\) *?}} */g;
-
 export function parseYamlIfEndif(yamlStr: string, data: {
   [key: string]: string | Record<string, string>;
   defaults: Record<string, string>;
@@ -240,56 +238,74 @@ export function parseYamlIfEndif(yamlStr: string, data: {
   })
 }
 
+const yamlIfEndifReg = / *\${{ *?(if|elif|else|endif)\((.*?)\) *?}} */g;
+
 const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) => boolean): string => {
   const stack: RegExpMatchArray[] = [];
 
-  const Matchs = yamlStr.matchAll(yamlIfEndifReg);
-  if (!Matchs) {
-    console.log(yamlStr)
+  const Matchs = Array.from(yamlStr.matchAll(yamlIfEndifReg));
+  if (Matchs.length === 0) {
     return yamlStr;
   }
+
   for (const Match of Matchs) {
     const Type = Match[1];
-    if (Type === 'if' || Type === 'else') {
+    if (Type === 'if' || Type === 'elif' || Type === 'else') {
       stack.push(Match);
       continue;
     }
     let If: RegExpMatchArray | undefined;
-    let Else: RegExpMatchArray | undefined;
-    If = stack.pop();
-    if (!If) {
-      throw new Error('ifend without if');
-    }
-    if (If[1] === 'else') {
-      Else = If
-      If = stack.pop();
-      if (!If) {
-        throw new Error('ifend without if');
+    let ElifElse: RegExpMatchArray[] = [];
+
+    while (stack.length > 0) {
+      const temp = stack.pop();
+      if (temp && (temp[1] === 'if' || (ElifElse.length > 0 && temp[1] === 'else'))) {
+        If = temp;
+        break;
+      } else if (temp) {
+        ElifElse.unshift(temp);
       }
     }
-    if (stack.length !== 0) {
-      continue
+
+    if (!If) {
+      throw new Error('endif without if');
     }
-    const IfExpression = If[2];
-    const IfResult = evaluateExpression(IfExpression);
-    const start = yamlStr.substring(0, If.index)
+
+    if (stack.length !== 0) {
+      continue;
+    }
+
+    const start = yamlStr.substring(0, If.index);
     const end = yamlStr.substring(Match.index! + Match[0].length);
     let between = '';
-    if (Else) {
-      if (IfResult) {
-        between = yamlStr.substring(If.index! + If[0].length, Else.index!)
-      } else {
-        between = yamlStr.substring(Else.index! + Else[0].length, Match.index)
-      }
-    } else {
+
+    if (ElifElse.length === 0) {
+      const IfResult = evaluateExpression(If[2]);
       if (IfResult) {
         between = yamlStr.substring(If.index! + If[0].length, Match.index);
       }
+    } else {
+      let conditionMet = false;
+      for (const clause of [If, ...ElifElse]) {
+        const expression = clause[2];
+        if (clause[1] === 'else' || evaluateExpression(expression)) {
+          between = yamlStr.substring(clause.index! + clause[0].length, clause === ElifElse[ElifElse.length - 1] ? Match.index : ElifElse[ElifElse.indexOf(clause) + 1].index);
+          conditionMet = true;
+          break;
+        }
+      }
+
+      if (!conditionMet) {
+        between = yamlStr.substring(ElifElse[ElifElse.length - 1].index! + ElifElse[ElifElse.length - 1][0].length, Match.index);
+      }
     }
+
     return __parseYamlIfEndif(start + between + end, evaluateExpression);
   }
+
   return yamlStr;
-}
+};
+
 
 export function clearYamlIfEndif(yamlStr: string): string {
   return __parseYamlIfEndif(yamlStr, () => {
