@@ -12,8 +12,7 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 import useCallbackStore from '@/stores/callback';
-import FloatButton from '@/components/floating_button';
-// import 'react-contexify/dist/ReactContexify.css';
+import 'react-contexify/dist/ReactContexify.css';
 
 const destination = '/signin';
 interface IMoreAppsContext {
