@@ -19,13 +19,14 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -203,9 +204,6 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	}
 	account, err := r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to create %s account: %v", owner, err)
 	}
 	return account, nil
@@ -290,9 +288,34 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
-		Watches(&accountv1.Payment{}, &handler.EnqueueRequestForObject{}).
+		Watches(&accountv1.Payment{}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(PaymentPredicate{})).
 		WithOptions(rateOpts).
 		Complete(r)
+}
+
+type PaymentPredicate struct{}
+
+func (PaymentPredicate) Create(e event.CreateEvent) bool {
+	if payment, ok := e.Object.(*accountv1.Payment); ok {
+		fmt.Println("payment create", payment.Status.TradeNO, payment.Status.Status)
+		return payment.Status.TradeNO != "" && payment.Status.Status != pay.PaymentSuccess
+	}
+	return false
+}
+
+func (PaymentPredicate) Update(e event.UpdateEvent) bool {
+	if payment, ok := e.ObjectNew.(*accountv1.Payment); ok {
+		return payment.Status.TradeNO != "" && payment.Status.Status != pay.PaymentSuccess
+	}
+	return false
+}
+
+func (PaymentPredicate) Delete(_ event.DeleteEvent) bool {
+	return false
+}
+
+func (PaymentPredicate) Generic(_ event.GenericEvent) bool {
+	return false
 }
 
 func RawParseRechargeConfig() (activities pkgtypes.Activities, discountsteps []int64, discountratios []float64, returnErr error) {

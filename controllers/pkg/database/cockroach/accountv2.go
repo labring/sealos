@@ -276,7 +276,7 @@ func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		if ops.IgnoreEmpty && errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to search account from db: %w", err)
+		return nil, err
 	}
 	return &account, nil
 }
@@ -307,16 +307,20 @@ func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount 
 		}
 		ops.UID = user.UserUID
 	}
-	var account types.Account
-	//TODO update UserUid = ?
-	if err := tx.Where(&types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
-		return fmt.Errorf("failed to get account: %w", err)
+	var account = &types.Account{}
+	if err := tx.Where(&types.Account{UserUID: ops.UID}).First(account).Error; err != nil {
+		// if not found, create a new account and retry
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to get account: %w", err)
+		}
+		if account, err = c.NewAccount(ops); err != nil {
+			return fmt.Errorf("failed to create account: %v", err)
+		}
 	}
-
-	if err := c.updateWithAccount(isDeduction, add, &account, amount); err != nil {
+	if err := c.updateWithAccount(isDeduction, add, account, amount); err != nil {
 		return err
 	}
-	if err := tx.Save(&account).Error; err != nil {
+	if err := tx.Save(account).Error; err != nil {
 		return fmt.Errorf("failed to update account balance: %w", err)
 	}
 	return nil

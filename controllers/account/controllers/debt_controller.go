@@ -155,6 +155,10 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 	account, err := r.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if account == nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_, err = r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
+			if err != nil {
+				return fmt.Errorf("failed to create account %s: %v", owner, err)
+			}
 			userOwner := &userv1.User{}
 			if err := r.Get(ctx, types.NamespacedName{Name: owner, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 				// if user not exist, skip
