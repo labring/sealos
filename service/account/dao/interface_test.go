@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -142,26 +143,148 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 			Owner: "5uxfy8jl",
 		},
 		//Namespace: "ns-hwhbg4vf",
-		//AppType: "APP-STORE",
-		//AppName: "cronicle-ldokpaus",
-		LimitReq: helper.LimitReq{
-			Page:     1,
-			PageSize: 5,
-		},
+		//AppType: "APP",
+		//AppName: "hello-world",
 	}
-	appList, err := m.GetCostOverview(req)
-	if err != nil {
-		t.Fatalf("failed to get cost app list: %v", err)
-	}
-	t.Logf("len costAppList: %v", len(appList.Overviews))
-	t.Logf("costAppList: %#+v", appList)
 
-	// 转json
-	b, err := json.MarshalIndent(appList, "", "  ")
-	if err != nil {
-		t.Fatalf("failed to marshal cost app list: %v", err)
+	/*
+	     "overviews": [
+	       {
+	         "amount": 605475,
+	         "namespace": "ns-5uxfy8jl",
+	         "regionDomain": "",
+	         "appType": 2,
+	         "appName": "hello-world"
+	       },
+	       {
+	         "amount": 4030,
+	         "namespace": "ns-5uxfy8jl",
+	         "regionDomain": "",
+	         "appType": 1,
+	         "appName": "wordpress-nwdzwqkv-mysql"
+	       },
+	       {
+	         "amount": 544983,
+	         "namespace": "ns-5uxfy8jl",
+	         "regionDomain": "",
+	         "appType": 1,
+	         "appName": "test"
+	       },
+	       {
+	         "amount": 8057,
+	         "namespace": "ns-5uxfy8jl",
+	         "regionDomain": "",
+	         "appType": 2,
+	         "appName": "wordpress-nwdzwqkv"
+	       },
+	       {
+	         "amount": 805435,
+	         "namespace": "ns-5uxfy8jl",
+	         "regionDomain": "",
+	         "appType": 8,
+	         "appName": "wordpress-nwdzwqkv"
+	       },
+	       {
+	         "amount": 1083138,
+	         "namespace": "ns-5uxfy8jl",
+	         "regionDomain": "",
+	         "appType": 8,
+	         "appName": "rustdesk-ijhdszru"
+	       }
+	     ],
+	     "total": 6,
+	     "totalPage": 1
+	   }
+
+	*/
+
+	for _, appType := range []string{"", "DB", "APP", "APP-STORE", "TERMINAL", "JOB"} {
+		req.AppType = appType
+		for i := 1; i <= 10; i++ {
+			for j := 1; j <= 10; j++ {
+				req.LimitReq = helper.LimitReq{
+					Page:     i,
+					PageSize: j,
+				}
+				appList, err := m.GetCostOverview(req)
+				if err != nil {
+					t.Fatalf("failed to get cost app list: %v", err)
+				}
+				if len(appList.Overviews) != GetCurrentPageItemCount(int(appList.Total), j, i) {
+					fmt.Printf("limit: %#+v\n", req.LimitReq)
+					fmt.Printf("total: %v\n", appList.Total)
+					t.Fatalf("len costAppList: %v, not equal getPageCount: %v", len(appList.Overviews), GetCurrentPageItemCount(int(appList.Total), j, i))
+				}
+
+				t.Logf("len costAppList: %v", len(appList.Overviews))
+				//t.Logf("costAppList: %#+v", appList)
+
+				// 转json
+				if len(appList.Overviews) != 0 {
+					b, err := json.MarshalIndent(appList, "", "  ")
+					if err != nil {
+						t.Fatalf("failed to marshal cost app list: %v", err)
+					}
+					t.Logf("costoverview json: %s", string(b))
+				}
+				t.Logf("success: %#+v", req.LimitReq)
+			}
+		}
 	}
-	t.Logf("costoverview json: %s", string(b))
+
+	//req.LimitReq = helper.LimitReq{
+	//	Page:     2,
+	//	PageSize: 2,
+	//}
+	////req.AppType = "APP-STORE"
+	//req.AppName = "rustdesk-ijhdszru"
+	//appList, err := m.GetCostOverview(req)
+	//if err != nil {
+	//	t.Fatalf("failed to get cost app list: %v", err)
+	//}
+	//if len(appList.Overviews) != GetCurrentPageItemCount(int(appList.Total), req.PageSize, req.Page) {
+	//	fmt.Printf("limit: %#+v\n", req.LimitReq)
+	//	fmt.Printf("total: %v\n", appList.Total)
+	//	t.Fatalf("len costAppList: %v, not equal getPageCount: %v", len(appList.Overviews), GetCurrentPageItemCount(int(appList.Total), 2, 1))
+	//}
+	//
+	//t.Logf("len costAppList: %v", len(appList.Overviews))
+	////t.Logf("costAppList: %#+v", appList)
+	//
+	//// 转json
+	//if len(appList.Overviews) != 0 {
+	//	b, err := json.MarshalIndent(appList, "", "  ")
+	//	if err != nil {
+	//		t.Fatalf("failed to marshal cost app list: %v", err)
+	//	}
+	//	t.Logf("costoverview json: %s", string(b))
+	//}
+	//t.Logf("success: %#+v", req.LimitReq)
+}
+
+func GetCurrentPageItemCount(totalItems, pageSize, currentPage int) int {
+	if totalItems <= 0 || pageSize <= 0 || currentPage <= 0 {
+		return 0
+	}
+
+	if pageSize >= totalItems {
+		if currentPage == 1 {
+			return totalItems
+		}
+		return 0
+	}
+
+	totalPages := (totalItems + pageSize - 1) / pageSize
+
+	if currentPage > totalPages {
+		return 0
+	}
+
+	if currentPage == totalPages {
+		return totalItems - (totalPages-1)*pageSize
+	}
+
+	return pageSize
 }
 
 func TestUnmarshal_Config(t *testing.T) {
