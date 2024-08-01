@@ -67,9 +67,9 @@ export default function History({ db }: { db?: DBDetailType }) {
     {
       title: 'status',
       key: 'status',
-      render: (item) => (
+      render: (item, configIndex) => (
         <Flex color={item.status.color} alignItems={'center'}>
-          {t(item.status.label)}
+          {configIndex === 0 ? t(item.status.label) : ''}
         </Flex>
       )
     }
