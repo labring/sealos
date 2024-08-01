@@ -43,11 +43,6 @@ const bodySchema = z.object({
     .string()
     .min(1, { message: 'Name must not be empty' })
     .max(20, { message: 'Name must not exceed 20 characters' }),
-  phone: z
-    .string()
-    .min(1, { message: 'Phone must not be empty' })
-    .regex(/^\d+$/, { message: 'Phone must contain only digits' })
-    .max(16, { message: 'Phone must not exceed 16 digits' }),
   idCard: z.string().refine(identityCodeValid, { message: 'Invalid ID card number' })
 });
 
@@ -66,7 +61,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
 
   try {
-    const { name, phone, idCard } = bodySchema.parse(req.body);
+    const { name, idCard } = bodySchema.parse(req.body);
+
+    const oauthProvider = await globalPrisma.oauthProvider.findFirst({
+      where: {
+        userUid: payload.userUid,
+        providerType: 'PHONE'
+      }
+    });
+
+    if (!oauthProvider) {
+      console.error('realNameAuth: User has not bound phone number');
+      return jsonRes(res, { code: 400, message: '未绑定手机号' });
+    }
+
+    const phone = oauthProvider.providerId;
 
     const realNameAuthProvider = (await globalPrisma.realNameAuthProvider.findFirst({
       where: {

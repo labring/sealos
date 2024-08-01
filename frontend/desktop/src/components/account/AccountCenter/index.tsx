@@ -221,8 +221,8 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <ConfigItem
                       LeftElement={<Text>{t('common:realname_info')}</Text>}
                       RightElement={
-                        session?.user.realName ? (
-                          <Flex flex={1}>{session.user.realName}</Flex>
+                        infoData.data.realName ? (
+                          <Flex flex={1}>{infoData?.data.realName}</Flex>
                         ) : (
                           <Badge
                             cursor="pointer"
