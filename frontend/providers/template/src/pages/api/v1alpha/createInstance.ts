@@ -3,7 +3,6 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import JSYAML from 'js-yaml';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../getTemplateSource';

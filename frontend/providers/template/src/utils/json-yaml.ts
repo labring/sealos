@@ -1,6 +1,6 @@
 import { YamlItemType } from '@/types';
 import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType, TemplateSourceType } from '@/types/app';
-import JSYAML from 'js-yaml';
+import JsYaml from 'js-yaml';
 import { cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { processEnvValue } from './tools';
@@ -9,8 +9,8 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
-    let _value = JSYAML.loadAll(value).filter((i) => i).map((item: any) =>
-      JSYAML.dump(processEnvValue(item, labelName))
+    let _value = JsYaml.loadAll(value).filter((i) => i).map((item: any) =>
+      JsYaml.dump(processEnvValue(item, labelName))
     );
 
     return [
@@ -27,10 +27,10 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
 
 export const developGenerateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
-    return JSYAML.loadAll(value).filter((i) => i).map((item: any) => {
+    return JsYaml.loadAll(value).filter((i) => i).map((item: any) => {
       return {
         filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
-        value: JSYAML.dump(processEnvValue(item, labelName))
+        value: JsYaml.dump(processEnvValue(item, labelName))
       };
     });
   } catch (error) {
@@ -317,7 +317,7 @@ export function getYamlSource(str: string, platformEnvs?: EnvResponse): Template
   const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
   const _instanceName = dataSource?.defaults?.app_name?.value || '';
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
-  yamlList.unshift(JSYAML.dump(instanceYaml));
+  yamlList.unshift(JsYaml.dump(instanceYaml));
 
   const result: TemplateSourceType = {
     source: {
@@ -340,7 +340,7 @@ export function getYamlTemplate(str: string): {
 
   for (const yamlStr of yamlStrList) {
     try {
-      const yamlObj = JSYAML.load(clearYamlIfEndif(yamlStr)) as TemplateType;
+      const yamlObj = JsYaml.load(clearYamlIfEndif(yamlStr)) as TemplateType;
       if (yamlObj && yamlObj.kind === 'Template') {
         templateYaml = yamlObj;
         continue

@@ -9,12 +9,11 @@ import {
   getYamlTemplate,
 } from '@/utils/json-yaml';
 import fs from 'fs';
-import yaml from 'js-yaml';
+import JsYaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { EnvResponse } from '@/types';
-import JsYaml from 'js-yaml';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {

@@ -6,7 +6,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { parseTemplateString, generateYamlList } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
-import JSYAML from 'js-yaml';
+import JsYaml from 'js-yaml';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       inputs: { ..._inputs, ...templateForm }
     });
     const correctYaml = generateYamlList(generateStr, app_name);
-    const yaml = JSYAML.loadAll(correctYaml[0].value);
+    const yaml = JsYaml.loadAll(correctYaml[0].value);
 
     jsonRes(res, {
       code: 200,

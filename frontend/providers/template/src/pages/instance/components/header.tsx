@@ -20,7 +20,7 @@ import {
   useDisclosure
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import JSYAML from 'js-yaml';
+import JsYaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useRef, useState } from 'react';
@@ -65,7 +65,7 @@ export default function Header({ instanceName }: { instanceName: string }) {
         if (displayName) {
           yamlCR.current.metadata.labels[templateDisplayNameKey] = displayName;
         }
-        const yaml = JSYAML.dump(yamlCR.current);
+        const yaml = JsYaml.dump(yamlCR.current);
         await postDeployApp([yaml], 'replace');
         refetch();
         toast({

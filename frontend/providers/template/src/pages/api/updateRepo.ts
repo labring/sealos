@@ -4,7 +4,6 @@ import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
 import { exec } from 'child_process';
 import fs from 'fs';
-import JSYAML from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import util from 'util';

@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml';
+import * as JsYaml from 'js-yaml';
 import type { SessionV1 } from 'sealos-desktop-sdk';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
@@ -33,7 +33,7 @@ const useSessionStore = create<SessionState>()(
       if (get().session?.kubeconfig === '') {
         return '';
       }
-      const doc = yaml.load(get().session.kubeconfig);
+      const doc = JsYaml.load(get().session.kubeconfig);
       //@ts-ignore
       return doc?.users[0]?.user?.token;
     }
