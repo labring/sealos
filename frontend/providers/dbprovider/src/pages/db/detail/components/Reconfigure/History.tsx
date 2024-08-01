@@ -3,7 +3,18 @@ import MyIcon from '@/components/Icon';
 import { DBReconfigureKey } from '@/constants/db';
 import { DBDetailType, OpsRequestItemType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { TableContainer, Table, Thead, Tr, Th, Tbody, Td, Box, Flex } from '@chakra-ui/react';
+import {
+  TableContainer,
+  Table,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
+  Td,
+  Box,
+  Flex,
+  Divider
+} from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
@@ -111,7 +122,7 @@ export default function History({ db }: { db?: DBDetailType }) {
           </Tr>
         </Thead>
         <Tbody>
-          {operationList?.map((app) => {
+          {operationList?.map((app, appIndex) => {
             return (
               <Fragment key={app.id}>
                 {app.configurations?.map((item, configIndex) => {
@@ -129,6 +140,13 @@ export default function History({ db }: { db?: DBDetailType }) {
                     </Tr>
                   );
                 })}
+                {appIndex < operationList.length - 1 && (
+                  <Tr>
+                    <Td colSpan={historyColumns.length} p={0}>
+                      <Divider my={'2px'} bg="grayModern.200" />
+                    </Td>
+                  </Tr>
+                )}
               </Fragment>
             );
           })}
