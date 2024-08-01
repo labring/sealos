@@ -16,6 +16,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Tag,
   Text,
   useDisclosure
 } from '@chakra-ui/react';
@@ -142,11 +143,11 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
             pb={2}
             borderBottom={'2px solid'}
             cursor={'pointer'}
-            fontSize={'lg'}
+            fontSize={'md'}
             {...(item.value === subMenu
               ? {
-                  color: 'black',
-                  borderBottomColor: 'black'
+                  color: 'grayModern.900',
+                  borderBottomColor: 'grayModern.900'
                 }
               : {
                   color: 'grayModern.600',
@@ -198,35 +199,44 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
       >
         <ModalOverlay />
         <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-          <ModalHeader display={'flex'}>
-            {t('prompt')}
-            {db.dbType === 'mongodb' && (
-              <Flex alignItems={'center'}>
-                <MyIcon
-                  ml={'12px'}
-                  color={'#0884DD'}
-                  name={'warningInfo'}
-                  width={'14px'}
-                  height={'14px'}
-                />
-                <Text fontSize={'base'} ml={'4px'} color={'brightBlue.600'} fontWeight={'bold'}>
-                  {t('dbconfig.updates_tip')}
-                </Text>
-              </Flex>
-            )}
-          </ModalHeader>
+          <ModalHeader display={'flex'}>{t('dbconfig.prompt')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Text color={'grayModern.900'} fontSize={'md'} fontWeight={'bold'}>
+            <Tag
+              alignItems={'center'}
+              fontSize={'13px'}
+              fontWeight={600}
+              w={'full'}
+              py={'6px'}
+              px={'12px'}
+              bg={'brightBlue.50'}
+              color={'brightBlue.600'}
+            >
+              {db.dbType === 'mongodb' ? (
+                <Box>
+                  <Text>1、{t('dbconfig.updates_tip')}</Text>
+                  <Text>2、{t('dbconfig.updates_tip2')}</Text>
+                </Box>
+              ) : (
+                <Box>
+                  <Text>{t('dbconfig.updates_tip2')}</Text>
+                </Box>
+              )}
+            </Tag>
+
+            <Text mt={'16px'} color={'grayModern.900'} fontSize={'md'} fontWeight={'bold'}>
               {t('dbconfig.confirm_updates')}
             </Text>
             <Box mt={'12px'}>
               <Flex
+                borderRadius={'4px'}
                 py={'6px'}
                 gap={'8px'}
                 px={'24px'}
                 color={'grayModern.600'}
                 bg={'grayModern.100'}
+                fontSize={'14px'}
+                fontWeight={500}
               >
                 <Text flex={1} minW={'220px'}>
                   {t('dbconfig.parameter_name')}

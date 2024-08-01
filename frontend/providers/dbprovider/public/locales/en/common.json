@@ -147,9 +147,11 @@
     "parameter": "Parameter Config",
     "parameter_name": "parameter name",
     "parameter_value": "Parameter value",
+    "prompt": "Change notice",
     "search": "search",
     "updates": "Modified parameters",
-    "updates_tip": "Changing the configuration of the mongo database will cause the database to restart"
+    "updates_tip": "Changing the configuration of the mongo database will cause the database to restart",
+    "updates_tip2": "Incorrect parameter values ​​may cause the database to fail to operate normally, so please operate with caution."
   },
   "delete_anyway": "Force Delete",
   "delete_backup": "Delete Backup",

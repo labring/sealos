@@ -42,7 +42,7 @@ export default function History({ db }: { db?: DBDetailType }) {
       title: 'dbconfig.modify_time',
       key: 'creation_time',
       render: (item, configIndex) => (
-        <Box>{configIndex === 0 ? dayjs(item.startTime).format('YYYY/MM/DD HH:mm') : ''}</Box>
+        <Box>{configIndex === 0 ? dayjs(item.startTime).format('YYYY-MM-DD HH:mm') : ''}</Box>
       )
     },
     {
@@ -53,12 +53,16 @@ export default function History({ db }: { db?: DBDetailType }) {
     {
       title: 'dbconfig.original_value',
       key: 'original_value',
-      render: (item, configIndex) => <Box>{item.configurations[configIndex].oldValue}</Box>
+      render: (item, configIndex) => (
+        <Box color={'grayModern.600'}>{item.configurations[configIndex].oldValue}</Box>
+      )
     },
     {
       title: 'dbconfig.modified_value',
       key: 'modified_value',
-      render: (item, configIndex) => <Box>{item.configurations[configIndex].newValue}</Box>
+      render: (item, configIndex) => (
+        <Box color={'grayModern.600'}>{item.configurations[configIndex].newValue}</Box>
+      )
     },
     {
       title: 'status',
@@ -114,7 +118,7 @@ export default function History({ db }: { db?: DBDetailType }) {
                   return (
                     <Tr key={item.parameterName}>
                       {historyColumns.map((col) => (
-                        <Td key={col.key}>
+                        <Td key={col.key} h={'48px'}>
                           {col.render
                             ? col.render(app, configIndex)
                             : col.dataIndex

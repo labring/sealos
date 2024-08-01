@@ -109,7 +109,14 @@ const ConfigTable = forwardRef<
       title: 'dbconfig.parameter_name',
       key: 'parameter_name',
       render: (item) => (
-        <Flex flex={1} alignItems={'center'} color={'grayModern.900'}>
+        <Flex
+          pl={'25px'}
+          h={'full'}
+          fontSize={'base'}
+          fontWeight={'bold'}
+          alignItems={'center'}
+          color={'grayModern.900'}
+        >
           {item.key}
         </Flex>
       )
@@ -118,7 +125,7 @@ const ConfigTable = forwardRef<
       title: 'dbconfig.parameter_value',
       key: 'parameter_value',
       render: (item) => (
-        <Flex flex={1} alignItems={'center'}>
+        <Flex alignItems={'center'} h={'full'}>
           {item.isEditing ? (
             <Input
               {...register(`configs.${item.originalIndex}.value`)}
@@ -150,14 +157,15 @@ const ConfigTable = forwardRef<
         <Box
           flex={1}
           fontSize={'12px'}
-          py={4}
+          py={'7px'}
           border={'none'}
           fontWeight={'500'}
+          height={'42px'}
           color={'grayModern.600'}
         >
           <Flex alignItems="center">
             <Text mr={2}>{t('dbconfig.parameter_name')}</Text>
-            <InputGroup width={'184px'}>
+            <InputGroup ml={'20px'} width={'184px'}>
               <InputLeftElement ml={'12px'} width={'16px'} height={'28px'}>
                 <MyIcon name="search" width={'16px'} height={'16px'} color="#485264" />
               </InputLeftElement>
@@ -171,7 +179,6 @@ const ConfigTable = forwardRef<
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </InputGroup>
-
             <Box ml={'4px'} cursor={'pointer'} onClick={() => setSearchTerm('')}>
               <MyIcon name="restart" w={'16px'} h={'16px'} />
             </Box>
@@ -185,15 +192,24 @@ const ConfigTable = forwardRef<
           border={'none'}
           fontWeight={'500'}
           color={'grayModern.600'}
+          height={'42px'}
         >
           {t('dbconfig.parameter_value')}
         </Flex>
       </Flex>
       <Box flex={1} height={'0'} overflowY={'auto'}>
         {controlledFields?.map((item, configIndex) => (
-          <Flex key={item.id} px={'25px'} py={'11px'} fontSize={'12px'}>
+          <Flex key={item.id}>
             {configColumns.map((col) => (
-              <Box flex={1} key={col.key}>
+              <Box
+                flex={1}
+                boxSizing={'content-box'}
+                fontSize={'12px'}
+                py={'11px'}
+                h={'32px'}
+                key={col.key}
+                bg={item.isEdited ? '#FFF6ED' : ''}
+              >
                 {col.render(item, configIndex)}
               </Box>
             ))}

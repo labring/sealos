@@ -147,9 +147,11 @@
     "parameter": "参数配置",
     "parameter_name": "参数名",
     "parameter_value": "参数值",
+    "prompt": "变更须知",
     "search": "搜索",
     "updates": "修改的参数",
-    "updates_tip": "mongo数据库变更配置会导致数据库重启"
+    "updates_tip": "mongo数据库变更配置会导致数据库重启",
+    "updates_tip2": "参数值错误可能会导致数据库无法正常运行，请谨慎操作。"
   },
   "delete_anyway": "仍要删除",
   "delete_backup": "删除备份",
