@@ -5,12 +5,11 @@ import { cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { processEnvValue } from './tools';
 import { EnvResponse } from '@/types/index';
-import JsYaml from 'js-yaml';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
-    let _value = JSYAML.loadAll(value).map((item: any) =>
+    let _value = JSYAML.loadAll(value).filter((i) => i).map((item: any) =>
       JSYAML.dump(processEnvValue(item, labelName))
     );
 
@@ -26,6 +25,20 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
   }
 };
 
+export const developGenerateYamlList = (value: string, labelName: string): YamlItemType[] => {
+  try {
+    return JSYAML.loadAll(value).filter((i) => i).map((item: any) => {
+      return {
+        filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
+        value: JSYAML.dump(processEnvValue(item, labelName))
+      };
+    });
+  } catch (error) {
+    console.log(error, 'developGenerateYamlList');
+    return [];
+  }
+};
+
 export const parseTemplateString = (
   sourceString: string,
   regex: RegExp = /\$\{\{\s*(.*?)\s*\}\}/g,
@@ -34,7 +47,7 @@ export const parseTemplateString = (
     defaults: Record<string, string>;
     inputs: Record<string, string>;
   }
-) => {
+): string => {
   sourceString = parseYamlIfEndif(sourceString, dataSource)
   // support function list
   const functionHandlers = [
@@ -176,20 +189,6 @@ export const getTemplateDataSource = (
   }
 };
 
-export const developGenerateYamlList = (value: string, labelName: string): YamlItemType[] => {
-  try {
-    return JSYAML.loadAll(value).map((item: any) => {
-      return {
-        filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
-        value: JSYAML.dump(processEnvValue(item, labelName))
-      };
-    });
-  } catch (error) {
-    console.log(error);
-    return [];
-  }
-};
-
 export const handleTemplateToInstanceYaml = (
   template: TemplateType,
   instanceName: string
@@ -306,7 +305,6 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
   return yamlStr;
 };
 
-
 export function clearYamlIfEndif(yamlStr: string): string {
   return __parseYamlIfEndif(yamlStr, () => {
     return false
@@ -319,7 +317,7 @@ export function getYamlSource(str: string, platformEnvs?: EnvResponse): Template
   const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
   const _instanceName = dataSource?.defaults?.app_name?.value || '';
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
-  yamlList.unshift(JsYaml.dump(instanceYaml));
+  yamlList.unshift(JSYAML.dump(instanceYaml));
 
   const result: TemplateSourceType = {
     source: {
@@ -342,7 +340,7 @@ export function getYamlTemplate(str: string): {
 
   for (const yamlStr of yamlStrList) {
     try {
-      const yamlObj = JsYaml.load(clearYamlIfEndif(yamlStr)) as TemplateType;
+      const yamlObj = JSYAML.load(clearYamlIfEndif(yamlStr)) as TemplateType;
       if (yamlObj && yamlObj.kind === 'Template') {
         templateYaml = yamlObj;
         continue
