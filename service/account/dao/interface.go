@@ -223,6 +223,7 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 					{Key: "order_id", Value: 1},
 					{Key: "namespace", Value: 1},
 					{Key: "used", Value: "$app_costs.used"},
+					{Key: "used_amount", Value: "$app_costs.used_amount"},
 					{Key: "amount", Value: "$app_costs.amount"},
 					{Key: "app_name", Value: "$app_costs.name"},
 					{Key: "app_type", Value: "$app_type"},
