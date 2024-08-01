@@ -15,7 +15,7 @@ import {
   parseTemplateString,
   getYamlSource,
 } from '@/utils/json-yaml';
-import { getTemplateDefaultValues } from '@/utils/template';
+import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
 import { downLoadBold } from '@/utils/tools';
 import { Button, Center, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -52,13 +52,16 @@ export default function Develop() {
 
   const generateCorrectYamlList = (
     yamlSource: TemplateSourceType,
-    inputs:Record<string, string> = {}
+    inputs: Record<string, string> = {}
   ): YamlItemType[] => {
-    const output = mapValues(yamlSource?.source.defaults, (value) => value.value);
+    const { defaults, defaultInputs } = getTemplateValues(yamlSource);
     const data = {
       ...yamlSource?.source,
-      inputs: inputs,
-      defaults: output
+      inputs: {
+        ...defaultInputs,
+        ...inputs
+      },
+      defaults: defaults
     };
     const generateStr = parseTemplateString(yamlSource.yamlList.join('---\n'), /\$\{\{\s*(.*?)\s*\}\}/g, data);
     const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
@@ -73,10 +76,9 @@ export default function Develop() {
     }
     try {
       const result = getYamlSource(str);
-      const defaultInputes = getTemplateDefaultValues(result);
       const formInputs = formHook.getValues();
       setYamlSource(result);
-      const correctYamlList = generateCorrectYamlList(result, { ...defaultInputes, ...formInputs });
+      const correctYamlList = generateCorrectYamlList(result, formInputs);
       setYamlList(correctYamlList);
     } catch (error: any) {
       toast({
@@ -91,19 +93,19 @@ export default function Develop() {
 
   // form
   const formHook = useForm({
-    defaultValues: getTemplateDefaultValues(yamlSource)
+    defaultValues: getTemplateInputDefaultValues(yamlSource)
   });
 
   // watch form change, compute new yaml
-  formHook.watch((data: any) => {
+  formHook.watch((data: Record<string, string>) => {
     data && formOnchangeDebounce(data);
     setForceUpdate(!forceUpdate);
   });
 
-  const formOnchangeDebounce = debounce((data: any) => {
+  const formOnchangeDebounce = debounce((formInputData: Record<string, string>) => {
     try {
       if (yamlSource) {
-        const correctYamlList = generateCorrectYamlList(yamlSource, data);
+        const correctYamlList = generateCorrectYamlList(yamlSource, formInputData);
         setYamlList(correctYamlList);
       }
     } catch (error) {

@@ -17,7 +17,6 @@ import {
 import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { mapValues, reduce } from 'lodash';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -26,6 +25,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
+import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -71,28 +71,19 @@ export default function EditApp({ appName }: { appName?: string }) {
     return val;
   }, [screenWidth]);
 
-  const getFormDefaultValues = (templateSource: TemplateSourceType | undefined) => {
-    const inputs = templateSource?.source?.inputs;
-    return reduce(
-      inputs,
-      (acc, item) => {
-        // @ts-ignore
-        acc[item.key] = item.default;
-        return acc;
-      },
-      {}
-    );
-  };
-
-  const generateYamlData = (templateSource: TemplateSourceType, inputs: Record<string, string>) => {
+  const generateYamlData = (templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
     if (!templateSource) return [];
     const app_name = templateSource?.source?.defaults?.app_name?.value;
-    const defaults = mapValues(templateSource?.source.defaults, (value) => value.value);
+    const { defaults, defaultInputs } = getTemplateValues(templateSource);
     const data = {
       ...templateSource?.source,
+      inputs: {
+        ...defaultInputs,
+        ...inputs
+      },
       defaults: defaults,
-      inputs: inputs
     };
+    console.log(data)
     const generateStr = parseTemplateString(templateSource.yamlList.join('---\n'), /\$\{\{\s*(.*?)\s*\}\}/g, data);
     return generateYamlList(generateStr, app_name);
   }
@@ -105,22 +96,25 @@ export default function EditApp({ appName }: { appName?: string }) {
     } catch (error) {
       console.log(error);
     }
-  }, 200);
+  }, 500);
 
-  const getCachedValue = () => {
-    if (!cached) return null;
+  const getCachedValue = (): {
+    cachedKey: string,
+    [key: string]: any
+  } | undefined => {
+    if (!cached) return undefined;
     const cachedValue = JSON.parse(cached);
-    return cachedValue?.cachedKey === templateName ? cachedValue : null;
+    return cachedValue?.cachedKey === templateName ? cachedValue : undefined;
   };
 
   // form
   const formHook = useForm({
-    defaultValues: getFormDefaultValues(templateSource),
+    defaultValues: getTemplateInputDefaultValues(templateSource),
     values: getCachedValue()
   });
 
   // watch form change, compute new yaml
-  formHook.watch((data: any) => {
+  formHook.watch((data: Record<string, string>) => {
     data && formOnchangeDebounce(data);
     setForceUpdate(!forceUpdate);
   });
@@ -173,8 +167,8 @@ export default function EditApp({ appName }: { appName?: string }) {
   const handleTemplateSource = (res: TemplateSourceType) => {
     try {
       setTemplateSource(res);
-      const inputs = getCachedValue() ? JSON.parse(cached) : getFormDefaultValues(res);
-      const list = generateYamlData(res, inputs)
+      const inputs = getCachedValue() ? JSON.parse(cached) : getTemplateInputDefaultValues(res);
+      const list = generateYamlData(res, inputs);
       setYamlList(list);
     } catch (err) {
       console.log(err, 'getTemplateData');
@@ -309,7 +303,7 @@ export default function EditApp({ appName }: { appName?: string }) {
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
-            <Form formHook={formHook} pxVal={pxVal} formSource={templateSource?.source} />
+            <Form formHook={formHook} pxVal={pxVal} formSource={templateSource!} />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
             <ReadMe templateDetail={data?.templateYaml!} />
           </Flex>

@@ -1,5 +1,5 @@
 import { YamlItemType } from '@/types';
-import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType, TemplateSourceType } from '@/types/app';
+import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType, TemplateSourceType, FormSourceInput } from '@/types/app';
 import JsYaml from 'js-yaml';
 import { cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
@@ -132,6 +132,7 @@ export const getTemplateDataSource = (
           default: string;
           required: boolean;
           options?: string[];
+          show?: string;
         }
       >,
       cloneDefauls: Record<
@@ -141,7 +142,7 @@ export const getTemplateDataSource = (
           value: string;
         }
       >
-    ) => {
+    ): FormSourceInput[] => {
       if (!inputs || Object.keys(inputs).length === 0) {
         return [];
       }
@@ -165,7 +166,9 @@ export const getTemplateDataSource = (
           default: item.default,
           required: item.required,
           key: key,
-          label: key
+          label: key,
+          options: item.options,
+          show: item.show
         };
       });
       return inputsArr;
@@ -212,17 +215,18 @@ export const handleTemplateToInstanceYaml = (
   };
 };
 
-const evaluateExpression = (expression: string, data: {
+export function evaluateExpression(expression: string, data: {
   [key: string]: string | Record<string, string>;
   defaults: Record<string, string>;
   inputs: Record<string, string>;
-}): boolean => {
+}): boolean {
   try {
     // TODO: unsafe
+    console.log(`expression: ${expression}\ndata: `, data)
     const result = new Function('data', `with(data) { return ${expression}; }`)(data);
     return !!result;
   } catch (error) {
-    console.error(`Failed to evaluate expression: ${expression}`, error);
+    console.error(`Failed to evaluate expression: ${expression}`, error, "data: ", data);
     return false;
   }
 };
@@ -340,10 +344,12 @@ export function getYamlTemplate(str: string): {
 
   for (const yamlStr of yamlStrList) {
     try {
-      const yamlObj = JsYaml.load(clearYamlIfEndif(yamlStr)) as TemplateType;
-      if (yamlObj && yamlObj.kind === 'Template') {
-        templateYaml = yamlObj;
-        continue
+      if (!templateYaml) {
+        const yamlObj = JsYaml.load(clearYamlIfEndif(yamlStr)) as TemplateType;
+        if (yamlObj && yamlObj.kind === 'Template') {
+          templateYaml = yamlObj;
+          continue
+        }
       }
       otherYamlList.push(yamlStr);
     } catch (error) {
