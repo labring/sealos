@@ -7,6 +7,7 @@ export const KBMigrationTaskLabel = 'datamigration.apecloud.io/migrationtask';
 export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
+export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 

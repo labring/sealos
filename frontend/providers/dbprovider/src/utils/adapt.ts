@@ -4,7 +4,9 @@ import {
   DBStatusEnum,
   DBReconfigureMap,
   MigrationRemark,
-  dbStatusMap
+  dbStatusMap,
+  DBReconfigureKey,
+  DBPreviousConfigKey
 } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type {
@@ -276,8 +278,7 @@ export const adaptOpsRequest = (
   item: KubeBlockOpsRequestType,
   dbType: DBType
 ): OpsRequestItemType => {
-  const key = DBReconfigureMap[dbType].configMapKey;
-  const config = item.metadata.annotations?.[key];
+  const config = item.metadata.annotations?.[DBPreviousConfigKey];
 
   let previousConfigurations: {
     [key: string]: string;

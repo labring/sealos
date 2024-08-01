@@ -2,6 +2,7 @@ import { BACKUP_LABEL_KEY, BACKUP_REMARK_LABEL_KEY } from '@/constants/backup';
 import {
   CloudMigraionLabel,
   DBComponentNameMap,
+  DBPreviousConfigKey,
   DBReconfigureMap,
   DBTypeEnum,
   MigrationRemark,
@@ -1120,6 +1121,11 @@ export const json2Reconfigure = (
         'app.kubernetes.io/managed-by': 'kubeblocks',
         'ops.kubeblocks.io/ops-type': 'Reconfiguring',
         ...configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.newValue }), {})
+      },
+      annotations: {
+        [DBPreviousConfigKey]: JSON.stringify(
+          configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.oldValue }), {})
+        )
       },
       name: `${dbName}-reconfiguring-${nanoid()}`,
       namespace: namespace,

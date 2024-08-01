@@ -143,6 +143,7 @@ const ConfigTable = forwardRef<
                 name={'edit'}
                 w={'16px'}
                 h={'16px'}
+                color={'grayModern.600'}
               />
             </Flex>
           )}
