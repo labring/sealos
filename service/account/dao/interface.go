@@ -215,6 +215,11 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 					{Key: "app_costs.name", Value: req.AppName},
 					timeMatch,
 				}}},
+				bson.D{{Key: "$sort", Value: bson.D{
+					{Key: "time", Value: -1},
+					{Key: "app_costs.name", Value: 1},
+					{Key: "_id", Value: 1},
+				}}},
 				bson.D{{Key: "$skip", Value: (currentPage - 1) * pageSize}},
 				bson.D{{Key: "$limit", Value: pageSize}},
 				bson.D{{Key: "$project", Value: bson.D{
