@@ -124,13 +124,6 @@ export function RealNameAuthForm(
     }
   });
 
-  useEffect(() => {
-    if (infoData.isSuccess && infoData.data) {
-      const phoneProvider = infoData.data.oauthProvider.find((p) => p.providerType === 'PHONE');
-      setPhoneNumber(phoneProvider?.providerId || null);
-    }
-  }, [infoData.isSuccess, infoData.data]);
-
   const { seconds, startTimer, isRunning } = useTimer({
     duration: 60,
     step: 1
@@ -164,11 +157,23 @@ export function RealNameAuthForm(
     reset,
     trigger,
     getValues,
-
+    setValue,
     formState: { errors }
   } = useForm<FormData>({
     resolver: zodResolver(schema)
   });
+
+  useEffect(() => {
+    if (infoData.isSuccess && infoData.data) {
+      const phoneProvider = infoData.data.oauthProvider.find((p) => p.providerType === 'PHONE');
+      const phoneNumber = phoneProvider?.providerId || null;
+      setPhoneNumber(phoneNumber);
+      if (phoneNumber) {
+        setValue('phone', phoneNumber, { shouldValidate: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [infoData.isSuccess, infoData.data]);
 
   const getCodeMutation = useMutation({
     mutationFn({ id, smsType }: { id: string; smsType: SmsType }) {
@@ -389,7 +394,6 @@ export function RealNameAuthForm(
                     placeholder={t('common:placeholders_phone')}
                     {...register('phone')}
                     isReadOnly={!!phoneNumber}
-                    value={phoneNumber || undefined}
                   />
                   {!phoneNumber && (
                     <InputRightElement h="auto" width={'auto'} right={'12px'} insetY={'8px'}>
