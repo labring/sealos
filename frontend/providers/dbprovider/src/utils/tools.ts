@@ -3,6 +3,9 @@ import { useMessage } from '@sealos/ui';
 import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
+import yaml from 'js-yaml';
+import ini from 'ini';
+import { DBType } from '@/types/db';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
@@ -299,3 +302,53 @@ export function decodeFromHex(encoded: string) {
   const decoded = Buffer.from(encoded, 'hex').toString('utf-8');
   return decoded;
 }
+
+export const parseConfig = ({
+  type,
+  configString
+}: {
+  type: 'ini' | 'yaml';
+  configString: string;
+}): Object => {
+  if (type === 'ini') {
+    return ini.parse(configString);
+  } else if (type === 'yaml') {
+    return yaml.load(configString) as Object;
+  } else {
+    throw new Error(`Unsupported config type: ${type}`);
+  }
+};
+
+export const flattenObject = (ob: any, prefix: string = ''): { key: string; value: string }[] => {
+  const result: { key: string; value: string }[] = [];
+
+  for (const i in ob) {
+    const key = prefix ? `${prefix}.${i}` : i;
+    if (typeof ob[i] === 'object' && ob[i] !== null) {
+      result.push(...flattenObject(ob[i], key));
+    } else {
+      result.push({ key, value: String(ob[i]) });
+    }
+  }
+
+  return result;
+};
+
+export const adjustDifferencesForIni = (
+  differences: { path: string; oldValue: any; newValue: any }[],
+  type: 'ini' | 'yaml',
+  dbType: DBType
+): { path: string; newValue: string; oldValue: string }[] => {
+  if (type !== 'ini' || dbType === 'postgresql') {
+    return differences;
+  }
+  return differences.map((diff) => {
+    const pathParts = diff.path.split('.');
+    const adjustedPath = pathParts.slice(1).join('.');
+    return {
+      path: adjustedPath,
+      newValue: diff.newValue,
+      oldValue: diff.oldValue
+    };
+  });
+};

@@ -303,8 +303,8 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={94}>{t('Remark')}</Label>
-                  <Input placeholder={t('Remark')} {...register('remark')} />
+                  <Label w={94}>{t('remark')}</Label>
+                  <Input placeholder={t('remark')} {...register('remark')} />
                 </Flex>
               </FormControl>
             </Box>

@@ -111,7 +111,7 @@ const Header = ({
             leftIcon={<MyIcon name="detail" w={'16px'} />}
             onClick={() => setShowSlider(true)}
           >
-            {t('Details')}
+            {t('details')}
           </Button>
         </Box>
       )}
