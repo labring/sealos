@@ -479,25 +479,6 @@ func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
 	t.Logf("lastUpdateTime: %v", lastUpdateTime)
 }
 
-func TestMongoDB_GetAllPricesMap(t *testing.T) {
-	dbCTX := context.Background()
-
-	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
-	if err != nil {
-		t.Errorf("failed to connect mongo: error = %v", err)
-	}
-	defer func() {
-		if err = m.Disconnect(dbCTX); err != nil {
-			t.Errorf("failed to disconnect mongo: error = %v", err)
-		}
-	}()
-	pricesMap, err := m.GetAllPricesMap()
-	if err != nil {
-		t.Fatalf("failed to get all prices map: %v", err)
-	}
-	t.Logf("pricesMap: %v", pricesMap)
-}
-
 func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
 	dbCTX := context.Background()
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -113,6 +114,9 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// determine the resource quota created by the owner user and the resource quota initialized by the account user,
 		// and only the resource quota created by the team user
 		_, err = r.syncAccount(ctx, owner, "ns-"+user.Name)
+		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(20*24*time.Hour).Before(time.Now()) {
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
@@ -204,7 +208,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	}
 	account, err := r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create %s account: %v", owner, err)
+		return nil, err
 	}
 	return account, nil
 }

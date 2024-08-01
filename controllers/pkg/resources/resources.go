@@ -15,14 +15,10 @@
 package resources
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/common"
-
-	"github.com/labring/sealos/controllers/pkg/crypto"
-	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -293,11 +289,6 @@ func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) 
 }
 
 func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
-	types, err := decryptPrice(types)
-	if err != nil {
-		logger.Warn("failed to decrypt price : %v", err)
-		types = DefaultPropertyTypeList
-	}
 	return newPropertyTypeLS(types)
 }
 
@@ -315,21 +306,6 @@ func newPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
 		ls.StringMap[types[i].Name] = types[i]
 	}
 	return
-}
-
-func decryptPrice(types []PropertyType) ([]PropertyType, error) {
-	for i := range types {
-		if types[i].EncryptUnitPrice == "" {
-			return types, fmt.Errorf("encrypt %s unit price is empty", types[i].Name)
-		}
-		price, err := crypto.DecryptFloat64(types[i].EncryptUnitPrice)
-		if err != nil {
-			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
-		}
-		types[i].UnitPrice = price
-		logger.Info("parse properties", types[i].Enum, types[i].UnitPrice)
-	}
-	return types, nil
 }
 
 type PropertyTypeEnumMap map[uint8]PropertyType

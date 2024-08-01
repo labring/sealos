@@ -53,7 +53,6 @@ type Account interface {
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
-	GetAllPricesMap() (map[string]resources.Price, error)
 	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error

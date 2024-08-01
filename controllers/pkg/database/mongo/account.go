@@ -30,7 +30,6 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
@@ -65,13 +64,6 @@ const (
 	DefaultTrafficConn = "traffic"
 )
 
-const DefaultRetentionDay = 30
-
-// override this value at build time
-const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
-
-var cryptoKey = defaultCryptoKey
-
 type mongoDB struct {
 	Client            *mongo.Client
 	AccountDB         string
@@ -83,7 +75,6 @@ type mongoDB struct {
 	MonitorConnPrefix string
 	MeteringConn      string
 	BillingConn       string
-	PricesConn        string
 	PropertiesConn    string
 	TrafficConn       string
 }
@@ -304,36 +295,6 @@ func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time) (
 		return nil, fmt.Errorf("cursor error: %v", err)
 	}
 	return monitors, nil
-}
-
-func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cursor, err := m.getPricesCollection().Find(ctx, bson.M{})
-	if err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var prices []struct {
-		Property string `json:"property" bson:"property"`
-		Price    string `json:"price" bson:"price"`
-		Detail   string `json:"detail" bson:"detail"`
-	}
-	if err = cursor.All(ctx, &prices); err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var pricesMap = make(map[string]resources.Price, len(prices))
-	for i := range prices {
-		price, err := crypto.DecryptInt64WithKey(prices[i].Price, []byte(cryptoKey))
-		if err != nil {
-			return nil, fmt.Errorf("decrypt price error: %v", err)
-		}
-		pricesMap[prices[i].Property] = resources.Price{
-			Price:    price,
-			Detail:   prices[i].Detail,
-			Property: prices[i].Property,
-		}
-	}
-	return pricesMap, nil
 }
 
 func (m *mongoDB) GetAllPayment() ([]resources.Billing, error) {
@@ -921,10 +882,6 @@ func (m *mongoDB) getMonitorCollectionName(collTime time.Time) string {
 	return fmt.Sprintf("%s_%s", m.MonitorConnPrefix, collTime.Format("20060102"))
 }
 
-func (m *mongoDB) getPricesCollection() *mongo.Collection {
-	return m.Client.Database(m.AccountDB).Collection(m.PricesConn)
-}
-
 func (m *mongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.BillingConn)
 }
@@ -1028,7 +985,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		MeteringConn:      DefaultMeteringConn,
 		MonitorConnPrefix: DefaultMonitorConn,
 		BillingConn:       DefaultBillingConn,
-		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
 		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
 		CvmConn:           env.GetEnvWithDefault(EnvCVMConn, DefaultCVMConn),
