@@ -205,7 +205,7 @@ export function RealNameAuthForm(
     e.preventDefault();
     if (isRunning) {
       message({
-        status: 'error',
+        status: 'warning',
         title: t('common:already_sent_code'),
         position: 'top',
         duration: 2000,
@@ -373,6 +373,9 @@ export function RealNameAuthForm(
               <HStack>
                 <FormLabel w={'120px'}>{t('common:phone')}</FormLabel>
                 <InputGroup
+                  _autofill={{
+                    bgColor: '#FBFBFC'
+                  }}
                   display={'flex'}
                   flex={1}
                   as={'div'}
@@ -418,6 +421,9 @@ export function RealNameAuthForm(
                 <HStack>
                   <FormLabel w={'120px'}>{t('common:verifycode')}</FormLabel>
                   <InputGroup
+                    _autofill={{
+                      bgColor: '#FBFBFC'
+                    }}
                     display={'flex'}
                     flex={1}
                     as={'div'}
@@ -482,7 +488,11 @@ export function RealNameAuthForm(
               type="submit"
               maxW={'72px'}
               _active={{ transform: 'scale(0.95)' }}
-              isLoading={realNameAuthMutation.isLoading}
+              isLoading={
+                realNameAuthMutation.isLoading ||
+                verifyCodeAndSmsBindMutation.isLoading ||
+                getCodeMutation.isLoading
+              }
             >
               {t('common:confirm')}
             </Button>
