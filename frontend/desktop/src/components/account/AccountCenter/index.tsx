@@ -367,7 +367,9 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
               )}
             </ModalBody>
           ) : (
-            <Spinner />
+            <Center h="100%">
+              <Spinner />
+            </Center>
           )}
         </ModalContent>
       </Modal>

@@ -350,9 +350,6 @@ export function RealNameAuthForm(
                 <Input
                   display={'flex'}
                   flex={1}
-                  _autofill={{
-                    bgColor: '#FBFBFC'
-                  }}
                   borderRadius="6px"
                   border="1px solid #DEE0E2"
                   color={'grayModern.500'}
@@ -373,9 +370,6 @@ export function RealNameAuthForm(
               <HStack>
                 <FormLabel w={'120px'}>{t('common:phone')}</FormLabel>
                 <InputGroup
-                  _autofill={{
-                    bgColor: '#FBFBFC'
-                  }}
                   display={'flex'}
                   flex={1}
                   as={'div'}
@@ -387,9 +381,6 @@ export function RealNameAuthForm(
                   px={'12px'}
                 >
                   <Input
-                    _autofill={{
-                      bgColor: '#FBFBFC'
-                    }}
                     color={'grayModern.500'}
                     fontSize={'14px'}
                     variant={'unstyled'}
@@ -405,6 +396,7 @@ export function RealNameAuthForm(
                         color={'brightBlue.600'}
                         marginY={'auto'}
                         fontSize={'11px'}
+                        pointerEvents={getCodeMutation.isLoading ? 'none' : 'auto'}
                         w={'60px'}
                       >
                         {t('common:get_code')}
@@ -421,9 +413,6 @@ export function RealNameAuthForm(
                 <HStack>
                   <FormLabel w={'120px'}>{t('common:verifycode')}</FormLabel>
                   <InputGroup
-                    _autofill={{
-                      bgColor: '#FBFBFC'
-                    }}
                     display={'flex'}
                     flex={1}
                     as={'div'}
@@ -435,9 +424,6 @@ export function RealNameAuthForm(
                     px={'12px'}
                   >
                     <Input
-                      _autofill={{
-                        bgColor: '#FBFBFC'
-                      }}
                       color={'grayModern.500'}
                       fontSize={'14px'}
                       variant={'unstyled'}
@@ -463,9 +449,6 @@ export function RealNameAuthForm(
                 <Input
                   display={'flex'}
                   flex={1}
-                  _autofill={{
-                    bgColor: '#FBFBFC'
-                  }}
                   borderRadius="6px"
                   border="1px solid #DEE0E2"
                   color={'grayModern.500'}
