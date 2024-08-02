@@ -115,11 +115,20 @@ const Form = ({
                       />
                     );
                   case 'boolean':
+                    const input = formHook.getValues(item.key)
                     return (
                       <Checkbox
-                        isChecked={formHook.getValues(item.key) || !!item.default}
-                        onChange={(e) => setValue(item.key, e.target.checked)}
-                      />
+                        isChecked={input !== undefined ? !!input : !!item.default}
+                        onChange={(e) => {
+                          setValue(item.key, e.target.checked);
+                        }}
+                      >
+                        {item.description && (
+                          <Text as="span" ml={2} fontSize="sm" color="gray.500">
+                            {item.description}
+                          </Text>
+                        )}
+                      </Checkbox>
                     );
                   case 'number':
                   case 'string':
