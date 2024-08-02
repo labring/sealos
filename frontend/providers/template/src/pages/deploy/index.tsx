@@ -37,7 +37,6 @@ export default function EditApp({ appName }: { appName?: string }) {
   const { copyData } = useCopyData();
   const { templateName } = router.query as QueryType;
   const { Loading, setIsLoading } = useLoading();
-  const [forceUpdate, setForceUpdate] = useState(false);
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
@@ -117,7 +116,6 @@ export default function EditApp({ appName }: { appName?: string }) {
   // watch form change, compute new yaml
   formHook.watch((data: Record<string, string>) => {
     data && formOnchangeDebounce(data);
-    setForceUpdate(!forceUpdate);
   });
 
   const submitSuccess = async () => {

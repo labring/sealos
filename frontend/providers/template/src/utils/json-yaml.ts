@@ -7,6 +7,9 @@ import { processEnvValue } from './tools';
 import { EnvResponse } from '@/types/index';
 import Interpreter from 'js-interpreter';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
+function base64(str: string) {
+  return Buffer.from(str).toString('base64');
+}
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
@@ -189,9 +192,6 @@ export function evaluateExpression(expression: string, data?: {
     const initInterpreterFunc = (interpreter: any, ctx: any) => {
       interpreter.setProperty(ctx, 'data', interpreter.nativeToPseudo(data));
       interpreter.setProperty(ctx, 'random', interpreter.nativeToPseudo(nanoid));
-      function base64(str: string) {
-        return Buffer.from(str).toString('base64');
-      }
       interpreter.setProperty(ctx, 'base64', interpreter.nativeToPseudo(base64));
     }
     const interpreter = new Interpreter(` with(data) { ${expression} } `, initInterpreterFunc)
