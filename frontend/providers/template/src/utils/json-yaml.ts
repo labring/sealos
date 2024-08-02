@@ -225,18 +225,10 @@ export function evaluateExpression(expression: string, data: {
   try {
     console.log(`expression: ${expression}\ndata: `, data)
     // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
-    const randomFunctionName = nanoid(32);
-    if (expression.includes(randomFunctionName)) {
-      throw new Error('expression contain random function name');
+    const initInterpreterFunc = (interpreter: any, ctx: any) => {
+      interpreter.setProperty(ctx, 'data', interpreter.nativeToPseudo(data));
     }
-    const interpreter = new Interpreter(`${randomFunctionName}()`, (interpreter: any, ctx: any) => {
-      function evaluate() {
-        return new Function('data', `with(data) { return ${expression}; }`)(data);
-      }
-      interpreter.setProperty(ctx, randomFunctionName,
-        interpreter.createNativeFunction(evaluate)
-      );
-    })
+    const interpreter = new Interpreter(` with(data) { ${expression} } `, initInterpreterFunc)
     interpreter.run();
     console.log(`raw resoult: ${interpreter.value}\n     result: `, !!interpreter.value)
     return !!interpreter.value;
