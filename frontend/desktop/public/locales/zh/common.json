@@ -154,6 +154,7 @@
   "realNameVerification": "实名认证",
   "realName_verification": "实名认证",
   "realname_auth_failed_tips": "手机号已被其他账号占用，请先解绑该手机号，或者完成账号合并操作。",
+  "realname_auth_success": "实名认证成功",
   "realname_info": "实名信息",
   "receive_tips": "{{managerName}} 邀请你到 {{teamName}} 成为 {{role}}",
   "recharge_amount": "充值金额",

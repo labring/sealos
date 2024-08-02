@@ -240,7 +240,7 @@ export function RealNameAuthForm(
     onSuccess: (data) => {
       if (data.code === 200) {
         message({
-          title: data.message,
+          title: t('common:realname_auth_success'),
           status: 'success',
           duration: 2000,
           isClosable: true

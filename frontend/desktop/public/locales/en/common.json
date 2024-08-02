@@ -158,6 +158,7 @@
   "realNameVerification": "Real Name Verification",
   "realName_verification": "Real Name Verification",
   "realname_auth_failed_tips": "The mobile number has been occupied by another account. Please unbind the mobile number or merge the accounts first.",
+  "realname_auth_success": "Identity verification success",
   "realname_info": "RealName",
   "receive_tips": "{{managerName}} invite you join in {{teamName}} as {{role}}",
   "recharge_amount": "Recharge Amount",
