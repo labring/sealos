@@ -1,6 +1,6 @@
 import { PC_MIN_WIDTH } from '@site/src/constants/platform';
 import useWindow from '@site/src/hooks/useWindow';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Footer from '../components/Footer';
 import Header from './header';
 import './index.scss';
@@ -13,6 +13,12 @@ import Layout from '@theme/Layout';
 export default function Pricing() {
   const { screenWidth } = useWindow();
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bd_vidValue = urlParams.get('bd_vid');
+    sessionStorage.setItem('bd_vid', bd_vidValue);
+  }, []);
 
   return (
     <div id="sealos-layout-wrap-home-page">
