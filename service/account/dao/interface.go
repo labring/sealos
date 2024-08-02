@@ -196,8 +196,8 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	results = &common.AppCosts{
 		CurrentPage: req.Page,
 	}
-	if req.OrderID != "" && req.AppType == strings.ToUpper(resources.AppStore) {
-		costs, err := m.GetAppCostsByOrderIDAndAppName(req.OrderID, req.AppName)
+	if req.OrderID != "" {
+		costs, err := m.GetAppCostsByOrderIDAndAppName(req)
 		if err != nil {
 			rErr = fmt.Errorf("failed to get app costs by order id and app name: %w", err)
 			return
@@ -212,22 +212,32 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 
 	matchConditions := bson.D{timeMatch}
 	matchConditions = append(matchConditions, bson.E{Key: "owner", Value: req.Owner})
-	if req.AppName != "" {
-		matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
-	}
-	if req.AppType != "" {
-		matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]})
+	if req.AppName != "" && req.AppType != "" {
+		if strings.ToUpper(req.AppType) != resources.AppStore {
+			matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
+		} else {
+			matchConditions = append(matchConditions, bson.E{Key: "app_name", Value: req.AppName})
+		}
 	}
 	if req.Namespace != "" {
 		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
 	}
-	if req.OrderID != "" {
-		matchConditions = append(matchConditions, bson.E{Key: "order_id", Value: req.OrderID})
-	}
 
 	if strings.ToUpper(req.AppType) != resources.AppStore {
+		var match bson.D
+		if req.AppType != "" {
+			match = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]})
+		} else {
+			match = append(matchConditions, bson.E{Key: "app_type", Value: bson.M{"$ne": resources.AppType[resources.AppStore]}})
+		}
+		if req.OrderID != "" {
+			match = bson.D{
+				{Key: "order_id", Value: req.OrderID},
+				{Key: "owner", Value: req.Owner},
+			}
+		}
 		pipeline := mongo.Pipeline{
-			{{Key: "$match", Value: append(matchConditions, bson.E{Key: "app_type", Value: bson.M{"$ne": resources.AppType[resources.AppStore]}})}},
+			{{Key: "$match", Value: match}},
 			{{Key: "$facet", Value: bson.D{
 				{Key: "totalRecords", Value: bson.A{
 					bson.D{{Key: "$unwind", Value: "$app_costs"}},
@@ -348,22 +358,41 @@ func (m *MongoDB) getAppStoreCostsTotal(req *helper.AppCostsReq) (int64, error) 
 	return result.TotalRecords, nil
 }
 
-func (m *MongoDB) GetAppCostsByOrderIDAndAppName(orderID string, appName string) ([]common.AppCost, error) {
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.D{{Key: "order_id", Value: orderID}, {Key: "app_name", Value: appName}}}},
-		{{Key: "$unwind", Value: "$filtered_app_costs"}},
-		{{Key: "$project", Value: bson.D{
-			{Key: "app_name", Value: "$filtered_app_costs.name"},
-			{Key: "app_type", Value: "$filtered_app_costs.type"},
-			{Key: "time", Value: "$time"},
-			{Key: "order_id", Value: "$order_id"},
-			{Key: "namespace", Value: "$namespace"},
-			{Key: "used", Value: "$filtered_app_costs.used"},
-			{Key: "used_amount", Value: "$filtered_app_costs.used_amount"},
-			{Key: "amount", Value: "$filtered_app_costs.amount"},
-		}}},
+func (m *MongoDB) GetAppCostsByOrderIDAndAppName(req *helper.AppCostsReq) ([]common.AppCost, error) {
+	var pipeline mongo.Pipeline
+	if req.AppType == resources.AppStore {
+		pipeline = mongo.Pipeline{
+			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}}}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "app_name", Value: "$app_costs.name"},
+				{Key: "app_type", Value: "$app_costs.type"},
+				{Key: "time", Value: "$time"},
+				{Key: "order_id", Value: "$order_id"},
+				{Key: "namespace", Value: "$namespace"},
+				{Key: "used", Value: "$app_costs.used"},
+				{Key: "used_amount", Value: "$app_costs.used_amount"},
+				{Key: "amount", Value: "$app_costs.amount"},
+			}}},
+		}
+	} else {
+		pipeline = mongo.Pipeline{
+			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}}}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+			{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "app_name", Value: "$app_costs.name"},
+				{Key: "app_type", Value: "$app_type"},
+				{Key: "time", Value: "$time"},
+				{Key: "order_id", Value: "$order_id"},
+				{Key: "namespace", Value: "$namespace"},
+				{Key: "used", Value: "$app_costs.used"},
+				{Key: "used_amount", Value: "$app_costs.used_amount"},
+				{Key: "amount", Value: "$app_costs.amount"},
+			}}},
+		}
 	}
-
+	fmt.Printf("pipeline: %v\n", pipeline)
 	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
