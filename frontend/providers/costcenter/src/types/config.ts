@@ -41,6 +41,10 @@ export type Components = {
 };
 
 export type AppConfigType = {
+  cloud: {
+    regionUID: string;
+    domain: string;
+  };
   costCenter: {
     transferEnabled: boolean;
     currencyType: string;
@@ -87,6 +91,10 @@ export var DefaultAppConfig: AppConfigType = {
       }
     },
     gpuEnabled: false
+  },
+  cloud: {
+    regionUID: '',
+    domain: ''
   }
 };
 

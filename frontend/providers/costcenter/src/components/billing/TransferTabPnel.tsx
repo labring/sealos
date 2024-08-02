@@ -21,20 +21,23 @@ import { TransferBillingTable } from '@/components/billing/billingTable';
 import SwitchPage from '@/components/billing/SwitchPage';
 import NotFound from '../notFound';
 import useBillingStore from '@/stores/billing';
+import { TRANSFER_LIST_TYPE } from '@/constants/billing';
 
 export default function TransferTabPanel() {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
-  const [selectType, setType] = useState<TransferType>(TransferType.ALL);
+  const [transferTypeIdx, settransferTypeIdx] = useState<number>(0);
   const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItem, setTotalItem] = useState(10);
-  const { namespace } = useBillingStore();
+  const { getNamespace } = useBillingStore();
+  const namespace = getNamespace()?.[0] || '';
+  const selectType = TRANSFER_LIST_TYPE[transferTypeIdx];
   useEffect(() => {
     setcurrentPage(1);
-  }, [startTime, endTime, selectType, namespace]);
+  }, [startTime, endTime, transferTypeIdx, namespace]);
   const { data, isFetching, isSuccess } = useQuery(
     ['billing', { currentPage, startTime, endTime, orderID, selectType, namespace, pageSize }],
     () => {
@@ -81,32 +84,25 @@ export default function TransferTabPanel() {
           </Text>
           <SelectRange isDisabled={isFetching}></SelectRange>
         </Flex>
-        <Flex align={'center'} mb="24px">
+        <Flex align={'center'} mb="24px" ml={'48px'}>
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
             {t('Type')}
           </Text>
-          <TypeMenu selectType={selectType} setType={setType} isDisabled={isFetching} />
+          <TypeMenu setIdx={settransferTypeIdx} idx={transferTypeIdx} isDisabled={isFetching} />
         </Flex>
         <SearchBox isDisabled={isFetching} setOrderID={setOrderID} />
       </Flex>
-      {isSuccess && tableResult.length > 0 ? (
-        <>
-          <TransferBillingTable data={tableResult} />
-          <Flex justifyContent={'flex-end'}>
-            <SwitchPage
-              totalPage={totalPage}
-              totalItem={totalItem}
-              pageSize={pageSize}
-              currentPage={currentPage}
-              setCurrentPage={setcurrentPage}
-            />
-          </Flex>
-        </>
-      ) : (
-        <Flex direction={'column'} w="full" align={'center'} flex={'1'} h={'0'} justify={'center'}>
-          <NotFound></NotFound>
-        </Flex>
-      )}
+
+      <TransferBillingTable data={tableResult || []} />
+      <Flex justifyContent={'flex-end'}>
+        <SwitchPage
+          totalPage={totalPage}
+          totalItem={totalItem}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          setCurrentPage={setcurrentPage}
+        />
+      </Flex>
     </TabPanel>
   );
 }

@@ -1,4 +1,5 @@
 import { authSession } from '@/service/backend/auth';
+import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -8,9 +9,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const { endTime, startTime } = req.body as {
+    const { endTime, startTime, regionUid } = req.body as {
       endTime?: Date;
       startTime?: Date;
+      regionUid: string;
     };
     if (!endTime)
       return jsonRes(resp, {
@@ -22,15 +24,14 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    const url =
-      global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/namespaces';
+    const region = await getRegionByUid(regionUid);
+    const url = makeAPIURL(region, '/account/v1alpha1/namespaces');
     const res = await (
       await fetch(url, {
         method: 'POST',
         body: JSON.stringify({
           endTime,
           kubeConfig: kc.exportConfig(),
-          owner: user.name,
           startTime,
           type: 0
         })

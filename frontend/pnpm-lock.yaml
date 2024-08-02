@@ -959,6 +959,9 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.6
         version: 4.0.9
+      '@types/lodash':
+        specifier: ^4.14.199
+        version: 4.14.202
       '@types/node':
         specifier: 18.15.5
         version: 18.15.5

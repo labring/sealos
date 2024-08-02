@@ -1,13 +1,17 @@
-import { Flex, Text, Img } from '@chakra-ui/react';
+import { Flex, Text, Img, Divider, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import bar_a_icon from '@/assert/bar_chart_4_bars_black.svg';
-import bar_icon from '@/assert/bar_chart_4_bars.svg';
 import letter_icon from '@/assert/format_letter_spacing_standard.svg';
 import letter_a_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import receipt_icon from '@/assert/receipt_long.svg';
 import receipt_a_icon from '@/assert/receipt_long_black.svg';
+import layers_icon from '@/assert/layers.svg';
+import layers_a_icon from '@/assert/layers_black.svg';
+import linechart_icon from '@/assert/lineChart.svg';
+import linechart_a_icon from '@/assert/lineChart_black.svg';
 import invoice_icon from '@/assert/invoice.svg';
 import invoice_a_icon from '@/assert/invoice-active.svg';
+import dashbordIcon from '@/assert/dashboard.svg';
+import dashboard_a_icon from '@/assert/dashboard_black.svg';
 import type { StaticImageData } from 'next/image';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
@@ -29,9 +33,17 @@ export default function SideBar() {
     {
       id: 'CostOverview',
       url: '/cost_overview',
+      value: 'SideBar.Index',
+      icon: dashbordIcon,
+      aicon: dashboard_a_icon,
+      display: true
+    },
+    {
+      id: 'BillingOverview',
+      url: '/app_overview',
       value: 'SideBar.CostOverview',
-      icon: bar_icon,
-      aicon: bar_a_icon,
+      icon: linechart_icon,
+      aicon: linechart_a_icon,
       display: true
     },
     {
@@ -40,6 +52,14 @@ export default function SideBar() {
       value: 'SideBar.BillingDetails',
       icon: receipt_icon,
       aicon: receipt_a_icon,
+      display: true
+    },
+    {
+      id: 'ResourceAnalysis',
+      url: '/resource_analysis',
+      value: 'SideBar.resource_analysis',
+      icon: layers_icon,
+      aicon: layers_a_icon,
       display: true
     },
     {
@@ -60,38 +80,47 @@ export default function SideBar() {
     }
   ];
   return (
-    <Flex flexDirection="column">
+    <Flex flexDirection="column" py={'22px'} px="16px">
       {ready &&
         menus
           .filter((item) => item.display)
-          .map((item) => {
+          .map((item, idx) => {
             return (
-              <Flex
-                key={item.value}
-                py={'10px'}
-                px={['10px', '10px', '10px', '20px']}
-                alignItems={'center'}
-                onClick={() => {
-                  router.push(item.url);
-                }}
-                as="button"
-              >
-                <Flex h={4} alignItems={'center'}>
-                  <Img
-                    src={router.route == item.url ? item.aicon.src : item.icon.src}
-                    width={'18px'}
-                    alt="icon of module"
-                  />
-                </Flex>
-                <Text
-                  color={router.route === item.url ? '#000000' : '#7B838B'}
-                  ml="10px"
-                  my="9px"
-                  display={['none', 'none', 'none', 'flex']}
+              <Box key={item.value}>
+                <Flex
+                  // py={'10px'}
+                  // px={['10px', '10px', '10px', '20px']}
+                  {...([1, 3, 5].includes(idx)
+                    ? {
+                        mb: '32px'
+                      }
+                    : {})}
+                  alignItems={'center'}
+                  onClick={() => {
+                    router.push(item.url);
+                  }}
+                  as="button"
+                  fontWeight={500}
+                  fontSize={'14px'}
                 >
-                  {t(item.value)}
-                </Text>
-              </Flex>
+                  <Flex h={4} alignItems={'center'}>
+                    <Img
+                      src={router.route == item.url ? item.aicon.src : item.icon.src}
+                      width={'20px'}
+                      alt="icon of module"
+                    />
+                  </Flex>
+                  <Text
+                    color={router.route === item.url ? 'grayModern.900' : 'grayModern.500'}
+                    ml="8px"
+                    // my="9px"
+                    // display={['none', 'none', 'none', 'flex']}
+                  >
+                    {t(item.value)}
+                  </Text>
+                </Flex>
+                {[0, 2, 4].includes(idx) && <Divider my="20px" borderColor={'grayModern.250'} />}
+              </Box>
             );
           })}
     </Flex>

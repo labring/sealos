@@ -1,6 +1,12 @@
 import { IncomingHttpHeaders } from 'http';
 import { K8sApi } from '@/service/backend/kubernetes';
-
+import * as yaml from 'js-yaml';
+// export function switchKubeconfigNamespace(kc: string, namespace: string) {
+//   const oldKc = yaml.load(kc);
+//   // @ts-ignore
+//   oldKc.contexts[0].context.namespace = namespace;
+//   return yaml.dump(oldKc);
+// }
 export const authSession = async (header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
@@ -10,6 +16,17 @@ export const authSession = async (header: IncomingHttpHeaders) => {
     const kubeconfig = decodeURIComponent(header.authorization);
     const kc = K8sApi(kubeconfig);
 
+    // rewrite exportConfig to stop transform domain to ip
+    kc.exportConfig = () => {
+      const domain = global.AppConfig.cloud.domain;
+      if (!domain) return kubeconfig;
+      const oldKc = yaml.load(kubeconfig);
+      const newServer = `https://${domain}:6443`;
+      //@ts-ignore
+      oldKc.clusters[0].cluster.server = newServer;
+      const newkubeconfig = yaml.dump(oldKc);
+      return newkubeconfig;
+    };
     return Promise.resolve(kc);
   } catch (err) {
     return Promise.reject('凭证错误');

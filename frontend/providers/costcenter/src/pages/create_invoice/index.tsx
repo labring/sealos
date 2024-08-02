@@ -42,7 +42,7 @@ function Invoice() {
       }
     ],
     () => {
-      return request<any, ApiResp<RechargeBillingData>>('/api/billing/recharge', {
+      return request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
         data: {
           startTime,
           endTime
@@ -63,7 +63,15 @@ function Invoice() {
   );
 
   return (
-    <Flex flexDirection="column" w="100%" h="100%" bg={'white'} p="24px" overflow={'auto'}>
+    <Flex
+      flexDirection="column"
+      w="100%"
+      h="100%"
+      bg={'white'}
+      px="24px"
+      py={'20px'}
+      overflow={'auto'}
+    >
       {processState === 0 ? (
         <>
           <Flex mr="24px" align={'center'}>

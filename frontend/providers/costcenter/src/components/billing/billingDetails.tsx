@@ -50,9 +50,6 @@ export default function BillingDetails({
       });
     },
     {
-      onSuccess(data) {
-        console.log(data);
-      },
       enabled: isOpen
     }
   );

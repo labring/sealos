@@ -10,7 +10,7 @@ import {
   PaginationState,
   useReactTable
 } from '@tanstack/react-table';
-import { BaseTable } from '@/components/billing/billingTable';
+import { BaseTable } from '@/components/table/BaseTable';
 import { ApiResp, BillingType, RechargeBillingData, RechargeBillingItem } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { format, formatISO, parseISO } from 'date-fns';
@@ -25,18 +25,21 @@ import CurrencySymbol from '@/components/CurrencySymbol';
 import { TableHeaderID } from '@/constants/billing';
 import Amount from '@/components/billing/AmountTableHeader';
 import SearchBox from '@/components/billing/SearchBox';
+import useBillingStore from '@/stores/billing';
 
 export default function RechargeTabPanel() {
   const { startTime, endTime } = useOverviewStore();
+  const { getRegion } = useBillingStore();
   const { data, isFetching, isSuccess } = useQuery(
     ['billing', 'in', { startTime, endTime }],
     () => {
       const body = {
         startTime: formatISO(startTime, { representation: 'complete' }),
         // startTime,
-        endTime: formatISO(endTime, { representation: 'complete' })
+        endTime: formatISO(endTime, { representation: 'complete' }),
+        regionUid: getRegion()?.uid || ''
       };
-      return request<any, ApiResp<RechargeBillingData>>('/api/billing/recharge', {
+      return request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
         method: 'POST',
         data: body
       });
@@ -57,7 +60,7 @@ export default function RechargeTabPanel() {
             <Text mr="4px">{t(header.id)}</Text>
             {!!needCurrency && (
               <Text>
-                (<CurrencySymbol type={currency} />)
+                <CurrencySymbol type={currency} />
               </Text>
             )}
           </Flex>

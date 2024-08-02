@@ -6,6 +6,7 @@ import { ApplyYaml } from '@/service/backend/kubernetes';
 import * as yaml from 'js-yaml';
 import crypto from 'crypto';
 import type { BillingData, BillingItem, BillingSpec, Costs, RawCosts } from '@/types/billing';
+import { formatISO, subMonths } from 'date-fns';
 const convertGpu = (_deduction?: RawCosts) =>
   _deduction
     ? (Object.entries(_deduction) as [keyof RawCosts, number][]).reduce<Costs>(
@@ -70,6 +71,19 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       namespace,
       plural: 'billingrecordqueries'
     };
+    const url =
+      global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/cost-app-list';
+    const res = await (
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({
+          endTime: formatISO(subMonths(new Date(), 2), { representation: 'complete' }),
+          kubeConfig: kc.exportConfig(),
+          owner: user.name,
+          startTime: formatISO(new Date(), { representation: 'complete' })
+        })
+      })
+    ).json();
     try {
       await ApplyYaml(kc, yaml.dump(crdSchema));
       await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));

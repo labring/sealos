@@ -16,7 +16,6 @@ const CheckoutForm = (props: { url: string; sessionId: string }) => {
       // Make sure to disable form submission until Stripe.js has loaded.
       return;
     }
-
     const res1 = await stripePromise;
     if (!res1) return;
     const res = await res1.redirectToCheckout({

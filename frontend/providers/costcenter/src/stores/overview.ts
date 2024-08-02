@@ -27,12 +27,11 @@ const useOverviewStore = create<OverviewState>()(
     immer((set, get) => ({
       rechargeSource: 0,
       balance: 0,
-      startTime: subDays(END_TIME, 2),
+      startTime: subDays(END_TIME, 7),
       endTime: END_TIME,
       preItems: [],
       items: [],
       setRecharge: (rechargeSource) => {
-        console.log('set');
         set({ rechargeSource });
       },
       setStartTime: (time) => set({ startTime: time }),

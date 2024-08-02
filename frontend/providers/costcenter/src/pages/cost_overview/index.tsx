@@ -9,17 +9,14 @@ import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
 import { Trend } from '@/components/cost_overview/trend';
+import { TrendBar } from '@/components/cost_overview/trendBar';
 import useBillingData from '@/hooks/useBillingData';
-import NotFound from '@/components/notFound';
 import { useRouter } from 'next/router';
 import useOverviewStore from '@/stores/overview';
-import { CommonBillingTable } from '@/components/billing/billingTable';
-import { QueryClient } from '@tanstack/react-query';
-import request from '@/service/request';
-import CurrencySymbol from '@/components/CurrencySymbol';
 import useEnvStore from '@/stores/env';
-
-const getProperties = () => request.post('/api/billing/propertiesUsedAmount');
+import { ApiResp } from '@/types';
+import request from '@/service/request';
+import { useQuery } from '@tanstack/react-query';
 
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
@@ -58,60 +55,41 @@ function CostOverview() {
     }
   }, []);
   const { NotEnoughModal } = useNotEnough();
-  const { data, isInitialLoading } = useBillingData({ pageSize: 3 });
-  const billingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
   const totast = useToast();
   const rechargeRef = useRef<any>();
-  const currency = useEnvStore((s) => s.currency);
+  const { data: balance_raw } = useQuery({
+    queryKey: ['getAccount'],
+    queryFn: () =>
+      request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
+  });
+
+  let rechargAmount = balance_raw?.data?.balance || 0;
+  let expenditureAmount = balance_raw?.data?.deductionBalance || 0;
+  let balance = rechargAmount - expenditureAmount;
   return (
     <RechargeContext.Provider value={{ rechargeRef }}>
-      <Flex h={'100%'}>
-        <Flex
-          bg="white"
-          p="24px"
-          borderRadius="8px"
-          direction="column"
-          flexGrow={'1'}
-          flex={'1'}
-          overflowY={'auto'}
-        >
-          <Flex wrap={'wrap'}>
-            <Flex mb={'24px'} mr="24px" align={'center'}>
-              <Img src={bar_icon.src} w={'24px'} h={'24px'} mr="18px"></Img>
-              <Heading size="lg">{t('SideBar.CostOverview')} </Heading>
-            </Flex>
-            <Box mb={'24px'}>
-              <SelectRange isDisabled={false}></SelectRange>
-            </Box>
-          </Flex>
-
-          <Flex flexDirection={'column'} flex={'auto'}>
+      <Flex h={'100%'} p={'8px'}>
+        <Flex direction="column" flexGrow={'1'} flex={'1'} overflowY={'auto'}>
+          <Flex flexDirection={'column'} flex={'auto'} gap={'12px'}>
             <Box borderRadius="12px" display={['block', 'block', 'block', 'none']}>
               <Flex direction={['column', 'column', 'row', 'row']} justify={'space-between'}>
                 <Box alignSelf={'center'}>
-                  <UserCard />
+                  <UserCard balance={balance} />
                 </Box>
-                <Buget></Buget>
+                <Buget expenditureAmount={expenditureAmount}></Buget>
               </Flex>
-              <Cost></Cost>
             </Box>
-            <Trend></Trend>
-            <Flex direction={'column'} h={'0'} flex={[1, null, null, 'auto']}>
-              <HStack h={'auto'} gap={'12px'} mb={'36px'}>
-                <Heading fontWeight={'500'} size={'sm'} verticalAlign={'middle'} display={'flex'}>
-                  {t('Recent Transactions')}
-                </Heading>
-                <Text fontSize={'12px'}>
-                  ({t('currencyUnit')}:{' '}
-                  <CurrencySymbol type={currency} boxSize={'14px'} verticalAlign={'middle'} /> )
-                </Text>
-              </HStack>
-              <CommonBillingTable data={billingItems} isOverview={true} />
-              {(isInitialLoading || billingItems.length === 0) && (
-                <Flex h="160px" justify={'center'} align={'center'}>
-                  <NotFound></NotFound>
-                </Flex>
-              )}
+            <Flex w={'full'} borderRadius="8px" bg="white" p="24px">
+              <Trend></Trend>
+            </Flex>
+            <Flex
+              direction={'column'}
+              flex={[1, null, null, 'auto']}
+              bg="white"
+              p="24px"
+              borderRadius="8px"
+            >
+              <TrendBar />
             </Flex>
           </Flex>
         </Flex>
@@ -127,9 +105,8 @@ function CostOverview() {
           direction={'column'}
           justify={'flex-start'}
         >
-          <UserCard />
-          <Buget></Buget>
-          <Cost></Cost>
+          <UserCard balance={balance} />
+          <Buget expenditureAmount={expenditureAmount}></Buget>
         </Flex>
       </Flex>
       <NotEnoughModal></NotEnoughModal>

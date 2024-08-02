@@ -1,18 +1,7 @@
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
-import {
-  Box,
-  Button,
-  Center,
-  Flex,
-  Image,
-  Img,
-  LayoutProps,
-  Stack,
-  SystemStyleObject,
-  Text
-} from '@chakra-ui/react';
+import { Box, Button, Center, Flex, Image, Stack, SystemStyleObject, Text } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useTranslation } from 'next-i18next';
@@ -26,7 +15,7 @@ import CurrencySymbol from '@/components/CurrencySymbol';
 import useOverviewStore from '@/stores/overview';
 import { RechargeContext } from '@/pages/cost_overview';
 
-export default memo(function UserCard() {
+export default memo(function UserCard({ balance }: { balance: number }) {
   const getSession = useSessionStore((state) => state.getSession);
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
   const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
@@ -44,11 +33,7 @@ export default memo(function UserCard() {
   }, [kubeconfig]);
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
-  const { data: balance_raw } = useQuery({
-    queryKey: ['getAccount'],
-    queryFn: () =>
-      request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
-  });
+
   const rechargeRef = useContext(RechargeContext).rechargeRef;
   const transferRef = useRef<any>();
   const queryClient = useQueryClient();
@@ -60,21 +45,17 @@ export default memo(function UserCard() {
       rechargeRef?.current?.onOpen();
     }
   }, [rechargeRef?.current, rechargeSource]);
-  let real_balance = balance_raw?.data?.balance || 0;
-  if (balance_raw?.data?.deductionBalance) {
-    real_balance -= balance_raw?.data.deductionBalance;
-  }
   const currency = useEnvStore((s) => s.currency);
-  const balance = real_balance;
   const stripePromise = useEnvStore((s) => s.stripePromise);
   const persudoPublic: SystemStyleObject = {
     content: '""',
     position: 'absolute',
-    width: '313px',
-    height: '313px',
+    width: '400px',
+    height: '400px',
     backgroundColor: 'white',
     borderRadius: '50%',
-    right: '-100px',
+    left: '-37px',
+    // right: '50%',
     opacity: 0.1
   };
   return (
@@ -91,8 +72,7 @@ export default memo(function UserCard() {
         borderRadius="8px"
         color="white"
         overflow="hidden"
-        _before={{ ...persudoPublic, bottom: '-180px' }}
-        _after={{ ...persudoPublic, bottom: '-130px' }}
+        _before={{ ...persudoPublic, top: '40px' }}
         shrink={[1, 1, 1, 0]}
       >
         <Stack zIndex="2" flex={'1'} gap="0">

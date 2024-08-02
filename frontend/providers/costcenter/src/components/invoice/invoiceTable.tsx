@@ -5,7 +5,6 @@ import { useTranslation } from 'next-i18next';
 import { RechargeBillingItem, ReqGenInvoice } from '@/types';
 import CurrencySymbol from '../CurrencySymbol';
 import useEnvStore from '@/stores/env';
-import { formatMoney } from '@/utils/format';
 
 export function InvoiceTable({
   data,
