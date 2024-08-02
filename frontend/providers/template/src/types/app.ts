@@ -86,7 +86,7 @@ export type FormSourceInput = {
   key: string;
   label: string;
   required: boolean;
-  type: string; // string | number | 'choice' | boolean;
+  type: string; // string | number | 'choice' | boolean
   options?: string[];
   if?: string;
 };
