@@ -290,7 +290,7 @@ export function RealNameAuthForm(
 
         if (verifyResult.code !== 200) {
           message({
-            title: '手机号已被其他账号占用，请先解绑该手机号，或者完成账号合并操作。',
+            title: t('common:realname_auth_failed_tips'),
             status: 'error',
             position: 'top',
             duration: 2000,
