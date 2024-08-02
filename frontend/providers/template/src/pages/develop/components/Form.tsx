@@ -99,17 +99,6 @@ const Form = ({
                       />
                     );
                   case 'number':
-                    return (
-                      <NumberInput
-                        {...commonInputProps}
-                        value={formHook.getValues(item.key) || item.default}
-                        onChange={(valueString) => {
-                          setValue(item.key, Number(valueString));
-                        }}
-                      >
-                        <NumberInputField />
-                      </NumberInput>
-                    );
                   case 'string':
                   default:
                     return (
