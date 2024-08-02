@@ -221,6 +221,9 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	if req.Namespace != "" {
 		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
 	}
+	if req.OrderID != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "order_id", Value: req.OrderID})
+	}
 
 	if strings.ToUpper(req.AppType) != resources.AppStore {
 		pipeline := mongo.Pipeline{
@@ -347,22 +350,7 @@ func (m *MongoDB) getAppStoreCostsTotal(req *helper.AppCostsReq) (int64, error) 
 
 func (m *MongoDB) GetAppCostsByOrderIDAndAppName(orderID string, appName string) ([]common.AppCost, error) {
 	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.D{{Key: "order_id", Value: orderID}}}},
-		{{Key: "$addFields", Value: bson.D{
-			{Key: "filtered_app_costs", Value: bson.D{
-				{Key: "$cond", Value: bson.A{
-					bson.D{{Key: "$eq", Value: bson.A{"$app_type", resources.AppType[resources.AppStore]}}},
-					"$app_costs",
-					bson.D{{Key: "$filter", Value: bson.D{
-						{Key: "input", Value: "$app_costs"},
-						{Key: "as", Value: "cost"},
-						{Key: "cond", Value: bson.D{
-							{Key: "$eq", Value: bson.A{"$$cost.name", appName}},
-						}},
-					}}},
-				}},
-			}},
-		}}},
+		{{Key: "$match", Value: bson.D{{Key: "order_id", Value: orderID}, {Key: "app_name", Value: appName}}}},
 		{{Key: "$unwind", Value: "$filtered_app_costs"}},
 		{{Key: "$project", Value: bson.D{
 			{Key: "app_name", Value: "$filtered_app_costs.name"},
