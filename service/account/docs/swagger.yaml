@@ -39,6 +39,13 @@ definitions:
           @Description Namespace
         example: ns-admin
         type: string
+      orderID:
+        description: |-
+          @Summary Order ID
+          @Description Order ID
+          @JSONSchema
+        example: order-id-1
+        type: string
       owner:
         example: admin
         type: string

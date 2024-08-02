@@ -178,6 +178,11 @@ func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
 }
 
 type AppCostsReq struct {
+	// @Summary Order ID
+	// @Description Order ID
+	// @JSONSchema
+	OrderID string `json:"orderID,omitempty" bson:"orderID" example:"order-id-1"`
+
 	UserBaseReq `json:",inline" bson:",inline"`
 
 	// @Summary Namespace

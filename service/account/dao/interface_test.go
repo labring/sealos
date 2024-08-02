@@ -380,3 +380,81 @@ func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
 	}
 	t.Logf("costAppList: %v", timeRange)
 }
+
+func TestMongoDB_GetAppCost1(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := &helper.AppCostsReq{
+		UserBaseReq: helper.UserBaseReq{
+			TimeRange: helper.TimeRange{
+				StartTime: time.Now().Add(-24 * time.Hour * 30),
+				EndTime:   time.Now(),
+			},
+			Auth: &helper.Auth{
+				Owner: "uy771xun",
+			},
+		},
+		//Namespace: "ns-hwhbg4vf",
+		//AppType: "APP",
+		//AppName: "hello-world",
+		Page:     1,
+		PageSize: 10,
+	}
+
+	//for _, appType := range []string{"", "DB", "APP", "APP-STORE", "TERMINAL", "JOB"} {
+	//	req.AppType = appType
+	//	for i := 1; i <= 30; i++ {
+	//		for j := 1; j <= 30; j++ {
+	//			req.Page = i
+	//			req.PageSize = j
+	//			appList, err := m.GetAppCosts(req)
+	//			if err != nil {
+	//				t.Fatalf("failed to get cost app list: %v", err)
+	//			}
+	//			if len(appList.Costs) != GetCurrentPageItemCount(appList.TotalRecords, j, i) {
+	//				fmt.Printf("page: %d, pageSize: %d\n", req.Page, req.PageSize)
+	//				fmt.Printf("appType: %s\n", appType)
+	//				fmt.Printf("total: %v\n", appList.TotalRecords)
+	//				t.Fatalf("len costAppList: %v, not equal getPageCount: %v", len(appList.Costs), GetCurrentPageItemCount(appList.TotalRecords, j, i))
+	//			}
+	//
+	//			t.Logf("len costAppList: %v", len(appList.Costs))
+	//			//t.Logf("costAppList: %#+v", appList)
+	//
+	//			//// 转json
+	//			//if len(appList.Costs) != 0 {
+	//			//	b, err := json.MarshalIndent(appList, "", "  ")
+	//			//	if err != nil {
+	//			//		t.Fatalf("failed to marshal cost app list: %v", err)
+	//			//	}
+	//			//	t.Logf("costoverview json: %s", string(b))
+	//			//}
+	//			t.Logf("success: apptype %s, page: %d, pagesize: %d, total: %d", req.AppType, req.Page, req.PageSize, appList.TotalRecords)
+	//		}
+	//	}
+	//}
+
+	req.Page = 1
+	req.PageSize = 10
+	req.AppType = "APP-STORE"
+	req.AppName = ""
+	appList, err := m.GetAppCosts(req)
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("costAppList: %#+v", appList)
+}
+
+func init() {
+	// set env
+	os.Setenv("MONGO_URI", "")
+}

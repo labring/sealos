@@ -1050,6 +1050,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "ns-admin"
                 },
+                "orderID": {
+                    "description": "@Summary Order ID\n@Description Order ID\n@JSONSchema",
+                    "type": "string",
+                    "example": "order-id-1"
+                },
                 "owner": {
                     "type": "string",
                     "example": "admin"

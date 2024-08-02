@@ -185,60 +185,194 @@ func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.Ti
 	return costsMap, nil
 }
 
-func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error) {
+func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts, rErr error) {
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
 	pageSize := req.PageSize
-	currentPage := req.Page
+	results = &common.AppCosts{
+		CurrentPage: req.Page,
+	}
+	if req.OrderID != "" {
+		costs, err := m.GetAppCostsByOrderIDAndAppName(req.OrderID, req.AppName)
+		if err != nil {
+			rErr = fmt.Errorf("failed to get app costs by order id and app name: %w", err)
+			return
+		}
+		results.Costs = costs
+		results.TotalRecords = len(costs)
+		results.TotalPages = 1
+		return
+	}
 
-	timeMatch := bson.E{Key: "time", Value: bson.D{{Key: "$gte", Value: req.StartTime}, {Key: "$lt", Value: req.EndTime}}}
+	timeMatch := bson.E{Key: "time", Value: bson.D{{Key: "$gte", Value: req.StartTime}, {Key: "$lte", Value: req.EndTime}}}
+
+	matchConditions := bson.D{timeMatch}
+	matchConditions = append(matchConditions, bson.E{Key: "owner", Value: req.Owner})
+	if req.AppName != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
+	}
+	if req.AppType != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]})
+	}
+	if req.Namespace != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+
+	if strings.ToUpper(req.AppType) != resources.AppStore {
+		pipeline := mongo.Pipeline{
+			{{Key: "$match", Value: append(matchConditions, bson.E{Key: "app_type", Value: bson.M{"$ne": resources.AppType[resources.AppStore]}})}},
+			{{Key: "$facet", Value: bson.D{
+				{Key: "totalRecords", Value: bson.A{
+					bson.D{{Key: "$unwind", Value: "$app_costs"}},
+					bson.D{{Key: "$match", Value: matchConditions}},
+					bson.D{{Key: "$count", Value: "count"}},
+				}},
+				{Key: "costs", Value: bson.A{
+					bson.D{{Key: "$unwind", Value: "$app_costs"}},
+					bson.D{{Key: "$match", Value: matchConditions}},
+					bson.D{{Key: "$sort", Value: bson.D{
+						{Key: "time", Value: -1},
+						{Key: "app_costs.name", Value: 1},
+						{Key: "_id", Value: 1},
+					}}},
+					bson.D{{Key: "$skip", Value: (req.Page - 1) * pageSize}},
+					bson.D{{Key: "$limit", Value: pageSize}},
+					bson.D{{Key: "$project", Value: bson.D{
+						{Key: "_id", Value: 0},
+						{Key: "time", Value: 1},
+						{Key: "order_id", Value: 1},
+						{Key: "namespace", Value: 1},
+						{Key: "used", Value: "$app_costs.used"},
+						{Key: "used_amount", Value: "$app_costs.used_amount"},
+						{Key: "amount", Value: "$app_costs.amount"},
+						{Key: "app_name", Value: "$app_costs.name"},
+						{Key: "app_type", Value: "$app_type"},
+					}}},
+				}},
+			}}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "total_records", Value: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$totalRecords.count", 0}}}},
+				{Key: "total_pages", Value: bson.D{{Key: "$ceil", Value: bson.D{{Key: "$divide", Value: bson.A{bson.D{{Key: "$arrayElemAt", Value: bson.A{"$totalRecords.count", 0}}}, pageSize}}}}}},
+				{Key: "costs", Value: 1},
+			}}},
+		}
+
+		cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+		if err != nil {
+			return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+		}
+		if cursor.Next(context.Background()) {
+			if err := cursor.Decode(results); err != nil {
+				return nil, fmt.Errorf("failed to decode result: %v", err)
+			}
+		}
+	}
+
+	if req.AppType == "" || strings.ToUpper(req.AppType) == resources.AppStore {
+		matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[resources.AppStore]})
+		appStoreTotal, err := m.getAppStoreCostsTotal(req)
+		if err != nil {
+			rErr = fmt.Errorf("failed to get app store costs total: %w", err)
+			return
+		}
+		currentAppPageIsFull := len(results.Costs) == pageSize
+		maxAppPageSize := (results.TotalRecords + pageSize - 1) / pageSize
+		completedNum := calculateComplement(results.TotalRecords, pageSize)
+
+		if req.Page == maxAppPageSize {
+			if !currentAppPageIsFull {
+				appStoreCost, err := m.getAppStoreCosts(matchConditions, 0, completedNum)
+				if err != nil {
+					rErr = fmt.Errorf("failed to get app store costs: %w", err)
+					return
+				}
+				results.Costs = append(results.Costs, appStoreCost.Costs...)
+			}
+		} else if req.Page > maxAppPageSize {
+			skipPageSize := (req.Page - maxAppPageSize - 1) * pageSize
+			if skipPageSize < 0 {
+				skipPageSize = 0
+			}
+			appStoreCost, err := m.getAppStoreCosts(matchConditions, completedNum+skipPageSize, req.PageSize)
+			if err != nil {
+				rErr = fmt.Errorf("failed to get app store costs: %w", err)
+				return
+			}
+			results.Costs = append(results.Costs, appStoreCost.Costs...)
+		}
+		results.TotalRecords += int(appStoreTotal)
+	}
+	results.TotalPages = (results.TotalRecords + pageSize - 1) / pageSize
+	return results, nil
+}
+
+func (m *MongoDB) getAppStoreCostsTotal(req *helper.AppCostsReq) (int64, error) {
+	matchConditions := bson.D{
+		{Key: "owner", Value: req.Owner},
+		{Key: "app_type", Value: resources.AppType[resources.AppStore]},
+	}
+	if req.AppName != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
+	}
+	if req.Namespace != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+	matchConditions = append(matchConditions, bson.E{Key: "time", Value: bson.M{
+		"$gte": req.StartTime,
+		"$lte": req.EndTime,
+	}})
 	pipeline := mongo.Pipeline{
-		// Initially matches a document with app_costs.name equal to the specified value | 初步匹配 app_costs.name 等于指定值的文档
-		{{Key: "$match", Value: bson.D{
-			{Key: "app_costs.name", Value: req.AppName},
-			{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]},
-			{Key: "namespace", Value: req.Namespace},
-			{Key: "owner", Value: req.Owner},
-			timeMatch,
-		}}},
-		// Process total records and paging data in parallel | 并行处理总记录数和分页数据
-		{{Key: "$facet", Value: bson.D{
-			{Key: "totalRecords", Value: bson.A{
-				bson.D{{Key: "$unwind", Value: "$app_costs"}},
-				bson.D{{Key: "$match", Value: bson.D{
-					{Key: "app_costs.name", Value: req.AppName},
-					timeMatch,
-				}}},
-				bson.D{{Key: "$count", Value: "count"}},
-			}},
-			{Key: "costs", Value: bson.A{
-				bson.D{{Key: "$unwind", Value: "$app_costs"}},
-				bson.D{{Key: "$match", Value: bson.D{
-					{Key: "app_costs.name", Value: req.AppName},
-					timeMatch,
-				}}},
-				bson.D{{Key: "$sort", Value: bson.D{
-					{Key: "time", Value: -1},
-					{Key: "app_costs.name", Value: 1},
-					{Key: "_id", Value: 1},
-				}}},
-				bson.D{{Key: "$skip", Value: (currentPage - 1) * pageSize}},
-				bson.D{{Key: "$limit", Value: pageSize}},
-				bson.D{{Key: "$project", Value: bson.D{
-					{Key: "_id", Value: 0},
-					{Key: "time", Value: 1},
-					{Key: "order_id", Value: 1},
-					{Key: "namespace", Value: 1},
-					{Key: "used", Value: "$app_costs.used"},
-					{Key: "used_amount", Value: "$app_costs.used_amount"},
-					{Key: "amount", Value: "$app_costs.amount"},
-					{Key: "app_name", Value: "$app_costs.name"},
-					{Key: "app_type", Value: "$app_type"},
-				}}},
+		{{Key: "$match", Value: matchConditions}},
+		{{Key: "$count", Value: "total_records"}},
+	}
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to aggregate billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+	var result struct {
+		TotalRecords int64 `bson:"total_records"`
+	}
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, fmt.Errorf("failed to decode result: %v", err)
+		}
+	}
+	return result.TotalRecords, nil
+}
+
+func (m *MongoDB) GetAppCostsByOrderIDAndAppName(orderID string, appName string) ([]common.AppCost, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{{Key: "order_id", Value: orderID}}}},
+		{{Key: "$addFields", Value: bson.D{
+			{Key: "filtered_app_costs", Value: bson.D{
+				{Key: "$cond", Value: bson.A{
+					bson.D{{Key: "$eq", Value: bson.A{"$app_type", resources.AppType[resources.AppStore]}}},
+					"$app_costs",
+					bson.D{{Key: "$filter", Value: bson.D{
+						{Key: "input", Value: "$app_costs"},
+						{Key: "as", Value: "cost"},
+						{Key: "cond", Value: bson.D{
+							{Key: "$eq", Value: bson.A{"$$cost.name", appName}},
+						}},
+					}}},
+				}},
 			}},
 		}}},
+		{{Key: "$unwind", Value: "$filtered_app_costs"}},
 		{{Key: "$project", Value: bson.D{
-			{Key: "total_records", Value: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$totalRecords.count", 0}}}},
-			{Key: "total_pages", Value: bson.D{{Key: "$ceil", Value: bson.D{{Key: "$divide", Value: bson.A{bson.D{{Key: "$arrayElemAt", Value: bson.A{"$totalRecords.count", 0}}}, pageSize}}}}}},
-			{Key: "costs", Value: 1},
+			{Key: "app_name", Value: "$app_name"},
+			{Key: "app_type", Value: "$app_type"},
+			{Key: "time", Value: "$time"},
+			{Key: "order_id", Value: "$order_id"},
+			{Key: "namespace", Value: "$namespace"},
+			{Key: "used", Value: "$filtered_app_costs.used"},
+			{Key: "used_amount", Value: "$filtered_app_costs.used_amount"},
+			{Key: "amount", Value: "$filtered_app_costs.amount"},
 		}}},
 	}
 
@@ -246,13 +380,55 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
 	}
-	var results common.AppCosts
-	if cursor.Next(context.Background()) {
-		if err := cursor.Decode(&results); err != nil {
+	defer cursor.Close(context.Background())
+
+	var results []common.AppCost
+	for cursor.Next(context.Background()) {
+		var appCost common.AppCost
+		if err := cursor.Decode(&appCost); err != nil {
 			return nil, fmt.Errorf("failed to decode result: %v", err)
 		}
+		results = append(results, appCost)
 	}
-	results.CurrentPage = currentPage
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
+	return results, nil
+}
+
+func (m *MongoDB) getAppStoreCosts(matchConditions bson.D, skip, limit int) (*common.AppCosts, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: matchConditions}},
+		{{Key: "$sort", Value: bson.D{
+			{Key: "time", Value: -1},
+			{Key: "app_name", Value: 1},
+			{Key: "_id", Value: 1},
+		}}},
+		{{Key: "$skip", Value: skip}},
+		{{Key: "$limit", Value: limit}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "_id", Value: 0},
+			{Key: "time", Value: 1},
+			{Key: "order_id", Value: 1},
+			{Key: "namespace", Value: 1},
+			{Key: "amount", Value: 1},
+			{Key: "app_name", Value: 1},
+			{Key: "app_type", Value: 1},
+		}}},
+	}
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var results common.AppCosts
+	if err := cursor.All(context.Background(), &results.Costs); err != nil {
+		return nil, fmt.Errorf("failed to decode results: %v", err)
+	}
 	return &results, nil
 }
 
