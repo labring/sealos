@@ -76,6 +76,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     const app_name = templateSource?.source?.defaults?.app_name?.value;
     const { defaults, defaultInputs } = getTemplateValues(templateSource);
     const data = {
+      ...platformEnvs,
       ...templateSource?.source,
       inputs: {
         ...defaultInputs,
@@ -84,7 +85,7 @@ export default function EditApp({ appName }: { appName?: string }) {
       defaults: defaults,
     };
     console.log(data)
-    const generateStr = parseTemplateString(templateSource.yamlList.join('---\n'), /\$\{\{\s*(.*?)\s*\}\}/g, data);
+    const generateStr = parseTemplateString(templateSource.yamlList.join('---\n'), data);
     return generateYamlList(generateStr, app_name);
   }
 

@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       {}
     );
 
-    const generateStr = parseTemplateString(yamlList?.join('---\n')!, /\$\{\{\s*(.*?)\s*\}\}/g, {
+    const generateStr = parseTemplateString(yamlList?.join('---\n')!, {
       ...TemplateEnvs,
       defaults: _defaults,
       inputs: { ..._inputs, ...templateForm }

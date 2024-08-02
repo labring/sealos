@@ -55,6 +55,7 @@ export default function Develop() {
   ): YamlItemType[] => {
     const { defaults, defaultInputs } = getTemplateValues(yamlSource);
     const data = {
+      ...platformEnvs,
       ...yamlSource?.source,
       inputs: {
         ...defaultInputs,
@@ -62,7 +63,7 @@ export default function Develop() {
       },
       defaults: defaults
     };
-    const generateStr = parseTemplateString(yamlSource.yamlList.join('---\n'), /\$\{\{\s*(.*?)\s*\}\}/g, data);
+    const generateStr = parseTemplateString(yamlSource.yamlList.join('---\n'), data);
     const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
     return developGenerateYamlList(generateStr, _instanceName)
   };

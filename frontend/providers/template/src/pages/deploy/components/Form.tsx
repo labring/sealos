@@ -74,7 +74,7 @@ const Form = ({
               (item) =>
                 item.if === undefined ||
                 item.if?.length === 0 ||
-                evaluateExpression(item.if, {
+                !!evaluateExpression(item.if, {
                   ...formSource?.source,
                   inputs: {
                     ...defaultInputs,
