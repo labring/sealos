@@ -92,9 +92,9 @@ const Form = ({
                     const input = formHook.getValues(item.key)
                     return (
                       <Checkbox
-                        isChecked={input !== undefined ? !!input : !!item.default}
+                        isChecked={input !== undefined ? input === 'true' : item.default === 'true'}
                         onChange={(e) => {
-                          setValue(item.key, e.target.checked);
+                          setValue(item.key, e.target.checked ? 'true' : 'false');
                         }}
                       >
                         {item.description && (

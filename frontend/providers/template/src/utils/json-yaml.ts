@@ -150,7 +150,7 @@ export const getTemplateDataSource = (
 
       const inputsArr = Object.entries(inputs).map(([key, item]) => {
         for (let { name, handler } of functionHandlers) {
-          if (item.default && item.default.toString().includes(`\${{ ${name}(`)) {
+          if (item.default && item.default.includes(`\${{ ${name}(`)) {
             item.default = handler(item.default);
             break;
           }

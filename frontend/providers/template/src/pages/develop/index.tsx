@@ -10,7 +10,6 @@ import { EnvResponse } from '@/types/index';
 import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
-  getTemplateDataSource,
   handleTemplateToInstanceYaml,
   parseTemplateString,
   getYamlSource,
