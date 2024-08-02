@@ -1,4 +1,4 @@
-import { DBEditType, DBDetailType, PodDetailType } from '@/types/db';
+import { DBEditType, DBDetailType, PodDetailType, DBType, ReconfigStatusMapType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
@@ -7,7 +7,9 @@ export const KBMigrationTaskLabel = 'datamigration.apecloud.io/migrationtask';
 export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
+export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
@@ -37,6 +39,43 @@ export enum DBStatusEnum {
   UnKnow = 'UnKnow',
   Deleting = 'Deleting'
 }
+
+export enum ReconfigStatus {
+  Deleting = 'Deleting',
+  Creating = 'Creating',
+  Running = 'Running',
+  Succeed = 'Succeed',
+  Failed = 'Failed'
+}
+
+export const DBReconfigStatusMap: Record<`${ReconfigStatus}`, ReconfigStatusMapType> = {
+  [ReconfigStatus.Deleting]: {
+    label: 'Deleting',
+    value: ReconfigStatus.Deleting,
+    color: '#DC6803'
+  },
+  [ReconfigStatus.Creating]: {
+    label: 'Creating',
+    value: ReconfigStatus.Creating,
+    color: '#667085'
+  },
+  [ReconfigStatus.Running]: {
+    label: 'Running',
+    value: ReconfigStatus.Running,
+    color: '#667085'
+  },
+  [ReconfigStatus.Succeed]: {
+    label: 'Success',
+    value: ReconfigStatus.Succeed,
+    color: '#039855'
+  },
+  [ReconfigStatus.Failed]: {
+    label: 'Failed',
+    value: ReconfigStatus.Failed,
+    color: '#F04438'
+  }
+};
+
 export const dbStatusMap = {
   [DBStatusEnum.Creating]: {
     label: 'Creating',
@@ -291,5 +330,79 @@ export const DBTypeSecretMap = {
   },
   milvus: {
     connectKey: 'milvus'
+  }
+};
+
+export const DBReconfigureMap: {
+  [key in DBType]: {
+    configMapKey: string;
+    configMapName: string;
+    type: 'yaml' | 'ini';
+    reconfigureName: string;
+    reconfigureKey: string;
+  };
+} = {
+  postgresql: {
+    configMapName: '-postgresql-postgresql-configuration',
+    configMapKey: 'postgresql.conf',
+    type: 'ini',
+    reconfigureName: 'postgresql-configuration',
+    reconfigureKey: 'postgresql.conf'
+  },
+  mongodb: {
+    type: 'yaml',
+    configMapName: '-mongodb-mongodb-config',
+    configMapKey: 'mongodb.conf',
+    reconfigureName: 'mongodb-config',
+    reconfigureKey: 'mongodb.conf'
+  },
+  'apecloud-mysql': {
+    type: 'ini',
+    configMapName: '-mysql-mysql-consensusset-config',
+    configMapKey: 'my.cnf',
+    reconfigureName: 'mysql-consensusset-config',
+    reconfigureKey: 'my.cnf'
+  },
+  redis: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  kafka: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  qdrant: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  nebula: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  weaviate: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  milvus: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
   }
 };

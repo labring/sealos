@@ -101,8 +101,8 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 使用 nip.io 作为 Sealos 的域名非常简单，只需在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash 
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta5 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com
 ```
@@ -145,8 +145,8 @@ cloud.example.io   A   192.168.1.10
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta5 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain> \
@@ -172,8 +172,8 @@ cloud.example.io   A   192.168.1.10
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta5 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -231,8 +231,8 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta5 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -395,34 +395,40 @@ Linux 不同发行版更新根证书存储的命令不一样，用来保存私�
 
 ## 激活集群
 
-集群安装完成后，默认只有 5 元的额度，你需要激活集群以获取赠送的 299 元余额。步骤如下：
+集群安装完成后，需要激活集群，步骤如下：
 
 1. 首先点击桌面的「许可证」打开许可证应用：
 
-   ![](images/sealos-license.png)
+   ![](images/sealos-license-1.png)
 
-2. 然后点击「激活/购买」：
-  
-   ![](images/sealos-license-activate.jpg)
+2. 然后点击出现的页面左侧的「激活/购买」：
 
-   然后浏览器会跳转到 License 页面，并跳出一个弹窗：
+   ![](images/sealos-license-2.png)
 
-   ![](images/sealos-license-activate1.png)
+   然后浏览器会跳转到 License 页面：
 
-3. 如果你还没有在该页面创建过集群，就点击「理立即开始」创建一个集群；如果你已经创建过集群了，只需要点击「已有集群」便会跳转到已有集群。
+   ![](images/sealos-license-3.png)
 
-   跳转到集群列表之后。你就会看到集群已经被激活了：
+3. 如果你还没有在该页面创建过集群，就点击左上角-价格-获取，立即开始创建一个集群；如果你已经创建过集群了，只需要点击「我的集群」便会跳转到已有集群。
 
-   ![](images/sealos-license-activate2.png)
+4. 新购买一个集群后，点进进入会看到新购买的集群显示-未激活：
 
-4. 点击 「License 管理」，然后下载免费赠送的价值 299 元的 License：
+   ![](images/sealos-license-4.png)
 
-   ![](images/sealos-license-activate3.png)
+   点击集群管理，在集群激活处输入一个集群id（自取，不能和他人重复），输入完成后点击激活即可成功激活集群。
 
-5. 然后回到 Sealos 集群的「许可证」应用界面，点击「上传 License 文件」：
+   ![](images/sealos-license-5.png)
+
+   5.成功激活集群后，集群管理的右侧会出现License管理选项，点击进入，在License列表下面导出License：
+
+   ![](images/sealos-license-6.png)
+
+   
+
+   6.导出License后，回到 Sealos 集群的「许可证」应用界面，点击「上传 License 文件」：
 
    ![](images/sealos-license-activate4.png)
 
-   选择刚刚下载的 License 文件进行上传，然后点击右下角的「激活 License」，便可激活 License。激活成功后，集群中的余额就变成了 304 元。
+   选择刚刚下载的 License 文件进行上传，然后点击右下角的「激活 License」，便可激活 License。
 
    ![](images/sealos-cost-center.jpg)

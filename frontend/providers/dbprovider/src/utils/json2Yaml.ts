@@ -2,6 +2,8 @@ import { BACKUP_LABEL_KEY, BACKUP_REMARK_LABEL_KEY } from '@/constants/backup';
 import {
   CloudMigraionLabel,
   DBComponentNameMap,
+  DBPreviousConfigKey,
+  DBReconfigureMap,
   DBTypeEnum,
   MigrationRemark,
   RedisHAConfig,
@@ -15,6 +17,8 @@ import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
 /**
  * Convert data for creating a database cluster to YAML configuration.
@@ -1092,6 +1096,66 @@ export const json2NetworkService = ({
         ...labelMap[dbDetail.dbType]
       },
       type: 'NodePort'
+    }
+  };
+
+  return yaml.dump(template);
+};
+
+export const json2Reconfigure = (
+  dbName: string,
+  dbType: DBType,
+  dbUid: string,
+  configParams: { path: string; newValue: string; oldValue: string }[]
+) => {
+  const namespace = getUserNamespace();
+  const template = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      finalizers: ['opsrequest.kubeblocks.io/finalizer'],
+      generateName: `${dbName}-reconfiguring-`,
+      generation: 2,
+      labels: {
+        'app.kubernetes.io/instance': dbName,
+        'app.kubernetes.io/managed-by': 'kubeblocks',
+        'ops.kubeblocks.io/ops-type': 'Reconfiguring',
+        ...configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.newValue }), {})
+      },
+      annotations: {
+        [DBPreviousConfigKey]: JSON.stringify(
+          configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.oldValue }), {})
+        )
+      },
+      name: `${dbName}-reconfiguring-${nanoid()}`,
+      namespace: namespace,
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          name: dbName,
+          uid: dbUid
+        }
+      ]
+    },
+    spec: {
+      clusterRef: dbName,
+      reconfigure: {
+        componentName: dbType === 'apecloud-mysql' ? 'mysql' : dbType,
+        configurations: [
+          {
+            keys: [
+              {
+                key: DBReconfigureMap[dbType].reconfigureKey,
+                parameters: configParams.map((item) => ({ key: item.path, value: item.newValue }))
+              }
+            ],
+            name: DBReconfigureMap[dbType].reconfigureName
+          }
+        ]
+      },
+      ttlSecondsBeforeAbort: 0,
+      type: 'Reconfiguring'
     }
   };
 

@@ -12,14 +12,17 @@ import type {
   V1StatefulSet,
   V1ContainerStatus
 } from '@kubernetes/client-node';
+import { I18nCommonKey } from './i18next';
 
 export type DBType = `${DBTypeEnum}`;
 
 export type SupportMigrationDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
 
-export type SupportConnectDBType = Extract<
+export type SupportConnectDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
+
+export type SupportReconfigureDBType = Extract<
   DBType,
-  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'mongodb'
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'redis'
 >;
 
 export type DeployKindsType =
@@ -120,4 +123,19 @@ export interface BackupItemType {
   type: `${BackupTypeEnum}`;
   namespace: string;
   connectionPassword: string;
+}
+
+export type ReconfigStatusMapType = {
+  label: I18nCommonKey;
+  value: ReconfigStatus;
+  color: string;
+};
+
+export interface OpsRequestItemType {
+  id: string;
+  name: string;
+  status: ReconfigStatusMapType;
+  startTime: Date;
+  namespace: string;
+  configurations: { parameterName: string; newValue: string; oldValue?: string }[];
 }

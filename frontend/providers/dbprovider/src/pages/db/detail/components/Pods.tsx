@@ -88,7 +88,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex alignItems={'center'} gap={'4px'}>
-          <MyTooltip offset={[0, 10]} label={t('Details')}>
+          <MyTooltip offset={[0, 10]} label={t('details')}>
             <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
               <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
             </Button>

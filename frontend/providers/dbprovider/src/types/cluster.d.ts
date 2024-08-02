@@ -1,4 +1,4 @@
-import { DBStatusEnum, DBTypeEnum, PodStatusEnum } from '@/constants/db';
+import { DBStatusEnum, DBTypeEnum, PodStatusEnum, ReconfigStatus } from '@/constants/db';
 
 export type KbPgClusterType = {
   apiVersion: 'apps.kubeblocks.io/v1alpha1';
@@ -103,5 +103,53 @@ export type KubeBlockBackupPolicyType = {
         enable: boolean;
       };
     };
+  };
+};
+
+export type KubeBlockOpsRequestType = {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    creationTimestamp: Date;
+    generation: number;
+    labels: { [key: string]: string };
+    name: string;
+    namespace: string;
+    uid: string;
+    annotations: {
+      [key: string]: string;
+    };
+  };
+  spec: {
+    clusterRef: string;
+    reconfigure: {
+      componentName: string;
+      configurations: {
+        keys: {
+          key: string;
+          parameters: {
+            key: string;
+            value: string;
+          }[];
+        }[];
+        name: string;
+      }[];
+    };
+    ttlSecondsBeforeAbort: number;
+    type: string;
+  };
+  status: {
+    clusterGeneration: number;
+    completionTimestamp: string;
+    conditions: {
+      lastTransitionTime: string;
+      message: string;
+      reason: string;
+      status: string;
+      type: string;
+    }[];
+    phase: `${ReconfigStatus}`;
+    progress: string;
+    startTimestamp: string;
   };
 };

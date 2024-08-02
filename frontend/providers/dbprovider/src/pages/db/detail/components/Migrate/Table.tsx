@@ -85,17 +85,17 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
     render?: (item: MigrateItemType, i: number) => React.ReactNode | string;
   }[] = [
     {
-      title: 'Name',
+      title: 'name',
       key: 'name',
       dataIndex: 'name'
     },
     {
-      title: 'Remark',
+      title: 'remark',
       key: 'remark',
       dataIndex: 'remark'
     },
     {
-      title: 'Status',
+      title: 'status',
       key: 'status',
       render: (item: MigrateItemType) => (
         <MigrateStatus migrateStatus={item.status} migrateName={item.name} />
