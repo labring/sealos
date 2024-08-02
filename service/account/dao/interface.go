@@ -196,7 +196,7 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	results = &common.AppCosts{
 		CurrentPage: req.Page,
 	}
-	if req.OrderID != "" {
+	if req.OrderID != "" && req.AppType == strings.ToUpper(resources.AppStore) {
 		costs, err := m.GetAppCostsByOrderIDAndAppName(req.OrderID, req.AppName)
 		if err != nil {
 			rErr = fmt.Errorf("failed to get app costs by order id and app name: %w", err)
@@ -365,8 +365,8 @@ func (m *MongoDB) GetAppCostsByOrderIDAndAppName(orderID string, appName string)
 		}}},
 		{{Key: "$unwind", Value: "$filtered_app_costs"}},
 		{{Key: "$project", Value: bson.D{
-			{Key: "app_name", Value: "$app_name"},
-			{Key: "app_type", Value: "$app_type"},
+			{Key: "app_name", Value: "$filtered_app_costs.name"},
+			{Key: "app_type", Value: "$filtered_app_costs.type"},
 			{Key: "time", Value: "$time"},
 			{Key: "order_id", Value: "$order_id"},
 			{Key: "namespace", Value: "$namespace"},
