@@ -57,13 +57,6 @@ const Form = ({
                 })
             )
             .map((item: FormSourceInput, index: number) => {
-              const commonInputProps = {
-                maxW: '500px',
-                ml: '20px',
-                defaultValue: item?.default,
-                placeholder: item?.description
-              };
-
               const renderInput = () => {
                 switch (item.type) {
                   case 'choice':
@@ -72,26 +65,29 @@ const Form = ({
                       return null;
                     }
                     return (
-                      <MySelect
-                        w={'100%'}
-                        bg={'transparent'}
-                        borderRadius={'2px'}
-                        value={formHook.getValues(item.key) || item.default}
-                        list={item.options?.map((option) => {
-                          return {
-                            value: option,
-                            label: option
-                          };
-                        })}
-                        onchange={(val: any) => {
-                          setValue(item.key, val);
-                        }}
-                      />
+                      <Box maxW={'300px'} ml={'20px'} w={'100%'}>
+                        <MySelect
+                          w={'100%'}
+                          bg={'transparent'}
+                          borderRadius={'2px'}
+                          value={formHook.getValues(item.key) || item.default}
+                          list={item.options?.map((option) => {
+                            return {
+                              value: option,
+                              label: option
+                            };
+                          })}
+                          onchange={(val: any) => {
+                            setValue(item.key, val);
+                          }}
+                        />
+                      </Box>
                     );
                   case 'boolean':
                     const input = formHook.getValues(item.key)
                     return (
                       <Checkbox
+                        ml={'20px'}
                         isChecked={input !== undefined ? input === 'true' : item.default === 'true'}
                         onChange={(e) => {
                           setValue(item.key, e.target.checked ? 'true' : 'false');
@@ -110,7 +106,10 @@ const Form = ({
                     return (
                       <Input
                         type={item?.type}
-                        {...commonInputProps}
+                        maxW={'500px'}
+                        ml={'20px'}
+                        defaultValue={item?.default}
+                        placeholder={item?.description}
                         {...register(item?.key, {
                           required: item?.required
                         })}
@@ -136,9 +135,7 @@ const Form = ({
                         </Text>
                       )}
                     </Flex>
-                    <Box ml={'17px'} w={'100%'}>
-                      {renderInput()}
-                    </Box>
+                    {renderInput()}
                   </Flex>
                 </FormControl>
               );
