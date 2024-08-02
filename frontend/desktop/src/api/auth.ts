@@ -142,7 +142,7 @@ export const _deleteUser = (request: AxiosInstance) => () =>
   request<never, ApiResp<RESOURCE_STATUS>>('/api/auth/delete');
 
 export const _realNameAuthRequest =
-  (request: AxiosInstance) => (data: { name: string; phone: string; idCard: string }) =>
+  (request: AxiosInstance) => (data: { name: string; phone?: string; idCard: string }) =>
     request.post<any, ApiResp<{ name: string }>>('/api/account/realNameAuth', data);
 
 export const passwordExistRequest = _passwordExistRequest(request);

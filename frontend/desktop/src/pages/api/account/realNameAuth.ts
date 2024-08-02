@@ -43,11 +43,6 @@ const bodySchema = z.object({
     .string()
     .min(1, { message: 'Name must not be empty' })
     .max(20, { message: 'Name must not exceed 20 characters' }),
-  phone: z
-    .string()
-    .min(1, { message: 'Phone must not be empty' })
-    .regex(/^\d+$/, { message: 'Phone must contain only digits' })
-    .max(16, { message: 'Phone must not exceed 16 digits' }),
   idCard: z.string().refine(identityCodeValid, { message: 'Invalid ID card number' })
 });
 
@@ -63,10 +58,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const payload = await verifyAccessToken(req.headers);
-  if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
+  if (!payload) return jsonRes(res, { code: 401, message: 'Token is invaild' });
 
   try {
-    const { name, phone, idCard } = bodySchema.parse(req.body);
+    const { name, idCard } = bodySchema.parse(req.body);
+
+    const oauthProvider = await globalPrisma.oauthProvider.findFirst({
+      where: {
+        userUid: payload.userUid,
+        providerType: 'PHONE'
+      }
+    });
+
+    if (!oauthProvider) {
+      console.error('realNameAuth: User has not bound phone number');
+      return jsonRes(res, { code: 400, message: 'Mobile number not bound' });
+    }
+
+    const phone = oauthProvider.providerId;
 
     const realNameAuthProvider = (await globalPrisma.realNameAuthProvider.findFirst({
       where: {
@@ -89,14 +98,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (realNameInfo && realNameInfo.isVerified) {
       console.info(`realNameAuth: User ${payload.userUid} has already been verified`);
-      return jsonRes(res, { code: 409, message: '已经实名，不可重复认证' });
+      return jsonRes(res, {
+        code: 409,
+        message: 'Identity verification has been completed, cannot be repeated.'
+      });
     }
 
     if (realNameInfo && realNameInfo.idVerifyFailedTimes >= realNameAuthProvider.maxFailedTimes) {
       console.info(
         `realNameAuth: User ${payload.userUid} has reached the maximum number of failed attempts`
       );
-      return jsonRes(res, { code: 429, message: '超出最大次数，请提交工单' });
+      return jsonRes(res, {
+        code: 429,
+        message: 'You have exceeded the maximum number of attempts. Please submit a ticket'
+      });
     }
 
     const { code, data } = await tcloudphone3efVerifyService(phone, name, idCard, config);
@@ -135,7 +150,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
       return jsonRes(res, {
         code: 400,
-        message: '实名认证失败，请确保姓名 身份证 手机号三者身份一致'
+        message:
+          'Identity verification failed. Please ensure that the name, ID number, and mobile number are consistent'
       });
     }
 
@@ -160,11 +176,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    return jsonRes(res, { code: 200, message: '实名认证成功', data: { name } });
+    return jsonRes(res, { code: 200, message: 'Identity verification success', data: { name } });
   } catch (error) {
     console.error('realNameAuth: Internal error');
     console.error(error);
-    return jsonRes(res, { code: 500, data: '内部错误' });
+    return jsonRes(res, { code: 500, data: 'The server has encountered an error' });
   }
 }
 
