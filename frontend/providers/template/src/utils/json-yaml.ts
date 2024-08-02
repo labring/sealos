@@ -5,6 +5,7 @@ import { cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { processEnvValue } from './tools';
 import { EnvResponse } from '@/types/index';
+import Interpreter from 'js-interpreter';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
@@ -215,16 +216,30 @@ export const handleTemplateToInstanceYaml = (
   };
 };
 
+// https://github.com/NeilFraser/JS-Interpreter
 export function evaluateExpression(expression: string, data: {
   [key: string]: string | Record<string, string>;
   defaults: Record<string, string>;
   inputs: Record<string, string>;
 }): boolean {
   try {
-    // TODO: unsafe
     console.log(`expression: ${expression}\ndata: `, data)
-    const result = new Function('data', `with(data) { return ${expression}; }`)(data);
-    return !!result;
+    // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
+    const randomFunctionName = nanoid(32);
+    if (expression.includes(randomFunctionName)) {
+      throw new Error('expression contain random function name');
+    }
+    const interpreter = new Interpreter(`${randomFunctionName}()`, (interpreter: any, ctx: any) => {
+      function evaluate() {
+        return new Function('data', `with(data) { return ${expression}; }`)(data);
+      }
+      interpreter.setProperty(ctx, randomFunctionName,
+        interpreter.createNativeFunction(evaluate)
+      );
+    })
+    interpreter.run();
+    console.log(`raw resoult: ${interpreter.value}\n     result: `, !!interpreter.value)
+    return !!interpreter.value;
   } catch (error) {
     console.error(`Failed to evaluate expression: ${expression}`, error, "data: ", data);
     return false;
