@@ -16,8 +16,8 @@ export default function Pricing() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const bd_vidValue = urlParams.get('bd_vid');
-    sessionStorage.setItem('bd_vid', bd_vidValue);
+    const value = urlParams.get('bd_vid');
+    sessionStorage.setItem('bd_vid', value);
   }, []);
 
   return (
