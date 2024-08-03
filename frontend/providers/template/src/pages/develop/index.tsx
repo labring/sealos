@@ -33,7 +33,7 @@ import Editor from './components/Editor';
 export default function Develop() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [yamlSource, setYamlSource] = useState<TemplateSourceType>();
+  const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,7 +46,7 @@ export default function Develop() {
   const onYamlChange = debounce((state: EditorState) => {
     const value = state.doc.toString();
     parseTemplate(value);
-  }, 800);
+  }, 1000);
 
   const generateCorrectYamlList = (
     yamlSource: TemplateSourceType,
@@ -69,14 +69,14 @@ export default function Develop() {
 
   const parseTemplate = (str: string) => {
     if (!str || !str.trim()) {
-      setYamlSource(void 0);
+      setTemplateSource(void 0);
       setYamlList([]);
       return;
     }
     try {
       const result = getYamlSource(str, platformEnvs);
       const formInputs = formHook.getValues();
-      setYamlSource(result);
+      setTemplateSource(result);
       const correctYamlList = generateCorrectYamlList(result, formInputs);
       setYamlList(correctYamlList);
     } catch (error: any) {
@@ -92,24 +92,28 @@ export default function Develop() {
 
   // form
   const formHook = useForm({
-    defaultValues: getTemplateInputDefaultValues(yamlSource)
+    defaultValues: getTemplateInputDefaultValues(templateSource)
   });
 
   // watch form change, compute new yaml
-  formHook.watch((data: Record<string, string>) => {
-    data && formOnchangeDebounce(data);
-  });
+  useEffect(() => {
+    formHook.watch();
+    const subscription = formHook.watch((data: Record<string, string>) => {
+      data && formOnchangeDebounce(data);
+    });
+    return () => subscription.unsubscribe();
+  }, [formHook, templateSource]);
 
   const formOnchangeDebounce = debounce((formInputData: Record<string, string>) => {
     try {
-      if (yamlSource) {
-        const correctYamlList = generateCorrectYamlList(yamlSource, formInputData);
+      if (templateSource) {
+        const correctYamlList = generateCorrectYamlList(templateSource, formInputData);
         setYamlList(correctYamlList);
       }
     } catch (error) {
       console.log(error);
     }
-  }, 300);
+  }, 1000);
 
   const submitSuccess = async () => {
     setIsLoading(true);
@@ -135,7 +139,6 @@ export default function Develop() {
   };
 
   const submitError = () => {
-    formHook.getValues();
     function deepSearch(obj: any): string {
       if (has(obj, 'message')) {
         return obj.message;
@@ -225,9 +228,7 @@ export default function Develop() {
               w="100%"
               position={'relative'}
               overflow={'auto'}
-              onDocChange={(s) => {
-                onYamlChange(s);
-              }}
+              onDocChange={onYamlChange}
             />
           )}
         </Flex>
@@ -258,7 +259,7 @@ export default function Develop() {
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
-              <Form formSource={yamlSource!} formHook={formHook} />
+              <Form formSource={templateSource!} formHook={formHook} platformEnvs={platformEnvs} />
             </Flex>
             <Flex flex={1} pl="42px" pt="26px" flexDirection={'column'} position={'relative'}>
               <Flex alignItems={'center'} justifyContent={'space-between'}>

@@ -1,5 +1,6 @@
 import MyIcon from '@/components/Icon';
 import MySelect from '@/components/Select';
+import type { EnvResponse } from '@/types';
 import { FormSourceInput, TemplateSourceType } from '@/types/app';
 import {
   Box,
@@ -19,10 +20,12 @@ import { getTemplateValues } from '@/utils/template';
 
 const Form = ({
   formSource,
-  formHook
+  formHook,
+  platformEnvs
 }: {
   formSource: TemplateSourceType;
   formHook: UseFormReturn;
+  platformEnvs: EnvResponse;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -35,110 +38,116 @@ const Form = ({
   const {
     register,
     formState: { errors },
-    setValue
+    setValue,
+    getValues
   } = formHook;
-  const { defaults, defaultInputs } = getTemplateValues(formSource);
+
+  const formData = getValues();
+  const filteredInputs = useMemo(() => {
+    const { defaults, defaultInputs } = getTemplateValues(formSource);
+    return formSource?.source?.inputs?.filter(
+      (item) =>
+        item.if === undefined ||
+        item.if?.length === 0 ||
+        !!evaluateExpression(item.if, {
+          ...platformEnvs,
+          ...formSource?.source,
+          inputs: {
+            ...defaultInputs,
+            ...formData
+          },
+          defaults: defaults
+        })
+    );
+  }, [formSource, formData]);
+
   return (
     <Box flexGrow={1} id={'baseInfo'} minH={'200px'}>
       {isShowContent ? (
         <Box py={'24px'}>
-          {formSource?.source?.inputs
-            ?.filter(
-              (item) =>
-                item.if === undefined ||
-                item.if?.length === 0 ||
-                !!evaluateExpression(item.if, {
-                  ...formSource?.source,
-                  inputs: {
-                    ...defaultInputs,
-                    ...formHook.getValues()
-                  },
-                  defaults: defaults
-                })
-            )
-            .map((item: FormSourceInput, index: number) => {
-              const renderInput = () => {
-                switch (item.type) {
-                  case 'choice':
-                    if (!item.options) {
-                      console.error(`${item.key} options is required`);
-                      return null;
-                    }
-                    return (
-                      <Box maxW={'300px'} ml={'20px'} w={'100%'}>
-                        <MySelect
-                          w={'100%'}
-                          bg={'transparent'}
-                          borderRadius={'2px'}
-                          defaultValue={item.default}
-                          list={item.options?.map((option) => {
-                            return {
-                              value: option,
-                              label: option
-                            };
-                          })}
-                          onchange={(val: any) => {
-                            setValue(item.key, val);
-                          }}
-                        />
-                      </Box>
-                    );
-                  case 'boolean':
-                    return (
-                      <Checkbox
-                        ml={'20px'}
-                        defaultChecked={item.default === 'true'}
-                        onChange={(e) => {
-                          setValue(item.key, e.target.checked ? 'true' : 'false');
-                        }}
-                      >
-                        {item.description && (
-                          <Text as="span" ml={2} fontSize="sm" color="gray.500">
-                            {item.description}
-                          </Text>
-                        )}
-                      </Checkbox>
-                    );
-                  case 'number':
-                  case 'string':
-                  default:
-                    return (
-                      <Input
-                        type={item?.type}
-                        maxW={'500px'}
-                        ml={'20px'}
-                        defaultValue={item?.default}
-                        placeholder={item?.description}
-                        {...register(item?.key, {
-                          required: item?.required
+          {filteredInputs.map((item: FormSourceInput, index: number) => {
+            const renderInput = () => {
+              switch (item.type) {
+                case 'choice':
+                  if (!item.options) {
+                    console.error(`${item.key} options is required`);
+                    return null;
+                  }
+                  return (
+                    <Box maxW={'300px'} ml={'20px'} w={'100%'}>
+                      <MySelect
+                        w={'100%'}
+                        bg={'transparent'}
+                        borderRadius={'2px'}
+                        defaultValue={item.default}
+                        list={item.options?.map((option) => {
+                          return {
+                            value: option,
+                            label: option
+                          };
                         })}
+                        onchange={(val: any) => {
+                          setValue(item.key, val);
+                        }}
                       />
-                    );
-                }
-              };
-
-              return (
-                <FormControl key={item?.key} mb={7} isInvalid={!!errors.appName}>
-                  <Flex alignItems={'center'} align="stretch">
-                    <Flex
-                      position={'relative'}
-                      w="200px"
-                      className="template-dynamic-label"
-                      color={'#333'}
-                      userSelect={'none'}
+                    </Box>
+                  );
+                case 'boolean':
+                  return (
+                    <Checkbox
+                      ml={'20px'}
+                      defaultChecked={item.default === 'true'}
+                      onChange={(e) => {
+                        setValue(item.key, e.target.checked ? 'true' : 'false');
+                      }}
                     >
-                      {item?.label}
-                      {item?.required && (
-                        <Text ml="2px" color={'#E53E3E'}>
-                          *
+                      {item.description && (
+                        <Text as="span" ml={2} fontSize="sm" color="gray.500">
+                          {item.description}
                         </Text>
                       )}
-                    </Flex>
-                    {renderInput()}
+                    </Checkbox>
+                  );
+                case 'number':
+                case 'string':
+                default:
+                  return (
+                    <Input
+                      type={item?.type}
+                      maxW={'500px'}
+                      ml={'20px'}
+                      defaultValue={item?.default}
+                      placeholder={item?.description}
+                      {...register(item?.key, {
+                        required: item?.required
+                      })}
+                    />
+                  );
+              }
+            };
+
+            return (
+              <FormControl key={item?.key} mb={7} isInvalid={!!errors.appName}>
+                <Flex alignItems={'center'} align="stretch">
+                  <Flex
+                    position={'relative'}
+                    w="200px"
+                    className="template-dynamic-label"
+                    color={'#333'}
+                    userSelect={'none'}
+                  >
+                    {item?.label}
+                    {item?.required && (
+                      <Text ml="2px" color={'#E53E3E'}>
+                        *
+                      </Text>
+                    )}
                   </Flex>
-                </FormControl>
-              );
-            })}
+                  {renderInput()}
+                </Flex>
+              </FormControl>
+            );
+          })}
         </Box>
       ) : (
         <Flex

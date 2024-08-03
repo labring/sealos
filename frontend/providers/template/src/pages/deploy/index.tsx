@@ -83,7 +83,6 @@ export default function EditApp({ appName }: { appName?: string }) {
       },
       defaults: defaults,
     };
-    console.log(data)
     const generateStr = parseTemplateString(templateSource.yamlList.join('---\n'), data);
     return generateYamlList(generateStr, app_name);
   }
@@ -96,7 +95,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     } catch (error) {
       console.log(error);
     }
-  }, 300);
+  }, 500);
 
   const getCachedValue = (): {
     cachedKey: string,
@@ -114,9 +113,13 @@ export default function EditApp({ appName }: { appName?: string }) {
   });
 
   // watch form change, compute new yaml
-  formHook.watch((data: Record<string, string>) => {
-    data && formOnchangeDebounce(data);
-  });
+  useEffect(() => {
+    formHook.watch();
+    const subscription = formHook.watch((data: Record<string, string>) => {
+      data && formOnchangeDebounce(data);
+    });
+    return () => subscription.unsubscribe();
+  }, [formHook, templateSource]);
 
   const submitSuccess = async () => {
     setIsLoading(true);
@@ -302,7 +305,7 @@ export default function EditApp({ appName }: { appName?: string }) {
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
-            <Form formHook={formHook} pxVal={pxVal} formSource={templateSource!} />
+            <Form formHook={formHook} pxVal={pxVal} formSource={templateSource!} platformEnvs={platformEnvs!} />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
             <ReadMe templateDetail={data?.templateYaml!} />
           </Flex>
