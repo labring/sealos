@@ -74,7 +74,7 @@ export default function Develop() {
       return;
     }
     try {
-      const result = getYamlSource(str);
+      const result = getYamlSource(str, platformEnvs);
       const formInputs = formHook.getValues();
       setYamlSource(result);
       const correctYamlList = generateCorrectYamlList(result, formInputs);

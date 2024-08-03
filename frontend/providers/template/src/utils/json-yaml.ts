@@ -122,13 +122,16 @@ export const getTemplateDataSource = (
             });
           }) || item.default;
         }
-        return {
-          ...item,
-          description: parseTemplateString(item.description, {
+        item.description = item.description.replace(regex, (match: string, key: string) => {
+          return evaluateExpression(key, {
             ...platformEnvs,
             defaults: output,
             inputs: {}
-          }),
+          });
+        }) || item.description;
+        return {
+          ...item,
+          description: item.description,
           type: item.type,
           default: item.default,
           required: item.required,
