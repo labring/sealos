@@ -191,8 +191,8 @@ export function evaluateExpression(expression: string, data?: {
     // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
     const initInterpreterFunc = (interpreter: any, ctx: any) => {
       interpreter.setProperty(ctx, 'data', interpreter.nativeToPseudo(data));
-      interpreter.setProperty(ctx, 'random', interpreter.nativeToPseudo(nanoid));
-      interpreter.setProperty(ctx, 'base64', interpreter.nativeToPseudo(base64));
+      interpreter.setProperty(ctx, 'random', interpreter.createNativeFunction(nanoid));
+      interpreter.setProperty(ctx, 'base64', interpreter.createNativeFunction(base64));
     }
     const interpreter = new Interpreter(` with(data) { ${expression} } `, initInterpreterFunc)
     interpreter.run();

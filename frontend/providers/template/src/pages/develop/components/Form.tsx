@@ -70,7 +70,7 @@ const Form = ({
                           w={'100%'}
                           bg={'transparent'}
                           borderRadius={'2px'}
-                          value={formHook.getValues(item.key) || item.default}
+                          defaultValue={item.default}
                           list={item.options?.map((option) => {
                             return {
                               value: option,
@@ -84,11 +84,10 @@ const Form = ({
                       </Box>
                     );
                   case 'boolean':
-                    const input = formHook.getValues(item.key)
                     return (
                       <Checkbox
                         ml={'20px'}
-                        isChecked={input !== undefined ? input === 'true' : item.default === 'true'}
+                        defaultChecked={item.default === 'true'}
                         onChange={(e) => {
                           setValue(item.key, e.target.checked ? 'true' : 'false');
                         }}

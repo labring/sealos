@@ -1,4 +1,4 @@
-import React, { useRef, forwardRef, useMemo } from 'react';
+import React, { useRef, forwardRef, useMemo, useState } from 'react';
 import {
   Menu,
   Box,
@@ -14,6 +14,7 @@ import MyIcon, { type IconType } from '../Icon';
 
 interface Props extends ButtonProps {
   value?: string;
+  defaultValue?: string;
   placeholder?: string;
   list: {
     icon?: string;
@@ -24,7 +25,7 @@ interface Props extends ButtonProps {
 }
 
 const MySelect = (
-  { placeholder, value, width = 'auto', list, onchange, ...props }: Props,
+  { placeholder, value, defaultValue, width = 'auto', list, onchange, ...props }: Props,
   selectRef: any
 ) => {
   const ref = useRef<HTMLButtonElement>(null);
@@ -40,6 +41,8 @@ const MySelect = (
   };
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  const [selectedValue, setSelectedValue] = useState(defaultValue || value || '');
+
   useOutsideClick({
     ref: SelectRef,
     handler: () => {
@@ -47,7 +50,10 @@ const MySelect = (
     }
   });
 
-  const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
+  const activeMenu = useMemo(
+    () => list.find((item) => item.value === (value !== undefined ? value : selectedValue)),
+    [list, value, selectedValue]
+  );
 
   return (
     <Menu autoSelect={false} isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
@@ -114,13 +120,14 @@ const MySelect = (
             <MenuItem
               key={item.value}
               {...menuItemStyles}
-              {...(value === item.value
+              {...((value !== undefined ? value : selectedValue) === item.value // 使用 value 或 selectedValue 判断选中状态
                 ? {
                     color: 'myBlue.600'
                   }
                 : {})}
               onClick={() => {
-                if (onchange && value !== item.value) {
+                setSelectedValue(item.value);
+                if (onchange) {
                   onchange(item.value);
                 }
               }}

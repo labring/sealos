@@ -96,7 +96,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     } catch (error) {
       console.log(error);
     }
-  }, 500);
+  }, 300);
 
   const getCachedValue = (): {
     cachedKey: string,

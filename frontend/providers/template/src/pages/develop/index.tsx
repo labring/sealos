@@ -109,7 +109,7 @@ export default function Develop() {
     } catch (error) {
       console.log(error);
     }
-  }, 1000);
+  }, 300);
 
   const submitSuccess = async () => {
     setIsLoading(true);
