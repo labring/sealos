@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       console.log(error, 'Unauthorized allowed');
     }
 
-    const { code, message, dataSource, templateYaml, TemplateEnvs, yamlList } =
+    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({
         namespace: user_namespace,
         templateName: templateName
@@ -47,8 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           ...dataSource,
           ...TemplateEnvs
         },
-        yamlList: yamlList,
-        templateYaml: templateYaml
+        appYaml,
+        templateYaml
       }
     });
   } catch (err: any) {
@@ -92,7 +92,7 @@ export async function GetTemplateByName({
     ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
     : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
 
-  const { yamlList, templateYaml } = getYamlTemplate(yamlString);
+  let { appYaml, templateYaml } = getYamlTemplate(yamlString);
   if (!templateYaml) {
     return {
       code: 40000,
@@ -116,14 +116,14 @@ export async function GetTemplateByName({
     };
   }
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
-  yamlList.unshift(JsYaml.dump(instanceYaml));
+  appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`
 
   return {
     code: 20000,
     message: 'success',
     dataSource,
     TemplateEnvs,
-    yamlList,
+    appYaml,
     templateYaml
   };
 }

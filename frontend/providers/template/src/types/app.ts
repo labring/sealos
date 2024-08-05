@@ -42,7 +42,7 @@ export type TemplateType = {
 
 export type TemplateSourceType = {
   source: SourceType;
-  yamlList: string[];
+  appYaml: string;
   templateYaml: TemplateType;
 };
 

@@ -83,7 +83,7 @@ export default function EditApp({ appName }: { appName?: string }) {
       },
       defaults: defaults,
     };
-    const generateStr = parseTemplateString(templateSource.yamlList.join('---\n'), data);
+    const generateStr = parseTemplateString(templateSource.appYaml, data);
     return generateYamlList(generateStr, app_name);
   }
 

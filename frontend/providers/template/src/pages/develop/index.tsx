@@ -62,7 +62,7 @@ export default function Develop() {
       },
       defaults: defaults
     };
-    const generateStr = parseTemplateString(yamlSource.yamlList.join('---\n'), data);
+    const generateStr = parseTemplateString(yamlSource.appYaml, data);
     const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
     return developGenerateYamlList(generateStr, _instanceName)
   };

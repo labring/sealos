@@ -197,7 +197,7 @@ export function evaluateExpression(expression: string, data?: {
       interpreter.setProperty(ctx, 'random', interpreter.createNativeFunction(nanoid));
       interpreter.setProperty(ctx, 'base64', interpreter.createNativeFunction(base64));
     }
-    const interpreter = new Interpreter(` with(data) { ${expression} } `, initInterpreterFunc)
+    const interpreter = new Interpreter(`with(data) { ${expression} }`, initInterpreterFunc)
     interpreter.run();
     // console.log('resoult: ', interpreter.value)
     return interpreter.value;
@@ -219,120 +219,139 @@ const yamlIfEndifReg = /^\s*\$\{\{\s*?(if|elif|else|endif)\((.*?)\)\s*?\}\}\s*$/
 
 const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) => boolean): string => {
   const stack: RegExpMatchArray[] = [];
+  let ifCount = 0;
 
-  const Matchs = Array.from(yamlStr.matchAll(yamlIfEndifReg));
-  if (Matchs.length === 0) {
+  const matches = Array.from(yamlStr.matchAll(yamlIfEndifReg));
+  if (matches.length === 0) {
     return yamlStr;
   }
 
-  for (const Match of Matchs) {
-    const Type = Match[1];
-    if (Type === 'if' || Type === 'elif' || Type === 'else') {
-      stack.push(Match);
-      continue;
-    }
-    let If: RegExpMatchArray | undefined;
-    let ElifElse: RegExpMatchArray[] = [];
-
-    while (stack.length > 0) {
-      const temp = stack.pop();
-      if (temp && (temp[1] === 'if' || (ElifElse.length > 0 && temp[1] === 'else'))) {
-        If = temp;
-        break;
-      } else if (temp) {
-        ElifElse.unshift(temp);
+  for (const match of matches) {
+    const type = match[1];
+    if (type === 'if') {
+      ifCount++;
+    } else if (type === 'endif') {
+      ifCount--;
+      if (ifCount < 0) {
+        throw new Error('endif without matching if');
       }
     }
 
-    if (!If) {
-      throw new Error('endif without if');
+    if (type === 'if' || type === 'elif' || type === 'else') {
+      stack.push(match);
+      continue;
+    }
+
+    let ifMatch: RegExpMatchArray | undefined;
+    let elifElseMatches: RegExpMatchArray[] = [];
+
+    while (stack.length > 0) {
+      const temp = stack.pop();
+      if (temp && (temp[1] === 'if' || (elifElseMatches.length > 0 && temp[1] === 'else'))) {
+        ifMatch = temp;
+        break;
+      } else if (temp) {
+        elifElseMatches.unshift(temp);
+      }
+    }
+
+    if (!ifMatch) {
+      throw new Error('endif without matching if');
     }
 
     if (stack.length !== 0) {
       continue;
     }
 
-    const start = yamlStr.substring(0, If.index);
-    const end = yamlStr.substring(Match.index! + Match[0].length);
+    const start = yamlStr.substring(0, ifMatch.index);
+    const end = yamlStr.substring(match.index! + match[0].length);
     let between = '';
 
-    if (ElifElse.length === 0) {
-      const IfResult = evaluateExpression(If[2]);
-      if (IfResult) {
-        between = yamlStr.substring(If.index! + If[0].length, Match.index);
+    if (elifElseMatches.length === 0) {
+      const ifResult = evaluateExpression(ifMatch[2]);
+      if (ifResult) {
+        between = yamlStr.substring(ifMatch.index! + ifMatch[0].length, match.index);
       }
     } else {
       let conditionMet = false;
-      for (const clause of [If, ...ElifElse]) {
+      for (const clause of [ifMatch, ...elifElseMatches]) {
         const expression = clause[2];
         if (clause[1] === 'else' || evaluateExpression(expression)) {
-          between = yamlStr.substring(clause.index! + clause[0].length, clause === ElifElse[ElifElse.length - 1] ? Match.index : ElifElse[ElifElse.indexOf(clause) + 1].index);
+          between = yamlStr.substring(clause.index! + clause[0].length, clause === elifElseMatches[elifElseMatches.length - 1] ? match.index : elifElseMatches[elifElseMatches.indexOf(clause) + 1].index);
           conditionMet = true;
           break;
         }
       }
 
       if (!conditionMet) {
-        between = yamlStr.substring(ElifElse[ElifElse.length - 1].index! + ElifElse[ElifElse.length - 1][0].length, Match.index);
+        between = yamlStr.substring(elifElseMatches[elifElseMatches.length - 1].index! + elifElseMatches[elifElseMatches.length - 1][0].length, match.index);
       }
     }
 
     return __parseYamlIfEndif(start + between + end, evaluateExpression);
   }
 
+  if (ifCount !== 0) {
+    throw new Error('Unmatched if statement found');
+  }
+
   return yamlStr;
 };
 
-export function clearYamlIfEndif(yamlStr: string): string {
-  return __parseYamlIfEndif(yamlStr, () => {
-    return false
-  })
-}
+// export function clearYamlIfEndif(yamlStr: string): string {
+//   return __parseYamlIfEndif(yamlStr, () => {
+//     return false
+//   })
+// }
 
 export function getYamlSource(str: string, platformEnvs?: EnvResponse): TemplateSourceType {
-  const { yamlList, templateYaml } = getYamlTemplate(str)
+  let { appYaml, templateYaml } = getYamlTemplate(str)
 
   const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
   const _instanceName = dataSource?.defaults?.app_name?.value || '';
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
-  yamlList.unshift(JsYaml.dump(instanceYaml));
+  appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
 
   const result: TemplateSourceType = {
     source: {
       ...dataSource,
       ...platformEnvs!
     },
-    yamlList: yamlList,
-    templateYaml: templateYaml
+    appYaml,
+    templateYaml
   };
   return result;
 }
 
 export function getYamlTemplate(str: string): {
-  yamlList: string[];
+  appYaml: string;
   templateYaml: TemplateType;
 } {
   const yamlStrList = str.split('---\n');
   let templateYaml: TemplateType | undefined;
-  const otherYamlList: string[] = [];
+  const appYamlList: string[] = [];
 
   for (const yamlStr of yamlStrList) {
     try {
-      if (!templateYaml) {
-        const yamlObj = JsYaml.load(clearYamlIfEndif(yamlStr)) as TemplateType;
-        if (yamlObj && yamlObj.kind === 'Template') {
-          templateYaml = yamlObj;
-          continue
-        }
+      if (templateYaml) {
+        appYamlList.push(yamlStr);
+        continue
       }
-      otherYamlList.push(yamlStr);
+      try {
+        templateYaml = JsYaml.load(yamlStr) as TemplateType;
+      } catch (error) {
+        throw new Error('the first yaml must be Template and cannot use conditional rendering')
+      }
+      if (templateYaml.kind !== 'Template') {
+        throw new Error('the first yaml type is not Template');
+      }
     } catch (error) {
       throw new Error('yaml parse error: ' + error);
     }
   }
 
   return {
-    yamlList: otherYamlList,
+    appYaml: appYamlList.join('---\n'),
     templateYaml: templateYaml as TemplateType
   };
 }

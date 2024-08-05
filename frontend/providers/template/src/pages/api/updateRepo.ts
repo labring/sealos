@@ -105,13 +105,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!item) return;
         const fileName = path.basename(item);
         const content = fs.readFileSync(item, 'utf-8');
-        const { templateYaml: yamlTemplate } = getYamlTemplate(content)
-        if (!!yamlTemplate) {
-          const appTitle = yamlTemplate.spec.title.toUpperCase();
-          yamlTemplate.spec['deployCount'] = templateStaticMap[appTitle];
-          yamlTemplate.spec['filePath'] = item;
-          yamlTemplate.spec['fileName'] = fileName;
-          jsonObjArr.push(yamlTemplate);
+        const { templateYaml } = getYamlTemplate(content)
+        if (!!templateYaml) {
+          const appTitle = templateYaml.spec.title.toUpperCase();
+          templateYaml.spec['deployCount'] = templateStaticMap[appTitle];
+          templateYaml.spec['filePath'] = item;
+          templateYaml.spec['fileName'] = fileName;
+          jsonObjArr.push(templateYaml);
         }
       } catch (error) {
         console.log(error, 'yaml parse error');
