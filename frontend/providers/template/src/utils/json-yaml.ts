@@ -97,7 +97,7 @@ export const getTemplateDataSource = (
           default: string;
           required: boolean;
           options?: string[];
-          show?: string;
+          if?: string;
         }
       >,
       cloneDefauls: Record<
@@ -138,7 +138,7 @@ export const getTemplateDataSource = (
           key: key,
           label: key,
           options: item.options,
-          show: item.show
+          if: item.if
         };
       });
       return inputsArr;
