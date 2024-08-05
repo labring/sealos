@@ -32,17 +32,11 @@ import {
   gpuNodeSelectorKey,
   gpuResourceKey
 } from '@/constants/app';
-import {
-  cpuFormatToM,
-  memoryFormatToMi,
-  formatPodTime,
-  atobSecretYaml,
-  printMemory
-} from '@/utils/tools';
+import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -181,7 +175,8 @@ export enum YamlKindEnum {
   PersistentVolumeClaim = 'PersistentVolumeClaim'
 }
 
-export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
+export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
+  const { SEALOS_DOMAIN } = await getInitData();
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
