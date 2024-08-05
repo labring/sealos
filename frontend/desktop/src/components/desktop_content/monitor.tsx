@@ -65,7 +65,7 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
       <Flex alignItems={'center'} mt={'12px'} gap={'20px'}>
         <CircularProgress
           size={'90px'}
-          trackColor={'#FF8398'}
+          trackColor={runningPodPercentage === 0 ? '#FFFFFF33' : '#FF8398'}
           value={runningPodPercentage}
           color="#2BE0B3"
         >
