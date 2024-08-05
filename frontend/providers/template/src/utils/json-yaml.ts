@@ -327,31 +327,31 @@ export function getYamlTemplate(str: string): {
   appYaml: string;
   templateYaml: TemplateType;
 } {
-  const yamlStrList = str.split('---\n');
+  const yamlStrList = str.split(/^\s*---\n/m);
   let templateYaml: TemplateType | undefined;
   const appYamlList: string[] = [];
 
   for (const yamlStr of yamlStrList) {
-    try {
-      if (templateYaml) {
-        appYamlList.push(yamlStr);
-        continue
-      }
-      try {
-        templateYaml = JsYaml.load(yamlStr) as TemplateType;
-      } catch (error) {
-        throw new Error('the first yaml must be Template and cannot use conditional rendering')
-      }
-      if (templateYaml.kind !== 'Template') {
-        throw new Error('the first yaml type is not Template');
-      }
-    } catch (error) {
-      throw new Error('yaml parse error: ' + error);
+    if (templateYaml) {
+      appYamlList.push(yamlStr);
+      continue;
     }
+    try {
+      templateYaml = JsYaml.load(yamlStr) as TemplateType;
+    } catch (error) {
+      throw new Error('The first YAML must be a Template and cannot use conditional rendering');
+    }
+    if (!templateYaml || templateYaml.kind !== 'Template') {
+      throw new Error('The first YAML type is not Template');
+    }
+  }
+
+  if (!templateYaml) {
+    throw new Error('No valid Template found in the input YAML string');
   }
 
   return {
     appYaml: appYamlList.join('---\n'),
-    templateYaml: templateYaml as TemplateType
+    templateYaml: templateYaml
   };
 }
