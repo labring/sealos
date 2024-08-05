@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const { code, message, dataSource, templateYaml, TemplateEnvs, yamlList } =
+    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({
         namespace,
         templateName
@@ -30,8 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           ...dataSource,
           ...TemplateEnvs
         },
-        yamlList: yamlList,
-        templateYaml: templateYaml
+        appYaml,
+        templateYaml
       }
     });
   } catch (err: any) {

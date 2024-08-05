@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const { code, message, dataSource, templateYaml, TemplateEnvs, yamlList } =
+    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({
         namespace,
         templateName
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       {}
     );
 
-    const generateStr = parseTemplateString(yamlList?.join('---\n')!, {
+    const generateStr = parseTemplateString(appYaml || '', {
       ...TemplateEnvs,
       defaults: _defaults,
       inputs: { ..._inputs, ...templateForm }
