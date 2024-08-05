@@ -160,6 +160,17 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
 	return userCr.UserUID, nil
 }
 
+func (c *Cockroach) GetWorkspace(namespaces ...string) ([]types.Workspace, error) {
+	if len(namespaces) == 0 {
+		return nil, fmt.Errorf("empty namespaces")
+	}
+	var workspaces []types.Workspace
+	if err := c.Localdb.Where("id IN ?", namespaces).Find(&workspaces).Error; err != nil {
+		return nil, fmt.Errorf("failed to get workspaces: %v", err)
+	}
+	return workspaces, nil
+}
+
 func checkOps(ops *types.UserQueryOpts) error {
 	if ops.Owner == "" && ops.UID == uuid.Nil && ops.ID == "" {
 		return fmt.Errorf("empty query opts")

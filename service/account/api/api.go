@@ -56,11 +56,8 @@ func GetBillingHistoryNamespaceList(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get namespace billing history list: %v", err)})
 		return
 	}
-	c.JSON(http.StatusOK, helper.NamespaceBillingHistoryResp{
-		Data: helper.NamespaceBillingHistoryRespData{
-			List: nsList,
-		},
-		Message: "successfully retrieved namespace billing history list",
+	c.JSON(http.StatusOK, gin.H{
+		"data": nsList,
 	})
 }
 
@@ -75,12 +72,6 @@ func GetBillingHistoryNamespaceList(c *gin.Context) {
 // @Failure 500 {object} helper.ErrorMessage "failed to get properties"
 // @Router /account/v1alpha1/properties [post]
 func GetProperties(c *gin.Context) {
-	if !dao.Debug {
-		if err := helper.AuthenticateWithBind(c); err != nil {
-			c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
-			return
-		}
-	}
 	// Get the properties from the database
 	properties, err := dao.DBClient.GetProperties()
 	if err != nil {

@@ -93,6 +93,7 @@ type AccountV2 interface {
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
 	GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error)
+	GetWorkspace(namespaces ...string) ([]types.Workspace, error)
 	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
 	SetAccountCreateLocalRegion(account *types.Account, region string) error
 	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error

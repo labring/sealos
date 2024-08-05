@@ -25,7 +25,7 @@ import (
 )
 
 type Interface interface {
-	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error)
+	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
@@ -39,6 +39,7 @@ type Interface interface {
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
 	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
+	GetWorkspaceName(namespaces []string) ([][]string, error)
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
 	Transfer(req *helper.TransferAmountReq) error
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
@@ -71,6 +72,18 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
 	return account, nil
+}
+
+func (g *Cockroach) GetWorkspaceName(namespaces []string) ([][]string, error) {
+	workspaceList := make([][]string, 0)
+	workspaces, err := g.ck.GetWorkspace(namespaces...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workspace: %v", err)
+	}
+	for _, workspace := range workspaces {
+		workspaceList = append(workspaceList, []string{workspace.ID, workspace.DisplayName})
+	}
+	return workspaceList, nil
 }
 
 func (g *Cockroach) GetUserID(ops types.UserQueryOpts) (string, error) {
@@ -968,6 +981,9 @@ func (m *MongoDB) getAppStoreList(req helper.GetCostAppListReq, skip, pageSize i
 }
 
 func (m *MongoDB) Disconnect(ctx context.Context) error {
+	if m == nil {
+		return nil
+	}
 	return m.Client.Disconnect(ctx)
 }
 
@@ -1109,6 +1125,7 @@ func newAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (
 		if err = ck.InitTables(); err != nil {
 			return nil, fmt.Errorf("failed to init tables: %v", err)
 		}
+		account.Cockroach = &Cockroach{ck: ck}
 	} else {
 		fmt.Printf("globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n")
 	}
@@ -1136,7 +1153,7 @@ func (m *MongoDB) getPropertiesCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDBName).Collection(m.PropertiesConn)
 }
 
-func (m *MongoDB) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error) {
+func (m *Account) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error) {
 	filter := bson.M{
 		"owner": req.Owner,
 	}
@@ -1162,7 +1179,7 @@ func (m *MongoDB) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 	defer cur.Close(context.Background())
 
 	if !cur.Next(context.Background()) {
-		return []string{}, nil
+		return [][]string{}, nil
 	}
 
 	var result struct {
@@ -1171,7 +1188,7 @@ func (m *MongoDB) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 	if err := cur.Decode(&result); err != nil {
 		return nil, err
 	}
-	return result.Namespaces, nil
+	return m.GetWorkspaceName(result.Namespaces)
 }
 
 func (m *MongoDB) getBillingCollection() *mongo.Collection {

@@ -3,20 +3,10 @@ package helper
 import (
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
 	auth2 "github.com/labring/sealos/service/pkg/auth"
 )
-
-func AuthenticateWithBind(c *gin.Context) error {
-	auth := &Auth{}
-	err := c.ShouldBindJSON(auth)
-	if err != nil {
-		return fmt.Errorf("bind json error : %v", err)
-	}
-	return AuthenticateKC(*auth)
-}
 
 func AuthenticateKC(auth Auth) error {
 	if auth.KubeConfig == "" {
