@@ -25,6 +25,8 @@ import Warn from './warn';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
+import { useQuery } from '@tanstack/react-query';
+import { UserInfo } from '@/api/auth';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -48,6 +50,14 @@ export default function Desktop(props: any) {
   const { layoutConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
+
+  const infoData = useQuery({
+    queryFn: UserInfo,
+    queryKey: [session?.token, 'UserInfo'],
+    select(d) {
+      return d.data?.info;
+    }
+  });
 
   /**
    * Open Desktop Application
@@ -105,7 +115,7 @@ export default function Desktop(props: any) {
   }, [openDesktopApp]);
 
   useEffect(() => {
-    if (!session?.user?.realName && commonConfig?.realNameAuthEnabled) {
+    if (infoData.isSuccess && !infoData?.data?.realName && commonConfig?.realNameAuthEnabled) {
       realAuthNotification({
         title: '国内可用区需要实名认证，未实名认证将会被限制使用，点击进行实名',
         status: 'error',
@@ -113,7 +123,7 @@ export default function Desktop(props: any) {
         isClosable: true
       });
     }
-  }, [session, commonConfig]);
+  }, [infoData, commonConfig?.realNameAuthEnabled]);
 
   // const { UserGuide, showGuide } = useDriver({ openDesktopApp });
 
