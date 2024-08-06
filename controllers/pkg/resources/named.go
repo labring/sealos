@@ -17,6 +17,8 @@ package resources
 import (
 	"strings"
 
+	"github.com/labring/sealos/controllers/pkg/utils/label"
+
 	corev1 "k8s.io/api/core/v1"
 
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
@@ -69,7 +71,7 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[DBPodLabelComponentNameKey] != "":
 		p._type = DB
 		p._name = labels[DBPodLabelInstanceKey]
-	case labels[TerminalIDLabelKey] != "":
+	case labels[TerminalIDLabelKey] != "" || (labels[label.AppManagedBy] == label.DefaultManagedBy && labels[label.AppPartOf] == "terminal"):
 		p._type = TERMINAL
 		p._name = ""
 	case labels[AppLabelKey] != "":
