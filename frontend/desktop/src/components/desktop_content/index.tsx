@@ -23,7 +23,7 @@ import Monitor from './monitor';
 import SearchBox from './searchBox';
 import Warn from './warn';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
-import { useRealAuthNotification } from '../account/RealNameModal';
+import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
 import { UserInfo } from '@/api/auth';
@@ -45,12 +45,12 @@ export default function Desktop(props: any) {
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { message } = useMessage();
-  const { realAuthNotification } = useRealAuthNotification();
+  const { realNameAuthNotification } = useRealNameAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
   const { layoutConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
-  const realAuthNotificationIdRef = useRef<string | number | undefined>();
+  const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -117,7 +117,7 @@ export default function Desktop(props: any) {
 
   useEffect(() => {
     if (infoData.isSuccess && !infoData?.data?.realName && commonConfig?.realNameAuthEnabled) {
-      realAuthNotificationIdRef.current = realAuthNotification({
+      realNameAuthNotificationIdRef.current = realNameAuthNotification({
         title: '国内可用区需要实名认证，未实名认证将会被限制使用，点击进行实名',
         status: 'error',
         duration: null,
@@ -126,8 +126,8 @@ export default function Desktop(props: any) {
     }
 
     return () => {
-      if (realAuthNotificationIdRef.current) {
-        realAuthNotification.close(realAuthNotificationIdRef.current);
+      if (realNameAuthNotificationIdRef.current) {
+        realNameAuthNotification.close(realNameAuthNotificationIdRef.current);
       }
     };
   }, [infoData.data, commonConfig?.realNameAuthEnabled]);
