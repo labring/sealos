@@ -44,8 +44,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTimer } from '@/hooks/useTimer';
 import { SmsType } from '@/services/backend/db/verifyCode';
 
-export function useRealAuthNotification(props?: UseToastOptions) {
-  const realAuthNotification = useToast({
+export function useRealNameAuthNotification(props?: UseToastOptions) {
+  const realNameAuthNotification = useToast({
     position: 'top',
     ...props,
     render: (props) => {
@@ -100,7 +100,7 @@ export function useRealAuthNotification(props?: UseToastOptions) {
     }
   });
   return {
-    realAuthNotification
+    realNameAuthNotification
   };
 }
 

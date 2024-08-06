@@ -10,7 +10,7 @@ import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import Cost from '../account/cost';
 import TriggerAccountModule from '../account/trigger';
@@ -23,8 +23,10 @@ import Monitor from './monitor';
 import SearchBox from './searchBox';
 import Warn from './warn';
 import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
-import { useRealAuthNotification } from '../account/RealNameModal';
+import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
+import { useQuery } from '@tanstack/react-query';
+import { UserInfo } from '@/api/auth';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -43,11 +45,20 @@ export default function Desktop(props: any) {
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { message } = useMessage();
-  const { realAuthNotification } = useRealAuthNotification();
+  const { realNameAuthNotification } = useRealNameAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
   const { layoutConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
+  const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
+
+  const infoData = useQuery({
+    queryFn: UserInfo,
+    queryKey: [session?.token, 'UserInfo'],
+    select(d) {
+      return d.data?.info;
+    }
+  });
 
   /**
    * Open Desktop Application
@@ -105,17 +116,21 @@ export default function Desktop(props: any) {
   }, [openDesktopApp]);
 
   useEffect(() => {
-    if (!session?.user?.realName && commonConfig?.realNameAuthEnabled) {
-      realAuthNotification({
+    if (infoData.isSuccess && !infoData?.data?.realName && commonConfig?.realNameAuthEnabled) {
+      realNameAuthNotificationIdRef.current = realNameAuthNotification({
         title: '国内可用区需要实名认证，未实名认证将会被限制使用，点击进行实名',
         status: 'error',
         duration: null,
         isClosable: true
       });
     }
-  }, [session, commonConfig]);
 
-  // const { UserGuide, showGuide } = useDriver({ openDesktopApp });
+    return () => {
+      if (realNameAuthNotificationIdRef.current) {
+        realNameAuthNotification.close(realNameAuthNotificationIdRef.current);
+      }
+    };
+  }, [infoData.data, commonConfig?.realNameAuthEnabled]);
 
   useEffect(() => {
     const globalNotification = async () => {
