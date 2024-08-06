@@ -4,7 +4,7 @@ import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { APPTYPE, TApp } from '@/types';
 import { Box, Center, Flex, Image } from '@chakra-ui/react';
-import { MouseEvent, useContext, useMemo, useState } from 'react';
+import { MouseEvent, useContext, useMemo } from 'react';
 import { Menu, useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import styles from './index.module.css';
@@ -28,7 +28,8 @@ export default function AppDock() {
   } = useAppStore();
   const logo = useConfigStore().layoutConfig?.logo;
   const moreAppsContent = useContext(MoreAppsContext);
-  const [isNavbarVisible, setNavbarVisible] = useState(true);
+  const { isNavbarVisible, toggleNavbarVisibility } = useDesktopConfigStore();
+
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
   });
@@ -135,7 +136,7 @@ export default function AppDock() {
         top={'-80px'}
         transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
         will-change="transform, opacity"
-        onClick={() => setNavbarVisible((prev) => !prev)}
+        onClick={toggleNavbarVisibility}
       >
         <ChevronDownIcon
           transform={isNavbarVisible ? 'rotate(0deg)' : 'rotate(180deg)'}

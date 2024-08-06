@@ -86,7 +86,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   useEffect(() => {
     const { bd_vid } = router.query;
     if (bd_vid) {
-      sessionStorage.setItem('bd_vid', bd_vid as string);
+      localStorage.setItem('bd_vid', bd_vid as string);
     }
   }, []);
 
