@@ -17,6 +17,7 @@ import GithubComponent from './github';
 import { ArrowIcon } from '../icons';
 import useAppStore from '@/stores/app';
 import AccountCenter from './AccountCenter';
+import CustomTooltip from '../AppDock/CustomTooltip';
 
 const baseItemStyle = {
   w: '52px',
@@ -118,19 +119,34 @@ export default function Account() {
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
           {layoutConfig?.common.docsUrl && (
-            <Center
-              cursor={'pointer'}
-              {...baseItemStyle}
-              onClick={() => window.open(layoutConfig?.common?.docsUrl)}
-            >
-              <DocsIcon />
-            </Center>
+            <CustomTooltip placement={'bottom'} label={t('common:doc')}>
+              <Center
+                cursor={'pointer'}
+                {...baseItemStyle}
+                onClick={() => window.open(layoutConfig?.common?.docsUrl)}
+              >
+                <DocsIcon />
+              </Center>
+            </CustomTooltip>
           )}
-          <LangSelectSimple {...baseItemStyle} />
-          {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
-          <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
-            <NotificationIcon />
-          </Center>
+          <CustomTooltip placement={'bottom'} label={t('common:language')}>
+            <Center>
+              <LangSelectSimple {...baseItemStyle} />
+            </Center>
+          </CustomTooltip>
+          {layoutConfig?.common.githubStarEnabled && (
+            <CustomTooltip placement="bottom" label={t('common:github')}>
+              <Center>
+                <GithubComponent {...baseItemStyle} />
+              </Center>
+            </CustomTooltip>
+          )}
+
+          <CustomTooltip placement={'bottom'} label={t('common:notification')}>
+            <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
+              <NotificationIcon />
+            </Center>
+          </CustomTooltip>
           <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
         </Flex>
 
