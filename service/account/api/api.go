@@ -659,7 +659,6 @@ func checkAuth(auth *helper.Auth) error {
 	if err != nil {
 		return fmt.Errorf("get user cr name error: %v", err)
 	}
-	fmt.Printf("auth: %v\n", auth)
 	return nil
 }
 
