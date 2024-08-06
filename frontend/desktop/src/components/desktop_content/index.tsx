@@ -10,7 +10,7 @@ import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import Cost from '../account/cost';
 import TriggerAccountModule from '../account/trigger';
@@ -50,6 +50,7 @@ export default function Desktop(props: any) {
   const { layoutConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
+  const realAuthNotificationIdRef = useRef<string | number | undefined>();
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -116,16 +117,20 @@ export default function Desktop(props: any) {
 
   useEffect(() => {
     if (infoData.isSuccess && !infoData?.data?.realName && commonConfig?.realNameAuthEnabled) {
-      realAuthNotification({
+      realAuthNotificationIdRef.current = realAuthNotification({
         title: '国内可用区需要实名认证，未实名认证将会被限制使用，点击进行实名',
         status: 'error',
         duration: null,
         isClosable: true
       });
     }
-  }, [infoData, commonConfig?.realNameAuthEnabled]);
 
-  // const { UserGuide, showGuide } = useDriver({ openDesktopApp });
+    return () => {
+      if (realAuthNotificationIdRef.current) {
+        realAuthNotification.close(realAuthNotificationIdRef.current);
+      }
+    };
+  }, [infoData.data, commonConfig?.realNameAuthEnabled]);
 
   useEffect(() => {
     const globalNotification = async () => {
