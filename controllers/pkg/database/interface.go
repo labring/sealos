@@ -53,7 +53,6 @@ type Account interface {
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
-	GetAllPricesMap() (map[string]resources.Price, error)
 	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
@@ -90,10 +89,14 @@ type AccountV2 interface {
 	Close() error
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
-	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
-	SetAccountCreateLocalRegion(account *types.Account, region string) error
+	GetRegions() ([]types.Region, error)
+	GetLocalRegion() types.Region
 	GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error)
+	GetWorkspace(namespaces ...string) ([]types.Workspace, error)
+	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
+	SetAccountCreateLocalRegion(account *types.Account, region string) error
+	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	AddBalance(user *types.UserQueryOpts, balance int64) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
@@ -106,7 +109,6 @@ type AccountV2 interface {
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
 	TransferAccountAll(from, to *types.UserQueryOpts) error
 	TransferAccountV1(owner string, account *types.Account) (*types.Account, error)
-	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
 	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error
 	AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error
 }

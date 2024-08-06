@@ -15,14 +15,10 @@
 package resources
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/common"
-
-	"github.com/labring/sealos/controllers/pkg/crypto"
-	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -79,11 +75,13 @@ type Price struct {
 type Monitor struct {
 	Time time.Time `json:"time" bson:"time"`
 	// equal namespace
-	Category string      `json:"category" bson:"category"`
-	Type     uint8       `json:"type" bson:"type"`
-	Name     string      `json:"name" bson:"name"`
-	Used     EnumUsedMap `json:"used" bson:"used"`
-	Property string      `json:"property,omitempty" bson:"property,omitempty"`
+	Category   string      `json:"category" bson:"category"`
+	Type       uint8       `json:"type" bson:"type"`
+	ParentType uint8       `json:"parent_type" bson:"parent_type"`
+	ParentName string      `json:"parent_name" bson:"parent_name"`
+	Name       string      `json:"name" bson:"name"`
+	Used       EnumUsedMap `json:"used" bson:"used"`
+	Property   string      `json:"property,omitempty" bson:"property,omitempty"`
 }
 
 type BillingType int
@@ -98,6 +96,7 @@ type Billing struct {
 	//UsedAmount Used        `json:"used_amount" bson:"used_amount"`
 
 	AppCosts []AppCost `json:"app_costs,omitempty" bson:"app_costs,omitempty"`
+	AppName  string    `json:"app_name,omitempty" bson:"app_name,omitempty"`
 	AppType  uint8     `json:"app_type,omitempty" bson:"app_type,omitempty"`
 
 	Amount int64  `json:"amount" bson:"amount,omitempty"`
@@ -127,6 +126,7 @@ type Transfer struct {
 }
 
 type AppCost struct {
+	Type       uint8       `json:"type" bson:"type"`
 	Used       EnumUsedMap `json:"used" bson:"used"`
 	UsedAmount EnumUsedMap `json:"used_amount" bson:"used_amount"`
 	Amount     int64       `json:"amount" bson:"amount,omitempty"`
@@ -162,6 +162,7 @@ const (
 	other
 	objectStorage
 	cvm
+	appStore
 )
 
 const (
@@ -172,14 +173,15 @@ const (
 	OTHER         = "OTHER"
 	ObjectStorage = "OBJECT-STORAGE"
 	CVM           = "CLOUD-VM"
+	AppStore      = "APP-STORE"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore,
 }
 
 // resource consumption
@@ -287,11 +289,6 @@ func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) 
 }
 
 func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
-	types, err := decryptPrice(types)
-	if err != nil {
-		logger.Warn("failed to decrypt price : %v", err)
-		types = DefaultPropertyTypeList
-	}
 	return newPropertyTypeLS(types)
 }
 
@@ -309,21 +306,6 @@ func newPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
 		ls.StringMap[types[i].Name] = types[i]
 	}
 	return
-}
-
-func decryptPrice(types []PropertyType) ([]PropertyType, error) {
-	for i := range types {
-		if types[i].EncryptUnitPrice == "" {
-			return types, fmt.Errorf("encrypt %s unit price is empty", types[i].Name)
-		}
-		price, err := crypto.DecryptFloat64(types[i].EncryptUnitPrice)
-		if err != nil {
-			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
-		}
-		types[i].UnitPrice = price
-		logger.Info("parse properties", types[i].Enum, types[i].UnitPrice)
-	}
-	return types, nil
 }
 
 type PropertyTypeEnumMap map[uint8]PropertyType

@@ -30,7 +30,6 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
@@ -65,13 +64,6 @@ const (
 	DefaultTrafficConn = "traffic"
 )
 
-const DefaultRetentionDay = 30
-
-// override this value at build time
-const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
-
-var cryptoKey = defaultCryptoKey
-
 type mongoDB struct {
 	Client            *mongo.Client
 	AccountDB         string
@@ -83,7 +75,6 @@ type mongoDB struct {
 	MonitorConnPrefix string
 	MeteringConn      string
 	BillingConn       string
-	PricesConn        string
 	PropertiesConn    string
 	TrafficConn       string
 }
@@ -306,36 +297,6 @@ func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time) (
 	return monitors, nil
 }
 
-func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cursor, err := m.getPricesCollection().Find(ctx, bson.M{})
-	if err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var prices []struct {
-		Property string `json:"property" bson:"property"`
-		Price    string `json:"price" bson:"price"`
-		Detail   string `json:"detail" bson:"detail"`
-	}
-	if err = cursor.All(ctx, &prices); err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var pricesMap = make(map[string]resources.Price, len(prices))
-	for i := range prices {
-		price, err := crypto.DecryptInt64WithKey(prices[i].Price, []byte(cryptoKey))
-		if err != nil {
-			return nil, fmt.Errorf("decrypt price error: %v", err)
-		}
-		pricesMap[prices[i].Property] = resources.Price{
-			Price:    price,
-			Detail:   prices[i].Detail,
-			Property: prices[i].Property,
-		}
-	}
-	return pricesMap, nil
-}
-
 func (m *mongoDB) GetAllPayment() ([]resources.Billing, error) {
 	filter := bson.M{
 		"type":           1,
@@ -393,7 +354,7 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	minutes := endTime.Sub(startTime).Minutes()
 
 	groupStage := bson.D{
-		primitive.E{Key: "_id", Value: bson.D{{Key: "type", Value: "$type"}, {Key: "name", Value: "$name"}, {Key: "category", Value: "$category"}}},
+		primitive.E{Key: "_id", Value: bson.D{{Key: "type", Value: "$type"}, {Key: "name", Value: "$name"}, {Key: "category", Value: "$category"}, {Key: "parent_type", Value: "$parent_type"}, {Key: "parent_name", Value: "$parent_name"}}},
 		primitive.E{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 	}
 
@@ -401,6 +362,8 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		primitive.E{Key: "_id", Value: 0},
 		primitive.E{Key: "type", Value: "$_id.type"},
 		primitive.E{Key: "name", Value: "$_id.name"},
+		primitive.E{Key: "parent_type", Value: "$_id.parent_type"},
+		primitive.E{Key: "parent_name", Value: "$_id.parent_name"},
 		primitive.E{Key: "category", Value: "$_id.category"},
 	}
 
@@ -464,16 +427,18 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	}
 	defer cursor.Close(context.Background())
 
-	var appCostsMap = make(map[string]map[uint8][]resources.AppCost)
+	var appCostsMap = make(map[string]map[string][]resources.AppCost)
 	// map[ns/type]int64
 	var nsTypeAmount = make(map[string]int64)
 
 	for cursor.Next(context.Background()) {
 		var result struct {
-			Type      uint8                 `bson:"type"`
-			Namespace string                `bson:"category"`
-			Name      string                `bson:"name"`
-			Used      resources.EnumUsedMap `bson:"used"`
+			Type       uint8                 `bson:"type"`
+			Namespace  string                `bson:"category"`
+			Name       string                `bson:"name"`
+			ParentType uint8                 `bson:"parent_type"`
+			ParentName string                `bson:"parent_name"`
+			Used       resources.EnumUsedMap `bson:"used"`
 		}
 
 		err := cursor.Decode(&result)
@@ -485,12 +450,14 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		//logger.Info("generate billing data", "result", result)
 
 		if _, ok := appCostsMap[result.Namespace]; !ok {
-			appCostsMap[result.Namespace] = make(map[uint8][]resources.AppCost)
+			appCostsMap[result.Namespace] = make(map[string][]resources.AppCost)
 		}
-		if _, ok := appCostsMap[result.Namespace][result.Type]; !ok {
-			appCostsMap[result.Namespace][result.Type] = make([]resources.AppCost, 0)
+		strType := strconv.Itoa(int(result.Type))
+		if _, ok := appCostsMap[result.Namespace][strType]; !ok {
+			appCostsMap[result.Namespace][strType] = make([]resources.AppCost, 0)
 		}
 		appCost := resources.AppCost{
+			Type:       result.Type,
 			Used:       result.Used,
 			Name:       result.Name,
 			UsedAmount: make(map[uint8]int64),
@@ -507,13 +474,17 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		if appCost.Amount == 0 {
 			continue
 		}
-		nsTypeAmount[result.Namespace+strconv.Itoa(int(result.Type))] += appCost.Amount
-		appCostsMap[result.Namespace][result.Type] = append(appCostsMap[result.Namespace][result.Type], appCost)
+		key := result.Namespace + "/" + strType
+		if result.ParentType != 0 && result.ParentName != "" {
+			key = result.Namespace + "/" + strconv.Itoa(int(result.ParentType)) + "/" + result.ParentName
+		}
+		nsTypeAmount[key] += appCost.Amount
+		appCostsMap[result.Namespace][key] = append(appCostsMap[result.Namespace][key], appCost)
 	}
 
 	for ns, appCostMap := range appCostsMap {
 		for tp, appCost := range appCostMap {
-			amountt := nsTypeAmount[ns+strconv.Itoa(int(tp))]
+			amountt := nsTypeAmount[tp]
 			if amountt == 0 {
 				continue
 			}
@@ -521,11 +492,21 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 			if err != nil {
 				return nil, 0, fmt.Errorf("generate billing id error: %v", err)
 			}
+			// tp = ns/type/parentName && parentName not contain "/"
+			appType, appName := 0, ""
+			switch strings.Count(tp, "/") {
+			case 1:
+				appType, _ = strconv.Atoi(strings.Split(tp, "/")[1])
+			case 2:
+				appType, _ = strconv.Atoi(strings.Split(tp, "/")[1])
+				appName = strings.Split(tp, "/")[2]
+			}
 			billing := resources.Billing{
 				OrderID:   id,
 				Type:      accountv1.Consumption,
 				Namespace: ns,
-				AppType:   tp,
+				AppType:   uint8(appType),
+				AppName:   appName,
 				AppCosts:  appCost,
 				Amount:    amountt,
 				Owner:     owner,
@@ -901,10 +882,6 @@ func (m *mongoDB) getMonitorCollectionName(collTime time.Time) string {
 	return fmt.Sprintf("%s_%s", m.MonitorConnPrefix, collTime.Format("20060102"))
 }
 
-func (m *mongoDB) getPricesCollection() *mongo.Collection {
-	return m.Client.Database(m.AccountDB).Collection(m.PricesConn)
-}
-
 func (m *mongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.BillingConn)
 }
@@ -1008,7 +985,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		MeteringConn:      DefaultMeteringConn,
 		MonitorConnPrefix: DefaultMonitorConn,
 		BillingConn:       DefaultBillingConn,
-		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
 		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
 		CvmConn:           env.GetEnvWithDefault(EnvCVMConn, DefaultCVMConn),

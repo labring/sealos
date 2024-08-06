@@ -67,6 +67,315 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/basic-cost-distribution": {
+            "post": {
+                "description": "Get basic cost distribution",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BasicCostDistribution"
+                ],
+                "summary": "Get basic cost distribution",
+                "parameters": [
+                    {
+                        "description": "Basic cost distribution request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetCostAppListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get basic cost distribution",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse basic cost distribution request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get basic cost distribution",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/check-permission": {
+            "post": {
+                "description": "Check permission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Permission"
+                ],
+                "summary": "Check permission",
+                "parameters": [
+                    {
+                        "description": "Check permission request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.UserBaseReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully check permission",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse check permission request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to check permission",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/cost-app-list": {
+            "post": {
+                "description": "Get cost app list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CostAppList"
+                ],
+                "summary": "Get cost app list",
+                "parameters": [
+                    {
+                        "description": "Cost app list request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetCostAppListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get cost app list",
+                        "schema": {
+                            "$ref": "#/definitions/helper.CostAppListResp"
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse cost app list request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get cost app list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/cost-app-time-range": {
+            "post": {
+                "description": "Get app cost time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AppCostTimeRange"
+                ],
+                "summary": "Get app cost time range",
+                "parameters": [
+                    {
+                        "description": "App cost time range request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetCostAppListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get app cost time range",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse app cost time range request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get app cost time range",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/cost-app-type-list": {
+            "post": {
+                "description": "Get app type list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AppTypeList"
+                ],
+                "summary": "Get app type list",
+                "responses": {
+                    "200": {
+                        "description": "successfully get app type list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get app type list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/cost-overview": {
+            "post": {
+                "description": "Get cost overview",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CostOverview"
+                ],
+                "summary": "Get cost overview",
+                "parameters": [
+                    {
+                        "description": "Cost overview request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetCostAppListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get cost overview",
+                        "schema": {
+                            "$ref": "#/definitions/helper.CostOverviewResp"
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse cost overview request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get cost overview",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/costs": {
             "post": {
                 "description": "Get user costs within a specified time range",
@@ -606,6 +915,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/regions": {
+            "post": {
+                "description": "Get regions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Regions"
+                ],
+                "summary": "Get regions",
+                "responses": {
+                    "200": {
+                        "description": "successfully get regions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get regions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/transfer": {
             "post": {
                 "description": "Transfer amount",
@@ -687,10 +1027,6 @@ const docTemplate = `{
         },
         "helper.AppCostsReq": {
             "type": "object",
-            "required": [
-                "kubeConfig",
-                "owner"
-            ],
             "properties": {
                 "appName": {
                     "description": "@Summary App Name\n@Description App Name",
@@ -713,6 +1049,11 @@ const docTemplate = `{
                     "description": "@Summary Namespace\n@Description Namespace",
                     "type": "string",
                     "example": "ns-admin"
+                },
+                "orderID": {
+                    "description": "@Summary Order ID\n@Description Order ID\n@JSONSchema",
+                    "type": "string",
+                    "example": "order-id-1"
                 },
                 "owner": {
                     "type": "string",
@@ -740,10 +1081,6 @@ const docTemplate = `{
         },
         "helper.Auth": {
             "type": "object",
-            "required": [
-                "kubeConfig",
-                "owner"
-            ],
             "properties": {
                 "kubeConfig": {
                     "type": "string"
@@ -758,12 +1095,138 @@ const docTemplate = `{
                 }
             }
         },
+        "helper.CostApp": {
+            "type": "object",
+            "properties": {
+                "appName": {
+                    "description": "@Summary App Name\n@Description App Name",
+                    "type": "string"
+                },
+                "appType": {
+                    "description": "@Summary App type\n@Description App type",
+                    "type": "integer"
+                },
+                "namespace": {
+                    "description": "@Summary Namespace\n@Description Namespace",
+                    "type": "string"
+                }
+            }
+        },
+        "helper.CostAppListResp": {
+            "type": "object",
+            "properties": {
+                "apps": {
+                    "description": "@Summary Cost app list\n@Description Cost app list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.CostApp"
+                    }
+                },
+                "total": {
+                    "description": "@Summary Total\n@Description Total",
+                    "type": "integer"
+                },
+                "totalPage": {
+                    "description": "@Summary Total page\n@Description Total page",
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.CostOverview": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "@Summary Amount\n@Description Amount",
+                    "type": "integer"
+                },
+                "appName": {
+                    "type": "string"
+                },
+                "appType": {
+                    "description": "@Summary App type\n@Description App type",
+                    "type": "integer"
+                },
+                "namespace": {
+                    "description": "@Summary Namespace\n@Description Namespace",
+                    "type": "string"
+                },
+                "regionDomain": {
+                    "description": "@Summary Region domain\n@Description Region domain",
+                    "type": "string",
+                    "example": "region-domain-1"
+                }
+            }
+        },
+        "helper.CostOverviewResp": {
+            "type": "object",
+            "properties": {
+                "overviews": {
+                    "description": "@Summary Cost overview\n@Description Cost overview",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.CostOverview"
+                    }
+                },
+                "total": {
+                    "description": "@Summary Total\n@Description Total",
+                    "type": "integer"
+                },
+                "totalPage": {
+                    "description": "@Summary Total page\n@Description Total page",
+                    "type": "integer"
+                }
+            }
+        },
         "helper.ErrorMessage": {
             "type": "object",
             "properties": {
                 "error": {
                     "type": "string",
                     "example": "authentication failure"
+                }
+            }
+        },
+        "helper.GetCostAppListReq": {
+            "type": "object",
+            "properties": {
+                "appName": {
+                    "description": "@Summary App Name\n@Description App Name",
+                    "type": "string"
+                },
+                "appType": {
+                    "description": "@Summary App type\n@Description App type",
+                    "type": "string"
+                },
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "@Summary Namespace\n@Description Namespace",
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
@@ -792,10 +1255,6 @@ const docTemplate = `{
         },
         "helper.GetTransferRecordReq": {
             "type": "object",
-            "required": [
-                "kubeConfig",
-                "owner"
-            ],
             "properties": {
                 "endTime": {
                     "type": "string",
@@ -840,10 +1299,6 @@ const docTemplate = `{
         },
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
-            "required": [
-                "kubeConfig",
-                "owner"
-            ],
             "properties": {
                 "endTime": {
                     "type": "string",
@@ -888,8 +1343,6 @@ const docTemplate = `{
         "helper.SetPaymentInvoiceReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner",
                 "paymentIDList"
             ],
             "properties": {
@@ -920,8 +1373,6 @@ const docTemplate = `{
         "helper.TransferAmountReq": {
             "type": "object",
             "required": [
-                "kubeConfig",
-                "owner",
                 "toUser"
             ],
             "properties": {
@@ -954,10 +1405,6 @@ const docTemplate = `{
         },
         "helper.UserBaseReq": {
             "type": "object",
-            "required": [
-                "kubeConfig",
-                "owner"
-            ],
             "properties": {
                 "endTime": {
                     "type": "string",

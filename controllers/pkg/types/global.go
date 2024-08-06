@@ -21,8 +21,9 @@ import (
 )
 
 type Account struct {
-	UserUID                 uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
-	ActivityBonus           int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	UserUID       uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
+	ActivityBonus int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	// Discard EncryptBalance and EncryptDeductionBalance
 	EncryptBalance          string    `gorm:"column:encryptBalance;type:text;not null"`
 	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text;not null"`
 	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
