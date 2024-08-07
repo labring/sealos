@@ -14,9 +14,9 @@ export const getPriceBonus = () =>
 
 // handle baidu
 export const uploadConvertData = (newType: number[], url?: string) => {
-  const defaultUrl = 'https://sealos.run/';
+  const defaultUrl = 'https://sealos.run/self-hosting';
   const main_url = url || defaultUrl;
-  const bd_vid = sessionStorage.getItem('bd_vid');
+  const bd_vid = localStorage.getItem('bd_vid');
   if (!bd_vid) {
     return Promise.reject('upload convert data params error');
   }
