@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const path = require('path')
+const path = require('path');
 
 const nextConfig = {
   output: 'standalone',
@@ -12,15 +12,15 @@ const nextConfig = {
         issuer: /\.[jt]sx?$/,
         use: ['@svgr/webpack'] // svg to react component
       }
-    ])
-    config.plugins = [...config.plugins]
-    return config
+    ]);
+    config.plugins = [...config.plugins];
+    return config;
   },
   transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')
   }
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

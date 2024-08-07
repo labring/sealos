@@ -11,7 +11,11 @@
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.8.1",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@sealos/ui": "workspace:^",
+    "framer-motion": "^10.16.4",
     "i18next": "^23.11.5",
     "next": "14.2.5",
     "react": "^18",
