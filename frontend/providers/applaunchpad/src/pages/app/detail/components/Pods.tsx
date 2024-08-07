@@ -118,7 +118,7 @@ const Pods = ({
         <Flex alignItems={'center'} fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
           {item.restarts}
           {!!item.containerStatus.reason && (
-            <Flex alignItems={'center'} color={'rgba(240, 68, 56, 1)'}>
+            <Flex alignItems={'center'} color={item.containerStatus?.color}>
               (<Text>{item.containerStatus?.reason}</Text>)
             </Flex>
           )}
