@@ -381,6 +381,62 @@ func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
 	t.Logf("costAppList: %v", timeRange)
 }
 
+func TestMongoDB_GetConsumptionAmount(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := helper.GetCostAppListReq{
+		Auth: &helper.Auth{
+			Owner: "uy771xun",
+		},
+		Namespace: "ns-uy771xun",
+		AppType:   "APP-STORE",
+		AppName:   "wordpress-nljzdohs",
+		LimitReq: helper.LimitReq{
+			TimeRange: helper.TimeRange{
+				StartTime: time.Now().Add(-24 * time.Hour * 300),
+				EndTime:   time.Now(),
+			},
+			PageSize: 20,
+			Page:     1,
+		},
+	}
+	costs, err := m.GetCostOverview(req)
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("GetCostOverview: %v", costs)
+	amountAll := int64(0)
+	for _, cost := range costs.Overviews {
+		amountAll += cost.Amount
+	}
+	t.Logf("amountAll: %v", amountAll)
+	amount2, err := m.GetConsumptionAmount(helper.ConsumptionRecordReq{
+		Auth: &helper.Auth{
+			Owner: req.Owner,
+		},
+		TimeRange: helper.TimeRange{
+			StartTime: req.StartTime,
+			EndTime:   req.EndTime,
+		},
+		Namespace: req.Namespace,
+		AppType:   req.AppType,
+		AppName:   req.AppName,
+	})
+	if err != nil {
+		t.Fatalf("failed to get cost app list: %v", err)
+	}
+	t.Logf("GetConsumptionAmount: %v", amount2)
+}
+
 func TestMongoDB_GetAppCost1(t *testing.T) {
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")

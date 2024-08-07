@@ -108,7 +108,7 @@ func GetConsumptionAmount(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	amount, err := dao.DBClient.GetConsumptionAmount(req.Owner, req.Namespace, req.AppType, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	amount, err := dao.DBClient.GetConsumptionAmount(*req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
 		return
