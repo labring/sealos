@@ -396,7 +396,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
+                            "$ref": "#/definitions/helper.ConsumptionRecordReq"
                         }
                     }
                 ],
@@ -508,7 +508,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
+                            "$ref": "#/definitions/helper.ConsumptionRecordReq"
                         }
                     }
                 ],
@@ -1088,6 +1088,45 @@ const docTemplate = `{
                 "owner": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.ConsumptionRecordReq": {
+            "type": "object",
+            "properties": {
+                "appName": {
+                    "description": "@Summary App Name\n@Description App Name",
+                    "type": "string",
+                    "example": "app"
+                },
+                "appType": {
+                    "description": "@Summary App type\n@Description App type",
+                    "type": "string",
+                    "example": "app"
+                },
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "@Summary Namespace\n@Description Namespace",
+                    "type": "string",
+                    "example": "ns-admin"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
                 },
                 "userID": {
                     "type": "string",

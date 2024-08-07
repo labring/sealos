@@ -92,7 +92,7 @@ func GetProperties(c *gin.Context) {
 // @Tags ConsumptionAmount
 // @Accept json
 // @Produce json
-// @Param request body helper.UserBaseReq true "User consumption amount request"
+// @Param request body helper.ConsumptionRecordReq true "User consumption amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user consumption amount"
 // @Failure 400 {object} map[string]interface{} "failed to parse user consumption amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
@@ -228,14 +228,14 @@ type CostsResultData struct {
 // @Tags Costs
 // @Accept json
 // @Produce json
-// @Param request body helper.UserBaseReq true "User costs amount request"
+// @Param request body helper.ConsumptionRecordReq true "User costs amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user costs"
 // @Failure 400 {object} map[string]interface{} "failed to parse user hour costs amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user costs"
 // @Router /account/v1alpha1/costs [post]
 func GetCosts(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParseConsumptionRecordReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
 		return
@@ -244,7 +244,7 @@ func GetCosts(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	costs, err := dao.DBClient.GetCosts(req.Auth.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	costs, err := dao.DBClient.GetCosts(*req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost : %v", err)})
 		return

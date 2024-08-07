@@ -27,7 +27,7 @@ import (
 type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
-	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
+	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
@@ -166,31 +166,64 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 	return propertiesQuery, nil
 }
 
-func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error) {
-	filter := bson.M{
-		"type": 0,
-		"time": bson.M{
-			"$gte": startTime,
-			"$lte": endTime,
-		},
-		"owner": user,
+func (m *MongoDB) GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error) {
+	owner, startTime, endTime := req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime
+	appType, appName := req.AppType, req.AppName
+
+	timeMatchValue := bson.D{
+		primitive.E{Key: "$gte", Value: startTime},
+		primitive.E{Key: "$lte", Value: endTime},
 	}
-	cursor, err := m.getBillingCollection().Find(context.Background(), filter, options.Find().SetSort(bson.M{"time": 1}))
+	matchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: owner},
+		primitive.E{Key: "type", Value: 0},
+	}
+
+	if appType != "" {
+		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]})
+	}
+	if req.Namespace != "" {
+		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: req.Namespace})
+	}
+
+	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: matchValue}},
+	}
+
+	project := bson.D{
+		primitive.E{Key: "time", Value: 1},
+		primitive.E{Key: "amount", Value: 1},
+	}
+	if appType != "" && appName != "" && appType != resources.AppStore {
+		pipeline = append(pipeline,
+			bson.D{{Key: "$unwind", Value: "$app_costs"}},
+			bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: appName}}}},
+		)
+		project[1] = primitive.E{Key: "amount", Value: "$app_costs.amount"}
+	}
+
+	pipeline = append(pipeline,
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "time", Value: 1}}}},
+		bson.D{{Key: "$project", Value: project}},
+	)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get billing collection: %v", err)
+		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
 	}
 	defer cursor.Close(context.Background())
-	var (
-		accountBalanceList []struct {
-			Time   time.Time `bson:"time"`
-			Amount int64     `bson:"amount"`
-		}
-	)
-	err = cursor.All(context.Background(), &accountBalanceList)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode all billing record: %w", err)
+
+	var accountBalanceList []struct {
+		Time   time.Time `bson:"time"`
+		Amount int64     `bson:"amount"`
 	}
-	var costsMap = make(common.TimeCostsMap, len(accountBalanceList))
+
+	if err := cursor.All(context.Background(), &accountBalanceList); err != nil {
+		return nil, fmt.Errorf("failed to decode all billing records: %w", err)
+	}
+
+	costsMap := make(common.TimeCostsMap, len(accountBalanceList))
 	for i := range accountBalanceList {
 		costsMap[i] = append(costsMap[i], accountBalanceList[i].Time.Unix())
 		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
