@@ -90,25 +90,37 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
   return {
     ...pod,
     podName: pod.metadata?.name || 'pod name',
-    // @ts-ignore
     status: (() => {
       const container = pod.status?.containerStatuses || [];
       if (container.length > 0) {
         const stateObj = container[0].state;
-        const lasteStateObj = container[0].lastState;
         if (stateObj) {
           const stateKeys = Object.keys(stateObj);
-          const key = stateKeys?.[0] as `${PodStatusEnum}`;
+          const key = stateKeys[0] as `${PodStatusEnum}`;
           if (key === PodStatusEnum.running) {
             return podStatusMap[PodStatusEnum.running];
           }
           if (key && podStatusMap[key]) {
-            const lastStateReason =
-              lasteStateObj && lasteStateObj[key] ? lasteStateObj[key]?.reason : '';
             return {
-              lastStateReason,
               ...podStatusMap[key],
               ...stateObj[key]
+            };
+          }
+        }
+      }
+      return podStatusMap.waiting;
+    })(),
+    containerStatus: (() => {
+      const container = pod.status?.containerStatuses || [];
+      if (container.length > 0) {
+        const lastStateObj = container[0].lastState;
+        if (lastStateObj) {
+          const lastStateKeys = Object.keys(lastStateObj);
+          const key = lastStateKeys[0] as `${PodStatusEnum}`;
+          if (key && podStatusMap[key]) {
+            return {
+              ...podStatusMap[key],
+              ...lastStateObj[key]
             };
           }
         }
