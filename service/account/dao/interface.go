@@ -648,15 +648,16 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 				{Key: "_id", Value: bson.D{
 					{Key: "app_type", Value: "$app_type"},
 					{Key: "app_name", Value: "$app_costs.name"},
+					{Key: "namespace", Value: "$namespace"},
+					{Key: "owner", Value: "$owner"},
 				}},
-				{Key: "namespace", Value: bson.D{{Key: "$first", Value: "$namespace"}}},
-				{Key: "owner", Value: bson.D{{Key: "$first", Value: "$owner"}}},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}}, // 添加一个计数字段
 			}}},
 			{{Key: "$project", Value: bson.D{
 				{Key: "_id", Value: 0},
-				{Key: "namespace", Value: 1},
+				{Key: "namespace", Value: "$_id.namespace"},
 				{Key: "appType", Value: "$_id.app_type"},
-				{Key: "owner", Value: 1},
+				{Key: "owner", Value: "$_id.owner"},
 				{Key: "appName", Value: "$_id.app_name"},
 			}}},
 		}...)
