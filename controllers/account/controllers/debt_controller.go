@@ -172,7 +172,9 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 				return nil
 			}
 		}
-		r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+		if err != nil {
+			r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+		}
 		return ErrAccountNotExist
 	}
 	if account.CreateRegionID == "" {
