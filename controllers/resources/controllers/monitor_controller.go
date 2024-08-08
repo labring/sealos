@@ -569,11 +569,12 @@ func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime t
 	if err != nil {
 		return fmt.Errorf("failed to get object storage flow: %w", err)
 	}
-	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
-	used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
-	if used <= 0 {
+	// Because the obtained traffic includes traffic communicating with the controller, filter out traffic smaller than 1 MB
+	if bytes < 1024*1024 {
 		return nil
 	}
+	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
+	used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
 
 	namespace := "ns-" + strings.SplitN(bucket, "-", 2)[0]
 	ro := resources.Monitor{
