@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect } from 'react'
 import NProgress from 'nprogress'
 import { usePathname } from 'next/navigation'
@@ -8,7 +6,7 @@ import { useGlobalStore } from '@/store/global'
 
 import 'nprogress/nprogress.css'
 
-const MainPage = () => {
+export const RouteHandlerProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
   const { setLastRoute } = useGlobalStore()
 
@@ -35,7 +33,5 @@ const MainPage = () => {
     }
   }, [])
 
-  return <div>test</div>
+  return <div>{children}</div>
 }
-
-export default MainPage

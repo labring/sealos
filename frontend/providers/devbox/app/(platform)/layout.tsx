@@ -1,7 +1,7 @@
 'use client'
 
-import throttle from 'lodash/throttle'
 import { useEffect } from 'react'
+import throttle from 'lodash/throttle'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
 import { useEnvStore } from '@/store/env'
@@ -10,6 +10,7 @@ import { useLoading } from '@/hooks/useLoading'
 import { useConfirm } from '@/hooks/useConfirm'
 import { QueryProvider } from '@/components/providers/queryProvider'
 import { ChakraProvider } from '@/components/providers/chakraProvider'
+import { RouteHandlerProvider } from '@/components/providers/routeHandlerProvider'
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const { Loading } = useLoading()
@@ -66,9 +67,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   return (
     <ChakraProvider>
       <QueryProvider>
-        <ConfirmChild />
-        <Loading loading={loading} />
-        {children}
+        <RouteHandlerProvider>
+          <ConfirmChild />
+          <Loading loading={loading} />
+          {children}
+        </RouteHandlerProvider>
       </QueryProvider>
     </ChakraProvider>
   )

@@ -1356,7 +1356,7 @@ importers:
         version: 4.17.21
       next:
         specifier: 14.2.5
-        version: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)
+        version: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -1369,6 +1369,9 @@ importers:
       react-i18next:
         specifier: ^14.1.2
         version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
+      sass:
+        specifier: ^1.68.0
+        version: 1.69.5
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
@@ -5820,7 +5823,7 @@ packages:
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
       '@emotion/cache': 11.11.0
       '@emotion/react': 11.11.1(@types/react@18.2.37)(react@18.2.0)
-      next: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)
+      next: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
     dev: false
 
@@ -17911,7 +17914,7 @@ packages:
       hoist-non-react-statics: 3.3.2
       i18next: 23.12.1
       i18next-fs-backend: 2.3.1
-      next: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)
+      next: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
       react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
@@ -18198,7 +18201,7 @@ packages:
       - babel-plugin-macros
     dev: false
 
-  /next@14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0):
+  /next@14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5):
     resolution: {integrity: sha512-0f8aRfBVL+mpzfBjYfQuLWh2WyAwtJXCRfkPF4UJ5qd2YwrHczsrSzXU4tRMV0OAxR8ZJZWPFn6uhSC56UTsLA==}
     engines: {node: '>=18.17.0'}
     hasBin: true
@@ -18224,6 +18227,7 @@ packages:
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
+      sass: 1.69.5
       styled-jsx: 5.1.1(@babel/core@7.23.5)(react@18.2.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.5
