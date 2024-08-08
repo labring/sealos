@@ -89,36 +89,48 @@ async function signUp({
   provider,
   id,
   name: nickname,
-  avatar_url
+  avatar_url,
+  userSemChannel
 }: {
   provider: ProviderType;
   id: string;
   name: string;
   avatar_url: string;
+  userSemChannel?: string;
 }) {
+  const name = nanoid(10);
   try {
-    let user: User | null = null;
-    const name = nanoid(10);
-    user = await globalPrisma.user.create({
-      data: {
-        name: name,
-        id: name,
-        nickname: nickname,
-        avatarUri: avatar_url,
-        oauthProvider: {
-          create: {
-            providerId: id,
-            providerType: provider
+    const result = await globalPrisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name: name,
+          id: name,
+          nickname: nickname,
+          avatarUri: avatar_url,
+          oauthProvider: {
+            create: {
+              providerId: id,
+              providerType: provider
+            }
           }
         }
+      });
+
+      if (userSemChannel) {
+        await tx.userSemChannel.create({
+          data: {
+            userUid: user.id,
+            channel: userSemChannel
+          }
+        });
       }
+
+      return { user };
     });
-    if (!user) return null;
-    return {
-      user
-    };
-  } catch (e) {
-    console.log(e);
+
+    return result;
+  } catch (error) {
+    console.error('globalAuth: Error during sign up:', error);
     return null;
   }
 }
@@ -127,33 +139,52 @@ export async function signUpByPassword({
   id,
   name: nickname,
   avatar_url,
-  password
+  password,
+  userSemChannel
 }: {
   id: string;
   name: string;
   avatar_url: string;
   password: string;
+  userSemChannel?: string;
 }) {
   const name = nanoid(10);
-  const user = await globalPrisma.user.create({
-    data: {
-      nickname,
-      avatarUri: avatar_url,
-      id: name,
-      name,
-      oauthProvider: {
-        create: {
-          providerId: id,
-          providerType: ProviderType.PASSWORD,
-          password: hashPassword(password)
+
+  try {
+    const result = await globalPrisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          nickname,
+          avatarUri: avatar_url,
+          id: name,
+          name,
+          oauthProvider: {
+            create: {
+              providerId: id,
+              providerType: ProviderType.PASSWORD,
+              password: hashPassword(password)
+            }
+          }
         }
+      });
+
+      if (userSemChannel) {
+        await tx.userSemChannel.create({
+          data: {
+            userUid: user.id,
+            channel: userSemChannel
+          }
+        });
       }
-    }
-  });
-  if (!user) return null;
-  return {
-    user
-  };
+
+      return { user };
+    });
+
+    return result;
+  } catch (error) {
+    console.error('globalAuth: Error during sign up:', error);
+    return null;
+  }
 }
 
 export async function updatePassword({ id, password }: { id: string; password: string }) {
@@ -179,13 +210,15 @@ export async function findUser({ userUid }: { userUid: string }) {
     }
   });
 }
+
 export const getGlobalToken = async ({
   provider,
   providerId,
   name,
   avatar_url,
   password,
-  inviterId
+  inviterId,
+  userSemChannel
 }: {
   provider: ProviderType;
   providerId: string;
@@ -193,6 +226,7 @@ export const getGlobalToken = async ({
   avatar_url: string;
   password?: string;
   inviterId?: string;
+  userSemChannel?: string;
 }) => {
   let user: User | null = null;
 
@@ -214,7 +248,8 @@ export const getGlobalToken = async ({
         id: providerId,
         name,
         avatar_url,
-        password
+        password,
+        userSemChannel
       });
       result && (user = result.user);
       if (inviterId && result) {
@@ -240,7 +275,8 @@ export const getGlobalToken = async ({
         provider,
         id: providerId,
         name,
-        avatar_url
+        avatar_url,
+        userSemChannel
       });
       result && (user = result.user);
       if (inviterId && result) {

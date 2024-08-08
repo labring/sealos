@@ -40,12 +40,18 @@ export const filterEmailParams = async (
 export const filterPhoneVerifyParams = (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { phoneNumbers: string; code: string; inviterId?: string }) => void
+  next: (data: {
+    phoneNumbers: string;
+    code: string;
+    inviterId?: string;
+    userSemChannel?: string;
+  }) => void
 ) =>
   filterPhoneParams(req, res, async (data) => {
-    const { code, inviterId } = req.body as {
+    const { code, inviterId, userSemChannel } = req.body as {
       code?: string;
       inviterId?: string;
+      userSemChannel?: string;
     };
     if (!code)
       return jsonRes(res, {
@@ -57,7 +63,8 @@ export const filterPhoneVerifyParams = (
       next({
         ...data,
         code,
-        inviterId
+        inviterId,
+        userSemChannel
       })
     );
   });
