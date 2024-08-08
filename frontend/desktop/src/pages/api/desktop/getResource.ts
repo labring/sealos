@@ -1,12 +1,10 @@
 import { verifyAccessToken } from '@/services/backend/auth';
-import { K8sApiDefault, getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
-import { CRDMeta, K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
+import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
+import { K8sApi } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { NotificationItem } from '@/types';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
 import * as k8s from '@kubernetes/client-node';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

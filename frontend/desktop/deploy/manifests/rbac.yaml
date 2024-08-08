@@ -3,15 +3,15 @@ kind: ClusterRole
 metadata:
   name: auth-system-manager-role
 rules:
-  - apiGroups: ['user.sealos.io']
-    resources: ['users']
-    verbs: ['list', 'get', 'create', 'update', 'patch', 'watch']
-  - apiGroups: ['user.sealos.io']
-    resources: ['users/status']
-    verbs: ['list', 'get', 'create', 'update', 'patch', 'watch']
-  - apiGroups: ['user.sealos.io']
-    resources: ['operationrequests', 'deleterequests']
-    verbs: ['create', 'get']
+  - apiGroups: ["user.sealos.io"]
+    resources: ["users"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: ["user.sealos.io"]
+    resources: ["users/status"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: ["user.sealos.io"]
+    resources: ["operationrequests", "deleterequests"]
+    verbs: ["create", "get"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -59,10 +59,10 @@ metadata:
   name: recharge-gift-cm-reader
   namespace: sealos
 rules:
-  - apiGroups: [''] # "" indicates the core API group
-    resources: ['configmaps']
-    resourceNames: ['recharge-gift']
-    verbs: ['get', 'watch', 'list']
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["configmaps"]
+    resourceNames: ["recharge-gift"]
+    verbs: ["get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -83,12 +83,12 @@ kind: ClusterRole
 metadata:
   name: account-editor-role
 rules:
-  - apiGroups: ['account.sealos.io']
-    resources: ['accounts']
-    verbs: ['list', 'get', 'create', 'update', 'patch', 'watch']
-  - apiGroups: ['notification.sealos.io']
-    resources: ['notifications']
-    verbs: ['list', 'get', 'create', 'update', 'patch', 'watch']
+  - apiGroups: ["account.sealos.io"]
+    resources: ["accounts"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: ["notification.sealos.io"]
+    resources: ["notifications"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

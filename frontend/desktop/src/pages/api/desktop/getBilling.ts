@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         prevDayTime: results[1].amount || 0
       }
     });
-  } catch (err) {
-    jsonRes(res, { code: 500, data: err });
+  } catch (err: any) {
+    jsonRes(res, { code: 500, data: err?.body });
   }
 }

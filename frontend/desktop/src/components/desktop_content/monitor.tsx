@@ -9,7 +9,9 @@ import { blurBackgroundStyles } from './index';
 export default function Monitor({ needStyles = true }: { needStyles?: boolean }) {
   const { t } = useTranslation();
   const { data } = useQuery(['appListQuery'], getResource, {
-    cacheTime: 5 * 60 * 1000
+    cacheTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const info = [

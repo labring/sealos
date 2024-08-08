@@ -97,11 +97,11 @@ export type TAppCRList = {
   metadata: { continue: string; resourceVersion: string };
 };
 
-export type NotificationItem = {
+export type NotificationCR = {
   metadata: {
     creationTimestamp: string;
     labels: {
-      isRead: string;
+      isRead?: string;
       [LicenseFrontendKey]?: string;
     };
     name: string;
@@ -120,6 +120,24 @@ export type NotificationItem = {
         message: string;
         title: string;
       };
+    };
+  };
+};
+
+export type TNotification = {
+  uid: string;
+  name: string;
+  namespace: string;
+  creationTimestamp: string;
+  isRead: boolean;
+  licenseFrontend?: string;
+  timestamp: number;
+  desktopPopup: boolean;
+  i18n: {
+    [key in string]: {
+      from: string;
+      message: string;
+      title: string;
     };
   };
 };
