@@ -27,12 +27,20 @@
     "clusterversions",
     "dataprotection",
     "devbox",
+    "immer",
     "kubeblocks",
+    "kubeconfig",
+    "kubernet",
+    "nprogress",
+    "openai",
     "Parens",
     "rolebinding",
     "sealos",
     "svgr",
+    "tanstack",
     "weixin",
-    "yalc"
+    "yalc",
+    "zustand"
   ],
+  "typescript.tsdk": "node_modules\\typescript\\lib",
 }
