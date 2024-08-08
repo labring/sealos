@@ -27,14 +27,14 @@ import (
 type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
-	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
+	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
 	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
 	GetBasicCostDistribution(req helper.GetCostAppListReq) (map[string]int64, error)
 	GetCostAppList(req helper.GetCostAppListReq) (helper.CostAppListResp, error)
 	Disconnect(ctx context.Context) error
-	GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error)
+	GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error)
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
@@ -166,31 +166,64 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 	return propertiesQuery, nil
 }
 
-func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error) {
-	filter := bson.M{
-		"type": 0,
-		"time": bson.M{
-			"$gte": startTime,
-			"$lte": endTime,
-		},
-		"owner": user,
+func (m *MongoDB) GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error) {
+	owner, startTime, endTime := req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime
+	appType, appName := req.AppType, req.AppName
+
+	timeMatchValue := bson.D{
+		primitive.E{Key: "$gte", Value: startTime},
+		primitive.E{Key: "$lte", Value: endTime},
 	}
-	cursor, err := m.getBillingCollection().Find(context.Background(), filter, options.Find().SetSort(bson.M{"time": 1}))
+	matchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: owner},
+		primitive.E{Key: "type", Value: 0},
+	}
+
+	if appType != "" {
+		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]})
+	}
+	if req.Namespace != "" {
+		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: req.Namespace})
+	}
+
+	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: matchValue}},
+	}
+
+	project := bson.D{
+		primitive.E{Key: "time", Value: 1},
+		primitive.E{Key: "amount", Value: 1},
+	}
+	if appType != "" && appName != "" && appType != resources.AppStore {
+		pipeline = append(pipeline,
+			bson.D{{Key: "$unwind", Value: "$app_costs"}},
+			bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: appName}}}},
+		)
+		project[1] = primitive.E{Key: "amount", Value: "$app_costs.amount"}
+	}
+
+	pipeline = append(pipeline,
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "time", Value: 1}}}},
+		bson.D{{Key: "$project", Value: project}},
+	)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get billing collection: %v", err)
+		return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
 	}
 	defer cursor.Close(context.Background())
-	var (
-		accountBalanceList []struct {
-			Time   time.Time `bson:"time"`
-			Amount int64     `bson:"amount"`
-		}
-	)
-	err = cursor.All(context.Background(), &accountBalanceList)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode all billing record: %w", err)
+
+	var accountBalanceList []struct {
+		Time   time.Time `bson:"time"`
+		Amount int64     `bson:"amount"`
 	}
-	var costsMap = make(common.TimeCostsMap, len(accountBalanceList))
+
+	if err := cursor.All(context.Background(), &accountBalanceList); err != nil {
+		return nil, fmt.Errorf("failed to decode all billing records: %w", err)
+	}
+
+	costsMap := make(common.TimeCostsMap, len(accountBalanceList))
 	for i := range accountBalanceList {
 		costsMap[i] = append(costsMap[i], accountBalanceList[i].Time.Unix())
 		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
@@ -462,10 +495,6 @@ func (m *MongoDB) getAppStoreCosts(matchConditions bson.D, skip, limit int) (*co
 	return &results, nil
 }
 
-func (m *MongoDB) GetConsumptionAmount(user, namespace, appType string, startTime, endTime time.Time) (int64, error) {
-	return m.getAmountWithType(0, user, namespace, appType, startTime, endTime)
-}
-
 func (m *MongoDB) GetCostOverview(req helper.GetCostAppListReq) (resp helper.CostOverviewResp, rErr error) {
 	appResp, err := m.GetCostAppList(req)
 	if err != nil {
@@ -474,7 +503,7 @@ func (m *MongoDB) GetCostOverview(req helper.GetCostAppListReq) (resp helper.Cos
 	}
 	resp.LimitResp = appResp.LimitResp
 	for _, app := range appResp.Apps {
-		totalAmount, err := m.GetTotalAppCost(req.Owner, app.Namespace, app.AppName, app.AppType)
+		totalAmount, err := m.getTotalAppCost(req, app)
 		if err != nil {
 			rErr = fmt.Errorf("failed to get total app cost: %w", err)
 			return
@@ -489,18 +518,41 @@ func (m *MongoDB) GetCostOverview(req helper.GetCostAppListReq) (resp helper.Cos
 	return
 }
 
-func (m *MongoDB) GetTotalAppCost(owner string, namespace string, appName string, appType uint8) (int64, error) {
+func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostApp) (int64, error) {
+	owner := req.Owner
+	namespace := app.Namespace
+	appName := app.AppName
+	appType := app.AppType
+	if req.StartTime.IsZero() {
+		req.StartTime = time.Now().UTC().Add(-time.Hour * 24 * 30)
+		req.EndTime = time.Now().UTC()
+	}
+	match := bson.M{
+		"owner":          owner,
+		"namespace":      namespace,
+		"app_costs.name": appName,
+		"app_type":       appType,
+		"time": bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		},
+	}
+	appStoreMatch := bson.M{
+		"owner":     owner,
+		"namespace": namespace,
+		"app_name":  appName,
+		"app_type":  appType,
+		"time": bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		},
+	}
 	var pipeline mongo.Pipeline
 
 	if appType == resources.AppType[resources.AppStore] {
 		// If appType is 8, match app_name and app_type directly
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: bson.D{
-				{Key: "owner", Value: owner},
-				{Key: "namespace", Value: namespace},
-				{Key: "app_name", Value: appName},
-				{Key: "app_type", Value: appType},
-			}}},
+			{{Key: "$match", Value: appStoreMatch}},
 			{{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: nil},
 				{Key: "totalAmount", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
@@ -509,12 +561,7 @@ func (m *MongoDB) GetTotalAppCost(owner string, namespace string, appName string
 	} else {
 		// Otherwise, match inside app_costs
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: bson.D{
-				{Key: "owner", Value: owner},
-				{Key: "namespace", Value: namespace},
-				{Key: "app_costs.name", Value: appName},
-				{Key: "app_type", Value: appType},
-			}}},
+			{{Key: "$match", Value: match}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$match", Value: bson.D{
 				{Key: "app_costs.name", Value: appName},
@@ -601,15 +648,16 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 				{Key: "_id", Value: bson.D{
 					{Key: "app_type", Value: "$app_type"},
 					{Key: "app_name", Value: "$app_costs.name"},
+					{Key: "namespace", Value: "$namespace"},
+					{Key: "owner", Value: "$owner"},
 				}},
-				{Key: "namespace", Value: bson.D{{Key: "$first", Value: "$namespace"}}},
-				{Key: "owner", Value: bson.D{{Key: "$first", Value: "$owner"}}},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}}, // 添加一个计数字段
 			}}},
 			{{Key: "$project", Value: bson.D{
 				{Key: "_id", Value: 0},
-				{Key: "namespace", Value: 1},
+				{Key: "namespace", Value: "$_id.namespace"},
 				{Key: "appType", Value: "$_id.app_type"},
-				{Key: "owner", Value: 1},
+				{Key: "owner", Value: "$_id.owner"},
 				{Key: "appName", Value: "$_id.app_name"},
 			}}},
 		}...)
@@ -987,29 +1035,36 @@ func (m *MongoDB) Disconnect(ctx context.Context) error {
 	return m.Client.Disconnect(ctx)
 }
 
-func (m *MongoDB) getAmountWithType(_type int64, user, namespace, _appType string, startTime, endTime time.Time) (int64, error) {
+func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error) {
+	owner, namespace, appType, appName, startTime, endTime := req.Owner, req.Namespace, req.AppType, req.AppName, req.TimeRange.StartTime, req.TimeRange.EndTime
 	timeMatchValue := bson.D{primitive.E{Key: "$gte", Value: startTime}, primitive.E{Key: "$lte", Value: endTime}}
 	matchValue := bson.D{
 		primitive.E{Key: "time", Value: timeMatchValue},
-		primitive.E{Key: "owner", Value: user},
-		primitive.E{Key: "type", Value: _type},
+		primitive.E{Key: "owner", Value: owner},
+	}
+	if appType != "" {
+		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]})
 	}
 	if namespace != "" {
 		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: namespace})
 	}
-	if _appType != "" {
-		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(_appType)]})
+	unwindMatchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
 	}
-	matchStage := bson.D{
-		primitive.E{
-			Key: "$match", Value: matchValue,
-		},
+	if appType != "" && appName != "" {
+		if appType != resources.AppStore {
+			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_costs.name", Value: appName})
+		} else {
+			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_name", Value: appName})
+		}
 	}
 	pipeline := bson.A{
-		matchStage,
+		bson.D{{Key: "$match", Value: matchValue}},
+		bson.D{{Key: "$unwind", Value: "$app_costs"}},
+		bson.D{{Key: "$match", Value: unwindMatchValue}},
 		bson.D{{Key: "$group", Value: bson.M{
 			"_id":   nil,
-			"total": bson.M{"$sum": "$amount"},
+			"total": bson.M{"$sum": "$app_costs.amount"},
 		}}},
 	}
 

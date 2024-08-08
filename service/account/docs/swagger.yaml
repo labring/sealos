@@ -79,6 +79,41 @@ definitions:
         example: admin
         type: string
     type: object
+  helper.ConsumptionRecordReq:
+    properties:
+      appName:
+        description: |-
+          @Summary App Name
+          @Description App Name
+        example: app
+        type: string
+      appType:
+        description: |-
+          @Summary App type
+          @Description App type
+        example: app
+        type: string
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      namespace:
+        description: |-
+          @Summary Namespace
+          @Description Namespace
+        example: ns-admin
+        type: string
+      owner:
+        example: admin
+        type: string
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
+        type: string
+    type: object
   helper.CostApp:
     properties:
       appName:
@@ -636,7 +671,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserBaseReq'
+          $ref: '#/definitions/helper.ConsumptionRecordReq'
       produces:
       - application/json
       responses:
@@ -712,7 +747,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserBaseReq'
+          $ref: '#/definitions/helper.ConsumptionRecordReq'
       produces:
       - application/json
       responses:
