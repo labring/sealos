@@ -101,7 +101,7 @@ async function signUp({
   const name = nanoid(10);
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
+      const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
@@ -119,7 +119,7 @@ async function signUp({
       if (userSemChannel) {
         await tx.userSemChannel.create({
           data: {
-            userUid: user.id,
+            userUid: user.uid,
             channel: userSemChannel
           }
         });
@@ -152,7 +152,7 @@ export async function signUpByPassword({
 
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
+      const user: User = await tx.user.create({
         data: {
           nickname,
           avatarUri: avatar_url,
@@ -171,7 +171,7 @@ export async function signUpByPassword({
       if (userSemChannel) {
         await tx.userSemChannel.create({
           data: {
-            userUid: user.id,
+            userUid: user.uid,
             channel: userSemChannel
           }
         });
