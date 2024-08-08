@@ -42,7 +42,8 @@ export default function Cost() {
       request<any, ApiResp<{ balance: number; deductionBalance: number }>>(
         '/api/account/getAmount'
       ),
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 60 * 1000
   });
 
   const { data: billing, isSuccess } = useQuery(['getUserBilling'], () => getUserBilling(), {
