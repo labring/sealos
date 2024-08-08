@@ -29,6 +29,8 @@ import (
 
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 
+	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -143,6 +145,12 @@ func InitIndexField(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
 		pvc := rawObj.(*corev1.PersistentVolumeClaim)
 		return []string{string(pvc.Status.Phase)}
+	}); err != nil {
+		return err
+	}
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
+		backup := rawObj.(*kbv1alpha1.Backup)
+		return []string{string(backup.Status.Phase)}
 	}); err != nil {
 		return err
 	}
@@ -434,20 +442,22 @@ func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed ma
 }
 
 func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
-	if r.ObjStorageUserBackupSize == nil {
-		return nil
+	backupList := &kbv1alpha1.BackupList{}
+	if err := r.List(context.Background(), backupList, &client.ListOptions{
+		Namespace:     namespace,
+		FieldSelector: fields.OneTermEqualSelector("status.phase", string(kbv1alpha1.BackupPhaseCompleted)),
+	}); err != nil {
+		return fmt.Errorf("failed to list backup: %v", err)
 	}
-	backupSize := r.ObjStorageUserBackupSize[getBackupObjectStorageName(namespace)]
-	if backupSize <= 0 {
-		return nil
+	for i := range backupList.Items {
+		backup := &backupList.Items[i]
+		backupRes := resources.NewResourceNamed(backup)
+		if resUsed[backupRes.String()] == nil {
+			resNamed[backupRes.String()] = backupRes
+			resUsed[backupRes.String()] = initResources()
+		}
+		resUsed[backupRes.String()][corev1.ResourceStorage].Add(resource.MustParse(backup.Status.TotalSize))
 	}
-
-	backupRes := resources.NewObjStorageResourceNamed("DB-BACKUP")
-	if resUsed[backupRes.String()] == nil {
-		resNamed[backupRes.String()] = backupRes
-		resUsed[backupRes.String()] = initResources()
-	}
-	resUsed[backupRes.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(backupSize, resource.BinarySI))
 	return nil
 }
 
@@ -479,10 +489,6 @@ func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUse
 		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI))
 	}
 	return nil
-}
-
-func getBackupObjectStorageName(namespace string) string {
-	return strings.TrimPrefix(namespace, "ns-")
 }
 
 func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]*quantity) (bool, map[uint8]int64) {
