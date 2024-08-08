@@ -8,9 +8,10 @@ import CronJobList from './components/cronjobList';
 import DBList from './components/dbList';
 import Header from './components/header';
 import OtherList from './components/otherList';
+import ObjStorageList from './components/objStorageList';
 
 export default function MyApp() {
-  const { setInstanceName, instanceName } = useResourceStore();
+  const { setInstanceName, instanceName, resource } = useResourceStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function MyApp() {
       <Box flex={1} px="32px" overflow={'auto'} pt="33px" py="40px">
         <AppList instanceName={instanceName} />
         <DBList instanceName={instanceName} />
+        <ObjStorageList instanceName={instanceName} />
         <CronJobList instanceName={instanceName} />
         <OtherList instanceName={instanceName} />
       </Box>

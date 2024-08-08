@@ -208,5 +208,6 @@
   "Please Enter": "请输入",
   "Delete successful": "删除成功",
   "Delete Failed": "删除失败",
-  "Description": "描述"
+  "Description": "描述",
+  "permission": "权限"
 }

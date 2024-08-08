@@ -12,7 +12,7 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
-export const refetchIntervalTime = 3000;
+export const refetchIntervalTime = 10 * 1000;
 
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
