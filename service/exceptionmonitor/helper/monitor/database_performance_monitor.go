@@ -118,7 +118,7 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 	}
 	if usage >= threshold && !monitorMap[UID] {
 		alertMessage := notification.GetNotificationMessage(info)
-		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+		if err := notification.SendFeishuNotification(info, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
 		monitorMap[UID] = true
@@ -132,7 +132,7 @@ func processUsage(usage float64, threshold float64, performanceType, UID string,
 	} else if usage < threshold && monitorMap[UID] {
 		info.NotificationType = "recovery"
 		alertMessage := notification.GetNotificationMessage(info)
-		if err := notification.SendFeishuNotification(alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+		if err := notification.SendFeishuNotification(info, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
 		delete(monitorMap, UID)

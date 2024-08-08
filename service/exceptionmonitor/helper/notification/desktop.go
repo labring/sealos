@@ -31,7 +31,7 @@ func randString(n int) (string, error) {
 	return string(b), nil
 }
 
-func CreateNotification(namespace, name, status, notificationMessage string) {
+func CreateNotification(namespace, name, status, notificationMessage, zhNotificationMessage string) {
 	gvr := schema.GroupVersionResource{
 		Group:    "notification.sealos.io",
 		Version:  "v1",
@@ -40,7 +40,8 @@ func CreateNotification(namespace, name, status, notificationMessage string) {
 
 	randomSuffix, _ := randString(5)
 	now := time.Now().UTC().Unix()
-	message := fmt.Sprintf("database : %s is %s. Please check in time.", name, status)
+	message := fmt.Sprintf("Because %s , Database %s current status : %s , Please check in time.", notificationMessage, name, status)
+	zhMessage := fmt.Sprintf("因为 %s , 数据库 %s 当前状态 : %s , 请及时检查.", zhNotificationMessage, name, status)
 	notification := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "notification.sealos.io/v1",
@@ -56,10 +57,10 @@ func CreateNotification(namespace, name, status, notificationMessage string) {
 				"importance":   "High",
 				"desktopPopup": true,
 				"i18ns": map[string]interface{}{
-					"en": map[string]interface{}{
-						"title":   "Database Exception",
-						"message": notificationMessage,
-						"from":    "Database Exception",
+					"zh": map[string]interface{}{
+						"title":   "数据库异常告警",
+						"message": zhMessage,
+						"from":    "数据库异常",
 					},
 				},
 			},

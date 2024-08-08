@@ -1,15 +1,24 @@
 package notification
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"log"
+	"regexp"
+	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
+	lark "github.com/larksuite/oapi-sdk-go/v3"
+	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
+	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 )
 
 const ExceptionType = "exception"
+
+var (
+	feiShuClient *lark.Client
+)
 
 type Info struct {
 	DatabaseClusterName string
@@ -24,6 +33,10 @@ type Info struct {
 	MemUsage            string
 	PerformanceType     string
 	ExceptionType       string
+}
+
+func InitFeishuClient() {
+	feiShuClient = lark.NewClient(api.APPID, api.APPSECRET)
 }
 
 func GetNotificationMessage(notificationInfo Info) string {
@@ -125,6 +138,16 @@ func GetNotificationMessage(notificationInfo Info) string {
 			}
 			elements = append(elements, exceptionElements...)
 		}
+		exceptionElements := []map[string]interface{}{
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("数据库恢复时间：%s", time.Now().Add(8*time.Hour).Format("2006-01-02 15:04:05")),
+					"tag":     "lark_md",
+				},
+			},
+		}
+		elements = append(elements, exceptionElements...)
 	}
 	card := map[string]interface{}{
 		"config": map[string]bool{
@@ -148,48 +171,102 @@ func GetNotificationMessage(notificationInfo Info) string {
 	return string(databaseMessage)
 }
 
-func SendFeishuNotification(message, feishuWebHook string) error {
-	//log.Print(message, feishuWebHook)
+func SendFeishuNotification(notification Info, message, feishuWebHook string) error {
 	if api.MonitorType != "all" {
 		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
 
-	// Create a map to hold the POST request body
-	bodyMap := map[string]interface{}{
-		"msg_type": "interactive",
-		"card":     message,
-	}
+	messageIDMap := getMessageIDMap(notification.PerformanceType)
 
-	// Convert the map to a JSON byte slice
-	bodyBytes, err := json.Marshal(bodyMap)
+	if messageID, ok := messageIDMap[notification.DatabaseClusterName]; ok {
+		if err := updateFeishuNotification(messageID, message); err != nil {
+			return err
+		}
+		delete(messageIDMap, notification.DatabaseClusterName)
+	} else {
+		if err := createFeishuNotification(notification, message, feishuWebHook, messageIDMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getMessageIDMap(performanceType string) map[string]string {
+	switch performanceType {
+	case "磁盘":
+		return api.DatabaseDiskMessageIDMap
+	case "内存":
+		return api.DatabaseMemMessageIDMap
+	case "CPU":
+		return api.DatabaseCPUMessageIDMap
+	case "Backup":
+		return api.DatabaseBackupMessageIDMap
+	default:
+		return api.DatabaseStatusMessageIDMap
+	}
+}
+
+func updateFeishuNotification(messageID, message string) error {
+	req := larkim.NewPatchMessageReqBuilder().
+		MessageId(messageID).
+		Body(larkim.NewPatchMessageReqBodyBuilder().
+			Content(message).Build()).Build()
+
+	fmt.Println(messageID)
+	resp, err := feiShuClient.Im.Message.Patch(context.Background(), req)
 	if err != nil {
+		log.Println("Error:", err)
 		return err
 	}
 
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", feishuWebHook, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return err
-	}
-
-	// Set the request header
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request using the default client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Print the status and response body
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
+	if !resp.Success() {
+		log.Println("Error:", resp.Code, resp.Msg, resp.RequestId())
 		return err
 	}
 	return nil
+}
+
+func createFeishuNotification(notification Info, message, feishuWebHook string, messageIDMap map[string]string) error {
+	req := larkim.NewCreateMessageReqBuilder().
+		ReceiveIdType("chat_id").
+		Body(larkim.NewCreateMessageReqBodyBuilder().
+			ReceiveId(feishuWebHook).
+			MsgType("interactive").
+			Content(message).Build()).Build()
+
+	resp, err := feiShuClient.Im.Message.Create(context.Background(), req)
+
+	if err != nil {
+		log.Println("Error:", err)
+		return err
+	}
+
+	if !resp.Success() {
+		log.Println("Error:", resp.Code, resp.Msg, resp.RequestId())
+		return err
+	}
+
+	respStr := larkcore.Prettify(resp)
+	messageID := extractAndPrintMessageID(respStr)
+	if notification.DatabaseClusterName == "Backup" {
+		return nil
+	}
+	if messageID == "" {
+		log.Printf("send databaseName %s feishu notification, return no messageID", notification.DatabaseClusterName)
+	} else {
+		messageIDMap[notification.DatabaseClusterName] = messageID
+	}
+	fmt.Println(messageIDMap)
+	return nil
+}
+
+func extractAndPrintMessageID(str string) string {
+	re := regexp.MustCompile(`MessageId:\s*"([^"]+)"`)
+	match := re.FindStringSubmatch(str)
+	if len(match) > 1 {
+		return match[1]
+	}
+	return ""
 }
 
 func createCard(headerTemplate, headerTitle string, elements []map[string]string) map[string]interface{} {

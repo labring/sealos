@@ -48,6 +48,7 @@ var (
 	MemMonitorNamespaceMap            = make(map[string]bool)
 	LastBackupStatusMap               = make(map[string]string)
 	IsSendBackupStatusMap             = make(map[string]string)
+	DatabaseNamespaceMap              = make(map[string]string)
 	ExceededQuotaException            = "exceeded quota"
 	DiskException                     = "Writing to log file failed"
 	OwnerLabel                        = "user.sealos.io/owner"
@@ -67,11 +68,20 @@ var (
 	DatabaseExceptionMonitorThreshold float64
 	DatabaseCPUMonitorThreshold       float64
 	DatabaseMemMonitorThreshold       float64
+	APPID                             string
+	APPSECRET                         string
+	DatabaseStatusMessageIDMap        = make(map[string]string)
+	DatabaseDiskMessageIDMap          = make(map[string]string)
+	DatabaseCPUMessageIDMap           = make(map[string]string)
+	DatabaseMemMessageIDMap           = make(map[string]string)
+	DatabaseBackupMessageIDMap        = make(map[string]string)
 )
 
 func GetENV() error {
 	var missingEnvVars []string
 
+	APPID = getEnvWithCheck("APPID", &missingEnvVars)
+	APPSECRET = getEnvWithCheck("APPSECRET", &missingEnvVars)
 	BaseURL = getEnvWithCheck("BaseURL", &missingEnvVars)
 	ClusterName = getEnvWithCheck("ClusterName", &missingEnvVars)
 	MonitorType = getEnvWithCheck("MonitorType", &missingEnvVars)
