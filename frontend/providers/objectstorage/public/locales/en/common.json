@@ -21,5 +21,10 @@
   "Custom Domain": "Custom Domain",
   "Disable Hosting": "Disable Hosting",
   "Effective": "Effective",
-  "Unable to Access": "Unable to Access"
+  "name": "Name",
+  "confirm": "Confirm",
+  "reset": "Reset",
+  "cancel": "Cancel",
+  "Unable to Access": "Unable to Access",
+  "reset_error": "Reset Error"
 }

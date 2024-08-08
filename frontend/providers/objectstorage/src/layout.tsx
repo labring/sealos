@@ -11,7 +11,7 @@ export default function Home({ children }: any) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <Flex w="100vw" h="100vh" bgColor={'#F2F2F4'}>
+        <Flex w="100vw" h="100vh" bgColor={'grayModern.100'}>
           {children}
         </Flex>
       </main>

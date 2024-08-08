@@ -5,6 +5,7 @@ import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
 import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { Session } from 'inspector';
 import { appWithTranslation, i18n, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
@@ -27,7 +28,7 @@ function App({ Component, pageProps }: AppProps) {
   const client = useOssStore((s) => s.client);
   // const setSession = useSessionStore((s) => s.setSession);
   const { session: oldSession, setSession } = useSessionStore();
-  const clearClient = useOssStore((s) => s.clearClient);
+  const { clearClient, setSecret, secret } = useOssStore((s) => s);
   const router = useRouter();
   useEffect(() => {
     createSealosApp();
@@ -44,11 +45,7 @@ function App({ Component, pageProps }: AppProps) {
         await changeI18n({
           currentLanguage: lang.lng
         });
-      } catch (error) {
-        // changeI18n({
-        //   currentLanguage: i18n.options.missingKeyNoValueFallbackToKey
-        // });
-      }
+      } catch (error) {}
     })();
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
   }, []);
@@ -60,10 +57,22 @@ function App({ Component, pageProps }: AppProps) {
         if (oldSession?.kubeconfig === session.kubeconfig && client) return;
         setSession(session);
         const userInit = await queryClient.fetchQuery([QueryKey.bucketUser, { session }], initUser);
-        const accessKeyId = userInit?.secret?.CONSOLE_ACCESS_KEY;
-        const secretAccessKey = userInit?.secret?.CONSOLE_SECRET_KEY;
-        const external = userInit?.secret?.external;
+        userInit?.secret && setSecret(userInit.secret);
+      } catch (error) {}
+    };
+    initApp();
+  }, [oldSession?.kubeconfig]);
+
+  useEffect(() => {
+    const initClient = async () => {
+      if (secret) {
+        const accessKeyId = secret.CONSOLE_ACCESS_KEY;
+        const secretAccessKey = secret.CONSOLE_SECRET_KEY;
+        const external = secret.external;
         if (!accessKeyId || !secretAccessKey || !external) return;
+        if (secret.specVersion > secret.version) {
+          return;
+        }
         initMinioClient({
           credentials: {
             accessKeyId,
@@ -73,11 +82,13 @@ function App({ Component, pageProps }: AppProps) {
           forcePathStyle: true,
           region: 'us-east-1'
         });
-        await queryClient.invalidateQueries();
-      } catch (error) {}
+        queryClient.invalidateQueries();
+      } else {
+        clearClient();
+      }
     };
-    initApp();
-  }, [queryClient, client]);
+    initClient();
+  }, [secret, oldSession]);
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>

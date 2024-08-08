@@ -51,9 +51,12 @@ const ConfigHeader = ({
       </Flex>
       <Flex gap={'16px'}>
         <Button
-          px="43px"
-          py="10.5px"
-          variant={'secondary'}
+          px="20px"
+          py="10px"
+          fontWeight={'500'}
+          variant={'outline'}
+          size={'md'}
+          color={'grayModern.600'}
           isDisabled={isSubmitting}
           onClick={(e) => {
             e.preventDefault();
@@ -62,7 +65,16 @@ const ConfigHeader = ({
         >
           {t('export')} Yaml
         </Button>
-        <Button px="43px" type="submit" py="10.5px" isDisabled={isSubmitting} variant={'primary'}>
+        <Button
+          px="42.5px"
+          type="submit"
+          py="10px"
+          isDisabled={isSubmitting}
+          // variant={'solid'}
+          size={'md'}
+          fontWeight={'500'}
+          backgroundColor={'grayModern.900'}
+        >
           {t('application')}
         </Button>
       </Flex>

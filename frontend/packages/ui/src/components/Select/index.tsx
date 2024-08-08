@@ -7,7 +7,8 @@ import {
   Button,
   useDisclosure,
   useOutsideClick,
-  MenuButton
+  MenuButton,
+  Flex
 } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
@@ -93,15 +94,7 @@ const MySelect = (
               })}
           {...props}
         >
-          {activeMenu ? (
-            <>
-              <Box>{activeMenu.label}</Box>
-            </>
-          ) : (
-            <>
-              <Box>{placeholder}</Box>
-            </>
-          )}
+          <Flex justifyContent={'flex-start'}>{activeMenu ? activeMenu.label : placeholder}</Flex>
         </MenuButton>
 
         <MenuList
