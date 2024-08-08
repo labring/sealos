@@ -1,0 +1,19 @@
+[Unit]
+Description=sealos containerd shim
+
+[Service]
+ExecStart=/usr/bin/cri-shim --cri-socket=unix:///var/run/containerd/containerd.sock --shim-socket=/var/run/sealos/cri-shim.sock
+Restart=always
+StartLimitInterval=0
+RestartSec=10
+LimitNOFILE=1048576
+# Having non-zero Limit*s causes performance problems due to accounting overhead
+# in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNPROC=infinity
+LimitCORE=infinity
+LimitNOFILE=1048576
+# Comment TasksMax if your systemd version does not supports it.
+# Only systemd 226 and above support this version.
+TasksMax=infinity
+[Install]
+WantedBy=multi-user.target

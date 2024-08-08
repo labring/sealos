@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: docker.io/lingdie/nginx:dev-slim
+    command:
+      - sleep 36000
