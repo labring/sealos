@@ -1,8 +1,4 @@
-import { customAlphabet } from 'nanoid'
-
 import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
-
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 export enum RuntimeEnum {
   java = 'java',
@@ -71,28 +67,8 @@ export const defaultDevboxEditValue: DevboxEditType = {
   devboxName: '',
   runTime: RuntimeEnum.java,
   runTimeVersion: '',
-  envs: [],
   cpu: CpuSlideMarkList[1].value,
-  memory: MemorySlideMarkList[1].value,
-  networks: [
-    {
-      networkName: '',
-      portName: nanoid(),
-      port: 80,
-      protocol: 'HTTP',
-      openPublicDomain: false,
-      publicDomain: '',
-      customDomain: ''
-    }
-  ],
-
-  dbType: DBTypeEnum.postgresql,
-  dbVersion: '',
-  dbName: '',
-  dbCpu: CpuSlideMarkList[1].value,
-  dbMemory: MemorySlideMarkList[1].value,
-  replicas: 1,
-  storage: 3
+  memory: MemorySlideMarkList[1].value
 }
 
 export const devboxStatusMap = {
@@ -201,6 +177,5 @@ export const defaultDevboxDetail: DevboxDetailType = {
   id: '',
   createTime: '2024/8/9',
   status: devboxStatusMap.Creating,
-  conditions: [],
   labels: {}
 }

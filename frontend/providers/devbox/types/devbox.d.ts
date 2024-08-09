@@ -6,33 +6,10 @@ export type RuntimeType = `${RuntimeEnum}`
 
 export interface DevboxEditType {
   devboxName: string
-  runTime: RuntimeEnum
+  runTime: RuntimeType
   runTimeVersion: string
-  envs: {
-    key: string
-    value: string
-    valueFrom?: any
-  }[]
   cpu: number
   memory: number
-  networks: {
-    networkName: string
-    portName: string
-    port: number
-    protocol: ProtocolType
-    openPublicDomain: boolean
-    publicDomain: string // default domain
-    customDomain: string // custom domain
-  }[]
-
-  // TODO: 数据库部分不确定
-  dbType: DBTypeEnum
-  dbVersion: string
-  dbName: string
-  dbCpu: number
-  dbMemory: number
-  replicas: number
-  storage: number
 }
 
 export interface DevboxStatusMapType {
@@ -56,7 +33,6 @@ export interface DevboxDetailType extends DevboxEditType {
   id: string
   createTime: string
   status: DevboxStatusMapType
-  conditions: DevboxConditionItemType[]
   labels: { [key: string]: string }
 }
 
