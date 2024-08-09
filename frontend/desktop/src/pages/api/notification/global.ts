@@ -2,8 +2,11 @@ import { verifyAccessToken } from '@/services/backend/auth';
 import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import { CRDMeta, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { NotificationItem } from '@/types';
+import { NotificationCR, TNotification } from '@/types';
+import { adaptNotification } from '@/utils/adapt';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
+const compareByTimestamp = (a: TNotification, b: TNotification) => b?.timestamp - a?.timestamp;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -19,22 +22,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const listCrd = (await ListCRD(defaultKc, notification_meta)) as {
       body: {
-        items: NotificationItem[];
+        items: NotificationCR[];
       };
     };
 
-    const compareByTimestamp = (a: NotificationItem, b: NotificationItem) =>
-      b?.spec?.timestamp - a?.spec?.timestamp;
+    const listData = listCrd.body?.items?.map(adaptNotification) || [];
 
-    if (listCrd.body?.items) {
-      listCrd.body.items.sort(compareByTimestamp);
-      if (listCrd.body.items[0]) {
-        return jsonRes(res, { data: listCrd.body.items[0] });
-      }
+    if (listData.length > 0) {
+      listData.sort(compareByTimestamp);
+      return jsonRes(res, { data: listData[0] });
     }
 
-    jsonRes(res, { data: listCrd.body });
-  } catch (err) {
-    jsonRes(res, { code: 500, data: err });
+    jsonRes(res, { data: null });
+  } catch (err: any) {
+    jsonRes(res, { code: 500, data: err?.body });
   }
 }
