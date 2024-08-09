@@ -1,5 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
-import * as yaml from 'js-yaml';
+import * as JsYaml from 'js-yaml';
 
 // Load default kc
 export function K8sApiDefault(): k8s.KubeConfig {
@@ -214,7 +214,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   const applyYamlList = async (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => {
     // insert namespace
     const formatYaml: k8s.KubernetesObject[] = yamlList
-      .map((item) => yaml.loadAll(item))
+      .map((item) => JsYaml.loadAll(item))
       .flat()
       .map((item: any) => {
         if (item.metadata) {

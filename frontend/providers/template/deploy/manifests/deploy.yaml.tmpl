@@ -75,7 +75,7 @@ spec:
             - name: TEMPLATE_REPO_URL
               value: {{ .templateRepoUrl }}
             - name: TEMPLATE_REPO_BRANCH
-              value: "main"
+              value: {{ .templateRepoBranch }}
             - name: SHOW_AUTHOR
               value: "false"
           image: ghcr.io/labring/sealos-template-frontend:latest
