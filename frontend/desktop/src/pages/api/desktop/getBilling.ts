@@ -54,8 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ).json()
     ]);
 
-    console.log(results, 1);
-
     jsonRes(res, {
       data: {
         prevMonthTime: results[0].amount || 0,

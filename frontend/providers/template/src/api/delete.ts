@@ -65,7 +65,7 @@ const deleteResourceByKind: Record<AllResourceKindType, DeleteResourceFunction |
   ServiceAccount: (instanceName: string) => delServiceAccountByName(instanceName),
   PersistentVolumeClaim: delPersistentVolumeClaim,
   Service: delServiceByName,
-  ObjectStorageBucket: undefined
+  ObjectStorageBucket: undefined // use delCR
 };
 
 export const deleteAllResources = async (resources: ResourceListItemType[]) => {
