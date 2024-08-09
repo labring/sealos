@@ -34,7 +34,7 @@ export default function ObjStorageList({ instanceName }: { instanceName: string 
   const handleToDetailPage = useCallback((name: string) => {
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-objectstorage',
-      pathname: '/objectstorage/detail',
+      pathname: '/',
       query: { name: name },
       messageData: { type: 'InternalAppCall', name: name }
     });
