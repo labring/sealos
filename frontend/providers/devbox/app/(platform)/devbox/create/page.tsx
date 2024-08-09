@@ -1,38 +1,34 @@
-import { defaultDBEditValue } from '@/constants/db'
-import { editModeMap } from '@/constants/editApp'
+'use client'
+
+import dynamic from 'next/dynamic'
+import debounce from 'lodash/debounce'
+import { useMessage } from '@sealos/ui'
+import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
+import { Box, Flex } from '@chakra-ui/react'
+import { useQuery } from '@tanstack/react-query'
+import { useCallback, useMemo, useRef, useState } from 'react'
+
+import Form from './components/Form'
+import Yaml from './components/Yaml'
+import Header from './components/Header'
+import type { YamlItemType } from '@/types'
+import { useUserStore } from '@/stores/user'
+import { useGlobalStore } from '@/stores/global'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
-import { useDBStore } from '@/store/db'
-import { useGlobalStore } from '@/store/global'
-import { DBVersionMap } from '@/store/static'
-import { useUserStore } from '@/store/user'
-import type { YamlItemType } from '@/types'
-import type { DBEditType } from '@/types/db'
-import { adaptDBForm } from '@/utils/adapt'
-import { serviceSideProps } from '@/utils/i18n'
-import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml'
-import { Box, Flex } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useQuery } from '@tanstack/react-query'
-import debounce from 'lodash/debounce'
-import { useTranslation } from 'next-i18next'
-import dynamic from 'next/dynamic'
-import { useRouter } from 'next/router'
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import Form from './components/Form'
-import Header from './components/Header'
-import Yaml from './components/Yaml'
+import { editModeMap } from '@/constants/editApp'
+import type { DevboxEditType } from '@/types/devbox'
+import { defaultDevboxEditValue } from '@/constants/devbox'
 
-const ErrorModal = dynamic(() => import('@/components/ErrorModal'))
+const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
 const defaultEdit = {
-  ...defaultDBEditValue,
+  ...defaultDevboxEditValue,
   dbVersion: DBVersionMap.postgresql[0]?.id
 }
 
-const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
-  const { t } = useTranslation()
+const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
   const router = useRouter()
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
   const [errorMessage, setErrorMessage] = useState('')
@@ -223,13 +219,4 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   )
 }
 
-export default EditApp
-
-export async function getServerSideProps(context: any) {
-  const dbName = context?.query?.name || ''
-  const tabType = context?.query?.type || 'form'
-
-  return {
-    props: { ...(await serviceSideProps(context)), dbName, tabType }
-  }
-}
+export default EditDevbox

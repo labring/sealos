@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import NProgress from 'nprogress'
 import { usePathname } from 'next/navigation'
 
-import { useGlobalStore } from '@/store/global'
+import { useGlobalStore } from '@/stores/global'
 
 import 'nprogress/nprogress.css'
 

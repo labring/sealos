@@ -1,14 +1,14 @@
-import React, { useCallback } from 'react';
-import { Box, Flex, Button } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
-import MyIcon from '@/components/Icon';
-import JSZip from 'jszip';
-import type { YamlItemType } from '@/types/index';
-import { downLoadBold } from '@/utils/tools';
-import dayjs from 'dayjs';
-import { useGlobalStore } from '@/store/global';
-import { useTranslation } from 'next-i18next';
-import { I18nCommonKey } from '@/types/i18next';
+import React, { useCallback } from 'react'
+import { Box, Flex, Button } from '@chakra-ui/react'
+import { useRouter } from 'next/router'
+import MyIcon from '@/components/Icon'
+import JSZip from 'jszip'
+import type { YamlItemType } from '@/types/index'
+import { downLoadBold } from '@/utils/tools'
+import dayjs from 'dayjs'
+import { useGlobalStore } from '@/stores/global'
+import { useTranslation } from 'next-i18next'
+import { I18nCommonKey } from '@/types/i18next'
 
 const Header = ({
   dbName,
@@ -17,28 +17,28 @@ const Header = ({
   applyCb,
   applyBtnText
 }: {
-  dbName: string;
-  title: I18nCommonKey;
-  yamlList: YamlItemType[];
-  applyCb: () => void;
-  applyBtnText: I18nCommonKey;
+  dbName: string
+  title: I18nCommonKey
+  yamlList: YamlItemType[]
+  applyCb: () => void
+  applyBtnText: I18nCommonKey
 }) => {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const { lastRoute } = useGlobalStore();
+  const { t } = useTranslation()
+  const router = useRouter()
+  const { lastRoute } = useGlobalStore()
 
   const handleExportYaml = useCallback(async () => {
-    const zip = new JSZip();
+    const zip = new JSZip()
     yamlList.forEach((item) => {
-      zip.file(item.filename, item.value);
-    });
-    const res = await zip.generateAsync({ type: 'blob' });
+      zip.file(item.filename, item.value)
+    })
+    const res = await zip.generateAsync({ type: 'blob' })
     downLoadBold(
       res,
       'application/zip',
       dbName ? `${dbName}.zip` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`
-    );
-  }, [dbName, yamlList]);
+    )
+  }, [dbName, yamlList])
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
@@ -56,7 +56,7 @@ const Header = ({
         {t(applyBtnText)}
       </Button>
     </Flex>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

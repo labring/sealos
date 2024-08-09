@@ -1,15 +1,15 @@
-import { obj2Query } from '@/api/tools';
-import MyIcon from '@/components/Icon';
-import PriceBox from '@/components/PriceBox';
-import QuotaBox from '@/components/QuotaBox';
-import Tip from '@/components/Tip';
-import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
-import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
-import type { QueryType } from '@/types';
-import type { DBEditType } from '@/types/db';
-import { I18nCommonKey } from '@/types/i18next';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { obj2Query } from '@/api/tools'
+import MyIcon from '@/components/Icon'
+import PriceBox from '@/components/PriceBox'
+import QuotaBox from '@/components/QuotaBox'
+import Tip from '@/components/Tip'
+import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db'
+import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp'
+import { DBVersionMap, INSTALL_ACCOUNT } from '@/stores/static'
+import type { QueryType } from '@/types'
+import type { DBEditType } from '@/types/devbox'
+import { I18nCommonKey } from '@/types/i18next'
+import { InfoOutlineIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
@@ -27,36 +27,36 @@ import {
   Text,
   useDisclosure,
   useTheme
-} from '@chakra-ui/react';
-import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
-import { throttle } from 'lodash';
-import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
-import { UseFormReturn } from 'react-hook-form';
+} from '@chakra-ui/react'
+import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui'
+import { throttle } from 'lodash'
+import { useTranslation } from 'next-i18next'
+import { useRouter } from 'next/router'
+import { useEffect, useMemo, useState } from 'react'
+import { UseFormReturn } from 'react-hook-form'
 
 const Form = ({
   formHook,
   pxVal,
   minStorage
 }: {
-  formHook: UseFormReturn<DBEditType, any>;
-  pxVal: number;
-  minStorage: number;
+  formHook: UseFormReturn<DBEditType, any>
+  pxVal: number
+  minStorage: number
 }) => {
-  if (!formHook) return null;
-  const { t } = useTranslation();
+  if (!formHook) return null
+  const { t } = useTranslation()
 
-  const router = useRouter();
-  const { name } = router.query as QueryType;
-  const theme = useTheme();
-  const isEdit = useMemo(() => !!name, [name]);
+  const router = useRouter()
+  const { name } = router.query as QueryType
+  const theme = useTheme()
+  const isEdit = useMemo(() => !!name, [name])
   const {
     register,
     setValue,
     getValues,
     formState: { errors }
-  } = formHook;
+  } = formHook
 
   const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
     {
@@ -64,63 +64,62 @@ const Form = ({
       label: 'basic',
       icon: 'formInfo'
     }
-  ];
+  ]
 
-  const [activeNav, setActiveNav] = useState(navList[0].id);
+  const [activeNav, setActiveNav] = useState(navList[0].id)
 
   // listen scroll and set activeNav
   useEffect(() => {
     const scrollFn = throttle((e: Event) => {
-      if (!e.target) return;
+      if (!e.target) return
       const doms = navList.map((item) => ({
         dom: document.getElementById(item.id),
         id: item.id
-      }));
+      }))
 
-      const dom = e.target as HTMLDivElement;
-      const scrollTop = dom.scrollTop;
+      const dom = e.target as HTMLDivElement
+      const scrollTop = dom.scrollTop
 
       for (let i = doms.length - 1; i >= 0; i--) {
-        const offsetTop = doms[i].dom?.offsetTop || 0;
+        const offsetTop = doms[i].dom?.offsetTop || 0
         if (scrollTop + 200 >= offsetTop) {
-          setActiveNav(doms[i].id);
-          break;
+          setActiveNav(doms[i].id)
+          break
         }
       }
-    }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
+    }, 200)
+    document.getElementById('form-container')?.addEventListener('scroll', scrollFn)
     return () => {
-      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
-    };
+      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn)
+    }
     // eslint-disable-next-line
-  }, []);
+  }, [])
 
   const Label = ({
     children,
     w = 'auto',
     ...props
   }: {
-    children: string;
-    w?: number | 'auto';
-    [key: string]: any;
+    children: string
+    w?: number | 'auto'
+    [key: string]: any
   }) => (
     <Box
       flex={`0 0 ${w === 'auto' ? 'auto' : `${w}px`}`}
       color={'grayModern.900'}
       fontWeight={'bold'}
       userSelect={'none'}
-      {...props}
-    >
+      {...props}>
       {children}
     </Box>
-  );
+  )
 
   const boxStyles = {
     border: theme.borders.base,
     borderRadius: 'lg',
     mb: 4,
     bg: 'white'
-  };
+  }
 
   const headerStyles = {
     py: 4,
@@ -132,7 +131,7 @@ const Form = ({
     display: 'flex',
     alignItems: 'center',
     backgroundColor: 'grayModern.50'
-  };
+  }
 
   return (
     <>
@@ -141,8 +140,7 @@ const Form = ({
         templateColumns={'220px 1fr'}
         gridGap={5}
         alignItems={'start'}
-        pl={`${pxVal}px`}
-      >
+        pl={`${pxVal}px`}>
         <Box>
           <Tabs
             list={[
@@ -165,8 +163,7 @@ const Form = ({
             overflow={'hidden'}
             backgroundColor={'white'}
             border={theme.borders.base}
-            p={'4px'}
-          >
+            p={'4px'}>
             {navList.map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
@@ -179,8 +176,7 @@ const Form = ({
                     backgroundColor: 'grayModern.100'
                   }}
                   color="grayModern.900"
-                  backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}
-                >
+                  backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}>
                   <Box
                     w={'2px'}
                     h={'24px'}
@@ -215,13 +211,13 @@ const Form = ({
                   },
                   ...(getValues('dbType') === DBTypeEnum.redis
                     ? (() => {
-                        const config = RedisHAConfig(getValues('replicas') > 1);
+                        const config = RedisHAConfig(getValues('replicas') > 1)
                         return [
                           {
                             ...config,
                             replicas: [config.replicas, config.replicas]
                           }
-                        ];
+                        ]
                       })()
                     : [])
                 ]}
@@ -234,8 +230,7 @@ const Form = ({
           pr={`${pxVal}px`}
           height={'100%'}
           position={'relative'}
-          overflowY={'scroll'}
-        >
+          overflowY={'scroll'}>
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
@@ -275,10 +270,9 @@ const Form = ({
                                 }
                               })}
                           onClick={() => {
-                            setValue('dbType', item.id);
-                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
-                          }}
-                        >
+                            setValue('dbType', item.id)
+                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id)
+                          }}>
                           <Image
                             width={'32px'}
                             height={'32px'}
@@ -290,12 +284,11 @@ const Form = ({
                               textTransform: 'capitalize'
                             }}
                             mt={'4px'}
-                            textAlign={'center'}
-                          >
+                            textAlign={'center'}>
                             {item.label}
                           </Text>
                         </Center>
-                      );
+                      )
                     })}
                 </Flex>
               </Flex>
@@ -337,7 +330,7 @@ const Form = ({
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
                   setVal={(e) => {
-                    setValue('cpu', CpuSlideMarkList[e].value);
+                    setValue('cpu', CpuSlideMarkList[e].value)
                   }}
                   max={CpuSlideMarkList.length - 1}
                   min={0}
@@ -353,7 +346,7 @@ const Form = ({
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
                   setVal={(e) => {
-                    setValue('memory', MemorySlideMarkList[e].value);
+                    setValue('memory', MemorySlideMarkList[e].value)
                   }}
                   max={MemorySlideMarkList.length - 1}
                   min={0}
@@ -384,12 +377,12 @@ const Form = ({
                         value: 20,
                         message: `${t('max_replicas')}20`
                       }
-                    });
-                    const dbType = getValues('dbType');
-                    const oddVal = val % 2 === 0 ? val + 1 : val;
+                    })
+                    const dbType = getValues('dbType')
+                    const oddVal = val % 2 === 0 ? val + 1 : val
                     const replicasValue =
-                      dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.mysql ? oddVal : val;
-                    setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue);
+                      dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.mysql ? oddVal : val
+                    setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue)
                   }}
                 />
 
@@ -438,9 +431,8 @@ const Form = ({
                       position={'relative'}
                       value={getValues('storage')}
                       onChange={(e) => {
-                        e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
-                      }}
-                    >
+                        e !== '' ? setValue('storage', +e) : setValue('storage', minStorage)
+                      }}>
                       <NumberInputField
                         {...register('storage', {
                           required: t('storage_cannot_empty'),
@@ -484,8 +476,7 @@ const Form = ({
                         right={10}
                         top={'50%'}
                         transform={'translateY(-50%)'}
-                        color={'grayModern.600'}
-                      >
+                        color={'grayModern.600'}>
                         Gi
                       </Box>
                     </NumberInput>
@@ -497,7 +488,7 @@ const Form = ({
         </Box>
       </Grid>
     </>
-  );
-};
+  )
+}
 
-export default Form;
+export default Form

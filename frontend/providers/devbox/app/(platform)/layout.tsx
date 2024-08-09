@@ -4,13 +4,13 @@ import { useEffect } from 'react'
 import throttle from 'lodash/throttle'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
-import { useEnvStore } from '@/store/env'
-import { useGlobalStore } from '@/store/global'
+import { useEnvStore } from '@/stores/env'
+import { useGlobalStore } from '@/stores/global'
 import { useLoading } from '@/hooks/useLoading'
 import { useConfirm } from '@/hooks/useConfirm'
-import { QueryProvider } from '@/components/providers/queryProvider'
-import { ChakraProvider } from '@/components/providers/chakraProvider'
-import { RouteHandlerProvider } from '@/components/providers/routeHandlerProvider'
+import { QueryProvider } from '@/components/providers/QueryProvider'
+import { ChakraProvider } from '@/components/providers/ChakraProvider'
+import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvider'
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const { Loading } = useLoading()

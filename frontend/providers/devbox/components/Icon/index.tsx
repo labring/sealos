@@ -3,6 +3,10 @@ import { Icon } from '@chakra-ui/react'
 import type { IconProps } from '@chakra-ui/react'
 
 const map = {
+  codeServer: require('./icons/codeServer.svg').default,
+  version: require('./icons/version.svg').default,
+  terminal: require('./icons/terminal.svg').default,
+
   more: require('./icons/more.svg').default,
   podList: require('./icons/podList.svg').default,
   arrowLeft: require('./icons/arrowLeft.svg').default,
@@ -22,7 +26,6 @@ const map = {
   noEvents: require('./icons/noEvents.svg').default,
   warning: require('./icons/warning.svg').default,
   analyze: require('./icons/analyze.svg').default,
-  terminal: require('./icons/terminal.svg').default,
   log: require('./icons/log.svg').default,
   statusDetail: require('./icons/statusDetail.svg').default,
   read: require('./icons/read.svg').default,

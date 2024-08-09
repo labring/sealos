@@ -4,34 +4,34 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import Empty from './components/empty'
-import DBList from './components/dbList'
-import { useDevboxStore } from '@/store/devbox'
+import DevboxList from './components/devboxList'
 import { useLoading } from '@/hooks/useLoading'
+import { useDevboxStore } from '@/stores/devbox'
 
 const EmptyPage = () => {
   const { Loading } = useLoading()
-  // const { dbList, setDBList } = useDevboxStore() //TODO
+  const { devboxList, setDevboxList } = useDevboxStore()
   const [initialized, setInitialized] = useState(false)
-
-  // const { refetch } = useQuery(['initDbData'], setDBList, {
-  //   refetchInterval: 3000,
-  //   onSettled() {
-  //     setInitialized(true)
-  //   }
-  // })
+  console.log(devboxList)
+  const { refetch } = useQuery(['initDevboxData'], setDevboxList, {
+    // refetchInterval: 3000,
+    // NOTE: 注意开发模式我就不一直重新获取了
+    onSettled() {
+      setInitialized(true)
+    }
+  })
 
   return (
-    // <>
-    //   {dbList.length === 0 && initialized ? (
-    //     <Empty />
-    //   ) : (
-    //     <>
-    //       <DBList dbList={dbList} refetchApps={refetch} />
-    //     </>
-    //   )}
-    //   <Loading loading={!initialized} />
-    // </>
-    <Empty />
+    <>
+      {devboxList.length === 0 && initialized ? (
+        <Empty />
+      ) : (
+        <>
+          <DevboxList devboxList={devboxList} refetchApps={refetch} />
+        </>
+      )}
+      <Loading loading={!initialized} />
+    </>
   )
 }
 
