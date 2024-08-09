@@ -1,6 +1,6 @@
 import { V1ServicePort } from '@kubernetes/client-node';
 
-export type ResourceKindType =
+export type AllResourceKindType =
   | 'DataBase'
   | 'AppLaunchpad'
   | 'CronJob'
@@ -14,15 +14,18 @@ export type ResourceKindType =
   | 'ConfigMap'
   | 'Instance'
   | 'Service'
+  | 'ObjectStorageBucket'
   | 'PersistentVolumeClaim';
+
+export type DeleteResourceFunction = (instanceName: string) => void;
 
 export type ResourceListItemType = {
   id: string;
   name: string;
-  kind: ResourceKindType;
+  kind: AllResourceKindType;
+  apiVersion?: string;
   createTime?: string;
   label?: string;
-  apiVersion?: string;
   servicePorts?: V1ServicePort[];
   serviceType?: string;
 };

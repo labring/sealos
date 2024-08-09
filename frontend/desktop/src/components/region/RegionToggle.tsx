@@ -18,7 +18,11 @@ export default function RegionToggle() {
   const { setWorkSpaceId, session } = useSessionStore();
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { data, isSuccess } = useQuery(['regionlist'], getRegionList);
+  const { data } = useQuery(['regionlist'], getRegionList, {
+    cacheTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  });
   const regionList = useMemo(() => data?.data?.regionList || [], [data]);
   const token = useSessionStore((s) => s.token);
   const curRegionUid = useMemo(() => {

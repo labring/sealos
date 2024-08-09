@@ -81,6 +81,10 @@ type ConsumptionRecordReq struct {
 	// @Summary App type
 	// @Description App type
 	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
+
+	// @Summary App Name
+	// @Description App Name
+	AppName string `json:"appName,omitempty" bson:"appName" example:"app"`
 }
 
 type NamespaceBillingHistoryResp struct {

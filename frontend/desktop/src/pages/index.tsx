@@ -3,7 +3,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { parseOpenappQuery } from '@/utils/format';
-import { setInviterId } from '@/utils/sessionConfig';
+import { setInviterId, setUserSemChannel } from '@/utils/sessionConfig';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -82,11 +82,16 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     }
   }, [router, init, setAutoLaunch, sealos_cloud_domain]);
 
-  // handle baidui
+  // handle baidu
   useEffect(() => {
-    const { bd_vid } = router.query;
+    const { bd_vid, s } = router.query;
     if (bd_vid) {
       localStorage.setItem('bd_vid', bd_vid as string);
+    }
+
+    // handle new user sem source
+    if (s) {
+      setUserSemChannel(s as string);
     }
   }, []);
 

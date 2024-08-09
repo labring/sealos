@@ -134,15 +134,12 @@ export default function Desktop(props: any) {
 
   useEffect(() => {
     const globalNotification = async () => {
-      const data = await getGlobalNotification();
-      const newID = data.data?.metadata?.uid;
+      const { data: notification } = await getGlobalNotification();
+      if (!notification) return;
+      const newID = notification?.uid;
+      const title = notification?.i18n[i18n.language].title;
 
-      const title =
-        i18n.language === 'zh' && data.data?.spec?.i18ns?.zh?.message
-          ? data.data?.spec?.i18ns?.zh?.message
-          : data.data?.spec?.message;
-
-      if (data.data?.metadata?.labels?.[LicenseFrontendKey]) {
+      if (notification.licenseFrontend) {
         message({
           title: title,
           status: 'info',

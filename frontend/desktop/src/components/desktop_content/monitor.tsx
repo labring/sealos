@@ -8,8 +8,8 @@ import { blurBackgroundStyles } from './index';
 
 export default function Monitor({ needStyles = true }: { needStyles?: boolean }) {
   const { t } = useTranslation();
-  const { data } = useQuery(['appListQuery'], getResource, {
-    cacheTime: 5 * 60 * 1000
+  const { data } = useQuery(['getResource'], getResource, {
+    staleTime: 60 * 1000
   });
 
   const info = [

@@ -1,5 +1,9 @@
 import { DELETE } from '@/services/request';
-import { ResourceListItemType, ResourceKindType } from '@/types/resource';
+import {
+  ResourceListItemType,
+  AllResourceKindType,
+  DeleteResourceFunction
+} from '@/types/resource';
 
 export const delCronJobByName = (instanceName: string) =>
   DELETE('/api/resource/deleteCronjob', { instanceName });
@@ -46,23 +50,23 @@ export const delCR = (data: Record<'kind' | 'name' | 'apiVersion', string>) =>
 export const delServiceByName = (instanceName: string) =>
   DELETE('/api/resource/delService', { instanceName });
 
-const deleteResourceByKind: Record<ResourceKindType, undefined | ((instanceName: string) => void)> =
-  {
-    CronJob: (instanceName: string) => delCronJobByName(instanceName),
-    App: (instanceName: string) => deleteAppCRD(instanceName),
-    Secret: (instanceName: string) => deleteSecret(instanceName),
-    AppLaunchpad: (instanceName: string) => delApplaunchpad(instanceName),
-    DataBase: (instanceName: string) => delDBByName(instanceName),
-    Instance: (instanceName: string) => delInstanceByName(instanceName),
-    Job: (instanceName: string) => delJobByName(instanceName),
-    ConfigMap: (instanceName: string) => delConfigMapByName(instanceName),
-    Issuer: (instanceName: string) => delIssuerByName(instanceName),
-    Role: (instanceName: string) => delRoleByName(instanceName),
-    RoleBinding: (instanceName: string) => delRoleBindingByName(instanceName),
-    ServiceAccount: (instanceName: string) => delServiceAccountByName(instanceName),
-    PersistentVolumeClaim: delPersistentVolumeClaim,
-    Service: delServiceByName
-  };
+const deleteResourceByKind: Record<AllResourceKindType, DeleteResourceFunction | undefined> = {
+  CronJob: (instanceName: string) => delCronJobByName(instanceName),
+  App: (instanceName: string) => deleteAppCRD(instanceName),
+  Secret: (instanceName: string) => deleteSecret(instanceName),
+  AppLaunchpad: (instanceName: string) => delApplaunchpad(instanceName),
+  DataBase: (instanceName: string) => delDBByName(instanceName),
+  Instance: (instanceName: string) => delInstanceByName(instanceName),
+  Job: (instanceName: string) => delJobByName(instanceName),
+  ConfigMap: (instanceName: string) => delConfigMapByName(instanceName),
+  Issuer: (instanceName: string) => delIssuerByName(instanceName),
+  Role: (instanceName: string) => delRoleByName(instanceName),
+  RoleBinding: (instanceName: string) => delRoleBindingByName(instanceName),
+  ServiceAccount: (instanceName: string) => delServiceAccountByName(instanceName),
+  PersistentVolumeClaim: delPersistentVolumeClaim,
+  Service: delServiceByName,
+  ObjectStorageBucket: undefined // use delCR
+};
 
 export const deleteAllResources = async (resources: ResourceListItemType[]) => {
   const deletePromises = resources.map((resource) => {
@@ -71,7 +75,7 @@ export const deleteAllResources = async (resources: ResourceListItemType[]) => {
       return fn(resource.name);
     } else {
       console.log(fn, resource);
-      delCR({
+      return delCR({
         name: resource.name,
         apiVersion: resource.apiVersion!,
         kind: resource.kind!
@@ -79,6 +83,5 @@ export const deleteAllResources = async (resources: ResourceListItemType[]) => {
     }
   });
   const reuslt = await Promise.allSettled(deletePromises);
-  console.log(reuslt);
   return reuslt;
 };

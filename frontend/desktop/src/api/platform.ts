@@ -1,13 +1,13 @@
 import request from '@/services/request';
 import {
   ApiResp,
-  NotificationItem,
   LayoutConfigType,
   CloudConfigType,
   AuthClientConfigType,
   AppClientConfigType,
   CommonConfigType,
-  CommonClientConfigType
+  CommonClientConfigType,
+  TNotification
 } from '@/types';
 import { AccountCRD } from '@/types/user';
 
@@ -76,8 +76,11 @@ export const getWechatResult = (payload: { code: string }) =>
   });
 
 export const getGlobalNotification = () => {
-  return request.get<any, ApiResp<NotificationItem>>('/api/notification/global');
+  return request.get<any, ApiResp<TNotification>>('/api/notification/global');
 };
+
+export const listNotification = () =>
+  request.get<any, ApiResp<TNotification[]>>('/api/notification/listNotification');
 
 export const getResource = () => {
   return request.get<
