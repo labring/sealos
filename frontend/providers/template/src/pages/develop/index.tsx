@@ -48,7 +48,7 @@ export default function Develop() {
     parseTemplate(value);
   }, 1000);
 
-  const generateCorrectYamlList = (
+  const generateYamlData = useCallback((
     yamlSource: TemplateSourceType,
     inputs: Record<string, string> = {}
   ): YamlItemType[] => {
@@ -65,9 +65,9 @@ export default function Develop() {
     const generateStr = parseTemplateString(yamlSource.appYaml, data);
     const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
     return developGenerateYamlList(generateStr, _instanceName)
-  };
+  }, [platformEnvs]);
 
-  const parseTemplate = (str: string) => {
+  const parseTemplate = useCallback((str: string) => {
     if (!str || !str.trim()) {
       setTemplateSource(void 0);
       setYamlList([]);
@@ -77,7 +77,7 @@ export default function Develop() {
       const result = getYamlSource(str, platformEnvs);
       const formInputs = formHook.getValues();
       setTemplateSource(result);
-      const correctYamlList = generateCorrectYamlList(result, formInputs);
+      const correctYamlList = generateYamlData(result, formInputs);
       setYamlList(correctYamlList);
     } catch (error: any) {
       toast({
@@ -88,32 +88,31 @@ export default function Develop() {
         isClosable: true
       });
     }
-  };
+  }, [platformEnvs, generateYamlData]);
 
   // form
   const formHook = useForm({
     defaultValues: getTemplateInputDefaultValues(templateSource)
   });
 
-  // watch form change, compute new yaml
-  useEffect(() => {
-    formHook.watch();
-    const subscription = formHook.watch((data: Record<string, string>) => {
-      data && formOnchangeDebounce(data);
-    });
-    return () => subscription.unsubscribe();
-  }, [formHook, templateSource]);
-
-  const formOnchangeDebounce = debounce((formInputData: Record<string, string>) => {
+  const formOnchangeDebounce = useCallback(debounce((formInputData: Record<string, string>) => {
     try {
       if (templateSource) {
-        const correctYamlList = generateCorrectYamlList(templateSource, formInputData);
+        const correctYamlList = generateYamlData(templateSource, formInputData);
         setYamlList(correctYamlList);
       }
     } catch (error) {
       console.log(error);
     }
-  }, 1000);
+  }, 500), [templateSource, generateYamlData]);
+
+  // watch form change, compute new yaml
+  useEffect(() => {
+    const subscription = formHook.watch((data: Record<string, string>) => {
+      data && formOnchangeDebounce(data);
+    });
+    return () => subscription.unsubscribe();
+  }, [formHook, formOnchangeDebounce]);
 
   const submitSuccess = async () => {
     setIsLoading(true);

@@ -42,24 +42,21 @@ const Form = ({
     getValues
   } = formHook;
 
-  const formData = getValues();
-  const filteredInputs = useMemo(() => {
-    const { defaults, defaultInputs } = getTemplateValues(formSource);
-    return formSource?.source?.inputs?.filter(
-      (item) =>
-        item.if === undefined ||
-        item.if?.length === 0 ||
-        !!evaluateExpression(item.if, {
-          ...platformEnvs,
-          ...formSource?.source,
-          inputs: {
-            ...defaultInputs,
-            ...formData
-          },
-          defaults: defaults
-        })
-    );
-  }, [formSource, formData]);
+  const { defaults, defaultInputs } = getTemplateValues(formSource);
+  const filteredInputs = formSource?.source?.inputs?.filter(
+    (item) =>
+      item.if === undefined ||
+      item.if?.length === 0 ||
+      !!evaluateExpression(item.if, {
+        ...platformEnvs,
+        ...formSource?.source,
+        inputs: {
+          ...defaultInputs,
+          ...getValues()
+        },
+        defaults: defaults
+      })
+  )
 
   return (
     <Box flexGrow={1} id={'baseInfo'} minH={'200px'}>
@@ -79,7 +76,7 @@ const Form = ({
                         w={'100%'}
                         bg={'transparent'}
                         borderRadius={'2px'}
-                        defaultValue={item.default}
+                        defaultValue={getValues(item.key) || item.default}
                         list={item.options?.map((option) => {
                           return {
                             value: option,

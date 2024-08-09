@@ -21,7 +21,7 @@ import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
@@ -70,7 +70,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     return val;
   }, [screenWidth]);
 
-  const generateYamlData = (templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
+  const generateYamlData = useCallback((templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
     if (!templateSource) return [];
     const app_name = templateSource?.source?.defaults?.app_name?.value;
     const { defaults, defaultInputs } = getTemplateValues(templateSource);
@@ -85,9 +85,9 @@ export default function EditApp({ appName }: { appName?: string }) {
     };
     const generateStr = parseTemplateString(templateSource.appYaml, data);
     return generateYamlList(generateStr, app_name);
-  }
+  }, [platformEnvs])
 
-  const formOnchangeDebounce = debounce((inputs: Record<string, string>) => {
+  const formOnchangeDebounce = useCallback(debounce((inputs: Record<string, string>) => {
     try {
       if (!templateSource) return;
       const list = generateYamlData(templateSource, inputs)
@@ -95,7 +95,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     } catch (error) {
       console.log(error);
     }
-  }, 500);
+  }, 500), [templateSource, generateYamlData]);
 
   const getCachedValue = (): {
     cachedKey: string,
@@ -114,12 +114,11 @@ export default function EditApp({ appName }: { appName?: string }) {
 
   // watch form change, compute new yaml
   useEffect(() => {
-    formHook.watch();
     const subscription = formHook.watch((data: Record<string, string>) => {
       data && formOnchangeDebounce(data);
     });
     return () => subscription.unsubscribe();
-  }, [formHook, templateSource]);
+  }, [formHook, formOnchangeDebounce]);
 
   const submitSuccess = async () => {
     setIsLoading(true);
@@ -166,7 +165,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     });
   };
 
-  const handleTemplateSource = (res: TemplateSourceType) => {
+  const parseTemplate = (res: TemplateSourceType) => {
     try {
       setTemplateSource(res);
       const inputs = getCachedValue() ? JSON.parse(cached) : getTemplateInputDefaultValues(res);
@@ -189,7 +188,7 @@ export default function EditApp({ appName }: { appName?: string }) {
     () => getTemplateSource(templateName),
     {
       onSuccess(data) {
-        handleTemplateSource(data);
+        parseTemplate(data);
       },
       onError(err) {
         toast({
