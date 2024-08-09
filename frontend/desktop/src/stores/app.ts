@@ -1,5 +1,5 @@
 import request from '@/services/request';
-import { APPTYPE, TApp, TOSState, WindowSize, displayType } from '@/types';
+import { APPTYPE, TApp, TAppMenuData, TOSState, WindowSize, displayType } from '@/types';
 import { formatUrl } from '@/utils/format';
 import { cloneDeep, minBy } from 'lodash';
 import { create } from 'zustand';
@@ -27,10 +27,7 @@ export class AppInfo {
   gallery?: string[];
   extra?: {};
   // app top info
-  menuData?: {
-    name: string;
-    link: string;
-  }[];
+  menuData?: TAppMenuData[];
   displayType: displayType;
   i18n?: any;
 

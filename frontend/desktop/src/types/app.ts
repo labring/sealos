@@ -24,6 +24,11 @@ export type TAppFront = {
   mouseDowning: boolean;
 };
 
+export type TAppMenuData = {
+  name: string;
+  link: string;
+};
+
 export type TAppConfig = {
   // app key
   key: `${'user' | 'system'}-${string}`;
@@ -42,10 +47,7 @@ export type TAppConfig = {
   gallery?: string[];
   extra?: {};
   // app top info
-  menuData?: {
-    name: string;
-    link: string;
-  }[];
+  menuData?: TAppMenuData[];
   i18n?: {
     [key: string]: {
       name: string;

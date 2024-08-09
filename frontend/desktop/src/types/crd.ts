@@ -1,4 +1,4 @@
-import { APPTYPE, displayType } from './app';
+import { APPTYPE, TAppMenuData, displayType } from './app';
 import { LicenseFrontendKey } from '@/constants/account';
 
 export type CRDMeta = {
@@ -80,11 +80,7 @@ export type TAppCR = {
     displayType: displayType;
     i18n: Record<'zh' | 'zh-Hans', { name: string }>;
     icon: string;
-    menuData?: {
-      nameColor: string;
-      helpDropDown: boolean;
-      helpDocs: boolean | string;
-    };
+    menuData?: TAppMenuData[];
     name: string;
     type: APPTYPE;
   };
