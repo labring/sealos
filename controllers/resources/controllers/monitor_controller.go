@@ -114,6 +114,8 @@ const (
 //+kubebuilder:rbac:groups=core,resources=services/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch
 //+kubebuilder:rbac:groups=app.sealos.io,resources=instances/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=dataprotection.apecloud.io,resources=backups,verbs=get;list;watch
+//+kubebuilder:rbac:groups=dataprotection.apecloud.io,resources=backups/status,verbs=get;list;watch
 
 func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	r := &MonitorReconciler{
