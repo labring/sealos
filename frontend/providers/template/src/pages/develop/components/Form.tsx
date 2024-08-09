@@ -57,19 +57,20 @@ const Form = ({
     []
   );
 
+  const evalData = {
+    ...platformEnvs,
+    ...formSource?.source,
+    inputs: {
+      ...defaultInputs,
+      ...getValues()
+    },
+    defaults: defaults
+  }
   const filteredInputs = formSource?.source?.inputs?.filter(
     (item) =>
       item.if === undefined ||
       item.if?.length === 0 ||
-      !!evaluateExpression(item.if, {
-        ...platformEnvs,
-        ...formSource?.source,
-        inputs: {
-          ...defaultInputs,
-          ...getValues()
-        },
-        defaults: defaults
-      })
+      !!evaluateExpression(item.if, evalData)
   )
 
   return (
