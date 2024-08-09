@@ -15,10 +15,11 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { evaluateExpression } from '@/utils/json-yaml';
 import { getTemplateValues } from '@/utils/template';
+import debounce from 'lodash/debounce';
 
 const Form = ({
   formHook,
@@ -34,6 +35,8 @@ const Form = ({
   if (!formHook) return null;
   const { t } = useTranslation();
   const theme = useTheme();
+  const [_, setForceUpdate] = useState(false);
+
   const isShowContent = useMemo(() => !!formSource?.source?.inputs?.length, [formSource?.source?.inputs?.length]);
 
   const {
@@ -43,7 +46,19 @@ const Form = ({
     setValue
   } = formHook;
 
-  const { defaults, defaultInputs } = getTemplateValues(formSource)
+  const { defaults, defaultInputs } = getTemplateValues(formSource);
+
+  const hasDynamicInputs = useMemo(() => {
+    return formSource?.source?.inputs?.some(item => item.if !== undefined);
+  }, [formSource?.source?.inputs]);
+
+  const debouncedReset = useCallback(
+    debounce(() => {
+      setForceUpdate(prev => !prev);
+    }, 150),
+    []
+  );
+
   const filteredInputs = formSource?.source?.inputs?.filter(
     (item) =>
       item.if === undefined ||
@@ -57,7 +72,7 @@ const Form = ({
         },
         defaults: defaults
       })
-  )
+  );
 
   const boxStyles = {
     border: theme.borders.base,
@@ -107,6 +122,7 @@ const Form = ({
                         })}
                         onchange={(val: any) => {
                           setValue(item.key, val);
+                          if (hasDynamicInputs) debouncedReset();
                         }}
                       />
                     </Box>
@@ -118,6 +134,7 @@ const Form = ({
                       defaultChecked={item.default === 'true'}
                       onChange={(e) => {
                         setValue(item.key, e.target.checked ? 'true' : 'false');
+                        if (hasDynamicInputs) debouncedReset();
                       }}
                     >
                       {item.description && (
@@ -139,7 +156,10 @@ const Form = ({
                       placeholder={item?.description}
                       autoFocus={index === 0}
                       {...register(item?.key, {
-                        required: item?.required ? `${item.label} is required` : ''
+                        required: item?.required ? `${item.label} is required` : '',
+                        onChange: () => {
+                          if (hasDynamicInputs) debouncedReset();
+                        }
                       })}
                     />
                   );

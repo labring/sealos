@@ -13,10 +13,11 @@ import {
   NumberInputField
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { evaluateExpression } from '@/utils/json-yaml';
 import { getTemplateValues } from '@/utils/template';
+import debounce from 'lodash/debounce';
 
 const Form = ({
   formSource,
@@ -29,6 +30,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
+  const [_, setForceUpdate] = useState(false);
 
   const isShowContent = useMemo(
     () => !!formSource?.source?.inputs?.length,
@@ -39,10 +41,22 @@ const Form = ({
     register,
     formState: { errors },
     setValue,
-    getValues
+    getValues,
   } = formHook;
 
   const { defaults, defaultInputs } = getTemplateValues(formSource);
+
+  const hasDynamicInputs = useMemo(() => {
+    return formSource?.source?.inputs?.some(item => item.if !== undefined);
+  }, [formSource?.source?.inputs]);
+
+  const debouncedReset = useCallback(
+    debounce(() => {
+      setForceUpdate(prev => !prev)
+    }, 150),
+    []
+  );
+
   const filteredInputs = formSource?.source?.inputs?.filter(
     (item) =>
       item.if === undefined ||
@@ -85,6 +99,7 @@ const Form = ({
                         })}
                         onchange={(val: any) => {
                           setValue(item.key, val);
+                          if (hasDynamicInputs) debouncedReset()
                         }}
                       />
                     </Box>
@@ -96,6 +111,7 @@ const Form = ({
                       defaultChecked={item.default === 'true'}
                       onChange={(e) => {
                         setValue(item.key, e.target.checked ? 'true' : 'false');
+                        if (hasDynamicInputs) debouncedReset()
                       }}
                     >
                       {item.description && (
@@ -116,7 +132,10 @@ const Form = ({
                       defaultValue={item?.default}
                       placeholder={item?.description}
                       {...register(item?.key, {
-                        required: item?.required
+                        required: item?.required,
+                        onChange: (e) => {
+                          if (hasDynamicInputs) debouncedReset()
+                        }
                       })}
                     />
                   );

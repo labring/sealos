@@ -5,9 +5,10 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { vscodeKeymap } from '@replit/codemirror-vscode-keymap';
 import { basicSetup } from 'codemirror';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
+import { debounce } from 'lodash';
 
-export default function Editor({
+function Editor({
   onDocChange,
   ...styles
 }: { onDocChange: (x: EditorState) => void } & BoxProps) {
@@ -17,28 +18,27 @@ export default function Editor({
     keymap.of(vscodeKeymap),
     StreamLanguage.define(yaml),
     EditorView.updateListener.of((update) => {
-      // persist
-      const store = update.state.toJSON();
-      localStorage.setItem('yamlEditor', JSON.stringify(store));
-      if (update.docChanged || init) onDocChange(update.state);
-      init && setInit(false);
+      debouncedOnDocChange(update);
     })
   ];
-  const getState = () => {
-    try {
-      return EditorState.create({
-        ...EditorState.fromJSON(JSON.parse(localStorage.getItem('yamlEditor')!)),
-        extensions
-      });
-    } catch (err) {
-      return undefined;
-    }
-  };
+
+  const debouncedOnDocChange = debounce((update) => {
+    // persist
+    localStorage.setItem('yamlEditor', update.state.doc.toString());
+    if (update.docChanged || init) onDocChange(update.state);
+    init && setInit(false);
+  }, 300);
+
   const ref = useRef(null);
   useEffect(() => {
+    const storage = localStorage.getItem('yamlEditor')
+
     const view = new EditorView({
-      state: getState(),
-      extensions, // indentOnInput(),
+      state: EditorState.create({
+        doc: storage || '',
+        extensions
+      }),
+      extensions,
       parent: ref.current!
     });
     return () => view && view.destroy();
@@ -46,3 +46,5 @@ export default function Editor({
 
   return <Box ref={ref} {...styles} />;
 }
+
+export default memo(Editor);

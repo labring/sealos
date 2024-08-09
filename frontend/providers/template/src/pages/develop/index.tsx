@@ -43,11 +43,6 @@ export default function Develop() {
     data: EnvResponse;
   };
 
-  const onYamlChange = debounce((state: EditorState) => {
-    const value = state.doc.toString();
-    parseTemplate(value);
-  }, 1000);
-
   const generateYamlData = useCallback((
     yamlSource: TemplateSourceType,
     inputs: Record<string, string> = {}
@@ -89,6 +84,11 @@ export default function Develop() {
       });
     }
   }, [platformEnvs, generateYamlData]);
+
+  const onYamlChange = useCallback(debounce((state: EditorState) => {
+    const value = state.doc.toString();
+    parseTemplate(value);
+  }, 1000), [parseTemplate]);
 
   // form
   const formHook = useForm({
