@@ -151,6 +151,15 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	updated := r.initObjectStorageUser(user, username, quota.Value())
 
+	pwdUpdated := false
+
+	if user.Spec.SecretKeyVersion > user.Status.SecretKeyVersion {
+		user.Status.SecretKey = rand.String(16)
+		user.Status.SecretKeyVersion = user.Spec.SecretKeyVersion
+		pwdUpdated = true
+		updated = true
+	}
+
 	accessKey := user.Status.AccessKey
 	secretKey := user.Status.SecretKey
 
@@ -166,6 +175,13 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			r.Logger.Error(err, "failed to new object storage user", "name", accessKey)
 			return ctrl.Result{}, err
 		}
+	}
+
+	if pwdUpdated {
+		if err := r.OSAdminClient.SetUser(ctx, accessKey, secretKey, madmin.AccountEnabled); err != nil {
+			r.Logger.Error(err, "failed to set user secret key", "name", accessKey)
+		}
+		r.Logger.V(1).Info("[user] password change info", "name", user.Name, "spec secret key version", user.Spec.SecretKeyVersion)
 	}
 
 	secret := &corev1.Secret{}
