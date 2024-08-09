@@ -37,3 +37,7 @@ export const sessionConfig = async ({
 export const getInviterId = () => localStorage.getItem('inviterId');
 
 export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);
+
+export const getUserSemChannel = () => localStorage.getItem('sem_source');
+
+export const setUserSemChannel = (s: string) => localStorage.setItem('sem_source', s);

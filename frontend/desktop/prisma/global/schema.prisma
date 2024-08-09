@@ -265,6 +265,17 @@ model RealNameAuthProvider {
   @@map("RealNameAuthProvider")
 }
 
+model UserSemChannel {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid        String   @unique @db.Uuid
+  channel        String
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo Json?
+
+  @@map("UserSemChannel")
+}
+
 enum ProviderType {
   PHONE
   GITHUB

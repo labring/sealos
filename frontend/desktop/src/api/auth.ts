@@ -23,7 +23,12 @@ export const _passwordLoginRequest =
   (request: AxiosInstance, switchAuth: (token: string) => void) =>
   (
     data:
-      | { user: string; password: string; inviterId: string | null | undefined }
+      | {
+          user: string;
+          password: string;
+          inviterId: string | null | undefined;
+          userSemChannel: string | null | undefined;
+        }
       | {
           user: string;
           password: string;
@@ -107,7 +112,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string }) =>
+  (data: { code: string; inviterId?: string; userSemChannel?: string }) =>
     request.post<
       typeof data,
       ApiResp<{

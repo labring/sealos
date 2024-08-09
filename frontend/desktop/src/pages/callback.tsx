@@ -1,16 +1,14 @@
-import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
-import { ApiResp, AppClientConfigType } from '@/types';
+import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { uploadConvertData } from '@/api/platform';
 import { isString } from 'lodash';
 import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
-import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, getUserSemChannel, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
-import axios from 'axios';
 import request from '@/services/request';
 import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
@@ -62,7 +60,11 @@ export default function Callback() {
           const { statePayload, action } = compareResult;
           // return
           if (action === 'LOGIN') {
-            const data = await signInRequest(provider)({ code, inviterId: getInviterId()! });
+            const data = await signInRequest(provider)({
+              code,
+              inviterId: getInviterId()!,
+              userSemChannel: getUserSemChannel()!
+            });
             setProvider();
             if (data.code === 200 && data.data?.token) {
               const token = data.data?.token;
