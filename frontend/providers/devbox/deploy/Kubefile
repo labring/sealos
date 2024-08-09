@@ -1,0 +1,19 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV certSecretName="wildcard-cert"
+ENV monitorUrl="http://database-monitor.sealos.svc.cluster.local:9090"
+ENV minioUrl=""
+ENV minioAccessKey=""
+ENV minioSecretKey=""
+ENV minioPort=""
+ENV migrateFileImage=""
+ENV minioBucketName=""
+
+CMD ["kubectl apply -f manifests"]

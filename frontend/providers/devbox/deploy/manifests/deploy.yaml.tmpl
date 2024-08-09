@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: dbprovider-frontend
+  name: dbprovider-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbprovider-frontend-config
+  namespace: dbprovider-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbprovider-frontend
+  namespace: dbprovider-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dbprovider-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: dbprovider-frontend
+    spec:
+      serviceAccountName: cluster-version-reader
+      containers:
+        - name: dbprovider-frontend
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: SEALOS_PORT
+              value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+            - name: MONITOR_URL
+              value: {{ .monitorUrl }}
+            - name: MINIO_URL
+              value: {{ .minioUrl }}
+            - name: MINIO_ACCESS_KEY
+              value: {{ .minioAccessKey }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .minioSecretKey }}
+            - name: MIGRATE_FILE_IMAGE
+              value: {{ .migrateFileImage }}
+            - name: MINIO_PORT
+              value: '{{ .minioPort }}'
+            - name: MINIO_BUCKET_NAME
+              value: {{ .minioBucketName }}
+            - name: BACKUP_ENABLED
+              value: "false"
+            - name: SHOW_DOCUMENT
+              value: "true"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-dbprovider-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dbprovider-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - dbprovider-frontend
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: dbprovider-frontend-volume
+          configMap:
+            name: dbprovider-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: dbprovider-frontend
+  name: dbprovider-frontend
+  namespace: dbprovider-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: dbprovider-frontend

@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: dbprovider
+  namespace: app-system
+spec:
+  data:
+    desc: Database
+    url: "https://dbprovider.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://dbprovider.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  i18n:
+    zh:
+      name: 数据库
+    zh-Hans:
+      name: 数据库
+  menuData:
+  name: Database
+  type: iframe
+  displayType: normal
