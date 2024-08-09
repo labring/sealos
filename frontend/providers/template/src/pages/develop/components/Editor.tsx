@@ -24,14 +24,14 @@ function Editor({
 
   const debouncedOnDocChange = debounce((update) => {
     // persist
-    localStorage.setItem('yamlEditor', update.state.doc.toString());
+    localStorage.setItem('developEditor', update.state.doc.toString());
     if (update.docChanged || init) onDocChange(update.state);
     init && setInit(false);
   }, 300);
 
   const ref = useRef(null);
   useEffect(() => {
-    const storage = localStorage.getItem('yamlEditor')
+    const storage = localStorage.getItem('developEditor')
 
     const view = new EditorView({
       state: EditorState.create({
