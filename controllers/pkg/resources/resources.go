@@ -163,6 +163,7 @@ const (
 	objectStorage
 	cvm
 	appStore
+	dbBackup
 )
 
 const (
@@ -174,14 +175,15 @@ const (
 	ObjectStorage = "OBJECT-STORAGE"
 	CVM           = "CLOUD-VM"
 	AppStore      = "APP-STORE"
+	DBBackup      = "DB-BACKUP"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore, DBBackup: dbBackup,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore, dbBackup: DBBackup,
 }
 
 // resource consumption

@@ -31,6 +31,8 @@ import (
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
+	"github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
+
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
 
@@ -54,6 +56,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(appv1.AddToScheme(scheme))
+	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
