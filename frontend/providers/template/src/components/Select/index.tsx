@@ -120,7 +120,7 @@ const MySelect = (
             <MenuItem
               key={item.value}
               {...menuItemStyles}
-              {...((value !== undefined ? value : selectedValue) === item.value // 使用 value 或 selectedValue 判断选中状态
+              {...((value !== undefined ? value : selectedValue) === item.value
                 ? {
                     color: 'myBlue.600'
                   }
