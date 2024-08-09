@@ -451,9 +451,13 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed
 	}); err != nil {
 		return fmt.Errorf("failed to list backup: %v", err)
 	}
+	if len(backupList.Items) == 0 {
+		return nil
+	}
 	for i := range backupList.Items {
 		backup := &backupList.Items[i]
 		backupRes := resources.NewResourceNamed(backup)
+		fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
 		if resUsed[backupRes.String()] == nil {
 			resNamed[backupRes.String()] = backupRes
 			resUsed[backupRes.String()] = initResources()
