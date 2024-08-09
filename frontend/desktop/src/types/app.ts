@@ -43,10 +43,9 @@ export type TAppConfig = {
   extra?: {};
   // app top info
   menuData?: {
-    nameColor: string;
-    helpDropDown: boolean;
-    helpDocs: boolean | string;
-  };
+    name: string;
+    link: string;
+  }[];
   i18n?: {
     [key: string]: {
       name: string;

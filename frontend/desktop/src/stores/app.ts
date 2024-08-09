@@ -28,10 +28,9 @@ export class AppInfo {
   extra?: {};
   // app top info
   menuData?: {
-    nameColor: string;
-    helpDropDown: boolean;
-    helpDocs: boolean | string;
-  };
+    name: string;
+    link: string;
+  }[];
   displayType: displayType;
   i18n?: any;
 
