@@ -71,7 +71,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.7 // indirect
 	google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230525234035-dd9d682886f9 // indirect
-	k8s.io/cloud-provider v0.0.0 // indirect
+	k8s.io/cloud-provider v0.27.4 // indirect
 	k8s.io/controller-manager v0.27.4 // indirect
 	k8s.io/cri-api v0.27.4 // indirect
 	k8s.io/kms v0.27.4 // indirect
