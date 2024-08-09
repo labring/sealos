@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -39,6 +43,9 @@ type Interface interface {
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
 	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
+	ApplyInvoice(req *helper.ApplyInvoiceReq) error
+	GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error)
+	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
 	GetWorkspaceName(namespaces []string) ([][]string, error)
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
 	Transfer(req *helper.TransferAmountReq) error
@@ -1248,4 +1255,69 @@ func (m *Account) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 
 func (m *MongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDBName).Collection(m.BillingConn)
+}
+
+func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
+	payments, err := m.ck.GetPaymentListWithIds(req.PaymentIDList, types.Payment{PaymentRaw: types.PaymentRaw{InvoicedAt: false}})
+	if err != nil {
+		return fmt.Errorf("failed to get payment list: %v", err)
+	}
+	if len(payments) == 0 {
+		return fmt.Errorf("no payment record was found for invoicing")
+	}
+	amount := int64(0)
+	var paymentIds []string
+	var invoicePayments []types.InvoicePayment
+	for i := range payments {
+		amount += payments[i].Amount
+		paymentIds = append(paymentIds, payments[i].ID)
+		invoicePayments = append(invoicePayments, types.InvoicePayment{
+			PaymentID: payments[i].ID,
+			Amount:    payments[i].Amount,
+		})
+	}
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("failed to generate payment id: %v", err)
+	}
+	invoice := &types.Invoice{
+		ID:          id,
+		UserID:      req.UserID,
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
+		Detail:      req.Detail,
+		TotalAmount: amount,
+		Status:      types.PendingInvoiceStatus,
+	}
+	if err = m.ck.DB.Transaction(
+		func(tx *gorm.DB) error {
+			if err = m.ck.SetPaymentInvoice(&types.UserQueryOpts{Owner: req.Auth.Owner}, paymentIds); err != nil {
+				return fmt.Errorf("failed to set payment invoice: %v", err)
+			}
+			if err = m.ck.CreateInvoice(invoice); err != nil {
+				return fmt.Errorf("failed to create invoice: %v", err)
+			}
+			if err = m.ck.CreateInvoicePayments(invoicePayments); err != nil {
+				return fmt.Errorf("failed to create invoice payments: %v", err)
+			}
+			return nil
+		}); err != nil {
+		return fmt.Errorf("failed to apply invoice: %v", err)
+	}
+	return nil
+}
+
+func (m *Account) GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error) {
+	return m.ck.GetInvoice(req.UserID, types.LimitReq{
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		TimeRange: types.TimeRange{
+			StartTime: req.StartTime,
+			EndTime:   req.EndTime,
+		},
+	})
+}
+
+func (m *Account) SetStatusInvoice(req *helper.SetInvoiceStatusReq) error {
+	return m.ck.SetInvoiceStatus(req.InvoiceIDList, req.Status)
 }

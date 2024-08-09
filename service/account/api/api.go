@@ -709,3 +709,111 @@ func CalibrateRegionAuth(auth *helper.Auth, kcHost string) error {
 	}
 	return fmt.Errorf("failed to calibrate region auth")
 }
+
+func checkInvoiceToken(token string) error {
+	if token != dao.Cfg.InvoiceToken || token == "" {
+		return fmt.Errorf("invalid invoice token: %s", token)
+	}
+	return nil
+}
+
+// ApplyInvoice
+// @Summary Apply invoice
+// @Description Apply invoice
+// @Tags ApplyInvoice
+// @Accept json
+// @Produce json
+// @Param request body helper.ApplyInvoiceReq true "Apply invoice request"
+// @Success 200 {object} map[string]interface{} "successfully apply invoice"
+// @Failure 400 {object} map[string]interface{} "failed to parse apply invoice request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to apply invoice"
+// @Router /account/v1alpha1/invoice/apply [post]
+func ApplyInvoice(c *gin.Context) {
+	req, err := helper.ParseApplyInvoiceReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse apply invoice request: %v", err)})
+		return
+	}
+	if err := CheckAuthAndCalibrate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	if err := dao.DBClient.ApplyInvoice(req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to apply invoice : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "successfully apply invoice",
+	})
+}
+
+// GetInvoice
+// @Summary Get invoice
+// @Description Get invoice
+// @Tags GetInvoice
+// @Accept json
+// @Produce json
+// @Param request body helper.GetInvoiceReq true "Get invoice request"
+// @Success 200 {object} map[string]interface{} "successfully get invoice"
+// @Failure 400 {object} map[string]interface{} "failed to parse get invoice request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get invoice"
+// @Router /account/v1alpha1/invoice/get [post]
+func GetInvoice(c *gin.Context) {
+	req, err := helper.ParseGetInvoiceReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get invoice request: %v", err)})
+		return
+	}
+	if err := CheckAuthAndCalibrate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	invoices, limits, err := dao.DBClient.GetInvoice(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get invoice : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": struct {
+			Invoices []types.Invoice `json:"invoices"`
+			Limits   types.LimitResp `json:",inline" bson:",inline"`
+		}{
+			Invoices: invoices,
+			Limits:   limits,
+		},
+	})
+}
+
+// SetStatusInvoice
+// @Summary Set status invoice
+// @Description Set status invoice
+// @Tags SetStatusInvoice
+// @Accept json
+// @Produce json
+// @Param request body helper.SetInvoiceStatusReq true "Set status invoice request"
+// @Success 200 {object} map[string]interface{} "successfully set status invoice"
+// @Failure 400 {object} map[string]interface{} "failed to parse set status invoice request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to set status invoice"
+// @Router /account/v1alpha1/invoice/set-status [post]
+func SetStatusInvoice(c *gin.Context) {
+	req, err := helper.ParseSetInvoiceStatusReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse set status invoice request: %v", err)})
+		return
+	}
+	if err = checkInvoiceToken(req.Token); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+
+	if err := dao.DBClient.SetStatusInvoice(req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to set status invoice : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "successfully set status invoice",
+	})
+}

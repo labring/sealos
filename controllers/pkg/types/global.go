@@ -246,3 +246,37 @@ type Payment struct {
 func (Payment) TableName() string {
 	return "Payment"
 }
+
+type InvoiceStatus string
+
+const (
+	PendingInvoiceStatus   = "PENDING"
+	CompletedInvoiceStatus = "COMPLETED"
+	RejectedInvoiceStatus  = "REJECTED"
+)
+
+type Invoice struct {
+	ID          string    `gorm:"type:text;primary_key"`
+	UserID      string    `gorm:"type:text;not null"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
+	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone"`
+	Detail      string    `gorm:"type:text;not null"`
+	Remark      string    `gorm:"type:text"`
+	TotalAmount int64     `gorm:"type:bigint;not null"`
+	// Pending, Completed, Rejected
+	Status InvoiceStatus `gorm:"type:text;not null"`
+}
+
+type InvoicePayment struct {
+	InvoiceID string `gorm:"type:text"`
+	PaymentID string `gorm:"type:text;primary_key"`
+	Amount    int64  `gorm:"type:bigint;not null"`
+}
+
+func (Invoice) TableName() string {
+	return "Invoice"
+}
+
+func (InvoicePayment) TableName() string {
+	return "InvoicePayment"
+}

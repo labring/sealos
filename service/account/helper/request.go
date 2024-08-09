@@ -366,3 +366,76 @@ type LimitResp struct {
 	// @Description Total page
 	TotalPage int64 `json:"totalPage" bson:"totalPage"`
 }
+
+type ApplyInvoiceReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	*Auth `json:",inline" bson:",inline"`
+
+	// payment id list
+	// @Summary Payment ID list
+	// @Description Payment ID list
+	// @JSONSchema required
+	PaymentIDList []string `json:"paymentIDList" bson:"paymentIDList" binding:"required" example:"[\"payment-id-1\",\"payment-id-2\"]"`
+
+	// invoice detail information json
+	// @Summary Invoice detail information
+	// @Description Invoice detail information
+	// @JSONSchema required
+	Detail string `json:"detail" bson:"detail" binding:"required" example:"{\"title\":\"title\",\"amount\":100,\"taxRate\":0.06,\"tax\":6,\"total\":106,\"invoiceType\":1,\"invoiceContent\":1,\"invoiceStatus\":1,\"invoiceTime\":\"2021-01-01T00:00:00Z\",\"invoiceNumber\":\"invoice-number-1\",\"invoiceCode\":\"invoice-code-1\",\"invoiceFile\":\"invoice-file-1\"}"`
+}
+
+func ParseApplyInvoiceReq(c *gin.Context) (*ApplyInvoiceReq, error) {
+	applyInvoice := &ApplyInvoiceReq{}
+	if err := c.ShouldBindJSON(applyInvoice); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	return applyInvoice, nil
+}
+
+type GetInvoiceReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	*Auth `json:",inline" bson:",inline"`
+
+	// @Summary Limit request
+	// @Description Limit request
+	LimitReq `json:",inline" bson:",inline"`
+}
+
+type SetInvoiceStatusReq struct {
+	// Invoice id list
+	// @Summary Invoice ID list
+	// @Description Invoice ID list
+	// @JSONSchema required
+	InvoiceIDList []string `json:"invoiceIDList" bson:"invoiceIDList" binding:"required" example:"[\"invoice-id-1\",\"invoice-id-2\"]"`
+
+	// Invoice status
+	// @Summary Invoice status
+	// @Description Invoice status
+	// @JSONSchema required
+	Status string `json:"status" bson:"status" binding:"required" example:"COMPLETED,REJECTED,PENDING"`
+
+	// @Summary Authentication token
+	// @Description Authentication token
+	// @JSONSchema required
+	Token string `json:"token" bson:"token" binding:"required" example:"token"`
+}
+
+func ParseGetInvoiceReq(c *gin.Context) (*GetInvoiceReq, error) {
+	invoiceList := &GetInvoiceReq{}
+	if err := c.ShouldBindJSON(invoiceList); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	return invoiceList, nil
+}
+
+func ParseSetInvoiceStatusReq(c *gin.Context) (*SetInvoiceStatusReq, error) {
+	invoiceStatus := &SetInvoiceStatusReq{}
+	if err := c.ShouldBindJSON(invoiceStatus); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	return invoiceStatus, nil
+}

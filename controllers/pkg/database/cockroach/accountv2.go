@@ -643,20 +643,94 @@ func (c *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time
 	return payment, nil
 }
 
+func (c *Cockroach) GetPaymentListWithIds(ids []string, status types.Payment) ([]types.Payment, error) {
+	var payment []types.Payment
+	if err := c.DB.Where(status).Where("id IN ?", ids).Find(&payment).Error; err != nil {
+		return nil, fmt.Errorf("failed to get payment: %w", err)
+	}
+	return payment, nil
+}
+
 func (c *Cockroach) SetPaymentInvoice(ops *types.UserQueryOpts, paymentIDList []string) error {
 	userUID, err := c.GetUserUID(ops)
 	if err != nil {
 		return fmt.Errorf("failed to get user uid: %v", err)
 	}
-	var payment []types.Payment
-	if err := c.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Find(&payment).Error; err != nil {
-		return fmt.Errorf("failed to get payment: %w", err)
+	if err := c.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Update("invoiced_at", true).Error; err != nil {
+		return fmt.Errorf("failed to save payment: %v", err)
 	}
-	for i := range payment {
-		payment[i].InvoicedAt = true
-		if err := c.DB.Save(&payment[i]).Error; err != nil {
-			return fmt.Errorf("failed to save payment: %v", err)
+	return nil
+}
+
+func (c *Cockroach) GetInvoice(userID string, req types.LimitReq) ([]types.Invoice, types.LimitResp, error) {
+	var invoices []types.Invoice
+	var total int64
+	var limitResp types.LimitResp
+
+	query := c.DB.Model(&types.Invoice{}).Where("user_id = ?", userID)
+
+	if !req.StartTime.IsZero() {
+		query = query.Where("created_at >= ?", req.StartTime)
+	}
+	if !req.EndTime.IsZero() {
+		query = query.Where("created_at <= ?", req.EndTime)
+	}
+
+	if req.Page < 1 {
+		req.Page = 1
+	}
+	if req.PageSize < 1 {
+		req.PageSize = 10
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, limitResp, fmt.Errorf("failed to get total count: %v", err)
+	}
+
+	totalPage := (total + int64(req.PageSize) - 1) / int64(req.PageSize)
+
+	if err := query.Limit(req.PageSize).
+		Offset((req.Page - 1) * req.PageSize).
+		Find(&invoices).Error; err != nil {
+		return nil, limitResp, fmt.Errorf("failed to get invoices: %v", err)
+	}
+
+	limitResp = types.LimitResp{
+		Total:     total,
+		TotalPage: totalPage,
+	}
+
+	return invoices, limitResp, nil
+}
+
+func (c *Cockroach) CreateInvoice(i *types.Invoice) error {
+	if i.ID == "" {
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("failed to generate invoice id: %v", err)
 		}
+		i.ID = id
+	}
+	if i.CreatedAt.IsZero() {
+		i.CreatedAt = time.Now()
+	}
+	if err := c.DB.Create(i).Error; err != nil {
+		return fmt.Errorf("failed to save invoice: %v", err)
+	}
+	return nil
+}
+
+// create invoicePayments
+func (c *Cockroach) CreateInvoicePayments(invoicePayments []types.InvoicePayment) error {
+	if err := c.DB.Create(invoicePayments).Error; err != nil {
+		return fmt.Errorf("failed to save invoice payments: %v", err)
+	}
+	return nil
+}
+
+func (c *Cockroach) SetInvoiceStatus(ids []string, stats string) error {
+	if err := c.DB.Model(&types.Invoice{}).Where("id IN ?", ids).Update("status", stats).Error; err != nil {
+		return fmt.Errorf("failed to update invoice status: %v", err)
 	}
 	return nil
 }
@@ -818,7 +892,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	return CreateTableIfNotExist(c.DB, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}, types.Region{})
+	return CreateTableIfNotExist(c.DB, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{})
 }
 
 func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {

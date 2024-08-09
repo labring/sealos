@@ -21,6 +21,9 @@ const (
 	GetBasicCostDistribution = "/cost-basic-distribution"
 	GetAppCostTimeRange      = "/cost-app-time-range"
 	CheckPermission          = "/check-permission"
+	GetInvoice               = "/invoice/get"
+	ApplyInvoice             = "/invoice/apply"
+	SetStatusInvoice         = "/invoice/set-status"
 )
 
 // env

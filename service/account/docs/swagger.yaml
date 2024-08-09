@@ -68,6 +68,40 @@ definitions:
         example: admin
         type: string
     type: object
+  helper.ApplyInvoiceReq:
+    properties:
+      detail:
+        description: |-
+          invoice detail information json
+          @Summary Invoice detail information
+          @Description Invoice detail information
+          @JSONSchema required
+        example: '{"title":"title","amount":100,"taxRate":0.06,"tax":6,"total":106,"invoiceType":1,"invoiceContent":1,"invoiceStatus":1,"invoiceTime":"2021-01-01T00:00:00Z","invoiceNumber":"invoice-number-1","invoiceCode":"invoice-code-1","invoiceFile":"invoice-file-1"}'
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      paymentIDList:
+        description: |-
+          payment id list
+          @Summary Payment ID list
+          @Description Payment ID list
+          @JSONSchema required
+        example:
+        - '["payment-id-1"'
+        - '"payment-id-2"]'
+        items:
+          type: string
+        type: array
+      userID:
+        example: admin
+        type: string
+    required:
+    - detail
+    - paymentIDList
+    type: object
   helper.Auth:
     properties:
       kubeConfig:
@@ -246,6 +280,33 @@ definitions:
         example: admin
         type: string
     type: object
+  helper.GetInvoiceReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
+        type: string
+    type: object
   helper.GetPropertiesResp:
     properties:
       data:
@@ -335,6 +396,40 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  helper.SetInvoiceStatusReq:
+    properties:
+      invoiceIDList:
+        description: |-
+          Invoice id list
+          @Summary Invoice ID list
+          @Description Invoice ID list
+          @JSONSchema required
+        example:
+        - '["invoice-id-1"'
+        - '"invoice-id-2"]'
+        items:
+          type: string
+        type: array
+      status:
+        description: |-
+          Invoice status
+          @Summary Invoice status
+          @Description Invoice status
+          @JSONSchema required
+        example: COMPLETED,REJECTED,PENDING
+        type: string
+      token:
+        description: |-
+          @Summary Authentication token
+          @Description Authentication token
+          @JSONSchema required
+        example: token
+        type: string
+    required:
+    - invoiceIDList
+    - status
+    - token
     type: object
   helper.SetPaymentInvoiceReq:
     properties:
@@ -921,6 +1016,120 @@ paths:
       summary: Get transfer
       tags:
       - Transfer
+  /account/v1alpha1/invoice/apply:
+    post:
+      consumes:
+      - application/json
+      description: Apply invoice
+      parameters:
+      - description: Apply invoice request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.ApplyInvoiceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully apply invoice
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse apply invoice request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to apply invoice
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Apply invoice
+      tags:
+      - ApplyInvoice
+  /account/v1alpha1/invoice/get:
+    post:
+      consumes:
+      - application/json
+      description: Get invoice
+      parameters:
+      - description: Get invoice request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetInvoiceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get invoice
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get invoice request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get invoice
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get invoice
+      tags:
+      - GetInvoice
+  /account/v1alpha1/invoice/set-status:
+    post:
+      consumes:
+      - application/json
+      description: Set status invoice
+      parameters:
+      - description: Set status invoice request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.SetInvoiceStatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully set status invoice
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse set status invoice request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to set status invoice
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Set status invoice
+      tags:
+      - SetStatusInvoice
   /account/v1alpha1/namespaces:
     post:
       consumes:
