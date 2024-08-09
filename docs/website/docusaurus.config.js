@@ -32,12 +32,12 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: "../4.0/docs",
+          path: "../5.0/docs",
           sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath, locale }) =>
-            "https://github.com/labring/sealos/tree/main/docs/4.0/" +
+            "https://github.com/labring/sealos/tree/main/docs/5.0/" +
             (locale === "en" ? `${versionDocsDirPath}` : `i18n/${locale}`) +
             `/${docPath}`,
           editLocalizedFiles: false,

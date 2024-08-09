@@ -9,7 +9,7 @@
  Create as many sidebars as you want.
  */
 
-const sidebar = require('../4.0/sidebar.json')
+const sidebar = require('../5.0/sidebar.json')
 
 // @ts-check
 
