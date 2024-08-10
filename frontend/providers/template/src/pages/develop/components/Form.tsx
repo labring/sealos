@@ -13,7 +13,7 @@ import {
   NumberInputField
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, memo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { evaluateExpression } from '@/utils/json-yaml';
 import { getTemplateValues } from '@/utils/template';
@@ -193,4 +193,4 @@ const Form = ({
   );
 };
 
-export default Form;
+export default memo(Form);

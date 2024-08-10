@@ -19,7 +19,7 @@ import { downLoadBold } from '@/utils/tools';
 import { Button, Center, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { debounce, has, isObject, mapValues } from 'lodash';
+import { debounce, has, isEqual, isObject, mapValues } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -71,7 +71,7 @@ export default function Develop() {
     try {
       const result = getYamlSource(str, platformEnvs);
       const formInputs = formHook.getValues();
-      setTemplateSource(result);
+      isEqual(result, templateSource) || setTemplateSource(result);
       const correctYamlList = generateYamlData(result, formInputs);
       setYamlList(correctYamlList);
     } catch (error: any) {
