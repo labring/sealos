@@ -44,7 +44,7 @@ const Form = ({
     getValues,
   } = formHook;
 
-  const { defaults, defaultInputs } = getTemplateValues(formSource);
+  const { defaults, defaultInputs } = useMemo(() => getTemplateValues(formSource), [formSource]);
 
   const hasDynamicInputs = useMemo(() => {
     return formSource?.source?.inputs?.some(item => item.if !== undefined);
