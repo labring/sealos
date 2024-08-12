@@ -13,11 +13,13 @@ import {
 export const useConfirm = ({
   title = 'prompt',
   content,
-  confirmText = 'confirm'
+  confirmText = 'confirm',
+  cancelText = 'cancel'
 }: {
   title?: string
   content: string
   confirmText?: string
+  cancelText?: string
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const cancelRef = useRef(null)
@@ -53,7 +55,7 @@ export const useConfirm = ({
                     onClose()
                     typeof cancelCb.current === 'function' && cancelCb.current()
                   }}>
-                  {'Cancel'}
+                  {cancelText}
                 </Button>
                 <Button
                   ml={3}

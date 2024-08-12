@@ -40,7 +40,10 @@ const DevboxCreatePage = () => {
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: '确认创建项目？'
+    content: '确认创建项目？',
+    title: '提示',
+    confirmText: '确认',
+    cancelText: '取消'
   })
   const tabType = searchParams.get('type') || 'form'
 
