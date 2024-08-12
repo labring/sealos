@@ -1258,7 +1258,10 @@ func (m *MongoDB) getBillingCollection() *mongo.Collection {
 }
 
 func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
-	payments, err := m.ck.GetPaymentListWithIds(req.PaymentIDList, types.Payment{PaymentRaw: types.PaymentRaw{InvoicedAt: false}})
+	if len(req.PaymentIDList) == 0 {
+		return nil
+	}
+	payments, err := m.ck.GetUnInvoicedPaymentListWithIds(req.PaymentIDList)
 	if err != nil {
 		return fmt.Errorf("failed to get payment list: %v", err)
 	}
@@ -1268,17 +1271,18 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
 	amount := int64(0)
 	var paymentIds []string
 	var invoicePayments []types.InvoicePayment
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("failed to generate payment id: %v", err)
+	}
 	for i := range payments {
 		amount += payments[i].Amount
 		paymentIds = append(paymentIds, payments[i].ID)
 		invoicePayments = append(invoicePayments, types.InvoicePayment{
 			PaymentID: payments[i].ID,
 			Amount:    payments[i].Amount,
+			InvoiceID: id,
 		})
-	}
-	id, err := gonanoid.New(12)
-	if err != nil {
-		return fmt.Errorf("failed to generate payment id: %v", err)
 	}
 	invoice := &types.Invoice{
 		ID:          id,
@@ -1289,15 +1293,16 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
 		TotalAmount: amount,
 		Status:      types.PendingInvoiceStatus,
 	}
+	// save invoice with transaction
 	if err = m.ck.DB.Transaction(
 		func(tx *gorm.DB) error {
-			if err = m.ck.SetPaymentInvoice(&types.UserQueryOpts{Owner: req.Auth.Owner}, paymentIds); err != nil {
+			if err = m.ck.SetPaymentInvoiceWithDB(&types.UserQueryOpts{ID: req.UserID}, paymentIds, tx); err != nil {
 				return fmt.Errorf("failed to set payment invoice: %v", err)
 			}
-			if err = m.ck.CreateInvoice(invoice); err != nil {
+			if err = m.ck.CreateInvoiceWithDB(invoice, tx); err != nil {
 				return fmt.Errorf("failed to create invoice: %v", err)
 			}
-			if err = m.ck.CreateInvoicePayments(invoicePayments); err != nil {
+			if err = m.ck.CreateInvoicePaymentsWithDB(invoicePayments, tx); err != nil {
 				return fmt.Errorf("failed to create invoice payments: %v", err)
 			}
 			return nil

@@ -287,6 +287,7 @@ func GetAccount(c *gin.Context) {
 }
 
 // SetPaymentInvoice
+// TODO will be deprecated
 // @Summary Set payment invoice
 // @Description Set payment invoice
 // @Tags PaymentInvoice

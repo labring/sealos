@@ -643,9 +643,9 @@ func (c *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time
 	return payment, nil
 }
 
-func (c *Cockroach) GetPaymentListWithIds(ids []string, status types.Payment) ([]types.Payment, error) {
+func (c *Cockroach) GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error) {
 	var payment []types.Payment
-	if err := c.DB.Where(status).Where("id IN ?", ids).Find(&payment).Error; err != nil {
+	if err := c.DB.Where("id IN ?", ids).Where("invoiced_at = ?", false).Find(&payment).Error; err != nil {
 		return nil, fmt.Errorf("failed to get payment: %w", err)
 	}
 	return payment, nil
@@ -656,8 +656,44 @@ func (c *Cockroach) SetPaymentInvoice(ops *types.UserQueryOpts, paymentIDList []
 	if err != nil {
 		return fmt.Errorf("failed to get user uid: %v", err)
 	}
-	if err := c.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Update("invoiced_at", true).Error; err != nil {
+	if err := c.DB.Model(&types.Payment{}).Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Update("invoiced_at", true).Error; err != nil {
 		return fmt.Errorf("failed to save payment: %v", err)
+	}
+	return nil
+}
+
+func (c *Cockroach) SetPaymentInvoiceWithDB(ops *types.UserQueryOpts, paymentIDList []string, DB *gorm.DB) error {
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return fmt.Errorf("failed to get user uid: %v", err)
+	}
+	if err := DB.Model(&types.Payment{}).Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Update("invoiced_at", true).Error; err != nil {
+		return fmt.Errorf("failed to save payment: %v", err)
+	}
+	return nil
+}
+
+func (c *Cockroach) CreateInvoiceWithDB(i *types.Invoice, DB *gorm.DB) error {
+	if i.ID == "" {
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("failed to generate invoice id: %v", err)
+		}
+		i.ID = id
+	}
+	if i.CreatedAt.IsZero() {
+		i.CreatedAt = time.Now()
+	}
+	if err := DB.Create(i).Error; err != nil {
+		return fmt.Errorf("failed to save invoice: %v", err)
+	}
+	return nil
+}
+
+// create invoicePayments
+func (c *Cockroach) CreateInvoicePaymentsWithDB(invoicePayments []types.InvoicePayment, DB *gorm.DB) error {
+	if err := DB.Create(invoicePayments).Error; err != nil {
+		return fmt.Errorf("failed to save invoice payments: %v", err)
 	}
 	return nil
 }
@@ -701,31 +737,6 @@ func (c *Cockroach) GetInvoice(userID string, req types.LimitReq) ([]types.Invoi
 	}
 
 	return invoices, limitResp, nil
-}
-
-func (c *Cockroach) CreateInvoice(i *types.Invoice) error {
-	if i.ID == "" {
-		id, err := gonanoid.New(12)
-		if err != nil {
-			return fmt.Errorf("failed to generate invoice id: %v", err)
-		}
-		i.ID = id
-	}
-	if i.CreatedAt.IsZero() {
-		i.CreatedAt = time.Now()
-	}
-	if err := c.DB.Create(i).Error; err != nil {
-		return fmt.Errorf("failed to save invoice: %v", err)
-	}
-	return nil
-}
-
-// create invoicePayments
-func (c *Cockroach) CreateInvoicePayments(invoicePayments []types.InvoicePayment) error {
-	if err := c.DB.Create(invoicePayments).Error; err != nil {
-		return fmt.Errorf("failed to save invoice payments: %v", err)
-	}
-	return nil
 }
 
 func (c *Cockroach) SetInvoiceStatus(ids []string, stats string) error {

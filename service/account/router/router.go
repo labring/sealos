@@ -40,7 +40,7 @@ func RegisterPayRouter() {
 		POST(helper.GetRechargeAmount, api.GetRechargeAmount).
 		POST(helper.GetConsumptionAmount, api.GetConsumptionAmount).
 		POST(helper.GetPropertiesUsed, api.GetPropertiesUsedAmount).
-		POST(helper.SetPaymentInvoice, api.SetPaymentInvoice).
+		POST(helper.SetPaymentInvoice, api.SetPaymentInvoice). // will be deprecated
 		POST(helper.SetTransfer, api.TransferAmount).
 		POST(helper.GetTransfer, api.GetTransfer).
 		POST(helper.CheckPermission, api.CheckPermission).
