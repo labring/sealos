@@ -61,6 +61,10 @@ const DevboxCreatePage = () => {
       {
         filename: 'pod.yaml',
         value: ''
+      },
+      {
+        filename: 'account.yaml',
+        value: json2Account(data)
       }
     ]
   }

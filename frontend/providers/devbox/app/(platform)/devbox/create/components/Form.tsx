@@ -40,16 +40,6 @@ const Form = ({
       id: 'baseInfo',
       label: '基础配置',
       icon: 'formInfo'
-    },
-    {
-      id: 'network',
-      label: '网络配置',
-      icon: 'formNetwork'
-    },
-    {
-      id: 'advanced',
-      label: '高级配置',
-      icon: 'formAdvanced'
     }
   ]
   const [activeNav, setActiveNav] = useState(navList[0].id)
@@ -192,7 +182,7 @@ const Form = ({
             ))}
           </Box>
           <Box mt={3} overflow={'hidden'}>
-            <QuotaBox />
+            {/* <QuotaBox /> */}
           </Box>
           {INSTALL_ACCOUNT && (
             <Box mt={3} overflow={'hidden'}>
@@ -321,7 +311,7 @@ const Form = ({
                   step={1}
                 />
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
-                  (Core)
+                  Core
                 </Box>
               </Flex>
               {/* Memory */}

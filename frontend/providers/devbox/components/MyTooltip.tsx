@@ -1,4 +1,3 @@
-import React from 'react'
 import { Tooltip, TooltipProps } from '@chakra-ui/react'
 
 const MyTooltip = ({ children, ...props }: TooltipProps) => {

@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react'

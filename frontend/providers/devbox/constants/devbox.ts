@@ -17,8 +17,8 @@ export const RuntimeTypeList = [
   { id: RuntimeTypeEnum.python, label: 'python' },
   { id: RuntimeTypeEnum.node, label: 'node' },
   { id: RuntimeTypeEnum.rust, label: 'rust' },
-  { id: RuntimeTypeEnum.php, label: 'php' },
-  { id: RuntimeTypeEnum.custom, label: 'custom' }
+  { id: RuntimeTypeEnum.php, label: 'php' }
+  // { id: RuntimeTypeEnum.custom, label: 'custom' }
 ]
 
 export enum DBTypeEnum {

@@ -1,7 +1,5 @@
 import { useMemo } from 'react'
-import { SealosCoin } from '@sealos/ui'
 import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
-import { SOURCE_PRICE } from '@/stores/static'
 
 // TODO: 补全colorMap
 export const colorMap = {
@@ -62,8 +60,7 @@ const PriceBox = ({
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
             <Box flex={'0 0 65px'}>{item.label}:</Box>
             <Flex alignItems={'center'} gap={'4px'}>
-              <SealosCoin />
-              {item.value}
+              ￥{item.value}
             </Flex>
           </Flex>
         ))}
