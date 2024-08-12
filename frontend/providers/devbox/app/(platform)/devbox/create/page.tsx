@@ -87,7 +87,7 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
   useQuery(['initDevboxCreateData'], () => {
     setYamlList([
       {
-        filename: 'cluster.yaml',
+        filename: 'pod.yaml',
         value: '' // TODO: 这里之后等有crd之后再补全
       },
       {
@@ -152,7 +152,7 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
       <Flex
         flexDirection={'column'}
         alignItems={'center'}
-        h={'100%'}
+        h={'100vh'}
         minWidth={'1024px'}
         backgroundColor={'grayModern.100'}>
         <Header
@@ -161,7 +161,6 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
             formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
           }
         />
-
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {formType === 'form' ? (
             <Form formHook={formHook} pxVal={pxVal} />
