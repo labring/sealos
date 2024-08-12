@@ -11,7 +11,7 @@ export const getMyDevboxList = () =>
       {
         id: 1,
         name: 'first-devbox',
-        runtime: 'node',
+        runtimeType: 'node',
         status: devboxStatusMap['Creating'],
         createTime: '2024-08-09 12:02',
         cpu: 2,
