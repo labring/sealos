@@ -1,3 +1,5 @@
+import { useMessage } from '@sealos/ui'
+
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
     return 0
@@ -69,4 +71,32 @@ export const obj2Query = (obj: Record<string, string | number>) => {
   })
 
   return str.slice(0, str.length - 1)
+}
+
+export const useCopyData = () => {
+  const { message: toast } = useMessage()
+
+  return {
+    copyData: (data: string, title: string = 'copy_success') => {
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = data
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        toast({
+          title: title,
+          status: 'success',
+          duration: 1000
+        })
+      } catch (error) {
+        console.error(error)
+        toast({
+          title: '复制失败',
+          status: 'error'
+        })
+      }
+    }
+  }
 }
