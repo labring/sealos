@@ -161,10 +161,7 @@ const Logs = ({
       });
     } catch (err: any) {
       toast({
-        title:
-          typeof err === 'string'
-            ? err
-            : err?.message || t('Event Analyze Error') || 'Event Analyze Error',
+        title: typeof err === 'string' ? err : err?.message || t('event_analyze_error'),
         status: 'warning',
         duration: 5000,
         isClosable: true
@@ -181,7 +178,7 @@ const Logs = ({
         <ModalHeader py={'8px'}>
           <Flex alignItems={'center'}>
             <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
-              Pod {t('Details')}
+              Pod {t('details')}
             </Box>
             <Box px={3}>
               <SealosMenu
@@ -224,7 +221,7 @@ const Logs = ({
         >
           <Flex flexDirection={'column'} h={'100%'}>
             <Box fontSize={'md'} fontWeight={'bold'} mb={4} color={'grayModern.600'}>
-              {t('Details')}
+              {t('details')}
             </Box>
             <Box
               flex={'1 0 0'}
@@ -279,7 +276,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  {t('Event Analyze')}
+                  {t('event_analyze')}
                 </Button>
               )} */}
             </Flex>

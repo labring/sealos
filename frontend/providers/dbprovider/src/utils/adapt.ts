@@ -1,8 +1,28 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
-import { DBStatusEnum, MigrationRemark, dbStatusMap } from '@/constants/db';
+import {
+  DBReconfigStatusMap,
+  DBStatusEnum,
+  DBReconfigureMap,
+  MigrationRemark,
+  dbStatusMap,
+  DBReconfigureKey,
+  DBPreviousConfigKey
+} from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
-import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
-import type { DBDetailType, DBEditType, DBListItemType, PodDetailType, PodEvent } from '@/types/db';
+import type {
+  KbPgClusterType,
+  KubeBlockBackupPolicyType,
+  KubeBlockOpsRequestType
+} from '@/types/cluster';
+import type {
+  DBDetailType,
+  DBEditType,
+  DBListItemType,
+  DBType,
+  OpsRequestItemType,
+  PodDetailType,
+  PodEvent
+} from '@/types/db';
 import { InternetMigrationCR, MigrateItemType } from '@/types/migrate';
 import {
   convertCronTime,
@@ -251,5 +271,44 @@ export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => 
     status: item.status?.taskStatus,
     startTime: formatTime(item.metadata?.creationTimestamp || ''),
     remark: item.metadata.labels[MigrationRemark] || '-'
+  };
+};
+
+export const adaptOpsRequest = (
+  item: KubeBlockOpsRequestType,
+  dbType: DBType
+): OpsRequestItemType => {
+  const config = item.metadata.annotations?.[DBPreviousConfigKey];
+
+  let previousConfigurations: {
+    [key: string]: string;
+  } = {};
+
+  if (config) {
+    try {
+      const confObject = JSON.parse(config);
+      Object.entries(confObject).forEach(([key, value]) => {
+        previousConfigurations[key] =
+          typeof value === 'string' ? value.replace(/^['"](.*)['"]$/, '$1') : String(value);
+      });
+    } catch (error) {
+      console.error('Error parsing postgresql.conf annotation:', error);
+    }
+  }
+
+  return {
+    id: item.metadata.uid,
+    name: item.metadata.name,
+    namespace: item.metadata.namespace,
+    status:
+      item.status?.phase && DBReconfigStatusMap[item.status.phase]
+        ? DBReconfigStatusMap[item.status.phase]
+        : DBReconfigStatusMap.Creating,
+    startTime: item.metadata?.creationTimestamp,
+    configurations: item.spec.reconfigure.configurations[0].keys[0].parameters.map((param) => ({
+      parameterName: param.key,
+      newValue: param.value,
+      oldValue: previousConfigurations[param.key]
+    }))
   };
 };

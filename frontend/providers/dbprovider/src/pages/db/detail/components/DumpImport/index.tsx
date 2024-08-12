@@ -62,7 +62,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           if (files.length <= 0) {
             closeMigrate();
             return toast({
-              title: t('Lost File'),
+              title: t('lost_file'),
               status: 'error'
             });
           }
@@ -74,16 +74,16 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             if (!e.progress) return;
             const percent = Math.round(e.progress * 100);
             if (percent < 100) {
-              setFileProgressText(t('file.Uploading', { percent }) || '');
+              setFileProgressText(t('file.Uploading', { percent }));
             } else {
-              setFileProgressText(t('file.Upload Success') || '');
+              setFileProgressText(t('file.Upload Success'));
             }
           });
 
           if (!result[0]) {
             closeMigrate();
             return toast({
-              title: t('File upload failed'),
+              title: t('file_upload_failed'),
               status: 'error'
             });
           }
@@ -101,7 +101,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       (error) => {
         onClose();
         const deepSearch = (obj: any): string => {
-          if (!obj) return t('Submit Error');
+          if (!obj) return t('submit_error');
           if (!!obj.message) {
             return obj.message;
           }
@@ -197,41 +197,36 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   return (
     <Box h={'100%'} position={'relative'}>
       <Flex borderTop={'1px solid #EAEBF0'} h="100%">
-        <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
-          <Box px={'4px'} pt={'14px'}>
-            <QuotaBox showBorder={false} />
-          </Box>
-        </Box>
         <Box flex={1} pt="35px" px="40px" overflowY={'auto'}>
           <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
-            {t('Upload dump file')}
+            {t('upload_dump_file')}
           </Text>
           <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
 
           <Flex alignItems={'center'} mt="22px">
             <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-              {t('DB Name')}
+              {t('db_name')}
             </Text>
             <Input
               width={'380px'}
               maxW={'400px'}
               isInvalid={!!formHook.formState?.errors?.databaseName}
               {...formHook.register('databaseName', {
-                required: t('Database Name Empty') || ''
+                required: t('database_name_empty')
               })}
             />
           </Flex>
           {db?.dbType === 'mongodb' && (
             <Flex alignItems={'center'} mt="22px">
               <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-                {t('Collection Name')}
+                {t('collection_name')}
               </Text>
               <Input width={'380px'} maxW={'400px'} {...formHook.register('collectionName')} />
             </Flex>
           )}
           <Flex justifyContent={'end'}>
             <Button mt="40px" w={'100px'} h={'32px'} variant={'solid'} onClick={onOpen}>
-              {t('Migrate Now')}
+              {t('migrate_now')}
             </Button>
           </Flex>
         </Box>
@@ -246,11 +241,11 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         <ModalOverlay />
         {migrateStatus === MigrateStatusEnum.Prepare && (
           <ModalContent>
-            <ModalHeader>{t('Prompt')}</ModalHeader>
+            <ModalHeader>{t('prompt')}</ModalHeader>
             <ModalBody>
               <ModalCloseButton top={'10px'} right={'10px'} />
               <Flex mb={'44px'}>
-                <Text> {t('Are you sure to perform database migration')} </Text>
+                <Text> {t('are_you_sure_to_perform_database_migration')} </Text>
               </Flex>
 
               <Flex justifyContent={'flex-end'}>
@@ -258,7 +253,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   {t('Cancel')}
                 </Button>
                 <Button ml={3} variant={'solid'} onClick={handleConfirm}>
-                  {t('Confirm')}
+                  {t('confirm')}
                 </Button>
               </Flex>
             </ModalBody>
@@ -287,7 +282,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   {fileProgressText}
                 </Text>
                 <Text fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
-                  {t('Migration prompt information')}
+                  {t('migration_prompt_information')}
                 </Text>
               </Flex>
             </ModalBody>
@@ -310,7 +305,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                 >
                   <MyIcon name="success" w={'42px'} h="42px"></MyIcon>
                   <Text mt="16px" fontSize={'20px'} fontWeight={500} color={'#24282C'}>
-                    {t('Migration Successful')}
+                    {t('migration_successful')}
                   </Text>
                 </Flex>
               )}
@@ -325,7 +320,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                 >
                   <MyIcon name="error" w={'42px'} h="42px"></MyIcon>
                   <Text mt="16px" fontSize={'20px'} fontWeight={500} color={'#24282C'}>
-                    {t('Migration Failed')}
+                    {t('migration_failed')}
                   </Text>
                   <Divider mt="44px" mb="24px" />
                   <Text
@@ -333,7 +328,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                     fontSize={'14px'}
                     fontWeight={400}
                     color={'#7B838B'}
-                    dangerouslySetInnerHTML={{ __html: log ? log : 'Have Error' }}
+                    dangerouslySetInnerHTML={{ __html: log ? log : 'have_error' }}
                   ></Text>
                 </Flex>
               )}

@@ -27,11 +27,6 @@ const Home = () => {
         script1.setAttribute('data-website-id', 'e5a8009f-7cb6-4841-9522-d23b96216b7a');
         script1.async = true;
         document.head.appendChild(script1);
-
-        const scriptBaidu = document.createElement('script');
-        scriptBaidu.src = 'https://hm.baidu.com/hm.js?d8e8ecf669c47dc2512d3f1417e761f9';
-        scriptBaidu.async = true;
-        document.head.appendChild(scriptBaidu);
       } else {
         const script2 = document.createElement('script');
         script2.src = 'https://umami.cloud.sealos.io/oishii';

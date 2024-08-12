@@ -8,8 +8,8 @@ import { blurBackgroundStyles } from './index';
 
 export default function Monitor({ needStyles = true }: { needStyles?: boolean }) {
   const { t } = useTranslation();
-  const { data } = useQuery(['appListQuery'], getResource, {
-    cacheTime: 5 * 60 * 1000
+  const { data } = useQuery(['getResource'], getResource, {
+    staleTime: 60 * 1000
   });
 
   const info = [
@@ -65,7 +65,7 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
       <Flex alignItems={'center'} mt={'12px'} gap={'20px'}>
         <CircularProgress
           size={'90px'}
-          trackColor={'#FF8398'}
+          trackColor={runningPodPercentage === 0 ? '#FFFFFF33' : '#FF8398'}
           value={runningPodPercentage}
           color="#2BE0B3"
         >

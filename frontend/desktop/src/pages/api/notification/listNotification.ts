@@ -3,8 +3,10 @@ import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
-
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
+import { NotificationCR } from '@/types';
+import { adaptNotification } from '@/utils/adapt';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
@@ -22,10 +24,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       plural: 'notifications'
     };
 
-    const listCrd = await ListCRD(kc, notification_meta);
-    jsonRes(res, { data: listCrd.body });
-  } catch (err) {
+    const result = (await ListCRD(kc, notification_meta)) as {
+      body: {
+        items: NotificationCR[];
+      };
+    };
+    const data = result.body?.items?.map(adaptNotification);
+
+    jsonRes(res, { data: data });
+  } catch (err: any) {
     console.log(err);
-    jsonRes(res, { code: 500 });
+    jsonRes(res, { code: 500, data: err?.body });
   }
 }

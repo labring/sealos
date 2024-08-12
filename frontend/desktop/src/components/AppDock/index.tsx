@@ -4,16 +4,18 @@ import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { APPTYPE, TApp } from '@/types';
 import { Box, Center, Flex, Image } from '@chakra-ui/react';
-import { MouseEvent, useContext, useMemo, useState } from 'react';
+import { MouseEvent, useContext, useMemo } from 'react';
 import { Menu, useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import styles from './index.module.css';
 import { useTranslation } from 'next-i18next';
+import CustomTooltip from './CustomTooltip';
+import { I18nCommonKey } from '@/types/i18next';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
 export default function AppDock() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     installedApps: apps,
     runningInfo,
@@ -26,7 +28,8 @@ export default function AppDock() {
   } = useAppStore();
   const logo = useConfigStore().layoutConfig?.logo;
   const moreAppsContent = useContext(MoreAppsContext);
-  const [isNavbarVisible, setNavbarVisible] = useState(true);
+  const { isNavbarVisible, toggleNavbarVisibility } = useDesktopConfigStore();
+
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
   });
@@ -116,7 +119,7 @@ export default function AppDock() {
   const transitionValue = 'transform 200ms ease-in-out, opacity 200ms ease-in-out';
 
   return (
-    <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'9999'}>
+    <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'1000'}>
       <Center
         width={'48px'}
         height={'16px'}
@@ -133,7 +136,7 @@ export default function AppDock() {
         top={'-80px'}
         transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
         will-change="transform, opacity"
-        onClick={() => setNavbarVisible((prev) => !prev)}
+        onClick={toggleNavbarVisibility}
       >
         <ChevronDownIcon
           transform={isNavbarVisible ? 'rotate(0deg)' : 'rotate(180deg)'}
@@ -164,44 +167,53 @@ export default function AppDock() {
       >
         {AppMenuLists.map((item: AppInfo, index: number) => {
           return (
-            <Flex
-              flexDirection={'column'}
-              alignItems={'center'}
-              cursor={'pointer'}
+            <CustomTooltip
+              placement="top"
               key={item?.name}
-              pt={'6px'}
-              pb={'2px'}
-              onClick={(e) => handleNavItem(e, item)}
+              label={
+                item?.i18n?.[i18n?.language]?.name
+                  ? item?.i18n?.[i18n?.language]?.name
+                  : t(item?.name as I18nCommonKey)
+              }
             >
-              <Center
-                w="40px"
-                h="40px"
-                borderRadius={'8px'}
-                bg={'rgba(255, 255, 255, 0.85)'}
-                backdropFilter={'blur(25px)'}
-                boxShadow={'0px 1.167px 2.333px 0px rgba(0, 0, 0, 0.20)'}
+              <Flex
+                flexDirection={'column'}
+                alignItems={'center'}
+                cursor={'pointer'}
+                key={item?.name}
+                pt={'6px'}
+                pb={'2px'}
+                onClick={(e) => handleNavItem(e, item)}
               >
-                <Image
-                  src={item?.icon}
-                  fallbackSrc={logo || '/logo.svg'}
-                  alt={item?.name}
-                  w="32px"
-                  h="32px"
-                />
-              </Center>
-              <Box
-                opacity={currentAppPid === item.pid ? 1 : 0}
-                mt={'6px'}
-                width={'4px'}
-                height={'4px'}
-                borderRadius={'full'}
-                bg={'rgba(7, 27, 65, 0.50)'}
-              ></Box>
-            </Flex>
+                <Center
+                  w="40px"
+                  h="40px"
+                  borderRadius={'8px'}
+                  bg={'rgba(255, 255, 255, 0.85)'}
+                  backdropFilter={'blur(25px)'}
+                  boxShadow={'0px 1.167px 2.333px 0px rgba(0, 0, 0, 0.20)'}
+                >
+                  <Image
+                    src={item?.icon}
+                    fallbackSrc={logo || '/logo.svg'}
+                    alt={item?.name}
+                    w="32px"
+                    h="32px"
+                  />
+                </Center>
+                <Box
+                  opacity={currentAppPid === item.pid ? 1 : 0}
+                  mt={'6px'}
+                  width={'4px'}
+                  height={'4px'}
+                  borderRadius={'full'}
+                  bg={'rgba(7, 27, 65, 0.50)'}
+                ></Box>
+              </Flex>
+            </CustomTooltip>
           );
         })}
       </Flex>
-
       <Menu className={styles.contexify} id={APP_DOCK_MENU_ID}>
         <>
           <Box

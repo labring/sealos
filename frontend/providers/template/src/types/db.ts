@@ -1,6 +1,7 @@
 import { V1Condition } from '@kubernetes/client-node';
 import { StatusMapType } from './status';
 import { StatusEnum } from '@/constants/status';
+import { AllResourceKindType } from './resource';
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',

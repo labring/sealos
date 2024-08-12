@@ -14,7 +14,7 @@ import { UNBIND_STATUS } from '@/types/response/unbind';
 export const OauthCodeFilter = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { code: string; inviterId?: string }) => void
+  next: (data: { code: string; inviterId?: string; userSemChannel?: string }) => void
 ) => {
   const { code } = req.body as { code?: string };
   if (!code)
@@ -23,10 +23,12 @@ export const OauthCodeFilter = async (
       code: 400
     });
   const { inviterId } = req.body as { inviterId?: string };
+  const { userSemChannel } = req.body as { userSemChannel?: string };
   await Promise.resolve(
     next?.({
       code,
-      inviterId
+      inviterId,
+      userSemChannel
     })
   );
 };

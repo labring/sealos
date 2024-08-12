@@ -25,6 +25,42 @@ var (
 	whiteListKubernetesHosts []string
 )
 
+func AddWhiteListKubernetesHosts(host string) {
+	whiteListKubernetesHosts = append(whiteListKubernetesHosts, host)
+}
+
+func GetKcHost(kc string) (string, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
+	if err != nil {
+		return "", fmt.Errorf("kubeconfig failed  %v", err)
+	}
+	return config.Host, nil
+}
+
+func GetKcUser(kc string) (string, error) {
+	config, err := clientcmd.Load([]byte(kc))
+	if err != nil {
+		return "", fmt.Errorf("kubeconfig failed  %v", err)
+	}
+	for user := range config.AuthInfos {
+		return user, nil
+	}
+	return "", fmt.Errorf("no user found")
+}
+
+func CheckK8sHost(host string) error {
+	if !IsWhitelistKubernetesHost(host) {
+		if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
+			if k8shost != host {
+				return fmt.Errorf("k8s host not match, expect %s, got %s", k8shost, host)
+			}
+		} else {
+			return ErrNoSealosHost
+		}
+	}
+	return nil
+}
+
 func Authenticate(ns, kc string) error {
 	if ns == "" {
 		return ErrNilNs
@@ -60,7 +96,7 @@ func Authenticate(ns, kc string) error {
 		return fmt.Errorf("ping apiserver is no ok: %v", string(res))
 	}
 
-	if err := CheckResourceAccess(client, ns, "get", "pods"); err != nil {
+	if err := CheckResourceAccess(client, ns, "update", "pods"); err != nil {
 		// fmt.Println(err.Error())
 		return fmt.Errorf("check resource access error: %v", err)
 	}

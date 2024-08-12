@@ -24,7 +24,8 @@ import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import { blurBackgroundStyles } from '../desktop_content';
 import Monitor from '../desktop_content/monitor';
-import { ClockIcon, DesktopSealosCoinIcon, InfiniteIcon } from '../icons';
+import { ClockIcon, DesktopSealosCoinIcon, HelpIcon, InfiniteIcon } from '../icons';
+import CustomTooltip from '../AppDock/CustomTooltip';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -41,11 +42,14 @@ export default function Cost() {
       request<any, ApiResp<{ balance: number; deductionBalance: number }>>(
         '/api/account/getAmount'
       ),
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 60 * 1000
   });
 
   const { data: billing, isSuccess } = useQuery(['getUserBilling'], () => getUserBilling(), {
-    cacheTime: 5 * 60 * 1000
+    cacheTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const balance = useMemo(() => {
@@ -183,9 +187,16 @@ export default function Cost() {
                 bg={'#C74FFF'}
                 borderRadius={'2px'}
               ></Center>
-              <Text fontSize={'12px'} fontWeight={'bold'} color={'rgba(255, 255, 255, 0.90)'}>
-                {t('common:expected_to_use_next_month')}
-              </Text>
+              <Flex alignItems={'center'} gap={'4px'} position={'relative'}>
+                <Text fontSize={'12px'} fontWeight={'bold'} color={'rgba(255, 255, 255, 0.90)'}>
+                  {t('common:expected_to_use_next_month')}
+                </Text>
+                <CustomTooltip placement="bottom" label={t('common:amount_forecast')}>
+                  <Box cursor={'pointer'}>
+                    <HelpIcon />
+                  </Box>
+                </CustomTooltip>
+              </Flex>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.estimatedNextMonthAmount).toFixed(2)}
               </Text>

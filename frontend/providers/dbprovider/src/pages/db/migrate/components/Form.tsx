@@ -27,6 +27,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import PrepareBox from './Prepare';
+import { I18nCommonKey } from '@/types/i18next';
 
 const Form = ({
   formHook,
@@ -51,20 +52,20 @@ const Form = ({
     formState: { errors }
   } = formHook;
 
-  const navList = [
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
     {
       id: 'preparation',
-      label: t('Migration Preparation'),
+      label: t('migration_preparation'),
       icon: 'book'
     },
     {
       id: 'baseInfo',
-      label: t('Basic'),
+      label: t('basic'),
       icon: 'formInfo'
     },
     {
       id: 'settings',
-      label: t('Advanced Configuration'),
+      label: t('advanced_configuration'),
       icon: 'settings'
     }
   ];
@@ -148,8 +149,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: t('Config Form') },
-              { id: 'yaml', label: t('YAML File') }
+              { id: 'form', label: t('config_form') },
+              { id: 'yaml', label: t('yaml_file') }
             ]}
             activeId={'form'}
             onChange={() => {
@@ -214,11 +215,11 @@ const Form = ({
           position={'relative'}
           overflowY={'scroll'}
         >
-          {/* Migration Preparation */}
+          {/* migration_preparation */}
           <Box id="preparation" {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'book'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {t('Migration Preparation')}
+              {t('migration_preparation')}
             </Box>
             <Box px={'42px'} py={'24px'} userSelect={'none'}>
               <PrepareBox migrationType={dbType} formHook={formHook} />
@@ -228,19 +229,19 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {t('Basic')}
+              {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
-                {t('Source Database')}
+                {t('source_database')}
               </Text>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceHost} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={94}>{t('Database Host')}</Label>
+                  <Label w={94}>{t('database_host')}</Label>
                   <Input
-                    placeholder={t('Database Host') || ''}
+                    placeholder={t('database_host')}
                     {...register('sourceHost', {
-                      required: t('Database Host Empty') || ''
+                      required: t('database_host_empty')
                     })}
                   />
                 </Flex>
@@ -249,9 +250,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Port')}</Label>
                   <Input
-                    placeholder={t('Port') || ''}
+                    placeholder={t('Port')}
                     {...register('sourcePort', {
-                      required: t('Database Port Empty') || ''
+                      required: t('database_port_empty')
                     })}
                   />
                 </Flex>
@@ -260,9 +261,9 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Username')}</Label>
                   <Input
-                    placeholder={t('Username') || ''}
+                    placeholder={t('Username')}
                     {...register('sourceUsername', {
-                      required: t('Database UserName Empty') || ''
+                      required: t('database_username_empty')
                     })}
                   />
                 </Flex>
@@ -271,27 +272,27 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('Password')}</Label>
                   <Input
-                    placeholder={t('Password') || ''}
+                    placeholder={t('Password')}
                     {...register('sourcePassword', {
-                      required: t('Database Password Empty') || ''
+                      required: t('database_password_empty')
                     })}
                   />
                 </Flex>
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceDatabase} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={94}>{t('DB Name')}</Label>
+                  <Label w={94}>{t('db_name')}</Label>
                   <Input
-                    placeholder={t('DB Name') || ''}
+                    placeholder={t('db_name')}
                     {...register('sourceDatabase', {
-                      required: t('Database Name Empty') || ''
+                      required: t('database_name_empty')
                     })}
                   />
                 </Flex>
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceDatabaseTable} w={'500px'}>
                 <Flex alignItems={'start'}>
-                  <Label w={94}>{t('DB Table')}</Label>
+                  <Label w={94}>{t('db_table')}</Label>
                   <TagTextarea
                     defaultValues={getValues('sourceDatabaseTable') || []}
                     onUpdate={(e) => {
@@ -302,8 +303,8 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={94}>{t('Remark')}</Label>
-                  <Input placeholder={t('Remark') || ''} {...register('remark')} />
+                  <Label w={94}>{t('remark')}</Label>
+                  <Input placeholder={t('remark')} {...register('remark')} />
                 </Flex>
               </FormControl>
             </Box>
@@ -320,7 +321,7 @@ const Form = ({
               >
                 <Flex alignItems={'center'}>
                   <MyIcon name={'settings'} mr={5} w={'20px'} />
-                  <Box>{t('Advanced Configuration')}</Box>
+                  <Box>{t('advanced_configuration')}</Box>
                   <Center
                     bg={'#E8EBF0'}
                     w={'48px'}
@@ -343,7 +344,7 @@ const Form = ({
                 </Text>
                 <Flex alignItems={'center'} h={'35px'}>
                   <Text fontSize={'14px'} color={'#333333'} fontWeight={400} mr="40px">
-                    {t('Continuous Migration')}
+                    {t('continuous_migration')}
                   </Text>
                   <Switch size={'md'} colorScheme={'blackAlpha'} {...register('continued')} />
                 </Flex>

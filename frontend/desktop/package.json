@@ -27,6 +27,7 @@
     "@chakra-ui/system": "^2.6.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@hookform/resolvers": "^3.9.0",
     "@kubernetes/client-node": "^0.18.1",
     "@marsidev/react-turnstile": "^0.5.3",
     "@prisma/client": "^5.10.2",
@@ -69,8 +70,10 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "sharp": "^0.32.6",
+    "tencentcloud-sdk-nodejs": "4.0.905",
     "uuid": "^9.0.1",
     "xml2js": "^0.6.2",
+    "zod": "^3.23.8",
     "zustand": "^4.4.1"
   },
   "devDependencies": {

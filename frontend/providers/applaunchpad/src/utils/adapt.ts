@@ -18,7 +18,8 @@ import type {
   AppDetailType,
   PodMetrics,
   PodEvent,
-  HpaTarget
+  HpaTarget,
+  ProtocolType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -31,17 +32,11 @@ import {
   gpuNodeSelectorKey,
   gpuResourceKey
 } from '@/constants/app';
-import {
-  cpuFormatToM,
-  memoryFormatToMi,
-  formatPodTime,
-  atobSecretYaml,
-  printMemory
-} from '@/utils/tools';
+import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -95,25 +90,37 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
   return {
     ...pod,
     podName: pod.metadata?.name || 'pod name',
-    // @ts-ignore
     status: (() => {
       const container = pod.status?.containerStatuses || [];
       if (container.length > 0) {
         const stateObj = container[0].state;
-        const lasteStateObj = container[0].lastState;
         if (stateObj) {
           const stateKeys = Object.keys(stateObj);
-          const key = stateKeys?.[0] as `${PodStatusEnum}`;
+          const key = stateKeys[0] as `${PodStatusEnum}`;
           if (key === PodStatusEnum.running) {
             return podStatusMap[PodStatusEnum.running];
           }
           if (key && podStatusMap[key]) {
-            const lastStateReason =
-              lasteStateObj && lasteStateObj[key] ? lasteStateObj[key]?.reason : '';
             return {
-              lastStateReason,
               ...podStatusMap[key],
               ...stateObj[key]
+            };
+          }
+        }
+      }
+      return podStatusMap.waiting;
+    })(),
+    containerStatus: (() => {
+      const container = pod.status?.containerStatuses || [];
+      if (container.length > 0) {
+        const lastStateObj = container[0].lastState;
+        if (lastStateObj) {
+          const lastStateKeys = Object.keys(lastStateObj);
+          const key = lastStateKeys[0] as `${PodStatusEnum}`;
+          if (key && podStatusMap[key]) {
+            return {
+              ...podStatusMap[key],
+              ...lastStateObj[key]
             };
           }
         }
@@ -180,7 +187,8 @@ export enum YamlKindEnum {
   PersistentVolumeClaim = 'PersistentVolumeClaim'
 }
 
-export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
+export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
+  const { SEALOS_DOMAIN } = await getInitData();
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
@@ -266,16 +274,18 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
         ) as V1Ingress;
         const domain = ingress?.spec?.rules?.[0].host || '';
 
+        const backendProtocol = ingress?.metadata?.annotations?.[
+          'nginx.ingress.kubernetes.io/backend-protocol'
+        ] as ProtocolType;
+
+        const protocol =
+          backendProtocol ?? (item.protocol === 'TCP' ? 'HTTP' : (item.protocol as ProtocolType));
+
         return {
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',
           port: item.port,
-          protocol:
-            (ingress?.metadata?.annotations?.[
-              'nginx.ingress.kubernetes.io/backend-protocol'
-            ] as AppEditType['networks'][0]['protocol']) || item.protocol === 'TCP'
-              ? 'HTTP'
-              : (item.protocol as AppEditType['networks'][number]['protocol']),
+          protocol: protocol,
           openPublicDomain: !!ingress,
           ...(domain.endsWith(SEALOS_DOMAIN)
             ? {

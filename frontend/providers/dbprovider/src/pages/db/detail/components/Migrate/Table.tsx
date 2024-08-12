@@ -23,6 +23,7 @@ import { useTranslation } from 'next-i18next';
 import React, { useCallback, useState } from 'react';
 import LogsModal from './LogsModal';
 import MigrateStatus from './MigrateStatus';
+import { I18nCommonKey } from '@/types/i18next';
 
 export const MigrateTable = ({ dbName }: { dbName: string }) => {
   if (!dbName) return <></>;
@@ -53,7 +54,7 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
   );
 
   const { openConfirm: openConfirmDel, ConfirmChild: ConfirmDelChild } = useConfirm({
-    content: t('Confirm delete the migrate')
+    content: t('confirm_delete_the_migrate')
   });
 
   const confirmDel = useCallback(
@@ -78,35 +79,35 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
   };
 
   const columns: {
-    title: string;
+    title: I18nCommonKey;
     dataIndex?: keyof MigrateItemType;
     key: string;
     render?: (item: MigrateItemType, i: number) => React.ReactNode | string;
   }[] = [
     {
-      title: 'Name',
+      title: 'name',
       key: 'name',
       dataIndex: 'name'
     },
     {
-      title: 'Remark',
+      title: 'remark',
       key: 'remark',
       dataIndex: 'remark'
     },
     {
-      title: 'Status',
+      title: 'status',
       key: 'status',
       render: (item: MigrateItemType) => (
         <MigrateStatus migrateStatus={item.status} migrateName={item.name} />
       )
     },
     {
-      title: 'Creation Time',
+      title: 'creation_time',
       key: 'creationtime',
       render: (item: MigrateItemType) => <>{dayjs(item.startTime).format('YYYY/MM/DD HH:mm')}</>
     },
     {
-      title: 'Operation',
+      title: 'operation',
       key: 'control',
       render: (item: MigrateItemType) => {
         return (
@@ -173,7 +174,7 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
       {isSuccess && migrateList.length === 0 && (
         <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
           <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
-          <Box pt={'8px'}>{t('No Data Available')}</Box>
+          <Box pt={'8px'}>{t('no_data_available')}</Box>
         </Flex>
       )}
       <ConfirmDelChild />

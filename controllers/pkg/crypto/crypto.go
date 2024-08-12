@@ -30,7 +30,7 @@ import (
 	"strconv"
 )
 
-const defaultEncryptionKey = "0123456789ABCDEF0123456789ABCDEF"
+const defaultEncryptionKey = "Bg1c3Dd5e9e0F84bdF0A5887cF43aB63"
 
 var encryptionKey = defaultEncryptionKey
 
@@ -77,56 +77,6 @@ func DecryptInt64(in string) (int64, error) {
 		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
 	}
 	return strconv.ParseInt(string(out), 10, 64)
-}
-
-func DecryptFloat64(in string) (float64, error) {
-	out, err := Decrypt(in)
-	if err != nil {
-		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
-	}
-	return strconv.ParseFloat(string(out), 64)
-}
-
-func EncryptFloat64(in float64) (*string, error) {
-	out, err := Encrypt([]byte(strconv.FormatFloat(in, 'f', -1, 64)))
-	return &out, err
-}
-
-// DecryptInt64WithKey decrypts the given ciphertext using AES-GCM.
-func DecryptInt64WithKey(in string, encryptionKey []byte) (int64, error) {
-	out, err := DecryptWithKey(in, encryptionKey)
-	if err != nil {
-		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
-	}
-	return strconv.ParseInt(string(out), 10, 64)
-}
-
-func RechargeBalance(rawBalance *string, amount int64) error {
-	balanceInt, err := DecryptInt64(*rawBalance)
-	if err != nil {
-		return fmt.Errorf("failed to recharge balance: %w", err)
-	}
-	balanceInt += amount
-	encryptBalance, err := EncryptInt64(balanceInt)
-	if err != nil {
-		return fmt.Errorf("failed to recharge balance: %w", err)
-	}
-	*rawBalance = *encryptBalance
-	return nil
-}
-
-func DeductBalance(balance *string, amount int64) error {
-	balanceInt, err := DecryptInt64(*balance)
-	if err != nil {
-		return fmt.Errorf("failed to deduct balance: %w", err)
-	}
-	balanceInt -= amount
-	encryptBalance, err := EncryptInt64(balanceInt)
-	if err != nil {
-		return fmt.Errorf("failed to deduct balance: %w", err)
-	}
-	*balance = *encryptBalance
-	return nil
 }
 
 // Decrypt decrypts the given ciphertext using AES-GCM.

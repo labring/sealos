@@ -107,7 +107,7 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	} else if ops.Owner != "" {
 		userCr, err := c.GetUserCr(ops)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
+			return nil, fmt.Errorf("failed to get user cr: %v", err)
 		}
 		queryUser.UID = userCr.UserUID
 	}
@@ -158,6 +158,17 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return userCr.UserUID, nil
+}
+
+func (c *Cockroach) GetWorkspace(namespaces ...string) ([]types.Workspace, error) {
+	if len(namespaces) == 0 {
+		return nil, fmt.Errorf("empty namespaces")
+	}
+	var workspaces []types.Workspace
+	if err := c.Localdb.Where("id IN ?", namespaces).Find(&workspaces).Error; err != nil {
+		return nil, fmt.Errorf("failed to get workspaces: %v", err)
+	}
+	return workspaces, nil
 }
 
 func checkOps(ops *types.UserQueryOpts) error {
@@ -276,18 +287,8 @@ func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		if ops.IgnoreEmpty && errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to search account from db: %w", err)
+		return nil, err
 	}
-	balance, err := crypto.DecryptInt64(account.EncryptBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt balance: %v", err)
-	}
-	deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
-	}
-	account.Balance = balance
-	account.DeductionBalance = deductionBalance
 	return &account, nil
 }
 
@@ -317,52 +318,35 @@ func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount 
 		}
 		ops.UID = user.UserUID
 	}
-	var account types.Account
-	//TODO update UserUid = ?
-	if err := tx.Where(&types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
-		return fmt.Errorf("failed to get account: %w", err)
+	var account = &types.Account{}
+	if err := tx.Where(&types.Account{UserUID: ops.UID}).First(account).Error; err != nil {
+		// if not found, create a new account and retry
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to get account: %w", err)
+		}
+		if account, err = c.NewAccount(ops); err != nil {
+			return fmt.Errorf("failed to create account: %v", err)
+		}
 	}
-
-	if err := c.updateWithAccount(isDeduction, add, &account, amount); err != nil {
+	if err := c.updateWithAccount(isDeduction, add, account, amount); err != nil {
 		return err
 	}
-	if err := tx.Save(&account).Error; err != nil {
+	if err := tx.Save(account).Error; err != nil {
 		return fmt.Errorf("failed to update account balance: %w", err)
 	}
 	return nil
 }
 
 func (c *Cockroach) updateWithAccount(isDeduction bool, add bool, account *types.Account, amount int64) error {
-	var fieldToUpdate string
+	balancePtr := &account.Balance
 	if isDeduction {
-		fieldToUpdate = account.EncryptDeductionBalance
-	} else {
-		fieldToUpdate = account.EncryptBalance
+		balancePtr = &account.DeductionBalance
 	}
-
-	currentBalance, err := crypto.DecryptInt64(fieldToUpdate)
-	if err != nil {
-		return fmt.Errorf("failed to decrypt balance: %w", err)
-	}
-
 	if add {
-		currentBalance += amount
+		*balancePtr += amount
 	} else {
-		currentBalance -= amount
+		*balancePtr -= amount
 	}
-
-	newEncryptBalance, err := crypto.EncryptInt64(currentBalance)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt balance: %v", err)
-	}
-	if isDeduction {
-		account.EncryptDeductionBalance = *newEncryptBalance
-		account.DeductionBalance = currentBalance
-	} else {
-		account.EncryptBalance = *newEncryptBalance
-		account.Balance = currentBalance
-	}
-
 	return nil
 }
 
@@ -616,6 +600,29 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 		}
 		return nil
 	})
+}
+
+func (c *Cockroach) GetRegions() ([]types.Region, error) {
+	var regions []types.Region
+	if err := c.DB.Find(&regions).Error; err != nil {
+		return nil, fmt.Errorf("failed to get regions: %v", err)
+	}
+	return regions, nil
+}
+
+func (c *Cockroach) GetLocalRegion() types.Region {
+	if c.LocalRegion.Domain == "" {
+		regions, err := c.GetRegions()
+		if err == nil {
+			for i := range regions {
+				if regions[i].UID == c.LocalRegion.UID {
+					c.LocalRegion = &regions[i]
+					return *c.LocalRegion
+				}
+			}
+		}
+	}
+	return *c.LocalRegion
 }
 
 func (c *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {

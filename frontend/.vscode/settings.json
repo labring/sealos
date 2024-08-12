@@ -16,5 +16,12 @@
     "i18n-ally.displayLanguage": "zh",
     "i18n-ally.namespace": true,
     "i18n-ally.pathMatcher": "{locale}/{namespaces}.json",
-    "i18n-ally.extract.targetPickingStrategy": "most-similar-by-key"
+    "i18n-ally.extract.targetPickingStrategy": "most-similar-by-key",
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
 }

@@ -3,6 +3,7 @@ import Tip from '@/components/Tip';
 import { DBBackupMethodNameMap, DBTypeEnum } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
+import { I18nCommonKey } from '@/types/i18next';
 import { convertCronTime, getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -23,7 +24,7 @@ import { MySelect, Tabs, useMessage } from '@sealos/ui';
 import { useMutation } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useRef, useState } from 'react';
+import { MutableRefObject, useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
@@ -50,15 +51,15 @@ const BackupModal = ({
   const { message: toast } = useMessage();
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: t('Confirm') || 'Confirm',
-    content: t('Manual Backup Tip'),
-    confirmText: 'Start Backup'
+    title: 'confirm',
+    content: 'manual_backup_tip',
+    confirmText: 'start_backup'
   });
 
   const { openConfirm: CloseAutoBackup, ConfirmChild: AutoBackupConfirmChild } = useConfirm({
-    title: 'Prompt',
-    content: t('Are you sure you want to turn off automatic backup'),
-    confirmText: 'Confirm'
+    title: 'prompt',
+    content: 'are_you_sure_you_want_to_turn_off_automatic_backup',
+    confirmText: 'confirm'
   });
 
   const [refresh, setRefresh] = useState(false);
@@ -97,7 +98,7 @@ const BackupModal = ({
         };
       }))()
   );
-  const weekSelectList = useRef([
+  const weekSelectList: MutableRefObject<{ label: I18nCommonKey; id: string }[]> = useRef([
     { label: 'Monday', id: '1' },
     { label: 'Tuesday', id: '2' },
     { label: 'Wednesday', id: '3' },
@@ -139,7 +140,7 @@ const BackupModal = ({
     onSuccess() {
       toast({
         status: 'success',
-        title: t('The backup task has been created successfully !')
+        title: t('backup_success_tip')
       });
       onClose();
     },
@@ -183,7 +184,7 @@ const BackupModal = ({
     onSuccess() {
       toast({
         status: 'success',
-        title: t('Set auto backup successful')
+        title: t('set_auto_backup_successful')
       });
       refetchPolicy();
       onClose();
@@ -207,7 +208,7 @@ const BackupModal = ({
     onSuccess() {
       toast({
         status: 'success',
-        title: t('Automatic backup is turned off')
+        title: t('automatic_backup_is_turned_off')
       });
       refetchPolicy();
       onClose();
@@ -215,7 +216,7 @@ const BackupModal = ({
     onError(err) {
       toast({
         status: 'error',
-        title: t('Failed to turn off automatic backup')
+        title: t('failed_to_turn_off_automatic_backup')
       });
     }
   });
@@ -236,11 +237,11 @@ const BackupModal = ({
               borderRadius={'lg'}
             >
               <Box mb={'16px'} fontSize={'16px'} fontWeight={'500'} color={'grayModern.900'}>
-                {t('Backup Database')}
+                {t('backup_database')}
               </Box>
-              <Box {...navStyle(NavEnum.manual)}>{t('Manual Backup')}</Box>
+              <Box {...navStyle(NavEnum.manual)}>{t('manual_backup')}</Box>
               <Flex {...navStyle(NavEnum.auto)} alignItems={'center'}>
-                <Box flex={1}>{t('Auto Backup')}</Box>
+                <Box flex={1}>{t('auto_backup')}</Box>
                 <Switch
                   variant={'deepLight'}
                   isChecked={getAutoValues('start')}
@@ -264,29 +265,29 @@ const BackupModal = ({
                 mt={'16px'}
                 mb={'28px'}
               >
-                {t(currentNav === 'auto' ? 'Auto Backup' : 'Manual Backup')}
+                {t(currentNav === 'auto' ? 'auto_backup' : 'manual_backup')}
               </Box>
               <Flex flex={1} flexDirection={'column'} px={'36px'} pb={'32px'} position={'relative'}>
                 <Tip
                   icon={<InfoOutlineIcon fontSize={'16px'} />}
                   size="sm"
-                  text={t('Manual Backup Tip')}
+                  text={t('manual_backup_tip')}
                 />
                 {currentNav === NavEnum.manual && (
                   <>
                     <Box flex={1} mt={8}>
                       <Flex alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>{t('Backup Name')}</Box>
+                        <Box flex={'0 0 80px'}>{t('backup_name')}</Box>
                         <Input
                           width={'328px'}
                           maxW={'328px'}
                           {...manualRegister('backupName', {
-                            required: t('Backup Name cannot empty') || 'Backup Name cannot empty'
+                            required: t('backup_name_cannot_empty')
                           })}
                         />
                       </Flex>
                       <Flex mt={7} alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>{t('Remark')}</Box>
+                        <Box flex={'0 0 80px'}>{t('remark')}</Box>
                         <Input width={'328px'} maxW={'328px'} {...manualRegister('remark')} />
                         <Tip
                           ml={'12px'}
@@ -302,7 +303,7 @@ const BackupModal = ({
                         variant={'solid'}
                         onClick={() => handleSubmitManual(openConfirm(onclickBackup))()}
                       >
-                        {t('Start Backup')}
+                        {t('start_backup')}
                       </Button>
                     </Box>
                   </>
@@ -355,7 +356,7 @@ const BackupModal = ({
                       )}
                       {getAutoValues('type') !== 'hour' && (
                         <Flex mt={7} alignItems={'center'}>
-                          <Box flex={'0 0 110px'}>{t('Start Hour')}</Box>
+                          <Box flex={'0 0 110px'}>{t('start_hour')}</Box>
                           <MySelect
                             width={'120px'}
                             value={getAutoValues('hour')}
@@ -371,7 +372,7 @@ const BackupModal = ({
                         </Flex>
                       )}
                       <Flex mt={7} alignItems={'center'}>
-                        <Box flex={'0 0 110px'}>{t('Start Minute')}</Box>
+                        <Box flex={'0 0 110px'}>{t('start_minute')}</Box>
                         <MySelect
                           width={'120px'}
                           value={getAutoValues('minute')}

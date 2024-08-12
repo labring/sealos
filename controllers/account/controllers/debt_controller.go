@@ -155,6 +155,10 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 	account, err := r.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if account == nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_, err = r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("failed to create account %s: %v", owner, err)
+			}
 			userOwner := &userv1.User{}
 			if err := r.Get(ctx, types.NamespacedName{Name: owner, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 				// if user not exist, skip
@@ -168,7 +172,9 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 				return nil
 			}
 		}
-		r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+		if err != nil {
+			r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+		}
 		return ErrAccountNotExist
 	}
 	if account.CreateRegionID == "" {
@@ -527,7 +533,9 @@ func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, no
 			} else if err != nil {
 				continue
 			}
-			if ntf.Labels != nil && ntf.Labels[readStatusLabel] == trueStatus {
+			if ntf.Labels == nil {
+				ntf.Labels = make(map[string]string)
+			} else if ntf.Labels[readStatusLabel] == trueStatus {
 				continue
 			}
 			ntf.Labels[readStatusLabel] = trueStatus

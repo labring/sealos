@@ -1,4 +1,4 @@
-import { APPTYPE, displayType } from './app';
+import { APPTYPE, TAppMenuData, displayType } from './app';
 import { LicenseFrontendKey } from '@/constants/account';
 
 export type CRDMeta = {
@@ -80,11 +80,7 @@ export type TAppCR = {
     displayType: displayType;
     i18n: Record<'zh' | 'zh-Hans', { name: string }>;
     icon: string;
-    menuData?: {
-      nameColor: string;
-      helpDropDown: boolean;
-      helpDocs: boolean | string;
-    };
+    menuData?: TAppMenuData[];
     name: string;
     type: APPTYPE;
   };
@@ -97,11 +93,11 @@ export type TAppCRList = {
   metadata: { continue: string; resourceVersion: string };
 };
 
-export type NotificationItem = {
+export type NotificationCR = {
   metadata: {
     creationTimestamp: string;
     labels: {
-      isRead: string;
+      isRead?: string;
       [LicenseFrontendKey]?: string;
     };
     name: string;
@@ -120,6 +116,24 @@ export type NotificationItem = {
         message: string;
         title: string;
       };
+    };
+  };
+};
+
+export type TNotification = {
+  uid: string;
+  name: string;
+  namespace: string;
+  creationTimestamp: string;
+  isRead: boolean;
+  licenseFrontend?: string;
+  timestamp: number;
+  desktopPopup: boolean;
+  i18n: {
+    [key in string]: {
+      from: string;
+      message: string;
+      title: string;
     };
   };
 };

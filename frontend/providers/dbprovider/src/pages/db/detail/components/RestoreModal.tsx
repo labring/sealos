@@ -61,7 +61,7 @@ const RestoreModal = ({
       router.replace(`/dbs`);
       toast({
         status: 'success',
-        title: t('Restore Success')
+        title: t('restore_success')
       });
       onClose();
     },
@@ -80,22 +80,22 @@ const RestoreModal = ({
       <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent maxW={'min(600px, 90vw)'}>
-          <ModalHeader>{t('Restore Database')}</ModalHeader>
+          <ModalHeader>{t('restore_database')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody display={'flex'} pb={8}>
             <Box>
               <Tip
                 icon={<InfoOutlineIcon fontSize={'16px'} />}
                 size="sm"
-                text={t('Restore Backup Tip')}
+                text={t('restore_backup_tip')}
                 borderRadius={'md'}
               />
               <Box>
                 <Flex mt={8} alignItems={'center'}>
-                  <Box flex={'0 0 120px'}>{t('Database Name')}</Box>
+                  <Box flex={'0 0 120px'}>{t('database_name')}</Box>
                   <Input
                     {...register('databaseName', {
-                      required: t('Database Name cannot empty') || 'Database Name cannot empty'
+                      required: t('database_name_cannot_empty')
                     })}
                   />
                 </Flex>

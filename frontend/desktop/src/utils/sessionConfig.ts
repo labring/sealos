@@ -19,6 +19,8 @@ export const sessionConfig = async ({
   store.setSession({
     token: appToken,
     user: {
+      userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined,
+      realName: infoData.data?.info.realName || undefined,
       k8s_username: payload.userCrName,
       name: infoData.data?.info.nickname || '',
       avatar: infoData.data?.info.avatarUri || '',
@@ -35,3 +37,7 @@ export const sessionConfig = async ({
 export const getInviterId = () => localStorage.getItem('inviterId');
 
 export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);
+
+export const getUserSemChannel = () => localStorage.getItem('sem_source');
+
+export const setUserSemChannel = (s: string) => localStorage.setItem('sem_source', s);

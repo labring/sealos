@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
-import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, getUserSemChannel, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 
 export default function usePassword({
@@ -46,13 +46,16 @@ export default function usePassword({
           try {
             setIsLoading(true);
             const inviterId = getInviterId();
+            const userSemChannel = getUserSemChannel();
+
             const result = await passwordExistRequest({ user: data.username });
 
             if (result?.code === 200) {
               const result = await passwordLoginRequest({
                 user: data.username,
                 password: data.password,
-                inviterId
+                inviterId,
+                userSemChannel
               });
               if (!!result?.data) {
                 await sessionConfig(result.data);
@@ -69,7 +72,8 @@ export default function usePassword({
                   const regionResult = await passwordLoginRequest({
                     user: data.username,
                     password: data.password,
-                    inviterId
+                    inviterId,
+                    userSemChannel
                   });
                   if (!!regionResult?.data) {
                     setToken(regionResult.data.token);
@@ -85,7 +89,9 @@ export default function usePassword({
                         ns_uid: payload.workspaceUid,
                         userCrUid: payload.userCrUid,
                         userId: payload.userId,
-                        userUid: payload.userUid
+                        userUid: payload.userUid,
+                        realName: infoData.data?.info.realName || undefined,
+                        userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined
                       },
                       // @ts-ignore
                       kubeconfig: result.data.kubeconfig

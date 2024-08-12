@@ -19,7 +19,7 @@ import { getRegionToken, UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { uploadConvertData } from '@/api/platform';
 import { AccessTokenPayload } from '@/types/token';
-import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, getUserSemChannel, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 
 export default function useSms({
@@ -30,7 +30,6 @@ export default function useSms({
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
-  const setSession = useSessionStore((s) => s.setSession);
   const [isLoading, setIsLoading] = useState(false);
   const setToken = useSessionStore((s) => s.setToken);
   const { register, handleSubmit, trigger, getValues } = useForm<{
@@ -56,7 +55,8 @@ export default function useSms({
             {
               id: data.phoneNumber,
               code: data.verifyCode,
-              inviterId: getInviterId()
+              inviterId: getInviterId(),
+              userSemChannel: getUserSemChannel()
             }
           );
           const globalToken = result1?.data?.token;

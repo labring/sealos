@@ -239,22 +239,21 @@ export function downLoadBold(content: BlobPart, type: string, fileName: string) 
  * patch yamlList and get action
  */
 export const patchYamlList = ({
-  formOldYamlList,
-  newYamlList,
-  crYamlList
+  parsedOldYamlList,
+  parsedNewYamlList,
+  originalYamlList
 }: {
-  formOldYamlList: string[];
-  newYamlList: string[];
-  crYamlList: DeployKindsType[];
+  parsedOldYamlList: string[];
+  parsedNewYamlList: string[];
+  originalYamlList: DeployKindsType[];
 }) => {
-  console.log(formOldYamlList, newYamlList, crYamlList, '=======');
-
-  const oldFormJsonList = formOldYamlList
+  const oldFormJsonList = parsedOldYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
-  const newFormJsonList = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
 
-  console.log(oldFormJsonList, newFormJsonList, crYamlList, '===patchYamlList===');
+  const newFormJsonList = parsedNewYamlList
+    .map((item) => yaml.loadAll(item))
+    .flat() as DeployKindsType[];
 
   const actions: AppPatchPropsType = [];
 
@@ -271,6 +270,7 @@ export const patchYamlList = ({
       });
     }
   });
+
   // find create and patch
   newFormJsonList.forEach((newYamlJson) => {
     const oldFormJson = oldFormJsonList.find(
@@ -287,7 +287,7 @@ export const patchYamlList = ({
       const actionsJson = (() => {
         try {
           /* find cr json */
-          let crOldYamlJson = crYamlList.find(
+          let crOldYamlJson = originalYamlList.find(
             (item) =>
               item.kind === oldFormJson?.kind &&
               item?.metadata?.name === oldFormJson?.metadata?.name
@@ -314,20 +314,26 @@ export const patchYamlList = ({
           }
 
           /* generate new json */
-          const _patchRes: jsonpatch.Operation[] = patchRes.map((item) => {
-            let jsonPatchError = jsonpatch.validate([item], crOldYamlJson);
-            if (
-              jsonPatchError?.operation &&
-              jsonPatchError?.name === 'OPERATION_PATH_UNRESOLVABLE'
-            ) {
-              return {
-                ...jsonPatchError.operation,
-                op: 'add'
-              };
-            } else {
+          const _patchRes: jsonpatch.Operation[] = patchRes
+            .map((item) => {
+              let jsonPatchError = jsonpatch.validate([item], crOldYamlJson);
+              if (jsonPatchError?.name === 'OPERATION_PATH_UNRESOLVABLE') {
+                switch (item.op) {
+                  case 'add':
+                  case 'replace':
+                    return {
+                      ...item,
+                      op: 'add' as const,
+                      value: item.value ?? ''
+                    };
+                  default:
+                    return null;
+                }
+              }
               return item;
-            }
-          });
+            })
+            .filter((op): op is jsonpatch.Operation => op !== null);
+
           const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
 
           // delete invalid field
@@ -344,7 +350,7 @@ export const patchYamlList = ({
 
           return patchResYamlJson;
         } catch (error) {
-          console.log('ACTIONS JSON ERROR\n', error);
+          console.error('ACTIONS JSON ERROR:\n', error);
           return newYamlJson;
         }
       })();
@@ -373,13 +379,7 @@ export const patchYamlList = ({
         }
       }
 
-      console.log(
-        'patch result===',
-        oldFormJson.metadata?.name,
-        oldFormJson.kind,
-        patchRes,
-        actionsJson
-      );
+      console.log('patch result:', oldFormJson.metadata?.name, oldFormJson.kind, actionsJson);
 
       actions.push({
         type: 'patch',
@@ -394,7 +394,7 @@ export const patchYamlList = ({
       });
     }
   });
-  console.log(actions, 'actions');
+
   return actions;
 };
 
