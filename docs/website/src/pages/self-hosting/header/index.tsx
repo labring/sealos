@@ -143,7 +143,11 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               {i18nMap[currentLocale].label}
             </div>
           )}
-          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
+          <a
+            className="start-now-button"
+            href={`${cloudUrl}?bd_vid=${bd_vid}&s=bd-sealos-self-hosting`}
+            target="_blank"
+          >
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
