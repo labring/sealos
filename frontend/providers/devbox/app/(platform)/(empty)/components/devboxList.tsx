@@ -32,7 +32,7 @@ const DevboxList = ({
               width={'20px'}
               height={'20px'}
               alt={item.id}
-              src={`/images/${item.runtime}.svg`}
+              src={`/images/${item.runtimeType}.svg`}
             />
             {/* TODO：先看看渲染效果，再看看是否更改 */}
             <Box color={'grayModern.900'} fontSize={'md'}>
@@ -150,7 +150,7 @@ const DevboxList = ({
           h={'40px'}
           variant={'solid'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} />}
-          onClick={() => router.push('/db/create')}>
+          onClick={() => router.push('/devbox/create')}>
           {'新建项目'}
         </Button>
       </Flex>
