@@ -42,7 +42,9 @@ export default function Product() {
       </div>
       <div className="flex justify-center mt-14">
         <div
-          onClick={() => window.open(`https://license.sealos.io/signin?bd_vid=${bd_vid}`)}
+          onClick={() =>
+            window.open(`https://license.sealos.io/signin?bd_vid=${bd_vid}&s=bd-sealos-license`)
+          }
           className="rounded-md cursor-pointer hover:no-underline text-[#FFFFFFCC] hover:text-[#FFFFFFCC] bg-[#B7D8FF26] flex justify-center items-center font-semibold text-lg gap-2 py-3 px-4  lg:text-sm"
         >
           <svg
@@ -89,7 +91,9 @@ export default function Product() {
               backgroundColor: '#8EBAEE',
               color: '#03080C'
             }}
-            onClick={() => window.open(`https://license.sealos.io/signin?bd_vid=${bd_vid}`)}
+            onClick={() =>
+              window.open(`https://license.sealos.io/signin?bd_vid=${bd_vid}&s=bd-sealos-license`)
+            }
           >
             获取
           </div>
