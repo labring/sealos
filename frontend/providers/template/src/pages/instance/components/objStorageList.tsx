@@ -114,7 +114,7 @@ export default function ObjStorageList({ instanceName }: { instanceName: string 
           />
         </Icon>
         <Text ml="12px" fontWeight={500} fontSize={'18px'} color={'#363C42'}>
-          Object Storage
+          {t('object_storage')}
         </Text>
       </Flex>
       <Box backgroundColor={'#F3F4F5'} mt="16px">
