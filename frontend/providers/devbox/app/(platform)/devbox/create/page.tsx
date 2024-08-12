@@ -21,7 +21,7 @@ import { runtimeVersionMap } from '@/stores/static'
 import type { DevboxEditType } from '@/types/devbox'
 import { applyYamlList, createDevbox } from '@/api/devbox'
 import { defaultDevboxEditValue } from '@/constants/devbox'
-import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml'
+import { json2Account, limitRangeYaml } from '@/utils/json2Yaml'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -53,6 +53,16 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
     return val
   }, [screenWidth])
 
+  // TODO: 这里之后有crd之后再补全
+  const generateYamlList = (data: DevboxEditType) => {
+    return [
+      {
+        filename: 'pod.yaml',
+        value: ''
+      }
+    ]
+  }
+
   const formHook = useForm<DevboxEditType>({
     defaultValues: defaultEdit
   })
@@ -74,21 +84,11 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
     setForceUpdate(!forceUpdate)
   })
 
-  // TODO: 这里可能有点问题
-  const generateYamlList = (data: DevboxEditType) => {
-    return [
-      {
-        filename: 'cluster.yaml',
-        value: json2CreateCluster(data)
-      }
-    ]
-  }
-
   useQuery(['initDevboxCreateData'], () => {
     setYamlList([
       {
         filename: 'cluster.yaml',
-        value: json2CreateCluster(defaultEdit)
+        value: '' // TODO: 这里之后等有crd之后再补全
       },
       {
         filename: 'account.yaml',

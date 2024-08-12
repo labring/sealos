@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node'
 
 import { RuntimeType } from '@/types/devbox'
-import { RuntimeEnum } from '@/constants/devbox'
+import { RuntimeTypeEnum } from '@/constants/devbox'
 import { runtimeVersionMap } from '@/stores/static'
 import { jsonRes } from '@/services/backend/response'
 import { K8sApi } from '@/services/backend/kubernetes'
@@ -20,13 +20,13 @@ const MOCK: Response = runtimeVersionMap
 export async function GET() {
   try {
     const runtimeVersionMap: Response = {
-      [RuntimeEnum.java]: [],
-      [RuntimeEnum.go]: [],
-      [RuntimeEnum.python]: [],
-      [RuntimeEnum.node]: [],
-      [RuntimeEnum.rust]: [],
-      [RuntimeEnum.php]: [],
-      [RuntimeEnum.custom]: []
+      [RuntimeTypeEnum.java]: [],
+      [RuntimeTypeEnum.go]: [],
+      [RuntimeTypeEnum.python]: [],
+      [RuntimeTypeEnum.node]: [],
+      [RuntimeTypeEnum.rust]: [],
+      [RuntimeTypeEnum.php]: [],
+      [RuntimeTypeEnum.custom]: []
     }
 
     // source price
@@ -40,7 +40,7 @@ export async function GET() {
     )) as any
 
     body.items.forEach((item: any) => {
-      const runtime = item?.spec?.clusterDefinitionRef as `${RuntimeEnum}`
+      const runtime = item?.spec?.clusterDefinitionRef as `${RuntimeTypeEnum}`
       if (
         runtimeVersionMap[runtime] &&
         item?.metadata?.name &&

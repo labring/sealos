@@ -1,4 +1,4 @@
-import { RuntimeEnum } from '@/constants/devbox'
+import { RuntimeTypeEnum } from '@/constants/devbox'
 import { getRuntimeVersionMap, getResourcePrice } from '@/api/platform'
 import type { Response as RuntimeVersionMapType } from '@/app/api/platform/getRuntimeVersion/route'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
@@ -18,13 +18,13 @@ let retryGetPrice = 3
 // NOTE: 枚举列表大小写不一致，需要统一
 // TODO: 这里需要知道具体的默认版本
 export let runtimeVersionMap: RuntimeVersionMapType = {
-  [RuntimeEnum.java]: [{ id: 'java-11', label: 'java-11' }],
-  [RuntimeEnum.go]: [{ id: 'go-1.17', label: 'go-1.17' }],
-  [RuntimeEnum.python]: [{ id: 'python-3.9', label: 'python-3.9' }],
-  [RuntimeEnum.node]: [{ id: 'node-16', label: 'node-16' }],
-  [RuntimeEnum.rust]: [{ id: 'rust-1.55', label: 'rust-1.55' }],
-  [RuntimeEnum.php]: [{ id: 'php-8.0', label: 'php-8.0' }],
-  [RuntimeEnum.custom]: [{ id: 'custom', label: 'custom' }]
+  [RuntimeTypeEnum.java]: [{ id: 'java-11', label: 'java-11' }],
+  [RuntimeTypeEnum.go]: [{ id: 'go-1.17', label: 'go-1.17' }],
+  [RuntimeTypeEnum.python]: [{ id: 'python-3.9', label: 'python-3.9' }],
+  [RuntimeTypeEnum.node]: [{ id: 'node-16', label: 'node-16' }],
+  [RuntimeTypeEnum.rust]: [{ id: 'rust-1.55', label: 'rust-1.55' }],
+  [RuntimeTypeEnum.php]: [{ id: 'php-8.0', label: 'php-8.0' }],
+  [RuntimeTypeEnum.custom]: [{ id: 'custom', label: 'custom' }]
 }
 
 export const getUserPrice = async () => {

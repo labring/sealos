@@ -100,3 +100,7 @@ export const useCopyData = () => {
     }
   }
 }
+
+export const str2Num = (str?: string | number) => {
+  return !!str ? +str : 0
+}

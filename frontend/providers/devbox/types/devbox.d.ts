@@ -1,8 +1,8 @@
 import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
-import { RuntimeEnum, DevboxStatusEnum } from '@/constants/devbox'
+import { RuntimeTypeEnum, DevboxStatusEnum } from '@/constants/devbox'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
-export type RuntimeType = `${RuntimeEnum}`
+export type RuntimeType = `${RuntimeTypeEnum}`
 
 export interface DevboxEditType {
   devboxName: string
