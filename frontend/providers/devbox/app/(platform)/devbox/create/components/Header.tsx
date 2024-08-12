@@ -32,7 +32,7 @@ const Header = ({ yamlList, applyCb }: { yamlList: YamlItemType[]; applyCb: () =
       </Flex>
       <Box flex={1}></Box>
       <Button h={'40px'} flex={'0 0 114px'} mr={5} variant={'outline'} onClick={handleExportYaml}>
-        {'导出YAML'} Yaml
+        {'导出YAML'}
       </Button>
       <Button flex={'0 0 114px'} h={'40px'} variant={'solid'} onClick={applyCb}>
         {'创建'}
