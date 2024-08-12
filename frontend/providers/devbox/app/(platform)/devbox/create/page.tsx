@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import debounce from 'lodash/debounce'
 import { useMessage } from '@sealos/ui'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Box, Flex } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
@@ -30,8 +30,9 @@ const defaultEdit = {
   runtimeVersion: runtimeVersionMap.java[0]?.id
 }
 
-const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
+const DevboxCreatePage = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { message: toast } = useMessage()
   const { checkQuotaAllow } = useUserStore()
   const { Loading, setIsLoading } = useLoading()
@@ -41,6 +42,7 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
   const { openConfirm, ConfirmChild } = useConfirm({
     content: '确认创建项目？'
   })
+  const tabType = searchParams.get('type') || 'form'
 
   // compute container width
   const { screenWidth, lastRoute } = useGlobalStore()
@@ -162,7 +164,7 @@ const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
           }
         />
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-          {formType === 'form' ? (
+          {tabType === 'form' ? (
             <Form formHook={formHook} pxVal={pxVal} />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
