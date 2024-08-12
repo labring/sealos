@@ -1,5 +1,7 @@
 import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
 
+export const crLabelKey = 'sealos-devbox-cr'
+
 export enum RuntimeEnum {
   java = 'java',
   go = 'go',
@@ -9,6 +11,15 @@ export enum RuntimeEnum {
   php = 'php',
   custom = 'custom'
 }
+export const RuntimeTypeList = [
+  { id: RuntimeEnum.java, label: 'java' },
+  { id: RuntimeEnum.go, label: 'go' },
+  { id: RuntimeEnum.python, label: 'python' },
+  { id: RuntimeEnum.node, label: 'node' },
+  { id: RuntimeEnum.rust, label: 'rust' },
+  { id: RuntimeEnum.php, label: 'php' },
+  { id: RuntimeEnum.custom, label: 'custom' }
+]
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
@@ -65,8 +76,8 @@ export const MemorySlideMarkList = [
 
 export const defaultDevboxEditValue: DevboxEditType = {
   devboxName: '',
-  runTime: RuntimeEnum.java,
-  runTimeVersion: '',
+  runtimeType: RuntimeEnum.java,
+  runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value
 }

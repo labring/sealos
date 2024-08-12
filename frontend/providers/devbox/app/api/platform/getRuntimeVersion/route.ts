@@ -1,13 +1,13 @@
 import * as k8s from '@kubernetes/client-node'
 
+import { RuntimeType } from '@/types/devbox'
 import { RuntimeEnum } from '@/constants/devbox'
 import { runtimeVersionMap } from '@/stores/static'
 import { jsonRes } from '@/services/backend/response'
 import { K8sApi } from '@/services/backend/kubernetes'
 
-// NOTE: 这里可能有点问题，可能RuntimeEnum需要转换成字符串
 export type Response = Record<
-  RuntimeEnum,
+  RuntimeType,
   {
     id: string
     label: string

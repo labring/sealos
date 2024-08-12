@@ -29,7 +29,7 @@ export type userPriceType = {
 }
 
 export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage'
+  type: 'cpu' | 'memory'
   used: number
   limit: number
 }

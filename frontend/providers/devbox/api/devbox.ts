@@ -2,6 +2,7 @@ import { KbPgClusterType } from '@/types/cluster'
 import { adaptDevboxListItem } from '@/utils/adapt'
 import { GET, POST, DELETE } from '@/services/request'
 import { devboxStatusMap } from '@/constants/devbox'
+import { DevboxEditType } from '@/types/devbox'
 
 export const getMyDevboxList = () =>
   GET<KbPgClusterType[]>('/api/getDevboxList').then((data) => {
@@ -18,3 +19,9 @@ export const getMyDevboxList = () =>
       }
     ]
   })
+
+export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
+  POST('/api/applyYamlList', { yamlList, type })
+
+export const createDevbox = (payload: { devboxForm: DevboxEditType }) =>
+  POST(`/api/createDevbox`, payload)

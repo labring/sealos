@@ -2,8 +2,8 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
-import { DevboxEditType } from '@/types/devbox'
 import { getUserQuota } from '@/api/platform'
+import { DevboxEditType } from '@/types/devbox'
 import { UserQuotaItemType } from '@/types/user'
 
 type State = {
@@ -26,26 +26,23 @@ export const useUserStore = create<State>()(
         })
         return null
       },
-      checkQuotaAllow: ({ cpu, memory, storage, replicas }, usedData): string | undefined => {
+      checkQuotaAllow: ({ cpu, memory }, usedData): string | undefined => {
         const quote = get().userQuota
 
         const request = {
-          cpu: (cpu / 1000) * replicas,
-          memory: (memory / 1024) * replicas,
-          storage: storage * replicas
+          cpu: cpu / 1000,
+          memory: memory / 1024
         }
 
         if (usedData) {
-          const { cpu, memory, storage, replicas } = usedData
-          request.cpu -= (cpu / 1000) * replicas
-          request.memory -= (memory / 1024) * replicas
-          request.storage -= storage * replicas
+          const { cpu, memory } = usedData
+          request.cpu -= cpu / 1000
+          request.memory -= memory / 1024
         }
 
         const overLimitTip: { [key: string]: string } = {
           cpu: 'app.cpu_exceeds_quota',
-          memory: 'app.memory_exceeds_quota',
-          storage: 'app.storage_exceeds_quota'
+          memory: 'app.memory_exceeds_quota'
         }
 
         const exceedQuota = quote.find((item) => {

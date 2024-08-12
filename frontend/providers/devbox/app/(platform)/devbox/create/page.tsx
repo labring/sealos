@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { Box, Flex } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import Form from './components/Form'
 import Yaml from './components/Yaml'
@@ -17,37 +17,34 @@ import { useUserStore } from '@/stores/user'
 import { useGlobalStore } from '@/stores/global'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
-import { editModeMap } from '@/constants/editApp'
+import { runtimeVersionMap } from '@/stores/static'
 import type { DevboxEditType } from '@/types/devbox'
+import { applyYamlList, createDevbox } from '@/api/devbox'
 import { defaultDevboxEditValue } from '@/constants/devbox'
+import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
 const defaultEdit = {
   ...defaultDevboxEditValue,
-  dbVersion: DBVersionMap.postgresql[0]?.id
+  runtimeVersion: runtimeVersionMap.java[0]?.id
 }
 
-const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
+const DevboxCreatePage = ({ formType }: { formType?: 'form' | 'yaml' }) => {
   const router = useRouter()
-  const [yamlList, setYamlList] = useState<YamlItemType[]>([])
+  const { message: toast } = useMessage()
+  const { checkQuotaAllow } = useUserStore()
+  const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
-  const [minStorage, setMinStorage] = useState(1)
-  const { message: toast } = useMessage()
-  const { Loading, setIsLoading } = useLoading()
-  const { loadDBDetail, dbDetail } = useDBStore()
-  const oldDBEditData = useRef<DBEditType>()
-  const { checkQuotaAllow } = useUserStore()
-
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName)
+  const [yamlList, setYamlList] = useState<YamlItemType[]>([])
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: t(applyMessage)
+    content: '确认创建项目？'
   })
-  const isEdit = useMemo(() => !!dbName, [dbName])
 
   // compute container width
   const { screenWidth, lastRoute } = useGlobalStore()
+
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2)
     if (val < 20) {
@@ -56,31 +53,13 @@ const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | '
     return val
   }, [screenWidth])
 
-  // form
-  const formHook = useForm<DBEditType>({
+  const formHook = useForm<DevboxEditType>({
     defaultValues: defaultEdit
   })
 
-  const generateYamlList = (data: DBEditType) => {
-    return [
-      ...(isEdit
-        ? []
-        : [
-            {
-              filename: 'account.yaml',
-              value: json2Account(data)
-            }
-          ]),
-      {
-        filename: 'cluster.yaml',
-        value: json2CreateCluster(data)
-      }
-    ]
-  }
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
-    debounce((data: DBEditType) => {
+    debounce((data: DevboxEditType) => {
       try {
         setYamlList(generateYamlList(data))
       } catch (error) {
@@ -91,33 +70,55 @@ const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | '
   )
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    data && formOnchangeDebounce(data as DBEditType)
+    data && formOnchangeDebounce(data as DevboxEditType)
     setForceUpdate(!forceUpdate)
   })
 
-  const submitSuccess = async (formData: DBEditType) => {
-    const needMongoAdapter =
-      formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas
+  // TODO: 这里可能有点问题
+  const generateYamlList = (data: DevboxEditType) => {
+    return [
+      {
+        filename: 'cluster.yaml',
+        value: json2CreateCluster(data)
+      }
+    ]
+  }
+
+  useQuery(['initDevboxCreateData'], () => {
+    setYamlList([
+      {
+        filename: 'cluster.yaml',
+        value: json2CreateCluster(defaultEdit)
+      },
+      {
+        filename: 'account.yaml',
+        value: json2Account(defaultEdit)
+      }
+    ])
+    return null
+  })
+
+  const submitSuccess = async (formData: DevboxEditType) => {
     setIsLoading(true)
     try {
-      !isEdit && (await applyYamlList([limitRangeYaml], 'create'))
-      needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }))
+      await applyYamlList([limitRangeYaml], 'create')
     } catch (err) {}
     try {
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current)
+      // NOTE: 其实这个限额检查可能不需要了
+      const quoteCheckRes = checkQuotaAllow(formData)
       if (quoteCheckRes) {
         setIsLoading(false)
         return toast({
           status: 'warning',
-          title: t(quoteCheckRes),
+          title: quoteCheckRes,
           duration: 5000,
           isClosable: true
         })
       }
-      await createDB({ dbForm: formData, isEdit })
+      await createDevbox({ devboxForm: formData })
       toast({
-        title: t(applySuccess),
+        title: '创建成功',
         status: 'success'
       })
       router.push(lastRoute)
@@ -131,7 +132,7 @@ const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | '
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('submit_error')
+      if (!obj || typeof obj !== 'object') return '提交表单错误'
       if (!!obj.message) {
         return obj.message
       }
@@ -144,45 +145,7 @@ const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | '
       duration: 3000,
       isClosable: true
     })
-  }, [formHook.formState.errors, t, toast])
-
-  useQuery(
-    ['init'],
-    () => {
-      if (!dbName) {
-        setYamlList([
-          {
-            filename: 'cluster.yaml',
-            value: json2CreateCluster(defaultEdit)
-          },
-          {
-            filename: 'account.yaml',
-            value: json2Account(defaultEdit)
-          }
-        ])
-        return null
-      }
-      setIsLoading(true)
-      return loadDBDetail(dbName)
-    },
-    {
-      onSuccess(res) {
-        if (!res) return
-        oldDBEditData.current = res
-        formHook.reset(adaptDBForm(res))
-        setMinStorage(res.storage)
-      },
-      onError(err) {
-        toast({
-          title: String(err),
-          status: 'error'
-        })
-      },
-      onSettled() {
-        setIsLoading(false)
-      }
-    }
-  )
+  }, [formHook.formState.errors, toast])
 
   return (
     <>
@@ -193,18 +156,15 @@ const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | '
         minWidth={'1024px'}
         backgroundColor={'grayModern.100'}>
         <Header
-          dbName={formHook.getValues('dbName')}
-          title={title}
           yamlList={yamlList}
-          applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
           }
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-          {tabType === 'form' ? (
-            <Form formHook={formHook} minStorage={minStorage} pxVal={pxVal} />
+          {formType === 'form' ? (
+            <Form formHook={formHook} pxVal={pxVal} />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}
@@ -213,10 +173,10 @@ const EditDevbox = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | '
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal title={'创建失败'} content={errorMessage} onClose={() => setErrorMessage('')} />
       )}
     </>
   )
 }
 
-export default EditDevbox
+export default DevboxCreatePage

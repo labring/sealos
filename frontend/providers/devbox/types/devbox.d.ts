@@ -6,8 +6,8 @@ export type RuntimeType = `${RuntimeEnum}`
 
 export interface DevboxEditType {
   devboxName: string
-  runTime: RuntimeType
-  runTimeVersion: string
+  runtimeType: RuntimeType
+  runtimeVersion: string
   cpu: number
   memory: number
 }
@@ -39,7 +39,7 @@ export interface DevboxDetailType extends DevboxEditType {
 export interface DevboxListItemType {
   id: string
   name: string
-  runtime: RuntimeType
+  runtimeType: RuntimeType
   status: DevboxStatusMapType
   createTime: string
   cpu: number

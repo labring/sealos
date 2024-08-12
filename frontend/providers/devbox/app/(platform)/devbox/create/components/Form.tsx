@@ -1,71 +1,57 @@
-import { obj2Query } from '@/api/tools'
-import MyIcon from '@/components/Icon'
-import PriceBox from '@/components/PriceBox'
-import QuotaBox from '@/components/QuotaBox'
-import Tip from '@/components/Tip'
-import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db'
-import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp'
-import { DBVersionMap, INSTALL_ACCOUNT } from '@/stores/static'
-import type { QueryType } from '@/types'
-import type { DBEditType } from '@/types/devbox'
-import { I18nCommonKey } from '@/types/i18next'
-import { InfoOutlineIcon } from '@chakra-ui/icons'
+'use client'
+
 import {
   Box,
-  Button,
   Center,
   Flex,
   FormControl,
   Grid,
   Image,
   Input,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
   Text,
-  useDisclosure,
   useTheme
 } from '@chakra-ui/react'
-import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui'
 import { throttle } from 'lodash'
-import { useTranslation } from 'next-i18next'
-import { useRouter } from 'next/router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { UseFormReturn } from 'react-hook-form'
+import { MySelect, MySlider, Tabs } from '@sealos/ui'
+
+import MyIcon from '@/components/Icon'
+import { obj2Query } from '@/utils/tools'
+import PriceBox from '@/components/PriceBox'
+import QuotaBox from '@/components/QuotaBox'
+import { RuntimeTypeList } from '@/constants/devbox'
+import type { DevboxEditType } from '@/types/devbox'
+import { INSTALL_ACCOUNT, runtimeVersionMap } from '@/stores/static'
+import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
 
 const Form = ({
   formHook,
-  pxVal,
-  minStorage
+  pxVal
 }: {
-  formHook: UseFormReturn<DBEditType, any>
+  formHook: UseFormReturn<DevboxEditType, any>
   pxVal: number
-  minStorage: number
 }) => {
-  if (!formHook) return null
-  const { t } = useTranslation()
-
-  const router = useRouter()
-  const { name } = router.query as QueryType
   const theme = useTheme()
-  const isEdit = useMemo(() => !!name, [name])
-  const {
-    register,
-    setValue,
-    getValues,
-    formState: { errors }
-  } = formHook
-
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
+  const router = useRouter()
+  const navList: { id: string; label: string; icon: string }[] = [
     {
       id: 'baseInfo',
-      label: 'basic',
+      label: '基础配置',
       icon: 'formInfo'
+    },
+    {
+      id: 'network',
+      label: '网络配置',
+      icon: 'formNetwork'
+    },
+    {
+      id: 'advanced',
+      label: '高级配置',
+      icon: 'formAdvanced'
     }
   ]
-
   const [activeNav, setActiveNav] = useState(navList[0].id)
 
   // listen scroll and set activeNav
@@ -94,6 +80,15 @@ const Form = ({
     }
     // eslint-disable-next-line
   }, [])
+
+  if (!formHook) return null
+
+  const {
+    register,
+    setValue,
+    getValues,
+    formState: { errors }
+  } = formHook
 
   const Label = ({
     children,
@@ -141,17 +136,17 @@ const Form = ({
         gridGap={5}
         alignItems={'start'}
         pl={`${pxVal}px`}>
+        {/* left sidebar */}
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: t('config_form') },
-              { id: 'yaml', label: t('yaml_file') }
+              { id: 'form', label: '配置表单' },
+              { id: 'yaml', label: 'YAML文件' }
             ]}
             activeId={'form'}
             onChange={() =>
               router.replace(
-                `/db/edit?${obj2Query({
-                  name,
+                `/devbox/create?${obj2Query({
                   type: 'yaml'
                 })}`
               )
@@ -191,7 +186,7 @@ const Form = ({
                     h={'20px'}
                     color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
                   />
-                  <Box>{t(item.label)}</Box>
+                  <Box>{item.label}</Box>
                 </Flex>
               </Box>
             ))}
@@ -205,26 +200,14 @@ const Form = ({
                 components={[
                   {
                     cpu: getValues('cpu'),
-                    memory: getValues('memory'),
-                    storage: getValues('storage'),
-                    replicas: [getValues('replicas') || 1, getValues('replicas') || 1]
-                  },
-                  ...(getValues('dbType') === DBTypeEnum.redis
-                    ? (() => {
-                        const config = RedisHAConfig(getValues('replicas') > 1)
-                        return [
-                          {
-                            ...config,
-                            replicas: [config.replicas, config.replicas]
-                          }
-                        ]
-                      })()
-                    : [])
+                    memory: getValues('memory')
+                  }
                 ]}
               />
             </Box>
           )}
         </Box>
+        {/* right content */}
         <Box
           id={'form-container'}
           pr={`${pxVal}px`}
@@ -235,16 +218,31 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {t('basic')}
+              {'基础配置'}
             </Box>
             <Box px={'42px'} py={'24px'}>
+              {/* Devbox Name */}
+              <FormControl mb={7} isInvalid={!!errors.devboxName} w={'500px'}>
+                <Flex alignItems={'center'}>
+                  <Label w={100}>{'项目名称'}</Label>
+                  {/* TODO：不知道项目名称的正则怎么整 */}
+                  <Input
+                    autoFocus={true}
+                    placeholder={'请输入项目名称'}
+                    {...register('devboxName', {
+                      required: '项目名称不能为空'
+                    })}
+                  />
+                </Flex>
+              </FormControl>
+              {/* Runtime Type */}
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100} alignSelf={'flex-start'}>
-                  {t('Type')}
+                  {'运行环境'}
                 </Label>
                 <Flex flexWrap={'wrap'} gap={'12px'}>
-                  {DBTypeList &&
-                    DBTypeList?.map((item) => {
+                  {RuntimeTypeList &&
+                    RuntimeTypeList?.map((item) => {
                       return (
                         <Center
                           key={item.id}
@@ -256,7 +254,7 @@ const Form = ({
                           cursor={'pointer'}
                           fontWeight={'bold'}
                           color={'grayModern.900'}
-                          {...(getValues('dbType') === item.id
+                          {...(getValues('runtimeType') === item.id
                             ? {
                                 bg: '#F9FDFE',
                                 borderColor: 'brightBlue.500',
@@ -270,8 +268,11 @@ const Form = ({
                                 }
                               })}
                           onClick={() => {
-                            setValue('dbType', item.id)
-                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id)
+                            setValue('runtimeType', item.id)
+                            setValue(
+                              'runtimeVersion',
+                              runtimeVersionMap[getValues('runtimeType')][0].id
+                            )
                           }}>
                           <Image
                             width={'32px'}
@@ -292,38 +293,21 @@ const Form = ({
                     })}
                 </Flex>
               </Flex>
+              {/* Runtime Version */}
               <Flex alignItems={'center'} mb={7}>
-                <Label w={100}>{t('version')}</Label>
-
+                <Label w={100}>{'版本'}</Label>
                 <MySelect
                   width={'200px'}
-                  placeholder={`${t('DataBase')} ${t('version')}`}
-                  value={getValues('dbVersion')}
-                  list={DBVersionMap[getValues('dbType')].map((i) => ({
+                  placeholder={`${'运行时'} ${'版本'}`}
+                  value={getValues('runtimeVersion')}
+                  list={runtimeVersionMap[getValues('runtimeType')].map((i) => ({
                     label: i.label,
                     value: i.id
                   }))}
-                  onchange={(val: any) => setValue('dbVersion', val)}
+                  onchange={(val: any) => setValue('runtimeVersion', val)}
                 />
               </Flex>
-              <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
-                <Flex alignItems={'center'}>
-                  <Label w={100}>{t('name')}</Label>
-                  <Input
-                    disabled={isEdit}
-                    title={isEdit ? t('cannot_change_name') : ''}
-                    autoFocus={true}
-                    placeholder={t('database_name_regex')}
-                    {...register('dbName', {
-                      required: t('database_name_empty'),
-                      pattern: {
-                        value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/g,
-                        message: t('database_name_regex_error')
-                      }
-                    })}
-                  />
-                </Flex>
-              </FormControl>
+              {/* CPU */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label w={100}>CPU</Label>
                 <MySlider
@@ -340,8 +324,9 @@ const Form = ({
                   (Core)
                 </Box>
               </Flex>
+              {/* Memory */}
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
-                <Label w={100}>{t('memory')}</Label>
+                <Label w={100}>{'内存'}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
@@ -353,136 +338,6 @@ const Form = ({
                   step={1}
                 />
               </Flex>
-              <Flex mb={8} alignItems={'center'}>
-                <Label w={100}>{t('Replicas')}</Label>
-                <RangeInput
-                  w={180}
-                  value={getValues('replicas')}
-                  min={1}
-                  max={20}
-                  step={
-                    getValues('dbType') === DBTypeEnum.mongodb ||
-                    getValues('dbType') === DBTypeEnum.mysql
-                      ? 2
-                      : 1
-                  }
-                  setVal={(val) => {
-                    register('replicas', {
-                      required: t('replicas_cannot_empty'),
-                      min: {
-                        value: 1,
-                        message: `${t('min_replicas')}1`
-                      },
-                      max: {
-                        value: 20,
-                        message: `${t('max_replicas')}20`
-                      }
-                    })
-                    const dbType = getValues('dbType')
-                    const oddVal = val % 2 === 0 ? val + 1 : val
-                    const replicasValue =
-                      dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.mysql ? oddVal : val
-                    setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue)
-                  }}
-                />
-
-                {getValues('replicas') === 1 && (
-                  <Tip
-                    ml={4}
-                    icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
-                    text={t('single_node_tip')}
-                    size="sm"
-                    borderRadius={'md'}
-                  />
-                )}
-                {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
-                  <Tip
-                    ml={4}
-                    icon={<InfoOutlineIcon />}
-                    text={t('multi_replica_redis_tip')}
-                    size="sm"
-                    borderRadius={'md'}
-                  />
-                )}
-                {(getValues('dbType') === DBTypeEnum.mongodb ||
-                  getValues('dbType') === DBTypeEnum.mysql) &&
-                  getValues('replicas') > 1 && (
-                    <Tip
-                      ml={4}
-                      icon={<InfoOutlineIcon />}
-                      text={t('db_instances_tip', {
-                        db: getValues('dbType')
-                      })}
-                      size="sm"
-                      borderRadius={'md'}
-                    />
-                  )}
-              </Flex>
-
-              <FormControl isInvalid={!!errors.storage} w={'500px'}>
-                <Flex alignItems={'center'}>
-                  <Label w={100}>{t('storage')}</Label>
-                  <MyTooltip label={`${t('storage_range')}${minStorage}~300 Gi`}>
-                    <NumberInput
-                      w={'180px'}
-                      max={300}
-                      min={minStorage}
-                      step={1}
-                      position={'relative'}
-                      value={getValues('storage')}
-                      onChange={(e) => {
-                        e !== '' ? setValue('storage', +e) : setValue('storage', minStorage)
-                      }}>
-                      <NumberInputField
-                        {...register('storage', {
-                          required: t('storage_cannot_empty'),
-                          min: {
-                            value: minStorage,
-                            message: `${t('storage_min')}${minStorage} Gi`
-                          },
-                          max: {
-                            value: 300,
-                            message: `${t('storage_max')}300 Gi`
-                          },
-                          valueAsNumber: true
-                        })}
-                        min={minStorage}
-                        max={300}
-                        borderRadius={'md'}
-                        borderColor={'#E8EBF0'}
-                        bg={'#F7F8FA'}
-                        _focusVisible={{
-                          borderColor: 'brightBlue.500',
-                          boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                          bg: '#FFF',
-                          color: '#111824'
-                        }}
-                        _hover={{
-                          borderColor: 'brightBlue.300'
-                        }}
-                      />
-
-                      <NumberInputStepper>
-                        <NumberIncrementStepper>
-                          <MyIcon name="arrowUp" width={'12px'} />
-                        </NumberIncrementStepper>
-                        <NumberDecrementStepper>
-                          <MyIcon name="arrowDown" width={'12px'} />
-                        </NumberDecrementStepper>
-                      </NumberInputStepper>
-                      <Box
-                        zIndex={1}
-                        position={'absolute'}
-                        right={10}
-                        top={'50%'}
-                        transform={'translateY(-50%)'}
-                        color={'grayModern.600'}>
-                        Gi
-                      </Box>
-                    </NumberInput>
-                  </MyTooltip>
-                </Flex>
-              </FormControl>
             </Box>
           </Box>
         </Box>

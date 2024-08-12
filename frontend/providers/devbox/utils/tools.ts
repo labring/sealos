@@ -47,3 +47,26 @@ export const storageFormatToNum = (storage = '0') => {
 export const printMemory = (val: number) => {
   return val >= 1024 ? `${Math.round(val / 1024)} Gi` : `${val} Mi`
 }
+
+export function downLoadBlob(content: BlobPart, type: string, fileName: string) {
+  const blob = new Blob([content], { type })
+
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+
+  link.click()
+}
+
+export const obj2Query = (obj: Record<string, string | number>) => {
+  let str = ''
+  Object.entries(obj).forEach(([key, val]) => {
+    if (val) {
+      str += `${key}=${val}&`
+    }
+  })
+
+  return str.slice(0, str.length - 1)
+}
