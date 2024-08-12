@@ -106,7 +106,7 @@
   "One click deploy button": "One-Click deploy button",
   "Operation": "Operation",
   "Option": "Optional",
-  "Others": "Others",
+  "others": "Others",
   "Parameters": "Parameters",
   "Password": "Password",
   "Password for the image registry": "Image Registry Password",

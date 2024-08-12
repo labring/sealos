@@ -106,7 +106,7 @@
   "One click deploy button": "一键部署按钮",
   "Operation": "操作",
   "Option": "选填",
-  "Others": "其他资源",
+  "others": "其他资源",
   "Parameters": "运行参数",
   "Password": "密码",
   "Password for the image registry": "镜像仓库的密码",
