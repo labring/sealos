@@ -256,15 +256,15 @@ const (
 )
 
 type Invoice struct {
-	ID          string    `gorm:"type:text;primary_key"`
-	UserID      string    `gorm:"type:text;not null"`
-	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone"`
-	Detail      string    `gorm:"type:text;not null"`
-	Remark      string    `gorm:"type:text"`
-	TotalAmount int64     `gorm:"type:bigint;not null"`
+	ID          string    `gorm:"type:text;primary_key" json:"id" bson:"id"`
+	UserID      string    `gorm:"type:text;not null" json:"userID" bson:"userID"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()" bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()" bson:"updatedAt" json:"updatedAt"`
+	Detail      string    `gorm:"type:text;not null" json:"detail" bson:"detail"`
+	Remark      string    `gorm:"type:text" json:"remark" bson:"remark"`
+	TotalAmount int64     `gorm:"type:bigint;not null" json:"totalAmount" bson:"totalAmount"`
 	// Pending, Completed, Rejected
-	Status InvoiceStatus `gorm:"type:text;not null"`
+	Status InvoiceStatus `gorm:"type:text;not null" json:"status" bson:"status"`
 }
 
 type InvoicePayment struct {

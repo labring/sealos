@@ -776,13 +776,14 @@ func GetInvoice(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get invoice : %v", err)})
 		return
 	}
+	type resp struct {
+		Invoices  []types.Invoice `json:"invoices"`
+		LimitResp types.LimitResp `json:",inline" bson:",inline"`
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"data": struct {
-			Invoices []types.Invoice `json:"invoices"`
-			Limits   types.LimitResp `json:",inline" bson:",inline"`
-		}{
-			Invoices: invoices,
-			Limits:   limits,
+		"data": resp{
+			Invoices:  invoices,
+			LimitResp: limits,
 		},
 	})
 }
