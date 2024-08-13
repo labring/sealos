@@ -1327,6 +1327,13 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
 }
 
 func (m *Account) GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error) {
+	if req.InvoiceID != "" {
+		invoice, err := m.ck.GetInvoiceWithID(req.InvoiceID)
+		if err != nil {
+			return nil, types.LimitResp{}, fmt.Errorf("failed to get invoice: %v", err)
+		}
+		return []types.Invoice{*invoice}, types.LimitResp{Total: 1, TotalPage: 1}, nil
+	}
 	return m.ck.GetInvoice(req.UserID, types.LimitReq{
 		Page:     req.Page,
 		PageSize: req.PageSize,

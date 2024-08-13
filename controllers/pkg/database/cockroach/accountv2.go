@@ -739,6 +739,15 @@ func (c *Cockroach) CreateInvoicePaymentsWithDB(invoicePayments []types.InvoiceP
 	return nil
 }
 
+// GetInvoiceWithID
+func (c *Cockroach) GetInvoiceWithID(invoiceID string) (*types.Invoice, error) {
+	var invoice types.Invoice
+	if err := c.DB.Where(types.Invoice{ID: invoiceID}).First(&invoice).Error; err != nil {
+		return nil, fmt.Errorf("failed to get invoice: %v", err)
+	}
+	return &invoice, nil
+}
+
 func (c *Cockroach) GetInvoice(userID string, req types.LimitReq) ([]types.Invoice, types.LimitResp, error) {
 	var invoices []types.Invoice
 	var total int64

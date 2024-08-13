@@ -1480,6 +1480,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-12-01T00:00:00Z"
                 },
+                "invoiceID": {
+                    "description": "@Summary Invoice ID\n@Description Invoice ID\n@JSONSchema",
+                    "type": "string",
+                    "example": "invoice-id-1"
+                },
                 "kubeConfig": {
                     "type": "string"
                 },
@@ -1526,6 +1531,11 @@ const docTemplate = `{
                 "pageSize": {
                     "description": "@Summary Page Size\n@Description Page Size",
                     "type": "integer"
+                },
+                "paymentID": {
+                    "description": "@Summary Payment ID\n@Description Payment ID\n@JSONSchema",
+                    "type": "string",
+                    "example": "payment-id-1"
                 },
                 "startTime": {
                     "type": "string",

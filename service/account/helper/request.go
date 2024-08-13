@@ -425,6 +425,11 @@ func ParseApplyInvoiceReq(c *gin.Context) (*ApplyInvoiceReq, error) {
 }
 
 type GetInvoiceReq struct {
+	// @Summary Invoice ID
+	// @Description Invoice ID
+	// @JSONSchema
+	InvoiceID string `json:"invoiceID,omitempty" bson:"invoiceID" example:"invoice-id-1"`
+
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required

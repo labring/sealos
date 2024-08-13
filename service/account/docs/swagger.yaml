@@ -285,6 +285,13 @@ definitions:
       endTime:
         example: "2021-12-01T00:00:00Z"
         type: string
+      invoiceID:
+        description: |-
+          @Summary Invoice ID
+          @Description Invoice ID
+          @JSONSchema
+        example: invoice-id-1
+        type: string
       kubeConfig:
         type: string
       owner:
@@ -327,6 +334,13 @@ definitions:
           @Summary Page Size
           @Description Page Size
         type: integer
+      paymentID:
+        description: |-
+          @Summary Payment ID
+          @Description Payment ID
+          @JSONSchema
+        example: payment-id-1
+        type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
         type: string
