@@ -182,7 +182,7 @@ const Form = ({
             ))}
           </Box>
           <Box mt={3} overflow={'hidden'}>
-            {/* <QuotaBox /> */}
+            <QuotaBox />
           </Box>
           {INSTALL_ACCOUNT && (
             <Box mt={3} overflow={'hidden'}>

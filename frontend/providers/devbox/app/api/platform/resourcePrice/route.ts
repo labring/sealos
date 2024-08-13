@@ -8,8 +8,6 @@ import { authSession } from '@/services/backend/auth'
 export type Response = {
   cpu: number
   memory: number
-  storage: number
-  nodeports: number
 }
 
 type ResourceType =
@@ -42,47 +40,48 @@ export const valuationMap: Record<string, number> = {
   storage: 1024
 }
 
-export default async function handler(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     // source price
-    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
-    })
+    // const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+    //   kubeconfig: await authSession(req)
+    // })
 
-    const crdJson = {
-      apiVersion: `account.sealos.io/v1`,
-      kind: 'PriceQuery',
-      metadata: {
-        name: 'prices',
-        namespace
-      },
-      spec: {}
-    }
+    // const crdJson = {
+    //   apiVersion: `account.sealos.io/v1`,
+    //   kind: 'PriceQuery',
+    //   metadata: {
+    //     name: 'prices',
+    //     namespace
+    //   },
+    //   spec: {}
+    // }
 
-    const crdYaml = yaml.dump(crdJson)
+    // const crdYaml = yaml.dump(crdJson)
 
-    try {
-      await applyYamlList([crdYaml], 'replace')
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000))
-    } catch (error) {}
+    // try {
+    //   await applyYamlList([crdYaml], 'replace')
+    //   await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000))
+    // } catch (error) {}
 
-    const { body: priceResponse } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'account.sealos.io',
-      'v1',
-      namespace,
-      'pricequeries',
-      crdJson.metadata.name
-    )) as { body: PriceCrdType }
+    // const { body: priceResponse } = (await k8sCustomObjects.getNamespacedCustomObject(
+    //   'account.sealos.io',
+    //   'v1',
+    //   namespace,
+    //   'pricequeries',
+    //   crdJson.metadata.name
+    // )) as { body: PriceCrdType }
 
-    const data = {
-      cpu: countSourcePrice(priceResponse, 'cpu'),
-      memory: countSourcePrice(priceResponse, 'memory'),
-      storage: countSourcePrice(priceResponse, 'storage'),
-      nodeports: countSourcePrice(priceResponse, 'services.nodeports')
-    }
-
+    // const data = {
+    //   cpu: countSourcePrice(priceResponse, 'cpu'),
+    //   memory: countSourcePrice(priceResponse, 'memory')
+    // }
+    console.log(123)
     return jsonRes({
-      data
+      data: {
+        cpu: 0.1,
+        memory: 0.2
+      }
     })
   } catch (error) {
     console.log(error)

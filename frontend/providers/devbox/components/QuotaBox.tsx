@@ -15,14 +15,6 @@ const sourceMap = {
   memory: {
     color: '#36ADEF',
     unit: 'Gi'
-  },
-  storage: {
-    color: '#8172D8',
-    unit: 'GB'
-  },
-  gpu: {
-    color: '#89CD11',
-    unit: 'Card'
   }
 }
 

@@ -6,9 +6,7 @@ import type { Response as resourcePriceResponse } from '@/app/api/platform/resou
 // TODO: 这里需要知道具体的价格
 export let SOURCE_PRICE: resourcePriceResponse = {
   cpu: 0.067,
-  memory: 0.033792,
-  storage: 0.002048,
-  nodeports: 0.5
+  memory: 0.033792
 }
 export let INSTALL_ACCOUNT = false
 

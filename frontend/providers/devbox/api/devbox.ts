@@ -6,7 +6,6 @@ import { DevboxEditType } from '@/types/devbox'
 
 export const getMyDevboxList = () =>
   GET<KbPgClusterType[]>('/api/getDevboxList').then((data) => {
-    console.log('test')
     return [
       {
         id: 1,
