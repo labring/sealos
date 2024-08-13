@@ -2,7 +2,7 @@
 
 Flarum 是一款简洁优雅,功能强大的论坛软件。以 Flarum 为例，介绍如何使用 Sealos 来部署应用。
 
-首先进入到 Sealos 公有云网站,登陆之后会看到如下图所示的桌面环境：
+首先进入到 Sealos 公有云网站，登录之后会看到如下图所示的桌面环境：
 
 ![](./images/quick-start-1.png)
 
@@ -24,8 +24,8 @@ Flarum 是一款简洁优雅,功能强大的论坛软件。以 Flarum 为例，�
 
 ![](./images/quick-start-5.png)
 
-直接点击公网地址即可访问跳转。
+直接点击公网地址即可跳转访问。
 
 ![](./images/quick-start-6.png)
 
-部署更多强大应用: [应用管理](/docs/user-doc/application/c-app-launchpad/)
+部署更多强大应用： [应用管理](/docs/user-doc/application/c-app-launchpad/)
