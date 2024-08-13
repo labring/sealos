@@ -28,4 +28,4 @@ Flarum 是一款简洁优雅,功能强大的论坛软件。以 Flarum 为例，�
 
 ![](./images/quick-start-6.png)
 
-部署更多强大应用: [应用管理](/user-doc/application/c-app-launchpad/)
+部署更多强大应用: [应用管理](/docs/user-doc/application/c-app-launchpad/)
