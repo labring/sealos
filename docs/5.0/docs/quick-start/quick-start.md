@@ -1,8 +1,8 @@
-# 部署的第一个应用
+# 部署第一个应用
 
-Flarum是一款简洁优雅,功能强大的论坛软件。以Flarum为例，介绍如何使用Sealos来部署应用。
+Flarum 是一款简洁优雅,功能强大的论坛软件。以 Flarum 为例，介绍如何使用 Sealos 来部署应用。
 
-首先进入到Sealos公有云网站,登陆之后会看到如下图所示的桌面环境：
+首先进入到 Sealos 公有云网站,登陆之后会看到如下图所示的桌面环境：
 
 ![](./images/quick-start-1.png)
 
@@ -10,7 +10,7 @@ Flarum是一款简洁优雅,功能强大的论坛软件。以Flarum为例，介�
 
 ![](./images/quick-start-2.png)
 
-在右上角搜索Flarum，搜索完成之后点击进入，可以看到完整的应用信息：
+在右上角搜索 Flarum，搜索完成之后点击进入，可以看到完整的应用信息：
 
 ![](./images/quick-start-3.png)
 
@@ -28,10 +28,4 @@ Flarum是一款简洁优雅,功能强大的论坛软件。以Flarum为例，介�
 
 ![](./images/quick-start-6.png)
 
-# 部署更多强大应用
-
-跳转 案例 部分的链接，如：
-
-部署拔测系统（）
-
-# 其他部分链接
+部署更多强大应用: [应用管理](/user-doc/application/c-app-launchpad/)
