@@ -140,14 +140,7 @@ func GetPayment(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	payment, limitResp, err := dao.DBClient.GetPayment(&types.UserQueryOpts{Owner: req.Owner}, types.LimitReq{
-		Page:     req.Page,
-		PageSize: req.PageSize,
-		TimeRange: types.TimeRange{
-			StartTime: req.StartTime,
-			EndTime:   req.EndTime,
-		},
-	})
+	payment, limitResp, err := dao.DBClient.GetPayment(&types.UserQueryOpts{Owner: req.Owner}, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get payment : %v", err)})
 		return

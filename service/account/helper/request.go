@@ -283,6 +283,11 @@ func setDefaultTimeRange(timeRange *TimeRange) {
 }
 
 type GetPaymentReq struct {
+	// @Summary Payment ID
+	// @Description Payment ID
+	// @JSONSchema
+	PaymentID string `json:"paymentID,omitempty" bson:"paymentID" example:"payment-id-1"`
+
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required

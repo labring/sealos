@@ -643,6 +643,14 @@ func (c *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time
 	return payment, nil
 }
 
+func (c *Cockroach) GetPaymentWithID(paymentID string) (*types.Payment, error) {
+	var payment types.Payment
+	if err := c.DB.Where(types.Payment{ID: paymentID}).First(&payment).Error; err != nil {
+		return nil, fmt.Errorf("failed to get payment: %w", err)
+	}
+	return &payment, nil
+}
+
 func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq) ([]types.Payment, types.LimitResp, error) {
 	var payment []types.Payment
 	var total int64

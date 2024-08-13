@@ -42,7 +42,7 @@ type Interface interface {
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
-	GetPayment(ops *types.UserQueryOpts, req types.LimitReq) ([]types.Payment, types.LimitResp, error)
+	GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error)
 	ApplyInvoice(req *helper.ApplyInvoiceReq) error
 	GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error)
 	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
@@ -109,8 +109,22 @@ func (g *Cockroach) GetUserCrName(ops types.UserQueryOpts) (string, error) {
 	return user.CrName, nil
 }
 
-func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req types.LimitReq) ([]types.Payment, types.LimitResp, error) {
-	return g.ck.GetPaymentWithLimit(ops, req)
+func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error) {
+	if req.PaymentID != "" {
+		payment, err := g.ck.GetPaymentWithID(req.PaymentID)
+		if err != nil {
+			return nil, types.LimitResp{}, fmt.Errorf("failed to get payment with id: %v", err)
+		}
+		return []types.Payment{*payment}, types.LimitResp{Total: 1, TotalPage: 1}, nil
+	}
+	return g.ck.GetPaymentWithLimit(ops, types.LimitReq{
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		TimeRange: types.TimeRange{
+			StartTime: req.StartTime,
+			EndTime:   req.EndTime,
+		},
+	})
 }
 
 func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {

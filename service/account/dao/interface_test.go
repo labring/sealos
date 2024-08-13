@@ -19,10 +19,7 @@ func TestCockroach_GetPayment(t *testing.T) {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
 	}
-	got, resp, err := db.GetPayment(&types.UserQueryOpts{Owner: "1fgtm0mn"}, types.LimitReq{
-		Page:     1,
-		PageSize: 10,
-	})
+	got, resp, err := db.GetPayment(&types.UserQueryOpts{Owner: "1fgtm0mn"}, &helper.GetPaymentReq{})
 	if err != nil {
 		t.Fatalf("GetPayment() error = %v", err)
 		return
