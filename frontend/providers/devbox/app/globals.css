@@ -137,3 +137,11 @@ div {
     }
   }
 }
+
+.hover-button {
+  display: none;
+}
+
+.hover-container:hover .hover-button {
+  display: block;
+}

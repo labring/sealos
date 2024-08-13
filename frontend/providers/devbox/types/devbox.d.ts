@@ -44,11 +44,9 @@ export interface DevboxListItemType {
   status: DevboxStatusMapType
   createTime: string
   cpu: number
-  gpu: number
+  memory: number
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
-  // TODO: 网络配置方面没补充
-  labels: { [key: string]: string }
 }
 
 export interface PodDetailType extends V1Pod {
@@ -61,4 +59,10 @@ export interface PodDetailType extends V1Pod {
   age: string
   cpu: number
   memory: number
+}
+
+export interface DevboxVersionListItemType {
+  id: string
+  createTime: string
+  description: string
 }

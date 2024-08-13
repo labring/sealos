@@ -2,13 +2,13 @@ import { KbPgClusterType } from '@/types/cluster'
 import { adaptDevboxListItem } from '@/utils/adapt'
 import { GET, POST, DELETE } from '@/services/request'
 import { devboxStatusMap } from '@/constants/devbox'
-import { DevboxEditType } from '@/types/devbox'
+import { DevboxEditType, DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
 export const getMyDevboxList = () =>
-  GET<KbPgClusterType[]>('/api/getDevboxList').then((data) => {
+  GET<KbPgClusterType[]>('/api/getDevboxList').then((data): DevboxListItemType[] => {
     return [
       {
-        id: 1,
+        id: '1',
         name: 'first-devbox',
         runtimeType: 'node',
         status: devboxStatusMap['Creating'],
@@ -46,3 +46,15 @@ export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | '
 
 export const createDevbox = (payload: { devboxForm: DevboxEditType }) =>
   POST(`/api/createDevbox`, payload)
+
+export const getDevboxVersionList = (devboxId: string) =>
+  GET<DevboxVersionListItemType[]>('/api/getDevboxVersionList', { devboxId }).then((data) => {
+    return [
+      {
+        id: '1.0.0',
+        createTime: '2024-08-09 12:02',
+        description:
+          'first versionfirst versionfirst versionfirst versionfirst versionfirst versionfirst versionfirst versionfirst version'
+      }
+    ]
+  })

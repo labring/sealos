@@ -1,12 +1,23 @@
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  MenuButton,
+  useTheme,
+  Text,
+  useDisclosure
+} from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
-import { MyTable, SealosMenu } from '@sealos/ui'
-import { Box, Button, Center, Flex, Image, MenuButton, useTheme, Text } from '@chakra-ui/react'
+import { SealosMenu, MyTable } from '@sealos/ui'
 
 import MyIcon from '@/components/Icon'
-import PodLineChart from '@/components/PodLineChart'
-import { printMemory } from '@/utils/tools'
 import { DevboxListItemType } from '@/types/devbox'
+import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
+import { useState } from 'react'
+import Version from './Version'
 
 const DevboxList = ({
   devboxList = []
@@ -16,6 +27,15 @@ const DevboxList = ({
 }) => {
   const theme = useTheme()
   const router = useRouter()
+  const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
+    null
+  )
+  const { isOpen: isOpenVersion, onOpen: onOpenVersion, onClose: onCloseVersion } = useDisclosure()
+
+  const handleOpenVersion = (item: DevboxListItemType) => {
+    setCurrentDevboxListItem(item)
+    onOpenVersion()
+  }
 
   const columns: {
     title: string
@@ -35,11 +55,9 @@ const DevboxList = ({
               alt={item.id}
               src={`/images/${item.runtimeType}.svg`}
             />
-            {/* TODO：先看看渲染效果，再看看是否更改 */}
             <Box color={'grayModern.900'} fontSize={'md'}>
               {item.name}
             </Box>
-            {/*  NOTE: 这里为啥db-provider要使用枚举 */}
           </Flex>
         )
       }
@@ -98,7 +116,6 @@ const DevboxList = ({
         </Box>
       )
     },
-    // NOTE: 这里可能需要加一个网络配置
     {
       title: '操作',
       key: 'control',
@@ -143,7 +160,7 @@ const DevboxList = ({
                     <Box ml={2}>{'版本'}</Box>
                   </>
                 ),
-                onClick: () => {} // TODO: 添加跳转版本逻辑
+                onClick: () => handleOpenVersion(item)
               },
               {
                 child: (
@@ -223,6 +240,13 @@ const DevboxList = ({
         </Button>
       </Flex>
       <MyTable columns={columns} data={devboxList} />
+      {!!currentDevboxListItem && (
+        <Version
+          onClose={onCloseVersion}
+          isOpen={isOpenVersion}
+          devboxId={currentDevboxListItem.id}
+        />
+      )}
     </Box>
   )
 }

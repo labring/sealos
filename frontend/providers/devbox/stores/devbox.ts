@@ -2,12 +2,14 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
-import { getMyDevboxList } from '@/api/devbox'
-import type { DevboxListItemType } from '@/types/devbox'
+import { getDevboxVersionList, getMyDevboxList } from '@/api/devbox'
+import type { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
 type State = {
   devboxList: DevboxListItemType[]
   setDevboxList: () => Promise<DevboxListItemType[]>
+  devboxVersionList: DevboxVersionListItemType[]
+  setDevboxVersionList: (devboxId: string) => Promise<DevboxVersionListItemType[]>
   // devboxDetail: DevboxDetailType
   // loadDevboxDetail: (name: string, isFetchConfigMap?: boolean) => Promise<DevboxDetailType>
   // devboxPods: PodDetailType[]
@@ -20,10 +22,18 @@ export const useDevboxStore = create<State>()(
       devboxList: [],
       setDevboxList: async () => {
         const res = await getMyDevboxList()
-        console.log(res)
 
         set((state) => {
           state.devboxList = res
+        })
+        return res
+      },
+      devboxVersionList: [],
+      setDevboxVersionList: async (devboxId: string) => {
+        const res = await getDevboxVersionList(devboxId)
+
+        set((state) => {
+          state.devboxVersionList = res
         })
         return res
       }
