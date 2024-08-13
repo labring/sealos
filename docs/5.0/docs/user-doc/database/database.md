@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # 数据库
 
-**数据库**是一个应用的核心组成部分，Sealos自带的数据库应用，提供了一个数据库集群部署管理工具，可以帮助你快速部署和管理数据库集群。目前支持 MySQL、PostgreSQL、MongoDB、Redis、Kafka等主流数据库。
+**数据库**是一个应用的核心组成部分，Sealos自带的数据库应用，提供了一个数据库集群部署管理工具，可以帮助你快速部署和管理数据库集群。目前支持 MySQL、PostgreSQL、MongoDB、Redis、Kafka 等主流数据库。
 
 目前数据库支持如下特性：
 

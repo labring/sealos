@@ -10,7 +10,7 @@ Flarum是一款简洁优雅,功能强大的论坛软件。以Flarum为例，介�
 
 ![](./images/quick-start-2.png)
 
-在右上角搜索flarum，搜索完成之后点击进入，可以看到完整的应用信息：
+在右上角搜索Flarum，搜索完成之后点击进入，可以看到完整的应用信息：
 
 ![](./images/quick-start-3.png)
 
@@ -20,11 +20,11 @@ Flarum是一款简洁优雅,功能强大的论坛软件。以Flarum为例，介�
 
 ![](./images/quick-start-4.png)
 
-点击详情可以查看每个应用的详细部署信息，包括实例数，CPU,存储，网络等等。
+点击详情可以查看每个应用的详细信息，包括实例数，CPU,存储，网络等等。
 
 ![](./images/quick-start-5.png)
 
-直接点击系统分类的公网链接地址就可以进行访问了。
+直接点击公网地址即可访问跳转。
 
 ![](./images/quick-start-6.png)
 
