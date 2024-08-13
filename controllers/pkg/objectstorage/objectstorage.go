@@ -145,10 +145,22 @@ func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.
 		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
 	}
 
+	if rcvdValues[0] <= 0 || rcvdValues[1] <= 0 {
+		fmt.Println("[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.", "bucket:", bucketName)
+		fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), rcvdValues[0], endTime.Format(timeFormat), rcvdValues[1])
+		return 0, nil
+	}
+
 	sentQuery := fmt.Sprintf("sum(minio_bucket_traffic_sent_bytes{bucket=\"%s\", instance=\"%s\"})", bucketName, instance)
 	sentValues, err := queryPrometheus(ctx, v1api, sentQuery, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
+	}
+
+	if sentValues[0] <= 0 || sentValues[1] <= 0 {
+		fmt.Println("[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.", "bucket:", bucketName)
+		fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), sentValues[0], endTime.Format(timeFormat), sentValues[1])
+		return 0, nil
 	}
 
 	receivedDiff := rcvdValues[1] - rcvdValues[0]
