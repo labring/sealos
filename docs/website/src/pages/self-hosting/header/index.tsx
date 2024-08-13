@@ -12,7 +12,7 @@ import './index.scss';
 const navbar = [
   {
     key: 'docs',
-    label: <Translate>Documentation</Translate>,
+    label: <Translate>Docs</Translate>,
     to: '/docs/Intro'
   },
   {
