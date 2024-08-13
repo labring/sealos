@@ -564,7 +564,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
+                            "$ref": "#/definitions/helper.GetPaymentReq"
                         }
                     }
                 ],
@@ -1474,6 +1474,38 @@ const docTemplate = `{
             }
         },
         "helper.GetInvoiceReq": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.GetPaymentReq": {
             "type": "object",
             "properties": {
                 "endTime": {

@@ -181,6 +181,20 @@ func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
 	return userCosts, nil
 }
 
+func ParsePaymentReq(c *gin.Context) (*GetPaymentReq, error) {
+	payment := &GetPaymentReq{}
+	if err := c.ShouldBindJSON(payment); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if payment.Page <= 0 {
+		payment.Page = 1
+	}
+	if payment.PageSize <= 0 {
+		payment.PageSize = 10
+	}
+	return payment, nil
+}
+
 type AppCostsReq struct {
 	// @Summary Order ID
 	// @Description Order ID
@@ -266,6 +280,17 @@ func setDefaultTimeRange(timeRange *TimeRange) {
 	if timeRange.EndTime.IsZero() {
 		timeRange.EndTime = time.Now()
 	}
+}
+
+type GetPaymentReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	*Auth `json:",inline" bson:",inline"`
+
+	// @Summary Limit request
+	// @Description Limit request
+	LimitReq `json:",inline" bson:",inline"`
 }
 
 type CostOverviewResp struct {

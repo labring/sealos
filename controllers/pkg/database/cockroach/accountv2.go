@@ -643,6 +643,39 @@ func (c *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time
 	return payment, nil
 }
 
+func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq) ([]types.Payment, types.LimitResp, error) {
+	var payment []types.Payment
+	var total int64
+	var limitResp types.LimitResp
+	page, pageSize := req.Page, req.PageSize
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return nil, limitResp, fmt.Errorf("failed to get user uid: %v", err)
+	}
+
+	query := c.DB.Model(&types.Payment{}).Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}})
+	if !req.StartTime.IsZero() {
+		query = query.Where("created_at >= ?", req.StartTime)
+	}
+	if !req.EndTime.IsZero() {
+		query = query.Where("created_at <= ?", req.EndTime)
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, limitResp, fmt.Errorf("failed to get total count: %v", err)
+	}
+	totalPage := (total + int64(pageSize) - 1) / int64(pageSize)
+	if err := query.Limit(pageSize).
+		Offset((page - 1) * pageSize).
+		Find(&payment).Error; err != nil {
+		return nil, limitResp, fmt.Errorf("failed to get payment: %v", err)
+	}
+	limitResp = types.LimitResp{
+		Total:     total,
+		TotalPage: totalPage,
+	}
+	return payment, limitResp, nil
+}
+
 func (c *Cockroach) GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error) {
 	var payment []types.Payment
 	if err := c.DB.Where("id IN ?", ids).Where("invoiced_at = ?", false).Find(&payment).Error; err != nil {

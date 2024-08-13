@@ -19,12 +19,16 @@ func TestCockroach_GetPayment(t *testing.T) {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
 	}
-	got, err := db.GetPayment(types.UserQueryOpts{Owner: "1fgtm0mn"}, time.Time{}, time.Time{})
+	got, resp, err := db.GetPayment(&types.UserQueryOpts{Owner: "1fgtm0mn"}, types.LimitReq{
+		Page:     1,
+		PageSize: 10,
+	})
 	if err != nil {
 		t.Fatalf("GetPayment() error = %v", err)
 		return
 	}
 	t.Logf("got = %+v", got)
+	t.Logf("limit resp = %+v", resp)
 }
 
 func TestMongoDB_GetAppCosts(t *testing.T) {

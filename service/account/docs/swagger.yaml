@@ -307,6 +307,33 @@ definitions:
         example: admin
         type: string
     type: object
+  helper.GetPaymentReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      page:
+        description: |-
+          @Summary Page
+          @Description Page
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page Size
+          @Description Page Size
+        type: integer
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      userID:
+        example: admin
+        type: string
+    type: object
   helper.GetPropertiesResp:
     properties:
       data:
@@ -880,7 +907,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserBaseReq'
+          $ref: '#/definitions/helper.GetPaymentReq'
       produces:
       - application/json
       responses:

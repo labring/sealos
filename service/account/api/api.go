@@ -124,14 +124,14 @@ func GetConsumptionAmount(c *gin.Context) {
 // @Tags Payment
 // @Accept json
 // @Produce json
-// @Param request body helper.UserBaseReq true "User payment request"
+// @Param request body helper.GetPaymentReq true "User payment request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user payment"
 // @Failure 400 {object} map[string]interface{} "failed to parse user payment request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user payment"
 // @Router /account/v1alpha1/costs/payment [post]
 func GetPayment(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParsePaymentReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user payment request: %v", err)})
 		return
@@ -140,13 +140,27 @@ func GetPayment(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	payment, err := dao.DBClient.GetPayment(types.UserQueryOpts{Owner: req.Owner}, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	payment, limitResp, err := dao.DBClient.GetPayment(&types.UserQueryOpts{Owner: req.Owner}, types.LimitReq{
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		TimeRange: types.TimeRange{
+			StartTime: req.StartTime,
+			EndTime:   req.EndTime,
+		},
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get payment : %v", err)})
 		return
 	}
+	type PaymentResp struct {
+		Payment         []types.Payment `json:"payments"`
+		types.LimitResp `json:",inline" bson:",inline"`
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"payment": payment,
+		"data": PaymentResp{
+			Payment:   payment,
+			LimitResp: limitResp,
+		},
 	})
 }
 

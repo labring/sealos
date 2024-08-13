@@ -42,7 +42,7 @@ type Interface interface {
 	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
-	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
+	GetPayment(ops *types.UserQueryOpts, req types.LimitReq) ([]types.Payment, types.LimitResp, error)
 	ApplyInvoice(req *helper.ApplyInvoiceReq) error
 	GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error)
 	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
@@ -109,8 +109,8 @@ func (g *Cockroach) GetUserCrName(ops types.UserQueryOpts) (string, error) {
 	return user.CrName, nil
 }
 
-func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
-	return g.ck.GetPayment(&ops, startTime, endTime)
+func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req types.LimitReq) ([]types.Payment, types.LimitResp, error) {
+	return g.ck.GetPaymentWithLimit(ops, req)
 }
 
 func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
@@ -137,7 +137,7 @@ func (g *Cockroach) GetLocalRegion() types.Region {
 }
 
 func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error) {
-	payment, err := g.GetPayment(ops, startTime, endTime)
+	payment, err := g.ck.GetPayment(&ops, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get payment: %v", err)
 	}
