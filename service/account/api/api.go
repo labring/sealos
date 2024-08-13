@@ -777,8 +777,8 @@ func GetInvoice(c *gin.Context) {
 		return
 	}
 	type resp struct {
-		Invoices  []types.Invoice `json:"invoices"`
-		LimitResp types.LimitResp `json:",inline" bson:",inline"`
+		Invoices        []types.Invoice `json:"invoices"`
+		types.LimitResp `json:",inline" bson:",inline"`
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": resp{
