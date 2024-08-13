@@ -1,4 +1,4 @@
-import { PassThrough, Readable, Writable } from 'stream';
+import { PassThrough, Readable, Transform, Writable } from 'stream';
 import * as k8s from '@kubernetes/client-node';
 import { Base64Encode } from 'base64-stream';
 
@@ -308,47 +308,102 @@ export class KubeFileSystem {
     podName: string;
     containerName: string;
     path: string;
-    file: Readable;
-  }) {
-    let localFileSize = 0;
-    const base64Encoder = new Base64Encode({ lineLength: 76 });
-    file.on('data', (chunk) => {
-      localFileSize += chunk.length;
+    file: PassThrough;
+  }): Promise<string> {
+    const smallFileThreshold = 1024;
+    let fileContent = Buffer.alloc(0);
+    let fileSize = 0;
+    let isSmallFile = true;
+
+    const processedFile = new PassThrough();
+
+    const processingPromise = new Promise<void>((resolve, reject) => {
+      file.on('data', (chunk) => {
+        fileSize += chunk.length;
+        if (isSmallFile) {
+          if (fileSize <= smallFileThreshold) {
+            fileContent = Buffer.concat([fileContent, chunk]);
+          } else {
+            isSmallFile = false;
+            processedFile.write(fileContent);
+            processedFile.write(chunk);
+          }
+        } else {
+          processedFile.write(chunk);
+        }
+      });
+
+      file.on('end', () => {
+        if (isSmallFile) {
+          processedFile.end(fileContent);
+        } else {
+          processedFile.end();
+        }
+        resolve();
+      });
+
+      file.on('error', (error) => {
+        reject(error);
+      });
     });
 
     try {
-      await this.execCommand(
-        namespace,
-        podName,
-        containerName,
-        ['sh', '-c', `dd of=${path}.tmp status=none bs=32767 `],
-        file.pipe(base64Encoder)
-      );
-      let attempts = 0;
-      const maxAttempts = 10;
-      const intervalTime = 3000;
+      await processingPromise;
 
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, intervalTime));
-        const v = await this.execCommand(namespace, podName, containerName, [
+      if (isSmallFile) {
+        const base64Content = fileContent.toString('base64');
+        await this.execCommand(namespace, podName, containerName, [
           'sh',
           '-c',
-          `stat -c %s ${path}.tmp`
+          `echo ${base64Content} > ${path}.tmp`
         ]);
-        const sizeIncreaseThreshold = localFileSize * 1.3;
-        if (parseInt(v.trim()) > sizeIncreaseThreshold) {
-          await this.execCommand(namespace, podName, containerName, [
+        await this.execCommand(namespace, podName, containerName, [
+          'sh',
+          '-c',
+          `base64 -d ${path}.tmp > ${path} && rm -f ${path}.tmp`
+        ]);
+        return 'success';
+      } else {
+        const base64Encoder = new Base64Encode({ lineLength: 76 });
+
+        await this.execCommand(
+          namespace,
+          podName,
+          containerName,
+          ['sh', '-c', `dd of=${path}.tmp status=none bs=32767`],
+          processedFile.pipe(base64Encoder)
+        );
+
+        const maxAttempts = 10;
+        const intervalTime = 3000;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, intervalTime));
+
+          const result = await this.execCommand(namespace, podName, containerName, [
             'sh',
             '-c',
-            `base64 -d ${path}.tmp > ${path} && rm -rf ${path}.tmp`
+            `stat -c %s ${path}.tmp`
           ]);
-          return 'success';
+
+          const uploadedSize = parseInt(result.trim());
+          const expectedEncodedSize = Math.ceil(fileSize / 3) * 4;
+          const sizeIncreaseThreshold = expectedEncodedSize + 1;
+
+          if (uploadedSize >= sizeIncreaseThreshold) {
+            await this.execCommand(namespace, podName, containerName, [
+              'sh',
+              '-c',
+              `base64 -d ${path}.tmp > ${path} && rm -f ${path}.tmp`
+            ]);
+            return 'success';
+          }
         }
-        attempts++;
+
+        throw new Error('File integrity check failed after maximum attempts.');
       }
-      throw new Error('File integrity check failed after maximum attempts.');
     } catch (error) {
-      throw new Error(`Upload error`);
+      throw new Error(`Upload error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
