@@ -53,6 +53,7 @@ const (
 	ACMEChallengeKey            = "acme.cert-manager.io/http01-solver"
 	KubeBlocksBackUpName        = "kubeblocks-backup-data"
 	dataProtectionBackupRepoKey = "dataprotection.kubeblocks.io/backup-repo-name"
+	InstanceLabelKey            = "app.kubernetes.io/instance"
 )
 
 type ResourceNamed struct {
@@ -68,6 +69,12 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	labels := cr.GetLabels()
 	p := &ResourceNamed{labels: labels}
 	switch {
+	case cr.GetName() == KubeBlocksBackUpName || labels[dataProtectionBackupRepoKey] != "":
+		p._type = DBBackup
+		p._name = KubeBlocksBackUpName
+		if labels[InstanceLabelKey] != "" {
+			p._name = labels[InstanceLabelKey]
+		}
 	case labels[DBPodLabelComponentNameKey] != "":
 		p._type = DB
 		p._name = labels[DBPodLabelInstanceKey]
@@ -86,9 +93,6 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[ACMEChallengeKey] != "":
 		p._type = APP
 		p._name = getACMEResolverName(cr)
-	case cr.GetName() == KubeBlocksBackUpName || labels[dataProtectionBackupRepoKey] != "":
-		p._type = JOB
-		p._name = KubeBlocksBackUpName
 	default:
 		p._type = OTHER
 		p._name = ""
