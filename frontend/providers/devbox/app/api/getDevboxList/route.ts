@@ -24,10 +24,11 @@ export async function GET(req: NextRequest) {
     // )
 
     // return jsonRes<ApiResp>({ data: response?.body?.items })
-    return jsonRes<apiResp>({
+    return jsonRes({
       data: []
     })
   } catch (err: any) {
+    // TODO: ApiResp全部去除
     return jsonRes<ApiResp>({
       code: 500,
       error: err

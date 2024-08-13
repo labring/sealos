@@ -1,8 +1,9 @@
 import { useRouter } from 'next/navigation'
 import { MyTable, SealosMenu } from '@sealos/ui'
-import { Box, Button, Center, Flex, Image, MenuButton, useTheme } from '@chakra-ui/react'
+import { Box, Button, Center, Flex, Image, MenuButton, useTheme, Text } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
+import PodLineChart from '@/components/PodLineChart'
 import { printMemory } from '@/utils/tools'
 import { DevboxListItemType } from '@/types/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
@@ -56,12 +57,46 @@ const DevboxList = ({
     {
       title: 'CPU',
       key: 'cpu',
-      render: (item: DevboxListItemType) => <>{item.cpu / 1000}C</>
+      render: (item: DevboxListItemType) => (
+        <Box h={'35px'} w={['120px', '130px', '140px']}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+            <PodLineChart type="blue" data={item.usedCpu} />
+            <Text
+              color={'#0077A9'}
+              fontSize={'sm'}
+              fontWeight={'bold'}
+              position={'absolute'}
+              right={'4px'}
+              bottom={'0px'}
+              pointerEvents={'none'}
+              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF">
+              {item?.usedCpu?.yData[item?.usedCpu?.yData?.length - 1]}%
+            </Text>
+          </Box>
+        </Box>
+      )
     },
     {
       title: '内存',
-      key: 'memory',
-      render: (item: DevboxListItemType) => <>{printMemory(item.memory)}</>
+      key: 'storage',
+      render: (item: DevboxListItemType) => (
+        <Box h={'35px'} w={['120px', '130px', '140px']}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+            <PodLineChart type="purple" data={item.usedMemory} />
+            <Text
+              color={'#6F5DD7'}
+              fontSize={'sm'}
+              fontWeight={'bold'}
+              position={'absolute'}
+              right={'4px'}
+              bottom={'0px'}
+              pointerEvents={'none'}
+              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF">
+              {item?.usedMemory?.yData[item?.usedMemory?.yData?.length - 1]}%
+            </Text>
+          </Box>
+        </Box>
+      )
     },
     // NOTE: 这里可能需要加一个网络配置
     {
@@ -118,6 +153,39 @@ const DevboxList = ({
                   </>
                 ),
                 onClick: () => {} // TODO: 添加跳转终端逻辑
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'pause'} w={'16px'} />
+                    <Box ml={2}>{'暂停'}</Box>
+                  </>
+                ),
+                onClick: () => {} //TODO: 添加暂停逻辑
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'restart'} w={'16px'} />
+                    <Box ml={2}>{'重启'}</Box>
+                  </>
+                ),
+                onClick: () => {} // TODO: 添加重启逻辑
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'delete'} w={'16px'} />
+                    <Box ml={2}>{'删除'}</Box>
+                  </>
+                ),
+                menuItemStyle: {
+                  _hover: {
+                    color: 'red.600',
+                    bg: 'rgba(17, 24, 36, 0.05)'
+                  }
+                },
+                onClick: () => {} // TODO: 添加删除逻辑
               }
             ]}
           />

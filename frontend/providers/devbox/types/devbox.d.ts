@@ -1,3 +1,4 @@
+import { MonitorDataResult } from './monitor'
 import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
 import { RuntimeTypeEnum, DevboxStatusEnum } from '@/constants/devbox'
 
@@ -43,7 +44,9 @@ export interface DevboxListItemType {
   status: DevboxStatusMapType
   createTime: string
   cpu: number
-  memory: number
+  gpu: number
+  usedCpu: MonitorDataResult
+  usedMemory: MonitorDataResult
   // TODO: 网络配置方面没补充
   labels: { [key: string]: string }
 }
