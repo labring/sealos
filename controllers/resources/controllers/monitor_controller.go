@@ -566,6 +566,7 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 		return nil
 	}
 	var objTraffic []*types.ObjectStorageTraffic
+	now := time.Now().UTC()
 	for user, metric := range r.currentObjectMetrics {
 		if len(metric.Sent) == 0 {
 			continue
@@ -579,6 +580,7 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 				}
 			}
 			objTraffic = append(objTraffic, &types.ObjectStorageTraffic{
+				Time:      now,
 				User:      user,
 				Bucket:    bucket,
 				TotalSent: m,

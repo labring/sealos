@@ -185,6 +185,10 @@ func main() {
 	} else {
 		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
 	}
+	err = reconciler.DBClient.CreateTTLTrafficTimeSeries()
+	if err != nil {
+		reconciler.Logger.Error(err, "failed to create ttl traffic time series")
+	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.
 	time.AfterFunc(time.Until(getNextMidnight()), func() {
@@ -194,10 +198,6 @@ func main() {
 			err := reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC().Add(24 * time.Hour))
 			if err != nil {
 				reconciler.Logger.Error(err, "failed to create monitor time series")
-			}
-			err = reconciler.DBClient.CreateTTLTrafficTimeSeries()
-			if err != nil {
-				reconciler.Logger.Error(err, "failed to create ttl traffic time series")
 			}
 			if err := reconciler.DropMonitorCollectionOlder(); err != nil {
 				reconciler.Logger.Error(err, "failed to drop monitor collection")
