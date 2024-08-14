@@ -264,12 +264,13 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 				metricData, exists := obMetrics[user]
 				if !exists {
 					metricData = MetricData{
+						Usage:    make(map[string]int64),
 						Sent:     make(map[string]int64),
 						Received: make(map[string]int64),
 					}
 				}
 				if bucketMetric.Name == "minio_bucket_usage_total_bytes" {
-					metricData.Sent[bucket] += intValue
+					metricData.Usage[bucket] += intValue
 				}
 				if bucketMetric.Name == "minio_bucket_traffic_sent_bytes" {
 					metricData.Sent[bucket] += intValue
@@ -310,7 +311,6 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 	}
 	return false
 }
-
 
 func getUserWithBucket(bucket string) string {
 	return strings.Split(bucket, "-")[0]
