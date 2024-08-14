@@ -1,6 +1,5 @@
-import { PassThrough, Readable, Transform, Writable } from 'stream';
+import { PassThrough, Readable, Writable } from 'stream';
 import * as k8s from '@kubernetes/client-node';
-import { Base64Encode } from 'base64-stream';
 
 export type TFile = {
   name: string;
@@ -62,7 +61,7 @@ export class KubeFileSystem {
         reject(error.toString());
       });
 
-      await this.k8sExec.exec(
+      const WebSocket = await this.k8sExec.exec(
         namespace,
         podName,
         containerName,
@@ -70,13 +69,16 @@ export class KubeFileSystem {
         stdout,
         stderr,
         stdin,
-        !!stdin
+        false
       );
+
+      WebSocket.on('close', () => {
+        resolve('success upload, close web socket');
+      });
 
       if (stdin) {
         stdin.on('end', () => {
           free();
-          resolve('Success');
         });
       }
     });
@@ -310,101 +312,14 @@ export class KubeFileSystem {
     path: string;
     file: PassThrough;
   }): Promise<string> {
-    const smallFileThreshold = 1024;
-    let fileContent = Buffer.alloc(0);
-    let fileSize = 0;
-    let isSmallFile = true;
-
-    const processedFile = new PassThrough();
-
-    const processingPromise = new Promise<void>((resolve, reject) => {
-      file.on('data', (chunk) => {
-        fileSize += chunk.length;
-        if (isSmallFile) {
-          if (fileSize <= smallFileThreshold) {
-            fileContent = Buffer.concat([fileContent, chunk]);
-          } else {
-            isSmallFile = false;
-            processedFile.write(fileContent);
-            processedFile.write(chunk);
-          }
-        } else {
-          processedFile.write(chunk);
-        }
-      });
-
-      file.on('end', () => {
-        if (isSmallFile) {
-          processedFile.end(fileContent);
-        } else {
-          processedFile.end();
-        }
-        resolve();
-      });
-
-      file.on('error', (error) => {
-        reject(error);
-      });
-    });
-
-    try {
-      await processingPromise;
-
-      if (isSmallFile) {
-        const base64Content = fileContent.toString('base64');
-        await this.execCommand(namespace, podName, containerName, [
-          'sh',
-          '-c',
-          `echo ${base64Content} > ${path}.tmp`
-        ]);
-        await this.execCommand(namespace, podName, containerName, [
-          'sh',
-          '-c',
-          `base64 -d ${path}.tmp > ${path} && rm -f ${path}.tmp`
-        ]);
-        return 'success';
-      } else {
-        const base64Encoder = new Base64Encode({ lineLength: 76 });
-
-        await this.execCommand(
-          namespace,
-          podName,
-          containerName,
-          ['sh', '-c', `dd of=${path}.tmp status=none bs=32767`],
-          processedFile.pipe(base64Encoder)
-        );
-
-        const maxAttempts = 10;
-        const intervalTime = 3000;
-
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, intervalTime));
-
-          const result = await this.execCommand(namespace, podName, containerName, [
-            'sh',
-            '-c',
-            `stat -c %s ${path}.tmp`
-          ]);
-
-          const uploadedSize = parseInt(result.trim());
-          const expectedEncodedSize = Math.ceil(fileSize / 3) * 4;
-          const sizeIncreaseThreshold = expectedEncodedSize + 1;
-
-          if (uploadedSize >= sizeIncreaseThreshold) {
-            await this.execCommand(namespace, podName, containerName, [
-              'sh',
-              '-c',
-              `base64 -d ${path}.tmp > ${path} && rm -f ${path}.tmp`
-            ]);
-            return 'success';
-          }
-        }
-
-        throw new Error('File integrity check failed after maximum attempts.');
-      }
-    } catch (error) {
-      throw new Error(`Upload error: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    const result = await this.execCommand(
+      namespace,
+      podName,
+      containerName,
+      ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      file
+    );
+    return result;
   }
 
   async md5sum({
