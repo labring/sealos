@@ -10,6 +10,7 @@ import { useGlobalStore } from '@/stores/global'
 import { useLoading } from '@/hooks/useLoading'
 import { useConfirm } from '@/hooks/useConfirm'
 import { getRuntimeVersion, getUserPrice } from '@/stores/static'
+import { IntlProvider } from '@/components/providers/IntlProvider'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ChakraProvider } from '@/components/providers/ChakraProvider'
 import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvider'
@@ -81,14 +82,16 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [pathname])
 
   return (
-    <ChakraProvider>
-      <QueryProvider>
-        <RouteHandlerProvider>
-          <ConfirmChild />
-          <Loading loading={loading} />
-          {children}
-        </RouteHandlerProvider>
-      </QueryProvider>
-    </ChakraProvider>
+    <IntlProvider>
+      <ChakraProvider>
+        <QueryProvider>
+          <RouteHandlerProvider>
+            <ConfirmChild />
+            <Loading loading={loading} />
+            {children}
+          </RouteHandlerProvider>
+        </QueryProvider>
+      </ChakraProvider>
+    </IntlProvider>
   )
 }

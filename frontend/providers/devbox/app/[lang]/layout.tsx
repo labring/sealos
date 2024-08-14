@@ -23,12 +23,14 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({
-  children
+  children,
+  params: { lang }
 }: Readonly<{
   children: React.ReactNode
+  params: { lang: string }
 }>) {
   return (
-    <html lang="en">
+    <html lang={lang}>
       <body className={inter.className}>{children}</body>
     </html>
   )
