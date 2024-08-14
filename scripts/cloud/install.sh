@@ -516,6 +516,15 @@ wait_cluster_ready() {
     done
 }
 
+check_control_plane_count() {
+    control_plane_count=$(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' --no-headers | wc -l)
+
+    if (( control_plane_count % 2 == 0 )); then
+        echo "The number of control-plane nodes is even"
+        exit 1
+    fi
+}
+
 loading_animation() {
     local message="$1"
     local duration="${2:-0.5}"
@@ -535,6 +544,7 @@ execute_commands() {
     command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.14.1}"
     [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.14.8}" --env ExtraValues="ipam.mode=kubernetes")
     wait_cluster_ready
+    check_control_plane_count
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.14.6}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.10.0}"
     sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
