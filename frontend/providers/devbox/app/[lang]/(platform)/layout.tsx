@@ -82,16 +82,14 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [pathname])
 
   return (
-    <IntlProvider>
-      <ChakraProvider>
-        <QueryProvider>
-          <RouteHandlerProvider>
-            <ConfirmChild />
-            <Loading loading={loading} />
-            {children}
-          </RouteHandlerProvider>
-        </QueryProvider>
-      </ChakraProvider>
-    </IntlProvider>
+    <ChakraProvider>
+      <QueryProvider>
+        <RouteHandlerProvider>
+          <ConfirmChild />
+          <Loading loading={loading} />
+          {children}
+        </RouteHandlerProvider>
+      </QueryProvider>
+    </ChakraProvider>
   )
 }

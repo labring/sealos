@@ -24,7 +24,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 
 const EditVersionDesModal = dynamic(
-  () => import('@/app/(platform)/(empty)/components/EditVersionDesModal')
+  () => import('@/app/[lang]/(platform)/(empty)/components/EditVersionDesModal')
 )
 
 const Version = ({
