@@ -199,6 +199,10 @@ func extractValues(result1, result2 model.Value) (int64, int64) {
 type MetricData struct {
 	// key: bucket name, value: usage
 	Usage map[string]int64
+	// key: bucket name, value: traffic sent
+	Sent map[string]int64
+	// key: bucket name, value: traffic received
+	Received map[string]int64
 }
 
 type Metrics map[string]MetricData
@@ -237,6 +241,47 @@ func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 	return obMetrics, err
 }
 
+func QueryUserTraffic(client *MetricsClient) (Metrics, error) {
+	obMetrics := make(Metrics)
+	bucketMetrics, err := client.BucketTrafficBytesMetrics(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bucket traffic metrics: %w", err)
+	}
+	for _, bucketMetric := range bucketMetrics {
+		if !isTrafficBytesTargetMetric(bucketMetric.Name) {
+			continue
+		}
+
+		for _, metrics := range bucketMetric.Metrics {
+			promMetrics := metrics.(prom2json.Metric)
+			floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %s to float value", promMetrics.Value)
+			}
+			intValue := int64(floatValue)
+			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
+				user := getUserWithBucket(bucket)
+				metricData, exists := obMetrics[user]
+				if !exists {
+					metricData = MetricData{
+						Sent:     make(map[string]int64),
+						Received: make(map[string]int64),
+					}
+				}
+				if bucketMetric.Name == "minio_bucket_traffic_sent_bytes" {
+					metricData.Sent[bucket] += intValue
+				}
+				if bucketMetric.Name == "minio_bucket_traffic_received_bytes" {
+					metricData.Received[bucket] += intValue
+				}
+				obMetrics[user] = metricData
+			}
+		}
+	}
+
+	return obMetrics, err
+}
+
 func isUsageBytesTargetMetric(name string) bool {
 	targetMetrics := []string{
 		"minio_bucket_usage_total_bytes",
@@ -248,6 +293,20 @@ func isUsageBytesTargetMetric(name string) bool {
 	}
 	return false
 }
+
+func isTrafficBytesTargetMetric(name string) bool {
+	targetMetrics := []string{
+		"minio_bucket_traffic_sent_bytes",
+		"minio_bucket_traffic_received_bytes",
+	}
+	for _, target := range targetMetrics {
+		if name == target {
+			return true
+		}
+	}
+	return false
+}
+
 
 func getUserWithBucket(bucket string) string {
 	return strings.Split(bucket, "-")[0]

@@ -75,13 +75,18 @@ func NewMetricsClient(endpoint string, accessKeyID, secretAccessKey string, secu
 	return privateNewMetricsClient(endpointURL, jwtToken, secure)
 }
 
-// BucketUsageTotalBytesMetrics - returns Bucket Metrics in Prometheus format
+// BucketUsageTotalBytesMetrics - returns Bucket Usage Total Metrics in Prometheus format
 func (client *MetricsClient) BucketUsageTotalBytesMetrics(ctx context.Context) ([]*prom2json.Family, error) {
-	return client.fetchMetrics(ctx, "bucket", "minio_bucket_usage_total_bytes")
+	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_usage_total_bytes"})
+}
+
+// BucketTrafficBytesMetrics - returns Bucket Traffic Metrics in Prometheus format
+func (client *MetricsClient) BucketTrafficBytesMetrics(ctx context.Context) ([]*prom2json.Family, error) {
+	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_traffic_sent_bytes", "minio_bucket_traffic_received_bytes"})
 }
 
 // fetchMetrics - returns Metrics of given subsystem in Prometheus format
-func (client *MetricsClient) fetchMetrics(ctx context.Context, subSystem string, metricsName string) ([]*prom2json.Family, error) {
+func (client *MetricsClient) fetchMetrics(ctx context.Context, subSystem string, metricsName []string) ([]*prom2json.Family, error) {
 	reqData := metricsRequestData{
 		relativePath: "/v2/metrics/" + subSystem,
 	}
@@ -119,7 +124,7 @@ func closeResponse(resp *http.Response) {
 	}
 }
 
-func parsePrometheusResults(reader io.Reader, prefix string) (results []*prom2json.Family, err error) {
+func parsePrometheusResults(reader io.Reader, prefix []string) (results []*prom2json.Family, err error) {
 	filteredReader, err := filterMetricsByPrefix(reader, prefix)
 	if err != nil {
 		return nil, err
@@ -136,10 +141,12 @@ func parsePrometheusResults(reader io.Reader, prefix string) (results []*prom2js
 	}()
 
 	for mf := range mfChan {
-		if !strings.Contains(mf.GetName(), prefix) {
-			continue
+		for i := range prefix {
+			if strings.Contains(mf.GetName(), prefix[i]) {
+				results = append(results, prom2json.NewFamily(mf))
+			}
 		}
-		results = append(results, prom2json.NewFamily(mf))
+
 	}
 	if err := <-errChan; err != nil {
 		return nil, err
@@ -147,7 +154,7 @@ func parsePrometheusResults(reader io.Reader, prefix string) (results []*prom2js
 	return results, nil
 }
 
-func filterMetricsByPrefix(reader io.Reader, prefix string) (io.Reader, error) {
+func filterMetricsByPrefix(reader io.Reader, prefix []string) (io.Reader, error) {
 	var buf bytes.Buffer
 	for {
 		line, err := readLine(reader)
@@ -156,11 +163,17 @@ func filterMetricsByPrefix(reader io.Reader, prefix string) (io.Reader, error) {
 		} else if err != nil {
 			return nil, err
 		}
-		if bytes.HasPrefix(line, []byte("#")) || !bytes.HasPrefix(line, []byte(prefix)) {
+
+		if bytes.HasPrefix(line, []byte("#")) {
 			continue
 		}
-		if _, err := buf.Write(line); err != nil {
-			return nil, err
+
+		for i := range prefix {
+			if bytes.HasPrefix(line, []byte(prefix[i])) {
+				if _, err := buf.Write(line); err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 	return &buf, nil

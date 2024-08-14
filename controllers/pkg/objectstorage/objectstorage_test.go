@@ -62,6 +62,23 @@ func TestQueryUserUsage(t *testing.T) {
 	}
 }
 
+func TestQueryUserTraffic(t *testing.T) {
+	obClient, err := NewMetricsClient("objectstorageapi.192.168.0.55.nip.io", "username", "passw0rd", false)
+	if err != nil {
+		t.Error(err)
+	}
+	metrics, err := QueryUserTraffic(obClient)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for user, metric := range metrics {
+		fmt.Println("user:", user)
+		fmt.Println("sent:", metric.Sent)
+		fmt.Println("received:", metric.Received)
+	}
+}
+
 func TestGetUserBakFileSize(t *testing.T) {
 	objStorageClient, err := objectstoragev1.NewOSClient("objectstorageapi.192.168.0.55.nip.io", "username", "passw0rd")
 	if err != nil {
