@@ -146,7 +146,6 @@ func parsePrometheusResults(reader io.Reader, prefix []string) (results []*prom2
 				results = append(results, prom2json.NewFamily(mf))
 			}
 		}
-
 	}
 	if err := <-errChan; err != nil {
 		return nil, err

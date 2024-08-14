@@ -331,25 +331,25 @@ func getUserWithBucket(bucket string) string {
 						6/halo-faxdridb-pg-yhxnjm.tar.gz
 */
 
-func GetUserBakFileSize(client *minio.Client) map[string]int64 {
-	bucket := "file-backup"
-	userUsageMap := make(map[string]int64)
-	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
-	for object := range objectsCh {
-		user := extractNamespace(object.Key)
-		if user != "" {
-			userUsageMap[user] += object.Size
-		}
-	}
+//func GetUserBakFileSize(client *minio.Client) map[string]int64 {
+//	bucket := "file-backup"
+//	userUsageMap := make(map[string]int64)
+//	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
+//	for object := range objectsCh {
+//		user := extractNamespace(object.Key)
+//		if user != "" {
+//			userUsageMap[user] += object.Size
+//		}
+//	}
+//
+//	return userUsageMap
+//}
 
-	return userUsageMap
-}
-
-func extractNamespace(input string) string {
-	re := regexp.MustCompile(`ns-(\w+)`)
-	matches := re.FindStringSubmatch(input)
-	if len(matches) < 2 {
-		return ""
-	}
-	return matches[1]
-}
+//func extractNamespace(input string) string {
+//	re := regexp.MustCompile(`ns-(\w+)`)
+//	matches := re.FindStringSubmatch(input)
+//	if len(matches) < 2 {
+//		return ""
+//	}
+//	return matches[1]
+//}

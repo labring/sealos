@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
@@ -80,6 +82,7 @@ type MonitorReconciler struct {
 	TrafficClient            database.Interface
 	Properties               *resources.PropertyTypeLS
 	PromURL                  string
+	lastObjectMetrics        map[string]objstorage.MetricData
 	currentObjectMetrics     map[string]objstorage.MetricData
 	ObjStorageClient         *minio.Client
 	ObjStorageMetricsClient  *objstorage.MetricsClient
@@ -218,7 +221,7 @@ func waitNextHour() {
 }
 
 func (r *MonitorReconciler) startMonitorTraffic() {
-	r.wg.Add(1)
+	r.wg.Add(2)
 	go func() {
 		defer r.wg.Done()
 		startTime, endTime := time.Now().UTC(), time.Now().Truncate(time.Hour).Add(1*time.Hour).UTC()
@@ -288,22 +291,47 @@ func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.Namespace
 		}(&namespaceList.Items[i])
 	}
 	wg.Wait()
+	if err := r.monitorObjectStorageTraffic(); err != nil {
+		r.Logger.Error(err, "failed to monitor object storage traffic")
+	}
 	logger.Info("end processNamespaceList", "time", time.Now().Format("2006-01-02 15:04:05"))
 	return nil
 }
 
 func (r *MonitorReconciler) preMonitorResourceUsage() error {
 	if r.ObjStorageMetricsClient != nil {
-		metrics, err := objstorage.QueryUserUsage(r.ObjStorageMetricsClient)
+		metrics, err := objstorage.QueryUserUsageAndTraffic(r.ObjStorageMetricsClient)
 		if err != nil {
 			return fmt.Errorf("failed to query object storage metrics: %w", err)
 		}
+		if r.currentObjectMetrics != nil {
+			r.lastObjectMetrics = r.currentObjectMetrics
+		} else {
+			latestObjTrafficSentMetrics := make(map[string]objstorage.MetricData)
+			traffic, err := r.DBClient.GetAllLatestObjTraffic()
+			if err != nil {
+				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
+			}
+			for i := range traffic {
+				user := traffic[i].User
+				bucket := traffic[i].Bucket
+				if _, ok := metrics[user]; !ok {
+					continue
+				}
+				if _, ok := latestObjTrafficSentMetrics[user]; !ok {
+					latestObjTrafficSentMetrics[user] = objstorage.MetricData{
+						Sent: make(map[string]int64),
+					}
+				}
+				if traffic[i].Time.Before(time.Now().Add(-5 * time.Minute)) {
+					continue
+				}
+				latestObjTrafficSentMetrics[user].Sent[bucket] = traffic[i].TotalSent
+			}
+			r.lastObjectMetrics = latestObjTrafficSentMetrics
+		}
 		r.currentObjectMetrics = metrics
 		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
-	}
-	if r.ObjStorageClient != nil {
-		r.ObjStorageUserBackupSize = objstorage.GetUserBakFileSize(r.ObjStorageClient)
-		logger.Info("success query object storage backup size", "time", time.Now().Format("2006-01-02 15:04:05"))
 	}
 	return nil
 }
@@ -533,6 +561,37 @@ func (r *MonitorReconciler) monitorObjectStorageUsage(namespace string, resMap m
 	return nil
 }
 
+func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
+	if r.currentObjectMetrics == nil {
+		return nil
+	}
+	var objTraffic []*types.ObjectStorageTraffic
+	for user, metric := range r.currentObjectMetrics {
+		if len(metric.Sent) == 0 {
+			continue
+		}
+		for bucket, m := range metric.Sent {
+			sent := int64(0)
+			if r.lastObjectMetrics != nil && r.lastObjectMetrics[user].Sent != nil {
+				ss := m - r.lastObjectMetrics[user].Sent[bucket]
+				if ss > 0 {
+					sent = ss
+				}
+			}
+			objTraffic = append(objTraffic, &types.ObjectStorageTraffic{
+				User:      user,
+				Bucket:    bucket,
+				TotalSent: m,
+				Sent:      sent,
+			})
+		}
+	}
+	if err := r.DBClient.SaveObjTraffic(objTraffic...); err != nil {
+		return fmt.Errorf("failed to save object storage traffic: %w", err)
+	}
+	return nil
+}
+
 func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) error {
 	logger.Info("start getTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
 	execTime := time.Now().UTC()
@@ -571,7 +630,7 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 }
 
 func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime time.Time, bucket string) error {
-	bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, bucket, r.ObjectStorageInstance, startTime, endTime)
+	bytes, err := r.DBClient.HandlerTimeObjBucketUsage(startTime, endTime, bucket)
 	if err != nil {
 		return fmt.Errorf("failed to get object storage flow: %w", err)
 	}

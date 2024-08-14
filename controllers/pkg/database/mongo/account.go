@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"github.com/labring/sealos/controllers/pkg/common"
@@ -57,6 +59,7 @@ const (
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
 	DefaultBillingConn    = "billing"
+	DefaultObjTrafficConn = "objectstorage-traffic"
 	DefaultUserConn       = "user"
 	DefaultPricesConn     = "prices"
 	DefaultPropertiesConn = "properties"
@@ -75,6 +78,7 @@ type mongoDB struct {
 	MonitorConnPrefix string
 	MeteringConn      string
 	BillingConn       string
+	ObjTrafficConn    string
 	PropertiesConn    string
 	TrafficConn       string
 }
@@ -244,6 +248,84 @@ func (m *mongoDB) SaveBillings(billing ...*resources.Billing) error {
 	}
 	_, err := m.getBillingCollection().InsertMany(context.Background(), billings)
 	return err
+}
+
+func (m *mongoDB) SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error {
+	traffic := make([]interface{}, len(obs))
+	for i, ob := range obs {
+		traffic[i] = ob
+	}
+	_, err := m.getObjTrafficCollection().InsertMany(context.Background(), traffic)
+	return err
+}
+
+func (m *mongoDB) GetAllLatestObjTraffic() ([]types.ObjectStorageTraffic, error) {
+	pipeline := []bson.M{
+		{
+			"$sort": bson.M{"time": -1},
+		},
+		{
+			"$group": bson.M{
+				"_id":       bson.M{"user": "$user", "bucket": "$bucket"},
+				"latestDoc": bson.M{"$first": "$$ROOT"},
+			},
+		},
+		{
+			"$replaceRoot": bson.M{"newRoot": "$latestDoc"},
+		},
+	}
+
+	cursor, err := m.getObjTrafficCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var results []types.ObjectStorageTraffic
+	if err = cursor.All(context.Background(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (m *mongoDB) HandlerTimeObjBucketUsage(startTime, endTime time.Time, bucket string) (int64, error) {
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"time": bson.M{
+					"$gt":  startTime,
+					"$lte": endTime,
+				},
+				"bucket": bucket,
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id":       nil,
+				"totalSent": bson.M{"$sum": "$sent"},
+			},
+		},
+	}
+	cursor, err := m.getObjTrafficCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return 0, err
+	}
+	defer cursor.Close(context.Background())
+
+	var result struct {
+		TotalSent int64 `bson:"totalSent"`
+	}
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, err
+		}
+		return result.TotalSent, nil
+	}
+	if err := cursor.Err(); err != nil {
+		return 0, err
+	}
+	return 0, nil
 }
 
 // InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
@@ -885,6 +967,9 @@ func (m *mongoDB) getMonitorCollectionName(collTime time.Time) string {
 func (m *mongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.BillingConn)
 }
+func (m *mongoDB) getObjTrafficCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDB).Collection(m.ObjTrafficConn)
+}
 
 func (m *mongoDB) getPropertiesCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.PropertiesConn)
@@ -941,6 +1026,21 @@ func (m *mongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) erro
 	return m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
 }
 
+func (m *mongoDB) CreateTTLTrafficTimeSeries() error {
+	// Check if the collection already exists
+	if exist, err := m.collectionExist(m.AccountDB, m.ObjTrafficConn); exist || err != nil {
+		return err
+	}
+	// If the collection does not exist, create it
+	cmd := bson.D{
+		primitive.E{Key: "create", Value: m.ObjTrafficConn},
+		primitive.E{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
+		//default ttl set 30 days
+		primitive.E{Key: "expireAfterSeconds", Value: 30 * 24 * 60 * 60},
+	}
+	return m.Client.Database(m.AccountDB).RunCommand(context.TODO(), cmd).Err()
+}
+
 func (m *mongoDB) DropMonitorCollectionsOlderThan(days int) error {
 	db := m.Client.Database(m.AccountDB)
 	// Get the current time minus the number of days
@@ -985,6 +1085,7 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		MeteringConn:      DefaultMeteringConn,
 		MonitorConnPrefix: DefaultMonitorConn,
 		BillingConn:       DefaultBillingConn,
+		ObjTrafficConn:    DefaultObjTrafficConn,
 		PropertiesConn:    DefaultPropertiesConn,
 		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
 		CvmConn:           env.GetEnvWithDefault(EnvCVMConn, DefaultCVMConn),

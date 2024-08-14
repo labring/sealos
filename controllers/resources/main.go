@@ -195,6 +195,10 @@ func main() {
 			if err != nil {
 				reconciler.Logger.Error(err, "failed to create monitor time series")
 			}
+			err = reconciler.DBClient.CreateTTLTrafficTimeSeries()
+			if err != nil {
+				reconciler.Logger.Error(err, "failed to create ttl traffic time series")
+			}
 			if err := reconciler.DropMonitorCollectionOlder(); err != nil {
 				reconciler.Logger.Error(err, "failed to drop monitor collection")
 			}

@@ -36,6 +36,7 @@ type Interface interface {
 	Account
 	Traffic
 	CVM
+	Creator
 }
 
 type CVM interface {
@@ -49,6 +50,9 @@ type Account interface {
 	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
 	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
+	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error
+	GetAllLatestObjTraffic() ([]types.ObjectStorageTraffic, error)
+	HandlerTimeObjBucketUsage(startTime, endTime time.Time, bucket string) (int64, error)
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
@@ -117,6 +121,7 @@ type Creator interface {
 	CreateBillingIfNotExist() error
 	//suffix by day, eg： monitor_20200101
 	CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error
+	CreateTTLTrafficTimeSeries() error
 }
 
 type MeteringOwnerTimeResult struct {
