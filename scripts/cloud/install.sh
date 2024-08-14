@@ -563,7 +563,11 @@ EOF
       ${image_registry}/${image_repository}/kubeblocks-mongodb:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
 
-    kbcli addon enable snapshot-controller
+    addons=("snapshot-controller" "csi-s3" "migration" "milvus" "weaviate")
+
+    for addon in "${addons[@]}"; do
+      kubectl patch addon $addon --type='merge' -p '{"spec":{"install":{"enabled":true,"resources":{},"tolerations":"[{\"effect\":\"NoSchedule\",\"key\":\"kb-controller\",\"operator\":\"Equal\",\"value\":\"true\"}]"}}}'
+    done
 
     kubectl apply -f $CLOUD_DIR/vm-secret.yaml
     kubectl patch vmagent -n vm victoria-metrics-k8s-stack --type merge -p '{"spec":{"additionalScrapeConfigs":{"key":"prometheus-additional.yaml","name":"additional-scrape-configs"}}}'
