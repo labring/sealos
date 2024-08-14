@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react'
 
@@ -20,9 +21,10 @@ const sourceMap = {
 
 const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
   const theme = useTheme()
+  const t = useTranslations()
   const { userQuota, loadUserQuota } = useUserStore()
-  useQuery(['getUserQuota'], loadUserQuota)
 
+  useQuery(['getUserQuota'], loadUserQuota)
   const quotaList = useMemo(() => {
     if (!userQuota) return []
 
@@ -32,13 +34,13 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
         const { limit, used, type } = item
         const unit = sourceMap[type]?.unit
         const color = sourceMap[type]?.color
-        const tip = `${'总共'}: ${limit} ${unit}
-          ${'已用'}: ${used.toFixed(2)} ${unit}
-          ${'剩余'}: ${(limit - used).toFixed(2)} ${unit}`
+        const tip = `${t('total')}: ${limit} ${unit}
+          ${t('used')}: ${used.toFixed(2)} ${unit}
+          ${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
 
         return { ...item, tip, color }
       })
-  }, [userQuota])
+  }, [userQuota, t])
 
   return userQuota.length === 0 ? null : (
     <Box borderRadius={'md'} border={showBorder && theme.borders.base} bg={'#FFF'}>
@@ -48,7 +50,7 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
         borderBottom={showBorder && theme.borders.base}
         color={'grayModern.900'}
         fontWeight={500}>
-        {'资源配额'}
+        {t('resource_quota')}
       </Box>
       <Flex flexDirection={'column'} gap={'14px'} py={'16px'} px={'20px'}>
         {quotaList.map((item) => (

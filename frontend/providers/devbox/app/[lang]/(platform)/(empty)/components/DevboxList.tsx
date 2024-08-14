@@ -9,15 +9,16 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { SealosMenu, MyTable } from '@sealos/ui'
 
+import Version from './Version'
 import MyIcon from '@/components/Icon'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { useState } from 'react'
-import Version from './Version'
 
 const DevboxList = ({
   devboxList = []
@@ -27,6 +28,7 @@ const DevboxList = ({
 }) => {
   const theme = useTheme()
   const router = useRouter()
+  const t = useTranslations()
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
     null
   )
@@ -44,7 +46,7 @@ const DevboxList = ({
     render?: (item: DevboxListItemType) => JSX.Element
   }[] = [
     {
-      title: '名字',
+      title: t('name'),
       key: 'name',
       render: (item: DevboxListItemType) => {
         return (
@@ -63,17 +65,17 @@ const DevboxList = ({
       }
     },
     {
-      title: '状态',
+      title: t('status'),
       key: 'status',
       render: (item: DevboxListItemType) => <DevboxStatusTag status={item.status} />
     },
     {
-      title: '创建时间',
+      title: t('create_time'),
       dataIndex: 'createTime',
       key: 'createTime'
     },
     {
-      title: 'CPU',
+      title: t('cpu'),
       key: 'cpu',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
@@ -95,7 +97,7 @@ const DevboxList = ({
       )
     },
     {
-      title: '内存',
+      title: t('memory'),
       key: 'storage',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
@@ -117,7 +119,7 @@ const DevboxList = ({
       )
     },
     {
-      title: '操作',
+      title: t('control'),
       key: 'control',
       render: (item: DevboxListItemType) => (
         <Flex>
@@ -134,7 +136,7 @@ const DevboxList = ({
             leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             // TODO: 这里要加上跳转vscode逻辑
             onClick={() => {}}>
-            {'VS Code 插件'}
+            {t('open_vscode')}
           </Button>
           <SealosMenu
             width={100}
@@ -148,7 +150,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'codeServer'} w={'16px'} />
-                    <Box ml={2}>{'CodeServer'}</Box>
+                    <Box ml={2}>{t('code_server')}</Box>
                   </>
                 ),
                 onClick: () => {} // TODO： 添加跳转code server逻辑
@@ -157,7 +159,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'version'} w={'16px'} />
-                    <Box ml={2}>{'版本'}</Box>
+                    <Box ml={2}>{t('version')}</Box>
                   </>
                 ),
                 onClick: () => handleOpenVersion(item)
@@ -166,7 +168,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'terminal'} w={'16px'} />
-                    <Box ml={2}>{'终端'}</Box>
+                    <Box ml={2}>{t('terminal')}</Box>
                   </>
                 ),
                 onClick: () => {} // TODO: 添加跳转终端逻辑
@@ -175,7 +177,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'pause'} w={'16px'} />
-                    <Box ml={2}>{'暂停'}</Box>
+                    <Box ml={2}>{t('pause')}</Box>
                   </>
                 ),
                 onClick: () => {} //TODO: 添加暂停逻辑
@@ -184,7 +186,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'restart'} w={'16px'} />
-                    <Box ml={2}>{'重启'}</Box>
+                    <Box ml={2}>{t('restart')}</Box>
                   </>
                 ),
                 onClick: () => {} // TODO: 添加重启逻辑
@@ -193,7 +195,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'delete'} w={'16px'} />
-                    <Box ml={2}>{'删除'}</Box>
+                    <Box ml={2}>{t('delete')}</Box>
                   </>
                 ),
                 menuItemStyle: {
@@ -224,7 +226,7 @@ const DevboxList = ({
           <MyIcon name="logo" w={'30px'} h={'30px'} />
         </Center>
         <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
-          {'项目列表'}
+          {t('devbox_list')}
         </Box>
         <Box ml={'8px'} fontSize={'md'} fontWeight={'bold'} color={'grayModern.500'}>
           ( {devboxList.length} )
@@ -236,7 +238,7 @@ const DevboxList = ({
           variant={'solid'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} />}
           onClick={() => router.push('/devbox/create')}>
-          {'新建项目'}
+          {t('create_devbox')}
         </Button>
       </Flex>
       <MyTable columns={columns} data={devboxList} />

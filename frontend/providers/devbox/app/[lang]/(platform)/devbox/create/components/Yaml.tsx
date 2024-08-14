@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tabs } from '@sealos/ui'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
@@ -14,6 +15,7 @@ import styles from './index.module.scss'
 const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme()
   const router = useRouter()
+  const t = useTranslations()
   const { copyData } = useCopyData()
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -27,8 +29,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
       <Box>
         <Tabs
           list={[
-            { id: 'form', label: '配置表单' },
-            { id: 'yaml', label: 'YAML文件' }
+            { id: 'form', label: t('config_form') },
+            { id: 'yaml', label: t('yaml_file') }
           ]}
           activeId={'yaml'}
           onChange={() =>

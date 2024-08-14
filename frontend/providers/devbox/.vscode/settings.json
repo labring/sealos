@@ -1,6 +1,6 @@
 {
   "i18n-ally.localesPaths": [
-    "public/locales"
+    "message"
   ],
   "i18n-ally.enabledParsers": [
     "json",
@@ -13,8 +13,7 @@
   "i18n-ally.keepFulfilled": false,
   "i18n-ally.sourceLanguage": "zh",
   "i18n-ally.displayLanguage": "zh",
-  // "i18n-ally.namespace": true,
-  "i18n-ally.pathMatcher": "{locale}/{namespaces}.json",
+  "i18n-ally.pathMatcher": "{locale}.json",
   "i18n-ally.extract.targetPickingStrategy": "most-similar-by-key",
   "i18n-ally.translate.engines": [
     "deepl",

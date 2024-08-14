@@ -1,4 +1,3 @@
-import MyIcon from '@/components/Icon'
 import { DevboxVersionListItemType } from '@/types/devbox'
 import {
   Box,
@@ -14,15 +13,8 @@ import {
   ModalOverlay,
   Textarea
 } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { has } from 'lodash'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { sealosApp } from 'sealos-desktop-sdk/app'
-
-enum Page {
-  REMINDER = 'REMINDER',
-  DELETION_WARNING = 'DELETION_WARNING'
-}
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 const EditVersionDesModal = ({
   version,
@@ -35,6 +27,7 @@ const EditVersionDesModal = ({
   onClose: () => void
   onSuccess: () => void
 }) => {
+  const t = useTranslations()
   const [inputValue, setInputValue] = useState(version.description)
 
   return (
@@ -43,25 +36,25 @@ const EditVersionDesModal = ({
       <ModalContent minW={'500px'} mt={'200px'} minH={'300px'}>
         <ModalHeader>
           <Flex alignItems={'center'} gap={'10px'}>
-            编辑版本描述
+            {t('edit_version_description')}
           </Flex>
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody pb={4}>
           <Flex alignItems={'start'} gap={'5px'}>
-            <Box w={'100px'}>版本描述</Box>
+            <Box w={'100px'}>{t('version_description')}</Box>
             <Textarea
               value={inputValue}
               minH={'150px'}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder={'请输入版本描述'}
+              placeholder={t('enter_version_description')}
             />
           </Flex>
         </ModalBody>
         <ModalFooter>
           {/* TODO: 保存逻辑 */}
           <Button ml={3} variant={'solid'} onClick={() => {}}>
-            保存
+            {t('save')}
           </Button>
         </ModalFooter>
       </ModalContent>

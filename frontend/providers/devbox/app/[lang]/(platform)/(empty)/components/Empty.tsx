@@ -1,5 +1,5 @@
-import React from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button, Box } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
@@ -8,6 +8,8 @@ import styles from './empty.module.scss'
 
 const Empty = () => {
   const router = useRouter()
+  const t = useTranslations()
+
   return (
     <Box
       className={styles.empty}
@@ -17,14 +19,14 @@ const Empty = () => {
       justifyContent="center"
       bg={'#F3F4F5'}>
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
-      <Box py={8}>{'您还没有新建项目'}</Box>
+      <Box py={8}>{t('devbox_empty')}</Box>
       <Button
         w={155}
         mt={5}
         variant={'solid'}
         onClick={() => router.push('/devbox/create')}
         leftIcon={<MyIcon name={'plus'} w={'20px'} />}>
-        {'新建项目'}
+        {t('create_devbox')}
       </Button>
     </Box>
   )

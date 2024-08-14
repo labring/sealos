@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
 
 import { SOURCE_PRICE } from '@/stores/static'
@@ -20,6 +21,7 @@ const PriceBox = ({
   }[]
 }) => {
   const theme = useTheme()
+  const t = useTranslations()
   const priceList: {
     label: string
     color: string
@@ -50,15 +52,15 @@ const PriceBox = ({
     <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
       <Flex py={3} px={'20px'} borderBottom={theme.borders.base} gap={'8px'}>
         <Text color={'grayModern.900'} fontWeight={500}>
-          {'预估价格'}
+          {t('estimated_price')}
         </Text>
-        <Text color={'grayModern.500'}> ({'每日'})</Text>
+        <Text color={'grayModern.500'}> ({t('daily')})</Text>
       </Flex>
       <Flex flexDirection={'column'} gap={'12px'} py={'16px'} px={'20px'}>
         {priceList.map((item) => (
           <Flex key={item.label} alignItems={'center'}>
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-            <Box flex={'0 0 65px'}>{item.label}:</Box>
+            <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
             <Flex alignItems={'center'} gap={'4px'}>
               ￥{item.value}
             </Flex>

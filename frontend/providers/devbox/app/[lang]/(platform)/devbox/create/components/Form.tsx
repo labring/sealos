@@ -14,6 +14,7 @@ import {
 import { throttle } from 'lodash'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { UseFormReturn } from 'react-hook-form'
 import { MySelect, MySlider, Tabs } from '@sealos/ui'
 
@@ -35,10 +36,11 @@ const Form = ({
 }) => {
   const theme = useTheme()
   const router = useRouter()
+  const t = useTranslations()
   const navList: { id: string; label: string; icon: string }[] = [
     {
       id: 'baseInfo',
-      label: '基础配置',
+      label: t('basic_configuration'),
       icon: 'formInfo'
     }
   ]
@@ -130,8 +132,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: '配置表单' },
-              { id: 'yaml', label: 'YAML文件' }
+              { id: 'form', label: t('config_form') },
+              { id: 'yaml', label: t('yaml_file') }
             ]}
             activeId={'form'}
             onChange={() =>
@@ -208,19 +210,18 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-              {'基础配置'}
+              {t('basic_configuration')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               {/* Devbox Name */}
               <FormControl mb={7} isInvalid={!!errors.devboxName} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={100}>{'项目名称'}</Label>
-                  {/* TODO：不知道项目名称的正则怎么整 */}
+                  <Label w={100}>{t('devbox_name')}</Label>
                   <Input
                     autoFocus={true}
-                    placeholder={'请输入项目名称'}
+                    placeholder={t('enter_devbox_name')}
                     {...register('devboxName', {
-                      required: '项目名称不能为空'
+                      required: t('devbox_name_required')
                     })}
                   />
                 </Flex>
@@ -228,7 +229,7 @@ const Form = ({
               {/* Runtime Type */}
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100} alignSelf={'flex-start'}>
-                  {'运行环境'}
+                  {t('runtime_environment')}
                 </Label>
                 <Flex flexWrap={'wrap'} gap={'12px'}>
                   {RuntimeTypeList &&
@@ -285,10 +286,10 @@ const Form = ({
               </Flex>
               {/* Runtime Version */}
               <Flex alignItems={'center'} mb={7}>
-                <Label w={100}>{'版本'}</Label>
+                <Label w={100}>{t('version')}</Label>
                 <MySelect
                   width={'200px'}
-                  placeholder={`${'运行时'} ${'版本'}`}
+                  placeholder={`${t('runtime')} ${t('version')}`}
                   value={getValues('runtimeVersion')}
                   list={runtimeVersionMap[getValues('runtimeType')].map((i) => ({
                     label: i.label,
@@ -299,7 +300,7 @@ const Form = ({
               </Flex>
               {/* CPU */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label w={100}>CPU</Label>
+                <Label w={100}>{t('cpu')}</Label>
                 <MySlider
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
@@ -311,12 +312,12 @@ const Form = ({
                   step={1}
                 />
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
-                  Core
+                  {t('core')}
                 </Box>
               </Flex>
               {/* Memory */}
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
-                <Label w={100}>{'内存'}</Label>
+                <Label w={100}>{t('memory')}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}

@@ -6,6 +6,7 @@ import { useMessage } from '@sealos/ui'
 import { useForm } from 'react-hook-form'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Box, Flex } from '@chakra-ui/react'
+import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -32,6 +33,7 @@ const defaultEdit = {
 
 const DevboxCreatePage = () => {
   const router = useRouter()
+  const t = useTranslations()
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
   const { checkQuotaAllow } = useUserStore()
@@ -40,10 +42,10 @@ const DevboxCreatePage = () => {
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: '确认创建项目？',
-    title: '提示',
-    confirmText: '确认',
-    cancelText: '取消'
+    content: t('confirm_create_devbox'),
+    title: t('prompt'),
+    confirmText: t('confirm'),
+    cancelText: t('cancel')
   })
   const tabType = searchParams.get('type') || 'form'
 
@@ -127,7 +129,7 @@ const DevboxCreatePage = () => {
       }
       await createDevbox({ devboxForm: formData })
       toast({
-        title: '创建成功',
+        title: t('create_success'),
         status: 'success'
       })
       router.push(lastRoute)
@@ -141,7 +143,7 @@ const DevboxCreatePage = () => {
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return '提交表单错误'
+      if (!obj || typeof obj !== 'object') return t('submit_form_error')
       if (!!obj.message) {
         return obj.message
       }
@@ -154,7 +156,7 @@ const DevboxCreatePage = () => {
       duration: 3000,
       isClosable: true
     })
-  }, [formHook.formState.errors, toast])
+  }, [formHook.formState.errors, toast, t])
 
   return (
     <>
@@ -181,7 +183,11 @@ const DevboxCreatePage = () => {
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={'创建失败'} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={t('create_failed')}
+          content={errorMessage}
+          onClose={() => setErrorMessage('')}
+        />
       )}
     </>
   )

@@ -1,6 +1,3 @@
-import MyIcon from '@/components/Icon'
-import { useDevboxStore } from '@/stores/devbox'
-import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 import {
   Box,
   Modal,
@@ -13,15 +10,19 @@ import {
   Center,
   Button,
   MenuButton,
-  useTheme,
   useDisclosure
 } from '@chakra-ui/react'
-import { useQuery } from '@tanstack/react-query'
-import MyTable from '@/components/MyTable'
-import { useLoading } from '@/hooks/useLoading'
-import { SealosMenu } from '@sealos/ui'
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
+import { SealosMenu } from '@sealos/ui'
+import { useTranslations } from 'next-intl'
+import { useQuery } from '@tanstack/react-query'
+
+import MyIcon from '@/components/Icon'
+import MyTable from '@/components/MyTable'
+import { useLoading } from '@/hooks/useLoading'
+import { useDevboxStore } from '@/stores/devbox'
+import { DevboxVersionListItemType } from '@/types/devbox'
 
 const EditVersionDesModal = dynamic(
   () => import('@/app/[lang]/(platform)/(empty)/components/EditVersionDesModal')
@@ -36,6 +37,7 @@ const Version = ({
   onClose: () => void
   devboxId: string
 }) => {
+  const t = useTranslations()
   const { Loading } = useLoading()
   const [initialized, setInitialized] = useState(false)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
@@ -43,11 +45,11 @@ const Version = ({
   const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
 
   const { refetch } = useQuery(['initDevboxVersionList'], () => setDevboxVersionList(devboxId), {
-    // refetchInterval: 3000,
     onSettled() {
       setInitialized(true)
     }
   })
+
   const columns: {
     title: string
     dataIndex?: keyof DevboxVersionListItemType
@@ -56,7 +58,7 @@ const Version = ({
     minWidth?: string
   }[] = [
     {
-      title: '版本号',
+      title: t('version_number'),
       key: 'id',
       render: (item: DevboxVersionListItemType) => (
         <Box color={'grayModern.900'} pl={'12px'}>
@@ -65,14 +67,13 @@ const Version = ({
       )
     },
     {
-      title: '创建时间',
+      title: t('creation_time'),
       dataIndex: 'createTime',
       key: 'createTime'
     },
     {
-      title: '版本描述',
+      title: t('version_description'),
       key: 'description',
-      // TODO: 各种样式安排感觉不优雅
       render: (item: DevboxVersionListItemType) => (
         <Flex alignItems="center" className="hover-container">
           <Box
@@ -99,7 +100,7 @@ const Version = ({
       minWidth: '300px'
     },
     {
-      title: '操作',
+      title: t('control'),
       key: 'control',
       render: (item: DevboxVersionListItemType) => (
         <Flex>
@@ -114,9 +115,8 @@ const Version = ({
             _hover={{
               color: 'brightBlue.600'
             }}
-            // TODO: 这里要加上上线逻辑
             onClick={() => {}}>
-            {'上线'}
+            {t('online')}
           </Button>
           <SealosMenu
             width={100}
@@ -130,7 +130,7 @@ const Version = ({
                 child: (
                   <>
                     <MyIcon name={'delete'} w={'16px'} />
-                    <Box ml={2}>{'删除'}</Box>
+                    <Box ml={2}>{t('delete')}</Box>
                   </>
                 ),
                 menuItemStyle: {
@@ -147,12 +147,13 @@ const Version = ({
       )
     }
   ]
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent minW={'900px'}>
         <ModalHeader display={'flex'} alignItems={'center'}>
-          <Box flex={1}>版本历史</Box>
+          <Box flex={1}>{t('version_history')}</Box>
           <ModalCloseButton top={'10px'} right={'10px'} />
         </ModalHeader>
         <ModalBody>
@@ -162,7 +163,7 @@ const Version = ({
                 <MyIcon name="pods" w={'20px'} h={'20px'} />
               </Center>
               <Box fontSize={'md'} color={'grayModern.900'} fontWeight={'bold'}>
-                {'版本列表'}
+                {t('version_list')}
               </Box>
               <Box
                 w={'2px'}
@@ -177,13 +178,12 @@ const Version = ({
               </Box>
               <Box flex={1}></Box>
               <Button minW={'100px'} h={'35px'} variant={'solid'} onClick={() => {}}>
-                {/* TODO: 发布版本逻辑 */}
-                {'发布版本'}
+                {t('release_version')}
               </Button>
             </Flex>
             <Loading loading={!initialized} />
             {devboxVersionList.length === 0 && initialized ? (
-              <Box>还没有版本，请先发布一个版本</Box>
+              <Box>{t('no_versions')}</Box>
             ) : (
               <>
                 <MyTable columns={columns} data={devboxVersionList} />
