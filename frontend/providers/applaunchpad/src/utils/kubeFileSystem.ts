@@ -1,6 +1,5 @@
 import { PassThrough, Readable, Writable } from 'stream';
 import * as k8s from '@kubernetes/client-node';
-import { Base64Encode } from 'base64-stream';
 
 export type TFile = {
   name: string;
@@ -62,7 +61,7 @@ export class KubeFileSystem {
         reject(error.toString());
       });
 
-      await this.k8sExec.exec(
+      const WebSocket = await this.k8sExec.exec(
         namespace,
         podName,
         containerName,
@@ -70,13 +69,16 @@ export class KubeFileSystem {
         stdout,
         stderr,
         stdin,
-        !!stdin
+        false
       );
+
+      WebSocket.on('close', () => {
+        resolve('success upload, close web socket');
+      });
 
       if (stdin) {
         stdin.on('end', () => {
           free();
-          resolve('Success');
         });
       }
     });
@@ -308,48 +310,16 @@ export class KubeFileSystem {
     podName: string;
     containerName: string;
     path: string;
-    file: Readable;
-  }) {
-    let localFileSize = 0;
-    const base64Encoder = new Base64Encode({ lineLength: 76 });
-    file.on('data', (chunk) => {
-      localFileSize += chunk.length;
-    });
-
-    try {
-      await this.execCommand(
-        namespace,
-        podName,
-        containerName,
-        ['sh', '-c', `dd of=${path}.tmp status=none bs=32767 `],
-        file.pipe(base64Encoder)
-      );
-      let attempts = 0;
-      const maxAttempts = 10;
-      const intervalTime = 3000;
-
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, intervalTime));
-        const v = await this.execCommand(namespace, podName, containerName, [
-          'sh',
-          '-c',
-          `stat -c %s ${path}.tmp`
-        ]);
-        const sizeIncreaseThreshold = localFileSize * 1.3;
-        if (parseInt(v.trim()) > sizeIncreaseThreshold) {
-          await this.execCommand(namespace, podName, containerName, [
-            'sh',
-            '-c',
-            `base64 -d ${path}.tmp > ${path} && rm -rf ${path}.tmp`
-          ]);
-          return 'success';
-        }
-        attempts++;
-      }
-      throw new Error('File integrity check failed after maximum attempts.');
-    } catch (error) {
-      throw new Error(`Upload error`);
-    }
+    file: PassThrough;
+  }): Promise<string> {
+    const result = await this.execCommand(
+      namespace,
+      podName,
+      containerName,
+      ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      file
+    );
+    return result;
   }
 
   async md5sum({
