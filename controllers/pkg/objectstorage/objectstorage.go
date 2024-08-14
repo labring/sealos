@@ -241,14 +241,14 @@ func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 	return obMetrics, err
 }
 
-func QueryUserTraffic(client *MetricsClient) (Metrics, error) {
+func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 	obMetrics := make(Metrics)
-	bucketMetrics, err := client.BucketTrafficBytesMetrics(context.TODO())
+	bucketMetrics, err := client.BucketUsageAndTrafficBytesMetrics(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bucket traffic metrics: %w", err)
 	}
 	for _, bucketMetric := range bucketMetrics {
-		if !isTrafficBytesTargetMetric(bucketMetric.Name) {
+		if !isUsageAndTrafficBytesTargetMetric(bucketMetric.Name) {
 			continue
 		}
 
@@ -267,6 +267,9 @@ func QueryUserTraffic(client *MetricsClient) (Metrics, error) {
 						Sent:     make(map[string]int64),
 						Received: make(map[string]int64),
 					}
+				}
+				if bucketMetric.Name == "minio_bucket_usage_total_bytes" {
+					metricData.Sent[bucket] += intValue
 				}
 				if bucketMetric.Name == "minio_bucket_traffic_sent_bytes" {
 					metricData.Sent[bucket] += intValue
@@ -294,8 +297,9 @@ func isUsageBytesTargetMetric(name string) bool {
 	return false
 }
 
-func isTrafficBytesTargetMetric(name string) bool {
+func isUsageAndTrafficBytesTargetMetric(name string) bool {
 	targetMetrics := []string{
+		"minio_bucket_usage_total_bytes",
 		"minio_bucket_traffic_sent_bytes",
 		"minio_bucket_traffic_received_bytes",
 	}

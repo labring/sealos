@@ -67,13 +67,14 @@ func TestQueryUserTraffic(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	metrics, err := QueryUserTraffic(obClient)
+	metrics, err := QueryUserUsageAndTraffic(obClient)
 	if err != nil {
 		t.Error(err)
 	}
 
 	for user, metric := range metrics {
 		fmt.Println("user:", user)
+		fmt.Println("usage:", metric.Usage)
 		fmt.Println("sent:", metric.Sent)
 		fmt.Println("received:", metric.Received)
 	}

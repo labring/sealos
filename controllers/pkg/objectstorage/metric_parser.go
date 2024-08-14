@@ -80,9 +80,9 @@ func (client *MetricsClient) BucketUsageTotalBytesMetrics(ctx context.Context) (
 	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_usage_total_bytes"})
 }
 
-// BucketTrafficBytesMetrics - returns Bucket Traffic Metrics in Prometheus format
-func (client *MetricsClient) BucketTrafficBytesMetrics(ctx context.Context) ([]*prom2json.Family, error) {
-	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_traffic_sent_bytes", "minio_bucket_traffic_received_bytes"})
+// BucketUsageAndTrafficBytesMetrics - returns Bucket Usage And Traffic Metrics in Prometheus format
+func (client *MetricsClient) BucketUsageAndTrafficBytesMetrics(ctx context.Context) ([]*prom2json.Family, error) {
+	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_usage_total_bytes", "minio_bucket_traffic_sent_bytes", "minio_bucket_traffic_received_bytes"})
 }
 
 // fetchMetrics - returns Metrics of given subsystem in Prometheus format
