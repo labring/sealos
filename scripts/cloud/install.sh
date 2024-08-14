@@ -516,6 +516,22 @@ wait_cluster_ready() {
     done
 }
 
+check_control_plane_count() {
+    # Check if master_ips is empty
+    if [[ -z "$master_ips" ]]; then
+        return 0
+    fi
+    
+    IFS=',' read -r -a master_ips_array <<< "$master_ips"
+    num_ips=${#master_ips_array[@]}
+
+    # If the number is even, output an error message and exit
+    if (( num_ips % 2 == 0 )); then
+        echo "Error: The number of master IPs is even. Please provide an odd number of master IPs."
+        exit 1
+    fi
+}
+
 loading_animation() {
     local message="$1"
     local duration="${2:-0.5}"
@@ -659,6 +675,7 @@ done
 
 [[ $HELP == "" ]] || get_prompt "usage"
 [[ $HELP == "" ]] || exit 0
+check_control_plane_count
 set_language
 init
 collect_input
