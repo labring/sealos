@@ -133,7 +133,7 @@
   "Memory target value": "内存目标值",
   "Min Storage Value": "容量最小为",
   "mount path": "挂载路径",
-  "Mount Path Auth": "挂载路径格式须满足: \/^[0-9a-zA-Z_\/][0-9a-zA-Z_\/.-]*[0-9a-zA-Z_\/]$\/",
+  "Mount Path Auth": "挂载路径格式须满足: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/",
   "Name": "名字",
   "Network Configuration": "网络配置",
   "Network port conflict": "容器端口冲突",
@@ -252,5 +252,9 @@
   "Remind": "提醒",
   "Confirm to go": "确认前往",
   "Delete anyway": "仍要删除",
-  "Delete Template App Tip": "该应用是通过应用商店部署的，如果您想完全卸载该应用并清理所有相关的组件，请到应用商店中将整个应用删除。"
+  "delete_template_app_tip": "该应用是通过应用商店部署的。仅删除应用无法清除应用的所有组件，这些组件可能仍会产生费用。要彻底卸载应用并清理所有相关组件，请在应用商店中卸载整个应用。",
+  "delete_sealaf_app_tip": "该应用是通过云开发部署的。仅删除应用无法清除应用的所有组件，这些组件可能仍会产生费用。要彻底卸载应用并清理所有相关组件，请在云开发中卸载整个应用。",
+  "remind": "提醒",
+  "update_sealaf_app_tip": "该应用是通过云开发部署的，变更该应用请到云开发中进行。",
+  "confirm_to_go": "确认前往"
 }
