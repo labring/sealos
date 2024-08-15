@@ -302,6 +302,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 	if r.ObjStorageMetricsClient != nil {
 		metrics, err := objstorage.QueryUserUsageAndTraffic(r.ObjStorageMetricsClient)
 		if err != nil {
+			r.lastObjectMetrics = r.currentObjectMetrics
 			return fmt.Errorf("failed to query object storage metrics: %w", err)
 		}
 		if r.currentObjectMetrics != nil {
@@ -323,7 +324,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 						Sent: make(map[string]int64),
 					}
 				}
-				if traffic[i].Time.Before(time.Now().Add(-5 * time.Minute)) {
+				if traffic[i].Time.Before(time.Now().Add(time.Hour)) {
 					continue
 				}
 				latestObjTrafficSentMetrics[user].Sent[bucket] = traffic[i].TotalSent
@@ -331,7 +332,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 			r.lastObjectMetrics = latestObjTrafficSentMetrics
 		}
 		r.currentObjectMetrics = metrics
-		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
+		logger.Info("success query object storage usage and traffic metrics", "time", time.Now().Format("2006-01-02 15:04:05"))
 	}
 	return nil
 }
@@ -485,7 +486,7 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed
 	for i := range backupList.Items {
 		backup := &backupList.Items[i]
 		backupRes := resources.NewResourceNamed(backup)
-		fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
+		//fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
 		if resUsed[backupRes.String()] == nil {
 			resNamed[backupRes.String()] = backupRes
 			resUsed[backupRes.String()] = initResources()
