@@ -255,7 +255,7 @@
   "delete_sealaf_app_tip": "The application is deployed via cloud development. \nSimply deleting the app won't clear out all of the app's components, which may still accrue charges. \nTo completely uninstall the app and clean all related components, uninstall the entire app in cloud development.",
   "remind": "remind",
   "update_sealaf_app_tip": "This application is deployed through cloud development. To change the application, please go to cloud development.",
-  "confirm_to_go": "Confirm to go",
+  "confirm_to_go": "Confirm",
   "app_store": "App Store",
   "sealaf": "sealaf"
 }
