@@ -27,6 +27,9 @@ import { DevboxVersionListItemType } from '@/types/devbox'
 const EditVersionDesModal = dynamic(
   () => import('@/app/[lang]/(platform)/(empty)/components/EditVersionDesModal')
 )
+const ReleaseModal = dynamic(
+  () => import('@/app/[lang]/(platform)/(empty)/components/releaseModal')
+)
 
 const Version = ({
   isOpen,
@@ -40,6 +43,7 @@ const Version = ({
   const t = useTranslations()
   const { Loading } = useLoading()
   const [initialized, setInitialized] = useState(false)
+  const [onOpenPublish, setOnOpenPublish] = useState(false)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
   const { devboxVersionList, setDevboxVersionList } = useDevboxStore()
   const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
@@ -177,7 +181,11 @@ const Version = ({
                 ( {devboxVersionList.length} )
               </Box>
               <Box flex={1}></Box>
-              <Button minW={'100px'} h={'35px'} variant={'solid'} onClick={() => {}}>
+              <Button
+                minW={'100px'}
+                h={'35px'}
+                variant={'solid'}
+                onClick={() => setOnOpenPublish(true)}>
                 {t('release_version')}
               </Button>
             </Flex>
@@ -199,6 +207,9 @@ const Version = ({
           isOpen={isOpenEdit}
           onClose={onCloseEdit}
         />
+      )}
+      {!!onOpenPublish && (
+        <ReleaseModal onSuccess={refetch} onClose={onCloseEdit} devboxId={devboxId} />
       )}
     </Modal>
   )

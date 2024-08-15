@@ -51,5 +51,9 @@
   "resource_quota": "资源配额",
   "total": "总共",
   "used": "已用",
-  "remaining": "剩余"
+  "remaining": "剩余",
+  "enter_version_number": "请输入版本号",
+  "image_name": "镜像名称",
+  "release": "发布",
+  "release_prompt": "发版过程将暂停机器，以当前状态发版。"
 }

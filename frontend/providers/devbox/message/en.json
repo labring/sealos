@@ -51,5 +51,9 @@
   "resource_quota": "Resource Quota",
   "total": "Total",
   "used": "Used",
-  "remaining": "Remaining"
+  "remaining": "Remaining",
+  "enter_version_number": "Please enter version number",
+  "image_name": "Image Name",
+  "release": "Release",
+  "release_prompt": "The release process will pause the machine and release in the current state."
 }

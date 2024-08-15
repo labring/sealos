@@ -1,4 +1,3 @@
-import { useCallback, useRef } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -9,6 +8,8 @@ import {
   useDisclosure,
   Button
 } from '@chakra-ui/react'
+import { useTranslations } from 'next-intl'
+import { useCallback, useRef } from 'react'
 
 export const useConfirm = ({
   title = 'prompt',
@@ -22,6 +23,7 @@ export const useConfirm = ({
   cancelText?: string
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const t = useTranslations()
   const cancelRef = useRef(null)
   const confirmCb = useRef<any>()
   const cancelCb = useRef<any>()
@@ -43,10 +45,10 @@ export const useConfirm = ({
           <AlertDialogOverlay>
             <AlertDialogContent>
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                {title}
+                {t(title)}
               </AlertDialogHeader>
 
-              <AlertDialogBody>{content}</AlertDialogBody>
+              <AlertDialogBody>{t(content)}</AlertDialogBody>
 
               <AlertDialogFooter>
                 <Button
@@ -55,7 +57,7 @@ export const useConfirm = ({
                     onClose()
                     typeof cancelCb.current === 'function' && cancelCb.current()
                   }}>
-                  {cancelText}
+                  {t(cancelText)}
                 </Button>
                 <Button
                   ml={3}
@@ -64,14 +66,14 @@ export const useConfirm = ({
                     onClose()
                     typeof confirmCb.current === 'function' && confirmCb.current()
                   }}>
-                  {confirmText}
+                  {t(confirmText)}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialogOverlay>
         </AlertDialog>
       ),
-      [confirmText, content, isOpen, onClose, title]
+      [cancelText, confirmText, content, isOpen, onClose, t, title]
     )
   }
 }
