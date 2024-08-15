@@ -15,20 +15,25 @@ import { useTranslations } from 'next-intl'
 import { SealosMenu, MyTable } from '@sealos/ui'
 
 import Version from './Version'
+import dynamic from 'next/dynamic'
 import MyIcon from '@/components/Icon'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 
+const DelModal = dynamic(() => import('@/components/modals/DelModal'))
+
 const DevboxList = ({
-  devboxList = []
+  devboxList = [],
+  refetchDevboxList
 }: {
   devboxList: DevboxListItemType[]
-  refetchApps: () => void
+  refetchDevboxList: () => void
 }) => {
   const theme = useTheme()
   const router = useRouter()
   const t = useTranslations()
+  const [delDevbox, setDelDevbox] = useState<DevboxListItemType | null>(null)
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
     null
   )
@@ -37,6 +42,13 @@ const DevboxList = ({
   const handleOpenVersion = (item: DevboxListItemType) => {
     setCurrentDevboxListItem(item)
     onOpenVersion()
+  }
+
+  const handlePauseDevbox = (item: DevboxListItemType) => {
+    console.log('pause devbox', item)
+  }
+  const handleRestartDevbox = (item: DevboxListItemType) => {
+    console.log('restart devbox', item)
   }
 
   const columns: {
@@ -180,7 +192,8 @@ const DevboxList = ({
                     <Box ml={2}>{t('pause')}</Box>
                   </>
                 ),
-                onClick: () => {} //TODO: 添加暂停逻辑
+                // TODO：启停禁用逻辑
+                onClick: () => handlePauseDevbox(item)
               },
               {
                 child: (
@@ -189,7 +202,7 @@ const DevboxList = ({
                     <Box ml={2}>{t('restart')}</Box>
                   </>
                 ),
-                onClick: () => {} // TODO: 添加重启逻辑
+                onClick: () => handleRestartDevbox(item)
               },
               {
                 child: (
@@ -204,7 +217,7 @@ const DevboxList = ({
                     bg: 'rgba(17, 24, 36, 0.05)'
                   }
                 },
-                onClick: () => {} // TODO: 添加删除逻辑
+                onClick: () => setDelDevbox(item)
               }
             ]}
           />
@@ -247,6 +260,13 @@ const DevboxList = ({
           onClose={onCloseVersion}
           isOpen={isOpenVersion}
           devboxId={currentDevboxListItem.id}
+        />
+      )}
+      {!!delDevbox && (
+        <DelModal
+          devbox={delDevbox}
+          onClose={() => setDelDevbox(null)}
+          onSuccess={refetchDevboxList}
         />
       )}
     </Box>

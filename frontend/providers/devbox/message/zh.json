@@ -5,6 +5,7 @@
   "config_form": "配置表单",
   "confirm": "确认",
   "confirm_create_devbox": "确认创建项目？",
+  "confirm_delete": "确认删除",
   "control": "操作",
   "core": "核",
   "cpu": "CPU",
@@ -56,10 +57,10 @@
   "total_price": "总价格",
   "used": "已用",
   "version": "版本",
+  "version_config": "版本配置",
   "version_description": "版本描述",
   "version_history": "版本历史",
   "version_list": "版本列表",
   "version_number": "版本号",
-  "version_config": "版本配置",
   "yaml_file": "YAML文件"
 }

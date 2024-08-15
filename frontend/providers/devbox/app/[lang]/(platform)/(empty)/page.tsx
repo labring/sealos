@@ -26,7 +26,7 @@ const EmptyPage = () => {
         <Empty />
       ) : (
         <>
-          <DevboxList devboxList={devboxList} refetchApps={refetch} />
+          <DevboxList devboxList={devboxList} refetchDevboxList={refetch} />
         </>
       )}
       <Loading loading={!initialized} />

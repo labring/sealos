@@ -58,3 +58,5 @@ export const getDevboxVersionList = (devboxId: string) =>
       }
     ]
   })
+
+export const delDevboxById = (devboxId: string) => DELETE('/api/delDevboxById', { devboxId })
