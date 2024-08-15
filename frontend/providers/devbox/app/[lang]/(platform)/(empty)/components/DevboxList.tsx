@@ -21,7 +21,7 @@ import { useGlobalStore } from '@/stores/global'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { restartDevbox } from '@/api/devbox'
+import { pauseDevbox, restartDevbox } from '@/api/devbox'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
@@ -43,14 +43,32 @@ const DevboxList = ({
   )
   const { isOpen: isOpenVersion, onOpen: onOpenVersion, onClose: onCloseVersion } = useDisclosure()
 
-  const handleOpenVersion = (item: DevboxListItemType) => {
-    setCurrentDevboxListItem(item)
+  const handleOpenVersion = (devbox: DevboxListItemType) => {
+    setCurrentDevboxListItem(devbox)
     onOpenVersion()
   }
 
-  const handlePauseDevbox = (item: DevboxListItemType) => {
-    console.log('pause devbox', item)
-  }
+  const handlePauseDevbox = useCallback(
+    async (devbox: DevboxListItemType) => {
+      try {
+        setLoading(true)
+        await pauseDevbox({ devboxId: devbox.id })
+        toast({
+          title: t('pause_success'),
+          status: 'success'
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('pause_error'),
+          status: 'error'
+        })
+        console.error(error)
+      }
+      setLoading(false)
+      refetchDevboxList()
+    },
+    [refetchDevboxList, setLoading, t, toast]
+  )
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemType) => {
       try {
@@ -62,7 +80,7 @@ const DevboxList = ({
         })
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('restart_success'),
+          title: typeof error === 'string' ? error : error.message || t('restart_error'),
           status: 'error'
         })
         console.error(error, '==')

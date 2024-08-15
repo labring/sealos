@@ -67,3 +67,12 @@ export const restartDevbox = (data: { devboxId: string }) => {
   // return applyYamlList([yaml], 'update')
   return {}
 }
+
+export const pauseDevbox = (data: { devboxId: string }) => {
+  // const yaml = json2StartOrStop({
+  //   ...data,
+  //   type: 'Stop'
+  // })
+  // return applyYamlList([yaml], 'update')
+  return {}
+}
