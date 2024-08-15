@@ -95,6 +95,7 @@ Options:
   --zh                              # Chinese prompt
   --en                              # English prompt
   --help                            # Help information"
+  ["invalid_master_ips"]="The number of master IPs is even. Please provide an odd number of master IPs."
 )
 PROMPTS_CN=(
     ["pre_prompt"]="依赖 iptables, 请确保 iptables 已经安装, 多节点需要配置 ssh 免密登录或密码一致, 使用 Sealos 提供的自签证书安装完成后需要自信任证书"
@@ -156,6 +157,7 @@ Options:
   --zh                            # 中文提示
   --en                            # 英文提示
   --help                          # 帮助信息"
+  ["invalid_master_ips"]="Master IP的数量是偶数,请提供奇数个 Master IP"
 )
 
 # Define error handling function
@@ -521,13 +523,13 @@ check_control_plane_count() {
     if [[ -z "$master_ips" ]]; then
         return 0
     fi
-    
+
     IFS=',' read -r -a master_ips_array <<< "$master_ips"
     num_ips=${#master_ips_array[@]}
 
     # If the number is even, output an error message and exit
     if (( num_ips % 2 == 0 )); then
-        echo "Error: The number of master IPs is even. Please provide an odd number of master IPs."
+        get_prompt "invalid_master_ips"
         exit 1
     fi
 }
@@ -675,8 +677,8 @@ done
 
 [[ $HELP == "" ]] || get_prompt "usage"
 [[ $HELP == "" ]] || exit 0
-check_control_plane_count
 set_language
+check_control_plane_count
 init
 collect_input
 prepare_configs
