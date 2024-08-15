@@ -52,7 +52,7 @@ type Account interface {
 	SaveBillings(billing ...*resources.Billing) error
 	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error
 	GetAllLatestObjTraffic() ([]types.ObjectStorageTraffic, error)
-	HandlerTimeObjBucketUsage(startTime, endTime time.Time, bucket string) (int64, error)
+	HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error)
 	GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error)
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)

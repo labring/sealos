@@ -668,7 +668,7 @@ func Test_mongoDB_GetAllLatestObjTraffic(t *testing.T) {
 	}
 }
 
-func Test_mongoDB_HandlerTimeObjBucketUsage(t *testing.T) {
+func Test_mongoDB_HandlerTimeObjBucketSentTraffic(t *testing.T) {
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -681,7 +681,7 @@ func Test_mongoDB_HandlerTimeObjBucketUsage(t *testing.T) {
 		}
 	}()
 
-	bytes, err := m.HandlerTimeObjBucketUsage(time.Now().UTC().Add(-time.Hour), time.Now().UTC(), "bucket-6")
+	bytes, err := m.HandlerTimeObjBucketSentTraffic(time.Now().UTC().Add(-time.Hour), time.Now().UTC(), "bucket-6")
 	if err != nil {
 		t.Fatalf("failed to handle time object bucket usage: %v", err)
 	}

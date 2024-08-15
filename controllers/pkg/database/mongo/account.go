@@ -289,7 +289,7 @@ func (m *mongoDB) GetAllLatestObjTraffic() ([]types.ObjectStorageTraffic, error)
 	return results, nil
 }
 
-func (m *mongoDB) HandlerTimeObjBucketUsage(startTime, endTime time.Time, bucket string) (int64, error) {
+func (m *mongoDB) HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error) {
 	pipeline := []bson.M{
 		{
 			"$match": bson.M{

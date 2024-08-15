@@ -632,7 +632,7 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 }
 
 func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime time.Time, bucket string) error {
-	bytes, err := r.DBClient.HandlerTimeObjBucketUsage(startTime, endTime, bucket)
+	bytes, err := r.DBClient.HandlerTimeObjBucketSentTraffic(startTime, endTime, bucket)
 	if err != nil {
 		return fmt.Errorf("failed to get object storage flow: %w", err)
 	}
