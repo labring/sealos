@@ -39,14 +39,14 @@ const PriceBox = ({
 
     return [
       {
-        label: 'cpu',
+        label: t('cpu'),
         color: '#33BABB',
         value: cp.toFixed(2)
       },
-      { label: 'memory', color: '#36ADEF', value: mp.toFixed(2) },
-      { label: 'total_price', color: '#485058', value: tp.toFixed(2) }
+      { label: t('memory'), color: '#36ADEF', value: mp.toFixed(2) },
+      { label: t('total_price'), color: '#485058', value: tp.toFixed(2) }
     ]
-  }, [components])
+  }, [components, t])
 
   return (
     <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
