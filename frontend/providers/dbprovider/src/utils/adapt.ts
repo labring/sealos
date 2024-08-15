@@ -1,12 +1,10 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
 import {
+  DBPreviousConfigKey,
   DBReconfigStatusMap,
-  DBStatusEnum,
-  DBReconfigureMap,
+  DBSourceConfigs,
   MigrationRemark,
-  dbStatusMap,
-  DBReconfigureKey,
-  DBPreviousConfigKey
+  dbStatusMap
 } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type {
@@ -18,6 +16,7 @@ import type {
   DBDetailType,
   DBEditType,
   DBListItemType,
+  DBSourceType,
   DBType,
   OpsRequestItemType,
   PodDetailType,
@@ -35,7 +34,34 @@ import {
 } from '@/utils/tools';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
+import { has } from 'lodash';
 import type { BackupItemType } from '../types/db';
+
+export const getDBSource = (
+  db: KbPgClusterType
+): {
+  hasSource: boolean;
+  sourceName: string;
+  sourceType: DBSourceType;
+} => {
+  const labels = db.metadata?.labels || {};
+
+  for (const config of DBSourceConfigs) {
+    if (has(labels, config.key)) {
+      return {
+        hasSource: true,
+        sourceName: labels[config.key],
+        sourceType: config.type
+      };
+    }
+  }
+
+  return {
+    hasSource: false,
+    sourceName: '',
+    sourceType: 'app_store'
+  };
+};
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
   // compute store amount
@@ -55,7 +81,8 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       '-',
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
-    labels: db.metadata.labels || {}
+    labels: db.metadata.labels || {},
+    source: getDBSource(db)
   };
 };
 
@@ -78,7 +105,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     ),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
-    labels: db.metadata.labels || {}
+    labels: db.metadata.labels || {},
+    source: getDBSource(db)
   };
 };
 

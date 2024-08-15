@@ -10,6 +10,7 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
+import UpdateModal from './UpdateModal';
 
 const DelModal = dynamic(() => import('./DelModal'));
 
@@ -30,6 +31,13 @@ const Header = ({
     onOpen: onOpenDelModal,
     onClose: onCloseDelModal
   } = useDisclosure();
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onClose: onCloseUpdateModal
+  } = useDisclosure();
+  const [updateAppName, setUpdateAppName] = useState('');
+
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: t('confirm_restart')
   });
@@ -143,7 +151,12 @@ const Header = ({
           isLoading={loading}
           isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
           onClick={() => {
-            router.push(`/db/edit?name=${db.dbName}`);
+            if (db.source.hasSource && db.source.sourceType === 'sealaf') {
+              setUpdateAppName(db.dbName);
+              onOpenUpdateModal();
+            } else {
+              router.push(`/db/edit?name=${db.dbName}`);
+            }
           }}
         >
           {t('update')}
@@ -211,12 +224,21 @@ const Header = ({
       <PauseChild />
       {isOpenDelModal && (
         <DelModal
-          labels={db.labels}
           dbName={db.dbName}
+          source={db.source}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/dbs')}
         />
       )}
+
+      <UpdateModal
+        source={db.source}
+        isOpen={isOpenUpdateModal}
+        onClose={() => {
+          setUpdateAppName('');
+          onCloseUpdateModal();
+        }}
+      />
     </Flex>
   );
 };

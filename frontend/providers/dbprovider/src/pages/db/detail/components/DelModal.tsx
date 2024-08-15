@@ -1,6 +1,7 @@
 import { delDBByName } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import { templateDeployKey } from '@/constants/db';
+import { DBSource, DBSourceType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 import {
   Box,
   Button,
@@ -15,7 +16,6 @@ import {
   ModalOverlay
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
-import { has } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -29,12 +29,12 @@ const DelModal = ({
   dbName,
   onClose,
   onSuccess,
-  labels
+  source
 }: {
   dbName: string;
   onClose: () => void;
   onSuccess: () => void;
-  labels: { [key: string]: string };
+  source?: DBSource;
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
@@ -45,10 +45,14 @@ const DelModal = ({
 
   useEffect(() => {
     if (!pageManuallyChangedRef.current) {
-      const hasApplicationSource = has(labels, templateDeployKey);
-      hasApplicationSource ? setActivePage(Page.REMINDER) : setActivePage(Page.DELETION_WARNING);
+      source?.hasSource ? setActivePage(Page.REMINDER) : setActivePage(Page.DELETION_WARNING);
     }
-  }, [labels]);
+  }, [source]);
+
+  const deleteTypeTipMap: Record<DBSourceType, I18nCommonKey> = {
+    app_store: t('delete_template_app_tip'),
+    sealaf: t('delete_sealaf_app_tip')
+  };
 
   const handleDelApp = useCallback(async () => {
     try {
@@ -71,14 +75,21 @@ const DelModal = ({
   }, [dbName, toast, t, onSuccess, onClose]);
 
   const openTemplateApp = () => {
-    if (!labels) return;
-    const sourceName = labels[templateDeployKey];
-    sealosApp.runEvents('openDesktopApp', {
-      appKey: 'system-template',
-      pathname: '/instance',
-      query: { instanceName: sourceName },
-      messageData: { type: 'InternalAppCall', name: sourceName }
-    });
+    if (!source?.hasSource) return;
+    if (source?.sourceType === 'app_store') {
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: 'system-template',
+        pathname: '/instance',
+        query: { instanceName: source?.sourceName }
+      });
+    }
+    if (source?.sourceType === 'sealaf') {
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: 'system-sealaf',
+        pathname: '/',
+        query: { instanceName: source?.sourceName }
+      });
+    }
     onClose();
   };
 
@@ -95,7 +106,9 @@ const DelModal = ({
         <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody pb={4}>
           <Box color={'grayModern.600'}>
-            {activePage === Page.REMINDER ? t('delete_template_app_tip') : t('delete_hint')}
+            {activePage === Page.REMINDER && source?.sourceType
+              ? deleteTypeTipMap[source?.sourceType]
+              : t('delete_hint')}
 
             {activePage === Page.DELETION_WARNING && (
               <Box my={3}>
@@ -127,7 +140,7 @@ const DelModal = ({
             {t('Cancel')}
           </Button>
 
-          {activePage === Page.REMINDER && (
+          {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
             <Button
               ml={3}
               variant={'outline'}
