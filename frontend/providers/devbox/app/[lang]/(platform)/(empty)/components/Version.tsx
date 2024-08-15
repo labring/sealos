@@ -24,12 +24,8 @@ import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
 
-const EditVersionDesModal = dynamic(
-  () => import('@/app/[lang]/(platform)/(empty)/components/EditVersionDesModal')
-)
-const ReleaseModal = dynamic(
-  () => import('@/app/[lang]/(platform)/(empty)/components/releaseModal')
-)
+const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))
+const ReleaseModal = dynamic(() => import('@/components/modals/releaseModal'))
 
 const Version = ({
   isOpen,
