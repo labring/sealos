@@ -30,10 +30,12 @@
   "enter_version_number": "请输入版本号",
   "estimated_price": "预估价格",
   "export_yaml": "导出YAML",
-  "image_name": "镜像名称",
+  "image_name": "镜像名",
+  "jump_prompt": "跳转提示",
   "memory": "内存",
   "name": "名字",
   "no_versions": "还没有版本，请先发布一个版本",
+  "not_allow_standalone_use": "不允许独立使用",
   "online": "上线",
   "open_vscode": "VS Code 插件",
   "pause": "暂停",
@@ -58,7 +60,6 @@
   "version_history": "版本历史",
   "version_list": "版本列表",
   "version_number": "版本号",
-  "yaml_file": "YAML文件",
-  "not_allow_standalone_use": "不允许独立使用",
-  "jump_prompt": "跳转提示"
+  "version_config": "版本配置",
+  "yaml_file": "YAML文件"
 }

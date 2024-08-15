@@ -209,7 +209,13 @@ const Version = ({
         />
       )}
       {!!onOpenPublish && (
-        <ReleaseModal onSuccess={refetch} onClose={onCloseEdit} devboxId={devboxId} />
+        <ReleaseModal
+          onSuccess={refetch}
+          onClose={() => {
+            setOnOpenPublish(false)
+          }}
+          devboxId={devboxId}
+        />
       )}
     </Modal>
   )

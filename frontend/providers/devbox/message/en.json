@@ -60,5 +60,6 @@
   "version_number": "Version Number",
   "yaml_file": "YAML File",
   "not_allow_standalone_use": "Not allowed to use standalone",
+  "version_config": "Version Configuration",
   "jump_prompt": "Jump prompt"
 }
