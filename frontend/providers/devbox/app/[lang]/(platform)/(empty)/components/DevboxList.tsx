@@ -9,17 +9,19 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { SealosMenu, MyTable } from '@sealos/ui'
+import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
 import Version from './Version'
 import dynamic from 'next/dynamic'
 import MyIcon from '@/components/Icon'
+import { useGlobalStore } from '@/stores/global'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
+import { restartDevbox } from '@/api/devbox'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
@@ -33,6 +35,8 @@ const DevboxList = ({
   const theme = useTheme()
   const router = useRouter()
   const t = useTranslations()
+  const { message: toast } = useMessage()
+  const { setLoading } = useGlobalStore()
   const [delDevbox, setDelDevbox] = useState<DevboxListItemType | null>(null)
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
     null
@@ -47,9 +51,26 @@ const DevboxList = ({
   const handlePauseDevbox = (item: DevboxListItemType) => {
     console.log('pause devbox', item)
   }
-  const handleRestartDevbox = (item: DevboxListItemType) => {
-    console.log('restart devbox', item)
-  }
+  const handleRestartDevbox = useCallback(
+    async (devbox: DevboxListItemType) => {
+      try {
+        setLoading(true)
+        await restartDevbox({ devboxId: devbox.id })
+        toast({
+          title: t('restart_success'),
+          status: 'success'
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('restart_success'),
+          status: 'error'
+        })
+        console.error(error, '==')
+      }
+      setLoading(false)
+    },
+    [setLoading, t, toast]
+  )
 
   const columns: {
     title: string

@@ -47,6 +47,7 @@
   "remaining": "Remaining",
   "resource_quota": "Resource Quota",
   "restart": "Restart",
+  "restart_success": "Restart success",
   "runtime": "Runtime",
   "runtime_environment": "Runtime Environment",
   "save": "Save",

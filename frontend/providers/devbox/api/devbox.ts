@@ -41,6 +41,7 @@ export const getMyDevboxList = () =>
     ]
   })
 
+// for devbox operator: restart,
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
@@ -60,3 +61,9 @@ export const getDevboxVersionList = (devboxId: string) =>
   })
 
 export const delDevboxById = (devboxId: string) => DELETE('/api/delDevboxById', { devboxId })
+
+export const restartDevbox = (data: { devboxId: string }) => {
+  // const yaml = json2Restart(data)
+  // return applyYamlList([yaml], 'update')
+  return {}
+}
