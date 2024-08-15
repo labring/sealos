@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   title: 'Sealos Devbox',
   description: 'Generated a development and production environment for you',
   icons: [
-    // TODO: favicon needs to be updated (favicon.ico)
     {
       url: '/logo.svg',
       href: '/logo.svg'
