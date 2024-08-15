@@ -105,7 +105,7 @@
   "confirm_deploy_database": "Confirm deploying the database?",
   "confirm_restart": "Confirm restarting this application?",
   "confirm_restart_pod": "Confirm restarting the pod?",
-  "confirm_to_go": "Confirm Navigation",
+  "confirm_to_go": "Confirm",
   "confirm_update_database": "Confirm updating the database?",
   "connection_info": "Connection Details",
   "continuous_migration": "Continuous Migration",
