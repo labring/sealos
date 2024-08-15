@@ -70,8 +70,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     }
   }, [setScreenWidth])
 
-  // TODO: add i18n init
-
   // record route
   useEffect(() => {
     return () => {

@@ -58,5 +58,7 @@
   "version_history": "Version History",
   "version_list": "Version List",
   "version_number": "Version Number",
-  "yaml_file": "YAML File"
+  "yaml_file": "YAML File",
+  "not_allow_standalone_use": "Not allowed to use standalone",
+  "jump_prompt": "Jump prompt"
 }

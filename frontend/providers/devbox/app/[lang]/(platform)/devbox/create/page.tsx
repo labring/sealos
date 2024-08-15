@@ -42,10 +42,10 @@ const DevboxCreatePage = () => {
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: t('confirm_create_devbox'),
-    title: t('prompt'),
-    confirmText: t('confirm'),
-    cancelText: t('cancel')
+    content: 'confirm_create_devbox',
+    title: 'prompt',
+    confirmText: 'confirm',
+    cancelText: 'cancel'
   })
   const tabType = searchParams.get('type') || 'form'
 

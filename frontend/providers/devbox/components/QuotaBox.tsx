@@ -57,7 +57,7 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
             <Flex alignItems={'center'}>
               <Box flex={'0 0 60px'} textTransform={'capitalize'}>
-                {item.type}
+                {t(item.type)}
               </Box>
               <Progress
                 flex={'1 0 0'}

@@ -58,5 +58,7 @@
   "version_history": "版本历史",
   "version_list": "版本列表",
   "version_number": "版本号",
-  "yaml_file": "YAML文件"
+  "yaml_file": "YAML文件",
+  "not_allow_standalone_use": "不允许独立使用",
+  "jump_prompt": "跳转提示"
 }

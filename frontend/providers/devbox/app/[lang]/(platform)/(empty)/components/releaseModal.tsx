@@ -30,8 +30,8 @@ const ReleaseModal = ({
   const [tag, setTag] = useState('')
   const [inputValue, setInputValue] = useState('')
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: t('prompt'),
-    content: t('release_prompt')
+    title: 'prompt',
+    content: 'release_prompt'
   })
 
   return (
