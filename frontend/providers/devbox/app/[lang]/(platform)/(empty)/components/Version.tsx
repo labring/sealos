@@ -12,9 +12,9 @@ import {
   MenuButton,
   useDisclosure
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { SealosMenu } from '@sealos/ui'
+import { SealosMenu, useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 
@@ -22,6 +22,7 @@ import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
+import { delDevboxVersionById } from '@/api/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
 
 const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))
@@ -37,7 +38,8 @@ const Version = ({
   devboxId: string
 }) => {
   const t = useTranslations()
-  const { Loading } = useLoading()
+  const { Loading, setIsLoading } = useLoading()
+  const { message: toast } = useMessage()
   const [initialized, setInitialized] = useState(false)
   const [onOpenPublish, setOnOpenPublish] = useState(false)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
@@ -49,6 +51,27 @@ const Version = ({
       setInitialized(true)
     }
   })
+
+  const handleDelDevboxVersion = useCallback(
+    async (versionId: string) => {
+      try {
+        setIsLoading(true)
+        await delDevboxVersionById(versionId)
+        toast({
+          title: t('delete_successful'),
+          status: 'success'
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('delete_failed'),
+          status: 'error'
+        })
+        console.error(error)
+      }
+      setIsLoading(false)
+    },
+    [setIsLoading, toast, t]
+  )
 
   const columns: {
     title: string
@@ -139,7 +162,7 @@ const Version = ({
                     bg: 'rgba(17, 24, 36, 0.05)'
                   }
                 },
-                onClick: () => {} // TODO: 添加删除逻辑
+                onClick: () => handleDelDevboxVersion(item.id)
               }
             ]}
           />

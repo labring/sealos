@@ -76,3 +76,6 @@ export const pauseDevbox = (data: { devboxId: string }) => {
   // return applyYamlList([yaml], 'update')
   return {}
 }
+
+export const delDevboxVersionById = (devboxId: string) =>
+  DELETE('/api/delDevboxVersionById', { devboxId })
