@@ -154,7 +154,7 @@ const DelModal = ({
             isLoading={loading}
             onClick={activePage === Page.REMINDER ? openTemplateApp : handleDelApp}
           >
-            {activePage === Page.REMINDER ? t('Confirm to go') : t('Delete')}
+            {activePage === Page.REMINDER ? t('confirm_to_go') : t('Delete')}
           </Button>
         </ModalFooter>
       </ModalContent>

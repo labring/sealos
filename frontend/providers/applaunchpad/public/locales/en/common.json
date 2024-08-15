@@ -250,11 +250,12 @@
   "App Store": "App Store",
   "Manage all resources": "Manage all resources",
   "Remind": "Remind",
-  "Confirm to go": "Confirm to go",
   "Delete anyway": "Delete anyway",
   "delete_template_app_tip": "The app is deployed via the app store. \nSimply deleting the app won't clear out all of the app's components, which may still accrue charges. \nTo completely uninstall an app and clean all related components, uninstall the entire app from the App Store.",
   "delete_sealaf_app_tip": "The application is deployed via cloud development. \nSimply deleting the app won't clear out all of the app's components, which may still accrue charges. \nTo completely uninstall the app and clean all related components, uninstall the entire app in cloud development.",
   "remind": "remind",
   "update_sealaf_app_tip": "This application is deployed through cloud development. To change the application, please go to cloud development.",
-  "confirm_to_go": "Confirm to go"
+  "confirm_to_go": "Confirm to go",
+  "app_store": "App Store",
+  "sealaf": "sealaf"
 }

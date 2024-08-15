@@ -131,7 +131,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               }}
             >
               <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                {t('App Store')}
+                {t(app.source?.sourceType)}
               </Box>
               <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
               <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
