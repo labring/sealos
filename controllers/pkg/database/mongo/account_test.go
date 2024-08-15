@@ -691,3 +691,26 @@ func Test_mongoDB_HandlerTimeObjBucketUsage(t *testing.T) {
 func init() {
 	os.Setenv("MONGODB_URI", "")
 }
+
+func Test_mongoDB_GetTimeObjBucketBucket(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	buckets, err := m.GetTimeObjBucketBucket(time.Now().UTC().Add(-10*time.Hour), time.Now().UTC())
+	if err != nil {
+		t.Fatalf("failed to get time object bucket bucket: %v", err)
+	}
+	t.Logf("get time object bucket bucket success： len: %v", len(buckets))
+	for _, bucket := range buckets {
+		t.Logf("bucket: %#+v", bucket)
+	}
+}

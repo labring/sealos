@@ -82,8 +82,8 @@ type MonitorReconciler struct {
 	TrafficClient            database.Interface
 	Properties               *resources.PropertyTypeLS
 	PromURL                  string
-	lastObjectMetrics        map[string]objstorage.MetricData
-	currentObjectMetrics     map[string]objstorage.MetricData
+	lastObjectMetrics        objstorage.Metrics
+	currentObjectMetrics     objstorage.Metrics
 	ObjStorageClient         *minio.Client
 	ObjStorageMetricsClient  *objstorage.MetricsClient
 	ObjStorageUserBackupSize map[string]int64
@@ -221,7 +221,7 @@ func waitNextHour() {
 }
 
 func (r *MonitorReconciler) startMonitorTraffic() {
-	r.wg.Add(2)
+	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
 		startTime, endTime := time.Now().UTC(), time.Now().Truncate(time.Hour).Add(1*time.Hour).UTC()
@@ -307,7 +307,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 		if r.currentObjectMetrics != nil {
 			r.lastObjectMetrics = r.currentObjectMetrics
 		} else {
-			latestObjTrafficSentMetrics := make(map[string]objstorage.MetricData)
+			latestObjTrafficSentMetrics := make(objstorage.Metrics)
 			traffic, err := r.DBClient.GetAllLatestObjTraffic()
 			if err != nil {
 				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
@@ -612,9 +612,9 @@ func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) err
 }
 
 func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime time.Time) error {
-	buckets, err := objstorage.ListAllObjectStorageBucket(r.ObjStorageClient)
+	buckets, err := r.DBClient.GetTimeObjBucketBucket(startTime, endTime)
 	if err != nil {
-		return fmt.Errorf("failed to list object storage buckets: %w", err)
+		return fmt.Errorf("failed to get object storage buckets: %w", err)
 	}
 	r.Logger.Info("object storage buckets", "buckets len", len(buckets))
 	wg, _ := errgroup.WithContext(context.Background())

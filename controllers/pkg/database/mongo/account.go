@@ -328,6 +328,44 @@ func (m *mongoDB) HandlerTimeObjBucketUsage(startTime, endTime time.Time, bucket
 	return 0, nil
 }
 
+func (m *mongoDB) GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error) {
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"time": bson.M{
+					"$gt":  startTime,
+					"$lte": endTime,
+				},
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id":     nil,
+				"buckets": bson.M{"$addToSet": "$bucket"},
+			},
+		},
+	}
+	cursor, err := m.getObjTrafficCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var result struct {
+		Buckets []string `bson:"buckets"`
+	}
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+		return result.Buckets, nil
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 // InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
 // The monitor data is saved daily 2020-12-01 00:00:00 - 2020-12-01 23:59:59 => monitor_20201201
 func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error {
