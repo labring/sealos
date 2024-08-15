@@ -43,6 +43,7 @@ PROMPTS_EN=(
     ["install_sealos"]="Sealos CLI is not installed, do you want to install it? (y/n): "
     ["input_master_ips"]="Please enter Master IP (For single node installation, you can press enter to skip this step; separate multiple Master nodes with commas, e.g: 192.168.0.1,192.168.0.2,192.168.0.3): "
     ["invalid_ips"]="Invalid or incorrect IP format, please try again."
+    ["invalid_master_ips"]="The number of master IPs is even. Please provide an odd number of master IPs."
     ["input_node_ips"]="Please enter Node IP (If there are no Node nodes, you can press enter to skip this step; separate multiple Node nodes with commas, e.g: 192.168.1.1,192.168.1.2,192.168.1.3): "
     ["pod_subnet"]="Please enter the Pod subnet (Press enter to use the default value: 100.64.0.0/10): "
     ["service_subnet"]="Please enter the Service subnet (Press enter to use the default value: 10.96.0.0/22): "
@@ -104,6 +105,7 @@ PROMPTS_CN=(
     ["install_sealos"]="Sealos CLI 尚未安装, 是否安装? (y/n): "
     ["input_master_ips"]="请输入 Master IP (单节点安装可输入回车跳过该步骤; 多个 Master 节点使用逗号分隔, 例: 192.168.0.1,192.168.0.2,192.168.0.3): "
     ["invalid_ips"]="IP无效或错误格式, 请再试一次."
+    ["invalid_master_ips"]="Master IP的数量是偶数,请提供奇数个 Master IP"
     ["input_node_ips"]="请输入 Node IP (无 Node 节点可输入回车跳过该步骤; 多个 Node 节点使用逗号分隔, 例: 192.168.1.1,192.168.1.2,192.168.1.3): "
     ["pod_subnet"]="请输入 Pod 子网 (回车使用默认值: 100.64.0.0/10): "
     ["service_subnet"]="请输入 Service 子网 (回车使用默认值: 10.96.0.0/22): "
@@ -521,13 +523,13 @@ check_control_plane_count() {
     if [[ -z "$master_ips" ]]; then
         return 0
     fi
-    
+
     IFS=',' read -r -a master_ips_array <<< "$master_ips"
     num_ips=${#master_ips_array[@]}
 
     # If the number is even, output an error message and exit
     if (( num_ips % 2 == 0 )); then
-        echo "Error: The number of master IPs is even. Please provide an odd number of master IPs."
+        get_prompt "invalid_master_ips"
         exit 1
     fi
 }
@@ -675,8 +677,8 @@ done
 
 [[ $HELP == "" ]] || get_prompt "usage"
 [[ $HELP == "" ]] || exit 0
-check_control_plane_count
 set_language
+check_control_plane_count
 init
 collect_input
 prepare_configs
