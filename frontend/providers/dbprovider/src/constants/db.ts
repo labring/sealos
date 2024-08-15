@@ -1,4 +1,11 @@
-import { DBEditType, DBDetailType, PodDetailType, DBType, ReconfigStatusMapType } from '@/types/db';
+import {
+  DBEditType,
+  DBDetailType,
+  PodDetailType,
+  DBType,
+  ReconfigStatusMapType,
+  DBSourceType
+} from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
@@ -9,6 +16,7 @@ export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-
 export const MigrationRemark = 'migration-remark';
 export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+export const sealafDeployKey = 'sealaf-app';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
 export enum DBTypeEnum {
@@ -271,7 +279,12 @@ export const defaultDBDetail: DBDetailType = {
   status: dbStatusMap.Creating,
   conditions: [],
   isDiskSpaceOverflow: false,
-  labels: {}
+  labels: {},
+  source: {
+    hasSource: false,
+    sourceName: '',
+    sourceType: 'app_store'
+  }
 };
 
 export const defaultPod: PodDetailType = {
@@ -406,3 +419,11 @@ export const DBReconfigureMap: {
     reconfigureKey: ''
   }
 };
+
+export const DBSourceConfigs: Array<{
+  key: string;
+  type: DBSourceType;
+}> = [
+  { key: templateDeployKey, type: 'app_store' },
+  { key: sealafDeployKey, type: 'sealaf' }
+];

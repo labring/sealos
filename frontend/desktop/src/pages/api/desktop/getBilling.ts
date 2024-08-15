@@ -33,9 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           method: 'POST',
           body: JSON.stringify({
             endTime: currentTime,
-            kubeConfig: kc.exportConfig(),
-            appType: '',
-            namespace,
+            kubeConfig: realKc,
+            // appType: '',
+            // namespace,
             startTime: timeOneMonthAgo
           })
         })
@@ -45,9 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           method: 'POST',
           body: JSON.stringify({
             endTime: currentTime,
-            kubeConfig: kc.exportConfig(),
-            appType: '',
-            namespace,
+            kubeConfig: realKc,
+            // appType: '',
+            // namespace,
             startTime: time24HoursAgo
           })
         })

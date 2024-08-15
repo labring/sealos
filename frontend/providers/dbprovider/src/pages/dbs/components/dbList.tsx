@@ -3,11 +3,21 @@ import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
+import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Box, Button, Center, Flex, Image, MenuButton, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  MenuButton,
+  useDisclosure,
+  useTheme
+} from '@chakra-ui/react';
 import { MyTable, SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -29,8 +39,14 @@ const DBList = ({
   const theme = useTheme();
   const router = useRouter();
   const { SystemEnv } = useEnvStore();
-
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onClose: onCloseUpdateModal
+  } = useDisclosure();
   const [delAppName, setDelAppName] = useState('');
+  const [updateAppName, setUpdateAppName] = useState('');
+
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
   });
@@ -202,7 +218,14 @@ const DBList = ({
                           <Box ml={2}>{t('update')}</Box>
                         </>
                       ),
-                      onClick: () => router.push(`/db/edit?name=${item.name}`),
+                      onClick: () => {
+                        if (item.source.hasSource && item.source.sourceType === 'sealaf') {
+                          setUpdateAppName(item.name);
+                          onOpenUpdateModal();
+                        } else {
+                          router.push(`/db/edit?name=${item.name}`);
+                        }
+                      },
                       isDisabled: item.status.value === 'Updating' && !item.isDiskSpaceOverflow
                     },
                     {
@@ -299,12 +322,20 @@ const DBList = ({
       <PauseChild />
       {!!delAppName && (
         <DelModal
-          labels={dbList?.find((item) => item.name === delAppName)?.labels || {}}
+          source={dbList.find((i) => i.name === delAppName)?.source}
           dbName={delAppName}
           onClose={() => setDelAppName('')}
           onSuccess={refetchApps}
         />
       )}
+      <UpdateModal
+        source={dbList.find((i) => i.name === updateAppName)?.source}
+        isOpen={isOpenUpdateModal}
+        onClose={() => {
+          setUpdateAppName('');
+          onCloseUpdateModal();
+        }}
+      />
     </Box>
   );
 };

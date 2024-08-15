@@ -1,6 +1,6 @@
 import React, { Dispatch, useCallback, useState } from 'react';
 import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
-import type { AppStatusMapType } from '@/types/app';
+import type { AppStatusMapType, TAppSource } from '@/types/app';
 import { useRouter } from 'next/router';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
 import { useToast } from '@/hooks/useToast';
@@ -10,6 +10,7 @@ import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
+import UpdateModal from './UpdateModal';
 
 const DelModal = dynamic(() => import('./DelModal'));
 
@@ -20,7 +21,7 @@ const Header = ({
   isLargeScreen = true,
   setShowSlider,
   refetch,
-  labels
+  source
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
@@ -28,7 +29,7 @@ const Header = ({
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
   refetch: () => void;
-  labels: { [key: string]: string };
+  source?: TAppSource;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -38,6 +39,13 @@ const Header = ({
     onOpen: onOpenDelModal,
     onClose: onCloseDelModal
   } = useDisclosure();
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onClose: onCloseUpdateModal
+  } = useDisclosure();
+  const [updateAppName, setUpdateAppName] = useState('');
+
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Confirm to restart this application?'
   });
@@ -164,7 +172,12 @@ const Header = ({
           leftIcon={<MyIcon name={'change'} w={'20px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={() => {
-            router.push(`/app/edit?name=${appName}`);
+            if (source?.hasSource && source?.sourceType === 'sealaf') {
+              setUpdateAppName(appName);
+              onOpenUpdateModal();
+            } else {
+              router.push(`/app/edit?name=${appName}`);
+            }
           }}
         >
           {t('Update')}
@@ -202,11 +215,19 @@ const Header = ({
       {isOpenDelModal && (
         <DelModal
           appName={appName}
+          source={source}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/apps')}
-          labels={labels}
         />
       )}
+      <UpdateModal
+        source={source}
+        isOpen={isOpenUpdateModal}
+        onClose={() => {
+          setUpdateAppName('');
+          onCloseUpdateModal();
+        }}
+      />
     </Flex>
   );
 };

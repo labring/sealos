@@ -56,6 +56,7 @@ export interface AppListItemType {
   maxReplicas: number;
   storeAmount: number;
   labels: { [key: string]: string };
+  source: TAppSource;
 }
 
 export type ProtocolType = 'HTTP' | 'GRPC' | 'WS';
@@ -107,6 +108,13 @@ export interface AppEditType {
   }[];
 }
 
+export type TAppSourceType = 'app_store' | 'sealaf';
+
+export type TAppSource = {
+  hasSource: boolean;
+  sourceName: string;
+  sourceType: TAppSourceType;
+};
 export interface AppDetailType extends AppEditType {
   id: string;
   createTime: string;
@@ -117,7 +125,7 @@ export interface AppDetailType extends AppEditType {
   usedMemory: MonitorDataResult;
   crYamlList: DeployKindsType[];
   labels: { [key: string]: string };
-
+  source: TAppSource;
   // pods: PodDetailType[];
 }
 

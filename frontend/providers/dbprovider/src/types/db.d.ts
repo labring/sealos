@@ -56,6 +56,7 @@ export interface DBListItemType {
   conditions: DBConditionItemType[];
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
+  source: DBSource;
 }
 
 export interface DBEditType {
@@ -68,6 +69,14 @@ export interface DBEditType {
   storage: number;
 }
 
+export type DBSourceType = 'app_store' | 'sealaf';
+
+export type DBSource = {
+  hasSource: boolean;
+  sourceName: string;
+  sourceType: DBSourceType;
+};
+
 export interface DBDetailType extends DBEditType {
   id: string;
   createTime: string;
@@ -75,6 +84,7 @@ export interface DBDetailType extends DBEditType {
   conditions: DBConditionItemType[];
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
+  source: DBSource;
 }
 
 export interface DBConditionItemType {
