@@ -800,6 +800,13 @@
                             "additionalProperties": true
                         }
                     },
+                    "403": {
+                        "description": "no payment can be applied to the invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "500": {
                         "description": "failed to apply invoice",
                         "schema": {
@@ -1234,6 +1241,10 @@
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1270,6 +1281,10 @@
                         "\"payment-id-2\"]"
                     ]
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1285,6 +1300,10 @@
                 "owner": {
                     "type": "string",
                     "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1324,6 +1343,10 @@
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1460,6 +1483,10 @@
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1497,6 +1524,10 @@
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1533,6 +1564,10 @@
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1591,6 +1626,10 @@
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "transferID": {
                     "description": "@Summary Transfer ID\n@Description Transfer ID",
                     "type": "string",
@@ -1624,6 +1663,10 @@
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "type": {
                     "description": "@Summary Type of the request (optional)\n@Description Type of the request (optional)\n@JSONSchema",
@@ -1705,6 +1748,10 @@
                         "\"payment-id-2\"]"
                     ]
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1734,6 +1781,10 @@
                     "type": "string",
                     "example": "admin"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "transferAll": {
                     "description": "@Summary Transfer all\n@Description Transfer all amount",
                     "type": "boolean"
@@ -1761,6 +1812,10 @@
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",

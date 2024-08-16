@@ -735,6 +735,7 @@ func checkInvoiceToken(token string) error {
 // @Success 200 {object} map[string]interface{} "successfully apply invoice"
 // @Failure 400 {object} map[string]interface{} "failed to parse apply invoice request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 403 {object} map[string]interface{} "no payment can be applied to the invoice"
 // @Failure 500 {object} map[string]interface{} "failed to apply invoice"
 // @Router /account/v1alpha1/invoice/apply [post]
 func ApplyInvoice(c *gin.Context) {
@@ -747,11 +748,17 @@ func ApplyInvoice(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	if err := dao.DBClient.ApplyInvoice(req); err != nil {
+	invoice, payments, err := dao.DBClient.ApplyInvoice(req)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to apply invoice : %v", err)})
 		return
 	}
+	if len(payments) == 0 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "no payment can be applied to the invoice"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
+		"data":    map[string]interface{}{"invoice": invoice, "payments": payments},
 		"message": "successfully apply invoice",
 	})
 }
@@ -774,7 +781,12 @@ func GetInvoice(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get invoice request: %v", err)})
 		return
 	}
-	if err := CheckAuthAndCalibrate(req.Auth); err != nil {
+	if req.Token != "" {
+		err = checkInvoiceToken(req.Token)
+	} else {
+		err = CheckAuthAndCalibrate(req.Auth)
+	}
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}

@@ -807,6 +807,13 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
+                    "403": {
+                        "description": "no payment can be applied to the invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "500": {
                         "description": "failed to apply invoice",
                         "schema": {
@@ -1241,6 +1248,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1277,6 +1288,10 @@ const docTemplate = `{
                         "\"payment-id-2\"]"
                     ]
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1292,6 +1307,10 @@ const docTemplate = `{
                 "owner": {
                     "type": "string",
                     "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1331,6 +1350,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1467,6 +1490,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1504,6 +1531,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1540,6 +1571,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1598,6 +1633,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "transferID": {
                     "description": "@Summary Transfer ID\n@Description Transfer ID",
                     "type": "string",
@@ -1631,6 +1670,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "type": {
                     "description": "@Summary Type of the request (optional)\n@Description Type of the request (optional)\n@JSONSchema",
@@ -1712,6 +1755,10 @@ const docTemplate = `{
                         "\"payment-id-2\"]"
                     ]
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1741,6 +1788,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "admin"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "transferAll": {
                     "description": "@Summary Transfer all\n@Description Transfer all amount",
                     "type": "boolean"
@@ -1768,6 +1819,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",

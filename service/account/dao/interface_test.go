@@ -536,7 +536,7 @@ func TestAccount_ApplyInvoice(t *testing.T) {
 		},
 		Detail: "jsonxxxx",
 	}
-	err = m.ApplyInvoice(req)
+	_, _, err = m.ApplyInvoice(req)
 	if err != nil {
 		t.Fatalf("failed to apply invoice: %v", err)
 	}

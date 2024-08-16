@@ -64,6 +64,9 @@ definitions:
       startTime:
         example: "2021-01-01T00:00:00Z"
         type: string
+      token:
+        example: token
+        type: string
       userID:
         example: admin
         type: string
@@ -95,6 +98,9 @@ definitions:
         items:
           type: string
         type: array
+      token:
+        example: token
+        type: string
       userID:
         example: admin
         type: string
@@ -108,6 +114,9 @@ definitions:
         type: string
       owner:
         example: admin
+        type: string
+      token:
+        example: token
         type: string
       userID:
         example: admin
@@ -143,6 +152,9 @@ definitions:
         type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
+        type: string
+      token:
+        example: token
         type: string
       userID:
         example: admin
@@ -276,6 +288,9 @@ definitions:
       startTime:
         example: "2021-01-01T00:00:00Z"
         type: string
+      token:
+        example: token
+        type: string
       userID:
         example: admin
         type: string
@@ -310,6 +325,9 @@ definitions:
       startTime:
         example: "2021-01-01T00:00:00Z"
         type: string
+      token:
+        example: token
+        type: string
       userID:
         example: admin
         type: string
@@ -343,6 +361,9 @@ definitions:
         type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
+        type: string
+      token:
+        example: token
         type: string
       userID:
         example: admin
@@ -388,6 +409,9 @@ definitions:
       startTime:
         example: "2021-01-01T00:00:00Z"
         type: string
+      token:
+        example: token
+        type: string
       transferID:
         description: |-
           @Summary Transfer ID
@@ -417,6 +441,9 @@ definitions:
         type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
+        type: string
+      token:
+        example: token
         type: string
       type:
         description: |-
@@ -490,6 +517,9 @@ definitions:
         items:
           type: string
         type: array
+      token:
+        example: token
+        type: string
       userID:
         example: admin
         type: string
@@ -517,6 +547,9 @@ definitions:
           @JSONSchema required
         example: admin
         type: string
+      token:
+        example: token
+        type: string
       transferAll:
         description: |-
           @Summary Transfer all
@@ -540,6 +573,9 @@ definitions:
         type: string
       startTime:
         example: "2021-01-01T00:00:00Z"
+        type: string
+      token:
+        example: token
         type: string
       userID:
         example: admin
@@ -1084,6 +1120,11 @@ paths:
             type: object
         "401":
           description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: no payment can be applied to the invoice
           schema:
             additionalProperties: true
             type: object

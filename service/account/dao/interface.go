@@ -43,7 +43,7 @@ type Interface interface {
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
 	GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error)
-	ApplyInvoice(req *helper.ApplyInvoiceReq) error
+	ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoice, payments []types.Payment, err error)
 	GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error)
 	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
 	GetWorkspaceName(namespaces []string) ([][]string, error)
@@ -1271,23 +1271,25 @@ func (m *MongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDBName).Collection(m.BillingConn)
 }
 
-func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
+func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoice, payments []types.Payment, err error) {
 	if len(req.PaymentIDList) == 0 {
-		return nil
+		return
 	}
-	payments, err := m.ck.GetUnInvoicedPaymentListWithIds(req.PaymentIDList)
+	payments, err = m.ck.GetUnInvoicedPaymentListWithIds(req.PaymentIDList)
 	if err != nil {
-		return fmt.Errorf("failed to get payment list: %v", err)
+		err = fmt.Errorf("failed to get payment list: %v", err)
+		return
 	}
 	if len(payments) == 0 {
-		return fmt.Errorf("no payment record was found for invoicing")
+		return
 	}
 	amount := int64(0)
 	var paymentIds []string
 	var invoicePayments []types.InvoicePayment
 	id, err := gonanoid.New(12)
 	if err != nil {
-		return fmt.Errorf("failed to generate payment id: %v", err)
+		err = fmt.Errorf("failed to generate payment id: %v", err)
+		return
 	}
 	for i := range payments {
 		amount += payments[i].Amount
@@ -1298,7 +1300,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
 			InvoiceID: id,
 		})
 	}
-	invoice := &types.Invoice{
+	invoice = types.Invoice{
 		ID:          id,
 		UserID:      req.UserID,
 		CreatedAt:   time.Now().UTC(),
@@ -1313,7 +1315,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
 			if err = m.ck.SetPaymentInvoiceWithDB(&types.UserQueryOpts{ID: req.UserID}, paymentIds, tx); err != nil {
 				return fmt.Errorf("failed to set payment invoice: %v", err)
 			}
-			if err = m.ck.CreateInvoiceWithDB(invoice, tx); err != nil {
+			if err = m.ck.CreateInvoiceWithDB(&invoice, tx); err != nil {
 				return fmt.Errorf("failed to create invoice: %v", err)
 			}
 			if err = m.ck.CreateInvoicePaymentsWithDB(invoicePayments, tx); err != nil {
@@ -1321,9 +1323,10 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) error {
 			}
 			return nil
 		}); err != nil {
-		return fmt.Errorf("failed to apply invoice: %v", err)
+		err = fmt.Errorf("failed to apply invoice: %v", err)
+		return
 	}
-	return nil
+	return
 }
 
 func (m *Account) GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error) {
