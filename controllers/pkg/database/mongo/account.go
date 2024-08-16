@@ -259,8 +259,16 @@ func (m *mongoDB) SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error {
 	return err
 }
 
-func (m *mongoDB) GetAllLatestObjTraffic() ([]types.ObjectStorageTraffic, error) {
+func (m *mongoDB) GetAllLatestObjTraffic(startTime, endTime time.Time) ([]types.ObjectStorageTraffic, error) {
 	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"time": bson.M{
+					"$gt":  startTime,
+					"$lte": endTime,
+				},
+			},
+		},
 		{
 			"$sort": bson.M{"time": -1},
 		},

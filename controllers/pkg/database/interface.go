@@ -51,7 +51,7 @@ type Account interface {
 	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
 	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error
-	GetAllLatestObjTraffic() ([]types.ObjectStorageTraffic, error)
+	GetAllLatestObjTraffic(startTime, endTime time.Time) ([]types.ObjectStorageTraffic, error)
 	HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error)
 	GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error)
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error

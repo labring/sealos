@@ -309,7 +309,8 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 			r.lastObjectMetrics = r.currentObjectMetrics
 		} else {
 			latestObjTrafficSentMetrics := make(objstorage.Metrics)
-			traffic, err := r.DBClient.GetAllLatestObjTraffic()
+			startTime, endTime := time.Now().UTC().Add(-time.Hour), time.Now().UTC()
+			traffic, err := r.DBClient.GetAllLatestObjTraffic(startTime, endTime)
 			if err != nil {
 				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
 			}

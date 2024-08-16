@@ -658,7 +658,7 @@ func Test_mongoDB_GetAllLatestObjTraffic(t *testing.T) {
 		}
 	}()
 
-	traffic, err := m.GetAllLatestObjTraffic()
+	traffic, err := m.GetAllLatestObjTraffic(time.Now().Add(-time.Hour), time.Now())
 	if err != nil {
 		t.Fatalf("failed to save object storage traffic: %v", err)
 	}
