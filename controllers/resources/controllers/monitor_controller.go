@@ -315,7 +315,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
 			}
 			for i := range traffic {
-				fmt.Println("------debug info", "traffic:", traffic)
+				fmt.Println("------debug info", "traffic:", traffic[i])
 				user := traffic[i].User
 				bucket := traffic[i].Bucket
 				if _, ok := metrics[user]; !ok {
@@ -326,7 +326,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 						Sent: make(map[string]int64),
 					}
 				}
-				if traffic[i].Time.Before(time.Now().Add(time.Hour)) {
+				if traffic[i].Time.Before(time.Now().Add(-time.Hour)) {
 					continue
 				}
 				latestObjTrafficSentMetrics[user].Sent[bucket] = traffic[i].TotalSent
