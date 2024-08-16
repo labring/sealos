@@ -321,14 +321,17 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 				if _, ok := metrics[user]; !ok {
 					continue
 				}
+
+				if traffic[i].Time.Before(time.Now().Add(-time.Hour)) {
+					continue
+				}
+
 				if _, ok := latestObjTrafficSentMetrics[user]; !ok {
 					latestObjTrafficSentMetrics[user] = objstorage.MetricData{
 						Sent: make(map[string]int64),
 					}
 				}
-				if traffic[i].Time.Before(time.Now().Add(-time.Hour)) {
-					continue
-				}
+
 				latestObjTrafficSentMetrics[user].Sent[bucket] = traffic[i].TotalSent
 			}
 			r.lastObjectMetrics = latestObjTrafficSentMetrics
@@ -577,9 +580,11 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 		for bucket, m := range metric.Sent {
 			sent := int64(0)
 			if r.lastObjectMetrics != nil && r.lastObjectMetrics[user].Sent != nil {
-				ss := m - r.lastObjectMetrics[user].Sent[bucket]
-				if ss > 0 {
-					sent = ss
+				if _, ok := r.lastObjectMetrics[user].Sent[bucket]; ok {
+					ss := m - r.lastObjectMetrics[user].Sent[bucket]
+					if ss > 0 {
+						sent = ss
+					}
 				}
 			}
 			objTraffic = append(objTraffic, &types.ObjectStorageTraffic{
