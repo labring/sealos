@@ -260,7 +260,13 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 			}
 			intValue := int64(floatValue)
 			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
+				//fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
 				user := getUserWithBucket(bucket)
+				if user == "" {
+					fmt.Println("debug info", "false bucket:", bucket)
+					continue
+				}
+				fmt.Println("debug info", "true bucket:", bucket, "user:", user)
 				metricData, exists := obMetrics[user]
 				if !exists {
 					metricData = MetricData{
@@ -313,7 +319,12 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 }
 
 func getUserWithBucket(bucket string) string {
-	return strings.Split(bucket, "-")[0]
+	re := regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
+	matches := re.FindStringSubmatch(bucket)
+	if len(matches) == 3 {
+		return matches[1]
+	}
+	return ""
 }
 
 /*
