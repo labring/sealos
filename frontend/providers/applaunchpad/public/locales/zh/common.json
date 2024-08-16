@@ -257,5 +257,6 @@
   "update_sealaf_app_tip": "该应用是通过云开发部署的，变更该应用请到云开发中进行。",
   "confirm_to_go": "确认前往",
   "sealaf": "云开发",
-  "app_store": "应用商店"
+  "app_store": "应用商店",
+  "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准"
 }
