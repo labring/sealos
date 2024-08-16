@@ -649,18 +649,22 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 			"$gte": req.StartTime,
 			"$lte": req.EndTime,
 		}
-
+		sort := bson.E{Key: "$sort", Value: bson.D{
+			{Key: "time", Value: -1},
+		}}
 		pipeline := mongo.Pipeline{
 			{{Key: "$match", Value: match}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$match", Value: bson.D{
 				{Key: "app_costs.name", Value: req.AppName},
 			}}},
+			{sort},
 		}
 		if req.AppName == "" {
 			pipeline = mongo.Pipeline{
 				{{Key: "$match", Value: match}},
 				{{Key: "$unwind", Value: "$app_costs"}},
+				{sort},
 			}
 		}
 
@@ -993,6 +997,9 @@ func (m *MongoDB) getAppPipeLine(req helper.GetCostAppListReq) []bson.M {
 	pipeline := []bson.M{
 		{"$match": match},
 		{"$unwind": "$app_costs"},
+		{"$sort": bson.M{
+			"time": -1,
+		}},
 		{"$group": bson.M{
 			"_id": bson.M{
 				"namespace": "$namespace",
