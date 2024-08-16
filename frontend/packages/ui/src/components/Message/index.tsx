@@ -6,11 +6,11 @@ import WarningIcon from '../icons/WarningIcon';
 
 export default function useMessage(props?: UseToastOptions) {
   const statusMap: Record<AlertStatus, { bg: string; icon: JSX.Element }> = {
-    info: { bg: '#F0FBFF', icon: <GeneralIcon w={'16px'} h="16px" fill={'#0884DD'} /> },
-    error: { bg: 'red.50', icon: <CloseIcon w={'16px'} h="16px" fill={'#D92D20'} /> },
-    success: { bg: '#EDFBF3', icon: <SuccessIcon w={'16px'} h="16px" fill={'#039855'} /> },
-    warning: { bg: 'yellow.50', icon: <WarningIcon /> },
-    loading: { bg: 'yellow.50', icon: <WarningIcon /> }
+    info: { bg: '#DBF3FF', icon: <GeneralIcon w={'16px'} h="16px" fill={'#0884DD'} /> },
+    error: { bg: '#FEE4E2', icon: <CloseIcon w={'16px'} h="16px" fill={'#D92D20'} /> },
+    success: { bg: '#D0F5DC', icon: <SuccessIcon w={'16px'} h="16px" fill={'#039855'} /> },
+    warning: { bg: '#FEF0C7', icon: <WarningIcon /> },
+    loading: { bg: '#FEF0C7', icon: <WarningIcon /> }
   };
 
   const renderStatusIcon = (status: AlertStatus) => {
