@@ -263,10 +263,10 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 				//fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
 				user := getUserWithBucket(bucket)
 				if user == "" {
-					fmt.Println("debug info", "false bucket:", bucket)
+					//fmt.Println("debug info", "false bucket:", bucket)
 					continue
 				}
-				fmt.Println("debug info", "true bucket:", bucket, "user:", user)
+				//fmt.Println("debug info", "true bucket:", bucket, "user:", user)
 				metricData, exists := obMetrics[user]
 				if !exists {
 					metricData = MetricData{
