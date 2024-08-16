@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
-import { Box, Flex, useTheme } from '@chakra-ui/react';
+import { Box, Center, Flex, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { Text, Icon } from '@chakra-ui/react';
 import { CURRENCY } from '@/store/static';
 import { useUserStore } from '@/store/user';
+import MyIcon from '@/components/Icon';
+import { MyTooltip } from '@sealos/ui';
 
 function Currencysymbol({
   type = 'shellCoin',
@@ -117,7 +119,7 @@ const PriceBox = ({
         <Text color={'grayModern.500'}> ({t('Perday')})</Text>
       </Flex>
       <Box py={3} px={4}>
-        {priceList.map((item) => (
+        {priceList.map((item, index) => (
           <Flex
             key={item.label}
             alignItems={'center'}
@@ -134,7 +136,17 @@ const PriceBox = ({
               borderRadius={'10px'}
               mr={2}
             ></Box>
-            <Box flex={'0 0 60px'}>{t(item.label)}:</Box>
+            <Flex alignItems={'center'} gap={'2px'} flex={'0 0 60px'}>
+              {t(item.label)}
+              {index === priceList.length - 1 && (
+                <MyTooltip label={t('total_price_tip')}>
+                  <Center width={'14px'} height={'14px'} cursor={'pointer'}>
+                    <MyIcon name="help" width={'14px'} height={'14px'} color={'grayModern.500'} />
+                  </Center>
+                </MyTooltip>
+              )}
+              :
+            </Flex>
             <Box whiteSpace={'nowrap'}>{item.value}</Box>
           </Flex>
         ))}

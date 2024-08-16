@@ -45,6 +45,7 @@ const map = {
   pods: require('./icons/pods.svg').default,
   upload: require('./icons/upload.svg').default,
   target: require('./icons/target.svg').default,
+  help: require('./icons/help.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };

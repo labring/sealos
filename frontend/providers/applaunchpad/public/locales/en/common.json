@@ -257,5 +257,6 @@
   "update_sealaf_app_tip": "This application is deployed through cloud development. To change the application, please go to cloud development.",
   "confirm_to_go": "Confirm",
   "app_store": "App Store",
-  "sealaf": "sealaf"
+  "sealaf": "sealaf",
+  "total_price_tip": "The estimated cost does not include port fees and traffic fees, and is subject to actual usage."
 }

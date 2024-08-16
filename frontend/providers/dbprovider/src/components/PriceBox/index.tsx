@@ -1,9 +1,10 @@
 import { SOURCE_PRICE } from '@/store/static';
 import { I18nCommonKey } from '@/types/i18next';
-import { Box, Flex, useTheme, Text } from '@chakra-ui/react';
-import { SealosCoin } from '@sealos/ui';
+import { Box, Flex, useTheme, Text, Center } from '@chakra-ui/react';
+import { MyTooltip, SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
+import MyIcon from '@/components/Icon';
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -73,10 +74,20 @@ const PriceBox = ({
         <Text color={'grayModern.500'}> ({t('Perday')})</Text>
       </Flex>
       <Flex flexDirection={'column'} gap={'12px'} py={'16px'} px={'20px'}>
-        {priceList.map((item) => (
+        {priceList.map((item, index) => (
           <Flex key={item.label} alignItems={'center'}>
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-            <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
+            <Flex alignItems={'center'} flex={'0 0 65px'}>
+              {t(item.label)}
+              {index === priceList.length - 1 && (
+                <MyTooltip label={t('total_price_tip')}>
+                  <Center>
+                    <MyIcon name="help" width={'14px'} height={'14px'} color={'grayModern.500'} />
+                  </Center>
+                </MyTooltip>
+              )}
+              :
+            </Flex>
             <Flex alignItems={'center'} gap={'4px'}>
               <SealosCoin />
               {item.value}

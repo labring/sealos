@@ -42,7 +42,7 @@ export default function AppDock() {
         name: 'home',
         icon: '/icons/home.svg',
         zIndex: 99999,
-        isShow: true,
+        isShow: false,
         pid: -9,
         size: 'maxmin',
         cacheSize: 'maxmin',
@@ -202,7 +202,7 @@ export default function AppDock() {
                   />
                 </Center>
                 <Box
-                  opacity={currentAppPid === item.pid ? 1 : 0}
+                  opacity={item?.isShow ? 1 : 0}
                   mt={'6px'}
                   width={'4px'}
                   height={'4px'}

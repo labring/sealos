@@ -277,6 +277,7 @@
   "successfully_closed_external_network_access": "已关闭外网访问",
   "table_locks": "表锁",
   "total_price": "总价",
+  "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准",
   "turn_on": "开启",
   "update": "变更",
   "update_database": "变更数据库",

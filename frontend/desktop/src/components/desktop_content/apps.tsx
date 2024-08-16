@@ -5,7 +5,7 @@ import { Box, Button, Flex, Grid, HStack, Image, Text, useBreakpointValue } from
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeftIcon, ArrowRightIcon, DesktopSealosCoinIcon } from '../icons';
+import { ArrowLeftIcon, ArrowRightIcon } from '../icons';
 import { blurBackgroundStyles } from './index';
 import { validateNumber } from '@/utils/tools';
 

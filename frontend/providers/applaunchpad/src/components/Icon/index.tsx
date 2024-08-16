@@ -43,6 +43,7 @@ const map = {
   upperRight: require('./icons/upperRight.svg').default,
   target: require('./icons/target.svg').default,
   yaml: require('./icons/file/yaml.svg').default,
+  help: require('./icons/help.svg').default,
   folderLine: require('./icons/file/folder-line.svg').default,
   default: require('./icons/file/default.svg').default,
   home: require('./icons/home.svg').default,
