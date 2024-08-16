@@ -118,8 +118,6 @@ export default function Desktop(props: any) {
   useEffect(() => {
     if (infoData.isSuccess && !infoData?.data?.realName && commonConfig?.realNameAuthEnabled) {
       realNameAuthNotificationIdRef.current = realNameAuthNotification({
-        title: '国内可用区需要实名认证，未实名认证将会被限制使用，点击进行实名',
-        status: 'error',
         duration: null,
         isClosable: true
       });
