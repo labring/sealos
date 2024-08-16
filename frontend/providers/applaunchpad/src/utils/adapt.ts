@@ -19,7 +19,9 @@ import type {
   PodMetrics,
   PodEvent,
   HpaTarget,
-  ProtocolType
+  ProtocolType,
+  TAppSource,
+  TAppSourceType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -30,15 +32,43 @@ import {
   PodStatusEnum,
   publicDomainKey,
   gpuNodeSelectorKey,
-  gpuResourceKey
+  gpuResourceKey,
+  AppSourceConfigs
 } from '@/constants/app';
 import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { getInitData } from '@/api/platform';
+import { has } from 'lodash';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+export const getAppSource = (
+  app: V1Deployment | V1StatefulSet
+): {
+  hasSource: boolean;
+  sourceName: string;
+  sourceType: TAppSourceType;
+} => {
+  const labels = app.metadata?.labels || {};
+
+  for (const config of AppSourceConfigs) {
+    if (has(labels, config.key)) {
+      return {
+        hasSource: true,
+        sourceName: labels[config.key],
+        sourceType: config.type
+      };
+    }
+  }
+
+  return {
+    hasSource: false,
+    sourceName: '',
+    sourceType: 'app_store'
+  };
+};
 
 export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
   // compute store amount
@@ -82,7 +112,8 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     maxReplicas: +(app.metadata?.annotations?.[maxReplicasKey] || app.status?.readyReplicas || 0),
     minReplicas: +(app.metadata?.annotations?.[minReplicasKey] || app.status?.readyReplicas || 0),
     storeAmount,
-    labels: app.metadata?.labels || {}
+    labels: app.metadata?.labels || {},
+    source: getAppSource(app)
   };
 };
 
@@ -329,7 +360,8 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
           path: item.metadata?.annotations?.path || '',
           value: Number(item.metadata?.annotations?.value || 0)
         }))
-      : []
+      : [],
+    source: getAppSource(appDeploy)
   };
 };
 

@@ -1,29 +1,28 @@
-import React, { useMemo, useState } from 'react';
-import {
-  Box,
-  Flex,
-  useTheme,
-  Tag,
-  Accordion,
-  AccordionButton,
-  AccordionItem,
-  AccordionPanel,
-  AccordionIcon
-} from '@chakra-ui/react';
-import type { AppDetailType } from '@/types/app';
-import { useCopyData, printMemory } from '@/utils/tools';
-import { useUserStore } from '@/store/user';
-import styles from '../index.module.scss';
-import dynamic from 'next/dynamic';
-const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
-import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { useTranslation } from 'next-i18next';
-import { MyTooltip } from '@sealos/ui';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
-import { has } from 'lodash';
-import { templateDeployKey } from '@/constants/account';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useUserStore } from '@/store/user';
+import type { AppDetailType } from '@/types/app';
+import { printMemory, useCopyData } from '@/utils/tools';
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Flex,
+  Tag,
+  useTheme
+} from '@chakra-ui/react';
+import { MyTooltip } from '@sealos/ui';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import React, { useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import styles from '../index.module.scss';
+
+const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
 const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -34,12 +33,6 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     mountPath: string;
     value: string;
   }>();
-
-  const [hasApplicationSource, sourceName] = useMemo(() => {
-    return app?.labels
-      ? [has(app.labels, templateDeployKey), app.labels[templateDeployKey]]
-      : [false, ''];
-  }, [app.labels]);
 
   const appInfoTable = useMemo<
     {
@@ -106,7 +99,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
   return (
     <Box px={6} py={7} position={'relative'}>
-      {hasApplicationSource && (
+      {app?.source?.hasSource && (
         <Box fontSize={'base'} mb={'12px'}>
           <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
             <MyIcon w={'16px'} name={'target'}></MyIcon>
@@ -120,17 +113,25 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               }}
               cursor={'pointer'}
               onClick={() => {
-                if (sourceName) {
+                if (!app?.source?.sourceName) return;
+                if (app.source.sourceType === 'app_store') {
                   sealosApp.runEvents('openDesktopApp', {
                     appKey: 'system-template',
                     pathname: '/instance',
-                    query: { instanceName: sourceName }
+                    query: { instanceName: app.source.sourceName }
+                  });
+                }
+                if (app.source.sourceType === 'sealaf') {
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-sealaf',
+                    pathname: '/',
+                    query: { instanceName: app.source.sourceName }
                   });
                 }
               }}
             >
               <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                {t('App Store')}
+                {t(app.source?.sourceType)}
               </Box>
               <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
               <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />

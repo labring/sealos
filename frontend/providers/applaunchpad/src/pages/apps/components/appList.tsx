@@ -11,12 +11,22 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import { Box, Text, Button, Center, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Text,
+  Button,
+  Center,
+  Flex,
+  MenuButton,
+  useTheme,
+  useDisclosure
+} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
+import UpdateModal from '@/pages/app/detail/components/UpdateModal';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
@@ -33,11 +43,16 @@ const AppList = ({
   const { toast } = useToast();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
-
   const [delAppName, setDelAppName] = useState('');
+  const [updateAppName, setUpdateAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: 'pause_message'
   });
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onClose: onCloseUpdateModal
+  } = useDisclosure();
 
   const handleRestartApp = useCallback(
     async (appName: string) => {
@@ -277,7 +292,14 @@ const AppList = ({
                             </Box>
                           </>
                         ),
-                        onClick: () => router.push(`/app/edit?name=${item.name}`)
+                        onClick: () => {
+                          if (item.source.hasSource && item.source.sourceType === 'sealaf') {
+                            setUpdateAppName(item.name);
+                            onOpenUpdateModal();
+                          } else {
+                            router.push(`/app/edit?name=${item.name}`);
+                          }
+                        }
                       },
                       {
                         child: (
@@ -356,11 +378,19 @@ const AppList = ({
       {!!delAppName && (
         <DelModal
           appName={delAppName}
-          labels={apps.find((item) => item.name === delAppName)?.labels || {}}
+          source={apps.find((item) => item.name === delAppName)?.source}
           onClose={() => setDelAppName('')}
           onSuccess={refetchApps}
         />
       )}
+      <UpdateModal
+        source={apps.find((i) => i.name === updateAppName)?.source}
+        isOpen={isOpenUpdateModal}
+        onClose={() => {
+          setUpdateAppName('');
+          onCloseUpdateModal();
+        }}
+      />
     </Box>
   );
 };

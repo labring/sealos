@@ -6,7 +6,7 @@ import {
   getDBStatefulSetByName
 } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail, templateDeployKey } from '@/constants/db';
+import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
 import useEnvStore from '@/store/env';
 import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType } from '@/types/db';
@@ -30,7 +30,7 @@ import {
 } from '@chakra-ui/react';
 import { MyTooltip, SealosCoin, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { has, pick } from 'lodash';
+import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -43,12 +43,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { message: toast } = useMessage();
-
-  const [hasApplicationSource, sourceName] = useMemo(() => {
-    return db?.labels
-      ? [has(db.labels, templateDeployKey), db.labels[templateDeployKey]]
-      : [false, ''];
-  }, [db.labels]);
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
@@ -216,7 +210,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   return (
     <Box px={5} py={7} position={'relative'}>
-      {hasApplicationSource && (
+      {db?.source?.hasSource && (
         <Box fontSize={'base'}>
           <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
             <MyIcon w={'16px'} name={'target'}></MyIcon>
@@ -230,17 +224,25 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               }}
               cursor={'pointer'}
               onClick={() => {
-                if (sourceName) {
+                if (!db.source.sourceName) return;
+                if (db.source.sourceType === 'app_store') {
                   sealosApp.runEvents('openDesktopApp', {
                     appKey: 'system-template',
                     pathname: '/instance',
-                    query: { instanceName: sourceName }
+                    query: { instanceName: db.source.sourceName }
+                  });
+                }
+                if (db.source.sourceType === 'sealaf') {
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-sealaf',
+                    pathname: '/',
+                    query: { instanceName: db.source.sourceName }
                   });
                 }
               }}
             >
               <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                {t('app_store')}
+                {t(db.source.sourceType)}
               </Box>
               <Box color={'grayModern.600'}>{t('manage_all_resources')}</Box>
               <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />

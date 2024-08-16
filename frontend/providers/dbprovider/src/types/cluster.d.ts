@@ -10,6 +10,7 @@ export type KbPgClusterType = {
       'clusterdefinition.kubeblocks.io/name': `${DBTypeEnum}`;
       'clusterversion.kubeblocks.io/name': string;
       'sealos-db-provider/postgresql': string;
+      [key: string]: string;
     };
     name: string;
     namespace: string;
