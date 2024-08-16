@@ -315,6 +315,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
 			}
 			for i := range traffic {
+				fmt.Println("------debug info", "traffic:", traffic)
 				user := traffic[i].User
 				bucket := traffic[i].Bucket
 				if _, ok := metrics[user]; !ok {
