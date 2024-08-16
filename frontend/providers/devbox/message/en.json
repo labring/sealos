@@ -33,6 +33,7 @@
   "export_yaml": "Export YAML",
   "image_name": "Image Name",
   "jump_prompt": "Jump prompt",
+  "jump_terminal_error": "Jump terminal failed",
   "memory": "Memory",
   "name": "Name",
   "no_versions": "There are no versions yet, please publish a version first.",

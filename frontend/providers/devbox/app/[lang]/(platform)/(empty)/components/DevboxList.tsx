@@ -18,6 +18,7 @@ import Version from './Version'
 import dynamic from 'next/dynamic'
 import MyIcon from '@/components/Icon'
 import { useGlobalStore } from '@/stores/global'
+import { sealosApp } from 'sealos-desktop-sdk/app'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
@@ -88,6 +89,28 @@ const DevboxList = ({
       setLoading(false)
     },
     [setLoading, t, toast]
+  )
+  const defaultCommand = 'echo "this is a test command"'
+  const handleGoToTerminal = useCallback(
+    async (devbox: DevboxListItemType) => {
+      try {
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-terminal',
+          query: {
+            defaultCommand
+          },
+          messageData: { type: 'new terminal', command: defaultCommand }
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('jump_terminal_error'),
+          status: 'error'
+        })
+        console.error(error)
+      }
+      refetchDevboxList()
+    },
+    [refetchDevboxList, t, toast]
   )
 
   const columns: {
@@ -222,7 +245,7 @@ const DevboxList = ({
                     <Box ml={2}>{t('terminal')}</Box>
                   </>
                 ),
-                onClick: () => {} // TODO: 添加跳转终端逻辑
+                onClick: () => handleGoToTerminal(item) // TODO: 添加跳转终端逻辑
               },
               {
                 child: (

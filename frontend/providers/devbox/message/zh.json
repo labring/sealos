@@ -33,6 +33,7 @@
   "export_yaml": "导出YAML",
   "image_name": "镜像名",
   "jump_prompt": "跳转提示",
+  "jump_terminal_error": "跳转终端失败",
   "memory": "内存",
   "name": "名字",
   "no_versions": "还没有版本，请先发布一个版本",
