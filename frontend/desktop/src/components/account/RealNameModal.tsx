@@ -45,55 +45,87 @@ import { useTimer } from '@/hooks/useTimer';
 import { SmsType } from '@/services/backend/db/verifyCode';
 
 export function useRealNameAuthNotification(props?: UseToastOptions) {
+  const { t } = useTranslation();
+
   const realNameAuthNotification = useToast({
     position: 'top',
     ...props,
     render: (props) => {
       return (
         <Box
-          position={'relative'}
-          background={'white'}
-          py={'12px'}
-          px={5}
-          fontSize={'md'}
-          borderRadius={'lg'}
-          boxShadow={
-            '0px 0px 1px 0px rgba(19, 51, 107, 0.08), 0px 4px 10px 0px rgba(19, 51, 107, 0.08)'
-          }
+          display="flex"
+          width="390px"
+          padding="16px 20px"
+          justifyContent="space-between"
+          alignItems="center"
+          borderRadius="6px"
+          background="#FFF"
+          boxShadow="0px 4px 10px 0px rgba(19, 51, 107, 0.08), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
         >
-          <Flex alignItems={'center'} gap={'12px'}>
-            <Center bg={'red.50'} borderRadius={'full'} p={1}>
-              <WarningIcon />
-            </Center>
-            <Box flex={1} color={'sealosGrayModern.900'}>
-              {props?.title && (
-                <Box
-                  fontSize={'14px'}
-                  fontWeight={400}
-                  mb={'0px'}
-                  whiteSpace={'normal'}
-                  wordBreak={'break-word'}
+          <Flex direction="column" alignItems="center" gap="6px" flex={1}>
+            <Flex width="350px" justifyContent="space-between" alignItems="center">
+              <Flex alignItems="center">
+                <Center bg="#FFF4E5" borderRadius="full" p={1} mr="12px">
+                  <WarningIcon fill="yellow.700" boxSize="16px" />
+                </Center>
+                <Text
+                  color="yellow.600"
+                  fontSize="16px"
+                  fontWeight={500}
+                  fontFamily="PingFang SC"
+                  lineHeight="24px"
+                  letterSpacing="0.15px"
+                  fontStyle="normal"
                 >
-                  <RealNameModal onFormSuccess={props.onClose}>
-                    <Text cursor="pointer" textDecoration="underline" color="#D92D20">
-                      {props?.title}
-                    </Text>
-                  </RealNameModal>
-                </Box>
+                  {t('common:realname_auth_reminder')}
+                </Text>
+              </Flex>
+              {props?.isClosable && (
+                <Center
+                  display="flex"
+                  padding="4px"
+                  alignItems="center"
+                  gap="6px"
+                  cursor="pointer"
+                  onClick={props.onClose}
+                  bg="transparent"
+                  border="none"
+                  _hover={{}}
+                  _active={{}}
+                  _focus={{}}
+                >
+                  <CloseIcon w="16px" h="16px" fill="Black" />
+                </Center>
               )}
-            </Box>
-
-            {props?.isClosable && (
-              <Center
-                borderRadius={'md'}
-                p={'4px'}
-                _hover={{ bg: 'rgba(0, 0, 0, 0.06)' }}
-                cursor={'pointer'}
-                onClick={props.onClose}
+            </Flex>
+            <Flex width="355px" paddingLeft="38px" alignItems="flex-start" gap="10px">
+              <Text
+                flex="1 0 0"
+                color="grayModern.900"
+                fontFamily="PingFang SC"
+                fontSize="14px"
+                fontWeight={400}
+                lineHeight="20px"
+                letterSpacing="0.25px"
               >
-                <CloseIcon w="16px" h="16px" fill={'black'} />
-              </Center>
-            )}
+                {t('common:realname_auth_reminder_desc')}
+                <RealNameModal onFormSuccess={props.onClose}>
+                  <Text
+                    as="span"
+                    cursor="pointer"
+                    color="yellow.600"
+                    fontFamily="PingFang SC"
+                    fontSize="14px"
+                    fontWeight={500}
+                    lineHeight="20px"
+                    letterSpacing="0.25px"
+                    textDecoration="underline"
+                  >
+                    {t('common:realname_auth_now')}
+                  </Text>
+                </RealNameModal>
+              </Text>
+            </Flex>
           </Flex>
         </Box>
       );
@@ -160,7 +192,8 @@ export function RealNameAuthForm(
     setValue,
     formState: { errors }
   } = useForm<FormData>({
-    resolver: zodResolver(schema)
+    resolver: zodResolver(schema),
+    mode: 'onChange'
   });
 
   useEffect(() => {
@@ -335,152 +368,156 @@ export function RealNameAuthForm(
   return (
     <>
       {infoData.isSuccess && infoData.data ? (
-        <form onSubmit={onSubmit}>
-          <VStack
-            w={'420px'}
-            alignItems={'stretch'}
-            fontSize={'14px'}
-            fontWeight={500}
-            gap={'30px'}
-            color={'grayModern.900'}
-          >
-            <FormControl isInvalid={!!errors.name}>
-              <HStack>
-                <FormLabel w={'120px'}>{t('common:name')}</FormLabel>
-                <Input
-                  display={'flex'}
-                  flex={1}
-                  borderRadius="6px"
-                  border="1px solid #DEE0E2"
-                  color={'grayModern.500'}
-                  bgColor={'grayModern.50'}
-                  alignItems={'center'}
-                  py={'8px'}
-                  px={'12px'}
-                  fontSize={'14px'}
-                  variant={'unstyled'}
-                  placeholder={t('common:placeholders_name')}
-                  {...register('name')}
-                />
-              </HStack>
-              {errors.name && <FormErrorMessage>{errors.name.message}</FormErrorMessage>}
-            </FormControl>
+        <VStack
+          w={'420px'}
+          alignItems={'stretch'}
+          fontSize={'14px'}
+          fontWeight={500}
+          gap={'30px'}
+          color={'grayModern.900'}
+        >
+          {/* Notification area */}
+          <Box bg="brightBlue.50" p={4} borderRadius="md" fontSize="12px" color="brightBlue.600">
+            <Text> {t('common:realname_auth_tips_a')}</Text>
+            <Text> {t('common:realname_auth_tips_b')}</Text>
+          </Box>
 
-            <FormControl isInvalid={!!errors.phone}>
-              <HStack>
-                <FormLabel w={'120px'}>{t('common:phone')}</FormLabel>
-                <InputGroup
-                  display={'flex'}
-                  flex={1}
-                  as={'div'}
-                  borderRadius="6px"
-                  border="1px solid #DEE0E2"
-                  bgColor={'grayModern.50'}
-                  alignItems={'center'}
-                  py={'8px'}
-                  px={'12px'}
-                >
-                  <Input
-                    color={'grayModern.500'}
-                    fontSize={'14px'}
-                    variant={'unstyled'}
-                    borderRadius={'unset'}
-                    placeholder={t('common:placeholders_phone')}
-                    {...register('phone')}
-                    isReadOnly={!!phoneNumber}
-                  />
-                  {!phoneNumber && (
-                    <InputRightElement h="auto" width={'auto'} right={'12px'} insetY={'8px'}>
-                      <Link
-                        onClick={getCode}
-                        color={'brightBlue.600'}
-                        marginY={'auto'}
-                        fontSize={'11px'}
-                        pointerEvents={getCodeMutation.isLoading ? 'none' : 'auto'}
-                        w={'60px'}
-                      >
-                        {t('common:get_code')}
-                      </Link>
-                    </InputRightElement>
-                  )}
-                </InputGroup>
-              </HStack>
-              {errors.phone && <FormErrorMessage>{errors.phone.message}</FormErrorMessage>}
-            </FormControl>
-
-            {!phoneNumber && (
-              <FormControl isInvalid={!!errors.verifyCode}>
+          {/* Form area */}
+          <form onSubmit={onSubmit}>
+            <VStack alignItems={'stretch'} gap={'30px'}>
+              <FormControl isInvalid={!!errors.name}>
                 <HStack>
-                  <FormLabel w={'120px'}>{t('common:verifycode')}</FormLabel>
-                  <InputGroup
-                    display={'flex'}
+                  <FormLabel w={'98px'} lineHeight="40px">
+                    {t('common:name')}
+                  </FormLabel>
+                  <Input
                     flex={1}
-                    as={'div'}
                     borderRadius="6px"
                     border="1px solid #DEE0E2"
+                    color={'grayModern.500'}
                     bgColor={'grayModern.50'}
-                    alignItems={'center'}
-                    py={'8px'}
-                    px={'12px'}
-                  >
+                    height="40px"
+                    pl={'12px'}
+                    fontSize={'14px'}
+                    _placeholder={{ color: 'grayModern.500' }}
+                    placeholder={t('common:placeholders_name')}
+                    {...register('name')}
+                  />
+                </HStack>
+                {errors.name && <FormErrorMessage>{errors.name.message}</FormErrorMessage>}
+              </FormControl>
+
+              <FormControl isInvalid={!!errors.phone}>
+                <HStack>
+                  <FormLabel w={'98px'} lineHeight="40px">
+                    {t('common:phone')}
+                  </FormLabel>
+                  <InputGroup flex={1}>
                     <Input
+                      borderRadius="6px"
+                      border="1px solid #DEE0E2"
                       color={'grayModern.500'}
+                      bgColor={'grayModern.50'}
+                      height="40px"
+                      pl={'12px'}
+                      pr={'72px'}
                       fontSize={'14px'}
-                      variant={'unstyled'}
-                      borderRadius={'unset'}
-                      autoComplete="one-time-code"
-                      placeholder={t('common:placeholders_verifycode')}
-                      {...register('verifyCode')}
+                      _placeholder={{ color: 'grayModern.500' }}
+                      placeholder={t('common:placeholders_phone')}
+                      {...register('phone')}
+                      isReadOnly={!!phoneNumber}
                     />
-                    <InputRightElement h="auto" width={'auto'} right={'12px'} insetY={'8px'}>
-                      {isRunning && <Text>{remainTime} s</Text>}
-                    </InputRightElement>
+                    {!phoneNumber && (
+                      <InputRightElement width="auto" h="100%">
+                        <Link
+                          onClick={getCode}
+                          color={'brightBlue.600'}
+                          fontSize={'11px'}
+                          pr="12px"
+                          pointerEvents={getCodeMutation.isLoading ? 'none' : 'auto'}
+                        >
+                          {t('common:get_code')}
+                        </Link>
+                      </InputRightElement>
+                    )}
                   </InputGroup>
                 </HStack>
-                {errors.verifyCode && (
-                  <FormErrorMessage>{errors.verifyCode.message}</FormErrorMessage>
-                )}
+                {errors.phone && <FormErrorMessage>{errors.phone.message}</FormErrorMessage>}
               </FormControl>
-            )}
 
-            <FormControl isInvalid={!!errors.idCard}>
-              <HStack>
-                <FormLabel w={'120px'}>{t('common:idCard')}</FormLabel>
-                <Input
-                  display={'flex'}
-                  flex={1}
-                  borderRadius="6px"
-                  border="1px solid #DEE0E2"
-                  color={'grayModern.500'}
-                  bgColor={'grayModern.50'}
-                  alignItems={'center'}
-                  py={'8px'}
-                  px={'12px'}
-                  fontSize={'14px'}
-                  variant={'unstyled'}
-                  placeholder={t('common:placeholders_idCard')}
-                  {...register('idCard')}
-                />
-              </HStack>
-              {errors.idCard && <FormErrorMessage>{errors.idCard.message}</FormErrorMessage>}
-            </FormControl>
+              {!phoneNumber && (
+                <FormControl isInvalid={!!errors.verifyCode}>
+                  <HStack>
+                    <FormLabel w={'98px'} lineHeight="40px">
+                      {t('common:verifycode')}
+                    </FormLabel>
+                    <InputGroup
+                      flex={1}
+                      borderRadius="6px"
+                      border="1px solid #DEE0E2"
+                      bgColor={'grayModern.50'}
+                    >
+                      <Input
+                        color={'grayModern.500'}
+                        height="40px"
+                        pl={'12px'}
+                        fontSize={'14px'}
+                        _placeholder={{ color: 'grayModern.500' }}
+                        autoComplete="one-time-code"
+                        placeholder={t('common:placeholders_verifycode')}
+                        {...register('verifyCode')}
+                      />
+                      <InputRightElement h="auto" width={'auto'} right={'12px'} insetY={'8px'}>
+                        {isRunning && <Text>{remainTime} s</Text>}
+                      </InputRightElement>
+                    </InputGroup>
+                  </HStack>
+                  {errors.verifyCode && (
+                    <FormErrorMessage>{errors.verifyCode.message}</FormErrorMessage>
+                  )}
+                </FormControl>
+              )}
 
-            <Button
-              variant={'primary'}
-              ml="auto"
-              type="submit"
-              maxW={'72px'}
-              _active={{ transform: 'scale(0.95)' }}
-              isLoading={
-                realNameAuthMutation.isLoading ||
-                verifyCodeAndSmsBindMutation.isLoading ||
-                getCodeMutation.isLoading
-              }
-            >
-              {t('common:confirm')}
-            </Button>
-          </VStack>
-        </form>
+              <FormControl isInvalid={!!errors.idCard}>
+                <HStack>
+                  <FormLabel w={'98px'} lineHeight="40px">
+                    {t('common:idCard')}
+                  </FormLabel>
+                  <Input
+                    flex={1}
+                    borderRadius="6px"
+                    border="1px solid #DEE0E2"
+                    color={'grayModern.500'}
+                    bgColor={'grayModern.50'}
+                    height="40px"
+                    pl={'12px'}
+                    fontSize={'14px'}
+                    _placeholder={{ color: 'grayModern.500' }}
+                    placeholder={t('common:placeholders_idCard')}
+                    {...register('idCard')}
+                  />
+                </HStack>
+                {errors.idCard && <FormErrorMessage>{errors.idCard.message}</FormErrorMessage>}
+              </FormControl>
+
+              <Button
+                variant={'primary'}
+                ml="auto"
+                type="submit"
+                height="40px"
+                px="16px"
+                _active={{ transform: 'scale(0.95)' }}
+                isLoading={
+                  realNameAuthMutation.isLoading ||
+                  verifyCodeAndSmsBindMutation.isLoading ||
+                  getCodeMutation.isLoading
+                }
+              >
+                {t('common:confirm')}
+              </Button>
+            </VStack>
+          </form>
+        </VStack>
       ) : (
         <Center h="100%">
           <Spinner />
