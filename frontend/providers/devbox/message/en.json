@@ -28,6 +28,7 @@
   "devbox_list": "Devbox List",
   "devbox_name": "Devbox Name",
   "devbox_name_required": "Devbox name cannot be empty",
+  "devbox_running_cannot_release": "Devbox cannot be released when it is booted, please shut down first",
   "edit_failed": "edit failed",
   "edit_successful": "edit successfully",
   "edit_version_description": "Edit Version Description",

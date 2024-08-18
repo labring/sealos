@@ -35,6 +35,14 @@ const ReleaseModal = ({
   const [releaseDes, setReleaseDes] = useState('')
 
   const handleReleaseDevbox = useCallback(async () => {
+    if (devbox.status.value === 'Running') {
+      toast({
+        title: t('devbox_running_cannot_release'),
+        status: 'error'
+      })
+      return
+    }
+
     try {
       setLoading(true)
       await releaseDevbox({

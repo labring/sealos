@@ -28,6 +28,7 @@
   "devbox_list": "项目列表",
   "devbox_name": "项目名称",
   "devbox_name_required": "项目名称不能为空",
+  "devbox_running_cannot_release": "Devbox开机时无法进行发版，请先关机",
   "edit_failed": "编辑失败",
   "edit_successful": "编辑成功",
   "edit_version_description": "编辑版本描述",

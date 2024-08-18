@@ -263,8 +263,8 @@ const DevboxList = ({
                     <Box ml={2}>{t('shutdown')}</Box>
                   </>
                 ),
-                // TODO：启停禁用逻辑
-                onClick: () => handlePauseDevbox(item)
+                onClick: () => handlePauseDevbox(item),
+                isDisabled: item.status.value === 'Stopped'
               },
               {
                 child: (
@@ -273,7 +273,8 @@ const DevboxList = ({
                     <Box ml={2}>{t('boot')}</Box>
                   </>
                 ),
-                onClick: () => handleRestartDevbox(item)
+                onClick: () => handleRestartDevbox(item),
+                isDisabled: item.status.value === 'Running'
               },
               {
                 child: (
