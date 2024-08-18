@@ -76,7 +76,6 @@ export async function GET(req: NextRequest) {
     //   cpu: countSourcePrice(priceResponse, 'cpu'),
     //   memory: countSourcePrice(priceResponse, 'memory')
     // }
-    console.log(123)
     return jsonRes({
       data: {
         cpu: 0.1,

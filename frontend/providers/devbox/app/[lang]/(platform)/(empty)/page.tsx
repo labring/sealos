@@ -13,8 +13,7 @@ const EmptyPage = () => {
   const { devboxList, setDevboxList } = useDevboxStore()
   const [initialized, setInitialized] = useState(false)
   const { refetch } = useQuery(['initDevboxData'], setDevboxList, {
-    // refetchInterval: 3000,
-    // NOTE: 注意开发模式我就不一直重新获取了
+    refetchInterval: 3000,
     onSettled() {
       setInitialized(true)
     }

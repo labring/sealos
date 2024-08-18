@@ -40,7 +40,7 @@ export interface DevboxDetailType extends DevboxEditType {
 export interface DevboxListItemType {
   id: string
   name: string
-  runtimeType: RuntimeType
+  runtimeType: string // TODO: RuntimeType
   status: DevboxStatusMapType
   createTime: string
   cpu: number
@@ -63,6 +63,9 @@ export interface PodDetailType extends V1Pod {
 
 export interface DevboxVersionListItemType {
   id: string
+  name: string
+  devboxName: string
+  tag: string
   createTime: string
   description: string
 }

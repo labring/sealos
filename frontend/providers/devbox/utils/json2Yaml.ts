@@ -1,124 +1,77 @@
 import yaml from 'js-yaml'
 
-import { str2Num } from './tools'
 import { getUserNamespace } from './user'
-import { RuntimeTypeEnum, crLabelKey } from '@/constants/devbox'
 import { DevboxEditType } from '@/types/devbox'
 
-export const json2Account = (data: DevboxEditType, ownerId?: string) => {
-  const commonLabels = {
-    [crLabelKey]: data.devboxName,
-    'app.kubernetes.io/instance': data.devboxName,
-    'app.kubernetes.io/managed-by': 'kbcli'
-  }
-
-  const commonBase = {
-    apiVersion: 'v1',
-    kind: 'ServiceAccount',
+export const json2Devbox = (data: DevboxEditType) => {
+  const json = {
+    apiVersion: 'devbox.sealos.io/v1alpha1',
+    kind: 'Devbox',
     metadata: {
-      labels: {
-        ...commonLabels
-      },
-      ...(ownerId && {
-        ownerReferences: [
+      name: data.devboxName
+    },
+    spec: {
+      network: {
+        type: 'NodePort',
+        extraPorts: [
           {
-            apiVersion: 'apps.kubeblocks.io/v1alpha1',
-            blockOwnerDeletion: true,
-            controller: true,
-            kind: 'Cluster',
-            uid: ownerId,
-            name: data.devboxName
+            containerPort: 8080,
+            hostPort: 8080,
+            protocol: 'TCP'
           }
         ]
-      }),
-      name: data.devboxName
+      },
+      resource: {
+        cpu: data.cpu,
+        memory: data.memory
+      },
+      runtimeRef: {
+        name: 'runtime-sample'
+      },
+      state: 'Running'
     }
   }
 
-  const devboxRolesBase = {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'Role',
+  return yaml.dump(json)
+}
+export const json2StartOrStop = ({
+  devboxName,
+  type
+}: {
+  devboxName: string
+  type: 'Stopped' | 'Running'
+}) => {
+  const json = {
+    apiVersion: 'devbox.sealos.io/v1alpha1',
+    kind: 'Devbox',
     metadata: {
-      labels: {
-        ...commonLabels
-      },
-      ...(ownerId && {
-        ownerReferences: [
-          {
-            apiVersion: 'apps.kubeblocks.io/v1alpha1',
-            blockOwnerDeletion: true,
-            controller: true,
-            kind: 'Cluster',
-            uid: ownerId,
-            name: data.devboxName
-          }
-        ]
-      }),
-      name: data.devboxName
+      name: devboxName
+    },
+    spec: {
+      state: type
     }
   }
+  return yaml.dump(json)
+}
 
-  const devboxRoleBindingBase = {
-    apiVersion: 'rbac.authorization.k8s.io/v1',
-    kind: 'RoleBinding',
+export const json2DevboxRelease = (data: {
+  devboxName: string
+  tag: string
+  releaseDes: string
+}) => {
+  const json = {
+    apiVersion: 'devbox.sealos.io/v1alpha1',
+    kind: 'DevBoxRelease',
     metadata: {
-      labels: {
-        ...commonLabels
-      },
-      ...(ownerId && {
-        ownerReferences: [
-          {
-            apiVersion: 'apps.kubeblocks.io/v1alpha1',
-            blockOwnerDeletion: true,
-            controller: true,
-            kind: 'Cluster',
-            uid: ownerId,
-            name: data.devboxName
-          }
-        ]
-      }),
-      name: data.devboxName
+      name: `${data.devboxName}-${data.tag}`
     },
-    roleRef: {
-      apiGroup: 'rbac.authorization.k8s.io',
-      kind: 'Role',
-      name: data.devboxName
-    },
-    subjects: [
-      {
-        kind: 'ServiceAccount',
-        name: data.devboxName
-      }
-    ]
-  }
-
-  const baseRoleRules = [
-    {
-      apiGroups: ['*'],
-      resources: ['*'],
-      verbs: ['*']
+    spec: {
+      devboxName: data.devboxName,
+      newTag: data.tag,
+      notes: data.releaseDes
     }
-  ]
-
-  const devboxAccountTemplate = [
-    commonBase,
-    {
-      ...devboxRolesBase,
-      rules: baseRoleRules
-    },
-    devboxRoleBindingBase
-  ]
-
-  const map = {
-    [RuntimeTypeEnum.java]: devboxAccountTemplate,
-    [RuntimeTypeEnum.go]: devboxAccountTemplate,
-    [RuntimeTypeEnum.python]: devboxAccountTemplate,
-    [RuntimeTypeEnum.node]: devboxAccountTemplate,
-    [RuntimeTypeEnum.rust]: devboxAccountTemplate,
-    [RuntimeTypeEnum.php]: devboxAccountTemplate,
-    [RuntimeTypeEnum.custom]: devboxAccountTemplate
   }
-  return map[data.runtimeType].map((item) => yaml.dump(item)).join('\n---\n')
+  return yaml.dump(json)
 }
 
 export const limitRangeYaml = `

@@ -77,17 +77,11 @@ export async function createYaml(
   specs: k8s.KubernetesObject[]
 ): Promise<k8s.KubernetesObject[]> {
   const client = k8s.KubernetesObjectApi.makeApiClient(kc)
-  const validSpecs = specs.filter((s) => s && s.kind && s.metadata)
   const created = [] as k8s.KubernetesObject[]
 
   try {
-    for (const spec of validSpecs) {
+    for (const spec of specs) {
       spec.metadata = spec.metadata || {}
-      spec.metadata.annotations = spec.metadata.annotations || {}
-      delete spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration']
-      spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] =
-        JSON.stringify(spec)
-      console.log('create yaml: ', spec.kind)
       const response = await client.create(spec)
       created.push(response.body)
     }
@@ -113,16 +107,12 @@ export async function updateYaml(
   canCreate = false
 ): Promise<k8s.KubernetesObject[]> {
   const client = k8s.KubernetesObjectApi.makeApiClient(kc)
-  const validSpecs = specs.filter((s) => s && s.kind && s.metadata)
+  // const validSpecs = specs.filter((s) => s && s.kind && s.metadata)
   const created = [] as k8s.KubernetesObject[]
 
   try {
-    for (const spec of validSpecs) {
+    for (const spec of specs) {
       spec.metadata = spec.metadata || {}
-      spec.metadata.annotations = spec.metadata.annotations || {}
-      delete spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration']
-      spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] =
-        JSON.stringify(spec)
 
       console.log('update yaml: ', spec.kind)
       const response = await client.create(spec)
@@ -131,7 +121,7 @@ export async function updateYaml(
   } catch (error: any) {
     console.log('update error')
     /* delete success specs */
-    for (const spec of validSpecs) {
+    for (const spec of specs) {
       try {
         console.log('delete:', spec.kind)
         await client.delete(spec)
@@ -233,17 +223,7 @@ export async function getUserQuota(
       type: 'memory',
       limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
       used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
-    },
-    {
-      type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
     }
-    // {
-    //   type: 'gpu',
-    //   limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-    //   used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
-    // }
   ]
 }
 
@@ -280,17 +260,12 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   const namespace = kc.contexts[0].namespace || GetUserDefaultNameSpace(kube_user.name)
 
   const applyYamlList = async (yamlList: string[], type: 'create' | 'replace' | 'update') => {
-    // insert namespace
     const formatYaml: k8s.KubernetesObject[] = yamlList
       .map((item) => yaml.loadAll(item))
       .flat()
       .map((item: any) => {
-        if (item.metadata) {
-          item.metadata.namespace = namespace
-        }
         return item
       })
-
     if (type === 'create') {
       return createYaml(kc, formatYaml)
     } else if (type === 'replace') {

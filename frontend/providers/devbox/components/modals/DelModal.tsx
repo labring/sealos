@@ -14,7 +14,7 @@ import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
 import MyIcon from '@/components/Icon'
-import { delDevboxById } from '@/api/devbox'
+import { delDevboxByName } from '@/api/devbox'
 import { DevboxListItemType } from '@/types/devbox'
 
 const DelModal = ({
@@ -33,7 +33,7 @@ const DelModal = ({
   const handleDelDevbox = useCallback(async () => {
     try {
       setLoading(true)
-      await delDevboxById(devbox.id)
+      await delDevboxByName(devbox.name)
       toast({
         title: t('delete_successful'),
         status: 'success'
@@ -48,7 +48,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.id, toast, t, onSuccess, onClose])
+  }, [devbox.name, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>

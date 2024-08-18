@@ -9,7 +9,7 @@ type State = {
   devboxList: DevboxListItemType[]
   setDevboxList: () => Promise<DevboxListItemType[]>
   devboxVersionList: DevboxVersionListItemType[]
-  setDevboxVersionList: (devboxId: string) => Promise<DevboxVersionListItemType[]>
+  setDevboxVersionList: (devboxName: string) => Promise<DevboxVersionListItemType[]>
   // devboxDetail: DevboxDetailType
   // loadDevboxDetail: (name: string, isFetchConfigMap?: boolean) => Promise<DevboxDetailType>
   // devboxPods: PodDetailType[]
@@ -29,8 +29,8 @@ export const useDevboxStore = create<State>()(
         return res
       },
       devboxVersionList: [],
-      setDevboxVersionList: async (devboxId: string) => {
-        const res = await getDevboxVersionList(devboxId)
+      setDevboxVersionList: async (devboxName: string) => {
+        const res = await getDevboxVersionList(devboxName)
 
         set((state) => {
           state.devboxVersionList = res

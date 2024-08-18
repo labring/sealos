@@ -12,27 +12,51 @@ import {
   ModalOverlay,
   Textarea
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
 
-import { useConfirm } from '@/hooks/useConfirm'
+import { releaseDevbox } from '@/api/devbox'
+import { DevboxListItemType } from '@/types/devbox'
 
 const ReleaseModal = ({
   onClose,
   onSuccess,
-  devboxId
+  devbox
 }: {
-  devboxId: string
+  devbox: DevboxListItemType
   onClose: () => void
   onSuccess: () => void
 }) => {
   const t = useTranslations()
   const [tag, setTag] = useState('')
-  const [inputValue, setInputValue] = useState('')
-  const { openConfirm, ConfirmChild } = useConfirm({
-    title: 'prompt',
-    content: 'release_prompt'
-  })
+  const { message: toast } = useMessage()
+  const [loading, setLoading] = useState(false)
+  const [releaseDes, setReleaseDes] = useState('')
+
+  const handleReleaseDevbox = useCallback(async () => {
+    try {
+      setLoading(true)
+      await releaseDevbox({
+        devboxName: devbox.name,
+        tag,
+        releaseDes
+      })
+      toast({
+        title: t('release_successful'),
+        status: 'success'
+      })
+      onSuccess()
+      onClose()
+    } catch (error: any) {
+      toast({
+        title: typeof error === 'string' ? error : error.message || t('release_failed'),
+        status: 'error'
+      })
+      console.error(error)
+    }
+    setLoading(false)
+  }, [devbox.name, tag, releaseDes, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
@@ -48,6 +72,7 @@ const ReleaseModal = ({
           <Flex alignItems={'start'} gap={'5px'} mb={'24px'}>
             <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>
               {t('image_name')}
+              {/* TODO: 获取镜像名 */}
             </Box>
             <Input defaultValue={'test'} />
           </Flex>
@@ -65,17 +90,22 @@ const ReleaseModal = ({
               />
               <Box w={'100px'}>{t('version_description')}</Box>
               <Textarea
-                value={inputValue}
+                value={releaseDes}
                 minH={'150px'}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => setReleaseDes(e.target.value)}
                 placeholder={t('enter_version_description')}
               />
             </Flex>
           </Flex>
         </ModalBody>
         <ModalFooter>
-          {/* TODO: 保存逻辑 */}
-          <Button variant={'solid'} onClick={() => {}} mr={'20px'} width={'60px'}>
+          {/* TODO: 发版弹窗忘搞了 */}
+          <Button
+            variant={'solid'}
+            onClick={handleReleaseDevbox}
+            mr={'20px'}
+            width={'60px'}
+            isLoading={loading}>
             {t('release')}
           </Button>
         </ModalFooter>

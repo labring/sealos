@@ -1,26 +1,39 @@
 import { NextRequest } from 'next/server'
 
 import { ApiResp } from '@/services/kubernet'
-import { DevboxEditType } from '@/types/devbox'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
-import { json2Devbox } from '@/utils/json2Yaml'
 
 export async function POST(req: NextRequest) {
   try {
     //TODO: zod later
-    const { devboxForm } = (await req.json()) as { devboxForm: DevboxEditType }
+    const { devboxName } = (await req.json()) as { devboxName: string }
 
-    const { applyYamlList } = await getK8s({
+    const { k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(req)
     })
-    const devbox = json2Devbox(devboxForm)
-    await applyYamlList([devbox], 'create')
+
+    const response = await k8sCustomObjects.patchNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      'default', // TODO: namespace动态获取
+      'devboxes',
+      devboxName,
+      { spec: { state: 'Running' } },
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/merge-patch+json'
+        }
+      }
+    )
 
     // TODO: ApiResp的使用不太好，尝试去除
     return jsonRes({
-      data: 'success create devbox'
+      data: 'success pause devbox'
     })
   } catch (err: any) {
     return jsonRes<ApiResp>({

@@ -5,7 +5,7 @@ import { ERROR_ENUM } from '../error'
 export const authSession = async (req: NextRequest) => {
   if (!req.headers) return Promise.reject(ERROR_ENUM.unAuthorization)
 
-  const { authorization } = req.headers as any // TODO: ts error
+  const authorization = req.headers.get('Authorization') || null
 
   if (!authorization) return Promise.reject(ERROR_ENUM.unAuthorization)
 

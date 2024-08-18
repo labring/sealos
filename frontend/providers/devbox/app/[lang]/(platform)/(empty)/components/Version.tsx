@@ -22,41 +22,42 @@ import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
-import { delDevboxVersionById } from '@/api/devbox'
-import { DevboxVersionListItemType } from '@/types/devbox'
+import { delDevboxVersionByName } from '@/api/devbox'
+import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
-const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))
 const ReleaseModal = dynamic(() => import('@/components/modals/releaseModal'))
+const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))
 
 const Version = ({
   isOpen,
   onClose,
-  devboxId
+  devbox
 }: {
   isOpen: boolean
   onClose: () => void
-  devboxId: string
+  devbox: DevboxListItemType
 }) => {
   const t = useTranslations()
   const { Loading, setIsLoading } = useLoading()
   const { message: toast } = useMessage()
   const [initialized, setInitialized] = useState(false)
-  const [onOpenPublish, setOnOpenPublish] = useState(false)
+  const [onOpenRelease, setOnOpenRelease] = useState(false)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
   const { devboxVersionList, setDevboxVersionList } = useDevboxStore()
   const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
 
-  const { refetch } = useQuery(['initDevboxVersionList'], () => setDevboxVersionList(devboxId), {
+  const { refetch } = useQuery(['initDevboxVersionList'], () => setDevboxVersionList(devbox.name), {
+    refetchInterval: 3000,
     onSettled() {
       setInitialized(true)
     }
   })
 
   const handleDelDevboxVersion = useCallback(
-    async (versionId: string) => {
+    async (versionName: string) => {
       try {
         setIsLoading(true)
-        await delDevboxVersionById(versionId)
+        await delDevboxVersionByName(versionName)
         toast({
           title: t('delete_successful'),
           status: 'success'
@@ -82,10 +83,10 @@ const Version = ({
   }[] = [
     {
       title: t('version_number'),
-      key: 'id',
+      key: 'tag',
       render: (item: DevboxVersionListItemType) => (
         <Box color={'grayModern.900'} pl={'12px'}>
-          v {item.id}
+          v {item.tag}
         </Box>
       )
     },
@@ -162,7 +163,7 @@ const Version = ({
                     bg: 'rgba(17, 24, 36, 0.05)'
                   }
                 },
-                onClick: () => handleDelDevboxVersion(item.id)
+                onClick: () => handleDelDevboxVersion(item.name)
               }
             ]}
           />
@@ -204,11 +205,12 @@ const Version = ({
                 minW={'100px'}
                 h={'35px'}
                 variant={'solid'}
-                onClick={() => setOnOpenPublish(true)}>
+                onClick={() => setOnOpenRelease(true)}>
                 {t('release_version')}
               </Button>
             </Flex>
             <Loading loading={!initialized} />
+            {/* TODO: 这里美化一下 */}
             {devboxVersionList.length === 0 && initialized ? (
               <Box>{t('no_versions')}</Box>
             ) : (
@@ -227,13 +229,13 @@ const Version = ({
           onClose={onCloseEdit}
         />
       )}
-      {!!onOpenPublish && (
+      {!!onOpenRelease && (
         <ReleaseModal
           onSuccess={refetch}
           onClose={() => {
-            setOnOpenPublish(false)
+            setOnOpenRelease(false)
           }}
-          devboxId={devboxId}
+          devbox={devbox}
         />
       )}
     </Modal>

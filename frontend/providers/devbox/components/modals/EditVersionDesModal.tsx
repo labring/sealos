@@ -1,9 +1,9 @@
+import { editDevboxVersion } from '@/api/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
 import {
   Box,
   Button,
   Flex,
-  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -13,8 +13,9 @@ import {
   ModalOverlay,
   Textarea
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
 
 const EditVersionDesModal = ({
   version,
@@ -28,7 +29,31 @@ const EditVersionDesModal = ({
   onSuccess: () => void
 }) => {
   const t = useTranslations()
+  const { message: toast } = useMessage()
+  const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState(version.description)
+  const handleEditVersionDes = useCallback(async () => {
+    try {
+      setLoading(true)
+      await editDevboxVersion({
+        name: version.name,
+        releaseDes: inputValue
+      })
+      toast({
+        title: t('edit_successful'),
+        status: 'success'
+      })
+      onSuccess()
+      onClose()
+    } catch (error: any) {
+      toast({
+        title: typeof error === 'string' ? error : error.message || t('edit_failed'),
+        status: 'error'
+      })
+      console.error(error)
+    }
+    setLoading(false)
+  }, [version.name, inputValue, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
@@ -53,7 +78,7 @@ const EditVersionDesModal = ({
         </ModalBody>
         <ModalFooter>
           {/* TODO: 保存逻辑 */}
-          <Button ml={3} variant={'solid'} onClick={() => {}}>
+          <Button ml={3} variant={'solid'} onClick={handleEditVersionDes} isLoading={loading}>
             {t('save')}
           </Button>
         </ModalFooter>

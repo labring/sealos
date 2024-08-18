@@ -15,14 +15,13 @@ import Yaml from './components/Yaml'
 import Header from './components/Header'
 import type { YamlItemType } from '@/types'
 import { useUserStore } from '@/stores/user'
+import { createDevbox } from '@/api/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 import { runtimeVersionMap } from '@/stores/static'
 import type { DevboxEditType } from '@/types/devbox'
-import { applyYamlList, createDevbox } from '@/api/devbox'
 import { defaultDevboxEditValue } from '@/constants/devbox'
-import { json2Account, limitRangeYaml } from '@/utils/json2Yaml'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -69,7 +68,7 @@ const DevboxCreatePage = () => {
       },
       {
         filename: 'account.yaml',
-        value: json2Account(data)
+        value: ''
       }
     ]
   }
@@ -103,7 +102,7 @@ const DevboxCreatePage = () => {
       },
       {
         filename: 'account.yaml',
-        value: json2Account(defaultEdit)
+        value: ''
       }
     ])
     return null
@@ -111,22 +110,22 @@ const DevboxCreatePage = () => {
 
   const submitSuccess = async (formData: DevboxEditType) => {
     setIsLoading(true)
-    try {
-      await applyYamlList([limitRangeYaml], 'create')
-    } catch (err) {}
+    // try {
+    //   await applyYamlList([limitRangeYaml], 'create')
+    // } catch (err) {}
     try {
       // quote check
       // NOTE: 其实这个限额检查可能不需要了
-      const quoteCheckRes = checkQuotaAllow(formData)
-      if (quoteCheckRes) {
-        setIsLoading(false)
-        return toast({
-          status: 'warning',
-          title: quoteCheckRes,
-          duration: 5000,
-          isClosable: true
-        })
-      }
+      // const quoteCheckRes = checkQuotaAllow(formData)
+      // if (quoteCheckRes) {
+      //   setIsLoading(false)
+      //   return toast({
+      //     status: 'warning',
+      //     title: quoteCheckRes,
+      //     duration: 5000,
+      //     isClosable: true
+      //   })
+      // }
       await createDevbox({ devboxForm: formData })
       toast({
         title: t('create_success'),

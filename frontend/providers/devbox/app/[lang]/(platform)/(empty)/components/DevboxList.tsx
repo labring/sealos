@@ -9,13 +9,12 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import dynamic from 'next/dynamic'
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
-import Version from './Version'
-import dynamic from 'next/dynamic'
 import MyIcon from '@/components/Icon'
 import { useGlobalStore } from '@/stores/global'
 import { sealosApp } from 'sealos-desktop-sdk/app'
@@ -24,6 +23,7 @@ import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { pauseDevbox, restartDevbox } from '@/api/devbox'
 
+const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
 const DevboxList = ({
@@ -53,7 +53,7 @@ const DevboxList = ({
     async (devbox: DevboxListItemType) => {
       try {
         setLoading(true)
-        await pauseDevbox({ devboxId: devbox.id })
+        await pauseDevbox({ devboxName: devbox.name })
         toast({
           title: t('pause_success'),
           status: 'success'
@@ -74,7 +74,7 @@ const DevboxList = ({
     async (devbox: DevboxListItemType) => {
       try {
         setLoading(true)
-        await restartDevbox({ devboxId: devbox.id })
+        await restartDevbox({ devboxName: devbox.name })
         toast({
           title: t('restart_success'),
           status: 'success'
@@ -245,13 +245,13 @@ const DevboxList = ({
                     <Box ml={2}>{t('terminal')}</Box>
                   </>
                 ),
-                onClick: () => handleGoToTerminal(item) // TODO: 添加跳转终端逻辑
+                onClick: () => handleGoToTerminal(item)
               },
               {
                 child: (
                   <>
                     <MyIcon name={'pause'} w={'16px'} />
-                    <Box ml={2}>{t('pause')}</Box>
+                    <Box ml={2}>{t('shutdown')}</Box>
                   </>
                 ),
                 // TODO：启停禁用逻辑
@@ -261,7 +261,7 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'restart'} w={'16px'} />
-                    <Box ml={2}>{t('restart')}</Box>
+                    <Box ml={2}>{t('boot')}</Box>
                   </>
                 ),
                 onClick: () => handleRestartDevbox(item)
@@ -318,11 +318,7 @@ const DevboxList = ({
       </Flex>
       <MyTable columns={columns} data={devboxList} />
       {!!currentDevboxListItem && (
-        <Version
-          onClose={onCloseVersion}
-          isOpen={isOpenVersion}
-          devboxId={currentDevboxListItem.id}
-        />
+        <Version onClose={onCloseVersion} isOpen={isOpenVersion} devbox={currentDevboxListItem} />
       )}
       {!!delDevbox && (
         <DelModal
