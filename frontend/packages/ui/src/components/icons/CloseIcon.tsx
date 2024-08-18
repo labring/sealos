@@ -1,3 +1,5 @@
+'use client';
+
 import { Icon, IconProps } from '@chakra-ui/react';
 
 export default function CloseIcon(props: IconProps) {

@@ -1,3 +1,5 @@
+'use client';
+'use client';
 import { createIcon } from '@chakra-ui/react';
 
 const ExpanMoreIcon = createIcon({

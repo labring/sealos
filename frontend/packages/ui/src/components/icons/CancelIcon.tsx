@@ -1,3 +1,5 @@
+'use client';
+
 import { Icon } from '@chakra-ui/react';
 export default function CancelIcon(props: Parameters<typeof Icon>[0]) {
   return (
