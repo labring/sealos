@@ -80,5 +80,6 @@
   "version_history": "版本历史",
   "version_list": "版本列表",
   "version_number": "版本号",
-  "yaml_file": "YAML文件"
+  "yaml_file": "YAML文件",
+  "release_confirm_info": "发版过程将暂停机器，以当前状态发版。"
 }

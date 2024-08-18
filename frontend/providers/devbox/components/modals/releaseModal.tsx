@@ -18,6 +18,7 @@ import { useCallback, useState } from 'react'
 
 import { releaseDevbox } from '@/api/devbox'
 import { DevboxListItemType } from '@/types/devbox'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const ReleaseModal = ({
   onClose,
@@ -33,6 +34,10 @@ const ReleaseModal = ({
   const { message: toast } = useMessage()
   const [loading, setLoading] = useState(false)
   const [releaseDes, setReleaseDes] = useState('')
+
+  const { openConfirm, ConfirmChild } = useConfirm({
+    content: 'release_confirm_info'
+  })
 
   const handleReleaseDevbox = useCallback(async () => {
     if (devbox.status.value === 'Running') {
@@ -64,7 +69,7 @@ const ReleaseModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.name, tag, releaseDes, toast, t, onSuccess, onClose])
+  }, [devbox.status.value, devbox.name, toast, t, tag, releaseDes, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
@@ -110,13 +115,14 @@ const ReleaseModal = ({
           {/* TODO: 发版弹窗忘搞了 */}
           <Button
             variant={'solid'}
-            onClick={handleReleaseDevbox}
+            onClick={() => openConfirm(() => handleReleaseDevbox)}
             mr={'20px'}
             width={'60px'}
             isLoading={loading}>
             {t('release')}
           </Button>
         </ModalFooter>
+        <ConfirmChild />
       </ModalContent>
     </Modal>
   )

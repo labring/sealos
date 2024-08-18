@@ -80,5 +80,6 @@
   "version_history": "Version History",
   "version_list": "Version List",
   "version_number": "Version Number",
-  "yaml_file": "YAML File"
+  "yaml_file": "YAML File",
+  "release_confirm_info": "The release process will pause the machine and release in its current state."
 }
