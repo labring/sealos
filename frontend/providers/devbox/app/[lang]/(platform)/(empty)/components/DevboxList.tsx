@@ -250,6 +250,15 @@ const DevboxList = ({
               {
                 child: (
                   <>
+                    <MyIcon name={'change'} w={'16px'} />
+                    <Box ml={2}>{t('update')}</Box>
+                  </>
+                ),
+                onClick: () => router.push(`/devbox/create?name=${item.name}`)
+              },
+              {
+                child: (
+                  <>
                     <MyIcon name={'pause'} w={'16px'} />
                     <Box ml={2}>{t('shutdown')}</Box>
                   </>

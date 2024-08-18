@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
     const matchingDevboxes = response?.body?.items.filter((item: any) => {
       return item.metadata && !item.metadata.deletionTimestamp
     })
-
     return jsonRes<ApiResp>({ data: matchingDevboxes })
   } catch (err: any) {
     // TODO: ApiResp全部去除

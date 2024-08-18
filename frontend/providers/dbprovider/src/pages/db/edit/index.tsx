@@ -94,6 +94,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     }, 200),
     []
   );
+
   // watch form change, compute new yaml
   formHook.watch((data) => {
     data && formOnchangeDebounce(data as DBEditType);

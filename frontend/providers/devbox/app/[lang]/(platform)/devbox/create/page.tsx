@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Box, Flex } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import Form from './components/Form'
 import Yaml from './components/Yaml'
@@ -19,9 +19,10 @@ import { createDevbox } from '@/api/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
+import { useDevboxStore } from '@/stores/devbox'
 import { runtimeVersionMap } from '@/stores/static'
 import type { DevboxEditType } from '@/types/devbox'
-import { defaultDevboxEditValue } from '@/constants/devbox'
+import { defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -35,18 +36,24 @@ const DevboxCreatePage = () => {
   const t = useTranslations()
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
+  const oldDevboxEditData = useRef<DevboxEditType>()
   const { checkQuotaAllow } = useUserStore()
+  const { setDevboxDetail } = useDevboxStore()
   const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
-  const { openConfirm, ConfirmChild } = useConfirm({
-    content: 'confirm_create_devbox',
-    title: 'prompt',
-    confirmText: 'confirm',
-    cancelText: 'cancel'
-  })
+
   const tabType = searchParams.get('type') || 'form'
+  const devboxName = searchParams.get('name') || null
+
+  const isEdit = useMemo(() => !!devboxName, [devboxName])
+
+  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(isEdit)
+
+  const { openConfirm, ConfirmChild } = useConfirm({
+    content: applyMessage
+  })
 
   // compute container width
   const { screenWidth, lastRoute } = useGlobalStore()
@@ -94,19 +101,42 @@ const DevboxCreatePage = () => {
     setForceUpdate(!forceUpdate)
   })
 
-  useQuery(['initDevboxCreateData'], () => {
-    setYamlList([
-      {
-        filename: 'pod.yaml',
-        value: '' // TODO: 这里之后等有crd之后再补全
-      },
-      {
-        filename: 'account.yaml',
-        value: ''
+  useQuery(
+    ['initDevboxCreateData'],
+    () => {
+      if (!devboxName) {
+        setYamlList([
+          {
+            filename: 'cluster.yaml',
+            value: ''
+          },
+          {
+            filename: 'account.yaml',
+            value: '' // TODO: 补充默认值
+          }
+        ])
+        return null
       }
-    ])
-    return null
-  })
+      setIsLoading(true)
+      return setDevboxDetail(devboxName)
+    },
+    {
+      onSuccess(res) {
+        if (!res) return
+        oldDevboxEditData.current = res
+        formHook.reset(res)
+      },
+      onError(err) {
+        toast({
+          title: String(err),
+          status: 'error'
+        })
+      },
+      onSettled() {
+        setIsLoading(false)
+      }
+    }
+  )
 
   const submitSuccess = async (formData: DevboxEditType) => {
     setIsLoading(true)
@@ -126,9 +156,9 @@ const DevboxCreatePage = () => {
       //     isClosable: true
       //   })
       // }
-      await createDevbox({ devboxForm: formData })
+      await createDevbox({ devboxForm: formData, isEdit })
       toast({
-        title: t('create_success'),
+        title: t(applySuccess),
         status: 'success'
       })
       router.push(lastRoute)
@@ -167,6 +197,8 @@ const DevboxCreatePage = () => {
         backgroundColor={'grayModern.100'}>
         <Header
           yamlList={yamlList}
+          title={title}
+          applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
           }
@@ -182,11 +214,7 @@ const DevboxCreatePage = () => {
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal
-          title={t('create_failed')}
-          content={errorMessage}
-          onClose={() => setErrorMessage('')}
-        />
+        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
       )}
     </>
   )

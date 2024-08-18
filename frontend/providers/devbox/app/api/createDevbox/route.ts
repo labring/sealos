@@ -10,11 +10,60 @@ import { json2Devbox } from '@/utils/json2Yaml'
 export async function POST(req: NextRequest) {
   try {
     //TODO: zod later
-    const { devboxForm } = (await req.json()) as { devboxForm: DevboxEditType }
+    const { devboxForm, isEdit } = (await req.json()) as {
+      devboxForm: DevboxEditType
+      isEdit: boolean
+    }
 
-    const { applyYamlList } = await getK8s({
+    const { applyYamlList, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(req)
     })
+
+    if (isEdit) {
+      await k8sCustomObjects.patchNamespacedCustomObject(
+        'devbox.sealos.io',
+        'v1alpha1',
+        'default', // TODO: namespace动态获取
+        'devboxes',
+        devboxForm.name,
+        {
+          metadata: {
+            name: devboxForm.name
+          },
+          spec: {
+            network: {
+              type: 'NodePort',
+              extraPorts: [
+                {
+                  containerPort: 8080,
+                  hostPort: 8080,
+                  protocol: 'TCP'
+                }
+              ]
+            },
+            resource: {
+              cpu: devboxForm.cpu,
+              memory: devboxForm.memory
+            },
+            runtimeRef: {
+              name: `${devboxForm.runtimeType}-${devboxForm.runtimeVersion}`
+            }
+          }
+        },
+        undefined,
+        undefined,
+        undefined,
+        {
+          headers: {
+            'Content-Type': 'application/merge-patch+json'
+          }
+        }
+      )
+      return jsonRes({
+        data: 'success update devbox'
+      })
+    }
+
     const devbox = json2Devbox(devboxForm)
     await applyYamlList([devbox], 'create')
 

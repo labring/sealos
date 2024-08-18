@@ -6,7 +6,7 @@ export type DevboxStatusValueType = `${DevboxStatusEnum}`
 export type RuntimeType = `${RuntimeTypeEnum}`
 
 export interface DevboxEditType {
-  devboxName: string
+  name: string
   runtimeType: RuntimeType
   runtimeVersion: string
   cpu: number
@@ -34,13 +34,13 @@ export interface DevboxDetailType extends DevboxEditType {
   id: string
   createTime: string
   status: DevboxStatusMapType
-  labels: { [key: string]: string }
 }
 
 export interface DevboxListItemType {
   id: string
   name: string
   runtimeType: string // TODO: RuntimeType
+  runtimeVersion: string
   status: DevboxStatusMapType
   createTime: string
   cpu: number

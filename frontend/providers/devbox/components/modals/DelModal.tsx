@@ -61,7 +61,7 @@ const DelModal = ({
           </Flex>
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />
-        <ModalBody pb={4}></ModalBody>
+        <ModalBody pb={4}>{t('delete_warning_content')}</ModalBody>
         <ModalFooter>
           <Button onClick={onClose} variant={'outline'}>
             {t('cancel')}

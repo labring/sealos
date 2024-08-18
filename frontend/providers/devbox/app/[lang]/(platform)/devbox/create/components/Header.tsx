@@ -10,7 +10,17 @@ import { downLoadBlob } from '@/utils/tools'
 import { useGlobalStore } from '@/stores/global'
 import type { YamlItemType } from '@/types/index'
 
-const Header = ({ yamlList, applyCb }: { yamlList: YamlItemType[]; applyCb: () => void }) => {
+const Header = ({
+  title,
+  yamlList,
+  applyCb,
+  applyBtnText
+}: {
+  yamlList: YamlItemType[]
+  applyCb: () => void
+  title: string
+  applyBtnText: string
+}) => {
   const router = useRouter()
   const { lastRoute } = useGlobalStore()
   const t = useTranslations()
@@ -29,7 +39,7 @@ const Header = ({ yamlList, applyCb }: { yamlList: YamlItemType[]; applyCb: () =
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
         <MyIcon name="arrowLeft" width={'24px'} height={'24px'} />
         <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
-          {t('devbox_creation')}
+          {t(title)}
         </Box>
       </Flex>
       <Box flex={1}></Box>
@@ -37,7 +47,7 @@ const Header = ({ yamlList, applyCb }: { yamlList: YamlItemType[]; applyCb: () =
         {t('export_yaml')}
       </Button>
       <Button flex={'0 0 114px'} h={'40px'} variant={'solid'} onClick={applyCb}>
-        {t('create')}
+        {t(applyBtnText)}
       </Button>
     </Flex>
   )

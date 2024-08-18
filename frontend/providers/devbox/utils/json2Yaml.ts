@@ -8,7 +8,7 @@ export const json2Devbox = (data: DevboxEditType) => {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
     metadata: {
-      name: data.devboxName
+      name: data.name
     },
     spec: {
       network: {
@@ -26,7 +26,7 @@ export const json2Devbox = (data: DevboxEditType) => {
         memory: data.memory
       },
       runtimeRef: {
-        name: 'runtime-sample'
+        name: `${data.runtimeType}-${data.runtimeVersion}`
       },
       state: 'Running'
     }

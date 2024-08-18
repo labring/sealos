@@ -75,7 +75,7 @@ export const MemorySlideMarkList = [
 ]
 
 export const defaultDevboxEditValue: DevboxEditType = {
-  devboxName: '',
+  name: '',
   runtimeType: RuntimeTypeEnum.java,
   runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,
@@ -183,10 +183,31 @@ export const devboxStatusMap = {
   }
 }
 
+export const editModeMap: (isEdit: boolean) => {
+  [key: string]: string
+} = (isEdit: boolean) => {
+  if (isEdit) {
+    return {
+      title: 'update_devbox',
+      applyBtnText: 'update',
+      applyMessage: 'confirm_update_devbox',
+      applySuccess: 'update_success',
+      applyError: 'update_failed'
+    }
+  }
+
+  return {
+    title: 'create_devbox',
+    applyBtnText: 'create',
+    applyMessage: 'confirm_create_devbox',
+    applySuccess: 'create_success',
+    applyError: 'create_failed'
+  }
+}
+
 export const defaultDevboxDetail: DevboxDetailType = {
   ...defaultDevboxEditValue,
   id: '',
   createTime: '2024/8/9',
-  status: devboxStatusMap.Creating,
-  labels: {}
+  status: devboxStatusMap.Creating
 }

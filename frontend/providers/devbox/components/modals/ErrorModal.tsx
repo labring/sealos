@@ -8,6 +8,7 @@ import {
   ModalCloseButton,
   Box
 } from '@chakra-ui/react'
+import { useTranslations } from 'next-intl'
 
 const ErrorModal = ({
   title,
@@ -18,6 +19,7 @@ const ErrorModal = ({
   content: string
   onClose: () => void
 }) => {
+  const t = useTranslations()
   return (
     <Modal isOpen={true} onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
@@ -28,11 +30,11 @@ const ErrorModal = ({
           color={'grayModern.900'}
           fontWeight={'bold'}
           fontSize={'lg'}>
-          <Box>{title}</Box>
+          <Box>{t(title)}</Box>
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
-          {content}
+          {t(content)}
         </ModalBody>
       </ModalContent>
     </Modal>

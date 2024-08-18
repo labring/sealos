@@ -214,13 +214,13 @@ const Form = ({
             </Box>
             <Box px={'42px'} py={'24px'}>
               {/* Devbox Name */}
-              <FormControl mb={7} isInvalid={!!errors.devboxName} w={'500px'}>
+              <FormControl mb={7} isInvalid={!!errors.name} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('devbox_name')}</Label>
                   <Input
                     autoFocus={true}
                     placeholder={t('enter_devbox_name')}
-                    {...register('devboxName', {
+                    {...register('name', {
                       required: t('devbox_name_required')
                     })}
                   />
@@ -290,6 +290,9 @@ const Form = ({
                 <MySelect
                   width={'200px'}
                   placeholder={`${t('runtime')} ${t('version')}`}
+                  defaultValue={
+                    getValues('runtimeVersion') || runtimeVersionMap[getValues('runtimeType')][0].id
+                  }
                   value={getValues('runtimeVersion')}
                   list={runtimeVersionMap[getValues('runtimeType')].map((i) => ({
                     label: i.label,

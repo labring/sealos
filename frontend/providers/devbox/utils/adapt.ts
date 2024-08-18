@@ -9,7 +9,10 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
-    runtimeType: devbox.spec.runtimeRef.name || 'runtime-sample',
+    runtimeType:
+      (devbox.spec.runtimeRef.name && devbox.spec.runtimeRef.name.split('-')[0]) || 'custom',
+    runtimeVersion:
+      (devbox.spec.runtimeRef.name && devbox.spec.runtimeRef.name.split('-')[1]) || 'custom',
     status:
       devbox.spec.state && devboxStatusMap[devbox.spec.state]
         ? devboxStatusMap[devbox.spec.state]

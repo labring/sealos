@@ -12,7 +12,7 @@ export const getMyDevboxList = () =>
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
-export const createDevbox = (payload: { devboxForm: DevboxEditType }) =>
+export const createDevbox = (payload: { devboxForm: DevboxEditType; isEdit: boolean }) =>
   POST(`/api/createDevbox`, payload)
 
 export const delDevboxByName = (devboxName: string) =>
