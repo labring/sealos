@@ -90,9 +90,10 @@ const DevboxList = ({
     },
     [setLoading, t, toast]
   )
-  const defaultCommand = 'echo "this is a test command"'
+
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemType) => {
+      const defaultCommand = `kubectl exec -it ${devbox.name} -- sh -c "clear; (bash || ash || sh)"`
       try {
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-terminal',
