@@ -63,6 +63,7 @@ export const parseTemplateString = (
   }
 };
 
+// need to use parseTemplateYaml first to fill in the variables
 export const getTemplateDataSource = (
   template: TemplateType,
 ): ProcessedTemplateSourceType => {
