@@ -63,7 +63,6 @@ export const parseTemplateString = (
   }
 };
 
-// need to use parseTemplateYaml first to fill in the variables
 export const getTemplateDataSource = (
   template: TemplateType,
 ): ProcessedTemplateSourceType => {
@@ -270,9 +269,8 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
 // }
 
 export function getYamlSource(str: string, platformEnvs?: EnvResponse): TemplateSourceType {
-  let { appYaml, templateYaml } = getYamlTemplate(str)
+  let { appYaml, templateYaml } = getYamlTemplate(str, platformEnvs)
 
-  templateYaml = parseTemplateYaml(templateYaml, platformEnvs)
   const dataSource = getTemplateDataSource(templateYaml);
   const _instanceName = dataSource?.defaults?.app_name?.value || '';
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
@@ -289,7 +287,7 @@ export function getYamlSource(str: string, platformEnvs?: EnvResponse): Template
   return result;
 }
 
-export function getYamlTemplate(str: string): {
+export function getYamlTemplate(str: string, platformEnvs?: EnvResponse): {
   appYaml: string;
   templateYaml: TemplateType;
 } {
@@ -318,11 +316,11 @@ export function getYamlTemplate(str: string): {
 
   return {
     appYaml: appYamlList.join('---\n'),
-    templateYaml: templateYaml
+    templateYaml: parseTemplateYaml(templateYaml, platformEnvs)
   };
 }
 
-export function parseTemplateYaml(templateYaml: TemplateType, platformEnvs?: EnvResponse): TemplateType {
+function parseTemplateYaml(templateYaml: TemplateType, platformEnvs?: EnvResponse): TemplateType {
   const regex = /\$\{\{\s*(.*?)\s*\}\}/g
 
   for (let [key, item] of Object.entries(templateYaml.spec.defaults)) {

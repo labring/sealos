@@ -9,6 +9,7 @@ import path from 'path';
 import util from 'util';
 import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
+import { getTemplateEnvs } from '@/utils/tools';
 const execAsync = util.promisify(exec);
 
 const readFileList = (targetPath: string, fileList: unknown[] = []) => {
@@ -73,6 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const jsonPath = path.resolve(originalPath, 'templates.json');
     const branch = process.env.TEMPLATE_REPO_BRANCH || 'main';
 
+    const TemplateEnvs = getTemplateEnvs()
+
     try {
       const gitConfigResult = await execAsync(
         'git config --global --add safe.directory /app/providers/template/templates',
@@ -105,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!item) return;
         const fileName = path.basename(item);
         const content = fs.readFileSync(item, 'utf-8');
-        const { templateYaml } = getYamlTemplate(content)
+        const { templateYaml } = getYamlTemplate(content, TemplateEnvs)
         if (!!templateYaml) {
           const appTitle = templateYaml.spec.title.toUpperCase();
           templateYaml.spec['deployCount'] = templateStaticMap[appTitle];
