@@ -1,4 +1,6 @@
 {
+  "Container Port": "Container Port",
+  "Network Configuration": "Network Configuration",
   "basic_configuration": "Basic Configuration",
   "boot": "boot",
   "cancel": "Cancel",
@@ -51,6 +53,7 @@
   "pause_success": "Pause success",
   "prompt": "Prompt",
   "release": "Release",
+  "release_confirm_info": "The release process will pause the machine and release in its current state.",
   "release_failed": "Release failed",
   "release_prompt": "The release process will pause the machine and release in the current state.",
   "release_successful": "release successfully",
@@ -81,5 +84,12 @@
   "version_list": "Version List",
   "version_number": "Version Number",
   "yaml_file": "YAML File",
-  "release_confirm_info": "The release process will pause the machine and release in its current state."
+  "The container exposed port cannot be empty": "Container port is required",
+  "The minimum exposed port is 1": "Minimum port number is 1",
+  "The maximum number of exposed ports is 65535": "Maximum port number is 65535",
+  "Add Port": "Add Port",
+  "Open Public Access": "Enable Internet Access",
+  "Custom Domain": "Custom Domain",
+  "Input your custom domain": "Enter your custom domain",
+  "CNAME Tips": "To set up a custom domain, please add a `CNAME` record for your domain pointing to {{domain}} at your domain registrar. You can bind your custom domain once the DNS resolution takes effect."
 }

@@ -39,6 +39,7 @@
     "kubeblocks",
     "kubeconfig",
     "kubernet",
+    "letsencrypt",
     "localematcher",
     "milvus",
     "minio",

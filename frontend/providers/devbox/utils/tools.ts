@@ -104,3 +104,9 @@ export const useCopyData = () => {
 export const str2Num = (str?: string | number) => {
   return !!str ? +str : 0
 }
+
+export const getErrText = (err: any, def = '') => {
+  const msg: string = typeof err === 'string' ? err : err?.message || def || ''
+  msg && console.log('error =>', msg)
+  return msg
+}

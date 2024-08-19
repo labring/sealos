@@ -1,11 +1,12 @@
 import { NextRequest } from 'next/server'
+import yaml from 'js-yaml'
 
 import { ApiResp } from '@/services/kubernet'
 import { DevboxEditType } from '@/types/devbox'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
-import { json2Devbox } from '@/utils/json2Yaml'
+import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,9 +16,15 @@ export async function POST(req: NextRequest) {
       isEdit: boolean
     }
 
-    const { applyYamlList, k8sCustomObjects } = await getK8s({
+    const { applyYamlList, k8sCustomObjects, k8sCore } = await getK8s({
       kubeconfig: await authSession(req)
     })
+    const devbox = json2Devbox(devboxForm)
+    const service = json2Service(devboxForm)
+    const ingress = json2Ingress(devboxForm)
+    const jsonDevbox = yaml.load(devbox) as object
+    const jsonService = yaml.load(service) as object
+    const jsonIngress = yaml.load(ingress) as object
 
     if (isEdit) {
       await k8sCustomObjects.patchNamespacedCustomObject(
@@ -26,30 +33,7 @@ export async function POST(req: NextRequest) {
         'default', // TODO: namespace动态获取
         'devboxes',
         devboxForm.name,
-        {
-          metadata: {
-            name: devboxForm.name
-          },
-          spec: {
-            network: {
-              type: 'NodePort',
-              extraPorts: [
-                {
-                  containerPort: 8080,
-                  hostPort: 8080,
-                  protocol: 'TCP'
-                }
-              ]
-            },
-            resource: {
-              cpu: devboxForm.cpu,
-              memory: devboxForm.memory
-            },
-            runtimeRef: {
-              name: `${devboxForm.runtimeType}-${devboxForm.runtimeVersion}`
-            }
-          }
-        },
+        jsonDevbox,
         undefined,
         undefined,
         undefined,
@@ -59,13 +43,34 @@ export async function POST(req: NextRequest) {
           }
         }
       )
+      await k8sCustomObjects.patchNamespacedCustomObject(
+        'networking.k8s.io',
+        'v1',
+        'default', // TODO: namespace动态获取
+        'ingresses',
+        devboxForm.name,
+        jsonIngress,
+        undefined,
+        undefined,
+        undefined,
+        {
+          headers: {
+            'Content-Type': 'application/merge-patch+json'
+          }
+        }
+      )
+      await k8sCore.patchNamespacedService(
+        devboxForm.name,
+        'default', // TODO: namespace动态获取
+        jsonService
+      )
+
       return jsonRes({
         data: 'success update devbox'
       })
     }
 
-    const devbox = json2Devbox(devboxForm)
-    await applyYamlList([devbox], 'create')
+    await applyYamlList([devbox, service, ingress], 'create')
 
     // TODO: ApiResp的使用不太好，尝试去除
     return jsonRes({

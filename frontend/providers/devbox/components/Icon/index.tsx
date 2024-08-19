@@ -24,6 +24,7 @@ const map = {
   copy: require('./icons/copy.svg').default,
   continue: require('./icons/continue.svg').default,
   noEvents: require('./icons/noEvents.svg').default,
+  network: require('./icons/network.svg').default,
   warning: require('./icons/warning.svg').default,
   analyze: require('./icons/analyze.svg').default,
   log: require('./icons/log.svg').default,

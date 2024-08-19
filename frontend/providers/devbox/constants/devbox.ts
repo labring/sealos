@@ -1,6 +1,12 @@
+import { customAlphabet } from 'nanoid'
+
 import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
 
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
+
 export const crLabelKey = 'sealos-devbox-cr'
+export const appDeployKey = 'cloud.sealos.io/app-deploy-manager'
+export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
 
 export enum RuntimeTypeEnum {
   java = 'java',
@@ -79,7 +85,18 @@ export const defaultDevboxEditValue: DevboxEditType = {
   runtimeType: RuntimeTypeEnum.java,
   runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,
-  memory: MemorySlideMarkList[1].value
+  memory: MemorySlideMarkList[1].value,
+  networks: [
+    {
+      networkName: '',
+      portName: nanoid(),
+      port: 80,
+      protocol: 'HTTP',
+      openPublicDomain: false,
+      publicDomain: '',
+      customDomain: ''
+    }
+  ]
 }
 
 export const devboxStatusMap = {
@@ -211,3 +228,9 @@ export const defaultDevboxDetail: DevboxDetailType = {
   createTime: '2024/8/9',
   status: devboxStatusMap.Creating
 }
+
+export const ProtocolList = [
+  { value: 'HTTP', label: 'https://' },
+  { value: 'GRPC', label: 'grpcs://' },
+  { value: 'WS', label: 'wss://' }
+]

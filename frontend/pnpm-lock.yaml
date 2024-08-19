@@ -1351,6 +1351,9 @@ importers:
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10
+      dns:
+        specifier: ^0.2.2
+        version: 0.2.2
       echarts:
         specifier: ^5.4.3
         version: 5.4.3
@@ -1372,6 +1375,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      nanoid:
+        specifier: ^4.0.2
+        version: 4.0.2
       next:
         specifier: 14.2.5
         version: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)

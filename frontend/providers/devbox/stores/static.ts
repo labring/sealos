@@ -53,3 +53,6 @@ export const getRuntimeVersion = async () => {
     }
   }
 }
+
+export let SEALOS_DOMAIN = 'cloud.sealos.io'
+export let INGRESS_SECRET = 'wildcard-cert'

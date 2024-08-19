@@ -70,11 +70,15 @@ const DevboxCreatePage = () => {
   const generateYamlList = (data: DevboxEditType) => {
     return [
       {
-        filename: 'pod.yaml',
+        filename: 'devbox.yaml',
         value: ''
       },
       {
-        filename: 'account.yaml',
+        filename: 'service.yaml',
+        value: ''
+      },
+      {
+        filename: 'ingress.yaml',
         value: ''
       }
     ]

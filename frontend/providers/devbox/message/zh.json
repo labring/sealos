@@ -1,4 +1,6 @@
 {
+  "Container Port": "容器暴露端口",
+  "Network Configuration": "网络配置",
   "basic_configuration": "基础配置",
   "boot": "开机",
   "cancel": "取消",
@@ -51,6 +53,7 @@
   "pause_success": "暂停成功",
   "prompt": "提示",
   "release": "发布",
+  "release_confirm_info": "发版过程将暂停机器，以当前状态发版。",
   "release_failed": "发版失败",
   "release_prompt": "发版过程将暂停机器，以当前状态发版。",
   "release_successful": "发版成功",
@@ -81,5 +84,12 @@
   "version_list": "版本列表",
   "version_number": "版本号",
   "yaml_file": "YAML文件",
-  "release_confirm_info": "发版过程将暂停机器，以当前状态发版。"
+  "The container exposed port cannot be empty": "容器暴露端口不能为空",
+  "The minimum exposed port is 1": "暴露端口最小为 1",
+  "The maximum number of exposed ports is 65535": "暴露端口最大为 65535",
+  "Add Port": "添加端口",
+  "Open Public Access": "开启公网访问",
+  "Custom Domain": "自定义域名",
+  "Input your custom domain": "输入您的自定义域名",
+  "CNAME Tips": "请到您的域名服务商处，添加该域名的 `CNAME` 解析到 {{domain}}，解析生效后即可绑定自定义域名。"
 }

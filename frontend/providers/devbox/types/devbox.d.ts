@@ -4,6 +4,7 @@ import { RuntimeTypeEnum, DevboxStatusEnum } from '@/constants/devbox'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
 export type RuntimeType = `${RuntimeTypeEnum}`
+export type ProtocolType = 'HTTP' | 'GRPC' | 'WS'
 
 export interface DevboxEditType {
   name: string
@@ -11,6 +12,15 @@ export interface DevboxEditType {
   runtimeVersion: string
   cpu: number
   memory: number
+  networks: {
+    networkName: string
+    portName: string
+    port: number
+    protocol: ProtocolType
+    openPublicDomain: boolean
+    publicDomain: string // default domain
+    customDomain: string // custom domain
+  }[]
 }
 
 export interface DevboxStatusMapType {

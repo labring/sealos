@@ -1,4 +1,4 @@
-import { GET } from '@/services/request'
+import { GET, POST } from '@/services/request'
 import type { UserQuotaItemType } from '@/types/user'
 import { SystemEnvResponse } from '@/app/api/getEnv/route'
 import type { Response as RuntimeVersionMapType } from '@/app/api/platform/getRuntimeVersion/route'
@@ -15,3 +15,6 @@ export const getRuntimeVersionMap = () =>
   GET<RuntimeVersionMapType>('/api/platform/getRuntimeVersion')
 
 export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice')
+
+export const postAuthCname = (data: { publicDomain: string; customDomain: string }) =>
+  POST('/api/platform/authCname', data)
