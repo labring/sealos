@@ -23,6 +23,7 @@ import { useDevboxStore } from '@/stores/devbox'
 import { runtimeVersionMap } from '@/stores/static'
 import type { DevboxEditType } from '@/types/devbox'
 import { defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
+import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -71,15 +72,15 @@ const DevboxCreatePage = () => {
     return [
       {
         filename: 'devbox.yaml',
-        value: ''
+        value: json2Devbox(data)
       },
       {
         filename: 'service.yaml',
-        value: ''
+        value: json2Service(data)
       },
       {
         filename: 'ingress.yaml',
-        value: ''
+        value: json2Ingress(data)
       }
     ]
   }
@@ -99,6 +100,7 @@ const DevboxCreatePage = () => {
     }, 200),
     []
   )
+
   // watch form change, compute new yaml
   formHook.watch((data) => {
     data && formOnchangeDebounce(data as DevboxEditType)
@@ -111,12 +113,16 @@ const DevboxCreatePage = () => {
       if (!devboxName) {
         setYamlList([
           {
-            filename: 'cluster.yaml',
-            value: ''
+            filename: 'devbox.yaml',
+            value: json2Devbox(defaultEdit)
           },
           {
-            filename: 'account.yaml',
-            value: '' // TODO: 补充默认值
+            filename: 'service.yaml',
+            value: json2Service(defaultEdit)
+          },
+          {
+            filename: 'ingress.yaml',
+            value: json2Ingress(defaultEdit)
           }
         ])
         return null
@@ -144,12 +150,9 @@ const DevboxCreatePage = () => {
 
   const submitSuccess = async (formData: DevboxEditType) => {
     setIsLoading(true)
-    // try {
-    //   await applyYamlList([limitRangeYaml], 'create')
-    // } catch (err) {}
     try {
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData)
+      const quoteCheckRes = checkQuotaAllow(formData, oldDevboxEditData.current)
       if (quoteCheckRes) {
         setIsLoading(false)
         return toast({

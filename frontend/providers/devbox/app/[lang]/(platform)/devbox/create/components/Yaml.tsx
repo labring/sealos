@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Tabs } from '@sealos/ui'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
@@ -17,7 +17,10 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   const router = useRouter()
   const t = useTranslations()
   const { copyData } = useCopyData()
+  const searchParams = useSearchParams()
   const [selectedIndex, setSelectedIndex] = useState(0)
+
+  const devboxName = searchParams.get('name') as string
 
   return (
     <Grid
@@ -36,7 +39,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           onChange={() =>
             router.replace(
               `/devbox/create?${obj2Query({
-                type: 'form'
+                type: 'form',
+                name: devboxName
               })}`
             )
           }
