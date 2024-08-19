@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 
+interface SemParams {
+  bd_vid: string;
+  keywords: string;
+}
+
 export default function useWindow() {
   const isBrowser = useIsBrowser();
   const [screenWidth, setScreenWidth] = useState(isBrowser ? document.body.clientWidth : 1440);
@@ -8,12 +13,15 @@ export default function useWindow() {
     isBrowser ? document.documentElement.lang : 'en'
   );
   const [cloudUrl, setCloudUrl] = useState('https://cloud.sealos.io');
-  const [bd_vid, setBdId] = useState('');
+  const [semParams, setSemParams] = useState<SemParams>({ bd_vid: '', keywords: '' });
 
   useEffect(() => {
     if (!isBrowser) return;
-    let bd_vid = sessionStorage.getItem('bd_vid');
-    if (bd_vid) setBdId(bd_vid);
+    const storedParams = sessionStorage.getItem('sealos_sem');
+    if (storedParams) {
+      const parsedParams = JSON.parse(storedParams);
+      setSemParams((prevParams) => ({ ...prevParams, ...parsedParams }));
+    }
   }, [isBrowser]);
 
   useEffect(() => {
@@ -41,6 +49,6 @@ export default function useWindow() {
     screenWidth,
     currentLanguage,
     cloudUrl,
-    bd_vid
+    semParams
   };
 }

@@ -40,8 +40,17 @@ const Home = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const bd_vidValue = urlParams.get('bd_vid');
-    sessionStorage.setItem('bd_vid', bd_vidValue);
+    const params: Record<string, string> = {};
+
+    const bd_vid = urlParams.get('bd_vid');
+    if (bd_vid) params.bd_vid = bd_vid;
+
+    const k = urlParams.get('k');
+    if (k) params.keywords = k;
+
+    if (Object.keys(params).length > 0) {
+      sessionStorage.setItem('sealos_sem', JSON.stringify(params));
+    }
   }, []);
 
   const HomeRender = (
