@@ -154,7 +154,7 @@ export function evaluateExpression(expression: string, data?: {
   [key: string]: any;
 }): any | undefined {
   try {
-    // console.log(`expression: ${expression}\ndata: `, data)
+    // console.log("expression: ", expression, " data: ", data)
     // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
     const initInterpreterFunc = (interpreter: any, ctx: any) => {
       interpreter.setProperty(ctx, 'data', interpreter.nativeToPseudo(data));
@@ -166,7 +166,7 @@ export function evaluateExpression(expression: string, data?: {
     // console.log('resoult: ', interpreter.value)
     return interpreter.value;
   } catch (error) {
-    console.error(`Failed to evaluate expression: ${expression}`, error, "data: ", data);
+    console.error("Failed to evaluate expression: ", expression, " data: ", data, error);
     return undefined;
   }
 };
