@@ -6,31 +6,15 @@ import { authSession } from '@/services/backend/auth'
 
 export async function GET(req: NextRequest) {
   try {
-    // const { getUserQuota } = await getK8s({
-    //   kubeconfig: await authSession(req)
-    // })
+    const { getUserQuota } = await getK8s({
+      kubeconfig: await authSession(req)
+    })
 
-    // const quota = await getUserQuota()
+    const quota = await getUserQuota()
 
-    // return jsonRes({
-    //   data: {
-    //     quota
-    //   }
-    // })
     return jsonRes({
       data: {
-        quota: [
-          {
-            type: 'cpu',
-            used: 0.1,
-            limit: 1
-          },
-          {
-            type: 'memory',
-            used: 0.2,
-            limit: 1
-          }
-        ]
+        quota
       }
     })
   } catch (error) {

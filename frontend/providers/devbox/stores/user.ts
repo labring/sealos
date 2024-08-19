@@ -20,6 +20,7 @@ export const useUserStore = create<State>()(
       userQuota: [],
       loadUserQuota: async () => {
         const response = await getUserQuota()
+        console.log('quota', response.quota)
 
         set((state) => {
           state.userQuota = response.quota
@@ -41,8 +42,8 @@ export const useUserStore = create<State>()(
         }
 
         const overLimitTip: { [key: string]: string } = {
-          cpu: 'app.cpu_exceeds_quota',
-          memory: 'app.memory_exceeds_quota'
+          cpu: 'cpu_exceeds_quota',
+          memory: 'memory_exceeds_quota'
         }
 
         const exceedQuota = quote.find((item) => {

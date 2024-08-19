@@ -91,5 +91,7 @@
   "Open Public Access": "开启公网访问",
   "Custom Domain": "自定义域名",
   "Input your custom domain": "输入您的自定义域名",
-  "CNAME Tips": "请到您的域名服务商处，添加该域名的 `CNAME` 解析到 {{domain}}，解析生效后即可绑定自定义域名。"
+  "CNAME Tips": "请到您的域名服务商处，添加该域名的 `CNAME` 解析到 {{domain}}，解析生效后即可绑定自定义域名。",
+  "cpu_exceeds_quota": "申请的 CPU 超出限制，请联系管理员",
+  "memory_exceeds_quota": "申请的 '内存' 超出限制，请联系管理员"
 }

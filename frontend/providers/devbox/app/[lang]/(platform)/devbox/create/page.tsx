@@ -149,17 +149,16 @@ const DevboxCreatePage = () => {
     // } catch (err) {}
     try {
       // quote check
-      // NOTE: 其实这个限额检查可能不需要了
-      // const quoteCheckRes = checkQuotaAllow(formData)
-      // if (quoteCheckRes) {
-      //   setIsLoading(false)
-      //   return toast({
-      //     status: 'warning',
-      //     title: quoteCheckRes,
-      //     duration: 5000,
-      //     isClosable: true
-      //   })
-      // }
+      const quoteCheckRes = checkQuotaAllow(formData)
+      if (quoteCheckRes) {
+        setIsLoading(false)
+        return toast({
+          status: 'warning',
+          title: t(quoteCheckRes),
+          duration: 5000,
+          isClosable: true
+        })
+      }
       await createDevbox({ devboxForm: formData, isEdit })
       toast({
         title: t(applySuccess),

@@ -91,5 +91,7 @@
   "Open Public Access": "Enable Internet Access",
   "Custom Domain": "Custom Domain",
   "Input your custom domain": "Enter your custom domain",
-  "CNAME Tips": "To set up a custom domain, please add a `CNAME` record for your domain pointing to {{domain}} at your domain registrar. You can bind your custom domain once the DNS resolution takes effect."
+  "CNAME Tips": "To set up a custom domain, please add a `CNAME` record for your domain pointing to {{domain}} at your domain registrar. You can bind your custom domain once the DNS resolution takes effect.",
+  "cpu_exceeds_quota": "CPU requested exceeds quota. Contact admin.",
+  "memory_exceeds_quota": "Memory requested exceeds quota. Contact admin."
 }
