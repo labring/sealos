@@ -10,11 +10,10 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName') as string
 
-    const { k8sCustomObjects } = await getK8s({
+    const { k8sCustomObjects, k8sCore } = await getK8s({
       kubeconfig: await authSession(req)
     })
 
-    // TODO: 这里的name不知道确定是什么，所以导致可能删除不成功
     await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -27,6 +26,21 @@ export async function DELETE(req: NextRequest) {
       undefined,
       undefined
     )
+
+    // delete service and ingress at the same time
+    await k8sCustomObjects.deleteNamespacedCustomObject(
+      'networking.k8s.io',
+      'v1',
+      'default',
+      'ingresses',
+      devboxName,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    )
+    await k8sCore.deleteNamespacedService(devboxName, 'default')
 
     return jsonRes({
       data: 'success delete devbox'
