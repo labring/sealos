@@ -13,17 +13,15 @@ export const json2Devbox = (data: DevboxEditType) => {
     metadata: {
       name: data.name
     },
-    //TODO: network这里忘记改了
     spec: {
       network: {
         type: 'NodePort',
-        extraPorts: [
-          {
-            containerPort: 8080,
-            hostPort: 8080,
-            protocol: 'TCP'
-          }
-        ]
+        extraPorts: data.networks.map((item) => ({
+          containerPort: item.port,
+          hostPort: item.port,
+          protocol: 'TCP',
+          name: item.portName
+        }))
       },
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
