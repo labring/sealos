@@ -10,9 +10,9 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
-import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
 import MyIcon from '@/components/Icon'

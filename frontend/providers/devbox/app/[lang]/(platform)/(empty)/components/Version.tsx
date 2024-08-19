@@ -12,10 +12,10 @@ import {
   MenuButton,
   useDisclosure
 } from '@chakra-ui/react'
-import { useCallback, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { SealosMenu, useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
+import { SealosMenu, useMessage } from '@sealos/ui'
 import { useQuery } from '@tanstack/react-query'
 
 import MyIcon from '@/components/Icon'

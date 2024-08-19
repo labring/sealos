@@ -1,6 +1,6 @@
 import React from 'react'
-import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
+import { NextIntlClientProvider } from 'next-intl'
 
 export const IntlProvider = async ({ children }: { children: React.ReactNode }) => {
   const messages = await getMessages()

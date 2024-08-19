@@ -1,6 +1,6 @@
 import { KBDevboxType } from '@/types/k8s'
-import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
 import { GET, POST, DELETE } from '@/services/request'
+import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
 import { DevboxEditType, DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
 export const getMyDevboxList = () =>

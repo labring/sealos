@@ -1,9 +1,9 @@
 import dayjs from 'dayjs'
 
 import { cpuFormatToM } from '@/utils/tools'
+import { devboxStatusMap } from '@/constants/devbox'
 import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
-import { devboxStatusMap } from '@/constants/devbox'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {

@@ -15,22 +15,22 @@ import {
   useTheme
 } from '@chakra-ui/react'
 import { throttle } from 'lodash'
+import dynamic from 'next/dynamic'
+import { customAlphabet } from 'nanoid'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
 import { MySelect, MySlider, Tabs } from '@sealos/ui'
-import { customAlphabet } from 'nanoid'
 
 import MyIcon from '@/components/Icon'
 import { obj2Query } from '@/utils/tools'
 import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
-import { ProtocolList, RuntimeTypeList } from '@/constants/devbox'
 import type { DevboxEditType } from '@/types/devbox'
-import { INSTALL_ACCOUNT, SEALOS_DOMAIN, runtimeVersionMap } from '@/stores/static'
+import { ProtocolList, RuntimeTypeList } from '@/constants/devbox'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
-import dynamic from 'next/dynamic'
+import { INSTALL_ACCOUNT, SEALOS_DOMAIN, runtimeVersionMap } from '@/stores/static'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
