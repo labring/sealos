@@ -19,6 +19,7 @@ import { useCallback, useState } from 'react'
 import { releaseDevbox } from '@/api/devbox'
 import { DevboxListItemType } from '@/types/devbox'
 import { useConfirm } from '@/hooks/useConfirm'
+import { NAMESPACE } from '@/stores/static'
 
 const ReleaseModal = ({
   onClose,
@@ -85,9 +86,8 @@ const ReleaseModal = ({
           <Flex alignItems={'start'} gap={'5px'} mb={'24px'}>
             <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>
               {t('image_name')}
-              {/* TODO: 获取镜像名 */}
             </Box>
-            <Input defaultValue={'test'} />
+            <Input defaultValue={`sealos.hub/${NAMESPACE}/${devbox.name}`} isReadOnly />
           </Flex>
           <Flex alignItems={'start'} gap={'5px'}>
             <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>

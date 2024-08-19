@@ -18,3 +18,5 @@ export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/
 
 export const postAuthCname = (data: { publicDomain: string; customDomain: string }) =>
   POST('/api/platform/authCname', data)
+
+export const getNamespace = () => GET<string>('/api/platform/getNamespace')

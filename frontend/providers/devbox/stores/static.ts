@@ -1,5 +1,5 @@
 import { RuntimeTypeEnum } from '@/constants/devbox'
-import { getRuntimeVersionMap, getResourcePrice } from '@/api/platform'
+import { getRuntimeVersionMap, getResourcePrice, getNamespace } from '@/api/platform'
 import type { Response as RuntimeVersionMapType } from '@/app/api/platform/getRuntimeVersion/route'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
@@ -9,9 +9,11 @@ export let SOURCE_PRICE: resourcePriceResponse = {
   memory: 0.033792
 }
 export let INSTALL_ACCOUNT = false
+export let NAMESPACE = 'default'
 
 let retryGetRuntimeVersion = 3
 let retryGetPrice = 3
+let retryGetNamespace = 3
 
 // NOTE: 枚举列表大小写不一致，需要统一
 // TODO: 这里需要知道具体的默认版本
@@ -35,6 +37,20 @@ export const getUserPrice = async () => {
     if (retryGetPrice >= 0) {
       setTimeout(() => {
         getUserPrice()
+      }, 1000)
+    }
+  }
+}
+
+export const getGlobalNamespace = async () => {
+  try {
+    const res = await getNamespace()
+    NAMESPACE = res
+  } catch (err) {
+    retryGetNamespace--
+    if (retryGetNamespace >= 0) {
+      setTimeout(() => {
+        getNamespace()
       }, 1000)
     }
   }

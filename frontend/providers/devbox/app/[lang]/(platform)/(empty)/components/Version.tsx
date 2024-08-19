@@ -24,6 +24,7 @@ import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { delDevboxVersionByName } from '@/api/devbox'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
+import { NAMESPACE } from '@/stores/static'
 
 const ReleaseModal = dynamic(() => import('@/components/modals/releaseModal'))
 const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))
@@ -198,7 +199,7 @@ const Version = ({
                 borderRadius={'base'}
               />
               <Box ml={'8px'} fontSize={'md'} fontWeight={'bold'} color={'grayModern.500'}>
-                ( {devboxVersionList.length} )
+                {t('image_name') + `: sealos.hub/${NAMESPACE}/${devbox.name}`}
               </Box>
               <Box flex={1}></Box>
               <Button
