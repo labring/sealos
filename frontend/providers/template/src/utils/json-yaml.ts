@@ -65,7 +65,6 @@ export const parseTemplateString = (
 
 export const getTemplateDataSource = (
   template: TemplateType,
-  platformEnvs?: EnvResponse
 ): ProcessedTemplateSourceType => {
   try {
     if (!template) {
@@ -75,17 +74,6 @@ export const getTemplateDataSource = (
       };
     }
     const { defaults, inputs } = template.spec;
-    const regex = /\$\{\{\s*(.*?)\s*\}\}/g
-
-    // handle default value
-    const cloneDefauls = cloneDeep(defaults);
-    for (let [key, item] of Object.entries(cloneDefauls)) {
-      if (item.value) {
-        item.value = item.value.replace(regex, (match: string, key: string) => {
-          return evaluateExpression(key, platformEnvs);
-        }) || item.value;
-      }
-    }
 
     // handle default value for inputs
     const handleInputs = (
@@ -99,13 +87,6 @@ export const getTemplateDataSource = (
           options?: string[];
           if?: string;
         }
-      >,
-      cloneDefauls: Record<
-        string,
-        {
-          type: string;
-          value: string;
-        }
       >
     ): FormSourceInput[] => {
       if (!inputs || Object.keys(inputs).length === 0) {
@@ -113,22 +94,6 @@ export const getTemplateDataSource = (
       }
 
       const inputsArr = Object.entries(inputs).map(([key, item]) => {
-        const output = mapValues(cloneDefauls, (value) => value.value);
-        if (item.default) {
-          item.default = item.default.replace(regex, (match: string, key: string) => {
-            return evaluateExpression(key, {
-              ...platformEnvs,
-              defaults: output,
-            });
-          }) || item.default;
-        }
-        item.description = item.description.replace(regex, (match: string, key: string) => {
-          return evaluateExpression(key, {
-            ...platformEnvs,
-            defaults: output,
-            inputs: {}
-          });
-        }) || item.description;
         return {
           ...item,
           description: item.description,
@@ -145,12 +110,11 @@ export const getTemplateDataSource = (
     };
 
     // // handle input value
-    const cloneInputs = cloneDeep(inputs);
-    const transformedInput = handleInputs(cloneInputs, cloneDefauls);
+    const transformedInput = handleInputs(inputs);
     // console.log(cloneDefauls, transformedInput);
 
     return {
-      defaults: cloneDefauls,
+      defaults,
       inputs: transformedInput
     };
   } catch (error) {
@@ -307,7 +271,8 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
 export function getYamlSource(str: string, platformEnvs?: EnvResponse): TemplateSourceType {
   let { appYaml, templateYaml } = getYamlTemplate(str)
 
-  const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
+  templateYaml = parseTemplateYaml(templateYaml, platformEnvs)
+  const dataSource = getTemplateDataSource(templateYaml);
   const _instanceName = dataSource?.defaults?.app_name?.value || '';
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
   appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
@@ -354,4 +319,37 @@ export function getYamlTemplate(str: string): {
     appYaml: appYamlList.join('---\n'),
     templateYaml: templateYaml
   };
+}
+
+export function parseTemplateYaml(templateYaml: TemplateType, platformEnvs?: EnvResponse): TemplateType {
+  const regex = /\$\{\{\s*(.*?)\s*\}\}/g
+
+  for (let [key, item] of Object.entries(templateYaml.spec.defaults)) {
+    if (item.value) {
+      item.value = item.value.replace(regex, (match: string, key: string) => {
+        return evaluateExpression(key, platformEnvs);
+      }) || item.value;
+    }
+  }
+
+  const defaults = mapValues(templateYaml.spec.defaults, (value) => value.value)
+  for (let [key, item] of Object.entries(templateYaml.spec.inputs)) {
+    if (item.description) {
+      item.description = item.description.replace(regex, (match: string, key: string) => {
+        return evaluateExpression(key, {
+          ...platformEnvs,
+          defaults,
+        });
+      }) || item.description;
+    }
+    if (item.default) {
+      item.default = item.default.replace(regex, (match: string, key: string) => {
+        return evaluateExpression(key, {
+          ...platformEnvs,
+          defaults,
+        });
+      }) || item.default;
+    }
+  }
+  return templateYaml
 }

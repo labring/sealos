@@ -7,6 +7,7 @@ import {
   getTemplateDataSource,
   handleTemplateToInstanceYaml,
   getYamlTemplate,
+  parseTemplateYaml,
 } from '@/utils/json-yaml';
 import fs from 'fs';
 import JsYaml from 'js-yaml';
@@ -105,7 +106,8 @@ export async function GetTemplateByName({
     templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
   }
 
-  const dataSource = getTemplateDataSource(templateYaml, TemplateEnvs);
+  templateYaml = parseTemplateYaml(templateYaml, TemplateEnvs);
+  const dataSource = getTemplateDataSource(templateYaml);
 
   // Convert template to instance
   const instanceName = dataSource?.defaults?.['app_name']?.value;
