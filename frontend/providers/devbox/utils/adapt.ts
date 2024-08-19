@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 
-import { cpuFormatToM } from '@/utils/tools'
 import { devboxStatusMap } from '@/constants/devbox'
+import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
@@ -12,14 +12,14 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
     runtimeType:
       (devbox.spec.runtimeRef.name && devbox.spec.runtimeRef.name.split('-')[0]) || 'custom',
     runtimeVersion:
-      (devbox.spec.runtimeRef.name && devbox.spec.runtimeRef.name.split('-')[1]) || 'custom',
+      (devbox.spec.runtimeRef.name && devbox.spec.runtimeRef.name.split('-')[1]) || 'default',
     status:
       devbox.spec.state && devboxStatusMap[devbox.spec.state]
         ? devboxStatusMap[devbox.spec.state]
         : devboxStatusMap.UnKnow,
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
-    memory: cpuFormatToM(devbox.spec.resource.memory),
+    memory: memoryFormatToMi(devbox.spec.resource.memory),
     usedCpu: {
       // TODO: 这里需要处理一下
       name: 'usedCpu',

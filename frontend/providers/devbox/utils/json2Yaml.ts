@@ -13,6 +13,7 @@ export const json2Devbox = (data: DevboxEditType) => {
     metadata: {
       name: data.name
     },
+    //TODO: network这里忘记改了
     spec: {
       network: {
         type: 'NodePort',
@@ -25,8 +26,8 @@ export const json2Devbox = (data: DevboxEditType) => {
         ]
       },
       resource: {
-        cpu: data.cpu,
-        memory: data.memory
+        cpu: `${str2Num(Math.floor(data.cpu))}m`,
+        memory: `${str2Num(data.memory)}Mi`
       },
       runtimeRef: {
         name: `${data.runtimeType}-${data.runtimeVersion}`

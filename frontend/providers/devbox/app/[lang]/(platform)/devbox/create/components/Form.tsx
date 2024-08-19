@@ -39,6 +39,7 @@ export type CustomAccessModalParams = {
   customDomain: string
 }
 
+// TODO: 删除时删除service和ingress
 const CustomAccessModal = dynamic(() => import('@/components/modals/CustomAccessModal'))
 
 const Form = ({
