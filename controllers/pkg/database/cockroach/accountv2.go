@@ -672,7 +672,8 @@ func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.Limi
 		return nil, limitResp, fmt.Errorf("failed to get total count: %v", err)
 	}
 	totalPage := (total + int64(pageSize) - 1) / int64(pageSize)
-	if err := query.Limit(pageSize).
+	if err := query.Order("created_at DESC").
+		Limit(pageSize).
 		Offset((page - 1) * pageSize).
 		Find(&payment).Error; err != nil {
 		return nil, limitResp, fmt.Errorf("failed to get payment: %v", err)
