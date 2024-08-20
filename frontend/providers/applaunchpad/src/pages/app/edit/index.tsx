@@ -9,7 +9,7 @@ import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
-import type { AppEditType, DeployKindsType } from '@/types/app';
+import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import {
   json2ConfigMap,
@@ -287,6 +287,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
+
+  useEffect(() => {
+    const query = router.query;
+    const updates: Partial<AppEditSyncedFields> = {
+      imageName: query.imageName as string,
+      replicas: query.replicas ? Number(query.replicas) : undefined,
+      cpu: query.cpu ? Number(query.cpu) : undefined,
+      memory: query.memory ? Number(query.memory) : undefined
+    };
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined) {
+        formHook.setValue(key as keyof AppEditSyncedFields, value);
+      }
+    });
+  }, []);
 
   return (
     <>
