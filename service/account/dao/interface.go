@@ -45,6 +45,7 @@ type Interface interface {
 	GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error)
 	ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoice, payments []types.Payment, err error)
 	GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error)
+	GetInvoicePayments(invoiceID string) ([]types.Payment, error)
 	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
 	GetWorkspaceName(namespaces []string) ([][]string, error)
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
@@ -1352,6 +1353,10 @@ func (m *Account) GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.
 			EndTime:   req.EndTime,
 		},
 	})
+}
+
+func (m *Account) GetInvoicePayments(invoiceID string) ([]types.Payment, error) {
+	return m.ck.GetPaymentWithInvoice(invoiceID)
 }
 
 func (m *Account) SetStatusInvoice(req *helper.SetInvoiceStatusReq) error {

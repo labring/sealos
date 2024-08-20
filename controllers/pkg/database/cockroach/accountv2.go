@@ -789,6 +789,32 @@ func (c *Cockroach) GetInvoice(userID string, req types.LimitReq) ([]types.Invoi
 	return invoices, limitResp, nil
 }
 
+func (c *Cockroach) GetInvoicePayments(invoiceID string) ([]types.InvoicePayment, error) {
+	var invoicePayments []types.InvoicePayment
+	query := c.DB.Model(&types.InvoicePayment{}).Where("invoice_id = ?", invoiceID)
+	if err := query.Find(&invoicePayments).Error; err != nil {
+		return nil, fmt.Errorf("failed to get invoice payments: %v", err)
+	}
+
+	return invoicePayments, nil
+}
+
+func (c *Cockroach) GetPaymentWithInvoice(invoiceID string) ([]types.Payment, error) {
+	invoicePayments, err := c.GetInvoicePayments(invoiceID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get invoice payments: %v", err)
+	}
+	var paymentIDs []string
+	for _, invoicePayment := range invoicePayments {
+		paymentIDs = append(paymentIDs, invoicePayment.PaymentID)
+	}
+	var payments []types.Payment
+	if err := c.DB.Where("id IN ?", paymentIDs).Find(&payments).Error; err != nil {
+		return nil, fmt.Errorf("failed to get payments: %v", err)
+	}
+	return payments, nil
+}
+
 func (c *Cockroach) SetInvoiceStatus(ids []string, stats string) error {
 	if err := c.DB.Model(&types.Invoice{}).Where("id IN ?", ids).Update("status", stats).Error; err != nil {
 		return fmt.Errorf("failed to update invoice status: %v", err)

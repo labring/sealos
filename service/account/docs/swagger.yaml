@@ -1174,6 +1174,44 @@ paths:
       summary: Get invoice
       tags:
       - GetInvoice
+  /account/v1alpha1/invoice/get-payment:
+    post:
+      consumes:
+      - application/json
+      description: Get invoice payment
+      parameters:
+      - description: Get invoice payment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetInvoiceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get invoice payment
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get invoice payment request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get invoice payment
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get invoice payment
+      tags:
+      - GetInvoicePayment
   /account/v1alpha1/invoice/set-status:
     post:
       consumes:

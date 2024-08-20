@@ -838,3 +838,40 @@ func SetStatusInvoice(c *gin.Context) {
 		"message": "successfully set status invoice",
 	})
 }
+
+// GetInvoicePayment
+// @Summary Get invoice payment
+// @Description Get invoice payment
+// @Tags GetInvoicePayment
+// @Accept json
+// @Produce json
+// @Param request body helper.GetInvoiceReq true "Get invoice payment request"
+// @Success 200 {object} map[string]interface{} "successfully get invoice payment"
+// @Failure 400 {object} map[string]interface{} "failed to parse get invoice payment request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get invoice payment"
+// @Router /account/v1alpha1/invoice/get-payment [post]
+func GetInvoicePayment(c *gin.Context) {
+	req, err := helper.ParseGetInvoiceReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get invoice payment request: %v", err)})
+		return
+	}
+	if req.Token != "" {
+		err = checkInvoiceToken(req.Token)
+	} else {
+		err = CheckAuthAndCalibrate(req.Auth)
+	}
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	payments, err := dao.DBClient.GetInvoicePayments(req.InvoiceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get invoice payment : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": payments,
+	})
+}

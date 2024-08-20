@@ -24,6 +24,7 @@ const (
 	GetInvoice               = "/invoice/get"
 	ApplyInvoice             = "/invoice/apply"
 	SetStatusInvoice         = "/invoice/set-status"
+	GetInvoicePayment        = "/invoice/get-payment"
 )
 
 // env
