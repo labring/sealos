@@ -90,8 +90,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       localStorage.setItem('bd_vid', bd_vid as string);
     }
 
-    const semData: SemData = { channel: '' };
     // handle new user sem source
+    const semData: SemData = { channel: '' };
     if (s) {
       semData.channel = s as string;
     }

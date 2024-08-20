@@ -40,7 +40,7 @@ export const getInviterId = () => localStorage.getItem('inviterId');
 export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);
 
 export const getUserSemData = (): SemData | null => {
-  const semDataString = localStorage.getItem('sem');
+  const semDataString = localStorage.getItem('sealos_sem');
   if (semDataString) {
     return JSON.parse(semDataString);
   }
@@ -48,5 +48,5 @@ export const getUserSemData = (): SemData | null => {
 };
 
 export const setUserSemData = (data: SemData): void => {
-  localStorage.setItem('sem', JSON.stringify(data));
+  localStorage.setItem('sealos_sem', JSON.stringify(data));
 };
