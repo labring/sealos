@@ -173,13 +173,9 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 		m.Properties = properties
 	}
 	for _, types := range m.Properties.Types {
-		price := types.ViewPrice
-		if price == 0 {
-			price = types.UnitPrice
-		}
 		property := common.PropertyQuery{
 			Name:      types.Name,
-			UnitPrice: price,
+			UnitPrice: types.UnitPrice,
 			Unit:      types.UnitString,
 			Alias:     types.Alias,
 		}
