@@ -18,7 +18,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   if (!enableOAuth2() || !redirectUrl) {
     throw new Error('District related env');
   }
-  const { code, inviterId, userSemChannel } = req.body;
+  const { code, inviterId, semData } = req.body;
   const url = `${tokenUrl}`;
   const oauth2Data = (await (
     await fetch(url, {
@@ -68,7 +68,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     avatar_url,
     name,
     inviterId,
-    userSemChannel
+    semData
   });
   if (!data)
     return jsonRes(res, {

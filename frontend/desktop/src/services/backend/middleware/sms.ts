@@ -10,6 +10,7 @@ import {
 } from '../db/verifyCode';
 import { isEmail } from '@/utils/crypto';
 import { EMAIL_STATUS } from '@/types/response/email';
+import { SemData } from '@/types/sem';
 
 export const filterPhoneParams = async (
   req: NextApiRequest,
@@ -44,14 +45,14 @@ export const filterPhoneVerifyParams = (
     phoneNumbers: string;
     code: string;
     inviterId?: string;
-    userSemChannel?: string;
+    semData?: SemData;
   }) => void
 ) =>
   filterPhoneParams(req, res, async (data) => {
-    const { code, inviterId, userSemChannel } = req.body as {
+    const { code, inviterId, semData } = req.body as {
       code?: string;
       inviterId?: string;
-      userSemChannel?: string;
+      semData?: SemData;
     };
     if (!code)
       return jsonRes(res, {
@@ -64,7 +65,7 @@ export const filterPhoneVerifyParams = (
         ...data,
         code,
         inviterId,
-        userSemChannel
+        semData
       })
     );
   });
