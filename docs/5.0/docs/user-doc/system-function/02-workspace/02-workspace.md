@@ -14,13 +14,13 @@
 
 点击创建工作空间。
 
-![](./images/workspace-1.png)
+![](./images/workspace-2.png)
 
 ### 切换工作空间
 
 回到 Sealos 界面，点击个人空间，点击 hello 工作空间即可切换到 hello。
 
-![](./images/workspace-2.png)
+![](./images/workspace-3.png)
 
 ### 邀请用户
 
@@ -34,10 +34,10 @@
 
 - 开发者（Developer）：拥有工作空间的开发权限，包括查看工作空间中的资源状态。
 
-![](./images/workspace-3.png)
+![](./images/workspace-4.png)
 
 ### 接受邀请
 
 用户收到邀请链接，访问链接，点击接受邀请即可加入工作空间。
 
-![](./images/workspace-4.png)
+![](./images/workspace-5.png)
