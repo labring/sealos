@@ -14,23 +14,6 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(req)
     })
 
-    // restart = stopped + running
-    await k8sCustomObjects.patchNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha1',
-      'default', // TODO: namespace动态获取
-      'devboxes',
-      devboxName,
-      { spec: { state: 'Stopped' } },
-      undefined,
-      undefined,
-      undefined,
-      {
-        headers: {
-          'Content-Type': 'application/merge-patch+json'
-        }
-      }
-    )
     await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -50,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     // TODO: ApiResp的使用不太好，尝试去除
     return jsonRes({
-      data: 'success pause devbox'
+      data: 'success start devbox'
     })
   } catch (err: any) {
     return jsonRes<ApiResp>({

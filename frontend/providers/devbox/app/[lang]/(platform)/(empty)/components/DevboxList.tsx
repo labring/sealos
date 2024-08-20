@@ -21,7 +21,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { pauseDevbox, restartDevbox } from '@/api/devbox'
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -82,6 +82,26 @@ const DevboxList = ({
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('restart_error'),
+          status: 'error'
+        })
+        console.error(error, '==')
+      }
+      setLoading(false)
+    },
+    [setLoading, t, toast]
+  )
+  const handleStartDevbox = useCallback(
+    async (devbox: DevboxListItemType) => {
+      try {
+        setLoading(true)
+        await startDevbox({ devboxName: devbox.name })
+        toast({
+          title: t('start_success'),
+          status: 'success'
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('start_error'),
           status: 'error'
         })
         console.error(error, '==')
@@ -248,6 +268,7 @@ const DevboxList = ({
                 ),
                 onClick: () => handleGoToTerminal(item)
               },
+
               {
                 child: (
                   <>
@@ -257,26 +278,42 @@ const DevboxList = ({
                 ),
                 onClick: () => router.push(`/devbox/create?name=${item.name}`)
               },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'pause'} w={'16px'} />
-                    <Box ml={2}>{t('shutdown')}</Box>
-                  </>
-                ),
-                onClick: () => handlePauseDevbox(item),
-                isDisabled: item.status.value === 'Stopped'
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'restart'} w={'16px'} />
-                    <Box ml={2}>{t('boot')}</Box>
-                  </>
-                ),
-                onClick: () => handleRestartDevbox(item),
-                isDisabled: item.status.value === 'Running'
-              },
+              ...(item.status.value === 'Stopped'
+                ? [
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'start'} w={'16px'} />
+                          <Box ml={2}>{t('boot')}</Box>
+                        </>
+                      ),
+                      onClick: () => handleStartDevbox(item),
+                      isDisabled: item.status.value === 'Stopped'
+                    }
+                  ]
+                : []),
+              ...(item.status.value === 'Running'
+                ? [
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'restart'} w={'16px'} />
+                          <Box ml={2}>{t('restart')}</Box>
+                        </>
+                      ),
+                      onClick: () => handleRestartDevbox(item)
+                    },
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'pause'} w={'16px'} />
+                          <Box ml={2}>{t('shutdown')}</Box>
+                        </>
+                      ),
+                      onClick: () => handlePauseDevbox(item)
+                    }
+                  ]
+                : []),
               {
                 child: (
                   <>

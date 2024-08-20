@@ -20,6 +20,8 @@ export const delDevboxByName = (devboxName: string) =>
 
 export const restartDevbox = (data: { devboxName: string }) => POST('/api/restartDevbox', data)
 
+export const startDevbox = (data: { devboxName: string }) => POST('/api/startDevbox', data)
+
 export const pauseDevbox = (data: { devboxName: string }) => POST('/api/pauseDevbox', data)
 
 export const getDevboxVersionList = (devboxName: string) =>
