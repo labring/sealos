@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
@@ -80,7 +82,8 @@ type MonitorReconciler struct {
 	TrafficClient            database.Interface
 	Properties               *resources.PropertyTypeLS
 	PromURL                  string
-	currentObjectMetrics     map[string]objstorage.MetricData
+	lastObjectMetrics        objstorage.Metrics
+	currentObjectMetrics     objstorage.Metrics
 	ObjStorageClient         *minio.Client
 	ObjStorageMetricsClient  *objstorage.MetricsClient
 	ObjStorageUserBackupSize map[string]int64
@@ -288,22 +291,52 @@ func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.Namespace
 		}(&namespaceList.Items[i])
 	}
 	wg.Wait()
+	if err := r.monitorObjectStorageTraffic(); err != nil {
+		r.Logger.Error(err, "failed to monitor object storage traffic")
+	}
 	logger.Info("end processNamespaceList", "time", time.Now().Format("2006-01-02 15:04:05"))
 	return nil
 }
 
 func (r *MonitorReconciler) preMonitorResourceUsage() error {
 	if r.ObjStorageMetricsClient != nil {
-		metrics, err := objstorage.QueryUserUsage(r.ObjStorageMetricsClient)
+		metrics, err := objstorage.QueryUserUsageAndTraffic(r.ObjStorageMetricsClient)
 		if err != nil {
+			r.lastObjectMetrics = r.currentObjectMetrics
 			return fmt.Errorf("failed to query object storage metrics: %w", err)
 		}
+		if r.currentObjectMetrics != nil {
+			r.lastObjectMetrics = r.currentObjectMetrics
+		} else {
+			latestObjTrafficSentMetrics := make(objstorage.Metrics)
+			startTime, endTime := time.Now().UTC().Add(-time.Hour), time.Now().UTC()
+			traffic, err := r.DBClient.GetAllLatestObjTraffic(startTime, endTime)
+			if err != nil {
+				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
+			}
+			for i := range traffic {
+				user := traffic[i].User
+				bucket := traffic[i].Bucket
+				if _, ok := metrics[user]; !ok {
+					continue
+				}
+
+				if traffic[i].Time.Before(time.Now().Add(-time.Hour)) {
+					continue
+				}
+
+				if _, ok := latestObjTrafficSentMetrics[user]; !ok {
+					latestObjTrafficSentMetrics[user] = objstorage.MetricData{
+						Sent: make(map[string]int64),
+					}
+				}
+
+				latestObjTrafficSentMetrics[user].Sent[bucket] = traffic[i].TotalSent
+			}
+			r.lastObjectMetrics = latestObjTrafficSentMetrics
+		}
 		r.currentObjectMetrics = metrics
-		logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
-	}
-	if r.ObjStorageClient != nil {
-		r.ObjStorageUserBackupSize = objstorage.GetUserBakFileSize(r.ObjStorageClient)
-		logger.Info("success query object storage backup size", "time", time.Now().Format("2006-01-02 15:04:05"))
+		logger.Info("success query object storage usage and traffic metrics", "time", time.Now().Format("2006-01-02 15:04:05"))
 	}
 	return nil
 }
@@ -457,7 +490,7 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed
 	for i := range backupList.Items {
 		backup := &backupList.Items[i]
 		backupRes := resources.NewResourceNamed(backup)
-		fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
+		//fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
 		if resUsed[backupRes.String()] == nil {
 			resNamed[backupRes.String()] = backupRes
 			resUsed[backupRes.String()] = initResources()
@@ -533,6 +566,41 @@ func (r *MonitorReconciler) monitorObjectStorageUsage(namespace string, resMap m
 	return nil
 }
 
+func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
+	if r.currentObjectMetrics == nil {
+		return nil
+	}
+	var objTraffic []*types.ObjectStorageTraffic
+	now := time.Now().UTC()
+	for user, metric := range r.currentObjectMetrics {
+		if len(metric.Sent) == 0 {
+			continue
+		}
+		for bucket, m := range metric.Sent {
+			sent := int64(0)
+			if r.lastObjectMetrics != nil && r.lastObjectMetrics[user].Sent != nil {
+				if _, ok := r.lastObjectMetrics[user].Sent[bucket]; ok {
+					ss := m - r.lastObjectMetrics[user].Sent[bucket]
+					if ss > 0 {
+						sent = ss
+					}
+				}
+			}
+			objTraffic = append(objTraffic, &types.ObjectStorageTraffic{
+				Time:      now,
+				User:      user,
+				Bucket:    bucket,
+				TotalSent: m,
+				Sent:      sent,
+			})
+		}
+	}
+	if err := r.DBClient.SaveObjTraffic(objTraffic...); err != nil {
+		return fmt.Errorf("failed to save object storage traffic: %w", err)
+	}
+	return nil
+}
+
 func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) error {
 	logger.Info("start getTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
 	execTime := time.Now().UTC()
@@ -551,9 +619,9 @@ func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) err
 }
 
 func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime time.Time) error {
-	buckets, err := objstorage.ListAllObjectStorageBucket(r.ObjStorageClient)
+	buckets, err := r.DBClient.GetTimeObjBucketBucket(startTime, endTime)
 	if err != nil {
-		return fmt.Errorf("failed to list object storage buckets: %w", err)
+		return fmt.Errorf("failed to get object storage buckets: %w", err)
 	}
 	r.Logger.Info("object storage buckets", "buckets len", len(buckets))
 	wg, _ := errgroup.WithContext(context.Background())
@@ -571,7 +639,7 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 }
 
 func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime time.Time, bucket string) error {
-	bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, bucket, r.ObjectStorageInstance, startTime, endTime)
+	bytes, err := r.DBClient.HandlerTimeObjBucketSentTraffic(startTime, endTime, bucket)
 	if err != nil {
 		return fmt.Errorf("failed to get object storage flow: %w", err)
 	}
@@ -633,7 +701,6 @@ func (r *MonitorReconciler) handlerTrafficUsed(startTime, endTime time.Time, mon
 		Time:     endTime.Add(-1 * time.Minute),
 		Type:     monitor.Type,
 	}
-	r.Logger.Info("monitor traffic used", "monitor", ro)
 	err = r.DBClient.InsertMonitor(context.Background(), &ro)
 	if err != nil {
 		return fmt.Errorf("failed to insert monitor: %w", err)
