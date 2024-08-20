@@ -15,8 +15,9 @@ import {
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
-import { SealosMenu, useMessage } from '@sealos/ui'
 import { useQuery } from '@tanstack/react-query'
+import { sealosApp } from 'sealos-desktop-sdk/app'
+import { SealosMenu, useMessage } from '@sealos/ui'
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
@@ -73,6 +74,20 @@ const Version = ({
       setIsLoading(false)
     },
     [setIsLoading, toast, t]
+  )
+
+  const handleOnline = useCallback(
+    (version: DevboxVersionListItemType) => {
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: 'system-applaunchpad',
+        pathname: '/app/edit',
+        messageData: {
+          type: 'InternalAppCall',
+          image: `sealos.hub/${NAMESPACE}/${devbox.name}:${version.tag}`
+        }
+      })
+    },
+    [devbox.name]
   )
 
   const columns: {
@@ -140,7 +155,7 @@ const Version = ({
             _hover={{
               color: 'brightBlue.600'
             }}
-            onClick={() => {}}>
+            onClick={() => handleOnline(item)}>
             {t('online')}
           </Button>
           <SealosMenu
