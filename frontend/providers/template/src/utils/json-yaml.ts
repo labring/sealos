@@ -231,13 +231,14 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
     const end = yamlStr.substring(match.index! + match[0].length);
     let between = '';
 
+    let conditionMet = false;
     if (elifElseMatches.length === 0) {
       const ifResult = evaluateExpression(ifMatch[2]);
       if (ifResult) {
         between = yamlStr.substring(ifMatch.index! + ifMatch[0].length, match.index);
+        conditionMet = true;
       }
     } else {
-      let conditionMet = false;
       for (const clause of [ifMatch, ...elifElseMatches]) {
         const expression = clause[2];
         if (clause[1] === 'else' || evaluateExpression(expression)) {
@@ -246,10 +247,10 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
           break;
         }
       }
+    }
 
-      if (!conditionMet) {
-        between = yamlStr.substring(elifElseMatches[elifElseMatches.length - 1].index! + elifElseMatches[elifElseMatches.length - 1][0].length, match.index);
-      }
+    if (!conditionMet && elifElseMatches.length === 0) {
+      between = '';
     }
 
     return __parseYamlIfEndif(start + between + end, evaluateExpression);
