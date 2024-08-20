@@ -6,7 +6,7 @@ import { Flex, Spinner } from '@chakra-ui/react';
 import { uploadConvertData } from '@/api/platform';
 import { isString } from 'lodash';
 import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
-import { getInviterId, getUserSemChannel, sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
@@ -62,8 +62,8 @@ export default function Callback() {
           if (action === 'LOGIN') {
             const data = await signInRequest(provider)({
               code,
-              inviterId: getInviterId()!,
-              userSemChannel: getUserSemChannel()!
+              inviterId: getInviterId() ?? undefined,
+              semData: getUserSemData() ?? undefined
             });
             setProvider();
             if (data.code === 200 && data.data?.token) {

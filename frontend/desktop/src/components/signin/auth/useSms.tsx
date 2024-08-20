@@ -19,7 +19,7 @@ import { getRegionToken, UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { uploadConvertData } from '@/api/platform';
 import { AccessTokenPayload } from '@/types/token';
-import { getInviterId, getUserSemChannel, sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 
 export default function useSms({
@@ -56,7 +56,7 @@ export default function useSms({
               id: data.phoneNumber,
               code: data.verifyCode,
               inviterId: getInviterId(),
-              userSemChannel: getUserSemChannel()
+              semData: getUserSemData()
             }
           );
           const globalToken = result1?.data?.token;

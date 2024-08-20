@@ -10,6 +10,7 @@ import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { BIND_STATUS } from '@/types/response/bind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { SemData } from '@/types/sem';
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
@@ -27,7 +28,7 @@ export const _passwordLoginRequest =
           user: string;
           password: string;
           inviterId: string | null | undefined;
-          userSemChannel: string | null | undefined;
+          semData: SemData | null | undefined;
         }
       | {
           user: string;
@@ -112,7 +113,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; userSemChannel?: string }) =>
+  (data: { code: string; inviterId?: string; semData?: SemData }) =>
     request.post<
       typeof data,
       ApiResp<{

@@ -10,11 +10,12 @@ import { addOrUpdateCode } from '../db/mergeUserCode';
 import { v4 } from 'uuid';
 import { BIND_STATUS } from '@/types/response/bind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
+import { SemData } from '@/types/sem';
 
 export const OauthCodeFilter = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { code: string; inviterId?: string; userSemChannel?: string }) => void
+  next: (data: { code: string; inviterId?: string; semData?: SemData }) => void
 ) => {
   const { code } = req.body as { code?: string };
   if (!code)
@@ -23,12 +24,12 @@ export const OauthCodeFilter = async (
       code: 400
     });
   const { inviterId } = req.body as { inviterId?: string };
-  const { userSemChannel } = req.body as { userSemChannel?: string };
+  const { semData } = req.body as { semData?: SemData };
   await Promise.resolve(
     next?.({
       code,
       inviterId,
-      userSemChannel
+      semData
     })
   );
 };

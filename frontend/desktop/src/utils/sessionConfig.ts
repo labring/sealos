@@ -2,6 +2,7 @@ import { UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
+import { SemData } from '@/types/sem';
 
 export const sessionConfig = async ({
   token,
@@ -38,6 +39,14 @@ export const getInviterId = () => localStorage.getItem('inviterId');
 
 export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);
 
-export const getUserSemChannel = () => localStorage.getItem('sem_source');
+export const getUserSemData = (): SemData | null => {
+  const semDataString = localStorage.getItem('sealos_sem');
+  if (semDataString) {
+    return JSON.parse(semDataString);
+  }
+  return null;
+};
 
-export const setUserSemChannel = (s: string) => localStorage.setItem('sem_source', s);
+export const setUserSemData = (data: SemData): void => {
+  localStorage.setItem('sealos_sem', JSON.stringify(data));
+};

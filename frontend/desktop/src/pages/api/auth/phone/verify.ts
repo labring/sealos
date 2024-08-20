@@ -8,13 +8,9 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   if (!enableSms()) {
     throw new Error('SMS is not enabled');
   }
-  await filterPhoneVerifyParams(
-    req,
-    res,
-    async ({ phoneNumbers, code, inviterId, userSemChannel }) => {
-      await verifyPhoneCodeGuard(phoneNumbers, code)(res, async ({ smsInfo: phoneInfo }) => {
-        await getGlobalTokenByPhoneSvc(phoneInfo.id, inviterId, userSemChannel)(res);
-      });
-    }
-  );
+  await filterPhoneVerifyParams(req, res, async ({ phoneNumbers, code, inviterId, semData }) => {
+    await verifyPhoneCodeGuard(phoneNumbers, code)(res, async ({ smsInfo: phoneInfo }) => {
+      await getGlobalTokenByPhoneSvc(phoneInfo.id, inviterId, semData)(res);
+    });
+  });
 });

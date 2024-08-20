@@ -5,6 +5,7 @@ import { ProviderType, User } from 'prisma/global/generated/client';
 import { nanoid } from 'nanoid';
 import { generateAuthenticationToken } from '@/services/backend/auth';
 import { AuthConfigType } from '@/types';
+import { SemData } from '@/types/sem';
 
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -90,13 +91,13 @@ async function signUp({
   id,
   name: nickname,
   avatar_url,
-  userSemChannel
+  semData
 }: {
   provider: ProviderType;
   id: string;
   name: string;
   avatar_url: string;
-  userSemChannel?: string;
+  semData?: SemData;
 }) {
   const name = nanoid(10);
   try {
@@ -116,11 +117,12 @@ async function signUp({
         }
       });
 
-      if (userSemChannel) {
+      if (semData?.channel) {
         await tx.userSemChannel.create({
           data: {
             userUid: user.uid,
-            channel: userSemChannel
+            channel: semData.channel,
+            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
           }
         });
       }
@@ -140,13 +142,13 @@ export async function signUpByPassword({
   name: nickname,
   avatar_url,
   password,
-  userSemChannel
+  semData
 }: {
   id: string;
   name: string;
   avatar_url: string;
   password: string;
-  userSemChannel?: string;
+  semData?: SemData;
 }) {
   const name = nanoid(10);
 
@@ -168,11 +170,12 @@ export async function signUpByPassword({
         }
       });
 
-      if (userSemChannel) {
+      if (semData?.channel) {
         await tx.userSemChannel.create({
           data: {
             userUid: user.uid,
-            channel: userSemChannel
+            channel: semData.channel,
+            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
           }
         });
       }
@@ -218,7 +221,7 @@ export const getGlobalToken = async ({
   avatar_url,
   password,
   inviterId,
-  userSemChannel
+  semData
 }: {
   provider: ProviderType;
   providerId: string;
@@ -226,7 +229,7 @@ export const getGlobalToken = async ({
   avatar_url: string;
   password?: string;
   inviterId?: string;
-  userSemChannel?: string;
+  semData?: SemData;
 }) => {
   let user: User | null = null;
 
@@ -249,7 +252,7 @@ export const getGlobalToken = async ({
         name,
         avatar_url,
         password,
-        userSemChannel
+        semData
       });
       result && (user = result.user);
       if (inviterId && result) {
@@ -276,7 +279,7 @@ export const getGlobalToken = async ({
         id: providerId,
         name,
         avatar_url,
-        userSemChannel
+        semData
       });
       result && (user = result.user);
       if (inviterId && result) {
