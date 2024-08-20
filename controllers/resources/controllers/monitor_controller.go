@@ -315,7 +315,6 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 				return fmt.Errorf("failed to get all latest object storage traffic: %w", err)
 			}
 			for i := range traffic {
-				fmt.Println("------debug info", "traffic:", traffic[i])
 				user := traffic[i].User
 				bucket := traffic[i].Bucket
 				if _, ok := metrics[user]; !ok {
@@ -702,7 +701,6 @@ func (r *MonitorReconciler) handlerTrafficUsed(startTime, endTime time.Time, mon
 		Time:     endTime.Add(-1 * time.Minute),
 		Type:     monitor.Type,
 	}
-	r.Logger.Info("monitor traffic used", "monitor", ro)
 	err = r.DBClient.InsertMonitor(context.Background(), &ro)
 	if err != nil {
 		return fmt.Errorf("failed to insert monitor: %w", err)
