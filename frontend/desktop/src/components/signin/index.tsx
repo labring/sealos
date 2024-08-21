@@ -27,9 +27,11 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWechat from './auth/useWechat';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
+import { getBaiduId } from '@/utils/sessionConfig';
 
 export default function SigninComponent() {
   const conf = useConfigStore();
+  const hasBaiduToken = conf.authConfig?.hasBaiduToken;
   const needPassword = conf.authConfig?.idp.password?.enabled;
   const needSms = conf.authConfig?.idp.sms?.enabled;
   const needTabs = conf.authConfig?.idp.password?.enabled && conf.authConfig?.idp.sms?.enabled;
@@ -247,7 +249,7 @@ export default function SigninComponent() {
                   ? (t('common:loading') || 'Loading') + '...'
                   : t('common:log_in') || 'Log In'}
               </Button>
-              <AuthList />
+              {hasBaiduToken && getBaiduId() ? <Box></Box> : <AuthList />}
             </>
           )}
         </Flex>

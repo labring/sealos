@@ -5,17 +5,17 @@ import {
   CloudConfigType,
   AuthClientConfigType,
   AppClientConfigType,
-  CommonConfigType,
   CommonClientConfigType,
   TNotification
 } from '@/types';
 import { AccountCRD } from '@/types/user';
+import { getBaiduId } from '@/utils/sessionConfig';
 
 // handle baidu
 export const uploadConvertData = (newType: number[], url?: string) => {
   const defaultUrl = 'https://sealos.run/self-hosting';
   const main_url = url || defaultUrl;
-  const bd_vid = localStorage.getItem('bd_vid');
+  const bd_vid = getBaiduId();
   if (!bd_vid) {
     return Promise.reject('upload convert data params error');
   }

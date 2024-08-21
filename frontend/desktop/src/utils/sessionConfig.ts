@@ -50,3 +50,7 @@ export const getUserSemData = (): SemData | null => {
 export const setUserSemData = (data: SemData): void => {
   localStorage.setItem('sealos_sem', JSON.stringify(data));
 };
+
+export const getBaiduId = () => localStorage.getItem('bd_vid');
+
+export const setBaiduId = (id: string) => localStorage.setItem('bd_vid', id);
