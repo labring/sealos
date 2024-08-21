@@ -380,6 +380,26 @@ spec:
 "
     echo "$ingress_config" > $CLOUD_DIR/ingress-nginx-config.yaml
 
+    backuprepo='
+    apiVersion: dataprotection.kubeblocks.io/v1alpha1
+    kind: BackupRepo
+    metadata:
+      annotations:
+        dataprotection.kubeblocks.io/need-update-tool-config: "true"
+        dataprotection.kubeblocks.io/is-default-repo: "true"
+      name: backup
+    spec:
+      accessMethod: Mount
+      config:
+        accessMode: ReadWriteOnce
+        storageClassName: openebs-backup
+        volumeMode: Filesystem
+      pvReclaimPolicy: Retain
+      storageProviderRef: pvc
+      volumeCapacity: 5Gi
+    '
+        echo "$backuprepo" > $CLOUD_DIR/backuprepo.yaml
+
     vm_secret='
 apiVersion: v1
 kind: Secret
@@ -586,6 +606,8 @@ EOF
     for addon in "${addons[@]}"; do
       kubectl patch addon $addon --type='merge' -p '{"spec":{"install":{"enabled":true,"resources":{},"tolerations":"[{\"effect\":\"NoSchedule\",\"key\":\"kb-controller\",\"operator\":\"Equal\",\"value\":\"true\"}]"}}}'
     done
+
+    kubectl apply -f $CLOUD_DIR/backuprepo.yaml
 
     kubectl apply -f $CLOUD_DIR/vm-secret.yaml
     kubectl patch vmagent -n vm victoria-metrics-k8s-stack --type merge -p '{"spec":{"additionalScrapeConfigs":{"key":"prometheus-additional.yaml","name":"additional-scrape-configs"}}}'
