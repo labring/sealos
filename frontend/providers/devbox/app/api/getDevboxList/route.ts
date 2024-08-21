@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const devboxRes: any = await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: devboxBody }: any = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       'default', // TODO: namespace动态获取
@@ -25,20 +25,40 @@ export async function GET(req: NextRequest) {
       undefined,
       undefined
     )
+    const { body: serviceBody } = await k8sCore.listNamespacedService('default')
 
-    const ingressRes: any = await k8sCustomObjects.listNamespacedCustomObject(
-      'networking.k8s.io',
-      'v1',
-      'default', // TODO: namespace动态获取
-      'ingresses'
+    const { body: runtimeBody }: any = await k8sCustomObjects.listNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      'default',
+      'runtimes'
     )
-    const serviceRes = await k8sCore.listNamespacedService('default')
 
-    const res = devboxRes.body.items.map((item: any) => {
-      item.networks = item.spec.network.extraPorts.map((port: any) => {})
+    // 对devboxBody进行处理，增加运行时和网络的一些字段
+    const res = devboxBody.items.map(async (item: any) => {
+      const devboxName = item.metadata.name
+      const runtimeName = item.spec.runtimeRef.name
+      const runtime = runtimeBody.items.find((item: any) => item.metadata.name === runtimeName)
+      item.spec.runtimeType = runtime?.spec.classRef
+      item.spec.runtimeVersion = runtime?.spec.name
+
+      const ingress = await k8sCustomObjects.getNamespacedCustomObject(
+        'networking.k8s.io',
+        'v1',
+        'default',
+        'ingresses',
+        devboxName
+      )
+      // TODO: 解决不了
+      item.networks = item.spec.network.extraPorts.map((item: any) => {
+        return {
+          networkName: item.name
+        }
+      })
+      return item
     })
 
-    return jsonRes<ApiResp>({ data: devboxRes.body.items })
+    return jsonRes<ApiResp>({ data: res })
   } catch (err: any) {
     // TODO: ApiResp全部去除
     return jsonRes<ApiResp>({

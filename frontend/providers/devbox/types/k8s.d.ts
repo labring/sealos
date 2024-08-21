@@ -13,6 +13,8 @@ export type KBDevboxType = {
 
 // TODO:有些值可以枚举处理的，这里先不处理了
 export interface KBDevboxSpec {
+  runtimeType: string
+  runtimeVersion: string
   network: {
     type: 'NodePort' | 'Tailnet'
     extraPorts: NetworkType[]

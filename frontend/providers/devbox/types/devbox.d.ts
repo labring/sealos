@@ -57,7 +57,15 @@ export interface DevboxListItemType {
   memory: number
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
-  networks: []
+  networks: {
+    networkName: string
+    portName: string
+    port: number
+    protocol: ProtocolType
+    openPublicDomain: boolean
+    publicDomain: string // default domain
+    customDomain: string // custom domain
+  }[]
 }
 
 export interface PodDetailType extends V1Pod {
