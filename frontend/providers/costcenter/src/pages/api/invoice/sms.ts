@@ -8,26 +8,6 @@ import { getClientIPFromRequest, retrySerially } from '@/utils/tools';
 import { authSession } from '@/service/backend/auth';
 import * as process from 'process';
 const requestTimestamps: Record<string, number> = {};
-
-function checkRequestFrequency(ipAddress: string) {
-  const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
-  const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
-  const templateCode = global.AppConfig.costCenter.invoice.aliSms.templateCode;
-  const signName = global.AppConfig.costCenter.invoice.aliSms.signName;
-  const currentTime = Date.now();
-  const lastRequestTime = requestTimestamps[ipAddress] || 0;
-  const timeDiff = currentTime - lastRequestTime;
-
-  const requestInterval = 60 * 1000;
-
-  if (timeDiff < requestInterval) {
-    return false;
-  } else {
-    requestTimestamps[ipAddress] = currentTime;
-    return true;
-  }
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
   const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
@@ -42,16 +22,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (user === null) {
       return jsonRes(res, { code: 401, message: 'user null' });
     }
+    if (process.env.NODE_ENV === 'development') {
+      return jsonRes(res, {
+        message: 'successfully',
+        code: 200
+      });
+    }
     const { phoneNumbers } = req.body;
     let ip = getClientIPFromRequest(req);
 
     if (!ip) {
-      if (process.env.NODE_ENV === 'development') ip = '127.0.0.1';
-      else
-        return jsonRes(res, {
-          message: 'The IP is null',
-          code: 403
-        });
+      // if (process.env.NODE_ENV === 'development') {
+      // 	// ip = '127.0.0.1';
+      // }
+      // else
+      return jsonRes(res, {
+        message: 'The IP is null',
+        code: 403
+      });
     }
     if (
       !(await checkSendable({

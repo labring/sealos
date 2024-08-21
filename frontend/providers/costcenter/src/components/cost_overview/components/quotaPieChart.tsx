@@ -6,7 +6,6 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { useMemo } from 'react';
 import { useBreakpointValue } from '@chakra-ui/react';
 import { UserQuotaItemType } from '@/pages/api/getQuota';
-import { useTranslation } from 'next-i18next';
 
 echarts.use([PieChart, CanvasRenderer, LabelLayout]);
 

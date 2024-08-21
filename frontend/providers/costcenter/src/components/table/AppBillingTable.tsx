@@ -16,13 +16,7 @@ import CurrencySymbol from '../CurrencySymbol';
 import { AppImg, BaseTable } from './BaseTable';
 import useAppTypeStore from '@/stores/appType';
 import BillingDetails from './billingDetails';
-import appIcon from '@/assert/app.svg';
-import jobIcon from '@/assert/job.svg';
-import osIcon from '@/assert/objectstorage.svg';
-import cvmIcon from '@/assert/cvm.svg';
-import terminalIcon from '@/assert/terminal.svg';
-import dbIcon from '@/assert/db.svg';
-import sealosIcon from '@/assert/sealos.svg';
+
 import { subHours, parseISO, format } from 'date-fns';
 import useBillingStore from '@/stores/billing';
 const getCustomTh = (data?: { tNs?: string; needCurrency?: boolean }) =>

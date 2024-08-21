@@ -459,11 +459,8 @@ const RechargeModal = forwardRef(
                   <Flex gap={'16px'} width={'full'} mt={'24px'}>
                     {stripeEnabled && (
                       <Button
-                        size="primary"
-                        variant="primary"
+                        variant="solid"
                         w="full"
-                        bgColor={'grayModern.900'}
-                        color={'white'}
                         h="auto"
                         py="14px"
                         px="34px"
@@ -479,17 +476,17 @@ const RechargeModal = forwardRef(
                     )}
                     {wechatEnabled && (
                       <Button
-                        size="primary"
-                        variant="primary"
-                        bgColor={'grayModern.900'}
-                        color={'white'}
+                        // size="primary"
+                        variant="solid"
+                        // bgColor={'grayModern.900'}
+                        // color={'white'}
                         w="full"
                         h="auto"
                         py="14px"
                         px="34px"
                         onClick={() => handleWechatConfirm()}
                       >
-                        <Img src={wechat_icon.src} mr="8px" w="24px" h="24px" />
+                        <Img src={wechat_icon.src} mr="8px" w="24px" h="24px" fill={'teal.400'} />
                         <Text fontSize={'14px'} fontWeight={500}>
                           {t('pay with wechat')}
                         </Text>

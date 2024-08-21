@@ -46,9 +46,12 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
           payment: []
         }
       });
-    const res = (await response.clone().json()) as RechargeBillingData;
+    const res = (await response.clone().json()) as { data: RechargeBillingData };
     return jsonRes(resp, {
-      data: res.payment.map((payment) => [parseISO(payment.CreatedAt).getTime(), payment.Amount])
+      data: res.data.payments.map((payment) => [
+        parseISO(payment.CreatedAt).getTime(),
+        payment.Amount
+      ])
     });
   } catch (error) {
     console.log(error);

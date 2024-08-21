@@ -48,21 +48,6 @@ export default function InOutTabPanel() {
     page,
     pageSize
   };
-  // useEffect(() => {
-  // 	if (!router.query) return
-  // 	const {
-  // 		appNameIdx,
-  // 		appTypeIdx,
-  // 		namespaceIdx,
-  // 		regionIdx,
-  // 	} = router.query
-  // 	if (isNumber(appNameIdx) && isNumber(appTypeIdx) && isNumber(namespaceIdx) && isNumber(regionIdx)) {
-  // 		setRegion(regionIdx)
-  // 		setNamespace(namespaceIdx)
-  // 		setAppType(appTypeIdx)
-  // 		setAppName(appNameIdx)
-  // 	}
-  // }, [router])
 
   const { data, isPreviousData, isFetching } = useQuery({
     queryFn() {

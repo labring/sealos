@@ -19,13 +19,6 @@ import Amount from '@/components/billing/AmountTableHeader';
 import { AppImg, BaseTable } from '../table/BaseTable';
 import { valuationMap } from '@/constants/payment';
 import useAppTypeStore from '@/stores/appType';
-import appIcon from '@/assert/app.svg';
-import jobIcon from '@/assert/job.svg';
-import osIcon from '@/assert/objectstorage.svg';
-import cvmIcon from '@/assert/cvm.svg';
-import terminalIcon from '@/assert/terminal.svg';
-import dbIcon from '@/assert/db.svg';
-import sealosIcon from '@/assert/sealos.svg';
 const getAmountCell = (data?: { isTotal?: boolean }) =>
   function AmountCell(props: CellContext<APPBillingItem, number>) {
     const isTotal = data?.isTotal || false;
@@ -130,12 +123,12 @@ export function BillingDetailsTable({
       columnHelper.accessor((row) => row.used[3], {
         id: TableHeaderID.Network,
         header: customTh(),
-        cell: customCell()
+        cell: getUnit('network')
       }),
       columnHelper.accessor((row) => row.used_amount[3], {
         id: TableHeaderID.NetworkAmount,
         header: customTh(),
-        cell: getUnit('network')
+        cell: customCell()
       }),
       columnHelper.accessor((row) => row.used[4], {
         id: TableHeaderID.Port,

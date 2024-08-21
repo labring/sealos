@@ -1,8 +1,8 @@
 import { authSession } from '@/service/backend/auth';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { formatISO, subMonths } from 'date-fns';
-import { getRegionByUid, getRegionList, makeAPIURL } from '@/service/backend/region';
+import { formatISO } from 'date-fns';
+import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
@@ -10,10 +10,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    // return jsonRes(resp, {
-    //   code: 200,
-    //   data: {"overviews":[{"amount":60492,"namespace":"ns-5uxfy8jl","regionDomain":"","appType":2,"appName":"hello-world"}],"total":1,"totalPage":1}
-    // });
     const {
       endTime = formatISO(new Date(), {
         representation: 'complete'
@@ -74,10 +70,12 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       method: 'POST',
       body
     });
+    const result = await response.json();
     if (!response.ok) {
+      console.log(result);
       throw Error('get cost overview error');
     }
-    const result = await response.json();
+
     return jsonRes(resp, {
       code: 200,
       data: result.data

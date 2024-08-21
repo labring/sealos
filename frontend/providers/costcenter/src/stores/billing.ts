@@ -69,7 +69,6 @@ const useBillingStore = create<BillingState>()(
         const appName = getAppName();
         const newAppNameIdx = appNameList.findIndex((item) => item === appName);
         const appNameIdx = newAppNameIdx === -1 ? 0 : newAppNameIdx;
-        console.log('setAppNameList', JSON.stringify(appNameList), appNameIdx, appName);
         set({ appNameList, appNameIdx });
       },
       setAppTypeList(appTypeList: string[]) {
