@@ -75,11 +75,15 @@ func processBackup(backup unstructured.Unstructured) {
 	backupPolicyName, _, _ := unstructured.NestedString(backup.Object, "spec", "backupPolicyName")
 	databaseName := getPrefix(backupPolicyName)
 	cluster, err := api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).Get(context.Background(), databaseName, metav1.GetOptions{})
-	if cluster != nil && errors.IsNotFound(err) {
+	if cluster == nil && errors.IsNotFound(err) {
 		return
 	}
-	dbStatus, _, _ := unstructured.NestedString(cluster.Object, "status", "phase")
-	if dbStatus == "Stopped" {
+	dbStatus, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
+	if err != nil {
+		log.Printf("Unable to get %s phase in %s: %v", backupName, namespace, err)
+		return
+	}
+	if !found || dbStatus == "Stopped" {
 		return
 	}
 	SendBackupNotification(backupName, namespace, status, startTimestamp)
