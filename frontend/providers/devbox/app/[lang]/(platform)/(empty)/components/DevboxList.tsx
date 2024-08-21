@@ -359,7 +359,7 @@ const DevboxList = ({
           minW={'156px'}
           h={'40px'}
           variant={'solid'}
-          leftIcon={<MyIcon name={'plus'} w={'20px'} />}
+          leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#ffffff'} />}
           onClick={() => router.push('/devbox/create')}>
           {t('create_devbox')}
         </Button>

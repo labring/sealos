@@ -25,7 +25,7 @@ const Empty = () => {
         mt={5}
         variant={'solid'}
         onClick={() => router.push('/devbox/create')}
-        leftIcon={<MyIcon name={'plus'} w={'20px'} />}>
+        leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#ffffff'} />}>
         {t('create_devbox')}
       </Button>
     </Box>
