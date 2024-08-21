@@ -16,10 +16,10 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import { releaseDevbox } from '@/api/devbox'
-import { DevboxListItemType } from '@/types/devbox'
-import { useConfirm } from '@/hooks/useConfirm'
 import { NAMESPACE } from '@/stores/static'
+import { useConfirm } from '@/hooks/useConfirm'
+import { DevboxListItemType } from '@/types/devbox'
+import { pauseDevbox, releaseDevbox } from '@/api/devbox'
 
 const ReleaseModal = ({
   onClose,
@@ -35,18 +35,23 @@ const ReleaseModal = ({
   const { message: toast } = useMessage()
   const [loading, setLoading] = useState(false)
   const [releaseDes, setReleaseDes] = useState('')
+  const [tagError, setTagError] = useState(false)
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'release_confirm_info'
   })
+  const handleSubmit = () => {
+    if (!tag) {
+      setTagError(true)
+    } else {
+      setTagError(false)
+      openConfirm(() => handleReleaseDevbox())()
+    }
+  }
 
   const handleReleaseDevbox = useCallback(async () => {
     if (devbox.status.value === 'Running') {
-      toast({
-        title: t('devbox_running_cannot_release'),
-        status: 'error'
-      })
-      return
+      await pauseDevbox({ devboxName: devbox.name })
     }
 
     try {
@@ -101,7 +106,13 @@ const ReleaseModal = ({
                   value={tag}
                   onChange={(e) => setTag(e.target.value)}
                   mb={'16px'}
+                  borderColor={tagError ? 'red.500' : undefined}
                 />
+                {tagError && (
+                  <Box color="red.500" fontSize="sm">
+                    {t('tag_required')}
+                  </Box>
+                )}
                 <Box w={'100px'}>{t('version_description')}</Box>
                 <Textarea
                   value={releaseDes}
@@ -115,7 +126,7 @@ const ReleaseModal = ({
           <ModalFooter>
             <Button
               variant={'solid'}
-              onClick={() => openConfirm(() => handleReleaseDevbox())()}
+              onClick={handleSubmit}
               mr={'20px'}
               width={'60px'}
               isLoading={loading}>

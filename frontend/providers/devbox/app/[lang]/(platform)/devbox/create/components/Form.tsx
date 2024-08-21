@@ -261,7 +261,15 @@ const Form = ({
                     autoFocus={true}
                     placeholder={t('enter_devbox_name')}
                     {...register('name', {
-                      required: t('devbox_name_required')
+                      required: t('devbox_name_required'),
+                      maxLength: {
+                        value: 63,
+                        message: t('devbox_name_max_length')
+                      },
+                      validate: {
+                        pattern: (value) =>
+                          /^[a-z][a-z0-9-]*[a-z0-9]$/.test(value) || t('devbox_name_invalid')
+                      }
                     })}
                   />
                 </Flex>

@@ -286,9 +286,11 @@ const DevboxList = ({
                     <Box ml={2}>{t('terminal')}</Box>
                   </>
                 ),
-                onClick: () => handleGoToTerminal(item)
+                onClick: () => handleGoToTerminal(item),
+                menuItemStyle: {
+                  borderBottom: '1px solid #000000'
+                }
               },
-
               {
                 child: (
                   <>
