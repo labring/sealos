@@ -21,7 +21,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+import { getDevboxPassword, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -134,6 +134,27 @@ const DevboxList = ({
     [refetchDevboxList, t, toast]
   )
 
+  const handleGotoVSCode = useCallback(
+    async (devbox: DevboxListItemType) => {
+      try {
+        setLoading(true)
+        const password = await getDevboxPassword({ devboxName: devbox.name })
+        toast({
+          title: t('start_success'),
+          status: 'success'
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('start_error'),
+          status: 'error'
+        })
+        console.error(error, '==')
+      }
+      setLoading(false)
+    },
+    [setLoading, t, toast]
+  )
+
   const columns: {
     title: string
     dataIndex?: keyof DevboxListItemType
@@ -229,8 +250,7 @@ const DevboxList = ({
               color: 'brightBlue.600'
             }}
             leftIcon={<MyIcon name={'detail'} w={'16px'} />}
-            // TODO: 这里要加上跳转vscode逻辑
-            onClick={() => {}}>
+            onClick={() => handleGotoVSCode(item)}>
             {t('open_vscode')}
           </Button>
           <SealosMenu

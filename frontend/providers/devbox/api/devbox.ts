@@ -37,3 +37,6 @@ export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>
 
 export const delDevboxVersionByName = (versionName: string) =>
   DELETE('/api/delDevboxVersionByName', { versionName })
+
+export const getDevboxPassword = (data: { devboxName: string }) =>
+  GET('/api/getDevboxPassword', data)
