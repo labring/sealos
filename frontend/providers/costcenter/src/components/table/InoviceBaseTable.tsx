@@ -8,7 +8,8 @@ import {
   Tbody,
   Td,
   Img,
-  ImgProps
+  ImgProps,
+  TableRowProps
 } from '@chakra-ui/react';
 import { flexRender, Table as ReactTable } from '@tanstack/react-table';
 import appIcon from '@/assert/app.svg';
@@ -26,7 +27,16 @@ export function BaseTable<T extends unknown>({
   ...styles
 }: { table: ReactTable<T> } & TableContainerProps) {
   return (
-    <TableContainer w="100%" mt="0px" flex={'1'} h="0" overflowY={'auto'} {...styles}>
+    <TableContainer
+      w="100%"
+      mt="0px"
+      flex={'1'}
+      h="0"
+      borderRadius={'6px'}
+      border="1px solid"
+      borderColor={'grayModern.250'}
+      {...styles}
+    >
       <Table variant="simple" fontSize={'12px'} width={'full'}>
         <Thead>
           {table.getHeaderGroups().map((headers) => {
@@ -36,8 +46,8 @@ export function BaseTable<T extends unknown>({
                   const pinState = header.column.getIsPinned();
                   return (
                     <Th
-                      py="13px"
-                      px={'24px'}
+                      py="14px"
+                      px={'33px'}
                       top={'0'}
                       {...(!pinState
                         ? {
@@ -54,9 +64,11 @@ export function BaseTable<T extends unknown>({
                               ...(pinState === 'right'
                                 ? {
                                     right: '100%'
+                                    // boxShadow: 'rgba(5, 5, 5, 0.06) -10px 0px 8px -8px inset'
                                   }
                                 : {
                                     left: '100%'
+                                    // boxShadow: 'rgba(5, 5, 5, 0.06) 10px 0px 8px -8px inset'
                                   })
                             },
                             bgColor: 'white',
@@ -85,14 +97,22 @@ export function BaseTable<T extends unknown>({
         <Tbody whiteSpace={'nowrap'}>
           {table.getRowModel().rows.map((item) => {
             return (
-              <Tr key={item.id} fontSize={'12px'}>
+              <Tr
+                key={item.id}
+                fontSize={'12px'}
+                _hover={{
+                  bgColor: 'brightBlue.50'
+                }}
+                onClick={item.getToggleSelectedHandler()}
+                data-group
+              >
                 {item.getAllCells().map((cell, i) => {
                   const pinState = cell.column.getIsPinned();
                   return (
                     <Td
-                      py="10px"
+                      py="19px"
                       key={cell.id}
-                      px={'24px'}
+                      px={'33px'}
                       {...(!pinState
                         ? {}
                         : {
@@ -117,6 +137,9 @@ export function BaseTable<T extends unknown>({
                             },
                             bgColor: 'white'
                           })}
+                      _groupHover={{
+                        bgColor: 'brightBlue.50'
+                      }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </Td>

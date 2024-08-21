@@ -265,17 +265,12 @@ const TransferModal = forwardRef(
                 {formatMoney(balance).toFixed(2)}
               </Text>
               <Button
-                size="primary"
-                variant="primary"
+                variant="solid"
                 w={'auto'}
                 ml={'auto'}
                 mr={'0px'}
                 px="29.5px"
                 py="8px"
-                color={'white'}
-                fontWeight={'500'}
-                fontSize={'14px'}
-                bgColor={'brightBlue.900'}
                 onClick={() => handleConfirm()}
                 isLoading={mutation.isLoading}
               >

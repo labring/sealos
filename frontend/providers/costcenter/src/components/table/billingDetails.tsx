@@ -151,7 +151,7 @@ export function BillingDetailsModal({
             </Text>
             <Text>
               {t('Transaction Time')}: {format(query.startTime, 'yyyy-MM-dd HH:MM')} ~
-              {format(query.endTime, ' HH:MM')}
+              {format(query.endTime, 'yyyy-MM-dd HH:MM')}
             </Text>
           </Flex>
           <BillingDetailsTable data={data?.data?.costs || []} flex="1" h={'0'} />

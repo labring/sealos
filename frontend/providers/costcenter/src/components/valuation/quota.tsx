@@ -29,8 +29,13 @@ export default function Quota(props: StackProps) {
   const quota = (data?.data?.quota || [])
     .filter((d) => d.type !== 'gpu')
     .map((d) => {
+      const _limit = Number.parseInt(d.limit * 1000 + '');
+      const _used = Number.parseInt(d.used * 1000 + '');
       return {
         ...d,
+        limit: _limit / 1000,
+        used: _used / 1000,
+        remain: (_limit - _used) / 1000,
         title: t(d.type),
         unit: valuationMap.get(d.type)?.unit,
         bg: valuationMap.get(d.type)?.bg
@@ -58,7 +63,6 @@ export default function Quota(props: StackProps) {
             </HStack>
             <HStack fontSize={'14px'} gap="10px">
               <Text size={'sm'} color={'grayModern.600'}>
-                {' '}
                 {t('Used')}: {item.used}
                 {item.unit}
               </Text>
@@ -70,8 +74,7 @@ export default function Quota(props: StackProps) {
                 borderWidth={'1px'}
               />
               <Text size={'sm'} color={'grayModern.600'}>
-                {' '}
-                {t('Remain')}: {item.limit - item.used}
+                {t('Remain')}: {item.remain}
                 {item.unit}
               </Text>
               <Divider
@@ -82,7 +85,6 @@ export default function Quota(props: StackProps) {
                 borderWidth={'1px'}
               />
               <Text size={'sm'} color={'grayModern.600'}>
-                {' '}
                 {t('Total')}: {item.limit}
                 {item.unit}
               </Text>

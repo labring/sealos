@@ -101,7 +101,9 @@ export type RechargeBillingItem = {
   InvoicedAt: boolean;
 };
 export type RechargeBillingData = {
-  payment: RechargeBillingItem[];
+  payments: RechargeBillingItem[];
+  totalPage: number;
+  total: number;
 };
 
 export type TransferBillingData = {

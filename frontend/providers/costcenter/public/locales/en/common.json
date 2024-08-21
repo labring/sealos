@@ -95,12 +95,14 @@
     "invoiceAmount": "Invoice Amount",
     "invoice": "Generate Invoice",
     "invoiceOrder": "Invoice Order",
+		"invoiceRecord": "Invoice Record",
     "phoneValidation": "Please enter a valid phone number",
     "taxNumberValidation": "Please enter a valid tax registration number",
     "bankAccountValidation": "Please enter a valid bank account number",
     "emailValidation": "Please enter a valid email address",
     "submit success": "Submit success",
     "submit fail": "Submit fail",
+		"require": "Please enter value",
     "code success": "Verification code sent successfully",
     "code error": "Verification code sent failed",
     "Name": "Name",
@@ -134,7 +136,15 @@
       "fax": {
         "name": "Fax",
         "placeholder": "Enter fax number"
-      }
+      },
+			"type":{
+				"name": "Type",
+				"placeholder": "Enter type",
+				"list": {
+					"special": "VAT invoice (Special)",
+					"normal": "VAT invoice (Normal)"
+				}
+			}
     },
     "contract": {
       "person": {
@@ -157,8 +167,19 @@
     "Invoice Details": "Invoice Details",
     "Invoice Content": "Invoice Content",
     "Electronic Computer Service Fee": "Electronic Computer Service Fee",
-    "Contact Information": "Contact Information"
+    "Contact Information": "Contact Information",
+		"Apply Inovice Tips": "Apply for an invoice need to 3 to 5 days",
+		"Apply Invoice": "Apply Invoice",
+		
+		"status":{
+			"PENDING": "pending",
+			"COMPLETED": "completed",
+			"REJECTED": "rejected"
+		}
   },
+	"Invoice Status": "Invoice Status",
+	"Invoice Create Time": "invoice create time",
+	"Invoice Update Time": "invoice update time",
   "pay with stripe": "Pay With Stripe",
   "pay with wechat": "Pay With Wechat",
   "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",

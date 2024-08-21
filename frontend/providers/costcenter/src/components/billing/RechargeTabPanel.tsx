@@ -47,9 +47,9 @@ export default function RechargeTabPanel() {
   );
   const { t } = useTranslation();
   const tableResult = useMemo(() => {
-    if (data?.data?.payment) return data.data.payment;
+    if (data?.data?.payments) return data.data.payments;
     else return [];
-  }, [data?.data?.payment]);
+  }, [data?.data?.payments]);
   const currency = useEnvStore((s) => s.currency);
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<RechargeBillingItem>();

@@ -46,7 +46,10 @@ export enum TableHeaderID {
   'Region' = 'Region',
   'Namespace' = 'workspace',
   'TransferType' = 'Transfer Type',
-  'TraderID' = 'Trader ID'
+  'TraderID' = 'Trader ID',
+  'Status' = 'Invoice Status',
+  'InvoiceCreateTime' = 'Invoice Create Time',
+  'InvoiceUpdateTime' = 'Invoice Update Time'
 }
 
 export const resourceType = ['cpu', 'memory', 'storage', 'network', 'nodeports'] as const;

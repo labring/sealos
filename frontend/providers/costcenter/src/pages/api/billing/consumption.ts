@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const data = await results.json();
     if (!results.ok) {
       console.log(data);
-      throw Error();
+      throw Error('get consumption error');
     }
     return jsonRes(resp, {
       code: 200,

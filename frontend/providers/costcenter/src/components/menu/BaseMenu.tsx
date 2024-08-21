@@ -115,6 +115,9 @@ export default function BaseMenu({
               p={'4px 6px'}
               borderRadius={'4px'}
               justifyContent={'flex-start'}
+              overflowX={'hidden'}
+              whiteSpace={'nowrap'}
+              textOverflow={'ellipsis'}
               onClick={() => onClick(idx)}
             >
               {v}
