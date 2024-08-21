@@ -10,11 +10,11 @@ export async function GET(req: NextRequest) {
   try {
     const headerList = headers()
 
-    const { k8sCustomObjects, namespace } = await getK8s({
+    const { k8sCustomObjects, namespace, k8sCore } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
-    const response: any = await k8sCustomObjects.listNamespacedCustomObject(
+    const devboxRes: any = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       'default', // TODO: namespace动态获取
@@ -26,10 +26,19 @@ export async function GET(req: NextRequest) {
       undefined
     )
 
-    const matchingDevboxes = response?.body?.items.filter((item: any) => {
-      return item.metadata && !item.metadata.deletionTimestamp
+    const ingressRes: any = await k8sCustomObjects.listNamespacedCustomObject(
+      'networking.k8s.io',
+      'v1',
+      'default', // TODO: namespace动态获取
+      'ingresses'
+    )
+    const serviceRes = await k8sCore.listNamespacedService('default')
+
+    const res = devboxRes.body.items.map((item: any) => {
+      item.networks = item.spec.network.extraPorts.map((port: any) => {})
     })
-    return jsonRes<ApiResp>({ data: matchingDevboxes })
+
+    return jsonRes<ApiResp>({ data: devboxRes.body.items })
   } catch (err: any) {
     // TODO: ApiResp全部去除
     return jsonRes<ApiResp>({

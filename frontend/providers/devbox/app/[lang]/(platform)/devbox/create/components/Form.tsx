@@ -28,9 +28,19 @@ import { obj2Query } from '@/utils/tools'
 import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
 import type { DevboxEditType } from '@/types/devbox'
-import { ProtocolList, RuntimeTypeList } from '@/constants/devbox'
+import { ProtocolList } from '@/constants/devbox'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
-import { INSTALL_ACCOUNT, SEALOS_DOMAIN, runtimeVersionMap } from '@/stores/static'
+import {
+  INSTALL_ACCOUNT,
+  SEALOS_DOMAIN,
+  frameworkTypeList,
+  frameworkVersionMap,
+  languageTypeList,
+  languageVersionMap,
+  osTypeList,
+  osVersionMap,
+  getRuntimeVersionList
+} from '@/stores/static'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
@@ -261,57 +271,169 @@ const Form = ({
                 <Label w={100} alignSelf={'flex-start'}>
                   {t('runtime_environment')}
                 </Label>
-                <Flex flexWrap={'wrap'} gap={'12px'}>
-                  {RuntimeTypeList &&
-                    RuntimeTypeList?.map((item) => {
-                      return (
-                        <Center
-                          key={item.id}
-                          flexDirection={'column'}
-                          w={'110px'}
-                          height={'80px'}
-                          border={'1px solid'}
-                          borderRadius={'6px'}
-                          cursor={'pointer'}
-                          fontWeight={'bold'}
-                          color={'grayModern.900'}
-                          {...(getValues('runtimeType') === item.id
-                            ? {
-                                bg: '#F9FDFE',
-                                borderColor: 'brightBlue.500',
-                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
-                              }
-                            : {
-                                bg: '#F7F8FA',
-                                borderColor: 'grayModern.200',
-                                _hover: {
-                                  borderColor: '#85ccff'
+                <Flex direction={'column'} gap={'10px'}>
+                  {/* Language */}
+                  <Box>{t('language')}</Box>
+                  <Flex flexWrap={'wrap'} gap={'12px'}>
+                    {languageTypeList &&
+                      languageTypeList?.map((item) => {
+                        return (
+                          <Center
+                            key={item.id}
+                            flexDirection={'column'}
+                            w={'110px'}
+                            height={'80px'}
+                            border={'1px solid'}
+                            borderRadius={'6px'}
+                            cursor={'pointer'}
+                            fontWeight={'bold'}
+                            color={'grayModern.900'}
+                            {...(getValues('runtimeType') === item.id
+                              ? {
+                                  bg: '#F9FDFE',
+                                  borderColor: 'brightBlue.500',
+                                  boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
                                 }
-                              })}
-                          onClick={() => {
-                            setValue('runtimeType', item.id)
-                            setValue(
-                              'runtimeVersion',
-                              runtimeVersionMap[getValues('runtimeType')][0].id
-                            )
-                          }}>
-                          <Image
-                            width={'32px'}
-                            height={'32px'}
-                            alt={item.id}
-                            src={`/images/${item.id}.svg`}
-                          />
-                          <Text
-                            _firstLetter={{
-                              textTransform: 'capitalize'
-                            }}
-                            mt={'4px'}
-                            textAlign={'center'}>
-                            {item.label}
-                          </Text>
-                        </Center>
-                      )
-                    })}
+                              : {
+                                  bg: '#F7F8FA',
+                                  borderColor: 'grayModern.200',
+                                  _hover: {
+                                    borderColor: '#85ccff'
+                                  }
+                                })}
+                            onClick={() => {
+                              setValue('runtimeType', item.id)
+                              setValue(
+                                'runtimeVersion',
+                                languageVersionMap[getValues('runtimeType')][0].id
+                              )
+                            }}>
+                            <Image
+                              width={'32px'}
+                              height={'32px'}
+                              alt={item.id}
+                              src={`/images/${item.id}.svg`}
+                            />
+                            <Text
+                              _firstLetter={{
+                                textTransform: 'capitalize'
+                              }}
+                              mt={'4px'}
+                              textAlign={'center'}>
+                              {item.label}
+                            </Text>
+                          </Center>
+                        )
+                      })}
+                  </Flex>
+                  {/* framework */}
+                  <Box>{t('framework')}</Box>
+                  <Flex flexWrap={'wrap'} gap={'12px'}>
+                    {frameworkTypeList &&
+                      frameworkTypeList?.map((item) => {
+                        return (
+                          <Center
+                            key={item.id}
+                            flexDirection={'column'}
+                            w={'110px'}
+                            height={'80px'}
+                            border={'1px solid'}
+                            borderRadius={'6px'}
+                            cursor={'pointer'}
+                            fontWeight={'bold'}
+                            color={'grayModern.900'}
+                            {...(getValues('runtimeType') === item.id
+                              ? {
+                                  bg: '#F9FDFE',
+                                  borderColor: 'brightBlue.500',
+                                  boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
+                                }
+                              : {
+                                  bg: '#F7F8FA',
+                                  borderColor: 'grayModern.200',
+                                  _hover: {
+                                    borderColor: '#85ccff'
+                                  }
+                                })}
+                            onClick={() => {
+                              setValue('runtimeType', item.id)
+                              setValue(
+                                'runtimeVersion',
+                                frameworkVersionMap[getValues('runtimeType')][0].id
+                              )
+                            }}>
+                            <Image
+                              width={'32px'}
+                              height={'32px'}
+                              alt={item.id}
+                              src={`/images/${item.id}.svg`}
+                            />
+                            <Text
+                              _firstLetter={{
+                                textTransform: 'capitalize'
+                              }}
+                              mt={'4px'}
+                              textAlign={'center'}>
+                              {item.label}
+                            </Text>
+                          </Center>
+                        )
+                      })}
+                  </Flex>
+                  {/* os */}
+                  <Box>{t('os')}</Box>
+                  <Flex flexWrap={'wrap'} gap={'12px'}>
+                    {osTypeList &&
+                      osTypeList?.map((item) => {
+                        return (
+                          <Center
+                            key={item.id}
+                            flexDirection={'column'}
+                            w={'110px'}
+                            height={'80px'}
+                            border={'1px solid'}
+                            borderRadius={'6px'}
+                            cursor={'pointer'}
+                            fontWeight={'bold'}
+                            color={'grayModern.900'}
+                            {...(getValues('runtimeType') === item.id
+                              ? {
+                                  bg: '#F9FDFE',
+                                  borderColor: 'brightBlue.500',
+                                  boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
+                                }
+                              : {
+                                  bg: '#F7F8FA',
+                                  borderColor: 'grayModern.200',
+                                  _hover: {
+                                    borderColor: '#85ccff'
+                                  }
+                                })}
+                            onClick={() => {
+                              setValue('runtimeType', item.id)
+                              setValue(
+                                'runtimeVersion',
+                                osVersionMap[getValues('runtimeType')][0].id
+                              )
+                            }}>
+                            <Image
+                              width={'32px'}
+                              height={'32px'}
+                              alt={item.id}
+                              src={`/images/${item.id}.svg`}
+                            />
+                            <Text
+                              _firstLetter={{
+                                textTransform: 'capitalize'
+                              }}
+                              mt={'4px'}
+                              textAlign={'center'}>
+                              {item.label}
+                            </Text>
+                          </Center>
+                        )
+                      })}
+                  </Flex>
                 </Flex>
               </Flex>
               {/* Runtime Version */}
@@ -321,13 +443,13 @@ const Form = ({
                   width={'200px'}
                   placeholder={`${t('runtime')} ${t('version')}`}
                   defaultValue={
-                    getValues('runtimeVersion') || runtimeVersionMap[getValues('runtimeType')][0].id
+                    getValues('runtimeVersion') ||
+                    languageVersionMap[getValues('runtimeType')][0].id ||
+                    frameworkVersionMap[getValues('runtimeType')][0].id ||
+                    osVersionMap[getValues('runtimeType')][0].id
                   }
                   value={getValues('runtimeVersion')}
-                  list={runtimeVersionMap[getValues('runtimeType')].map((i) => ({
-                    label: i.label,
-                    value: i.id
-                  }))}
+                  list={getRuntimeVersionList(getValues('runtimeType'))}
                   onchange={(val: any) => setValue('runtimeVersion', val)}
                 />
               </Flex>

@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
         }
       }
     )
-    console.log(response)
 
     // TODO: ApiResp的使用不太好，尝试去除
     return jsonRes({

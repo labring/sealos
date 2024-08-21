@@ -307,8 +307,7 @@ const DevboxList = ({
                           <Box ml={2}>{t('boot')}</Box>
                         </>
                       ),
-                      onClick: () => handleStartDevbox(item),
-                      isDisabled: item.status.value === 'Stopped'
+                      onClick: () => handleStartDevbox(item)
                     }
                   ]
                 : []),

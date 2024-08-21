@@ -28,7 +28,7 @@ export const json2Devbox = (data: DevboxEditType) => {
         memory: `${str2Num(data.memory)}Mi`
       },
       runtimeRef: {
-        name: `${data.runtimeType}-${data.runtimeVersion}`
+        name: data.runtimeVersion
       },
       state: 'Running'
     }

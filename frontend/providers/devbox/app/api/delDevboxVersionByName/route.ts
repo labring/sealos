@@ -25,8 +25,6 @@ export async function DELETE(req: NextRequest) {
       versionName
     )
 
-    console.log(response)
-
     return jsonRes({
       data: 'success delete devbox version'
     })

@@ -1,64 +1,35 @@
-import * as k8s from '@kubernetes/client-node'
+import { headers } from 'next/headers'
+import { NextRequest } from 'next/server'
 
-import { RuntimeType } from '@/types/devbox'
-import { RuntimeTypeEnum } from '@/constants/devbox'
-import { runtimeVersionMap } from '@/stores/static'
+import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
-import { K8sApi } from '@/services/backend/kubernetes'
+import { getK8s } from '@/services/backend/kubernetes'
 
-export type Response = Record<
-  RuntimeType,
-  {
-    id: string
-    label: string
-  }[]
->
-
-// TODO: 补充其他的mock数据
-const MOCK: Response = runtimeVersionMap
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    // const runtimeVersionMap: Response = {
-    //   [RuntimeTypeEnum.java]: [],
-    //   [RuntimeTypeEnum.go]: [],
-    //   [RuntimeTypeEnum.python]: [],
-    //   [RuntimeTypeEnum.node]: [],
-    //   [RuntimeTypeEnum.rust]: [],
-    //   [RuntimeTypeEnum.php]: [],
-    //   [RuntimeTypeEnum.custom]: []
-    // }
+    const headerList = headers()
+    const { searchParams } = req.nextUrl
+    const runtimeName = searchParams.get('runtimeName')
 
-    // // source price
-    // const kc = K8sApi()
-    // const k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi)
+    const { k8sCustomObjects } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    })
 
-    // const { body } = (await k8sCustomObjects.listClusterCustomObject(
-    //   'apps.kubeblocks.io',
-    //   'v1alpha1',
-    //   'clusterversions'
-    // )) as any
-
-    // body.items.forEach((item: any) => {
-    //   const runtime = item?.spec?.clusterDefinitionRef as `${RuntimeTypeEnum}`
-    //   if (
-    //     runtimeVersionMap[runtime] &&
-    //     item?.metadata?.name &&
-    //     !runtimeVersionMap[runtime].find((runtime) => runtime.id === item.metadata.name)
-    //   ) {
-    //     runtimeVersionMap[runtime].push({
-    //       id: item.metadata.name,
-    //       label: item.metadata.name
-    //     })
-    //   }
-    // })
+    const response: any = await k8sCustomObjects.listNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      'default',
+      'runtimes'
+    )
+    const data = response?.body?.items.filter((item: any) => item.spec.classRef === runtimeName)
 
     return jsonRes({
-      data: runtimeVersionMap
+      data
     })
   } catch (error) {
     return jsonRes({
-      data: MOCK
+      code: 500,
+      error: error
     })
   }
 }

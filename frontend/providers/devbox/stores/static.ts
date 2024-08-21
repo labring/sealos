@@ -1,6 +1,5 @@
-import { RuntimeTypeEnum } from '@/constants/devbox'
-import { getRuntimeVersionMap, getResourcePrice, getNamespace } from '@/api/platform'
-import type { Response as RuntimeVersionMapType } from '@/app/api/platform/getRuntimeVersion/route'
+import { LanguageTypeEnum, FrameworkTypeEnum, OSTypeEnum } from '@/constants/devbox'
+import { getRuntime as getRuntimeApi, getResourcePrice, getNamespace } from '@/api/platform'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
 // TODO: 这里需要知道具体的价格
@@ -15,18 +14,55 @@ let retryGetRuntimeVersion = 3
 let retryGetPrice = 3
 let retryGetNamespace = 3
 
-// NOTE: 枚举列表大小写不一致，需要统一
-// TODO: 这里需要知道具体的默认版本
-export let runtimeVersionMap: RuntimeVersionMapType = {
-  [RuntimeTypeEnum.java]: [{ id: '11', label: 'java-11' }],
-  [RuntimeTypeEnum.go]: [{ id: '1.17', label: 'go-1.17' }],
-  [RuntimeTypeEnum.python]: [{ id: '3.9', label: 'python-3.9' }],
-  [RuntimeTypeEnum.node]: [{ id: '16', label: 'node-16' }],
-  [RuntimeTypeEnum.rust]: [{ id: '1.55', label: 'rust-1.55' }],
-  [RuntimeTypeEnum.php]: [{ id: '8.0', label: 'php-8.0' }],
-  [RuntimeTypeEnum.custom]: [{ id: 'custom', label: 'custom' }]
+interface valueType {
+  id: string
+  label: string
 }
 
+interface VersionMapType {
+  [key: string]: valueType[]
+}
+
+export let languageTypeList: valueType[] = []
+export let frameworkTypeList: valueType[] = []
+export let osTypeList: valueType[] = []
+
+export let languageVersionMap: VersionMapType = {
+  // [LanguageTypeEnum.java]: [{ id: '11', label: 'java-11' }],
+  // [LanguageTypeEnum.go]: [{ id: '1.17', label: 'go-1.17' }],
+  // [LanguageTypeEnum.python]: [{ id: '3.9', label: 'python-3.9' }],
+  // [LanguageTypeEnum.node]: [{ id: '16', label: 'node-16' }],
+  // [LanguageTypeEnum.rust]: [{ id: '1.55', label: 'rust-1.55' }],
+  // [LanguageTypeEnum.c]: [{ id: '11', label: 'c-11' }]
+}
+export let frameworkVersionMap: VersionMapType = {
+  // [FrameworkTypeEnum.gin]: [{ id: '1.7', label: 'gin-1.7' }],
+  // [FrameworkTypeEnum.Hertz]: [{ id: '1.0', label: 'Hertz-1.0' }],
+  // [FrameworkTypeEnum.springBoot]: [{ id: '2.5', label: 'spring-boot-2.5' }],
+  // [FrameworkTypeEnum.flask]: [{ id: '2.0', label: 'flask-2.0' }],
+  // [FrameworkTypeEnum.nextjs]: [{ id: '11', label: 'nextjs-11' }],
+  // [FrameworkTypeEnum.vue]: [{ id: '3.0', label: 'vue-3.0' }]
+}
+
+export let osVersionMap: VersionMapType = {
+  // [OSTypeEnum.ubuntu]: [{ id: '20.04', label: 'ubuntu-20.04' }],
+  // [OSTypeEnum.centos]: [{ id: '8', label: 'centos-8' }]
+}
+export const getRuntimeVersionList = (runtimeType: string) => {
+  let versions: valueType[] = []
+
+  if (languageVersionMap[runtimeType]) {
+    versions = languageVersionMap[runtimeType]
+  } else if (frameworkVersionMap[runtimeType]) {
+    versions = frameworkVersionMap[runtimeType]
+  } else if (osVersionMap[runtimeType]) {
+    versions = osVersionMap[runtimeType]
+  }
+  return versions.map((i) => ({
+    value: i.id,
+    label: i.label
+  }))
+}
 export const getUserPrice = async () => {
   try {
     const res = await getResourcePrice()
@@ -56,15 +92,20 @@ export const getGlobalNamespace = async () => {
   }
 }
 
-export const getRuntimeVersion = async () => {
+export const getRuntime = async () => {
   try {
-    const res = await getRuntimeVersionMap()
-    runtimeVersionMap = res
+    const res = await getRuntimeApi()
+    languageVersionMap = res.language
+    frameworkVersionMap = res.framework
+    osVersionMap = res.os
+    languageTypeList = res.languageTypeList
+    frameworkTypeList = res.frameworkTypeList
+    osTypeList = res.osTypeList
   } catch (err) {
     retryGetRuntimeVersion--
     if (retryGetRuntimeVersion >= 0) {
       setTimeout(() => {
-        getRuntimeVersion()
+        getRuntime()
       }, 1000)
     }
   }

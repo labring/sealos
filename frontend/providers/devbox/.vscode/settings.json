@@ -44,6 +44,7 @@
     "localematcher",
     "milvus",
     "minio",
+    "nextjs",
     "nextline",
     "nodeports",
     "nprogress",
@@ -54,6 +55,8 @@
     "qdrant",
     "Reconfig",
     "rolebinding",
+    "runtimeclasses",
+    "runtimes",
     "sealos",
     "statefulset",
     "svgr",
@@ -65,4 +68,5 @@
     "zustand"
   ],
   "typescript.tsdk": "node_modules\\typescript\\lib",
+  "svg.preview.background": "black",
 }

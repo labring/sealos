@@ -1,7 +1,6 @@
 import { GET, POST } from '@/services/request'
 import type { UserQuotaItemType } from '@/types/user'
 import { SystemEnvResponse } from '@/app/api/getEnv/route'
-import type { Response as RuntimeVersionMapType } from '@/app/api/platform/getRuntimeVersion/route'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
 export const getAppEnv = () => GET<SystemEnvResponse>('/api/getEnv')
@@ -11,8 +10,10 @@ export const getUserQuota = () =>
     quota: UserQuotaItemType[]
   }>('/api/platform/getQuota')
 
-export const getRuntimeVersionMap = () =>
-  GET<RuntimeVersionMapType>('/api/platform/getRuntimeVersion')
+export const getRuntime = () => GET('/api/platform/getRuntime')
+
+export const getRuntimeVersion = (data: { runtimeName: string }) =>
+  GET('/api/platform/getRuntimeVersion', data)
 
 export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice')
 

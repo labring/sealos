@@ -30,24 +30,32 @@ export async function DELETE(req: NextRequest) {
     )
 
     // delete service and ingress at the same time
-    await k8sCustomObjects.deleteNamespacedCustomObject(
-      'networking.k8s.io',
-      'v1',
-      'default',
-      'ingresses',
-      devboxName,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    )
+    try {
+      await k8sCustomObjects.deleteNamespacedCustomObject(
+        'networking.k8s.io',
+        'v1',
+        'default',
+        'ingresses',
+        devboxName,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      )
+    } catch (err: any) {
+      if (err.response?.statusCode !== 404) {
+        throw err
+      }
+    }
+
     await k8sCore.deleteNamespacedService(devboxName, 'default')
 
     return jsonRes({
       data: 'success delete devbox'
     })
   } catch (err: any) {
+    // TODO: 这里需要处理一下
     return jsonRes<ApiResp>({
       code: 500,
       error: err

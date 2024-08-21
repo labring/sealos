@@ -14,12 +14,12 @@ import {
   ModalContent,
   ModalHeader
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
-import { SEALOS_DOMAIN } from '@/stores/static'
 import { Tip } from '@sealos/ui'
+import { SEALOS_DOMAIN } from '@/stores/static'
 import { InfoOutlineIcon } from '@chakra-ui/icons'
 import { useRequest } from '@/hooks/useRequest'
 import { postAuthCname } from '@/api/platform'
+import { useTranslations } from 'next-intl'
 
 export type CustomAccessModalParams = {
   publicDomain: string
@@ -34,7 +34,7 @@ const CustomAccessModal = ({
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const ref = useRef<HTMLInputElement>(null)
   const theme = useTheme()
-  const { t } = useTranslation()
+  const t = useTranslations()
 
   const titleStyles: BoxProps = {
     fontWeight: 'bold',
@@ -94,7 +94,7 @@ const CustomAccessModal = ({
               size={'sm'}
               whiteSpace={'pre-wrap'}
               icon={<InfoOutlineIcon />}
-              text={`${t('CNAME Tips', { domain: completePublicDomain })}`}
+              text={t('CNAME Tips', { domain: completePublicDomain })}
             />
           </ModalBody>
           <ModalFooter>

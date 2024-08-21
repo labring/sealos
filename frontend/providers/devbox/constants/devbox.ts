@@ -8,24 +8,31 @@ export const crLabelKey = 'sealos-devbox-cr'
 export const appDeployKey = 'cloud.sealos.io/app-deploy-manager'
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
 
-export enum RuntimeTypeEnum {
+export enum LanguageTypeEnum {
   java = 'java',
   go = 'go',
   python = 'python',
   node = 'node',
   rust = 'rust',
-  php = 'php',
-  custom = 'custom'
+  c = 'c'
 }
-export const RuntimeTypeList = [
-  { id: RuntimeTypeEnum.java, label: 'java' },
-  { id: RuntimeTypeEnum.go, label: 'go' },
-  { id: RuntimeTypeEnum.python, label: 'python' },
-  { id: RuntimeTypeEnum.node, label: 'node' },
-  { id: RuntimeTypeEnum.rust, label: 'rust' },
-  { id: RuntimeTypeEnum.php, label: 'php' }
-  // { id: RuntimeTypeEnum.custom, label: 'custom' }
-]
+export enum FrameworkTypeEnum {
+  gin = 'gin',
+  Hertz = 'Hertz',
+  springBoot = 'spring-boot',
+  flask = 'flask',
+  nextjs = 'nextjs',
+  vue = 'vue'
+}
+export enum OSTypeEnum {
+  ubuntu = 'ubuntu',
+  centos = 'centos'
+}
+export enum RuntimeTypeEnum {
+  language = 'language',
+  framework = 'framework',
+  os = 'os'
+}
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
@@ -82,7 +89,7 @@ export const MemorySlideMarkList = [
 
 export const defaultDevboxEditValue: DevboxEditType = {
   name: '',
-  runtimeType: RuntimeTypeEnum.java,
+  runtimeType: LanguageTypeEnum.java,
   runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,

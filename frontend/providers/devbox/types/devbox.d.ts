@@ -1,14 +1,14 @@
 import { MonitorDataResult } from './monitor'
 import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
-import { RuntimeTypeEnum, DevboxStatusEnum } from '@/constants/devbox'
+import { RuntimeTypeEnum, DevboxStatusEnum, FrameworkTypeEnum } from '@/constants/devbox'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
-export type RuntimeType = `${RuntimeTypeEnum}`
+export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`
 export type ProtocolType = 'HTTP' | 'GRPC' | 'WS'
 
 export interface DevboxEditType {
   name: string
-  runtimeType: RuntimeType
+  runtimeType: string
   runtimeVersion: string
   cpu: number
   memory: number
@@ -80,3 +80,5 @@ export interface DevboxVersionListItemType {
   createTime: string
   description: string
 }
+
+export interface Runtime {}
