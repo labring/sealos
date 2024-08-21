@@ -1,65 +1,78 @@
----
-sidebar_position: 1
----
-
 # 对象存储
 
-「对象存储」是 Sealos 内置的对象存储服务，主要用于存储和管理非结构化数据。
+对象存储是 Sealos 内置的对象存储服务，主要用于存储和管理非结构化数据。
 
-目前「对象存储」具备以下功能：
+目前对象存储具备以下功能：
 
-- 上传文件到「存储桶」
-- 从「存储桶」下载文件
-- 公开「存储桶」的访问权限
-- 使用 SDK 访问「存储桶」
-- 监控「存储桶」资源指标
-- 静态托管
+- 上传文件到存储桶；
+- 从存储桶下载文件；
+- 公开存储桶的访问权限；
+- 使用 SDK 访问存储桶；
+- 监控存储桶资源指标；
+- 静态托管。
 
 ## 快速开始
 
-### 上传文件
+打开 Sealos 桌面，点击对象存储。
 
-进入「对象存储」
 ![](./images/1.png)
 
-创建「存储桶」
+### 上传文件
+
+点击创建存储桶。
+
 ![](./images/2.png)
 
-设置「存储桶」名字为 test，权限为 private
+输入存储桶的名字，设置存储桶的权限。
+
+存储桶权限说明：
+
+- private：私有桶，不开放访问；
+- publicRead：共享存储桶，开放公共读功能；
+- publicReadwrite：共享存储桶，开放公共读写功能。
+
 ![](./images/3.png)
 
-「存储桶」创建成功
+存储桶创建成功。
+
 ![](./images/4.png)
 
-上传文件
+上传文件。
+
 ![](./images/5.png)
 
-上传文件成功
+上传文件成功。
+
 ![](./images/6.png)
 
-## 公开「存储桶」的访问权限
+## 公开存储桶的访问权限
 
-点击「编辑」
+点击编辑。
+
 ![](./images/7.png)
 
-设置「存储桶权限」为 publicRead，点击「应用」
+设置存储桶权限为 publicRead，点击应用。
+
 ![](./images/8.png)
 
-复制文件链接
+复制文件链接。
+
 ![](./images/9.png)
 
-粘贴到浏览器地址栏访问文件
+粘贴到浏览器地址栏访问文件。
+
 ![](./images/10.png)
 
 ## 查看访问密钥配置
 
 对象存储用户由唯一的 Access Key（用户名）和对应的 Secret Key（密码）组成。Internal 为对象存储的内部访问地址，External
 为对象存储的外部访问地址。
+
 ![](./images/11.png)
 
-## 使用 SDK 访问「存储桶」
+## 使用 SDK 访问存储桶
 
-SDK 访问「存储桶」需要三个参数：AccessKey、SecretKey、Endpoint。参数都在访问密钥中，Internal 是内网地址 Endpoint，External 是外网地址
+SDK 访问存储桶需要三个参数：AccessKey、SecretKey、Endpoint。参数都在访问密钥中，Internal 是内网地址 Endpoint，External 是外网地址
 Endpoint。如果需要使用 Region 参数，默认使用 us-east-1。
 
 ### Go Client SDK
@@ -115,7 +128,8 @@ func main() {
 }
 ```
 
-文件上传成功
+文件上传成功。
+
 ![](./images/12.png)
 
 ### Java Client SDK
@@ -162,7 +176,8 @@ public class FileUploader {
 }
 ```
 
-文件上传成功
+文件上传成功。
+
 ![](./images/13.png)
 
 ### 其他语言 SDK 略
@@ -171,15 +186,19 @@ public class FileUploader {
 
 ## 静态托管
 
-创建一个权限为 publicRead/publicReadwrite 的「存储桶」，点击「打开托管」
+创建一个权限为 publicRead/publicReadwrite 的存储桶，点击打开托管。
+
 ![](./images/14.png)
 
-点击地址跳转访问
+点击地址跳转访问。
+
 ![](./images/15.png)
 
-点击「自定义域名」
+点击自定义域名。
+
 ![](./images/16.png)
 
-跳转到「应用管理」的「变更」中，可以自定义域名
+跳转到应用管理的变更中，可以自定义域名。
+
 ![](./images/17.png)
 
