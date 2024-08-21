@@ -4,11 +4,12 @@ import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
 import { exec } from 'child_process';
 import fs from 'fs';
-import JSYAML from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import util from 'util';
 import * as k8s from '@kubernetes/client-node';
+import { getYamlTemplate } from '@/utils/json-yaml';
+import { getTemplateEnvs } from '@/utils/tools';
 const execAsync = util.promisify(exec);
 
 const readFileList = (targetPath: string, fileList: unknown[] = []) => {
@@ -73,6 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const jsonPath = path.resolve(originalPath, 'templates.json');
     const branch = process.env.TEMPLATE_REPO_BRANCH || 'main';
 
+    const TemplateEnvs = getTemplateEnvs()
+
     try {
       const gitConfigResult = await execAsync(
         'git config --global --add safe.directory /app/providers/template/templates',
@@ -105,13 +108,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!item) return;
         const fileName = path.basename(item);
         const content = fs.readFileSync(item, 'utf-8');
-        const yamlTemplate = JSYAML.loadAll(content)[0] as TemplateType;
-        if (!!yamlTemplate) {
-          const appTitle = yamlTemplate.spec.title.toUpperCase();
-          yamlTemplate.spec['deployCount'] = templateStaticMap[appTitle];
-          yamlTemplate.spec['filePath'] = item;
-          yamlTemplate.spec['fileName'] = fileName;
-          jsonObjArr.push(yamlTemplate);
+        const { templateYaml } = getYamlTemplate(content, TemplateEnvs)
+        if (!!templateYaml) {
+          const appTitle = templateYaml.spec.title.toUpperCase();
+          templateYaml.spec['deployCount'] = templateStaticMap[appTitle];
+          templateYaml.spec['filePath'] = item;
+          templateYaml.spec['fileName'] = fileName;
+          jsonObjArr.push(templateYaml);
         }
       } catch (error) {
         console.log(error, 'yaml parse error');

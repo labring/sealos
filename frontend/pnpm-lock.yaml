@@ -2054,6 +2054,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      js-interpreter:
+        specifier: ^5.1.2
+        version: 5.1.2
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
@@ -16341,6 +16344,13 @@ packages:
   /js-cookie@3.0.5:
     resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
     engines: {node: '>=14'}
+    dev: false
+
+  /js-interpreter@5.1.2:
+    resolution: {integrity: sha512-UaGCF7yuCvMBfeVSnSdpXu8lTLW48HIr5b46qSMwqFBDO1tgb/Yxlx3LRuEDpN2DlLnFTcvfoBseUxVTjFA6zg==}
+    hasBin: true
+    dependencies:
+      minimist: 1.2.8
     dev: false
 
   /js-sdsl@4.4.2:
