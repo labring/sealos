@@ -1,6 +1,6 @@
 # Kubepanel
 
-Kubepanel是一款可视化的Kubernetes管理面板，如果您较为熟悉Kubernetes，可以直接使用快速查看和管理您的各种Kubernetes资源。
+Kubepanel 是一款可视化的 Kubernetes 管理面板，如果您较为熟悉 Kubernetes，可以直接使用快速查看和管理您的各种 Kubernetes 资源。
 
 ## 快速开始
 
@@ -18,7 +18,7 @@ Kubepanel是一款可视化的Kubernetes管理面板，如果您较为熟悉Kube
 
 ![](./images/kubepanel-2.png)
 
-部署资源直接使用yml文件，可以自己编写或者导入，也可以点击左上角 choose a template 选择您所需要的模版然后进行修改。
+部署资源直接使用 yml 文件，可以自己编写或者导入，也可以点击左上角 choose a template 选择您所需要的模版然后进行修改。
 
 ![](./images/kubepanel-3.png)
 
