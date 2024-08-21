@@ -1,86 +1,91 @@
-# 对象存储
+---
+sidebar_position: 0
+---
 
-对象存储是 Sealos 内置的对象存储服务，主要用于存储和管理非结构化数据。
+# Object Storage
 
-目前对象存储具备以下功能：
+**Object Storage** is Sealos' built-in object storage service, which is primarily used to store and manage unstructured
+data.
 
-- 上传文件到存储桶；
-- 从存储桶下载文件；
-- 公开存储桶的访问权限；
-- 使用 SDK 访问存储桶；
-- 监控存储桶资源指标；
-- 静态托管。
+Currently, **Object Storage** has the following features:
 
-## 快速开始
+- Upload files to bucket.
+- Download files from bucket.
+- Expose the access permission of the bucket.
+- Use SDK to access bucket.
+- Monitors bucket resource metrics.
+- Static host.
 
-打开 Sealos 桌面，点击对象存储。
+## Quick start
+
+### Upload files to bucket
+
+Go to Object Storage.
 
 ![](./images/1.png)
 
-### 上传文件
-
-点击创建存储桶。
+Create a bucket.
 
 ![](./images/2.png)
 
-输入存储桶的名字，设置存储桶的权限。
+Set bucket name to test and permission to private.
 
-存储桶权限说明：
+Bucket Permissions Explanation:
 
-- private：私有桶，不开放访问；
-- publicRead：共享存储桶，开放公共读功能；
-- publicReadwrite：共享存储桶，开放公共读写功能。
+- private: Private bucket, no public access.
+- publicRead: Shared bucket with public read access.
+- publicReadwrite: Shared bucket with public read and write access.
 
 ![](./images/3.png)
 
-存储桶创建成功。
+Bucket is created successfully.
 
 ![](./images/4.png)
 
-上传文件。
+Upload file.
 
 ![](./images/5.png)
 
-上传文件成功。
+File uploaded successfully.
 
 ![](./images/6.png)
 
-## 公开存储桶的访问权限
+### Expose the access permission of the bucket
 
-点击编辑。
+Click the Edit button.
 
 ![](./images/7.png)
 
-设置存储桶权限为 publicRead，点击应用。
+Set Bucket Permission to publicRead and click the Application button.
 
 ![](./images/8.png)
 
-复制文件链接。
+Copy file link.
 
 ![](./images/9.png)
 
-粘贴到浏览器地址栏访问文件。
+Paste to browser address bar to access files.
 
 ![](./images/10.png)
 
-## 查看访问密钥配置
+### View the access key configuration
 
-对象存储用户由唯一的 Access Key（用户名）和对应的 Secret Key（密码）组成。Internal 为对象存储的内部访问地址，External
-为对象存储的外部访问地址。
+An Object Storage user consists of a unique access key (username) and corresponding secret key (password). Internal is
+the internal access address of Object Storage, and External is the external access address of Object Storage.
 
 ![](./images/11.png)
 
-## 使用 SDK 访问存储桶
+### Use SDK to access bucket
 
-SDK 访问存储桶需要三个参数：AccessKey、SecretKey、Endpoint。参数都在访问密钥中，Internal 是内网地址 Endpoint，External 是外网地址
-Endpoint。如果需要使用 Region 参数，默认使用 us-east-1。
+The SDK requires three parameters to access bucket: AccessKey, SecretKey, and Endpoint (Internal or External). If the
+Region parameter is required, us-east-1 is used by default.
 
-### Go Client SDK
+#### Go Client SDK
 
-详细文档参考：https://min.io/docs/minio/linux/developers/go/API.html
+Detailed documentation reference: https://min.io/docs/minio/linux/developers/go/API.html
 
-例子：使用 Go Client SDK 上传 style.css 文件到 sv3dd7u4-test 存储桶，将 Endpoint 设置为外网地址 External。如果服务部署在当前
-K8s 集群内，可以将 Endpoint 改为内网地址 Internal。
+Example: Use the Go Client SDK to upload the style.css file to the sv3dd7u4-test bucket, and set the endpoint to the
+external address. If the service is deployed in the K8s cluster, you can change the endpoint to the internal address.
 
 ```go
 package main
@@ -128,16 +133,16 @@ func main() {
 }
 ```
 
-文件上传成功。
+File uploaded successfully.
 
 ![](./images/12.png)
 
-### Java Client SDK
+#### Java Client SDK
 
-详细文档参考：https://min.io/docs/minio/linux/developers/java/API.html
+Detailed documentation reference: https://min.io/docs/minio/linux/developers/java/API.html
 
-例子：使用 Java Client SDK 上传 style1.css 文件到 sv3dd7u4-test 存储桶，将 Endpoint 设置为外网地址 External。如果服务部署在当前
-K8s 集群内，可以将 Endpoint 改为内网地址 Internal。
+Example: Use the Java Client SDK to upload the style1.css file to the sv3dd7u4-test bucket, and set the endpoint to the
+external address. If the service is deployed in the K8s cluster, you can change the endpoint to the internal address.
 
 ```xml
 
@@ -176,29 +181,32 @@ public class FileUploader {
 }
 ```
 
-文件上传成功。
+File uploaded successfully.
 
 ![](./images/13.png)
 
-### 其他语言 SDK 略
+#### Omit other language SDK
 
-详细文档参考：https://min.io/docs/minio/linux/developers/minio-drivers.html
+Detailed documentation reference: https://min.io/docs/minio/linux/developers/minio-drivers.html
 
-## 静态托管
+### Static host
 
-创建一个权限为 publicRead/publicReadwrite 的存储桶，点击打开托管。
+Create a permission for publicRead/publicReadwrite bucket, click Enable Hosting.
 
 ![](./images/14.png)
 
-点击地址跳转访问。
+Click on the address to jump to access.
 
 ![](./images/15.png)
 
-点击自定义域名。
+Click Custom Domain.
 
 ![](./images/16.png)
 
-跳转到应用管理的变更中，可以自定义域名。
+In the Update area of App Launchpad, you can customize the domain.
 
 ![](./images/17.png)
+
+
+
 
