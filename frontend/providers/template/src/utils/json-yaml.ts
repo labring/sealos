@@ -1,7 +1,13 @@
 import { YamlItemType } from '@/types';
-import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType, TemplateSourceType, FormSourceInput } from '@/types/app';
+import {
+  ProcessedTemplateSourceType,
+  TemplateInstanceType,
+  TemplateType,
+  TemplateSourceType,
+  FormSourceInput
+} from '@/types/app';
 import JsYaml from 'js-yaml';
-import { cloneDeep, mapValues } from 'lodash';
+import { clone, cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { processEnvValue } from './tools';
 import { EnvResponse } from '@/types/index';
@@ -13,9 +19,9 @@ function base64(str: string) {
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
-    let _value = JsYaml.loadAll(value).filter((i) => i).map((item: any) =>
-      JsYaml.dump(processEnvValue(item, labelName))
-    );
+    let _value = JsYaml.loadAll(value)
+      .filter((i) => i)
+      .map((item: any) => JsYaml.dump(processEnvValue(item, labelName)));
 
     return [
       {
@@ -31,12 +37,14 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
 
 export const developGenerateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
-    return JsYaml.loadAll(value).filter((i) => i).map((item: any) => {
-      return {
-        filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
-        value: JsYaml.dump(processEnvValue(item, labelName))
-      };
-    });
+    return JsYaml.loadAll(value)
+      .filter((i) => i)
+      .map((item: any) => {
+        return {
+          filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
+          value: JsYaml.dump(processEnvValue(item, labelName))
+        };
+      });
   } catch (error) {
     console.log(error, 'developGenerateYamlList');
     return [];
@@ -49,8 +57,8 @@ export const parseTemplateString = (
     [key: string]: string | Record<string, string>;
   }
 ): string => {
-  sourceString = parseYamlIfEndif(sourceString, dataSource)
-  const regex = /\$\{\{\s*(.*?)\s*\}\}/g
+  sourceString = parseYamlIfEndif(sourceString, dataSource);
+  const regex = /\$\{\{\s*(.*?)\s*\}\}/g;
 
   try {
     const replacedString = sourceString.replace(regex, (match: string, key: string) => {
@@ -63,9 +71,8 @@ export const parseTemplateString = (
   }
 };
 
-export const getTemplateDataSource = (
-  template: TemplateType,
-): ProcessedTemplateSourceType => {
+// need to use parseTemplateVariable first to fill in the variables
+export const getTemplateDataSource = (template: TemplateType): ProcessedTemplateSourceType => {
   try {
     if (!template) {
       return {
@@ -110,11 +117,11 @@ export const getTemplateDataSource = (
     };
 
     // // handle input value
-    const transformedInput = handleInputs(inputs);
+    const transformedInput = inputs ? handleInputs(inputs) : [];
     // console.log(cloneDefauls, transformedInput);
 
     return {
-      defaults,
+      defaults: defaults || {},
       inputs: transformedInput
     };
   } catch (error) {
@@ -144,15 +151,20 @@ export const handleTemplateToInstanceYaml = (
       gitRepo: gitRepo,
       templateType: templateType || template_type,
       categories: categories || [],
+      defaults: {},
+      inputs: {},
       ...resetSpec
     }
   };
 };
 
 // https://github.com/NeilFraser/JS-Interpreter
-export function evaluateExpression(expression: string, data?: {
-  [key: string]: any;
-}): any | undefined {
+export function evaluateExpression(
+  expression: string,
+  data?: {
+    [key: string]: any;
+  }
+): any | undefined {
   try {
     // console.log("expression: ", expression, " data: ", data)
     // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
@@ -160,28 +172,34 @@ export function evaluateExpression(expression: string, data?: {
       interpreter.setProperty(ctx, 'data', interpreter.nativeToPseudo(data));
       interpreter.setProperty(ctx, 'random', interpreter.createNativeFunction(nanoid));
       interpreter.setProperty(ctx, 'base64', interpreter.createNativeFunction(base64));
-    }
-    const interpreter = new Interpreter(`with(data) { ${expression} }`, initInterpreterFunc)
+    };
+    const interpreter = new Interpreter(`with(data) { ${expression} }`, initInterpreterFunc);
     interpreter.run();
     // console.log('resoult: ', interpreter.value)
     return interpreter.value;
   } catch (error) {
-    console.error("Failed to evaluate expression: ", expression, " data: ", data, error);
+    console.error('Failed to evaluate expression: ', expression, ' data: ', data, error);
     return undefined;
   }
-};
+}
 
-export function parseYamlIfEndif(yamlStr: string, data: {
-  [key: string]: string | Record<string, string>;
-}): string {
+export function parseYamlIfEndif(
+  yamlStr: string,
+  data: {
+    [key: string]: string | Record<string, string>;
+  }
+): string {
   return __parseYamlIfEndif(yamlStr, (exp) => {
-    return !!evaluateExpression(exp, data)
-  })
+    return !!evaluateExpression(exp, data);
+  });
 }
 
 const yamlIfEndifReg = /^\s*\$\{\{\s*?(if|elif|else|endif)\((.*?)\)\s*?\}\}\s*$/gm;
 
-const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) => boolean): string => {
+const __parseYamlIfEndif = (
+  yamlStr: string,
+  evaluateExpression: (exp: string) => boolean
+): string => {
   const stack: RegExpMatchArray[] = [];
   let ifCount = 0;
 
@@ -242,7 +260,12 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
       for (const clause of [ifMatch, ...elifElseMatches]) {
         const expression = clause[2];
         if (clause[1] === 'else' || evaluateExpression(expression)) {
-          between = yamlStr.substring(clause.index! + clause[0].length, clause === elifElseMatches[elifElseMatches.length - 1] ? match.index : elifElseMatches[elifElseMatches.indexOf(clause) + 1].index);
+          between = yamlStr.substring(
+            clause.index! + clause[0].length,
+            clause === elifElseMatches[elifElseMatches.length - 1]
+              ? match.index
+              : elifElseMatches[elifElseMatches.indexOf(clause) + 1].index
+          );
           conditionMet = true;
           break;
         }
@@ -270,8 +293,9 @@ const __parseYamlIfEndif = (yamlStr: string, evaluateExpression: (exp: string) =
 // }
 
 export function getYamlSource(str: string, platformEnvs?: EnvResponse): TemplateSourceType {
-  let { appYaml, templateYaml } = getYamlTemplate(str, platformEnvs)
+  let { appYaml, templateYaml } = getYamlTemplate(str);
 
+  templateYaml = parseTemplateVariable(templateYaml, platformEnvs);
   const dataSource = getTemplateDataSource(templateYaml);
   const _instanceName = dataSource?.defaults?.app_name?.value || '';
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
@@ -288,7 +312,7 @@ export function getYamlSource(str: string, platformEnvs?: EnvResponse): Template
   return result;
 }
 
-export function getYamlTemplate(str: string, platformEnvs?: EnvResponse): {
+export function getYamlTemplate(str: string): {
   appYaml: string;
   templateYaml: TemplateType;
 } {
@@ -317,39 +341,53 @@ export function getYamlTemplate(str: string, platformEnvs?: EnvResponse): {
 
   return {
     appYaml: appYamlList.join('---\n'),
-    templateYaml: parseTemplateYaml(templateYaml, platformEnvs)
+    templateYaml: templateYaml
   };
 }
 
-function parseTemplateYaml(templateYaml: TemplateType, platformEnvs?: EnvResponse): TemplateType {
-  const regex = /\$\{\{\s*(.*?)\s*\}\}/g
+export function parseTemplateVariable(
+  templateYaml: TemplateType,
+  platformEnvs?: EnvResponse
+): TemplateType {
+  const regex = /\$\{\{\s*(.*?)\s*\}\}/g;
 
-  for (let [key, item] of Object.entries(templateYaml.spec.defaults)) {
-    if (item.value) {
-      item.value = item.value.replace(regex, (match: string, key: string) => {
-        return evaluateExpression(key, platformEnvs);
-      }) || item.value;
+  templateYaml = clone(templateYaml);
+
+  if (templateYaml.spec.defaults) {
+    for (let [key, item] of Object.entries(templateYaml.spec.defaults)) {
+      if (item.value) {
+        item.value =
+          item.value.replace(regex, (match: string, key: string) => {
+            return evaluateExpression(key, platformEnvs);
+          }) || item.value;
+      }
     }
   }
 
-  const defaults = mapValues(templateYaml.spec.defaults, (value) => value.value)
-  for (let [key, item] of Object.entries(templateYaml.spec.inputs)) {
-    if (item.description) {
-      item.description = item.description.replace(regex, (match: string, key: string) => {
-        return evaluateExpression(key, {
-          ...platformEnvs,
-          defaults,
-        });
-      }) || item.description;
-    }
-    if (item.default) {
-      item.default = item.default.replace(regex, (match: string, key: string) => {
-        return evaluateExpression(key, {
-          ...platformEnvs,
-          defaults,
-        });
-      }) || item.default;
+  const defaults = templateYaml.spec.defaults
+    ? mapValues(templateYaml.spec.defaults, (value) => value.value)
+    : {};
+  if (templateYaml.spec.inputs) {
+    for (let [key, item] of Object.entries(templateYaml.spec.inputs)) {
+      if (item.description) {
+        item.description =
+          item.description.replace(regex, (match: string, key: string) => {
+            return evaluateExpression(key, {
+              ...platformEnvs,
+              defaults
+            });
+          }) || item.description;
+      }
+      if (item.default) {
+        item.default =
+          item.default.replace(regex, (match: string, key: string) => {
+            return evaluateExpression(key, {
+              ...platformEnvs,
+              defaults
+            });
+          }) || item.default;
+      }
     }
   }
-  return templateYaml
+  return templateYaml;
 }

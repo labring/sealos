@@ -66,15 +66,12 @@ export async function GetTemplateStatic() {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const repoHttpUrl =
-      process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates';
     const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
     const originalPath = process.cwd();
     const targetPath = path.resolve(originalPath, 'templates');
     const jsonPath = path.resolve(originalPath, 'templates.json');
-    const branch = process.env.TEMPLATE_REPO_BRANCH || 'main';
 
-    const TemplateEnvs = getTemplateEnvs()
+    const TemplateEnvs = getTemplateEnvs();
 
     try {
       const gitConfigResult = await execAsync(
@@ -82,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         { timeout: 10000 }
       );
       const gitCommand = !fs.existsSync(targetPath)
-        ? `git clone -b ${branch} ${repoHttpUrl} ${targetPath} --depth=1`
+        ? `git clone -b ${TemplateEnvs.TEMPLATE_REPO_BRANCH} ${TemplateEnvs.TEMPLATE_REPO_URL} ${targetPath} --depth=1`
         : `cd ${targetPath} && git pull --depth=1 --rebase`;
 
       const result = await execAsync(gitCommand, { timeout: 60000 });
@@ -108,7 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!item) return;
         const fileName = path.basename(item);
         const content = fs.readFileSync(item, 'utf-8');
-        const { templateYaml } = getYamlTemplate(content, TemplateEnvs)
+        const { templateYaml } = getYamlTemplate(content);
         if (!!templateYaml) {
           const appTitle = templateYaml.spec.title.toUpperCase();
           templateYaml.spec['deployCount'] = templateStaticMap[appTitle];
@@ -124,7 +121,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const jsonContent = JSON.stringify(jsonObjArr, null, 2);
     fs.writeFileSync(jsonPath, jsonContent, 'utf-8');
 
-    jsonRes(res, { data: `success update template ${repoHttpUrl} branch ${branch}`, code: 200 });
+    jsonRes(res, {
+      data: `success update template ${TemplateEnvs.TEMPLATE_REPO_URL} branch ${TemplateEnvs.TEMPLATE_REPO_BRANCH}`,
+      code: 200
+    });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

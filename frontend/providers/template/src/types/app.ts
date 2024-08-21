@@ -21,14 +21,14 @@ export type TemplateType = {
     icon: string;
     description: string;
     draft: boolean;
-    defaults: Record<
+    defaults?: Record<
       string,
       {
         type: string;
         value: string;
       }
     >;
-    inputs: Record<
+    inputs?: Record<
       string,
       {
         description: string;

@@ -7,6 +7,7 @@ import {
   getTemplateDataSource,
   handleTemplateToInstanceYaml,
   getYamlTemplate,
+  parseTemplateVariable
 } from '@/utils/json-yaml';
 import fs from 'fs';
 import JsYaml from 'js-yaml';
@@ -70,7 +71,7 @@ export async function GetTemplateByName({
   const cdnUrl = process.env.CDN_URL;
   const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
 
-  const TemplateEnvs = getTemplateEnvs(namespace)
+  const TemplateEnvs = getTemplateEnvs(namespace);
 
   const originalPath = process.cwd();
   const targetPath = path.resolve(originalPath, 'templates', targetFolder);
@@ -83,7 +84,7 @@ export async function GetTemplateByName({
     ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
     : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
 
-  let { appYaml, templateYaml } = getYamlTemplate(yamlString, TemplateEnvs);
+  let { appYaml, templateYaml } = getYamlTemplate(yamlString);
   if (!templateYaml) {
     return {
       code: 40000,
@@ -95,7 +96,7 @@ export async function GetTemplateByName({
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
     templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
   }
-
+  templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
   const dataSource = getTemplateDataSource(templateYaml);
 
   // Convert template to instance
@@ -107,7 +108,7 @@ export async function GetTemplateByName({
     };
   }
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
-  appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`
+  appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
 
   return {
     code: 20000,
