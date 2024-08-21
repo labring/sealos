@@ -12,9 +12,6 @@ export const getUserQuota = () =>
 
 export const getRuntime = () => GET('/api/platform/getRuntime')
 
-export const getRuntimeVersion = (data: { runtimeName: string }) =>
-  GET('/api/platform/getRuntimeVersion', data)
-
 export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice')
 
 export const postAuthCname = (data: { publicDomain: string; customDomain: string }) =>
