@@ -27,7 +27,6 @@ import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
 import YamlList from './components/YamlList';
-import { type EditorState } from '@codemirror/state';
 import Editor from './components/Editor';
 
 export default function Develop() {
@@ -85,9 +84,8 @@ export default function Develop() {
     }
   }, [platformEnvs, generateYamlData]);
 
-  const onYamlChange = useCallback(debounce((state: EditorState) => {
-    const value = state.doc.toString();
-    parseTemplate(value);
+  const onYamlChange = useCallback(debounce((doc: string) => {
+    parseTemplate(doc);
   }, 1000), [parseTemplate]);
 
   // form

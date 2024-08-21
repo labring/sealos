@@ -1,37 +1,43 @@
 import { Box, BoxProps } from '@chakra-ui/react';
 import { StreamLanguage } from '@codemirror/language';
 import { yaml } from '@codemirror/legacy-modes/mode/yaml';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Text } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { vscodeKeymap } from '@replit/codemirror-vscode-keymap';
+import { StateField } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
-import { useEffect, useRef, useState, memo } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { debounce } from 'lodash';
 
 function Editor({
   onDocChange,
   ...styles
-}: { onDocChange: (x: EditorState) => void } & BoxProps) {
-  const [init, setInit] = useState(true);
-  const extensions = [
-    basicSetup,
-    keymap.of(vscodeKeymap),
-    StreamLanguage.define(yaml),
-    EditorView.updateListener.of((update) => {
-      debouncedOnDocChange(update);
-    })
-  ];
-
-  const debouncedOnDocChange = debounce((update) => {
-    // persist
-    localStorage.setItem('developEditor', update.state.doc.toString());
-    if (update.docChanged || init) onDocChange(update.state);
-    init && setInit(false);
-  }, 300);
-
+}: { onDocChange: (x: string) => void } & BoxProps) {
   const ref = useRef(null);
   useEffect(() => {
     const storage = localStorage.getItem('developEditor')
+
+    const debouncedOnDocChange = debounce((doc: Text) => {
+      const docStr = doc.toString()
+      localStorage.setItem('developEditor', docStr);
+      onDocChange(docStr);
+    }, 300);
+
+    const extensions = [
+      basicSetup,
+      keymap.of(vscodeKeymap),
+      StreamLanguage.define(yaml),
+      StateField.define({
+        create: (state) => {
+          onDocChange(state.doc.toString())
+        },
+        update: (_, transaction) => {
+          if (transaction.docChanged) {
+            debouncedOnDocChange(transaction.newDoc)
+          }
+        },
+      })
+    ];
 
     const view = new EditorView({
       state: EditorState.create({
