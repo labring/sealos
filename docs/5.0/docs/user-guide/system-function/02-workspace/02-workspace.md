@@ -1,43 +1,50 @@
-# 工作空间
+# Workspace
 
-工作空间是一种多租户资源隔离机制，它将一个集群划分为多个独立的工作空间，每个空间都有自己的资源配额和权限。这种机制支持团队协作与资源分配。
+A workspace is a multi-tenant resource isolation mechanism that divides a cluster into multiple independent workspaces,
+each with its own resource quotas and permissions. This mechanism supports team collaboration and resource allocation.
 
-个人空间是工作空间的一种特殊形式，用户拥有一个与其用户名相同的个人空间。尽管个人空间的资源配额和权限与普通工作空间相同，但它无法被删除，也无法添加其他用户。
+A personal workspace is a special form of a workspace where each user has a personal space with the same name as their
+username. Although the resource quotas and permissions for a personal space are the same as those of a regular
+workspace, it cannot be deleted or have other users added.
 
-## 快速开始
+## Quick Start
 
-### 创建工作空间
+### Creating a Workspace
 
-打开 Sealos 桌面，点击个人空间，点击管理工作空间。
+Open the Sealos desktop, click on the Personal Workspace, and then click on Manage Workspace.
 
 ![](./images/workspace-1.png)
 
-点击创建工作空间。
+Click on Create Workspace.
 
 ![](./images/workspace-2.png)
 
-### 切换工作空间
+### Switching Workspaces
 
-回到 Sealos 界面，点击个人空间，点击 hello 工作空间即可切换到 hello。
+Return to the Sealos desktop, click on the Personal Workspace, and select the hello workspace to switch to it.
 
 ![](./images/workspace-3.png)
 
-### 邀请用户
+### Inviting Users
 
-在管理工作空间中，点击邀请成员，选择成员的身份权限，点击生成邀请链接，然后将链接发送给其他用户。
+In the Manage Workspaces section, click on Invite Member, select the members' roles and permissions, click on Generate
+Invitation Link, and then send the link to other users.
 
-工作空间中的用户有三种不同的角色，角色和权限的说明如下：
+There are three different roles for users within a workspace, with the following descriptions of roles and permissions:
 
-- 所有者（Owner）：所有者拥有工作空间的所有权限，包括删除工作空间、查看/创建/修改工作空间中的所有资源、邀请用户以管理员/开发者身份加入工作空间等。
+- Owner: The owner has full permissions for the workspace, including deleting the workspace, viewing/creating/modifying
+  all resources within the workspace, and inviting users to join the workspace as managers or developers.
 
-- 管理员（Manager）：拥有工作空间的管理权限，包括查看/创建/修改工作空间中的所有资源、邀请用户以开发者身份加入工作空间等。
+- Manager: The manager has administrative permissions for the workspace, including viewing/creating/modifying all
+  resources within the workspace and inviting users to join the workspace as developers.
 
-- 开发者（Developer）：拥有工作空间的开发权限，包括查看工作空间中的资源状态。
+- Developer: The developer has development permissions, including viewing the status of resources within the workspace.
 
 ![](./images/workspace-4.png)
 
-### 接受邀请
+### Accepting an Invitation
 
-用户收到邀请链接，访问链接，点击接受邀请即可加入工作空间。
+When a user receives an invitation link, they should visit the link and click on Accept Invitation to join the
+workspace.
 
 ![](./images/workspace-5.png)

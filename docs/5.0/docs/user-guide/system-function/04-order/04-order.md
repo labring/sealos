@@ -1,26 +1,29 @@
-# 工单
+# Work Order
 
-当您在使用 Sealos 的过程中，遇到任何问题，都可以使用工单提出您的疑问和反馈，我们会尽快为您处理。
+If you encounter any issues while using Sealos, you can use the Work Order to submit your questions and feedback. We
+will address them as soon as possible.
 
-## 快速开始
+## Quick Start
 
-打开 Sealos 桌面，点击工单。
+Open the Sealos desktop and click on Work Order.
 
 ![](./images/order-1.png)
 
-点击新建工单。
+Click on New Order.
 
 ![](./images/order-2.png)
 
-选择问题的类型，上传与问题相关的附件，描述问题的详细情况，最后点击提交工单。
+Select the type of issue, upload relevant appendix, describe the details of the issue, and then click Submit Order.
 
 ![](./images/order-3.png)
 
-工单提交成后之后，会有🤖机器人客服回答问题，如果觉得机器人的回复无法解决问题，可以点击转人工客服。
+After submitting the order, a 🤖 chatbot will respond to your queries. If you find that the chatbot’s response does not
+resolve the issue, you can click Switch to Manual to connect with a human agent.
 
 ![](./images/order-4.png)
 
-点击工单的详情，可以重新进入聊天界面，如果问题已经解决，可以点击关闭工单。
+Click on the Order details to re-enter the chat interface. If the issue is resolved, you can click Close to close the
+order.
 
 ![](./images/order-5.png)
 

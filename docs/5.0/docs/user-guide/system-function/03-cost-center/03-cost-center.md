@@ -1,39 +1,46 @@
-# 费用中心
+# Cost Center
 
-费用中心包含五个模块：账单概览、账单明细、资源分析、计价标准和开具发票。账单概览和账单明细展示账户的总体收支情况和各应用的支出，资源分析显示各资源的支出占比，计价标准解释定价信息，而开具发票模块则支持为充值生成发票。
+The Cost Center consists of five modules: Cost Overview, Billing Details, Resource Analysis, Standard, and Create
+Invoice.
 
-## 快速开始
+Cost Overview and Billing Details display the overall income and expenditure of the account and the expenses of various
+applications, Resource Analysis shows the expenditure distribution of each resource, Standard explains pricing
+information, and the Create Invoice module supports generating invoices for recharges.
 
-打开 Sealos 桌面，点击费用中心。
+## Quick Start
+
+Open the Sealos desktop and click on the Cost Center.
 
 ![](./images/cost-center-1.png)
 
-### 首页
+### Home Page
 
-展示了所有可用区的成本趋势图和年度收支图。
+Displays cost trend charts for all available zones and annual income and expenditure charts.
 
 ![](./images/cost-center-2.png)
 
-### 账单概览和账单明细
+### Cost Overview and Billing Details
 
-支持快速查找账单，并支持通过设置时间范围、可用区、工作空间、应用类型和应用名称来筛选。
+Supports quick bill lookup and filtering by setting time range, available zones, workspaces, application types, and
+application names.
 
 ![](./images/cost-center-3.png)
 
-### 资源分析
+### Resource Analysis
 
-展示了资源配额和成本分布图，并支持通过设置时间范围、可用区、工作空间、应用类型和应用名称来筛选。
+Shows resource quota and cost distribution charts, with filtering options by setting time range, available zones,
+workspaces, application types, and application names.
 
 ![](./images/cost-center-4.png)
 
-### 计价标准
+### Standard
 
-展示了资源定价，并支持通过设置可用区进行筛选。
+Displays resource pricing and supports filtering by setting available zones.
 
 ![](./images/cost-center-5.png)
 
-### 开具发票
+### Create invoice
 
-支持为充值订单申请开具发票。
+Invoice Generation.
 
 ![](./images/cost-center-6.png)
