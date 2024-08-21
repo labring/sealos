@@ -2,79 +2,97 @@
 sidebar_position: 4
 ---
 
-# 终端
+# Terminal
 
-终端是 Sealos 云操作系统内置的应用，它是一款非常强大的应用，与单机操作系统的终端一样，允许用户与操作系统进行直接交互，可以通过键入命令来执行各种操作。
+Integrated within the [Sealos](https://cloud.sealos.io) Cloud Operating System is the Terminal, an application of
+profound potency. Mirroring the terminal in standalone operating systems, it facilitates users to interact directly with
+the operating system, executing various operations via command entry.
 
-终端的价值在于其高效，灵活和强大的特性。对于许多任务来说，使用终端比使用图形用户界面（GUI）更快更简洁。对于开发者而言，终端是必不可少的工具。使用终端，可以让用户深入理解和控制 Sealos 云操作系统。
+![](./images/terminal.webp)
 
-## 快速开始
+The value of the Terminal rests in its efficiency, flexibility, and powerful capabilities. For a plethora of tasks,
+employing the Terminal proves swifter and more concise than utilizing a Graphical User Interface (GUI). It is an
+indispensable instrument for developers, permitting users to gain a profound understanding and control of the Sealos
+Cloud Operating System.
 
-### 进入应用容器的终端
+**Every user's Terminal is in fact operating within a Pod of Kubernetes**, which can be observed in the Terminal using
+the following command:
 
-假设你在应用管理中部署了一个 Nginx 应用，点击应用管理进入应用详情页面后，点击应用右侧的终端即可进入当前应用的终端。
+![](./images/terminal-pod.png)
 
-![](./images/terminal-1.png)
+## Accessing the Terminal of an Application Container
+
+One may directly access the Terminal of any application container via the Terminal App. Suppose you have deployed an
+application such as Nginx via application management, one can navigate directly to the Nginx application's detail page,
+click on the three dots on the right side of the details, and then click on 'Terminal' to access the Terminal of the
+Nginx application.
+
+![](./images/nginx-terminal.png)
+
+![](./images/nginx-terminal-1.png)
 
 ## 终端一键直连数据库
 
-还可以在终端中一键直连数据库 App中创建的数据库。
+It is also possible to establish a direct connection to the database created in
+the[Database App](../dbprovider/dbprovider.md) with a single click via the Terminal.
 
-进入数据库详情页面，点击左侧的「一键连接」：
+Navigate to the database details page and click on '一键连接' on the left:
 
 ![](./images/database-terminal.png)
 
-就会直接跳转到终端 App 并连接数据库：
+This will take you directly to the Terminal App and connect to the database:
 
 ![](./images/database-terminal-1.png)
 
-## 终端直接操作 Kubernetes 资源
+## Direct Manipulation of Kubernetes Resources via Terminal
 
 :::danger
 
-以下操作需要一定的 Kubernetes 和容器相关知识基础，否则不要轻易操作。
+The following operations necessitate foundational knowledge of Kubernetes and container-related concepts, avoid casual
+execution without this understanding.
 
 :::
 
-资深 Kubernetes 用户可以直接使用终端来操作 Kubernetes 资源，对于资深用户而言，终端的优势有很多：
+Veteran Kubernetes users can utilize the Terminal to manipulate Kubernetes resources directly, affording many advantages
+for such seasoned users:
 
-+ 可以批量操作和自动化
-+ 高度灵活性
-+ 可以进行深入的故障排查
++ Enables batch operations and automation
++ Offers high flexibility
++ Allows in-depth troubleshooting
 
-以下是一些常见的终端中操作 Kubernetes 资源的示例：
+Below are examples of common operations with Kubernetes resources within the Terminal:
 
-### 查看用户的 Pod 列表
++ View the list of user's Pods
 
 ```bash
 kubectl get pods
 ```
 
-### 创建和管理资源对象
++ Create and manage resource
 
 ```bash
-# 使用YAML或JSON文件创建资源
+# Create resources using YAML or JSON files
 $ kubectl create -f <filename>
 
-# 使用YAML或JSON文件创建或更新资源
+# Create or update resources using YAML or JSON files
 $ kubectl apply -f <filename>
 
-# 删除指定类型和名称的资源
+# Delete specified resource type and name
 $ kubectl delete <resource-type> <resource-name>
 
-# 查看指定 Deployment 的滚动更新状态
+# View the status of a specified Deployment's rolling update
 $ kubectl rollout status deployment/<deployment-name>
 ```
 
-### 故障排查
++ Troubleshooting
 
 ```bash
-# 获取指定资源的详细信息，包括事件和状态
+# Obtain detailed information about a specific resource, including events and status
 $ kubectl describe <resource-type> <resource-name>
 
-# 获取指定 Pod 中指定容器的日志
+# Obtain logs of a specific container in a specific Pod
 $ kubectl logs <pod-name> -c <container-name>
 
-# 在指定 Pod 中打开一个终端，以便进行调试
+# Open a terminal in a specific Pod for debugging purposes
 $ kubectl exec -it <pod-name>
 ```
