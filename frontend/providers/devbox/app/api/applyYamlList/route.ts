@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 
+import { headers } from 'next/headers'
 import { ApiResp } from '@/services/kubernet'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -19,10 +20,11 @@ export async function POST(req: NextRequest) {
     })
     return
   }
+  const headerList = headers()
 
   try {
     const { applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req)
+      kubeconfig: await authSession(headerList)
     })
 
     await applyYamlList(yamlList, type)

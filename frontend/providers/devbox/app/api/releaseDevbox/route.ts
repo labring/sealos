@@ -5,6 +5,7 @@ import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { json2DevboxRelease } from '@/utils/json2Yaml'
+import { headers } from 'next/headers'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,9 +15,10 @@ export async function POST(req: NextRequest) {
       tag: string
       releaseDes: string
     }
+    const headerList = headers()
 
     const { applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req)
+      kubeconfig: await authSession(headerList)
     })
     const devbox = json2DevboxRelease(releaseForm)
     await applyYamlList([devbox], 'create')

@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 
 import { ApiResp } from '@/services/kubernet'
@@ -9,9 +10,10 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName')
+    const headerList = headers()
 
     const { k8sCustomObjects } = await getK8s({
-      kubeconfig: await authSession(req)
+      kubeconfig: await authSession(headerList)
     })
 
     const response: any = await k8sCustomObjects.listNamespacedCustomObject(
@@ -29,9 +31,8 @@ export async function GET(req: NextRequest) {
     const matchingDevboxVersions = response?.body?.items.filter((item: any) => {
       return item.spec && item.spec.devboxName === devboxName
     })
-    // console.log(matchingDevboxVersions)
 
-    return jsonRes<ApiResp>({ data: matchingDevboxVersions })
+    return jsonRes({ data: matchingDevboxVersions })
   } catch (err: any) {
     // TODO: ApiResp全部去除
     return jsonRes<ApiResp>({

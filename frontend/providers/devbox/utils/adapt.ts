@@ -42,7 +42,8 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
         1691583960000 // '2024-08-09 12:06'
       ],
       yData: ['0.1', '0.2', '0.3', '0.4', '0.5']
-    }
+    },
+    networks: []
   }
 }
 

@@ -57,6 +57,7 @@ export interface DevboxListItemType {
   memory: number
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
+  networks: []
 }
 
 export interface PodDetailType extends V1Pod {

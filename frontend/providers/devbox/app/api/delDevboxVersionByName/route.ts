@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 
 import { ApiResp } from '@/services/kubernet'
@@ -9,9 +10,10 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
     const versionName = searchParams.get('versionName') as string
+    const headerList = headers()
 
     const { k8sCustomObjects } = await getK8s({
-      kubeconfig: await authSession(req)
+      kubeconfig: await authSession(headerList)
     })
 
     // TODO: 这里的name不知道确定是什么，所以导致可能删除不成功

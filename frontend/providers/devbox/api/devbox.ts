@@ -1,4 +1,4 @@
-import { KBDevboxType } from '@/types/k8s'
+import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
 import { GET, POST, DELETE } from '@/services/request'
 import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
 import { DevboxEditType, DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
@@ -25,7 +25,7 @@ export const startDevbox = (data: { devboxName: string }) => POST('/api/startDev
 export const pauseDevbox = (data: { devboxName: string }) => POST('/api/pauseDevbox', data)
 
 export const getDevboxVersionList = (devboxName: string) =>
-  GET<DevboxVersionListItemType[]>('/api/getDevboxVersionList', { devboxName }).then(
+  GET<KBDevboxVersionType[]>('/api/getDevboxVersionList', { devboxName }).then(
     (data): DevboxVersionListItemType[] => data.map(adaptDevboxVersionListItem)
   )
 

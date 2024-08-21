@@ -34,11 +34,11 @@ type PriceCrdType = {
 }
 const PRICE_SCALE = 1000000
 
-export const valuationMap: Record<string, number> = {
-  cpu: 1000,
-  memory: 1024,
-  storage: 1024
-}
+// export const valuationMap: Record<string, number> = {
+//   cpu: 1000,
+//   memory: 1024,
+//   storage: 1024
+// }
 
 export async function GET(req: NextRequest) {
   try {
@@ -88,10 +88,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
-  const rawPrice =
-    rawData?.status?.billingRecords.find((item) => item.resourceType === type)?.price || 1
-  const sourceScale = rawPrice * (valuationMap[type] || 1)
-  const unitScale = sourceScale / PRICE_SCALE
-  return unitScale
-}
+// function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
+//   const rawPrice =
+//     rawData?.status?.billingRecords.find((item) => item.resourceType === type)?.price || 1
+//   const sourceScale = rawPrice * (valuationMap[type] || 1)
+//   const unitScale = sourceScale / PRICE_SCALE
+//   return unitScale
+// }
