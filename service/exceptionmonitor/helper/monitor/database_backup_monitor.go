@@ -46,22 +46,34 @@ func checkDatabaseBackups() error {
 
 func processBackup(backup unstructured.Unstructured) {
 	status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
-	backupName, namespace, startTime := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
+	backupName, namespace, startTimestamp := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
 	if err != nil {
-		log.Printf("Unable to get %s status in ns %s:%v", backupName, namespace, err)
+		log.Printf("Unable to get %s status in %s:%v", backupName, namespace, err)
 		return
 	}
-	if !found || status != "Failed" {
+	if !found || (status != "Failed" && status != "InProgress") {
 		return
 	}
-	fmt.Println(backupName, namespace)
+	if status == "InProgress" {
+		startTime, err := time.Parse(time.RFC3339, startTimestamp)
+		if err != nil {
+			log.Printf("%s Unable to parsing time  in %s:%v", backupName, namespace, err)
+			fmt.Println("Error parsing time:", err)
+			return
+		}
+		currentTime := time.Now().UTC()
+		duration := currentTime.Sub(startTime)
+		if duration >= time.Hour {
+			SendBackupNotification(backupName, namespace, status, startTimestamp)
+		}
+		return
+	}
 	debt, _, _ := checkDebt(namespace)
 	if !debt {
 		return
 	}
 	backupPolicyName, _, _ := unstructured.NestedString(backup.Object, "spec", "backupPolicyName")
 	databaseName := getPrefix(backupPolicyName)
-	fmt.Println(databaseName)
 	cluster, err := api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).Get(context.Background(), databaseName, metav1.GetOptions{})
 	if cluster != nil && errors.IsNotFound(err) {
 		return
@@ -70,7 +82,10 @@ func processBackup(backup unstructured.Unstructured) {
 	if dbStatus == "Stopped" {
 		return
 	}
-	fmt.Println(dbStatus)
+	SendBackupNotification(backupName, namespace, status, startTimestamp)
+}
+
+func SendBackupNotification(backupName, namespace, status, startTimestamp string) {
 	notificationInfo := notification.Info{
 		DatabaseClusterName: backupName,
 		Namespace:           namespace,
@@ -80,7 +95,7 @@ func processBackup(backup unstructured.Unstructured) {
 		NotificationType:    "exception",
 	}
 	if _, ok := api.LastBackupStatusMap[backupName]; !ok {
-		message := notification.GetBackupMessage("exception", namespace, backupName, status, startTime, "")
+		message := notification.GetBackupMessage("exception", namespace, backupName, status, startTimestamp, "")
 		if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLBackup"]); err != nil {
 			log.Printf("Error sending exception notification:%v", err)
 		}
