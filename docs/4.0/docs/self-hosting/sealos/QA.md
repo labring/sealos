@@ -104,3 +104,10 @@ enabled user register:
 kubectl get cm -n sealos desktop-frontend-config -o yaml | sed 's/signUpEnabled: false/signUpEnabled: true/g' | kubectl apply -f -
 kubectl rollout restart deployment desktop-frontend -n sealos
 ```
+
+
+## Database Issues
+
+### Dify installation
+
+The Sealos offline package does not include the vector database by default (and the related image is not packaged), so it is currently not possible to install the Dify application in a privately deployed Sealos cluster.
