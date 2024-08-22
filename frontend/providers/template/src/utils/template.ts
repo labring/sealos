@@ -7,7 +7,7 @@ export const getTemplateInputDefaultValues = (templateSource: TemplateSourceType
     inputs,
     (acc, item) => {
       // @ts-ignore
-      acc[item.key] = item.default;
+      acc[item.key] = item.default || '';
       return acc;
     },
     {}
@@ -15,7 +15,7 @@ export const getTemplateInputDefaultValues = (templateSource: TemplateSourceType
 };
 
 export const getTemplateDefaultValues = (templateSource: TemplateSourceType | undefined) => {
-  return mapValues(templateSource?.source.defaults, (value) => value.value)
+  return mapValues(templateSource?.source.defaults, (value) => value.value || '')
 };
 
 export const getTemplateValues = (templateSource: TemplateSourceType | undefined) => {
