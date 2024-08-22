@@ -108,6 +108,8 @@ export interface AppEditType {
   }[];
 }
 
+export type AppEditSyncedFields = Pick<AppEditType, 'imageName' | 'replicas' | 'cpu' | 'memory'>;
+
 export type TAppSourceType = 'app_store' | 'sealaf';
 
 export type TAppSource = {
