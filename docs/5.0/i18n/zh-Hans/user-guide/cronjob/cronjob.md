@@ -25,4 +25,4 @@ deployment），副本数 0，点击部署。
 
 详情中展示了成功数和失败数，以及历史任务的执行情况。
 
-![](./images/cronjob-5.png)
+![](./images/cronjob-5.png) 
