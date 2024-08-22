@@ -62,7 +62,8 @@ export const parseTemplateString = (
 
   try {
     const replacedString = sourceString.replace(regex, (match: string, key: string) => {
-      return evaluateExpression(key, dataSource);
+      const value = evaluateExpression(key, dataSource)
+      return value !== undefined ? value : '';
     });
     return replacedString;
   } catch (error) {
