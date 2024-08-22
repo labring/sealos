@@ -1,6 +1,6 @@
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
-import { ApiResp, Session } from '@/types';
+import { ApiResp } from '@/types';
 import {
   Image,
   Input,
@@ -15,11 +15,8 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { getRegionToken, UserInfo } from '@/api/auth';
-import { jwtDecode } from 'jwt-decode';
-import { uploadConvertData } from '@/api/platform';
-import { AccessTokenPayload } from '@/types/token';
-import { getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getRegionToken } from '@/api/auth';
+import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 
 export default function useSms({
@@ -56,7 +53,8 @@ export default function useSms({
               id: data.phoneNumber,
               code: data.verifyCode,
               inviterId: getInviterId(),
-              semData: getUserSemData()
+              semData: getUserSemData(),
+              bdVid: getBaiduId()
             }
           );
           const globalToken = result1?.data?.token;
@@ -65,14 +63,6 @@ export default function useSms({
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
             await sessionConfig(regionTokenRes.data);
-            uploadConvertData([3]).then(
-              (res) => {
-                console.log(res);
-              },
-              (err) => {
-                console.log(err);
-              }
-            );
             await router.replace('/');
           }
         } catch (error) {

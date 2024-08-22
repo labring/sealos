@@ -66,11 +66,11 @@ export default function Account() {
         <Flex alignItems={'center'}>
           <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'8px'}>
             <Image
-              width={user?.avatar && 'full'}
-              height={user?.avatar && 'full'}
+              width={user?.avatar && user.avatar.trim() !== '' ? 'full' : '20px'}
+              height={user?.avatar && user.avatar.trim() !== '' ? 'full' : '20px'}
               objectFit={'cover'}
               borderRadius="full"
-              src={user?.avatar || ''}
+              src={user?.avatar}
               fallbackSrc={'/images/default-user.svg'}
               alt="user avator"
               draggable={'false'}

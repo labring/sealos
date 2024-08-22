@@ -3,10 +3,9 @@ import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
-import { uploadConvertData } from '@/api/platform';
 import { isString } from 'lodash';
 import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
-import { getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
@@ -63,7 +62,8 @@ export default function Callback() {
             const data = await signInRequest(provider)({
               code,
               inviterId: getInviterId() ?? undefined,
-              semData: getUserSemData() ?? undefined
+              semData: getUserSemData() ?? undefined,
+              bdVid: getBaiduId() ?? undefined
             });
             setProvider();
             if (data.code === 200 && data.data?.token) {
@@ -72,14 +72,6 @@ export default function Callback() {
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
                 await sessionConfig(regionTokenRes.data);
-                uploadConvertData([3]).then(
-                  (res) => {
-                    console.log(res);
-                  },
-                  (err) => {
-                    console.log(err);
-                  }
-                );
                 await router.replace('/');
               }
             } else {
