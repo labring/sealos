@@ -1,25 +1,39 @@
 # Kubepanel
 
-Kubepanel 是一款可视化的 Kubernetes 管理面板，如果您较为熟悉 Kubernetes，可以直接使用快速查看和管理您的各种 Kubernetes 资源。
+Kubepanel 是一个款 Kubernetes IDE（集成开发环境）。它提供了一个用户友好的图形界面来管理 Kubernetes
+集群，具有实时监控和资源可视化管理的功能。它旨在使 Kubernetes 更加易于访问和管理，即使对于那些不太熟悉 Kubernetes
+命令行工具的人也是如此。
 
 ## 快速开始
 
-### 进入 Kubepanel
-
-直接点击桌面上的 Kubepanel app 就可以直接进入 Kubepanel 页面。
+打开 Sealos 桌面，点击 Kubepanel。
 
 ![](./images/kubepanel-1.png)
 
-可以在其中看到部署信息，资源概览，与发生事件等信息。
+### 查看资源
 
-## 部署资源
-
-进入 Kubepanel 后，点击左下角加号，即可使用其部署资源。
+Kubepanel 内可以查看 Workload、Config、Network 和 Storage 资源。
 
 ![](./images/kubepanel-2.png)
 
-部署资源直接使用 yml 文件，可以自己编写或者导入，也可以点击左上角 choose a template 选择您所需要的模版然后进行修改。
+### 部署资源
+
+点击➕加号。
 
 ![](./images/kubepanel-3.png)
 
-修改完成配置文件之后，点击右下角的 create 即可开始部署，等待部署完成即可。
+需要先选择一个模板，然后才可以编写资源 YAML。
+
+![](./images/kubepanel-4.png)
+
+这里选择了 Deployment 模板，点击 Create 创建 Deployment 资源。
+
+![](./images/kubepanel-5.png)
+
+创建成功后，可以在 Workload/Deployments 中看到该 Deployment 资源。
+
+![](./images/kubepanel-6.png)
+
+也支持对资源进行删除或者更新操作。
+
+![](./images/kubepanel-7.png)
