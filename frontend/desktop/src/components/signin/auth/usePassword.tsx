@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
-import { getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 import { SemData } from '@/types/sem';
 
@@ -47,6 +47,7 @@ export default function usePassword({
           try {
             setIsLoading(true);
             const inviterId = getInviterId();
+            const bdVid = getBaiduId();
             const semData: SemData | null = getUserSemData();
 
             const result = await passwordExistRequest({ user: data.username });
@@ -56,7 +57,8 @@ export default function usePassword({
                 user: data.username,
                 password: data.password,
                 inviterId,
-                semData
+                semData,
+                bdVid
               });
               if (!!result?.data) {
                 await sessionConfig(result.data);
@@ -74,7 +76,8 @@ export default function usePassword({
                     user: data.username,
                     password: data.password,
                     inviterId,
-                    semData
+                    semData,
+                    bdVid
                   });
                   if (!!regionResult?.data) {
                     setToken(regionResult.data.token);

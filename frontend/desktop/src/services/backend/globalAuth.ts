@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import { generateAuthenticationToken } from '@/services/backend/auth';
 import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
+import { uploadConvertData } from '@/api/platform';
 
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -221,7 +222,8 @@ export const getGlobalToken = async ({
   avatar_url,
   password,
   inviterId,
-  semData
+  semData,
+  bdVid
 }: {
   provider: ProviderType;
   providerId: string;
@@ -230,6 +232,7 @@ export const getGlobalToken = async ({
   password?: string;
   inviterId?: string;
   semData?: SemData;
+  bdVid?: string;
 }) => {
   let user: User | null = null;
 
@@ -288,6 +291,15 @@ export const getGlobalToken = async ({
           inviteeId: result?.user.name,
           signResult: result
         });
+      }
+      if (bdVid && result) {
+        uploadConvertData({ newType: [3], bdVid })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     } else {
       const result = await signIn({

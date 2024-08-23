@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     ).json();
 
-    console.log('upload data success', data);
+    console.log('upload data:', data, 'result:', result);
     jsonRes(res, {
       data: result
     });

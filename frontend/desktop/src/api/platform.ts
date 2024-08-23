@@ -9,20 +9,18 @@ import {
   TNotification
 } from '@/types';
 import { AccountCRD } from '@/types/user';
-import { getBaiduId } from '@/utils/sessionConfig';
 
 // handle baidu
-export const uploadConvertData = (newType: number[], url?: string) => {
+export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid?: string }) => {
+  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
   const defaultUrl = 'https://sealos.run/self-hosting';
-  const main_url = url || defaultUrl;
-  const bd_vid = getBaiduId();
-  if (!bd_vid) {
+  if (!bdVid) {
     return Promise.reject('upload convert data params error');
   }
-  return request.post('/api/platform/uploadData', {
+  return request.post(`${baseurl}/api/platform/uploadData`, {
     newType,
-    bd_vid,
-    main_url
+    bd_vid: bdVid,
+    main_url: defaultUrl
   });
 };
 

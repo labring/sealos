@@ -29,6 +29,7 @@ export const _passwordLoginRequest =
           password: string;
           inviterId: string | null | undefined;
           semData: SemData | null | undefined;
+          bdVid: string | null | undefined;
         }
       | {
           user: string;
@@ -113,7 +114,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; semData?: SemData }) =>
+  (data: { code: string; inviterId?: string; semData?: SemData; bdVid?: string }) =>
     request.post<
       typeof data,
       ApiResp<{

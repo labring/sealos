@@ -13,7 +13,8 @@ export const getGlobalTokenSvc =
     providerType: ProviderType,
     password?: string,
     inviterId?: string,
-    semData?: SemData
+    semData?: SemData,
+    bdVid?: string
   ) =>
   async (res: NextApiResponse, next?: () => void) => {
     const data = await getGlobalToken({
@@ -23,7 +24,8 @@ export const getGlobalTokenSvc =
       name,
       inviterId,
       password,
-      semData
+      semData,
+      bdVid
     });
     if (!data)
       return jsonRes(res, {
@@ -42,7 +44,8 @@ export const getGlobalTokenByGithubSvc = (
   providerId: string,
   name: string,
   inviterId?: string,
-  semData?: SemData
+  semData?: SemData,
+  bdVid?: string
 ) =>
   getGlobalTokenSvc(
     avatar_url,
@@ -51,14 +54,16 @@ export const getGlobalTokenByGithubSvc = (
     ProviderType.GITHUB,
     undefined,
     inviterId,
-    semData
+    semData,
+    bdVid
   );
 export const getGlobalTokenByWechatSvc = (
   avatar_url: string,
   providerId: string,
   name: string,
   inviterId?: string,
-  semData?: SemData
+  semData?: SemData,
+  bdVid?: string
 ) =>
   getGlobalTokenSvc(
     avatar_url,
@@ -67,10 +72,15 @@ export const getGlobalTokenByWechatSvc = (
     ProviderType.WECHAT,
     undefined,
     inviterId,
-    semData
+    semData,
+    bdVid
   );
-export const getGlobalTokenByPhoneSvc = (phone: string, inviterId?: string, semData?: SemData) =>
-  getGlobalTokenSvc('', phone, phone, ProviderType.PHONE, undefined, inviterId, semData);
+export const getGlobalTokenByPhoneSvc = (
+  phone: string,
+  inviterId?: string,
+  semData?: SemData,
+  bdVid?: string
+) => getGlobalTokenSvc('', phone, phone, ProviderType.PHONE, undefined, inviterId, semData, bdVid);
 export const getGlobalTokenByPasswordSvc = (name: string, password: string, inviterId?: string) =>
   getGlobalTokenSvc('', name, name, ProviderType.PASSWORD, password, inviterId);
 export const getGlobalTokenByGoogleSvc = (
@@ -78,7 +88,8 @@ export const getGlobalTokenByGoogleSvc = (
   providerId: string,
   name: string,
   inviterId?: string,
-  semData?: SemData
+  semData?: SemData,
+  bdVid?: string
 ) =>
   getGlobalTokenSvc(
     avatar_url,
@@ -87,5 +98,6 @@ export const getGlobalTokenByGoogleSvc = (
     ProviderType.GOOGLE,
     undefined,
     inviterId,
-    semData
+    semData,
+    bdVid
   );

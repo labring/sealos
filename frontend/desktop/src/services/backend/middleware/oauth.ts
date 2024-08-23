@@ -15,21 +15,27 @@ import { SemData } from '@/types/sem';
 export const OauthCodeFilter = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { code: string; inviterId?: string; semData?: SemData }) => void
+  next: (data: { code: string; inviterId?: string; semData?: SemData; bdVid?: string }) => void
 ) => {
-  const { code } = req.body as { code?: string };
-  if (!code)
+  const { code, inviterId, semData, bdVid } = req.body as {
+    code?: string;
+    inviterId?: string;
+    semData?: SemData;
+    bdVid?: string;
+  };
+  if (!code) {
     return jsonRes(res, {
       message: 'code is invalid',
       code: 400
     });
-  const { inviterId } = req.body as { inviterId?: string };
-  const { semData } = req.body as { semData?: SemData };
+  }
+
   await Promise.resolve(
     next?.({
       code,
       inviterId,
-      semData
+      semData,
+      bdVid
     })
   );
 };

@@ -46,13 +46,15 @@ export const filterPhoneVerifyParams = (
     code: string;
     inviterId?: string;
     semData?: SemData;
+    bdVid?: string;
   }) => void
 ) =>
   filterPhoneParams(req, res, async (data) => {
-    const { code, inviterId, semData } = req.body as {
+    const { code, inviterId, semData, bdVid } = req.body as {
       code?: string;
       inviterId?: string;
       semData?: SemData;
+      bdVid?: string;
     };
     if (!code)
       return jsonRes(res, {
@@ -65,7 +67,8 @@ export const filterPhoneVerifyParams = (
         ...data,
         code,
         inviterId,
-        semData
+        semData,
+        bdVid
       })
     );
   });

@@ -65,9 +65,14 @@ export default function Cost() {
     const estimatedNextMonthAmount = prevDayAmount.times(30).toNumber();
     const _balance = new Decimal(balance || 0);
 
-    const estimatedDaysUsable = prevDayAmount.greaterThan(0)
-      ? _balance.div(prevDayAmount).ceil().toNumber()
-      : Number.POSITIVE_INFINITY;
+    let estimatedDaysUsable;
+    if (_balance.isNegative()) {
+      estimatedDaysUsable = 0;
+    } else if (prevDayAmount.isZero()) {
+      estimatedDaysUsable = Number.POSITIVE_INFINITY;
+    } else {
+      estimatedDaysUsable = _balance.div(prevDayAmount).ceil().toNumber();
+    }
 
     return {
       prevMonthAmount: new Decimal(billing?.data?.prevMonthTime || 0).toNumber(),
