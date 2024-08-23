@@ -121,6 +121,11 @@
     ]
   },
   {
+    "type": "doc",
+    "id": "community",
+    "label": "Community"
+  },
+  {
     "type": "category",
     "label": "Master Services Agreement",
     "link": {

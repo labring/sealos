@@ -1,58 +1,67 @@
-# Sealos 云服务隐私政策
+---
+sidebar_position: 2
+---
 
-我们非常重视您的隐私保护，在您使用本服务时，我们将按照以下政策收集、使用、披露和保护您的个人信息。请您仔细阅读并充分理解本隐私政策。
+# Sealos Cloud Privacy Policy
 
-**信息收集**
+We prioritize your privacy immensely. This policy details the collection, use, disclosure, and protection of your
+personal information when you utilize our services. Please thoroughly understand its contents.
 
-1. 在您注册或使用本服务时，我们可能收集您的姓名、电话号码、电子邮件地址、地址等个人信息。
-2. 在您使用本服务过程中产生的信息，如操作日志、访问IP地址、设备型号等。
-3. 我们可能会通过 Cookies 或其他技术收集和存储您访问本服务的相关信息，以便为您提供更好的用户体验。
+**Information Collection**
 
-**信息使用**
+1. We may gather your personal details like name, phone number, email, and address during registration or service usage.
+2. We also collect data produced during service use, such as operational logs, IP addresses, and device types.
+3. For enhanced user experience, technologies like cookies may be employed to store information related to your service
+   interaction.
 
-1. 我们会根据法律法规规定以及与用户之间的约定来处理用户的个人信息。
-2. 我们可能会将收集到的信息用于改进服务质量、开发新产品或功能等目的。
-3. 我们可能会将收集到的信息用于向您推送与本服务相关的通知或广告。
+**Information Usage**
 
-**信息披露**
+1. The handling of your personal data adheres to legal regulations and user agreements.
+2. We utilize the information for improving service quality, innovating new products, and other similar purposes.
+3. Collected data might be used for delivering service-related notifications and advertisements.
 
-1. 我们不会向任何第三方披露您的个人信息，除非：
+**Disclosure of Information**
 
-   1. 您事先同意；
+1. Your personal data will not be shared with third parties, except under these circumstances:
 
-   2. 法律法规要求；
+    1. With your prior agreement;
+    2. When legally or regulatorily required;
+    3. To uphold our or other users' legal rights.
 
-   3. 为维护我们或其他用户的合法权益。
+2. We may share your information with affiliated entities or partners, ensuring data security through strict
+   confidentiality.
 
-2. 我们可能与关联公司、合作伙伴分享您的个人信息，但我们会采取相应的保密措施，确保信息安全。
+**Protection of Information**
 
-**信息保护**
+1. We apply various security measures, like encryption and access control, to prevent unauthorized data access, use, or
+   disclosure.
+2. Regular safety assessments are conducted on stored personal data to guarantee its security.
+3. Should a data leak or similar security incident occur, we'll immediately implement emergency measures and inform you
+   as required by law.
 
-1. 我们采取各种安全措施，包括加密、访问控制等技术手段，以保护您的个人信息免受未经授权的访问、使用或泄露。
-2. 我们会定期对收集、存储和处理的个人信息进行安全评估，以确保个人信息安全。
-3. 在发生个人信息泄露等安全事件时，我们会立即启动应急预案，并在法律法规规定的范围内向您及时告知。
+**User Rights**
 
-**用户权利**
+1. You have complete authority to access, correct, or delete your personal data at any time.
+2. Opting out of data collection can limit your access to certain service features.
+3. You may request a halt in processing your personal data, which might affect service continuation.
 
-1. 您有权随时查阅、更正或删除您的个人信息。
-2. 您有权拒绝我们收集您的个人信息，但这可能导致您无法使用本服务的部分功能。
-3. 您有权要求我们停止处理您的个人信息，但这可能导致您无法继续使用本服务。
+**Privacy Policy Updates**
 
-**隐私政策更新**
+1. We may periodically update this policy, and any changes will be published on our service page. Continuing service use
+   implies acceptance of any updated terms.
+2. Regularly reviewing this policy is encouraged to stay informed about your data protection.
 
-1. 我们可能会对本隐私政策进行修改。如本隐私政策发生变更，我们将在本服务页面上发布修改后的隐私政策。如您继续使用本服务，则视为同意修改后的隐私政策。
-2. 我们鼓励您定期查阅本隐私政策，以了解我们如何保护您的个人信息。
+**Minor Protection**
 
-**未成年人保护**
+Minors' data protection is crucial to us. If you're a minor, please engage with our services under guardian supervision,
+ensuring proper data management.
 
-我们非常重视对未成年人个人信息的保护，如您为未成年人，请在监护人指导下使用本服务，并请监护人帮助您在使用本服务过程中正确处理个人信息。
+**Cross-border Data Transfer**
 
-**跨境数据传输**
+Considering our servers' diverse locations, your data may be transferred and processed internationally. We assure that
+cross-border data remains securely protected.
 
-由于我们的服务器可能位于不同国家或地区，您同意我们可能需要将您的个人信息传输至其他国家或地区，并在该等国家或地区存储和处理以向您提供服务。我们会采取适当措施确保跨境传输的数据仍然受到适当保护。
+**Contact Us**
 
-**联系我们**
-
-1. 如您对本隐私政策有任何疑问、建议或投诉，请通过以下方式与我们联系(微信)：
-   [fangnux]
-2. 我们将尽快回复并解决您提出的问题。
+1. For any questions, suggestions, or complaints about this policy, please reach us via email fanux@sealos.io
+2. We are committed to quickly resolving any issues you raise.

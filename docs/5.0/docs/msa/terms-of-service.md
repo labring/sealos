@@ -1,64 +1,93 @@
-# Sealos 云服务服务协议
+---
+sidebar_position: 1
+---
 
-Sealos 云服务服务协议是您与珠海环界云计算有限公司（以下简称“我们”或“本公司”）之间就云服务（以下简称“本服务”）的使用等相关事项所订立的协议。请您仔细阅读并充分理解本协议各条款，特别是免除或者限制我们责任的条款、对您权益的限制条款、争议解决和法律适用条款等。如您不同意本协议任一内容，请勿注册或使用本服务。
+# Sealos Cloud Terms of Service
 
-**第1条 服务内容**
+These Sealos Cloud Terms of Service (this “Agreement”) are entered into by and between you and Zhuhai Huanjie Cloud
+Computing Co., Ltd. (referred to as “we/us” or "the Company") regarding the use of our cloud services (hereafter
+referred to as "the Service"). We urge you to read and understand every clause, particularly those concerning
+limitations of our liability, restrictions on your rights, and the terms about dispute resolution and legal
+jurisdiction. If any aspect of this agreement is not acceptable to you, refrain from registering for or using the
+Service.
 
-1. 我们将向您提供存储、计算、网络传输等基于互联网的信息技术服务。
-2. 我们将为您提供相关技术支持和客户服务，帮助您更好地使用本服务。
-3. 您同意我们有权自行决定变更、中断、终止或暂停本服务的全部或部分功能，且无需对您承担任何责任。
+**Article 1: Scope of Services**
 
-**第2条 用户注册与账户管理**
+1. We offer a range of internet-based IT services, including but not limited to storage, computation, and network
+   transmission.
+2. Technical support and customer assistance will be provided to enhance your experience with the Service.
+3. We reserve the right to modify, suspend, or discontinue any or all aspects of the Service without any obligation to
+   you.
 
-1. 您在使用本服务前需要注册一个账户。您保证在注册时提供的信息真实、准确、完整，并及时更新。
-2. 您应妥善保管账户名和密码，对由此产生的全部行为负责。如发现他人使用您的账户，应立即通知我们。
-3. 我们有权对您的账户进行审查，如发现您的账户存在异常情况，我们有权暂停或终止向您提供服务。
+**Article 2: Account Registration and Management**
 
-**第3条 使用规则**
+1. Prior to using the Service, registering an account is mandatory. You must ensure that the information provided at
+   registration is accurate and updated regularly.
+2. The security of your account credentials is your responsibility. Any misuse of your account should be reported to us
+   immediately.
+3. We hold the right to inspect your account and, if irregularities are detected, may halt or terminate the services
+   provided to you.
 
-1. 您不得利用本服务从事任何违法活动或侵犯他人合法权益的行为，包括但不限于侵犯知识产权、泄露他人商业机密等。
-2. 您不得通过任何手段恶意注册账户，包括但不限于以牟利、炒作、套现等目的。
-3. 您不得利用本服务传播任何违法、有害、恶意软件等信息。
-4. 您应遵守相关法律法规及本协议的规定，对在本服务中发布的信息及使用本服务所产生的结果承担全部责任。
+**Article 3: Usage Guidelines**
 
-**第4条 费用及支付**
+1. The Service must not be used for illegal activities or in ways that infringe upon the rights of others, including
+   intellectual property rights and confidentiality breaches.
+2. The Service must not be used for malicious registration of accounts, whether for profit, speculation, or other
+   purposes.
+3. Dissemination of illegal, harmful, or malevolent content via the Service is strictly prohibited.
+4. You are liable for adhering to all relevant laws and the terms of this agreement, including the responsibility for
+   the content shared and outcomes arising from your use of the Service.
 
-1. 您同意支付与本服务相关的费用，具体费用标准以我们公布的价格为准。
-2. 我们可能会根据市场情况调整费用标准，并提前通知您。您如继续使用本服务，则视为同意调整后的费用标准。
-3. 如您未按时支付费用，我们有权暂停或终止向您提供本服务，并保留追讨欠款及要求赔偿的权利。
+**Article 4: Fees and Payment**
 
-**第5条 服务免责与责任限制**
+1. You agree to the fee structure associated with the Service, as outlined in our published rates.
+2. We may revise the fee structure based on market conditions, notifying you in advance. Continued use of the Service
+   implies agreement to the revised fees.
+3. Non-payment of fees may lead to the suspension or termination of the Service, and we retain the right to seek
+   compensation.
 
-1. 本服务按照现有技术和条件所能达到的水平提供。我们不能保证本服务无故障、安全完全可靠或满足您的所有需求。
-2. 如因不可抗力导致本服务发生故障或无法正常使用，我们不承担责任。
-3. 对于因您自身原因导致的数据丢失、损坏等情况，我们不承担责任。
+**Article 5: Disclaimer and Limitation of Liability**
 
-**第6条 隐私政策**
+1. The Service is provided based on existing technology and conditions, and we do not guarantee uninterrupted,
+   completely secure, or error-free service.
+2. We are not liable for Service disruptions or unavailability due to force majeure.
+3. We bear no responsibility for loss or damage of data caused by your actions.
 
-您同意接受并遵守我们制定的隐私政策。隐私政策为本协议的一部分，具体内容请参见下文“隐私政策”。
+**Article 6: Privacy Policy**
 
-**第7条 知识产权**
+Your agreement to and compliance with our privacy policy, an integral part of this agreement, is required. Please refer
+to the detailed "Privacy Policy" section below.
 
-1. 我们对本服务及相关软件、技术、文档等拥有全部知识产权，除非经我们明确许可，您不得进行复制、分发、出租、反向工程等行为。
-2. 您在使用本服务过程中产生的数据和内容（包括但不限于文件、图片等）之知识产权归您所有，但为了向您提供服务，您同意授权我们在必要范围内对其进行存储、备份等操作。
+**Article 7: Intellectual Property Rights**
 
-**第8条 协议终止**
+1. The intellectual property of the Service and all related materials, including software and documentation, is owned by
+   us. Unauthorized reproduction, distribution, or reverse engineering is prohibited.
+2. While you retain intellectual property rights over your data and content generated within the Service, you grant us
+   permission for necessary operations such as storage and backup to facilitate the Service.
 
-1. 如您违反本协议规定，我们有权立即终止向您提供服务，并保留追究法律责任的权利。
-2. 如您决定停止使用本服务，可以申请注销账户，本协议自账户注销之日起终止。
+**Article 8: Agreement Termination**
 
-**第9条 争议解决和法律适用**
+1. Violation of any terms of this agreement permits us to cease providing the Service immediately and to pursue legal
+   remedies.
+2. You can terminate this agreement by requesting the cancellation of your account.
 
-1. 本协议的签订、履行、解释和争议解决均适用中华人民共和国法律。
-2. 若您与我们发生争议，应先友好协商解决；协商不成的，任何一方均有权将争议提交至有管辖权的人民法院诉讼解决。
+**Article 9: Dispute Resolution and Governing Law**
 
-**第10条 网络安全**
+1. This agreement is governed by the laws of the People's Republic of China. Disputes arising from this agreement should
+   be resolved through negotiation; failing that, legal action may be pursued in a competent court.
+2. The agreement includes provisions for resolving disputes and the applicable legal framework.
 
-1. 如果利用平台服务提供违反国家法律的服务，您需要自行承担后果。
-2. 您对外提供的服务需要做好监管职责，如有用户在您的服务上从事违反国家法律的行为，您需自行承担后果。
-3. 我们如果发现您存在违法行为，将会对相关部门发起诉讼，并为有关部门提供证据。
+**Article 10: Network Security**
 
-**第11条 其他条款**
+1. You bear the consequences for any services provided through the platform that violate national laws.
+2. You are responsible for overseeing the services you offer and bear consequences for any illegal activities conducted
+   by your users.
+3. Should we discover your involvement in illegal activities, legal action will be taken and evidence provided to the
+   authorities.
 
-1. 如本协议中部分条款因违反法律法规而被视为无效，不影响其他条款的效力。
-2. 本公司保留对本协议及隐私政策的最终解释权。如您对本协议或隐私政策有任何疑问，请联系我们。
+**Article 11: Additional Provisions**
+
+1. Should parts of this agreement become invalid due to legal conflicts, it does not affect the validity of the
+   remaining terms.
+2. The Company retains the ultimate interpretive authority over this agreement and the privacy policy. For inquiries,
+   please contact us.
