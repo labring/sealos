@@ -1,7 +1,3 @@
----
-sidebar_position: 0
----
-
 # Object Storage
 
 **Object Storage** is Sealos' built-in object storage service, which is primarily used to store and manage unstructured

@@ -1,7 +1,3 @@
----
-sidebar_position: 4
----
-
 # Terminal
 
 Integrated within the [Sealos](https://cloud.sealos.io) Cloud Operating System is the Terminal, an application of
