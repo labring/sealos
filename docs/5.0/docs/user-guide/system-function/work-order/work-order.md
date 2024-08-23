@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Work Order
 
 If you encounter any issues while using Sealos, you can use the Work Order to submit your questions and feedback. We

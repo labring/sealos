@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Cost Center
 
 The Cost Center consists of five modules: Cost Overview, Billing Details, Resource Analysis, Standard, and Create

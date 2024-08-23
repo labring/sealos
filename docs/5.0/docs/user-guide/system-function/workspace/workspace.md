@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Workspace
 
 A workspace is a multi-tenant resource isolation mechanism that divides a cluster into multiple independent workspaces,

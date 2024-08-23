@@ -1,3 +1,7 @@
+---
+sidebar_position: 0
+---
+
 # Overview
 
 Sealos offers system functions such as cost center, workspace, and work order.
