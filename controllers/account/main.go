@@ -271,9 +271,10 @@ func main() {
 	}
 
 	if err = (&controllers.PaymentReconciler{
-		Account: accountReconciler,
-		Client:  mgr.GetClient(),
-		Scheme:  mgr.GetScheme(),
+		Account:     accountReconciler,
+		WatchClient: watchClient,
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}

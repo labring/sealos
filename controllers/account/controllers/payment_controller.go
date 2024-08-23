@@ -77,7 +77,7 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func initFieldIndex(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &accountv1.Payment{}, "status.tradeNO", func(rawObj client.Object) []string {
 		payment := rawObj.(*accountv1.Payment)
-		return []string{payment.Status.CodeURL}
+		return []string{payment.Status.TradeNO}
 	}); err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs [
 }
 
 func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
-	if payment.Status.TradeNO == "" || payment.Status.CodeURL == "" {
+	if payment.Status.TradeNO == "" {
 		if err := r.reconcileNewPayment(payment); err != nil {
 			return fmt.Errorf("reconcile new payment failed: %w", err)
 		}
@@ -265,7 +265,7 @@ func (r *PaymentReconciler) expiredOvertimePayment(payment *accountv1.Payment) e
 }
 
 func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) error {
-	if payment.Status.CodeURL != "" || payment.Status.TradeNO != "" {
+	if payment.Status.TradeNO != "" {
 		return nil
 	}
 	if payment.Spec.UserID == "" {
