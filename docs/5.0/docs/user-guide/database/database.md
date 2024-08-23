@@ -1,3 +1,7 @@
+---
+sidebar_position: 0
+---
+
 # Database
 
 ** Database ** is the core component of an application, Sealos provides a database cluster deployment management tool,

@@ -12,7 +12,7 @@ LVScare通过IPVS实时监控后端服务（real servers）的健康状态。如
 
 在Sealos中，我们利用了官方推荐的静态Pod的方式，自动配置和管理LVScare，以实现Kubernetes集群的高可用性。Sealos会在安装Kubernetes集群的过程中自动使用LVScare进行master节点的健康检查和负载均衡。这意味着，即使某个master节点出现故障，也不会影响Kubernetes集群的整体功能。
 
-![](./images/01.webp)
+![](images/01.webp)
 
 ### 如何运行LVScare静态Pod
 

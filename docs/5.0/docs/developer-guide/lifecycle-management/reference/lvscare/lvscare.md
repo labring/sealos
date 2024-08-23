@@ -25,7 +25,7 @@ achieving high availability of Kubernetes clusters. During the installation proc
 automatically uses LVScare for health checking and load balancing of the master nodes. This means that even if one of
 the master nodes fails, it does not affect the overall functionality of the Kubernetes cluster.
 
-![](./images/01.webp)
+![](images/01.webp)
 
 ### Running LVScare as a Static Pod
 

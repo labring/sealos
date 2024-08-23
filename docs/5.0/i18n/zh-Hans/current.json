@@ -31,6 +31,38 @@
     "message": "私有化部署",
     "description": "The label for the doc item Self Hosting in sidebar docSidebar, linking to the doc Community"
   },
+  "sidebar.docSidebar.category.User Guide": {
+    "message": "用户文档",
+    "description": "The label for category User Guide in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Cronjob": {
+    "message": "定时任务",
+    "description": "The label for category Cronjob in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Application": {
+    "message": "应用",
+    "description": "The label for category Application in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Object Storage": {
+    "message": "对象存储",
+    "description": "The label for category Object Storage in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Control": {
+    "message": "控制",
+    "description": "The label for category Control in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Database": {
+    "message": "数据库",
+    "description": "The label for category Database in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.System Function": {
+    "message": "系统应用",
+    "description": "The label for category System Function in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Developer Guide": {
+    "message": "开发者文档",
+    "description": "The label for category Developer Guide in sidebar docSidebar"
+  },
   "sidebar.docSidebar.category.Sealos": {
     "message": "Sealos 私有云",
     "description": "The label for category Sealos Self Hosting in sidebar docSidebar"
@@ -38,6 +70,10 @@
   "sidebar.docSidebar.category.Kubernetes Lifecycle Management": {
     "message": "K8s 集群生命周期管理",
     "description": "The label for category Kubernetes Lifecycle Management in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.System Design": {
+    "message": "系统设计",
+    "description": "The label for category System Design in sidebar docSidebar"
   },
   "sidebar.docSidebar.doc.Community": {
     "message": "社区",
