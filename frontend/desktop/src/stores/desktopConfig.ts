@@ -6,7 +6,7 @@ type State = {
   isAppBar: boolean;
   isNavbarVisible: boolean;
   toggleShape: () => void;
-  toggleNavbarVisibility: () => void;
+  toggleNavbarVisibility: (forceState?: boolean) => void;
 };
 
 export const useDesktopConfigStore = create<State>()(
@@ -19,9 +19,9 @@ export const useDesktopConfigStore = create<State>()(
           state.isAppBar = !state.isAppBar;
         });
       },
-      toggleNavbarVisibility() {
+      toggleNavbarVisibility(forceState) {
         set((state) => {
-          state.isNavbarVisible = !state.isNavbarVisible;
+          state.isNavbarVisible = forceState !== undefined ? forceState : !state.isNavbarVisible;
         });
       }
     })),

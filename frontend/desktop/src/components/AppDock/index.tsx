@@ -3,14 +3,14 @@ import useAppStore, { AppInfo } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { APPTYPE, TApp } from '@/types';
+import { I18nCommonKey } from '@/types/i18next';
 import { Box, Center, Flex, Image } from '@chakra-ui/react';
-import { MouseEvent, useContext, useMemo } from 'react';
+import { useTranslation } from 'next-i18next';
+import { MouseEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { Menu, useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
-import styles from './index.module.css';
-import { useTranslation } from 'next-i18next';
 import CustomTooltip from './CustomTooltip';
-import { I18nCommonKey } from '@/types/i18next';
+import styles from './index.module.css';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
@@ -29,6 +29,7 @@ export default function AppDock() {
   const logo = useConfigStore().layoutConfig?.logo;
   const moreAppsContent = useContext(MoreAppsContext);
   const { isNavbarVisible, toggleNavbarVisibility } = useDesktopConfigStore();
+  const [isMouseOverDock, setIsMouseOverDock] = useState(false);
 
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
@@ -118,32 +119,45 @@ export default function AppDock() {
 
   const transitionValue = 'transform 200ms ease-in-out, opacity 200ms ease-in-out';
 
+  useEffect(() => {
+    if (!isMouseOverDock) {
+      const hasMaximizedApp = runningInfo.some((app) => app.size === 'maximize');
+      toggleNavbarVisibility(!hasMaximizedApp);
+    }
+  }, [isMouseOverDock, runningInfo, toggleNavbarVisibility]);
+
   return (
     <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'1000'}>
-      <Center
-        width={'48px'}
-        height={'16px'}
-        position={'absolute'}
-        color={'white'}
-        transition={transitionValue}
-        cursor={'pointer'}
-        bg="rgba(220, 220, 224, 0.3)"
-        backdropFilter="blur(80px) saturate(150%)"
-        boxShadow={
-          '0px 0px 20px -4px rgba(12, 26, 67, 0.25), 0px 0px 1px 0px rgba(24, 43, 100, 0.25)'
-        }
-        borderTopRadius={'4px'}
-        top={'-80px'}
-        transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
-        will-change="transform, opacity"
-        onClick={toggleNavbarVisibility}
-      >
-        <ChevronDownIcon
-          transform={isNavbarVisible ? 'rotate(0deg)' : 'rotate(180deg)'}
-          transition="transform 0.3s ease-in-out"
-        />
-      </Center>
+      {runningInfo.length > 0 && (
+        <Center
+          width={'48px'}
+          height={'16px'}
+          position={'absolute'}
+          color={'white'}
+          transition={transitionValue}
+          cursor={'pointer'}
+          bg="rgba(220, 220, 224, 0.3)"
+          backdropFilter="blur(80px) saturate(150%)"
+          boxShadow={
+            '0px 0px 20px -4px rgba(12, 26, 67, 0.25), 0px 0px 1px 0px rgba(24, 43, 100, 0.25)'
+          }
+          borderTopRadius={'4px'}
+          top={'-80px'}
+          transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
+          will-change="transform, opacity"
+          onClick={() => {
+            toggleNavbarVisibility();
+          }}
+        >
+          <ChevronDownIcon
+            transform={isNavbarVisible ? 'rotate(0deg)' : 'rotate(180deg)'}
+            transition="transform 0.3s ease-in-out"
+          />
+        </Center>
+      )}
       <Flex
+        onMouseEnter={() => setIsMouseOverDock(true)}
+        onMouseLeave={() => setIsMouseOverDock(false)}
         onContextMenu={(e) => displayMenu(e)}
         borderRadius="12px"
         border={'1px solid rgba(255, 255, 255, 0.07)'}
@@ -199,6 +213,7 @@ export default function AppDock() {
                     alt={item?.name}
                     w="32px"
                     h="32px"
+                    draggable={false}
                   />
                 </Center>
                 <Box
