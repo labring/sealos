@@ -1,29 +1,31 @@
-# 部署第一个应用
+# Quick Start
 
-使用 Sealos 快速部署 Flarum。
+Deploy Flarum quickly with Sealos.
 
-> Flarum 是一款非常简洁的开源论坛软件。它响应快速、简便易用，拥有打造一片成功的社区所需的所有功能。它也极其可扩展，允许达到终极的可定制性。
+> Flarum is a very simple open source forum software. It's responsive, easy to use, and has all the features you need to
+> build a successful community. It's also extremely extensible, allowing for ultimate customizability.
 
-打开 Sealos 桌面，点击应用商店
+Open the Sealos desktop and click App Store.
 
 ![](./images/quick-start-1.png)
 
-点击 Flarum 应用（左上角搜索栏可以快速查找应用）
+Click on the Flarum app (the search bar in the upper left corner can quickly find the app).
 
 ![](./images/quick-start-2.png)
 
-点击部署应用
+Click Deploy App.
 
 ![](./images/quick-start-3.png)
 
-等待所有组件的状态变为运行中，代表组件启动完毕（可以重新进入当前页面刷新状态）
+Wait for the status of all components to change to running, which means that the components have been started (you can
+re-enter the current page refresh state).
 
 ![](./images/quick-start-4.png)
 
-返回 Sealos 桌面，点击 Flarum 应用
+Return to the Sealos desktop and click on the Flarum app.
 
 ![](./images/quick-start-5.png)
 
-成功访问 Flarum
+Successfully accessed Flarum.
 
 ![](./images/quick-start-6.png)
