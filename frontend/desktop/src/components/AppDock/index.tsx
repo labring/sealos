@@ -28,7 +28,7 @@ export default function AppDock() {
   } = useAppStore();
   const logo = useConfigStore().layoutConfig?.logo;
   const moreAppsContent = useContext(MoreAppsContext);
-  const { isNavbarVisible, toggleNavbarVisibility } = useDesktopConfigStore();
+  const { isNavbarVisible, toggleNavbarVisibility, getTransitionValue } = useDesktopConfigStore();
   const [isMouseOverDock, setIsMouseOverDock] = useState(false);
 
   const { show } = useContextMenu({
@@ -117,8 +117,6 @@ export default function AppDock() {
     });
   };
 
-  const transitionValue = 'transform 200ms ease-in-out, opacity 200ms ease-in-out';
-
   useEffect(() => {
     if (!isMouseOverDock) {
       const hasMaximizedApp = runningInfo.some((app) => app.size === 'maximize');
@@ -134,7 +132,7 @@ export default function AppDock() {
           height={'16px'}
           position={'absolute'}
           color={'white'}
-          transition={transitionValue}
+          transition={getTransitionValue()}
           cursor={'pointer'}
           bg="rgba(220, 220, 224, 0.3)"
           backdropFilter="blur(80px) saturate(150%)"
@@ -171,7 +169,7 @@ export default function AppDock() {
         gap={'12px'}
         userSelect={'none'}
         px={'12px'}
-        transition={transitionValue}
+        transition={getTransitionValue()}
         opacity={isNavbarVisible ? 1 : 0}
         position="absolute"
         top={'-64px'}
