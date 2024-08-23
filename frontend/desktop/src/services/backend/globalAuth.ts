@@ -265,15 +265,6 @@ export const getGlobalToken = async ({
           signResult: result
         });
       }
-      if (bdVid && result) {
-        uploadConvertData({ newType: [3], bdVid })
-          .then((res) => {
-            console.log(res);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      }
     } else {
       const result = await signInByPassword({
         id: providerId,
@@ -300,6 +291,15 @@ export const getGlobalToken = async ({
           inviteeId: result?.user.name,
           signResult: result
         });
+      }
+      if (bdVid && result) {
+        uploadConvertData({ newType: [3], bdVid })
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     } else {
       const result = await signIn({

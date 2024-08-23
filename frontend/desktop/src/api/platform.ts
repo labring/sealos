@@ -12,11 +12,12 @@ import { AccountCRD } from '@/types/user';
 
 // handle baidu
 export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid?: string }) => {
+  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
   const defaultUrl = 'https://sealos.run/self-hosting';
   if (!bdVid) {
     return Promise.reject('upload convert data params error');
   }
-  return request.post('/api/platform/uploadData', {
+  return request.post(`${baseurl}/api/platform/uploadData`, {
     newType,
     bd_vid: bdVid,
     main_url: defaultUrl
