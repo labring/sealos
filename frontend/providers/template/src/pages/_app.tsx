@@ -15,6 +15,7 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import { useSystemConfigStore } from '@/store/config';
 import useSessionStore from '@/store/session';
+import { useUserStore } from '@/store/user';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 
@@ -41,9 +42,11 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { setScreenWidth, setLastRoute } = useGlobalStore();
   const { initSystemConfig, initSystemEnvs } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
+  const { loadUserSourcePrice } = useUserStore();
 
   useEffect(() => {
     initSystemConfig();
+    loadUserSourcePrice();
   }, []);
 
   useEffect(() => {

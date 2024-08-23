@@ -10,10 +10,7 @@ import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
 import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
-import {
-  generateYamlList,
-  parseTemplateString,
-} from '@/utils/json-yaml';
+import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -26,6 +23,10 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
 import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
+import QuotaBox from './components/QuotaBox';
+import PriceBox from './components/PriceBox';
+import { useUserStore } from '@/store/user';
+import JsYaml from 'js-yaml';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -50,6 +51,20 @@ export default function EditApp({ appName }: { appName?: string }) {
     [templateSource]
   );
 
+  const { userSourcePrice } = useUserStore();
+
+  const cost = useMemo(() => {
+    let cost = {};
+    // for (const item of yamlList) {
+    //   const itemYaml = JsYaml.load(item.value)
+    //   switch (itemYaml.kind) {
+    //     case 'Deployment':
+
+    //   }
+    // }
+    return cost;
+  }, [yamlList]);
+
   const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv, {
     staleTime: 5 * 60 * 1000
   });
@@ -70,37 +85,45 @@ export default function EditApp({ appName }: { appName?: string }) {
     return val;
   }, [screenWidth]);
 
-  const generateYamlData = useCallback((templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
-    if (!templateSource) return [];
-    const app_name = templateSource?.source?.defaults?.app_name?.value;
-    const { defaults, defaultInputs } = getTemplateValues(templateSource);
-    const data = {
-      ...platformEnvs,
-      ...templateSource?.source,
-      inputs: {
-        ...defaultInputs,
-        ...inputs
-      },
-      defaults: defaults,
-    };
-    const generateStr = parseTemplateString(templateSource.appYaml, data);
-    return generateYamlList(generateStr, app_name);
-  }, [platformEnvs])
+  const generateYamlData = useCallback(
+    (templateSource: TemplateSourceType, inputs: Record<string, string>): YamlItemType[] => {
+      if (!templateSource) return [];
+      const app_name = templateSource?.source?.defaults?.app_name?.value;
+      const { defaults, defaultInputs } = getTemplateValues(templateSource);
+      const data = {
+        ...platformEnvs,
+        ...templateSource?.source,
+        inputs: {
+          ...defaultInputs,
+          ...inputs
+        },
+        defaults: defaults
+      };
+      const generateStr = parseTemplateString(templateSource.appYaml, data);
+      return generateYamlList(generateStr, app_name);
+    },
+    [platformEnvs]
+  );
 
-  const formOnchangeDebounce = useCallback(debounce((inputs: Record<string, string>) => {
-    try {
-      if (!templateSource) return;
-      const list = generateYamlData(templateSource, inputs)
-      setYamlList(list);
-    } catch (error) {
-      console.log(error);
-    }
-  }, 500), [templateSource, generateYamlData]);
+  const formOnchangeDebounce = useCallback(
+    debounce((inputs: Record<string, string>) => {
+      try {
+        if (!templateSource) return;
+        const list = generateYamlData(templateSource, inputs);
+        setYamlList(list);
+      } catch (error) {
+        console.log(error);
+      }
+    }, 500),
+    [templateSource, generateYamlData]
+  );
 
-  const getCachedValue = (): {
-    cachedKey: string,
-    [key: string]: any
-  } | undefined => {
+  const getCachedValue = ():
+    | {
+        cachedKey: string;
+        [key: string]: any;
+      }
+    | undefined => {
     if (!cached) return undefined;
     const cachedValue = JSON.parse(cached);
     return cachedValue?.cachedKey === templateName ? cachedValue : undefined;
@@ -304,7 +327,20 @@ export default function EditApp({ appName }: { appName?: string }) {
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
-            <Form formHook={formHook} pxVal={pxVal} formSource={templateSource!} platformEnvs={platformEnvs!} />
+            <Box mt={3} overflow={'hidden'}>
+              <QuotaBox />
+            </Box>
+            {userSourcePrice && (
+              <Box mt={3} overflow={'hidden'}>
+                <PriceBox cpu={[512, 1024]} memory={[2048, 4096]} storage={[0, 0]} />
+              </Box>
+            )}
+            <Form
+              formHook={formHook}
+              pxVal={pxVal}
+              formSource={templateSource!}
+              platformEnvs={platformEnvs!}
+            />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
             <ReadMe templateDetail={data?.templateYaml!} />
           </Flex>
