@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	"github.com/minio/madmin-go/v3"
 
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -205,9 +207,13 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		ops.Namespace = kbCluster.Namespace
 		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("2006-01-02-15")
 		ops.Spec.TTLSecondsAfterSucceed = 1
+		abort := int32(60 * 60)
+		ops.Spec.TTLSecondsBeforeAbort = &abort
 		ops.Spec.ClusterRef = kbCluster.Name
 		ops.Spec.Type = "Stop"
-		err := r.Client.Create(ctx, &ops)
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ops, func() error {
+			return nil
+		})
 		if err != nil {
 			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
 		}
