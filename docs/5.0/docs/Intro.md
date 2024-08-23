@@ -1,107 +1,87 @@
-# 什么是 Sealos？
+import Highlight from '@site/src/components/Highlight'
 
-云原生生态之庞大与复杂，无疑让许多企业感到手足无措，这个生态依然缺乏好用的、开箱即用的发行版。在云原生市场还急需一款云操作系统以进一步降低云原生门槛与成本。
+# What is Sealos?
 
-Sealos 的问世为企业开启了一扇新窗。它为企业与开发者提供了一种全新的选择，无论在公有云还是私有云中，都只需安装一个云操作系统。它能让各类应用在操作系统上稳定安全地运行，一并解决了应用所需的各种依赖问题。
+<Highlight content="Try Sealos now" url="https://cloud.sealos.io" />
 
-Sealos 坚守的理念是：**云可以像 Linux 一样简单**。你可以像使用 Linux 一样安装后立即投入使用，使用过程无需过多纠结。唯一的差别仅在于，Linux
-是安装在单一服务器上，而 Sealos 则是安装在整个数据中心。
+The vastness and complexity of the cloud-native ecosystem undoubtedly leaves many businesses in disarray, yearning for
+an efficient, ready-to-use distribution, which this ecosystem sorely lacks. The cloud-native market is in dire need of a
+cloud operating system to further reduce barriers and costs.
 
-在 Sealos 的架构中，**公有云与私有云并无本质上的差异**，他们应是同一套代码的不同实例，唯一的区别仅在于配置与所安装应用的差异。在内网安装即是私有云，而在公网对外提供服务则成为公有云。
+The advent of Sealos opens a new window for enterprises. It provides a novel choice for businesses and developers alike,
+necessitating only the installation of a cloud operating system, regardless of public or private cloud use. It allows
+various applications to operate stably and securely, tackling all sorts of dependency issues they might require.
 
-我们坚信，随着 Sealos 的不断发展与进步，未来的云将更加开放，更加简单。云计算的美好将属于所有算力的提供者，云的价值将由所有云计算的参与者共享。
-**他们将能够在多元化的市场环境中，以更经济的方式享受云计算所带来的种种便利。**
+Sealos adheres to the philosophy that **cloud usage can be as simple as Linux**. You can commence usage right after
+installation, as you would with Linux, without entanglement in excessive complexities. The sole difference is that while
+Linux is installed on a single server, Sealos is installed across an entire data center.
 
-## 概述
+In Sealos's architecture, **there's no essential difference between public and private clouds**. They should be separate
+instances of the same codebase, the only distinction lying in their configuration and installed applications. Installing
+it on an intranet renders it a private cloud, while offering services on the public internet converts it into a public
+cloud.
 
-Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以云原生的方式，抛弃了传统的云计算架构，转向以 Kubernetes
-为云内核的新架构，使企业能够**像使用个人电脑一样**简单地使用云。
+We firmly believe that with the continuous development and advancement of Sealos, the future of cloud computing will be
+more open, more straightforward. The benefits of cloud computing should belong to all providers of computational power,
+and the value of the cloud should be shared by all participants of cloud computing. **They will be able to enjoy the
+various conveniences of cloud computing in a more economical fashion in a diversified market environment.**
 
-用户将可以像使用个人电脑一样在 Kubernetes 上一键安装任意高可用分布式应用，几乎不需要任何专业的交付和运维成本。同时，利用独特的集群镜像能力，用户可将任意分布式应用打包成
-OCI 镜像，自由组合各种分布式应用，轻松订制所需的云。通过强大且灵活的应用商店功能，可满足各类用户的多样化需求。
+## Overview
 
-![](./images/overview-1.png)
+Sealos is a **cloud operating system distribution** based on the Kubernetes kernel. It adopts a cloud-native approach,
+discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the
+cloud kernel. This allows enterprises to use the cloud **as effortlessly as they would use a personal computer**.
 
-## 适用场景 & 优势
+Users will be able to install any high-availability distributed application on Kubernetes with the click of a button,
+similar to using a personal computer. It practically requires no professional delivery or operational costs.
+Simultaneously, utilizing unique cluster imaging capabilities, users can package any distributed application into an OCI
+image, freely combine a variety of distributed applications, and easily customize their desired cloud. The powerful and
+flexible app store function can meet the diverse needs of various users.
 
-Sealos 是一款强大的业务运行平台，它能完美支持 Java、Go、Python、PHP
-等各类应用，不受编程语言限制。该平台为应用提供稳定的运行环境，并解决后端依赖问题，例如数据库、对象存储和消息队列等。更进一步，它还能灵活处理应用配置管理、服务发现、公网暴露，以及自动伸缩等问题。
+![](./images/sealos-desktop.webp)
 
-### 公有云
+## Scenarios & Advantages
 
-如果您的业务需要运行在公有云环境中，那么您可以直接使用 [Sealos 提供的公有云服务](https://cloud.sealos.io)。
+Sealos is a powerful business operating platform, providing flawless support for various applications such as Java, Go,
+Python, PHP, and more, unrestricted by the programming language. The platform offers a stable operating environment for
+applications and resolves backend dependency issues like databases, object storage, and messaging queues. Further, it
+can flexibly handle application configuration management, service discovery, public network exposure, and automatic
+scaling issues.
 
-#### Sealos 的能力
+### Public Cloud
 
-- 🚀 **应用管理**：在应用商店中轻松管理并快速发布可公网访问的分布式应用。
-- 🗄️ **数据库管理**：秒级创建高可用数据库，支持 MySQL、PostgreSQL、MongoDB 和 Redis。
-- 🌥️ **公私一致**：即是公有云也是私有云，支持传统应用无缝迁移到云环境。
+If your business requires operation within a public cloud environment, you can directly use
+the [public cloud services provided by Sealos](https://cloud.sealos.io).
 
-![](./images/overview-2.jpeg)
+#### Capabilities of Sealos
 
-#### Sealos 的优势
+- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the
+  app store.
+- 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL,
+  MongoDB, and Redis.
+- 🌥️ **Cloud Universality**: Equally effective in both public and private cloud, enabling a seamless transition of
+  traditional applications to the cloud.
 
-- 💰 **高效 & 经济**：仅需为容器付费，自动伸缩杜绝资源浪费，大幅度节省成本。
-- 🌐 **通用性强，无心智负担**：专注于业务本身，无需担心复杂性，几乎没有学习成本。
-- 🛡️ **灵活 & 安全**：多租户共享机制在确保安全的同时，实现资源隔离与高效协作。
+#### Advantages of Sealos
 
-### 私有云
+- 💰 **Efficient & Economical**: Pay solely for the containers you utilize; automatic scaling prevents resource
+  squandering and substantially reduces costs.
+- 🌐 **High Universality & Ease of Use**: Concentrate on your core business activities without worrying about system
+  complexities; negligible learning costs involved.
+- 🛡️ **Agility & Security**: The distinctive multi-tenancy sharing model ensures both effective resource segmentation
+  and collaboration, all under a secure framework.
 
-Sealos 云操作系统 **100% 开源**，您可在 [GitHub](https://github.com/labring/sealos) 上找到所有源代码，因此 **Sealos 公有云
-**的全部功能也可以部署在私有云环境中，以满足您更多样化的业务需求。
+### Private Cloud
 
-### 强大的应用交付能力
+The Sealos cloud operating system is **100% open source**. You can find all source code
+on [GitHub](https://github.com/labring/sealos), which means all features of the **Sealos Public Cloud** can also be
+deployed in a private cloud environment to meet more diversified business needs.
 
-- Sealos 具备优秀的 Kubernetes 生命周期管理能力，还可以自由定制 Kubernetes 环境。
-- Sealos 可以将整个集群打包，并一键交付到客户环境中。所有服务和业务都可以整体交付。
-- 不同于 Docker 主要关注单机镜像，Sealos 更进一步，可以将**整个集群**或者某个分布式应用进行打包。
+### Strong Application Delivery Capability
 
-云原生生态之庞大与复杂，无疑让许多企业感到手足无措，这个生态依然缺乏好用的、开箱即用的发行版。在云原生市场还急需一款云操作系统以进一步降低云原生门槛与成本。
-
-Sealos 的问世为企业开启了一扇新窗。它为企业与开发者提供了一种全新的选择，无论在公有云还是私有云中，都只需安装一个云操作系统。它能让各类应用在操作系统上稳定安全地运行，一并解决了应用所需的各种依赖问题。
-
-Sealos 坚守的理念是：**云可以像 Linux 一样简单**。你可以像使用 Linux 一样安装后立即投入使用，使用过程无需过多纠结。唯一的差别仅在于，Linux 是安装在单一服务器上，而 Sealos 则是安装在整个数据中心。
-
-在 Sealos 的架构中，**公有云与私有云并无本质上的差异**，他们应是同一套代码的不同实例，唯一的区别仅在于配置与所安装应用的差异。在内网安装即是私有云，而在公网对外提供服务则成为公有云。
-
-我们坚信，随着 Sealos 的不断发展与进步，未来的云将更加开放，更加简单。云计算的美好将属于所有算力的提供者，云的价值将由所有云计算的参与者共享。**他们将能够在多元化的市场环境中，以更经济的方式享受云计算所带来的种种便利。**
-
-## 概述
-
-Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以云原生的方式，抛弃了传统的云计算架构，转向以 Kubernetes 为云内核的新架构，使企业能够**像使用个人电脑一样**简单地使用云。
-
-用户将可以像使用个人电脑一样在 Kubernetes 上一键安装任意高可用分布式应用，几乎不需要任何专业的交付和运维成本。同时，利用独特的集群镜像能力，用户可将任意分布式应用打包成 OCI 镜像，自由组合各种分布式应用，轻松订制所需的云。通过强大且灵活的应用商店功能，可满足各类用户的多样化需求。
-
-![](./images/overview-1.png)
-
-## 适用场景 & 优势
-
-Sealos 是一款强大的业务运行平台，它能完美支持 Java、Go、Python、PHP 等各类应用，不受编程语言限制。该平台为应用提供稳定的运行环境，并解决后端依赖问题，例如数据库、对象存储和消息队列等。更进一步，它还能灵活处理应用配置管理、服务发现、公网暴露，以及自动伸缩等问题。
-
-### 公有云
-
-如果您的业务需要运行在公有云环境中，那么您可以直接使用 [Sealos 提供的公有云服务](https://cloud.sealos.io)。
-
-#### Sealos 的能力
-
-- 🚀 **应用管理**：在应用商店中轻松管理并快速发布可公网访问的分布式应用。
-- 🗄️ **数据库管理**：秒级创建高可用数据库，支持 MySQL、PostgreSQL、MongoDB 和 Redis。
-- 🌥️ **公私一致**：即是公有云也是私有云，支持传统应用无缝迁移到云环境。
-
-![](./images/overview-2.jpeg)
-
-#### Sealos 的优势
-
-- 💰 **高效 & 经济**：仅需为容器付费，自动伸缩杜绝资源浪费，大幅度节省成本。
-- 🌐 **通用性强，无心智负担**：专注于业务本身，无需担心复杂性，几乎没有学习成本。
-- 🛡️ **灵活 & 安全**：多租户共享机制在确保安全的同时，实现资源隔离与高效协作。
-
-### 私有云
-
-Sealos 云操作系统 **100% 开源**，您可在 [GitHub](https://github.com/labring/sealos) 上找到所有源代码，因此 **Sealos 公有云**的全部功能也可以部署在私有云环境中，以满足您更多样化的业务需求。
-
-### 强大的应用交付能力
-
-- Sealos 具备优秀的 Kubernetes 生命周期管理能力，还可以自由定制 Kubernetes 环境。
-- Sealos 可以将整个集群打包，并一键交付到客户环境中。所有服务和业务都可以整体交付。
-- 不同于 Docker 主要关注单机镜像，Sealos 更进一步，可以将**整个集群**或者某个分布式应用进行打包。
+- Sealos has excellent Kubernetes life cycle management capabilities, and you can freely customize the Kubernetes
+  environment.
+- Sealos can package an entire cluster and deliver it to the customer environment with a single click. All services and
+  businesses can be delivered as a whole.
+- Unlike Docker, which mainly focuses on single-machine imaging, Sealos goes further, packaging the **entire cluster**
+  or a distributed application.
