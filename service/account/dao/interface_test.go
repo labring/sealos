@@ -19,12 +19,13 @@ func TestCockroach_GetPayment(t *testing.T) {
 		t.Fatalf("NewAccountInterface() error = %v", err)
 		return
 	}
-	got, err := db.GetPayment(types.UserQueryOpts{Owner: "1fgtm0mn"}, time.Time{}, time.Time{})
+	got, resp, err := db.GetPayment(&types.UserQueryOpts{Owner: "1fgtm0mn"}, &helper.GetPaymentReq{})
 	if err != nil {
 		t.Fatalf("GetPayment() error = %v", err)
 		return
 	}
 	t.Logf("got = %+v", got)
+	t.Logf("limit resp = %+v", resp)
 }
 
 func TestMongoDB_GetAppCosts(t *testing.T) {
@@ -510,7 +511,79 @@ func TestMongoDB_GetAppCost1(t *testing.T) {
 	t.Logf("costAppList: %#+v", appList)
 }
 
+func TestAccount_ApplyInvoice(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	req := &helper.ApplyInvoiceReq{
+		Auth: &helper.Auth{
+			Owner:  "uy771xun",
+			UserID: "Vobqe43JUs",
+		},
+		PaymentIDList: []string{
+			"vrCBsLt1oIf0",
+			"uro7KQmUp1bD",
+			"85M_N42NID_S",
+			"o6qZ7qk6wNRl",
+		},
+		Detail: "jsonxxxx",
+	}
+	_, _, err = m.ApplyInvoice(req)
+	if err != nil {
+		t.Fatalf("failed to apply invoice: %v", err)
+	}
+	t.Logf("success to apply invoice")
+
+	invoice, resp, err := m.GetInvoice(&helper.GetInvoiceReq{
+		Auth: &helper.Auth{
+			Owner:  "uy771xun",
+			UserID: "Vobqe43JUs",
+		},
+		LimitReq: helper.LimitReq{
+			Page:     1,
+			PageSize: 10,
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to get invoice: %v", err)
+	}
+	t.Logf("invoice: %#+v", invoice)
+	t.Logf("resp: %#+v", resp)
+}
+
+func TestAccount_SetStatusInvoice(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := newAccountForTest(os.Getenv("MONGO_URI"), os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	err = m.SetStatusInvoice(&helper.SetInvoiceStatusReq{
+		InvoiceIDList: []string{"8WKSA0ECYhSr", "M0Y0dyUhdX9S"},
+		Status:        types.PendingInvoiceStatus,
+	})
+	if err != nil {
+		t.Fatalf("failed to set status invoice: %v", err)
+	}
+}
+
 func init() {
 	// set env
 	os.Setenv("MONGO_URI", "")
+	os.Setenv("GLOBAL_COCKROACH_URI", "")
+	os.Setenv("LOCAL_COCKROACH_URI", "")
+	os.Setenv("LOCAL_REGION", "")
 }

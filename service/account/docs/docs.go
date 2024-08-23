@@ -564,7 +564,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
+                            "$ref": "#/definitions/helper.GetPaymentReq"
                         }
                     }
                 ],
@@ -753,6 +753,237 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "failed to get transfer",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/invoice/apply": {
+            "post": {
+                "description": "Apply invoice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ApplyInvoice"
+                ],
+                "summary": "Apply invoice",
+                "parameters": [
+                    {
+                        "description": "Apply invoice request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.ApplyInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully apply invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse apply invoice request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "no payment can be applied to the invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to apply invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/invoice/get": {
+            "post": {
+                "description": "Get invoice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GetInvoice"
+                ],
+                "summary": "Get invoice",
+                "parameters": [
+                    {
+                        "description": "Get invoice request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get invoice request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/invoice/get-payment": {
+            "post": {
+                "description": "Get invoice payment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GetInvoicePayment"
+                ],
+                "summary": "Get invoice payment",
+                "parameters": [
+                    {
+                        "description": "Get invoice payment request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get invoice payment",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get invoice payment request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get invoice payment",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/invoice/set-status": {
+            "post": {
+                "description": "Set status invoice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SetStatusInvoice"
+                ],
+                "summary": "Set status invoice",
+                "parameters": [
+                    {
+                        "description": "Set status invoice request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.SetInvoiceStatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully set status invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse set status invoice request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to set status invoice",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1073,6 +1304,50 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.ApplyInvoiceReq": {
+            "type": "object",
+            "required": [
+                "detail",
+                "paymentIDList"
+            ],
+            "properties": {
+                "detail": {
+                    "description": "invoice detail information json\n@Summary Invoice detail information\n@Description Invoice detail information\n@JSONSchema required",
+                    "type": "string",
+                    "example": "{\"title\":\"title\",\"amount\":100,\"taxRate\":0.06,\"tax\":6,\"total\":106,\"invoiceType\":1,\"invoiceContent\":1,\"invoiceStatus\":1,\"invoiceTime\":\"2021-01-01T00:00:00Z\",\"invoiceNumber\":\"invoice-number-1\",\"invoiceCode\":\"invoice-code-1\",\"invoiceFile\":\"invoice-file-1\"}"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "paymentIDList": {
+                    "description": "payment id list\n@Summary Payment ID list\n@Description Payment ID list\n@JSONSchema required",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"payment-id-1\"",
+                        "\"payment-id-2\"]"
+                    ]
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1088,6 +1363,10 @@ const docTemplate = `{
                 "owner": {
                     "type": "string",
                     "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1127,6 +1406,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1263,6 +1546,92 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.GetInvoiceReq": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "invoiceID": {
+                    "description": "@Summary Invoice ID\n@Description Invoice ID\n@JSONSchema",
+                    "type": "string",
+                    "example": "invoice-id-1"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.GetPaymentReq": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "page": {
+                    "description": "@Summary Page\n@Description Page",
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "description": "@Summary Page Size\n@Description Page Size",
+                    "type": "integer"
+                },
+                "paymentID": {
+                    "description": "@Summary Payment ID\n@Description Payment ID\n@JSONSchema",
+                    "type": "string",
+                    "example": "payment-id-1"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "userID": {
                     "type": "string",
                     "example": "admin"
@@ -1320,6 +1689,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "transferID": {
                     "description": "@Summary Transfer ID\n@Description Transfer ID",
                     "type": "string",
@@ -1354,6 +1727,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "type": {
                     "description": "@Summary Type of the request (optional)\n@Description Type of the request (optional)\n@JSONSchema",
                     "type": "integer"
@@ -1376,6 +1753,37 @@ const docTemplate = `{
                         "[\"ns-admin\"",
                         "\"ns-test1\"]"
                     ]
+                }
+            }
+        },
+        "helper.SetInvoiceStatusReq": {
+            "type": "object",
+            "required": [
+                "invoiceIDList",
+                "status",
+                "token"
+            ],
+            "properties": {
+                "invoiceIDList": {
+                    "description": "Invoice id list\n@Summary Invoice ID list\n@Description Invoice ID list\n@JSONSchema required",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"invoice-id-1\"",
+                        "\"invoice-id-2\"]"
+                    ]
+                },
+                "status": {
+                    "description": "Invoice status\n@Summary Invoice status\n@Description Invoice status\n@JSONSchema required",
+                    "type": "string",
+                    "example": "COMPLETED,REJECTED,PENDING"
+                },
+                "token": {
+                    "description": "@Summary Authentication token\n@Description Authentication token\n@JSONSchema required",
+                    "type": "string",
+                    "example": "token"
                 }
             }
         },
@@ -1402,6 +1810,10 @@ const docTemplate = `{
                         "[\"payment-id-1\"",
                         "\"payment-id-2\"]"
                     ]
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",
@@ -1432,6 +1844,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "admin"
                 },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
                 "transferAll": {
                     "description": "@Summary Transfer all\n@Description Transfer all amount",
                     "type": "boolean"
@@ -1459,6 +1875,10 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
                 },
                 "userID": {
                     "type": "string",

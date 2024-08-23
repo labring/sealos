@@ -108,6 +108,7 @@ type AccountV2 interface {
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
 	Payment(payment *types.Payment) error
 	SavePayment(payment *types.Payment) error
+	GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error)
 	CreateErrorPaymentCreate(payment types.Payment, errorMsg string) error
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
 	CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error

@@ -12,6 +12,7 @@ import (
 type Config struct {
 	LocalRegionDomain string   `json:"localRegionDomain"`
 	Regions           []Region `json:"regions"`
+	InvoiceToken      string   `json:"invoiceToken"`
 }
 
 type Region struct {
