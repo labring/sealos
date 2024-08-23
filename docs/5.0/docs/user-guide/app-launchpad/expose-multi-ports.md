@@ -24,7 +24,7 @@ When deploying applications using "[App Launchpad](/guides/applaunchpad/applaunc
 on [Sealos](https://cloud.sealos.io), you can easily choose to expose multiple ports. During the deployment process,
 users simply click on the "Network" option and then select "Add Port" to configure multiple ports.
 
-![](./images/multi-ports1.png)
+![](images/multi-ports1.png)
 
 Furthermore, the Sealos platform offers external access to these ports. Once exposed to the public network, each port
 will be assigned a unique sub-domain, facilitating easier remote access and management.

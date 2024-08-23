@@ -4,7 +4,7 @@ Integrated within the [Sealos](https://cloud.sealos.io) Cloud Operating System i
 profound potency. Mirroring the terminal in standalone operating systems, it facilitates users to interact directly with
 the operating system, executing various operations via command entry.
 
-![](./images/terminal.webp)
+![](images/terminal.webp)
 
 The value of the Terminal rests in its efficiency, flexibility, and powerful capabilities. For a plethora of tasks,
 employing the Terminal proves swifter and more concise than utilizing a Graphical User Interface (GUI). It is an
@@ -14,7 +14,7 @@ Cloud Operating System.
 **Every user's Terminal is in fact operating within a Pod of Kubernetes**, which can be observed in the Terminal using
 the following command:
 
-![](./images/terminal-pod.png)
+![](images/terminal-pod.png)
 
 ## Accessing the Terminal of an Application Container
 
@@ -23,9 +23,9 @@ application such as Nginx via application management, one can navigate directly 
 click on the three dots on the right side of the details, and then click on 'Terminal' to access the Terminal of the
 Nginx application.
 
-![](./images/nginx-terminal.png)
+![](images/nginx-terminal.png)
 
-![](./images/nginx-terminal-1.png)
+![](images/nginx-terminal-1.png)
 
 ## 终端一键直连数据库
 
@@ -34,11 +34,11 @@ the[Database App](../dbprovider/dbprovider.md) with a single click via the Termi
 
 Navigate to the database details page and click on '一键连接' on the left:
 
-![](./images/database-terminal.png)
+![](images/database-terminal.png)
 
 This will take you directly to the Terminal App and connect to the database:
 
-![](./images/database-terminal-1.png)
+![](images/database-terminal-1.png)
 
 ## Direct Manipulation of Kubernetes Resources via Terminal
 

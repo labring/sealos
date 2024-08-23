@@ -13,7 +13,7 @@ corresponding to your domain.
 
 Open "App Launchpad", set a custom domain.
 
-![](./images/set-cert1.png)
+![](images/set-cert1.png)
 
 Open the "Terminal", and execute the following commands in sequence.
 
@@ -39,7 +39,7 @@ kubectl create secret tls network-test --cert tls.crt --key tls.key
 kubectl get ingress 
 ```
 
-![](./images/set-cert2.png)
+![](images/set-cert2.png)
 
 Modify the ingress (replace xzy-dev.sealos.run with your own custom domain).
 
@@ -47,8 +47,8 @@ Modify the ingress (replace xzy-dev.sealos.run with your own custom domain).
 kubectl patch ingress network-twvuqmjzckur -p '{"spec":{"tls":[{"hosts":["xzy-dev.sealos.run"],"secretName":"network-test"}]}}'
 ```
 
-![](./images/set-cert3.png)
+![](images/set-cert3.png)
 
 Test the effect.
 
-![](./images/set-cert4.png)
+![](images/set-cert4.png)

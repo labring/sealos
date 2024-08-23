@@ -2,22 +2,22 @@
 
 终端是 [Sealos](https://cloud.sealos.io) 云操作系统内置的应用，它是一款非常强大的应用，与单机操作系统的终端一样，允许用户与操作系统进行直接交互，用户可以通过键入命令来执行各种操作。
 
-![](./images/terminal.webp)
+![](images/terminal.webp)
 
 终端的价值在于其高效，灵活和强大的特性。对于许多任务来说，使用终端比使用图形用户界面（GUI）更快更简洁。对于开发者而言，终端是必不可少的工具。使用终端，可以让用户深入理解和控制 Sealos 云操作系统。
 
 **每一个用户的终端实际上都运行在 Kubernetes 的一个 Pod 中**，可以在终端中通过以下命令查看：
 
-![](./images/terminal-pod.png)
+![](images/terminal-pod.png)
 
 ## 进入应用容器的终端
 
 也可以直接通过终端 App 进入每个应用所在容器的终端。假设你在应用管理中部署了一个应用 Nginx，可以直接进入 Nginx
 应用的详情页面，依次点击详情右侧的三个点，再点击「终端」，便进入了 Nginx 应用的终端。
 
-![](./images/nginx-terminal.png)
+![](images/nginx-terminal.png)
 
-![](./images/nginx-terminal-1.png)
+![](images/nginx-terminal-1.png)
 
 ## 终端一键直连数据库
 
@@ -25,11 +25,11 @@
 
 进入数据库详情页面，点击左侧的「一键连接」：
 
-![](./images/database-terminal.png)
+![](images/database-terminal.png)
 
 就会直接跳转到终端 App 并连接数据库：
 
-![](./images/database-terminal-1.png)
+![](images/database-terminal-1.png)
 
 ## 终端直接操作 Kubernetes 资源
 

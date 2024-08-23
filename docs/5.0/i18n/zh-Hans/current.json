@@ -39,24 +39,32 @@
     "message": "定时任务",
     "description": "The label for category Cronjob in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.Application": {
-    "message": "应用",
-    "description": "The label for category Application in sidebar docSidebar"
+  "sidebar.docSidebar.category.App Store": {
+    "message": "应用商店",
+    "description": "The label for category App Store in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.App Launchpad": {
+    "message": "应用管理",
+    "description": "The label for category App Launchpad in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.Object Storage": {
     "message": "对象存储",
     "description": "The label for category Object Storage in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.Control": {
-    "message": "控制",
-    "description": "The label for category Control in sidebar docSidebar"
+  "sidebar.docSidebar.category.Kubepanel": {
+    "message": "Kubepanel",
+    "description": "The label for category Kubepanel in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Terminal": {
+    "message": "终端",
+    "description": "The label for category Terminal in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.Database": {
     "message": "数据库",
     "description": "The label for category Database in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.System Function": {
-    "message": "系统应用",
+    "message": "系统功能",
     "description": "The label for category System Function in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.Developer Guide": {

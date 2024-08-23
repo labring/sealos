@@ -12,17 +12,17 @@ that aligns with your brand.
 Just enable "Public Access" when you're deploying, and [Sealos](https://cloud.sealos.io) will sorts you out with a
 domain.
 
-![](./images/app-launchpad-domain.png)
+![](images/app-launchpad-domain.png)
 
 Now, on your domain provider's end, link the 'CNAME' to the one Sealos provided.
 
 Once it's active, jump back to Sealos, click on "Custom Domain" to the side:
 
-![](./images/app-launchpad-domain2.png)
+![](images/app-launchpad-domain2.png)
 
 Enter your custom domain in the pop-up box and click confirm.
 
-![](./images/app-launchpad-domain3.png)
+![](images/app-launchpad-domain3.png)
 
 To wrap up, click the "Deploy" button. Once your app's live, click on the external address to access the app via the
 custom domain.

@@ -17,4 +17,4 @@ For instance, in deploying Nextcloud, all data associated with its container is 
 directory. To maintain data continuity, it's necessary to use external storage solutions for persisting data in this
 directory.
 
-![](./images/persistent-volume.png)
+![](images/persistent-volume.png)

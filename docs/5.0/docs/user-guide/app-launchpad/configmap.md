@@ -24,4 +24,4 @@ follows:
 - **Key Points**: The approach involves mounting an individual file, not an entire directory. It is imperative to
   precisely identify the file to be mounted, rather than just a directory path.
 
-![](./images/applaunchpad13.png)
+![](images/applaunchpad13.png)

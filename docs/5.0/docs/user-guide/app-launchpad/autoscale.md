@@ -30,4 +30,4 @@ ability for instance numbers to vary between 1 and 5, Autoscaling will:
 - Decrease the number of instances when the average CPU usage drops below 50%, but always maintain at least one instance
   in operation.
 
-![](./images/autoscale.png)
+![](images/autoscale.png)

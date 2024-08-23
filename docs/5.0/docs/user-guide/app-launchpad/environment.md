@@ -14,7 +14,7 @@ variable comprises a key and a value, separated by either an equal sign (=) or a
 automatically eliminate any invalid characters from the key, ensuring the accuracy and validity of the environment
 variables.
 
-![](./images/applaunchpad12.png)
+![](images/applaunchpad12.png)
 
 **Environment Variable Formats That Are Correctly Interpreted:**
 
