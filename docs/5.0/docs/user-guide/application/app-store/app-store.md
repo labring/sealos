@@ -1,23 +1,29 @@
-# 应用商店
+# App Store
 
-应用商店提供了一系列预制的应用模板，支持快速创建和部署各种网站及应用程序。这些模板包括博客、AI
-应用、低代码应用、网盘、即时通讯应用、中间件等，旨在简化开发过程，让开发者无需从零开始构建项目或处理应用之间的依赖关系。
-## 快速开始
+The App Store provides a series of pre-made application templates to support the rapid creation and deployment of
+various websites and applications. These templates include Blog applications,
+AI Applications, low-code applications, storage applications, instant messaging applications, middleware, etc. are
+designed to simplify the development process so that developers do not need to build projects from scratch or deal with
+dependencies between applications.
 
-打开 Sealos 桌面，点击应用商店。
+## Quick Start
+
+Open the Sealos desktop and click App Store.
 
 ![](./images/app-store-1.png)
 
-应用商店内展示了众多的应用，支持搜索框快速查找应用。
+There are many applications displayed in the app store, and the search box is supported to quickly find applications.
 
 ![](./images/app-store-2.png)
 
-### 查看/卸载应用
+### View/uninstall apps
 
-展示了从应用商店部署的所有应用。
+Shows all apps deployed from the app store.
 
 ![](./images/app-store-3.png)
 
-点击对应的应用，可以看到应用的详细信息，也支持卸载应用。（注意：从应用商店部署的应用需要从应用商店卸载应用才能完整卸载应用）
+Click on the corresponding application to see the detailed information of the application. It also supports uninstalling
+the application. (Note: Apps deployed from the app store need to uninstall the app from the app store to completely
+uninstall the app)
 
 ![](./images/app-store-4.png)
