@@ -35,29 +35,17 @@
     "message": "用户文档",
     "description": "The label for category User Guide in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.CronJob": {
+  "sidebar.docSidebar.doc.CronJob": {
     "message": "定时任务",
     "description": "The label for category CronJob in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.App Store": {
+  "sidebar.docSidebar.doc.App Store": {
     "message": "应用商店",
     "description": "The label for category App Store in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.App Launchpad": {
     "message": "应用管理",
     "description": "The label for category App Launchpad in sidebar docSidebar"
-  },
-  "sidebar.docSidebar.category.Object Storage": {
-    "message": "对象存储",
-    "description": "The label for category Object Storage in sidebar docSidebar"
-  },
-  "sidebar.docSidebar.category.Kubepanel": {
-    "message": "Kubepanel",
-    "description": "The label for category Kubepanel in sidebar docSidebar"
-  },
-  "sidebar.docSidebar.category.Terminal": {
-    "message": "终端",
-    "description": "The label for category Terminal in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.Database": {
     "message": "数据库",
@@ -130,6 +118,10 @@
   "sidebar.docSidebar.category.low-code-platform": {
     "message": "低代码平台",
     "description": "The label for category low-code-platform in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.others": {
+    "message": "其他",
+    "description": "The label for category others in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.dial-testing-system": {
     "message": "拨测系统",
