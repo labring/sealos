@@ -35,9 +35,9 @@
     "message": "用户文档",
     "description": "The label for category User Guide in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.Cronjob": {
+  "sidebar.docSidebar.category.CronJob": {
     "message": "定时任务",
-    "description": "The label for category Cronjob in sidebar docSidebar"
+    "description": "The label for category CronJob in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.App Store": {
     "message": "应用商店",

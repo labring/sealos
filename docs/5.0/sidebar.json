@@ -87,7 +87,7 @@
       },
       {
         "type": "category",
-        "label": "Cronjob",
+        "label": "CronJob",
         "link": {
           "type": "generated-index"
         },
