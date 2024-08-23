@@ -1,49 +1,45 @@
----
-sidebar_position: 2
----
+# Database
 
-# 数据库
+** Database ** is the core component of an application, Sealos provides a database cluster deployment management tool,
+can help you quickly deploy database clusters. It supports MySQL, PostgreSQL, MongoDB, Redis, Kafka, and more. Currently
+the ** database ** supports the following features.
 
-**数据库** 是一个应用的核心组成，Sealos 提供了一个数据库集群部署管理工具，可以帮助你快速部署数据库集群。目前支持
-MySQL、PostgreSQL、MongoDB、Redis、Kafka等。目前**数据库** 支持如下特性。
++ Elastic expansion
++ Support multi-version and multi-type databases
++ Database connection: one-click connection, external network access
++ Database connection: manual backup, automatic backup
++ Database monitoring: resource, status, and performance monitoring
++ Database migration: public network migration and file migration
++ Database high availability: Supports multiple database instances
++ Visual database management: Create, delete, update, pause, restart the database
 
-+ 弹性伸缩
-+ 支持多版本、多类型 数据库
-+ 数据库 连接：一键连接、外网访问
-+ 数据库 连接：手动备份、自动备份
-+ 数据库 监控：资源、状态、性能监控
-+ 数据库 迁移：公网迁移、文件迁移
-+ 数据库 高可用：支持多个 数据库 实例
-+ 可视化 数据库 管理：新建、删除、更新 、暂停、重启 数据库
+## Quick start
 
+Take deploying a PostgreSQL database as an example to experience the convenience of a database.
 
-## 快速开始
+Deployment and access in just 6 steps:
 
-以部署一个 PostgreSQL 数据库为例，体验 **数据库** 的便捷性。
-
-只需 6 步即可完成部署和访问：
-
-1. 在 [Sealos](https://cloud.sealos.io) 桌面进入 **数据库** 应用：
+1. Enter the Database application from the [Sealos](https://cloud.sealos.io) desktop：
 
 ![start_1](./imgs/start_1.png)
 
-2. 点击新建集群：
+2. Click on the creation of a new cluster.：
 
 ![start_2](./imgs/start_2.png)
 
-3. 填写数据库名并选择对应的数据库和参数：
+3. Select the corresponding database and parameters：
 
 ![start_3](./imgs/start_3.png)
 
-4. 点击部署：
+4. Click on deployment：
 
 ![start_4](./imgs/start_4.png)
 
-5. 查看数据库详情信息：
+5. Enter DB to view details：
 
 ![start_5](./imgs/start_5.png)
 
-6. 数据库详情界面：
+6. Database details：
 
 ![start_6](./imgs/start_6.png)
 
@@ -59,152 +55,155 @@ MySQL、PostgreSQL、MongoDB、Redis、Kafka等。目前**数据库** 支持如�
 
 ![start_12](./imgs/start_12.png)
 
-## 数据库连接
+## Database connection
 
-### 一键连接
+### One-click connection
 
-1. 进入 **数据库** ，点击连接：
+1. Enter ** database **, click Connect:
 
 ![connect_1](./imgs/connect_1.png)
 
-2. 在终端操作数据库：
+2. Manipulate the database at the terminal：
 
 ![connect_2](./imgs/connect_2.png)
 
-### 外网访问
+### Extranet access
 
-1. 进入 **数据库** ，开启外网访问：
+1. Enter ** database **, click Connect：
 
 ![connect_3](./imgs/connect_3.png)
 
-2. 确认开启：
+2. Confirm open ** database **：
 
 ![connect_4](./imgs/connect_4.png)
 
-3. 复制数据库连接信息：
+3. Copy the database connection information：
 
 ![connect_5](./imgs/connect_5.png)
 
-4. 在数据库连接工具中连接数据库：
+4. Connect to the database in the Database Connection tool：
 
 ![connect_6](./imgs/connect_6.png)
 
 ![connect_7](./imgs/connect_7.png)
 
-## 数据库备份
+## Database backup
 
-### 手动备份
+### Manual backup
 
-1. 进入数据库备份界面，点击备份：
+1. Enter the database backup page, click Backup：
 
 ![backup_1](./imgs/backup_1.png)
 
-2. 填写备份信息，开始备份：
+2. Enter the backup information to start the backup：
 
 ![backup_2](./imgs/backup_2.png)
 
-3. 查看备份状态：
+3. Check Backup status：
 
 ![backup_3](./imgs/backup_3.png)
 
 ![backup_4](./imgs/backup_4.png)
 
+### Automatic backup
 
-### 自动备份
-
-1. 进入数据库备份界面，点击备份：
+1. Enter the database backup page, click Backup：
 
 ![backup_5](./imgs/backup_5.png)
 
-2. 开启自动备份，填写备份信息：
+2. Enable automatic backup and enter backup information：
 
 ![backup_6](./imgs/backup_6.png)
 
+## Database migration
 
-## 数据库迁移
+This section uses the MySQL database as an example to describe how to migrate a database.
 
-以 MySQL 数据库为例，介绍 数据库迁移 的过程。
+### Public network migration
 
-### 公网迁移
+Public network migration involves two databases: the source database and the target database. The source database is the
+data source for migration, and the target database is the data destination for migration. The following introduction
+demonstrates the local database as the source database.
 
-公网迁移涉及两个数据库：源数据库、目标数据库。源数据库是迁移的数据来源，目标数据库是迁移的数据目的地。以下介绍中以本地数据库做为源数据库进行演示。
-
-1. 进入目标数据库，连接目标数据库：
+1. Enter the target database and connect to the target database：
 
 ![migration_1](./imgs/migration_1.png)
 
-2. 在终端界面中创建对应的database（如果已经存在对应的database，则跳过这一步）：
+2. Create the corresponding database in the terminal interface (skip this step if the corresponding database already
+   exists)：
 
 ![migration_2](./imgs/migration_2.png)
 ```bash
-# 创建数据库sql语句，示例：
+# Example of creating a database sql statement：
 $ create database testmysql;
 ```
 
-3. 进入目标数据库公网迁移界面，点击迁移按钮：
+3. Enter the public network migration page of the target database, click the Migrate button：
 
 ![migration_3](./imgs/migration_3.png)
 
-4. 查看迁移配置信息：
+4. View migration configuration information：
 
 ![migration_4](./imgs/migration_4.png)
 
-复制迁移配置信息，如下：
+Copy the migration configuration information as follows：
 ```bash
-# 设置配置信息sql语句，示例：
+# Example of an sql statement for setting configuration information：
 $ set global binlog_format=ROW;
 $ set binlog_row_image ='FULL';
 ```
 
-5. 在源数据库中执行设置配置信息（MySQL、Postgres需要手动配置信息，Mongo不需要进行配置）：
+5. Set the configuration information in the source database (MySQL and Postgres require manual configuration
+   information, Mongo does not require configuration)：
 ```bash
-# 设置配置信息sql语句，示例：
+# xample of an sql statement for setting configuration information：
 $ set global binlog_format=ROW;
 $ set binlog_row_image ='FULL';
 ```
-
 ![migration_5](./imgs/migration_5.png)
 
-6. 进入目标数据库，填写源数据库的迁移信息，要迁移哪些表，并填写要迁移到目标数据库中哪个database：
+6. Enter the target database, fill in the migration information of the source database, which tables to migrate, and
+   fill in which database in the target database to migrate：
 
 ![migration_6](./imgs/migration_6.png)
 
-如果需要持续从源数据库迁移数据，可开启高级配置中的持续迁移，如下：
+If you need to continuously migrate data from the source database, enable continuous migration in the advanced
+configuration as follows：
 
 ![migration_7](./imgs/migration_7.png)
 
-7. 查看迁移任务信息：
+7. View migration task information：
 
 ![migration_8](./imgs/migration_8.png)
 
-8. 进入目标数据库，连接目标数据库，检查迁移数据是否完整：
+8. Enter the target database, connect to the target database, and check whether the migration data is complete：
 
 ![migration_9](./imgs/migration_9.png)
 
-### 文件迁移
+### File migration
 
-1. 进入目标数据库，连接目标数据库：
+1. Enter the target database and connect to the target database：
 
 ![migration_10](./imgs/migration_10.png)
 
-2. 在终端界面中创建对应的database（如果已经存在对应的database，则跳过这一步）：
+2. Create the corresponding database in the terminal interface (skip this step if the corresponding database already
+   exists)：
 ```bash
-# 创建数据库sql语句，示例：
+# Example of creating a database sql statement：
 $ create database testmysql;
 ```
-
 ![migration_11](./imgs/migration_11.png)
 
-3. 上传迁移文件、填写数据库名，开始迁移：
+3. Upload the migration file, enter the database name, and start the migration：
 
 ![migration_12](./imgs/migration_12.png)
 
-4. 文件迁移中，等待迁移结果：
+4. File migrating, Wait for the migration result：
 
 ![migration_13](./imgs/migration_13.png)
 
 ![migration_14](./imgs/migration_14.png)
 
-5. 连接数据库，检查迁移数据是否完整：
+5. Connect to the database to check whether the migrated data is complete：
 
 ![migration_15](./imgs/migration_15.png)
