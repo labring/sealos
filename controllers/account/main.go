@@ -81,7 +81,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&development, "development", false, "Enable development mode.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.IntVar(&concurrent, "concurrent", 5, "The number of concurrent cluster reconciles.")
@@ -207,12 +207,6 @@ func main() {
 	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Account")
 	}
-	if err = (&controllers.PaymentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Payment")
-	}
 	if err = (&controllers.DebtReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
@@ -275,6 +269,15 @@ func main() {
 	if err = (billingInfoQueryReconciler).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "BillingInfoQuery")
 	}
+
+	if err = (&controllers.PaymentReconciler{
+		Account: accountReconciler,
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupManagerError(err, "Payment")
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -317,7 +317,7 @@ func (r *NamespaceReconciler) resumePod(ctx context.Context, namespace string) e
 
 func (r *NamespaceReconciler) recreatePod(ctx context.Context, oldPod corev1.Pod, newPod *corev1.Pod) error {
 	list := corev1.PodList{}
-	watcher, err := r.Client.Watch(ctx, &list)
+	watcher, err := r.Client.Watch(ctx, &list, client.InNamespace(oldPod.Namespace))
 	if err != nil {
 		return fmt.Errorf("failed to start watch stream for pod %s: %w", oldPod.Name, err)
 	}
