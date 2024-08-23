@@ -1,4 +1,8 @@
+import Highlight from '@site/src/components/Highlight'
+
 # 什么是 Sealos？
+
+<Highlight content="在线使用 Sealos" url="https://cloud.sealos.io" />
 
 云原生生态之庞大与复杂，无疑让许多企业感到手足无措，这个生态依然缺乏好用的、开箱即用的发行版。在云原生市场还急需一款云操作系统以进一步降低云原生门槛与成本。
 
@@ -16,7 +20,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 用户将可以像使用个人电脑一样在 Kubernetes 上一键安装任意高可用分布式应用，几乎不需要任何专业的交付和运维成本。同时，利用独特的集群镜像能力，用户可将任意分布式应用打包成 OCI 镜像，自由组合各种分布式应用，轻松订制所需的云。通过强大且灵活的应用商店功能，可满足各类用户的多样化需求。
 
-![](./images/overview-1.png)
+![](./images/sealos-desktop-zh.webp)
 
 ## 适用场景 & 优势
 
@@ -31,8 +35,6 @@ Sealos 是一款强大的业务运行平台，它能完美支持 Java、Go、Pyt
 - 🚀 **应用管理**：在应用商店中轻松管理并快速发布可公网访问的分布式应用。
 - 🗄️ **数据库管理**：秒级创建高可用数据库，支持 MySQL、PostgreSQL、MongoDB 和 Redis。
 - 🌥️ **公私一致**：即是公有云也是私有云，支持传统应用无缝迁移到云环境。
-
-![](./images/overview-2.jpeg)
 
 #### Sealos 的优势
 

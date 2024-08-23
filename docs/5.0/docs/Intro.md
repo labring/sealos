@@ -38,7 +38,7 @@ Simultaneously, utilizing unique cluster imaging capabilities, users can package
 image, freely combine a variety of distributed applications, and easily customize their desired cloud. The powerful and
 flexible app store function can meet the diverse needs of various users.
 
-![](./images/sealos-desktop.webp)
+![](./images/overview-1.png)
 
 ## Scenarios & Advantages
 
