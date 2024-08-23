@@ -1,27 +1,26 @@
 ---
 sidebar_position: 5
-
 ---
 
-# 使用calico安装双栈集群
+# install Dual-stack cluster with Calico
 
-1. 前置条件
-    - sealos 版本 >=4.3.0
-    - 每个主机都有一个IPv4主机和IPv6地址,并且可以互通通过IPv4和IPv6地址
-    - calico采用vxlan模式， 内核版本必须大于 3.12。  可以参考[官方文档](https://github.com/cyclinder/kubespray/blob/042c960c6617f8a360a8281464ff63f99ee2471c/docs/calico.md)
-2. 运行 `sealos gen` 生成一个 Clusterfile，例如：
+1. Prerequisites:
+    - Sealos version >=4.3.0
+    - The hosts can communicate using both IPv6 and IPv4 addresses.
+    - Calico adopts the VXLAN mode，the kernel version must be >= 3.12 。 refer
+      to [official docs](https://github.com/cyclinder/kubespray/blob/042c960c6617f8a360a8281464ff63f99ee2471c/docs/calico.md)
+2. run`sealos gen` to generate a Clusterfile, for example:
 
 ```shell
 $ sealos gen labring/kubernetes:v1.26.1 labring/helm:v3.10.3 labring/calico:v3.25.0 --masters 192.168.0.10 --nodes 192.168.0.11 --passwd "xxx" >Clusterfile
 ```
 
-注意：labring/helm 应当在 labring/calico 之前。
+Notice: labring/helm should be set before labring/calico.
 
-生成的 Clusterfile 如下：
+The generated Clusterfile is as follows:
 
 <details>
 <summary>Clusterfile</summary>
-
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -353,38 +352,38 @@ volumeStatsAggPeriod: 1m0s
 
 </details>
 
-3. 生成 Clusterfile 后，编辑Clusterfile,然后添加IPv6 的 pod 和svc 的 CIDR 范围。这里使用fd85:ee78:d8a6:8607::1:0000/112、fd85:ee78:d8a6:8607::1000/116作为参考示例。主要修改以下信息。
+3. After generating the Clusterfile, modify the cluster configuration.to add IPv6 pod and svc CIDR 。Here's use the fd85:
+   ee78:d8a6:8607::1:0000/112、fd85:ee78:d8a6:8607::1000/116 as a example。The main modifications are as follows:
 
 <details>
 <summary>Clusterfile</summary>
-
 
 ```yaml
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 Networking:
   DNSDomain: ""
-  PodSubnet: 100.64.0.0/10,fd85:ee78:d8a6:8607::1:0000/112 #增加pod IPv6地址段
-  ServiceSubnet: 10.96.0.0/22,fd85:ee78:d8a6:8607::1000/116 #增加svc IPv6地址段
+  PodSubnet: 100.64.0.0/10,fd85:ee78:d8a6:8607::1:0000/112 #add pod IPv6 subnet
+  ServiceSubnet: 10.96.0.0/22,fd85:ee78:d8a6:8607::1000/116 #add svc IPv6 subnet
 APIServer:
   CertSANs:
   - 127.0.0.1
   - apiserver.cluster.local
   - 10.103.97.2
   - 192.168.0.10
-  - 2001:db8::f816:3eff:fe8c:910a #增加控制节点的ipv6地址，如果你需要使用此IP访问apiserver
+  - 2001:db8::f816:3eff:fe8c:910a #The IPv6 address of the control node,If you need to access the APIserver using this IP,add it.
   ExtraArgs:
-    service-cluster-ip-range: 10.96.0.0/22,fd85:ee78:d8a6:8607::1000/116 #增加svc IPv6地址段
+    service-cluster-ip-range: 10.96.0.0/22,fd85:ee78:d8a6:8607::1000/116 #add svc IPv6 subnet
 ControllerManager:
   ExtraArgs:
-    node-cidr-mask-size-ipv6: 120 #默认为64
-    node-cidr-mask-size-ipv4: 24  #默认为24
+    node-cidr-mask-size-ipv6: 120 #Default to 64
+    node-cidr-mask-size-ipv4: 24  #Default to 24
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
-clusterCIDR: "100.64.0.0/10,fd85:ee78:d8a6:8607::1:0000/112" #增加pod IPv6地址段
+clusterCIDR: "100.64.0.0/10,fd85:ee78:d8a6:8607::1:0000/112" #add pod IPv6 subnet
 ---
-# 添加Calico双栈配置
+# add configure dual stack for calico
 apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
@@ -405,7 +404,7 @@ spec:
           natOutgoing: Enabled
           nodeSelector: all()
         - blockSize: 122
-          cidr: fd85:ee78:d8a6:8607::1:0000/112 #增加pod IPv6地址段
+          cidr: fd85:ee78:d8a6:8607::1:0000/112 #add pod IPv6 subnet
           encapsulation: VXLAN
           natOutgoing: Enabled
           nodeSelector: all()
@@ -417,11 +416,10 @@ spec:
 
 </details>
 
-最终的Clusterfile会是这样。
+The final Clusterfile would look like this:
 
 <details>
 <summary>Clusterfile</summary>
-
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -787,6 +785,8 @@ spec:
 
 </details>
 
-4. 运行 `sealos apply -f Clusterfile` 部署集群。
+4. run`sealos apply -f Clusterfile` to install the cluster。
 
-5. 更多参考[Calico官网](https://docs.tigera.io/calico/latest/networking/ipam/ipv6) 和 [k8s官方文档](https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/dual-stack-support/)
+5. More refer to [Calico official docs](https://docs.tigera.io/calico/latest/networking/ipam/ipv6)
+   and [k8s offical docs](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/dual-stack-support/)
+

@@ -2,20 +2,24 @@
 sidebar_position: 3
 ---
 
-# 常见问题
+# Q&A
 
-在部署及使用 Sealos Cloud 过程中，您可能会遇到各种问题。为了更好地帮助您解决这些问题，我们对常见问题进行了总结，并提供了详细的答案和解决方法。
+Encountering issues during the deployment and use of Sealos Cloud is not uncommon. To assist you effectively, we have
+compiled a list of frequently encountered problems along with comprehensive solutions.
 
-## 部署问题
+## Deployment Related Issues
 
-下面总结了部署过程中可能遇到的问题及解决方法，假如您遇到了其他问题，请在 [Sealos 社区](https://forum.laf.run/)中联系我们。
+This section details the problems you may face during the deployment phase and their respective solutions. For issues
+not covered here, please consult with us at the [Sealos Community](https://github.com/labring/sealos/discussions).
 
-### Q1：iptables / ip_forward 问题
+### Q1: iptables / ip_forward Concerns
 
-**问题描述**：在部分操作系统中，iptables 或 IPv4 IP 转发默认未启用，例如旧版本的 Centos、RHEL 等。这可能导致部署过程中无法正常创建
-iptables 规则或转发数据包，从而导致集群无法正常启动。
+**Problem Overview**: In some operating systems, such as older versions of Centos and RHEL, iptables or IPv4 IP
+forwarding is not enabled by default. This can hinder the creation of iptables rules or the forwarding of packets,
+potentially preventing the cluster from starting correctly.
 
-**解决方法**：需要在每个节点上执行以下命令，以启用 iptables 和 IP 转发：
+**Resolution Strategy**: To address this, execute the following commands on each node to activate iptables and IP
+forwarding:
 
 ```shell
 $ modprobe br_netfilter
@@ -23,86 +27,96 @@ $ echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
 $ echo 1 > /proc/sys/net/ipv4/ip_forward
 ```
 
-### Q2：系统内核问题
+### Q2: Issues with System Kernel
 
-- **问题描述**：如果系统内核版本过低，可能导致集群无法正常启动。低版本内核也可能导致依赖 MongoDB 5.0 的应用无法正常运行。
-- **解决方法**：在部署前，请确保系统内核版本至少为 5.4 或更高。
+- **Problem Overview**: An outdated system kernel can impede the proper startup of the cluster. Also, certain
+  applications, especially those dependent on MongoDB 5.0, might not function with an older kernel.
+- **Resolution Strategy**: Ensure your system's kernel version is at least 5.4 or higher before commencing the
+  deployment.
 
-### Q3：系统资源问题
+### Q3: System Resource Constraints
 
-- **问题描述**：系统资源紧张可能会导致部署过程中出现卡顿或停滞，当您等待过久时，请检查系统资源是否足够。
-- **解决方法**：使用命令 `kubectl describe nodes` 查看节点资源状态。一般情况下可以从 CPU、内存、存储等方向排查系统资源是否充足。
+- **Problem Overview**: Limited system resources can lead to deployment delays or even halts. If you encounter prolonged
+  wait times, it's likely due to insufficient system resources.
+- **Resolution Strategy**: Check the resource status of your nodes using `kubectl describe nodes`, focusing on CPU,
+  memory, and storage availability.
 
-### Q4：网络问题
+### Q4: Networking Issues
 
-- **问题描述**: 在部署过程中，服务器的不当配置可能会引发多种网络问题，例如：
-   1. http_proxy / https_proxy 环境变量配置；
-   2. 服务器防火墙配置；
-   3. 服务器路由配置；
-- **解决方法**: 遇到网络问题时，请检查以上配置是否正确。
+- **Problem Overview**: Incorrect server configuration can lead to various network issues during deployment. Common
+  areas of concern include:
+    1. Misconfiguration of http_proxy / https_proxy environment variables;
+    2. Inadequate server firewall settings;
+    3. Improper server routing configurations;
+- **Resolution Strategy**: Troubleshoot network issues by verifying the correctness of these configurations.
 
-## 证书及域名相关问题
+## Certificate and Domain Name Issues
 
-### 证书更新
+### Certificate Renewal Process
 
-在您使用 Sealos 过程中，证书是保障集群安全的重要组成部分。以下是详细的证书更新步骤，这些步骤可以帮助您在证书即将过期时顺利更新：
+Certificates are crucial for the security of your Sealos cluster. Follow these steps to update your certificates,
+especially as they approach their expiration date:
 
-1. **备份旧证书**：
+1. **Backup Existing Certificate**:
 
-   在主节点 `master0` 上，您需要先备份当前使用的证书。这是一个防止更新过程中出现问题而导致证书丢失的重要步骤。使用以下命令进行备份：
+   On the `master0` node, backup your current certificate. This step is crucial to prevent loss of the certificate
+   during the update process. Use this command:
 
    ```shell
    $ kubectl get secret -n sealos-system wildcard-cert -o yaml > cert-backup.yaml
    ```
 
-   此命令会将名为 `wildcard-cert` 的证书以 YAML 格式保存到文件 `cert-backup.yaml` 中。
+   This will save the `wildcard-cert` certificate in YAML format to `cert-backup.yaml`.
 
-2. **保存新证书**：
+2. **Storing the New Certificate**:
 
-   将您已经准备好的新证书文件保存到 `master0` 节点上。确保新的证书文件（通常是 `.crt` 和 `.key` 文件）在节点上的某个位置。
+   Place your new certificate files (.crt and .key) on the `master0` node.
 
-3. **更新证书**：
+3. **Updating the Certificate**:
 
-   使用以下脚本来更新证书。您需要替换脚本中的 `<path-to-tls.crt>` 和 `<path-to-tls.key>`，以指向您的新证书文件和密钥文件的实际路径。
+   To update, use the script below, replacing `<path-to-tls.crt>` and `<path-to-tls.key>` with the actual paths of your
+   new certificate and key files.
 
    ```shell
    #!/bin/bash 
-   # 设置变量
+   # Set Variables
    CRT_FILE=<path-to-tls.crt>
    KEY_FILE=<path-to-tls.key>
    
-   # 将证书和密钥文件内容进行Base64编码
+   # Base64 encode the certificate and key files
    CRT_BASE64=$(cat $CRT_FILE | base64 -w 0)
    KEY_BASE64=$(cat $KEY_FILE | base64 -w 0)
    
-   # 构建部分更新的JSON对象
+   # Create JSON for update
    PATCH_JSON='{"data":{"tls.crt":"'$CRT_BASE64'","tls.key":"'$KEY_BASE64'"}}'
    
-   # 使用kubectl patch命令更新Secret
+   # Update the Secret using kubectl patch
    kubectl patch secret wildcard-cert -n sealos-system -p $PATCH_JSON
    ```
-   
-   这个脚本的主要作用是将新证书的内容编码为 Base64 格式，并使用 `kubectl patch` 命令更新 Kubernetes 集群中的相应 Secret
-   对象。
 
-### 域名更换
+   This script encodes the new certificate in Base64 and updates the Kubernetes cluster's Secret object using
+   `kubectl patch`.
 
-域名更换是一个更加复杂的过程，因为它通常涉及到集群内多个组件和服务的配置更改。目前，我们尚未在文档中提供域名更换的详细教程。不过，我们计划在未来推出
-Sealos 集群管理面板，该面板将提供更加简便的方法来替换集群域名和证书。
+### Changing the Domain Name
 
-请注意，域名更换通常需要对集群的网络配置进行深入了解，并且可能涉及到 DNS
-设置、服务发现等多个方面。因此，建议在执行此类操作时，确保您具备相应的技术知识或咨询专业人士的帮助。
+Changing a domain name in a Sealos cluster is complex, often requiring adjustments in multiple components and services.
+We do not currently provide a comprehensive guide for this process in our documentation. However, future plans include
+the release of a Sealos Cluster Management Panel for easier domain name and certificate replacement.
 
-### 用户注册开关
+It's important to note that domain name changes demand deep knowledge of the cluster's network setup and may involve
+intricate DNS settings and service discovery. We recommend undertaking such changes only if you have the requisite
+expertise or with guidance from a professional.
 
-关闭用户注册:
+### user registration switch
+
+disabled user register:
 
 ```shell
 kubectl get cm -n sealos desktop-frontend-config -o yaml | sed 's/signUpEnabled: true/signUpEnabled: false/g' | kubectl apply -f -
 kubectl rollout restart deployment desktop-frontend -n sealos
 ```
 
-开启用户注册:
+enabled user register:
 
 ```shell
 kubectl get cm -n sealos desktop-frontend-config -o yaml | sed 's/signUpEnabled: false/signUpEnabled: true/g' | kubectl apply -f -

@@ -1,100 +1,97 @@
 ---
 sidebar_position: 1
-keywords: [sealos, sealos 命令行, sealos 下载]
+keywords: [sealos, sealos cli]
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 下载 Sealos 命令行工具
+# Download Sealos CLI
 
-你可以通过运行命令来获取版本列表：
+You can get the list of versions by running:
 
-```shell
-$ curl --silent "https://api.github.com/repos/labring/sealos/releases" | jq -r '.[].tag_name'
+```bash
+curl --silent "https://api.github.com/repos/labring/sealos/releases" | jq -r '.[].tag_name'
 ```
 
-> 注意：在选择版本时，建议使用稳定版本例如 `v4.3.0`。像 `v4.3.0-rc1`、`v4.3.0-alpha1` 这样的版本是预发布版，请谨慎使用。
+Note: While choosing the version, it's recommended to use a stable version. The versions like `v4.3.0-rcx`,
+`v4.3.0-alpha1` are pre-releases, use them with caution.
 
-设置 `VERSION` 环境变量为 latest 版本号，或者将 `VERSION` 替换为您要安装的 Sealos 版本：
-
-```shell
-$ VERSION=`curl -s https://api.github.com/repos/labring/sealos/releases/latest | grep -oE '"tag_name": "[^"]+"' | head -n1 | cut -d'"' -f4`
-```
-
-## 二进制自动下载
+Set the 'VERSION' environment variable to the latest VERSION number, or replace 'version' with the Sealos version you
+want to install:
 
 ```shell
+VERSION=`curl -s https://api.github.com/repos/labring/sealos/releases/latest | grep -oE '"tag_name": "[^"]+"' | head -n1 | cut -d'"' -f4`
+```
 
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/install.sh | PROXY_PREFIX=https://mirror.ghproxy.com sh -s ${VERSION} labring/sealos
+## Binary Auto Download
+
+```bash
+curl -sfL https://raw.githubusercontent.com/labring/sealos/${VERSION}/scripts/install.sh |
+  sh -s ${VERSION} labring/sealos
 
 ```
 
-## 二进制手动下载
+## Binary Manual Download
 
 <Tabs groupId="arch">
   <TabItem value="amd64" label="amd64" default>
 
-```shell
-$ wget https://mirror.ghproxy.com/https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_amd64.tar.gz \
-  && tar zxvf sealos_${VERSION#v}_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+```bash
+$ wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_amd64.tar.gz \
+   && tar zxvf sealos_${VERSION#v}_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>
   <TabItem value="arm64" label="arm64">
 
-```shell
-$ wget https://mirror.ghproxy.com/https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_arm64.tar.gz \
-  && tar zxvf sealos_${VERSION#v}_linux_arm64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+```bash
+$ wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_arm64.tar.gz \
+   && tar zxvf sealos_${VERSION#v}_linux_arm64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>
 </Tabs>
 
-## 包管理工具安装
+## Package Management Tool Installation
 
-### DEB 源
+### DEB Repository
 
-```shell
-$ echo "deb [trusted=yes] https://apt.fury.io/labring/ /" | sudo tee /etc/apt/sources.list.d/labring.list
-$ sudo apt update
-$ sudo apt install sealos
+```bash
+echo "deb [trusted=yes] https://apt.fury.io/labring/ /" | sudo tee /etc/apt/sources.list.d/labring.list
+sudo apt update
+sudo apt install sealos
 ```
 
-### RPM 源
+### RPM Repository
 
-```shell
-$ sudo cat > /etc/yum.repos.d/labring.repo << EOF
+```bash
+sudo cat > /etc/yum.repos.d/labring.repo << EOF
 [fury]
 name=labring Yum Repo
 baseurl=https://yum.fury.io/labring/
 enabled=1
 gpgcheck=0
 EOF
-$ sudo yum clean all
-$ sudo yum install sealos
+sudo yum clean all
+sudo yum install sealos
 ```
 
-## 源码安装
+## Source Code Installation
 
-### 前置依赖
+### Prerequisites
 1. `linux`
 2. `git`
 3. `golang` 1.20+
 4. `libgpgme-dev libbtrfs-dev libdevmapper-dev`
 
-如果在 `arm64` 环境下需要添加 `:arm64` 后缀。
+If you are in an `arm64` environment, add the `:arm64` suffix.
 
-### 构建
+### Build
 
-```shell
+```bash
 # git clone the repo
-$ git clone https://github.com/labring/sealos.git
+git clone https://github.com/labring/sealos.git
 # just make it
-$ make build BINS=sealos
+make build BINS=sealos
 ```
-
-## 下一步
-
-[安装 K8s 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)。
-
