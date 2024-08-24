@@ -1,7 +1,7 @@
 import { FormSchema, TabId } from '@/consts';
 import { json2Bucket } from '@/utils/json2Yaml';
 import { Flex, Box, Stack, IconButton, Text, useTab } from '@chakra-ui/react';
-import { EditTabs, YamlCode } from '@sealos/ui';
+import { EditTabs, Tabs, YamlCode } from '@sealos/ui';
 import { useState, useEffect, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import CopyIcon from '../Icons/CopyIcon';
@@ -32,14 +32,14 @@ const ConfigMain = () => {
   return (
     <Flex w="100%" h="100%" justifyContent={'center'} px="32px" gap="36px">
       <Box w="220px">
-        <EditTabs
+        <Tabs
           list={[
             { id: TabId.Form, label: t('configForm') },
             { id: TabId.Yaml, label: t('yamlFile') }
           ]}
           activeId={activeId}
           onChange={function (id): void {
-            setActiveId(id);
+            setActiveId(id as TabId);
           }}
         />
         {
@@ -93,7 +93,6 @@ const ConfigMain = () => {
           <ConfigFormContainer
             header={
               <Flex
-                flex={1}
                 fontSize={'xl'}
                 color={'grayModern.900'}
                 gap="12px"

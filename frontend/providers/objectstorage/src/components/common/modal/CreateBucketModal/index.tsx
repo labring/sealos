@@ -21,7 +21,7 @@ export default function CreateBucketModal({
         ></IconButton>
       ) : (
         <Button
-          variant={'primary'}
+          variant={'solid'}
           gap={'8px'}
           py="7.5px"
           px="36px"

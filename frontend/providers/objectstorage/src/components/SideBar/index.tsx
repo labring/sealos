@@ -16,7 +16,7 @@ import {
 import RefreshIcon from '@/components/Icons/RefreshIcon';
 import BucketIcon from '@/components/Icons/BucketIcon';
 import MoreIcon from '@/components/Icons/MoreIcon';
-import { ReactNode, useEffect, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import ParamterModal from '@/components/common/modal/ParamterModal';
 import CreateBucketModal from '@/components/common/modal/CreateBucketModal';
 import EditIcon from '../Icons/EditIcon';
@@ -34,19 +34,28 @@ import useSessionStore from '@/store/session';
 function MoreMenu({ bucket }: { bucket: TBucket }) {
   const router = useRouter();
   const { t } = useTranslation(['common', 'bucket']);
+  const [hoverIdx, setHoverIdx] = useState(-1);
   return (
     <Menu>
       <MenuButton
         as={IconButton}
         variant={'white-bg-icon'}
-        icon={<MoreIcon w="16px" h="16px" color="grayIron.600" />}
+        icon={<MoreIcon w="16px" h="16px" color="grayModern.500" />}
         p="4px"
         onClick={(e) => e.stopPropagation()}
       ></MenuButton>
-      <MenuList p="6px" minW={'85px'} fontSize={'12px'} onClick={(e) => e.stopPropagation()}>
+      <MenuList
+        p="6px"
+        minW={'85px'}
+        fontSize={'12px'}
+        onClick={(e) => e.stopPropagation()}
+        boxShadow={'0px 0px 1px 0px #13336B1A, 0px 4px 10px 0px #13336B1A'}
+      >
         <MenuItem
           px="4px"
           py="6px"
+          display={'flex'}
+          gap={'8px'}
           onClick={() => {
             const _params: bucketConfigQueryParam = {
               bucketName: bucket.crName,
@@ -55,9 +64,14 @@ function MoreMenu({ bucket }: { bucket: TBucket }) {
             const params = new URLSearchParams(_params);
             router.push('/bucketConfig?' + params.toString());
           }}
+          fill={'grayModern.600'}
+          color={'grayModern.600'}
+          alignItems={'center'}
         >
-          <EditIcon w="16px" h="16px" color={'grayModern.600'} mr="8px" />
-          <Text color={'grayModern.700'}>{t('edit')}</Text>
+          <EditIcon w="16px" h="16px" fill={'inherit'} />
+          <Text fontSize={'12px'} fontWeight={500}>
+            {t('edit')}
+          </Text>
         </MenuItem>
         <MenuItem p="0">
           <DeleteBucketModal layout="sm" bucketName={bucket.name} />
@@ -76,16 +90,16 @@ function BucketListItem({
       alignItems={'center'}
       bgColor={isSelected ? '#9699B41A' : ''}
       fontWeight={'500'}
+      p="4px"
+      borderRadius={'4px'}
       pl="12px"
-      pr="4px"
-      py="6px"
       cursor={'pointer'}
       {...props}
       justifyContent={'space-between'}
     >
       <Flex gap={'6px'} align={'center'}>
-        <BucketIcon w="16px" h="16px" color={isSelected ? 'brightBlue.600' : 'grayModern.700'} />
-        <Text fontSize={'12px'} color={isSelected ? 'brightBlue.700' : 'grayModern.700'}>
+        <BucketIcon w="16px" h="16px" color={'brightBlue.600'} />
+        <Text fontSize={'12px'} color={'brightBlue.700'}>
           {bucket.name}
         </Text>
       </Flex>
@@ -225,7 +239,7 @@ export default function SideBar() {
         <Text color={'grayModern.900'} fontSize={'16px'} fontWeight={'500'}>
           {t('bucketList')}
         </Text>
-        <Flex color={'#219BF4'}>
+        <Flex color={'brightBlue.500'}>
           <IconButton
             icon={<RefreshIcon boxSize="18px" />}
             p="5px"

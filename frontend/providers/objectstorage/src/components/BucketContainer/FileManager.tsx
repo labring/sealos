@@ -82,11 +82,10 @@ export default function FileManager({ ...styles }: FlexProps) {
   const { t } = useTranslation('file');
   const { t: commonT } = useTranslation('common');
   const { t: toolsT } = useTranslation('tools');
-  const bucket = useOssStore((s) => s.currentBucket);
-  const s3client = useOssStore((s) => s.client);
   const session = useSessionStore((s) => s.session);
+
+  const { isUpdating, prefix, client: s3client, currentBucket: bucket, secret } = useOssStore();
   const Bucket = bucket?.name || '';
-  const prefix = useOssStore((s) => s.prefix);
   const Prefix = prefix.length === 0 ? '' : [...prefix, ''].join('/');
   const [pageStack, setpageStack] = useState<string[]>([]);
   const [ContinuationToken, setContinuationToken] = useState<string | undefined>(undefined);
@@ -107,7 +106,7 @@ export default function FileManager({ ...styles }: FlexProps) {
   const objectsQuery = useQuery({
     queryKey: [
       QueryKey.minioFileList,
-      { Bucket, Prefix, MaxKeys, ContinuationToken, s3client, session }
+      { Bucket, Prefix, MaxKeys, ContinuationToken, s3client, session, secret }
     ],
     queryFn: () =>
       listObjects(s3client!)({ Bucket, Prefix, Delimiter: '/', ContinuationToken, MaxKeys }),
@@ -116,6 +115,7 @@ export default function FileManager({ ...styles }: FlexProps) {
     },
     enabled: !!s3client && !!Bucket
   });
+
   useEffect(() => {
     if (objectsQuery.isError) {
       // @ts-ignore
@@ -509,7 +509,7 @@ export default function FileManager({ ...styles }: FlexProps) {
     <Flex direction={'column'} {...styles}>
       <HStack w="full" my="16px" mb="25px">
         <PathLink />
-        <InputGroup variant={'secondary'} alignItems={'center'} size={'sm'}>
+        <InputGroup variant={'outline'} alignItems={'center'} size={'sm'}>
           <InputLeftElement>
             <SearchIcon boxSize={'16px'} color="grayModern.600" />
           </InputLeftElement>

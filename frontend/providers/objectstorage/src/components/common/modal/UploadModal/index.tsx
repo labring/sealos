@@ -191,29 +191,23 @@ export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-l
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
-        <ModalContent
-          borderRadius={'4px'}
-          maxW={'560px'}
-          bgColor={'#FFF'}
-          backdropFilter="blur(150px)"
-          p="24px"
-        >
-          <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">{t('upload')}</ModalHeader>
-          <ModalBody h="100%" w="100%" p="0" mt="22px">
+        <ModalContent maxW={'530px'} bgColor={'#FFF'} backdropFilter="blur(150px)">
+          <ModalCloseButton />
+          <ModalHeader>{t('upload')}</ModalHeader>
+          <ModalBody h="100%" w="100%">
             {isLoading ? (
               <Center w="full">
                 <Spinner size={'md'} mx="auto" />
               </Center>
             ) : (
               <Center
-                width={'510px'}
+                // width={'510px'}
                 h="180px"
                 borderRadius={'4px'}
                 border={'dashed'}
-                borderColor={'grayModern.200'}
+                borderColor={'grayModern.300'}
                 transition={'0.3s'}
-                bgColor={isDragAccept ? 'white_.700' : 'white_.500'}
+                bgColor={'grayModern.25'}
                 {...getRootProps()}
               >
                 <input {...getInputProps({ multiple: true })} />

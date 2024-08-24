@@ -57,6 +57,7 @@ request.interceptors.response.use(
     }
 
     response.data = apiResp.data;
+
     return response.data;
   },
   (error: any) => {

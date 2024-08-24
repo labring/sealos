@@ -5,21 +5,21 @@ export default function AuthorityTips({ authority }: { authority: Authority }) {
   const style: Record<Authority, ColorProps & BackgroundProps> = {
     [Authority.readonly]: {
       color: 'adora.600',
-      bgColor: 'rgba(129, 114, 216, 0.05)'
+      bgColor: 'adora.50'
     },
     [Authority.private]: {
-      color: 'brightBlue.700',
-      bgColor: 'blue.100'
+      color: 'brightBlue.600',
+      bgColor: 'brightBlue.50'
     },
     [Authority.readwrite]: {
-      color: 'primary.600',
-      bgColor: 'primary.100'
+      color: 'teal.700',
+      bgColor: 'teal.50'
     }
   };
   return (
     <Flex
-      px="4px"
-      py="3px"
+      px="8px"
+      py="4px"
       borderRadius={'4px'}
       {...style[authority]}
       textTransform={'capitalize'}
