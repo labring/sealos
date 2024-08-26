@@ -16,7 +16,7 @@ Currently, **Object Storage** has the following features:
 
 ### Upload files to bucket
 
-Go to Object Storage.
+Open the Sealos desktop and click on Object Storage.
 
 ![](./images/1.png)
 
