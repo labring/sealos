@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     // })
 
     // const crdJson = {
-    //   apiVersion: `account.sealos.io/v1`,
+    //   apiVersion: `account.sealos.io/v1alpha`,
     //   kind: 'PriceQuery',
     //   metadata: {
     //     name: 'prices',
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // const { body: priceResponse } = (await k8sCustomObjects.getNamespacedCustomObject(
     //   'account.sealos.io',
-    //   'v1',
+    //   'v1alpha',
     //   namespace,
     //   'pricequeries',
     //   crdJson.metadata.name

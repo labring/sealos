@@ -18,15 +18,14 @@ export async function POST(req: NextRequest) {
     }
     const headerList = headers()
 
-    const { applyYamlList, k8sCustomObjects, k8sCore } = await getK8s({
+    const { applyYamlList, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
     const devbox = json2Devbox(devboxForm)
     const service = json2Service(devboxForm)
     const ingress = json2Ingress(devboxForm)
     const jsonDevbox = yaml.load(devbox) as object
-    const jsonService = yaml.load(service) as object
-    const jsonIngress = yaml.load(ingress) as object
+    console.log('devbox', devboxForm)
 
     if (isEdit) {
       await k8sCustomObjects.patchNamespacedCustomObject(
@@ -45,27 +44,7 @@ export async function POST(req: NextRequest) {
           }
         }
       )
-      await k8sCustomObjects.patchNamespacedCustomObject(
-        'networking.k8s.io',
-        'v1',
-        'default', // TODO: namespace动态获取
-        'ingresses',
-        devboxForm.name,
-        jsonIngress,
-        undefined,
-        undefined,
-        undefined,
-        {
-          headers: {
-            'Content-Type': 'application/merge-patch+json'
-          }
-        }
-      )
-      await k8sCore.patchNamespacedService(
-        devboxForm.name,
-        'default', // TODO: namespace动态获取
-        jsonService
-      )
+      await applyYamlList([service, ingress], 'update')
 
       return jsonRes({
         data: 'success update devbox'

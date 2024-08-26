@@ -41,16 +41,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       ],
       yData: ['0.1', '0.2', '0.3', '0.4', '0.5']
     },
-    networks: devbox.spec.network.extraPorts.map((item) => {
-      return {
-        port: item.containerPort,
-        portName: item.name,
-        protocol: 'HTTP',
-        openPublicDomain: false,
-        publicDomain: '',
-        customDomain: ''
-      }
-    })
+    networks: devbox.networks
   }
 }
 

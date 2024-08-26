@@ -24,7 +24,7 @@ import { UseFormReturn, useFieldArray } from 'react-hook-form'
 import { MySelect, MySlider, Tabs } from '@sealos/ui'
 
 import MyIcon from '@/components/Icon'
-import { obj2Query } from '@/utils/tools'
+import { getValueDefault, obj2Query } from '@/utils/tools'
 import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
 import type { DevboxEditType } from '@/types/devbox'
@@ -451,10 +451,7 @@ const Form = ({
                   width={'200px'}
                   placeholder={`${t('runtime')} ${t('version')}`}
                   defaultValue={
-                    getValues('runtimeVersion') ||
-                    languageVersionMap[getValues('runtimeType')][0].id ||
-                    frameworkVersionMap[getValues('runtimeType')][0].id ||
-                    osVersionMap[getValues('runtimeType')][0].id
+                    getValues('runtimeVersion') || getValueDefault(getValues('runtimeType'))
                   }
                   value={getValues('runtimeVersion')}
                   list={getRuntimeVersionList(getValues('runtimeType'))}

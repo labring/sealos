@@ -50,12 +50,11 @@ const ReleaseModal = ({
   }
 
   const handleReleaseDevbox = useCallback(async () => {
-    if (devbox.status.value === 'Running') {
-      await pauseDevbox({ devboxName: devbox.name })
-    }
-
     try {
       setLoading(true)
+      if (devbox.status.value === 'Running') {
+        await pauseDevbox({ devboxName: devbox.name })
+      }
       await releaseDevbox({
         devboxName: devbox.name,
         tag,
@@ -105,7 +104,7 @@ const ReleaseModal = ({
                   placeholder={t('enter_version_number')}
                   value={tag}
                   onChange={(e) => setTag(e.target.value)}
-                  mb={'16px'}
+                  mb={'8px'}
                   borderColor={tagError ? 'red.500' : undefined}
                 />
                 {tagError && (

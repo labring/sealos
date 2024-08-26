@@ -1,3 +1,4 @@
+import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
 import { useMessage } from '@sealos/ui'
 
 export const cpuFormatToM = (cpu = '0') => {
@@ -109,4 +110,13 @@ export const getErrText = (err: any, def = '') => {
   const msg: string = typeof err === 'string' ? err : err?.message || def || ''
   msg && console.log('error =>', msg)
   return msg
+}
+
+export const getValueDefault = (valueIndex: string) => {
+  return (
+    languageVersionMap[valueIndex]?.[0]?.id ||
+    frameworkVersionMap[valueIndex]?.[0]?.id ||
+    osVersionMap[valueIndex]?.[0]?.id ||
+    undefined
+  )
 }

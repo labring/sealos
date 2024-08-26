@@ -9,6 +9,15 @@ export type KBDevboxType = {
     creationTimestamp: string
   }
   spec: KBDevboxSpec
+  networks: {
+    networkName: string
+    portName: string
+    port: number
+    protocol: ProtocolType
+    openPublicDomain: boolean
+    publicDomain: string // default domain
+    customDomain: string // custom domain
+  }[]
 }
 
 // TODO:有些值可以枚举处理的，这里先不处理了

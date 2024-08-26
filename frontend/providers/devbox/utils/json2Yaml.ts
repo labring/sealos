@@ -4,7 +4,7 @@ import { str2Num } from './tools'
 import { getUserNamespace } from './user'
 import { DevboxEditType } from '@/types/devbox'
 import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/stores/static'
-import { appDeployKey, publicDomainKey } from '@/constants/devbox'
+import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (data: DevboxEditType) => {
   const json = {
@@ -115,7 +115,7 @@ export const json2Ingress = (data: DevboxEditType) => {
         metadata: {
           name: network.networkName,
           labels: {
-            [appDeployKey]: data.name,
+            [devboxKey]: data.name,
             [publicDomainKey]: network.publicDomain
           },
           annotations: {
@@ -160,7 +160,7 @@ export const json2Ingress = (data: DevboxEditType) => {
         metadata: {
           name: network.networkName,
           labels: {
-            [appDeployKey]: data.name
+            [devboxKey]: data.name
           }
         },
         spec: {
@@ -189,7 +189,7 @@ export const json2Ingress = (data: DevboxEditType) => {
         metadata: {
           name: network.networkName,
           labels: {
-            [appDeployKey]: data.name
+            [devboxKey]: data.name
           }
         },
         spec: {
@@ -219,7 +219,7 @@ export const json2Service = (data: DevboxEditType) => {
     metadata: {
       name: data.name,
       labels: {
-        [appDeployKey]: data.name
+        [devboxKey]: data.name
       }
     },
     spec: {

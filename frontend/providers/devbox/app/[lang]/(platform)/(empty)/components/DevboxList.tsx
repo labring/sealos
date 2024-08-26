@@ -288,7 +288,9 @@ const DevboxList = ({
                 ),
                 onClick: () => handleGoToTerminal(item),
                 menuItemStyle: {
-                  borderBottom: '1px solid #000000'
+                  borderBottomLeftRadius: '0px',
+                  borderBottomRightRadius: '0px',
+                  borderBottom: '1px solid #F0F1F6'
                 }
               },
               {

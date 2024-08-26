@@ -95,9 +95,9 @@ export const getGlobalNamespace = async () => {
 export const getRuntime = async () => {
   try {
     const res = await getRuntimeApi()
-    languageVersionMap = res.language
-    frameworkVersionMap = res.framework
-    osVersionMap = res.os
+    languageVersionMap = res.languageVersionMap
+    frameworkVersionMap = res.frameworkVersionMap
+    osVersionMap = res.osVersionMap
     languageTypeList = res.languageTypeList
     frameworkTypeList = res.frameworkTypeList
     osTypeList = res.osTypeList

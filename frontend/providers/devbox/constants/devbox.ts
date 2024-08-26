@@ -5,7 +5,7 @@ import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 export const crLabelKey = 'sealos-devbox-cr'
-export const appDeployKey = 'cloud.sealos.io/app-deploy-manager'
+export const devboxKey = 'cloud.sealos.io/devbox-manager'
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
 
 export enum LanguageTypeEnum {
@@ -89,7 +89,7 @@ export const MemorySlideMarkList = [
 
 export const defaultDevboxEditValue: DevboxEditType = {
   name: '',
-  runtimeType: LanguageTypeEnum.java,
+  runtimeType: LanguageTypeEnum.go,
   runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
