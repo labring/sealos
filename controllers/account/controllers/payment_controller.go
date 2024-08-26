@@ -152,7 +152,7 @@ func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs [
 		}
 	}
 	// watch new payment
-	watcher, err := r.WatchClient.Watch(context.Background(), &accountv1.PaymentList{}, listOpts)
+	watcher, err := r.WatchClient.Watch(context.Background(), &accountv1.PaymentList{}, &client.ListOptions{})
 	if err != nil {
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
 		return
