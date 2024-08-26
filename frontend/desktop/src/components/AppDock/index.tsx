@@ -6,7 +6,7 @@ import { APPTYPE, TApp } from '@/types';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Center, Flex, Image } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { MouseEvent, useContext, useEffect, useMemo, useState } from 'react';
+import { MouseEvent, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Menu, useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import CustomTooltip from './CustomTooltip';
@@ -19,7 +19,6 @@ export default function AppDock() {
   const {
     installedApps: apps,
     runningInfo,
-    setToHighestLayerById,
     currentAppPid,
     openApp,
     switchAppById,
@@ -30,6 +29,7 @@ export default function AppDock() {
   const moreAppsContent = useContext(MoreAppsContext);
   const { isNavbarVisible, toggleNavbarVisibility, getTransitionValue } = useDesktopConfigStore();
   const [isMouseOverDock, setIsMouseOverDock] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
 
   const { show } = useContextMenu({
     id: APP_DOCK_MENU_ID
@@ -110,9 +110,9 @@ export default function AppDock() {
       event: e,
       position: {
         // @ts-ignore
-        x: '60px',
+        x: '244px',
         // @ts-ignore
-        y: '-114px'
+        y: '-34px'
       }
     });
   };
@@ -124,13 +124,40 @@ export default function AppDock() {
     }
   }, [isMouseOverDock, runningInfo, toggleNavbarVisibility]);
 
+  const handleMouseEnter = () => {
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsMouseOverDock(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = window.setTimeout(() => {
+      setIsMouseOverDock(false);
+    }, 500);
+  };
+
   return (
-    <Box position="absolute" left="50%" bottom={'4px'} transform="translateX(-50%)" zIndex={'1000'}>
-      {runningInfo.length > 0 && (
+    <Flex
+      flexDirection={'column'}
+      alignItems={'center'}
+      position="absolute"
+      p={'16px'}
+      pb={'0px'}
+      left="50%"
+      bottom={'4px'}
+      zIndex={'1000'}
+      transition={getTransitionValue()}
+      transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
+      will-change="transform, opacity"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {runningInfo.length > 0 && runningInfo.some((app) => app.size === 'maximize') && (
         <Center
           width={'48px'}
           height={'16px'}
-          position={'absolute'}
           color={'white'}
           transition={getTransitionValue()}
           cursor={'pointer'}
@@ -140,8 +167,7 @@ export default function AppDock() {
             '0px 0px 20px -4px rgba(12, 26, 67, 0.25), 0px 0px 1px 0px rgba(24, 43, 100, 0.25)'
           }
           borderTopRadius={'4px'}
-          top={'-80px'}
-          transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 64px)'}
+          transform={isNavbarVisible ? 'translateY(0)' : 'translateY(-4px)'}
           will-change="transform, opacity"
           onClick={() => {
             toggleNavbarVisibility();
@@ -149,13 +175,12 @@ export default function AppDock() {
         >
           <ChevronDownIcon
             transform={isNavbarVisible ? 'rotate(0deg)' : 'rotate(180deg)'}
-            transition="transform 0.3s ease-in-out"
+            transition="transform 200ms ease-in-out"
           />
         </Center>
       )}
+
       <Flex
-        onMouseEnter={() => setIsMouseOverDock(true)}
-        onMouseLeave={() => setIsMouseOverDock(false)}
         onContextMenu={(e) => displayMenu(e)}
         borderRadius="12px"
         border={'1px solid rgba(255, 255, 255, 0.07)'}
@@ -169,13 +194,6 @@ export default function AppDock() {
         gap={'12px'}
         userSelect={'none'}
         px={'12px'}
-        transition={getTransitionValue()}
-        opacity={isNavbarVisible ? 1 : 0}
-        position="absolute"
-        top={'-64px'}
-        transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 68px)'}
-        will-change="transform, opacity"
-        overflow="hidden"
       >
         {AppMenuLists.map((item: AppInfo, index: number) => {
           return (
@@ -227,6 +245,7 @@ export default function AppDock() {
           );
         })}
       </Flex>
+
       <Menu className={styles.contexify} id={APP_DOCK_MENU_ID}>
         <>
           <Box
@@ -243,6 +262,6 @@ export default function AppDock() {
           <div className={styles.arrow}></div>
         </>
       </Menu>
-    </Box>
+    </Flex>
   );
 }
