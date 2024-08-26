@@ -71,6 +71,7 @@ PROMPTS_EN=(
     ["cilium_requirement"]="Using Cilium as the network plugin, the host system must meet the following requirements:
 1. Hosts with AMD64 or AArch64 architecture;
 2. Linux kernel> = 4.19.57 or equivalent version (e.g., 4.18 on RHEL8)."
+    ["optimizing_h2_buffer"]="Optimizing the size of the H2 flow control buffer."
     ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["enable_acme"]="Do you want to enable ACME to automatically obtain certificates (Press n to use the self-signed certificate provided by Sealos)? (y/n): "
     ["acmedns_registration_failed"]="ACME DNS registration failed. Please check if the acmedns-host: '${GREEN}%s${RESET}' is correct."
@@ -140,6 +141,7 @@ PROMPTS_CN=(
     ["cilium_requirement"]="正在使用 Cilium 作为网络插件, 主机系统必须满足以下要求:
 1.具有AMD64或AArch64架构的主机;
 2.Linux内核> = 4.19.57或等效版本 (例如, 在RHEL8上为4.18)."
+    ["optimizing_h2_buffer"]="正在优化H2流控缓冲区大小."
     ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["enable_acme"]="是否启用 ACME 自动获取证书（输入 n 使用 Sealos 提供的自签证书）? (y/n): "
     ["acmedns_registration_failed"]="注册 ACME DNS 失败, 请检查 acmedns-host: '${GREEN}%s${RESET}' 是否正确."
@@ -766,6 +768,8 @@ EOF
     sealos run ${image_registry}/${image_repository}/higress:v${higress_version#v:-1.4.2} --config-file $CLOUD_DIR/higress-config.yaml --config-file $CLOUD_DIR/higress-console-config.yaml
     kubectl apply -f $CLOUD_DIR/higress-https.yaml
     kubectl apply -f $CLOUD_DIR/higress-plugins.yaml
+    get_prompt "optimizing_h2_buffer"
+    kubectl patch cm higress-config -n higress-system -p '{"data":{"higress":"downstream:\n  http2:\n    initialConnectionWindowSize: 4194304\n    initialStreamWindowSize: 524288"}}' --type=merge
 
     sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}
     sealos run ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
