@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     const service = json2Service(devboxForm)
     const ingress = json2Ingress(devboxForm)
     const jsonDevbox = yaml.load(devbox) as object
-    console.log('devbox', devboxForm)
 
     if (isEdit) {
       await k8sCustomObjects.patchNamespacedCustomObject(

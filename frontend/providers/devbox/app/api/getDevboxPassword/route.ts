@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const response = await k8sCore.readNamespacedSecret(devboxName, 'ns-admin')
+    const response = await k8sCore.readNamespacedSecret(devboxName, 'default')
 
     const base64Secret = response.body.data?.['SEALOS_DEVBOX_PASSWORD'] as string
 

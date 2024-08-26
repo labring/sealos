@@ -7,6 +7,7 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 export const crLabelKey = 'sealos-devbox-cr'
 export const devboxKey = 'cloud.sealos.io/devbox-manager'
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
+export const SSHDOMAIN = 'sealos@192.168.0.127.nip.io'
 
 export enum LanguageTypeEnum {
   java = 'java',

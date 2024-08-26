@@ -66,6 +66,7 @@ export interface DevboxListItemType {
     publicDomain: string // default domain
     customDomain: string // custom domain
   }[]
+  sshPort: number
 }
 
 export interface PodDetailType extends V1Pod {

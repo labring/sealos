@@ -22,6 +22,7 @@ import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { getDevboxPassword, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+import { SSHDOMAIN } from '@/constants/devbox'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -137,22 +138,19 @@ const DevboxList = ({
   const handleGotoVSCode = useCallback(
     async (devbox: DevboxListItemType) => {
       try {
-        setLoading(true)
         const password = await getDevboxPassword({ devboxName: devbox.name })
-        toast({
-          title: t('start_success'),
-          status: 'success'
-        })
+
+        const vscodeUri = `vscode://mlhiter.sealos-devbox/devbox.connectRemoteSSH?sshDomain=${encodeURIComponent(
+          SSHDOMAIN
+        )}&sshPort=${encodeURIComponent(devbox.sshPort)}&password=${encodeURIComponent(password)}`
+        console.log('vscodeUri', vscodeUri)
+
+        window.location.href = vscodeUri
       } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('start_error'),
-          status: 'error'
-        })
         console.error(error, '==')
       }
-      setLoading(false)
     },
-    [setLoading, t, toast]
+    [t, toast]
   )
 
   const columns: {

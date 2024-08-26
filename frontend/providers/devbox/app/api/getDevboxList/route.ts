@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
       const devboxName = item.metadata.name
       const runtimeName = item.spec.runtimeRef.name
       const runtime = runtimeBody.items.find((item: any) => item.metadata.name === runtimeName)
+
       item.spec.runtimeType = runtime?.spec.classRef
       item.spec.runtimeVersion = runtime?.metadata.name
 

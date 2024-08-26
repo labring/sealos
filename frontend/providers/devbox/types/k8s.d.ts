@@ -18,6 +18,20 @@ export type KBDevboxType = {
     publicDomain: string // default domain
     customDomain: string // custom domain
   }[]
+  status: {
+    commitHistory: {
+      image: string
+      pod: string
+      status: string
+      time: string
+    }[]
+    network: {
+      nodePort: number
+      tailnet: string
+      type: 'NodePort' | 'Tailnet'
+    }
+    podPhase: string
+  }
 }
 
 // TODO:有些值可以枚举处理的，这里先不处理了

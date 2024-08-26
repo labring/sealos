@@ -15,6 +15,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       devbox.spec.state && devboxStatusMap[devbox.spec.state]
         ? devboxStatusMap[devbox.spec.state]
         : devboxStatusMap.UnKnow,
+    sshPort: devbox.status.network.nodePort,
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
