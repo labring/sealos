@@ -140,7 +140,7 @@ const DevboxList = ({
       try {
         const password = await getDevboxPassword({ devboxName: devbox.name })
 
-        const vscodeUri = `vscode://mlhiter.sealos-devbox/devbox.connectRemoteSSH?sshDomain=${encodeURIComponent(
+        const vscodeUri = `vscode://mlhiter.devbox-sealos/devbox.connectRemoteSSH?sshDomain=${encodeURIComponent(
           SSHDOMAIN
         )}&sshPort=${encodeURIComponent(devbox.sshPort)}&password=${encodeURIComponent(password)}`
         console.log('vscodeUri', vscodeUri)
