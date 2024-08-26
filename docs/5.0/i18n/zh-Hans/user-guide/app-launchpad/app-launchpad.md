@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 0
 ---
 
 # 应用管理
@@ -22,34 +22,34 @@ sidebar_position: 1
 - 一键进入容器终端，方便管理和调试；
 - 支持将应用的多个端口暴露到外网。
 
-## [快速开始](/quick-start/use-app-launchpad.md)
+## [快速开始](./use-app-launchpad.md)
 
 快速安装一些比较常见的应用。
 
-## [更新应用](/guides/applaunchpad/update-app.md)
+## [更新应用](./update-app.md)
 
 应用部署完成后修改应用配置。
 
-## [自定义域名](/guides/applaunchpad/add-domain.md)
+## [自定义域名](./add-domain.md)
 
 为应用接入自定义域名。
 
-## [暴露多端口](/guides/applaunchpad/expose-multi-ports.md)
+## [暴露多端口](./expose-multi-ports.md)
 
 将应用的多个端口暴露到外网中。
 
-## [环境变量](/guides/applaunchpad/environment.md)
+## [环境变量](./environment.md)
 
 通过环境变量为应用提供配置信息。
 
-## [配置文件](/guides/applaunchpad/configmap.md)
+## [配置文件](./configmap.md)
 
 通过配置文件为应用提供配置信息。
 
-## [弹性伸缩](/guides/applaunchpad/autoscale.md)
+## [弹性伸缩](./autoscale.md)
 
 通过弹性伸缩来根据负载自动调整应用的实例数量。
 
-## [持久化存储](/guides/applaunchpad/persistent-volume.md)
+## [持久化存储](./persistent-volume.md)
 
 使用持久化存储来保障数据的持久化。

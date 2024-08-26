@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 0
 ---
 
 # App Launchpad
@@ -24,34 +24,34 @@ The tool currently boasts a range of functionalities:
 - A convenient one-click feature to access the container terminal, simplifying management and debugging tasks.
 - Ability to expose several ports of an application to the external network.
 
-## [Quick Start](/quick-start/use-app-launchpad.md)
+## [Quick Start](./use-app-launchpad.md)
 
 For quick and easy installation of commonly utilized applications.
 
-## [Update Application](/guides/applaunchpad/update-app.md)
+## [Update Application](./update-app.md)
 
 Guidance on modifying application configurations after initial deployment.
 
-## [Add a domain](/guides/applaunchpad/add-domain.md)
+## [Add a domain](./add-domain.md)
 
 Instructions for integrating a custom domain with your application.
 
-## [Exposing Multiple Ports](/guides/applaunchpad/expose-multi-ports.md)
+## [Exposing Multiple Ports](./expose-multi-ports.md)
 
 Details on how to make multiple ports of an application accessible externally.
 
-## [Environment](/guides/applaunchpad/environment.md)
+## [Environment](./environment.md)
 
 Directions for configuring applications through the use of environment variables.
 
-## [ConfigMap](/guides/applaunchpad/configmap.md)
+## [ConfigMap](./configmap.md)
 
 Guidelines for setting up application configurations via configuration files.
 
-## [Autoscaling](/guides/applaunchpad/autoscale.md)
+## [Autoscaling](./autoscale.md)
 
 Strategy for autoscaling the number of application instances in response to varying workloads.
 
-## [Persistent Volume](/guides/applaunchpad/persistent-volume.md)
+## [Persistent Volume](./persistent-volume.md)
 
 Utilizing persistent storage for the long-term preservation of data.
