@@ -25,8 +25,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"k8s.io/apimachinery/pkg/fields"
-
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
@@ -65,26 +63,10 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
 	r.domain = os.Getenv("DOMAIN")
-	if err := initFieldIndex(mgr); err != nil {
-		return fmt.Errorf("init field index failed: %w", err)
-	}
 	if err := mgr.Add(r); err != nil {
 		return fmt.Errorf("add payment controller failed: %w", err)
 	}
 	return nil
-}
-
-func initFieldIndex(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &accountv1.Payment{}, "status.tradeNO", func(rawObj client.Object) []string {
-		payment := rawObj.(*accountv1.Payment)
-		return []string{payment.Status.TradeNO}
-	}); err != nil {
-		return err
-	}
-	return mgr.GetFieldIndexer().IndexField(context.Background(), &accountv1.Payment{}, "status.status", func(rawObj client.Object) []string {
-		payment := rawObj.(*accountv1.Payment)
-		return []string{payment.Status.Status}
-	})
 }
 
 // LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
@@ -120,9 +102,7 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 
 func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) {
 	paymentList := &accountv1.PaymentList{}
-	err := r.Client.List(context.Background(), paymentList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("status.status", pay.PaymentProcessing),
-	})
+	err := r.Client.List(context.Background(), paymentList, &client.ListOptions{})
 	if err != nil {
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
 		return
@@ -136,21 +116,21 @@ func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) 
 }
 
 func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs []error) {
-	paymentList := &accountv1.PaymentList{}
-	listOpts := &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("status.tradeNO", ""),
-	}
-	// handler old payment
-	err := r.Client.List(context.Background(), paymentList, listOpts)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
-		return
-	}
-	for _, payment := range paymentList.Items {
-		if err := r.reconcileNewPayment(&payment); err != nil {
-			errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
-		}
-	}
+	//paymentList := &accountv1.PaymentList{}
+	//listOpts := &client.ListOptions{
+	//	FieldSelector: fields.OneTermEqualSelector("status.tradeNO", ""),
+	//}
+	//// handler old payment
+	//err := r.Client.List(context.Background(), paymentList, listOpts)
+	//if err != nil {
+	//	errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+	//	return
+	//}
+	//for _, payment := range paymentList.Items {
+	//	if err := r.reconcileNewPayment(&payment); err != nil {
+	//		errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
+	//	}
+	//}
 	// watch new payment
 	watcher, err := r.WatchClient.Watch(context.Background(), &accountv1.PaymentList{}, &client.ListOptions{})
 	if err != nil {
