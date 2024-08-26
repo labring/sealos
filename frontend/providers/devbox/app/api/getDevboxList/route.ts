@@ -27,8 +27,6 @@ export async function GET(req: NextRequest) {
       undefined
     )
 
-    console.log('devboxBody', devboxBody.items[0].spec.runtimeRef.name)
-
     const { body: runtimeBody }: any = await k8sCustomObjects.listClusterCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
