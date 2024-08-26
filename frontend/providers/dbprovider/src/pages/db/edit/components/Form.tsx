@@ -258,7 +258,8 @@ const Form = ({
                           height={'80px'}
                           border={'1px solid'}
                           borderRadius={'6px'}
-                          cursor={'pointer'}
+                          cursor={isEdit ? 'not-allowed' : 'pointer'}
+                          opacity={isEdit && getValues('dbType') !== item.id ? '0.4' : '1'}
                           fontWeight={'bold'}
                           color={'grayModern.900'}
                           {...(getValues('dbType') === item.id
@@ -275,6 +276,7 @@ const Form = ({
                                 }
                               })}
                           onClick={() => {
+                            if (isEdit) return;
                             setValue('dbType', item.id);
                             setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
                           }}
@@ -303,6 +305,7 @@ const Form = ({
                 <Label w={100}>{t('version')}</Label>
 
                 <MySelect
+                  isDisabled={isEdit}
                   width={'200px'}
                   placeholder={`${t('DataBase')} ${t('version')}`}
                   value={getValues('dbVersion')}
