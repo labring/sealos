@@ -9,70 +9,76 @@ const rootDir = path.resolve(websiteDir, '..')
 async function generateVersionsJson () {
   const versionsJsonPath = path.join(websiteDir, 'versions.json')
   await fs.writeJson(versionsJsonPath, versions, { spaces: 2 })
-  console.log(`versions.json 文件已生成在 ${versionsJsonPath}`)
 }
 
 async function syncDocs () {
   try {
-    // 删除指定的目录
-    await fs.remove(path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-blog'))
-    await fs.remove(path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs'))
-    await fs.remove(path.join(websiteDir, 'versioned_docs'))
-    await fs.remove(path.join(websiteDir, 'versioned_sidebars'))
+    // Remove specified directories
+    const dirsToRemove = [
+      'i18n/zh-Hans/docusaurus-plugin-content-blog',
+      'i18n/zh-Hans/docusaurus-plugin-content-docs',
+      'versioned_docs',
+      'versioned_sidebars'
+    ].map(dir => path.join(websiteDir, dir))
 
-    console.log('指定目录已删除')
+    await Promise.all(dirsToRemove.map(dir => fs.remove(dir)))
 
     for (const version of versions) {
-      const shortVersion = version.slice(0, 3) // 4.0.0 -> 4.0
+      const shortVersion = version.slice(0, 3)
 
-      // 同步英文文档
-      const enSourceDir = path.join(rootDir, shortVersion, 'docs')
-      const enDestDir = path.join(websiteDir, 'versioned_docs', `version-${version}`)
-      await fs.copy(enSourceDir, enDestDir)
-      console.log(`英文文档已同步到 ${enDestDir}`)
+      // Sync English docs
+      await fs.copy(
+        path.join(rootDir, shortVersion, 'docs'),
+        path.join(websiteDir, 'versioned_docs', `version-${version}`)
+      )
 
-      // 同步中文文档
-      const zhSourceDir = path.join(rootDir, shortVersion, 'i18n', 'zh-Hans')
-      const zhDestDir = path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}`)
-      await fs.copy(zhSourceDir, zhDestDir)
-      console.log(`中文文档已同步到 ${zhDestDir}`)
+      // Sync Chinese docs
+      await fs.copy(
+        path.join(rootDir, shortVersion, 'i18n', 'zh-Hans'),
+        path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}`)
+      )
 
-      // 复制 code.json 文件
-      const codeJsonSource = path.join(rootDir, shortVersion, 'code.json')
-      const codeJsonDest = path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}`, 'code.json')
-      await fs.copy(codeJsonSource, codeJsonDest)
-      console.log(`code.json 已复制到 ${codeJsonDest}`)
+      // Copy code.json
+      await fs.copy(
+        path.join(rootDir, shortVersion, 'code.json'),
+        path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}`, 'code.json')
+      )
 
+      // Copy sidebar files
+      const sidebarPaths = [
+        {
+          src: path.join(rootDir, shortVersion, 'sidebar.json'),
+          dest: path.join(websiteDir, 'versioned_sidebars', `version-${version}-sidebars.json`)
+        },
+        {
+          src: path.join(rootDir, shortVersion, 'i18n', 'zh-Hans', 'sidebar.json'),
+          dest: path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}.json`)
+        }
+      ]
 
-      // 复制 sidebar 文件
-      const sidebarSource = path.join(rootDir, shortVersion, 'sidebar.json')
-      const sidebarDest = path.join(websiteDir, 'versioned_sidebars', `version-${version}-sidebars.json`)
-      if (await fs.pathExists(sidebarSource)) {
-        await fs.copy(sidebarSource, sidebarDest)
-        console.log(`sidebar.json 已复制到 ${sidebarDest}`)
+      for (const { src, dest } of sidebarPaths) {
+        if (await fs.pathExists(src)) {
+          await fs.copy(src, dest)
+        }
       }
-
-      const sidebarSourceZh = path.join(rootDir, shortVersion, 'i18n', 'zh-Hans', 'sidebar.json')
-      const sidebarDestZh = path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}.json`)
-      if (await fs.pathExists(sidebarSourceZh)) {
-        await fs.copy(sidebarSourceZh, sidebarDestZh)
-        console.log(`zh sidebar.json 已复制到 ${sidebarDestZh}`)
-      }
-
     }
 
-    // 同步博客内容
-    const blogSourceDir = path.join(rootDir, 'blog/zh-Hans')
-    const blogDestDir = path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-blog')
-    await fs.copy(blogSourceDir, blogDestDir)
-    console.log(`博客内容已同步到 ${blogDestDir}`)
+    // Sync blog content
+    await fs.copy(
+      path.join(rootDir, 'blog/zh-Hans'),
+      path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-blog')
+    )
 
-    // 生成 versions.json 文件
     await generateVersionsJson()
-    console.log('所有文档同步完成')
+    console.log(`All documents synchronized successfully:
+    - Synced docs for versions: ${versions.join(', ')}
+    - Updated English and Chinese documentation
+    - Copied code.json and sidebar files
+    - Synced blog content
+    - Generated versions.json`)
 
   } catch (err) {
-    console.error('同步过程中发生错误:', err)
+    console.error('Error during synchronization:', err)
   }
 }
 
