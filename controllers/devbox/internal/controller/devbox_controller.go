@@ -352,12 +352,14 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 		},
 	}
 	terminationGracePeriodSeconds := 300
+	automountServiceAccountToken := false
 	expectPod := &corev1.Pod{
 		ObjectMeta: objectMeta,
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
 			Containers:                    containers,
 			TerminationGracePeriodSeconds: ptr.To(int64(terminationGracePeriodSeconds)),
+			AutomountServiceAccountToken:  ptr.To(automountServiceAccountToken),
 		},
 	}
 	if err = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme); err != nil {
