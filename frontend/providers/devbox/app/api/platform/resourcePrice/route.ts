@@ -5,6 +5,8 @@ import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 
+export const dynamic = 'force-dynamic'
+
 export type Response = {
   cpu: number
   memory: number

@@ -6,6 +6,8 @@ import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers

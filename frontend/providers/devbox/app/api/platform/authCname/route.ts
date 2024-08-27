@@ -3,6 +3,8 @@ import { NextRequest } from 'next/server'
 
 import { jsonRes } from '@/services/backend/response'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const { publicDomain, customDomain } = (await req.json()) as {

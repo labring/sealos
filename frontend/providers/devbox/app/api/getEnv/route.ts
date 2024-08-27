@@ -4,6 +4,8 @@ export type SystemEnvResponse = {
   domain: string
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   return jsonRes<SystemEnvResponse>({
     data: {

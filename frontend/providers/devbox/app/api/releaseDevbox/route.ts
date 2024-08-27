@@ -6,6 +6,8 @@ import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { json2DevboxRelease } from '@/utils/json2Yaml'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     //TODO: zod later
