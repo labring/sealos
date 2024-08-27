@@ -426,7 +426,7 @@ func (m *MongoDB) GetAppCostsByOrderIDAndAppName(req *helper.AppCostsReq) ([]com
 	var pipeline mongo.Pipeline
 	if req.AppType == resources.AppStore {
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}}}},
+			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}, {Key: "owner", Value: req.Owner}}}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$project", Value: bson.D{
 				{Key: "app_name", Value: "$app_costs.name"},
@@ -441,7 +441,7 @@ func (m *MongoDB) GetAppCostsByOrderIDAndAppName(req *helper.AppCostsReq) ([]com
 		}
 	} else {
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}}}},
+			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}, {Key: "owner", Value: req.Owner}}}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}},
 			{{Key: "$project", Value: bson.D{
