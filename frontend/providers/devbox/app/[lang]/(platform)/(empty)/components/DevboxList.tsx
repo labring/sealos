@@ -135,23 +135,20 @@ const DevboxList = ({
     [refetchDevboxList, t, toast]
   )
 
-  const handleGotoVSCode = useCallback(
-    async (devbox: DevboxListItemType) => {
-      try {
-        const password = await getDevboxPassword({ devboxName: devbox.name })
+  const handleGotoVSCode = useCallback(async (devbox: DevboxListItemType) => {
+    try {
+      const password = await getDevboxPassword({ devboxName: devbox.name })
 
-        const vscodeUri = `vscode://mlhiter.devbox-sealos/devbox.connectRemoteSSH?sshDomain=${encodeURIComponent(
-          SSHDOMAIN
-        )}&sshPort=${encodeURIComponent(devbox.sshPort)}&password=${encodeURIComponent(password)}`
-        console.log('vscodeUri', vscodeUri)
+      const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
+        SSHDOMAIN
+      )}&sshPort=${encodeURIComponent(devbox.sshPort)}&password=${encodeURIComponent(password)}`
+      console.log('vscodeUri', vscodeUri)
 
-        window.location.href = vscodeUri
-      } catch (error: any) {
-        console.error(error, '==')
-      }
-    },
-    [t, toast]
-  )
+      window.location.href = vscodeUri
+    } catch (error: any) {
+      console.error(error, '==')
+    }
+  }, [])
 
   const columns: {
     title: string

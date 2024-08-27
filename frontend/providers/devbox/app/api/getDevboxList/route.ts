@@ -97,6 +97,7 @@ export async function GET(req: NextRequest) {
       return item
     })
     const resp = await Promise.all(res)
+
     return jsonRes({ data: resp })
   } catch (err: any) {
     // TODO: ApiResp全部去除
