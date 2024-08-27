@@ -1,4 +1,3 @@
-import { headers } from 'next/headers'
 import type { NextRequest } from 'next/server'
 
 import { getK8s } from '@/services/backend/kubernetes'
@@ -7,7 +6,7 @@ import { authSession } from '@/services/backend/auth'
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = headers()
+    const headerList = req.headers
 
     const { getUserQuota } = await getK8s({
       kubeconfig: await authSession(headerList)

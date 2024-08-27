@@ -9,7 +9,7 @@ import { useEnvStore } from '@/stores/env'
 import { useGlobalStore } from '@/stores/global'
 import { useLoading } from '@/hooks/useLoading'
 import { useConfirm } from '@/hooks/useConfirm'
-import { getRuntime, getUserPrice } from '@/stores/static'
+import { getGlobalNamespace, getRuntime, getUserPrice } from '@/stores/static'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ChakraProvider } from '@/components/providers/ChakraProvider'
 import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvider'
@@ -54,6 +54,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     getUserPrice()
     getRuntime()
+    getGlobalNamespace()
   })
 
   // add resize event

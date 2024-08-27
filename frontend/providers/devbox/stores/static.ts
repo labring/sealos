@@ -81,7 +81,7 @@ export const getUserPrice = async () => {
 export const getGlobalNamespace = async () => {
   try {
     const res = await getNamespace()
-    NAMESPACE = res
+    // NAMESPACE = res
   } catch (err) {
     retryGetNamespace--
     if (retryGetNamespace >= 0) {

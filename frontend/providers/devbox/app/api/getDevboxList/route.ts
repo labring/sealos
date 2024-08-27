@@ -1,4 +1,3 @@
-import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 
 import { ApiResp } from '@/services/kubernet'
@@ -9,7 +8,7 @@ import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = headers()
+    const headerList = req.headers
 
     const { k8sCustomObjects, namespace, k8sCore } = await getK8s({
       kubeconfig: await authSession(headerList)

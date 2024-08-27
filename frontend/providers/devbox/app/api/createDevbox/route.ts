@@ -1,5 +1,4 @@
 import yaml from 'js-yaml'
-import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 
 import { ApiResp } from '@/services/kubernet'
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
       devboxForm: DevboxEditType
       isEdit: boolean
     }
-    const headerList = headers()
+    const headerList = req.headers
 
     const { applyYamlList, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)

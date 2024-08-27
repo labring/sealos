@@ -1,10 +1,9 @@
-import { headers } from 'next/headers'
-
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
+import { NextRequest } from 'next/server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const languageTypeList: any[] = []
     const frameworkTypeList: any[] = []
@@ -13,7 +12,7 @@ export async function GET() {
     const frameworkVersionMap: any = {}
     const osVersionMap: any = {}
 
-    const headerList = headers()
+    const headerList = req.headers
 
     const { k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)

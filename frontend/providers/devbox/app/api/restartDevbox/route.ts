@@ -1,4 +1,3 @@
-import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 
 import { ApiResp } from '@/services/kubernet'
@@ -10,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     //TODO: zod later
     const { devboxName } = (await req.json()) as { devboxName: string }
-    const headerList = headers()
+    const headerList = req.headers
 
     const { k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
