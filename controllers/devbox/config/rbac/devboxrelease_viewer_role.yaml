@@ -1,0 +1,23 @@
+# permissions for end users to view devboxreleases.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: devbox
+    app.kubernetes.io/managed-by: kustomize
+  name: devboxrelease-viewer-role
+rules:
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - devboxreleases
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - devboxreleases/status
+  verbs:
+  - get

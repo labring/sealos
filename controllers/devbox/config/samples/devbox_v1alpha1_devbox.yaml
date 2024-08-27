@@ -1,0 +1,21 @@
+apiVersion: devbox.sealos.io/v1alpha1
+kind: Devbox
+metadata:
+  labels:
+    app.kubernetes.io/name: devbox
+    app.kubernetes.io/managed-by: kustomize
+  name: devbox-sample
+spec:
+  state: Running
+  resource:
+    cpu: 2
+    memory: 4000Mi
+  runtimeRef:
+    name: go-1-22-5
+  network:
+    type: NodePort
+    extraPorts:
+      - containerPort: 443
+        name: 'https'
+      - containerPort: 80
+        name: 'http'

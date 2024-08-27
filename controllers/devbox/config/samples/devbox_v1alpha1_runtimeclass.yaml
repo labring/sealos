@@ -1,0 +1,53 @@
+apiVersion: devbox.sealos.io/v1alpha1
+kind: RuntimeClass
+metadata:
+  name: go
+spec:
+  kind: Language
+  title: go
+  description: go
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: RuntimeClass
+metadata:
+  name: gin
+spec:
+  kind: Framework
+  title: gin
+  description: gin
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: RuntimeClass
+metadata:
+  name: java
+spec:
+  kind: Language
+  title: java
+  description: java
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: RuntimeClass
+metadata:
+  name: spring-boot
+spec:
+  kind: Framework
+  title: Spring Boot
+  description: Spring Boot
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: RuntimeClass
+metadata:
+  name: python
+spec:
+  kind: Language
+  title: python
+  description: python
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: RuntimeClass
+metadata:
+  name: nodejs
+spec:
+  kind: Language
+  title: node.js
+  description: node.js
