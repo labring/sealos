@@ -252,8 +252,12 @@ const config = {
     },
     {
       src: "/global.js",
-      async: false
-    }
+      async: true
+    },
+    ...(isDomesticSite ? [{
+      src: 'https://hm.baidu.com/hm.js?d8e8ecf669c47dc2512d3f1417e761f9',
+      async: true,
+    }] : [])
   ],
   headTags: [
     {
