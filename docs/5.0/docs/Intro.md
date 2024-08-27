@@ -1,6 +1,6 @@
 import Highlight from '@site/src/components/Highlight'
 
-# What is Sealos? 5.0.0
+# What is Sealos?
 
 <Highlight content="Try Sealos now" url="https://cloud.sealos.io" />
 

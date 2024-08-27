@@ -14,7 +14,7 @@ const navbar = [
   {
     key: 'docs',
     label: <Translate>Docs</Translate>,
-    to: '/docs/Intro'
+    to: '/docs/5.0.0/Intro'
   },
   {
     key: 'appstore',
@@ -130,8 +130,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           {currentLocale === 'en' ? (
             <h3>
               Sealos is the cloud OS for deploying, managing and scaling your applications&nbsp;
-              <span className="txt-title">in seconds</span>
-              , not minutes, not hours.&nbsp;
+              <span className="txt-title">in seconds</span>, not minutes, not hours.&nbsp;
               <span className="txt-title">Use Sealos as easily as your own PC!</span>
             </h3>
           ) : (
@@ -220,8 +219,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
         {currentLocale === 'en' ? (
           <h3>
             Sealos is the cloud OS for deploying, managing and scaling your applications&nbsp;
-            <span className="txt-title">in seconds</span>
-            , not minutes, not hours.&nbsp;
+            <span className="txt-title">in seconds</span>, not minutes, not hours.&nbsp;
             <span className="txt-title">Use Sealos as easily as your own PC!</span>
           </h3>
         ) : (
