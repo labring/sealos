@@ -38,12 +38,6 @@ async function syncDocs () {
         path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}`)
       )
 
-      // Copy code.json
-      await fs.copy(
-        path.join(rootDir, shortVersion, 'code.json'),
-        path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}`, 'code.json')
-      )
-
       // Copy sidebar files
       const sidebarPaths = [
         {
@@ -62,6 +56,12 @@ async function syncDocs () {
         }
       }
     }
+
+    // Sync code.json
+    await fs.copy(
+      path.join(rootDir, '5.0/code.json'),
+      path.join(websiteDir, 'i18n/zh-Hans/code.json')
+    )
 
     // Sync blog content
     await fs.copy(
