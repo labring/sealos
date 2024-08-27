@@ -121,7 +121,7 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 	return r.Registry.TagImage(hostName, imageName, oldTag, devboxRelease.Spec.NewTag)
 }
 
-func (r *DevBoxReleaseReconciler) DeleteReleaseTag(ctx context.Context, devboxRelease *devboxv1alpha1.DevBoxRelease) error {
+func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv1alpha1.DevBoxRelease) error {
 	//todo only delete CR without doing any other operations
 	return nil
 }

@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -172,7 +172,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		if len(podList.Items) == 0 {
 			nextCommitHistory := r.generateNextCommitHistory(devbox)
 			expectPod, err := r.generateDevboxPod(ctx, devbox, nextCommitHistory)
-			if err = r.Create(ctx, expectPod); err != nil {
+			if err != nil {
+				logger.Error(err, "generate pod failed")
+				return err
+			}
+			if err := r.Create(ctx, expectPod); err != nil {
 				logger.Error(err, "create pod failed")
 				return err
 			}
@@ -347,12 +351,13 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 			},
 		},
 	}
+	terminationGracePeriodSeconds := 300
 	expectPod := &corev1.Pod{
 		ObjectMeta: objectMeta,
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
 			Containers:                    containers,
-			TerminationGracePeriodSeconds: pointer.Int64(300),
+			TerminationGracePeriodSeconds: ptr.To(int64(terminationGracePeriodSeconds)),
 		},
 	}
 	if err = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme); err != nil {
@@ -439,10 +444,8 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	}
 	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
 	devbox.Status.Network.NodePort = nodePort
-	if err := r.Status().Update(ctx, devbox); err != nil {
-		return err
-	}
-	return nil
+
+	return r.Status().Update(ctx, devbox)
 }
 
 func (r *DevboxReconciler) getRecLabels(devbox *devboxv1alpha1.Devbox) map[string]string {

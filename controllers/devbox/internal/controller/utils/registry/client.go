@@ -2,7 +2,6 @@ package registry
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -30,46 +29,46 @@ func (t *Client) TagImage(hostName string, imageName string, oldTag string, newT
 	}, retry.Delay(time.Second*5), retry.Attempts(3), retry.LastErrorOnly(true))
 }
 
-func (t *Client) login(authPath string, username string, password string, imageName string) (string, error) {
-	var (
-		client = http.DefaultClient
-		url    = authPath + imageName + ":pull,push"
-	)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-
-	req.SetBasicAuth(username, password)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.New(resp.Status)
-	}
-
-	bodyText, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	var data struct {
-		Token       string `json:"token"`
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-		IssuedAt    string `json:"issued_at"`
-	}
-	if err := json.Unmarshal(bodyText, &data); err != nil {
-		return "", err
-	}
-	if data.Token == "" {
-		return "", errors.New("empty token")
-	}
-	return data.Token, nil
-}
+//func (t *Client) login(authPath string, username string, password string, imageName string) (string, error) {
+//	var (
+//		client = http.DefaultClient
+//		url    = authPath + imageName + ":pull,push"
+//	)
+//
+//	req, err := http.NewRequest("GET", url, nil)
+//	if err != nil {
+//		return "", err
+//	}
+//
+//	req.SetBasicAuth(username, password)
+//
+//	resp, err := client.Do(req)
+//	if err != nil {
+//		return "", err
+//	}
+//
+//	if resp.StatusCode != http.StatusOK {
+//		return "", errors.New(resp.Status)
+//	}
+//
+//	bodyText, err := ioutil.ReadAll(resp.Body)
+//	if err != nil {
+//		return "", err
+//	}
+//	var data struct {
+//		Token       string `json:"token"`
+//		AccessToken string `json:"access_token"`
+//		ExpiresIn   int    `json:"expires_in"`
+//		IssuedAt    string `json:"issued_at"`
+//	}
+//	if err := json.Unmarshal(bodyText, &data); err != nil {
+//		return "", err
+//	}
+//	if data.Token == "" {
+//		return "", errors.New("empty token")
+//	}
+//	return data.Token, nil
+//}
 
 func (t *Client) pullManifest(username string, password string, hostName string, imageName string, tag string) ([]byte, error) {
 	var (
