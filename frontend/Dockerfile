@@ -82,7 +82,7 @@ RUN if [ "$name" = "template" ]; then \
     apk add --no-cache git openssh-client; \
 fi
 RUN if [ "$name" = "desktop" ]; then \
-    npm install -g prisma; \
+    npm install -g prisma@5.10.2; \
 fi
 USER nextjs
 
