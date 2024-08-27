@@ -32,8 +32,8 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: "../5.0/docs",
-          sidebarPath: require.resolve("./sidebars.js"),
+          // path: "../5.0/docs",
+          // sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath, locale }) =>
@@ -42,6 +42,21 @@ const config = {
             `/${docPath}`,
           editLocalizedFiles: false,
           editCurrentVersion: false,
+          // version
+          includeCurrentVersion: false,
+          lastVersion: '4.0.0',
+          versions: {
+            '4.0.0': {
+              label: '4.0.0',
+              path: '',
+              banner: 'none'
+            },
+            '5.0.0': {
+              label: '5.0.0',
+              path: '5.0.0',
+              banner: 'none',
+            }
+          }
         },
         blog: {
           path: "../blog/en",
@@ -147,6 +162,10 @@ const config = {
           label: "Contact",
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+        },
+        {
           type: "localeDropdown",
           position: "right",
         },
@@ -229,11 +248,11 @@ const config = {
   scripts: [
     {
       src: "/wow.min.js",
-      async: true
+      async: false
     },
     {
       src: "/global.js",
-      async: true
+      async: false
     }
   ],
   headTags: [

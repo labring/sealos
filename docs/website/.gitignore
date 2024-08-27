@@ -27,3 +27,6 @@ yarn-error.log*
 i18n/zh-Hans/docusaurus-plugin-content-blog
 i18n/zh-Hans/docusaurus-plugin-content-docs
 i18n/zh-Hans/code.json
+
+/versioned_docs
+/versioned_sidebars
