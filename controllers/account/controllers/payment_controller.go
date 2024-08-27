@@ -40,17 +40,27 @@ import (
 // PaymentReconciler reconciles a Payment object
 type PaymentReconciler struct {
 	client.Client
-	Account     *AccountReconciler
-	WatchClient client.WithWatch
-	Scheme      *runtime.Scheme
-	Logger      logr.Logger
-	domain      string
+	Account           *AccountReconciler
+	WatchClient       client.WithWatch
+	Scheme            *runtime.Scheme
+	Logger            logr.Logger
+	reconcileDuration time.Duration
+	createDuration    time.Duration
+	domain            string
 }
 
 var (
 	// Ensure PaymentReconciler implements the LeaderElectionRunnable and Runnable interface
 	_ manager.LeaderElectionRunnable = &PaymentReconciler{}
 	_ manager.Runnable               = &PaymentReconciler{}
+)
+
+const (
+	EnvPaymentReconcileDuration = "PAYMENT_RECONCILE_DURATION"
+	EnvPaymentCreateDuration    = "PAYMENT_CREATE_DURATION"
+
+	defaultReconcileDuration = 10 * time.Second
+	defaultCreateDuration    = 5 * time.Second
 )
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=payments,verbs=get;list;watch;create;update;patch;delete
@@ -63,6 +73,21 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
 	r.domain = os.Getenv("DOMAIN")
+	r.reconcileDuration = defaultReconcileDuration
+	r.createDuration = defaultCreateDuration
+	if duration := os.Getenv(EnvPaymentReconcileDuration); duration != "" {
+		reconcileDuration, err := time.ParseDuration(duration)
+		if err == nil {
+			r.reconcileDuration = reconcileDuration
+		}
+	}
+	if duration := os.Getenv(EnvPaymentCreateDuration); duration != "" {
+		createDuration, err := time.ParseDuration(duration)
+		if err == nil {
+			r.createDuration = createDuration
+		}
+	}
+	r.Logger.V(1).Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
 	if err := mgr.Add(r); err != nil {
 		return fmt.Errorf("add payment controller failed: %w", err)
 	}
@@ -93,8 +118,8 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 			}
 		}
 	}
-	tickerReconcilePayment := time.NewTicker(10 * time.Second)
-	tickerNewPayment := time.NewTicker(5 * time.Second)
+	tickerReconcilePayment := time.NewTicker(r.reconcileDuration)
+	tickerNewPayment := time.NewTicker(r.createDuration)
 	go fc(&wg, tickerReconcilePayment, r.reconcilePayments)
 	go fc(&wg, tickerNewPayment, r.reconcileCreatePayments)
 	return nil
@@ -263,7 +288,7 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 		}
 		payment.Spec.UserID = user.ID
 	}
-	if err := r.Create(context.Background(), payment); err != nil {
+	if err := r.Update(context.Background(), payment); err != nil {
 		return fmt.Errorf("create payment failed: %w", err)
 	}
 	// get user ID

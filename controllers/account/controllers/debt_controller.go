@@ -138,15 +138,23 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to get payment %s: %v", req.Name, err)
 	} else {
-		owner, err := r.getNamespaceOwner(req.NamespacedName.Name)
+		cr, err := r.AccountV2.GetUserCr(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name})
 		if err != nil {
-			return ctrl.Result{}, err
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				r.Logger.Info("user cr not exist, skip", "user", req.NamespacedName.Name)
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user cr %s: %v", req.NamespacedName.Name, err)
 		}
-		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: owner})
+		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name, UID: cr.UserUID})
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to get user %s: %v", owner, err)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				r.Logger.Info("user not exist, skip", "user", req.NamespacedName.Name)
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user %s: %v", req.NamespacedName.Name, err)
 		}
-		reconcileErr = r.reconcile(ctx, owner, user.ID)
+		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, user.ID)
 	}
 	if reconcileErr != nil {
 		if reconcileErr == ErrAccountNotExist {
@@ -158,20 +166,20 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{RequeueAfter: r.DebtDetectionCycle}, nil
 }
 
-func (r *DebtReconciler) getNamespaceOwner(namespace string) (string, error) {
-	ns := &corev1.Namespace{}
-	if err := r.Get(context.Background(), client.ObjectKey{Name: namespace}, ns); err != nil {
-		return "", fmt.Errorf("failed to get namespace %s: %v", namespace, err)
-	}
-	if ns.Labels == nil {
-		return "", fmt.Errorf("namespace %s labels is nil", namespace)
-	}
-	owner, ok := ns.Labels[userv1.UserAnnotationOwnerKey]
-	if !ok {
-		return "", fmt.Errorf("namespace %s owner is not exist", namespace)
-	}
-	return owner, nil
-}
+//func (r *DebtReconciler) getNamespaceOwner(namespace string) (string, error) {
+//	ns := &corev1.Namespace{}
+//	if err := r.Get(context.Background(), client.ObjectKey{Name: namespace}, ns); err != nil {
+//		return "", fmt.Errorf("failed to get namespace %s: %v", namespace, err)
+//	}
+//	if ns.Labels == nil {
+//		return "", fmt.Errorf("namespace %s labels is nil", namespace)
+//	}
+//	owner, ok := ns.Labels[userv1.UserAnnotationOwnerKey]
+//	if !ok {
+//		return "", fmt.Errorf("namespace %s owner is not exist", namespace)
+//	}
+//	return owner, nil
+//}
 
 func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) error {
 	debt := &accountv1.Debt{}
