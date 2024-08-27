@@ -108,3 +108,10 @@ kubectl rollout restart deployment desktop-frontend -n sealos
 kubectl get cm -n sealos desktop-frontend-config -o yaml | sed 's/signUpEnabled: false/signUpEnabled: true/g' | kubectl apply -f -
 kubectl rollout restart deployment desktop-frontend -n sealos
 ```
+
+
+## 数据库相关问题
+
+### Dify安装
+
+由于 Sealos 离线包默认未包含向量数据库的启动配置（也未打包相关镜像），目前在私有化部署的 Sealos 集群中暂时无法安装 Dify 应用。

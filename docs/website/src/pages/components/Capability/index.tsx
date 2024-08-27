@@ -36,7 +36,7 @@ const i18nObj = {
 
 const Capability = ({ isPc }: { isPc: boolean }) => {
   const isBrowser = useIsBrowser();
-  const { screenWidth, currentLanguage, cloudUrl, bd_vid } = useWindow();
+  const { screenWidth, currentLanguage, cloudUrl, semParams } = useWindow();
 
   useLayoutEffect(() => {
     // @ts-ignore nextline
@@ -67,7 +67,7 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
             <h3> {i18nObj.appMan} </h3>
             <h4>{i18nObj.appManagement_introduce}</h4>
             <a
-              href={`${cloudUrl}/?bd_vid=${bd_vid}&openapp=system-applaunchpad%3F`}
+              href={`${cloudUrl}/?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&openapp=system-applaunchpad%3F`}
               target="_black"
             >
               {i18nObj.Explore} {'>'}
@@ -87,7 +87,10 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           </div>
           <div className="application-title">{i18nObj.database} </div>
           <div className="application-text">{i18nObj.database_introduce}</div>
-          <a href={`${cloudUrl}/?bd_vid=${bd_vid}&openapp=system-dbprovider%3F`} target="_black">
+          <a
+            href={`${cloudUrl}/?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&openapp=system-dbprovider%3F`}
+            target="_black"
+          >
             {i18nObj.Explore} {'>'}
           </a>
           <img
@@ -128,7 +131,10 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           </div>
           <h3> {i18nObj.appMan} </h3>
           <h4>{i18nObj.appManagement_introduce}</h4>
-          <a href={`${cloudUrl}/?bd_vid=${bd_vid}&openapp=system-applaunchpad%3F`} target="_black">
+          <a
+            href={`${cloudUrl}/?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&openapp=system-applaunchpad%3F`}
+            target="_black"
+          >
             {i18nObj.Explore} {'>'}
           </a>
         </div>
@@ -146,7 +152,10 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           </div>
           <div className="application-title">{i18nObj.database}</div>
           <div className="application-text">{i18nObj.database_introduce}</div>
-          <a href={`${cloudUrl}/?bd_vid=${bd_vid}&openapp=system-dbprovider%3F`} target="_black">
+          <a
+            href={`${cloudUrl}/?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&openapp=system-dbprovider%3F`}
+            target="_black"
+          >
             {i18nObj.Explore} {'>'}
           </a>
           <img

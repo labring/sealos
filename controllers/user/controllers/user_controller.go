@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-logr/logr"
 	"golang.org/x/exp/rand"
 
 	utilcontroller "github.com/labring/operator-sdk/controller"
@@ -31,30 +32,26 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	rbacv1 "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/rest"
-	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
-
-	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
@@ -135,13 +132,15 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 	r.Logger.V(1).Info("init reconcile controller user")
 	r.minRequeueDuration = minRequeueDuration
 	r.maxRequeueDuration = maxRequeueDuration
-	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
+
+	ownerEventHandler := handler.EnqueueRequestForOwner(r.Scheme, r.Client.RESTMapper(), &userv1.User{}, handler.OnlyControllerOwner())
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.User{}, builder.WithPredicates(
-			predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
-		Watches(&source.Kind{Type: &v1.ServiceAccount{}}, owner).
-		Watches(&source.Kind{Type: &rbacv1.Role{}}, owner).
-		Watches(&source.Kind{Type: &rbacv1.RoleBinding{}}, owner).
+		For(&userv1.User{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+		Watches(&rbacv1.Role{}, ownerEventHandler).
+		Watches(&rbacv1.RoleBinding{}, ownerEventHandler).
+		Watches(&v1.Secret{}, ownerEventHandler).
+		Watches(&v1.ServiceAccount{}, ownerEventHandler).
 		WithOptions(kubecontroller.Options{
 			MaxConcurrentReconciles: utilcontroller.GetConcurrent(opts),
 			RateLimiter:             utilcontroller.GetRateLimiter(opts),
@@ -512,44 +511,27 @@ func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) 
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync User namespace  kubeconfig %s is error: %v", user.Name, "serviceAccount not found")
 		return ctx
 	}
-	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).WithServiceAccountConfig(config.GetUsersNamespace(user.Name), sa)
-	var apiConfig *api.Config
-	var err error
-	apiConfig, event, err := syncReNewConfig(user)
-	if event != nil {
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", *event)
-	}
 	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
+	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).WithServiceAccountConfig(config.GetUsersNamespace(user.Name), sa)
+	apiConfig, err := cfg.Apply(r.config, r.Client)
 	if err != nil {
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "syncReNewConfig event %s is error: %v", user.Name, err)
+		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, err)
 		return ctx
 	}
-	if ok, val := ctx.Value(ctxKey("reNew")).(bool); ok {
-		if val {
-			apiConfig = nil
-		}
-	}
 	if apiConfig == nil {
-		apiConfig, err = cfg.Apply(r.config, r.Client)
-		if err != nil {
-			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
-			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, err)
-			return ctx
-		}
-		if apiConfig == nil {
-			helper.SetConditionError(userCondition, "SyncKubeConfigError", errors.New("api.config is nil"))
-			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, errors.New("api.config is nil"))
-			return ctx
-		}
-		kubeData, err := clientcmd.Write(*apiConfig)
-		if err != nil {
-			helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
-			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Output KubeConfig apply %s is error: %v", user.Name, err)
-			return ctx
-		}
-		user.Status.KubeConfig = string(kubeData)
-		userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.HashToString(user.Status.KubeConfig))
+		helper.SetConditionError(userCondition, "SyncKubeConfigError", errors.New("api.config is nil"))
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, errors.New("api.config is nil"))
+		return ctx
 	}
+	kubeData, err := clientcmd.Write(*apiConfig)
+	if err != nil {
+		helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Output KubeConfig apply %s is error: %v", user.Name, err)
+		return ctx
+	}
+	user.Status.KubeConfig = string(kubeData)
+	userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.HashToString(user.Status.KubeConfig))
 	return ctx
 }
 

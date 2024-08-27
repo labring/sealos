@@ -2,31 +2,30 @@ package helper
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
 	auth2 "github.com/labring/sealos/service/pkg/auth"
 )
 
-func AuthenticateWithBind(c *gin.Context) error {
-	auth := &Auth{}
-	err := c.ShouldBindJSON(auth)
+func AuthenticateKC(auth Auth) error {
+	if auth.KubeConfig == "" {
+		return fmt.Errorf("kubeconfig must be set")
+	}
+	host, err := auth2.GetKcHost(auth.KubeConfig)
 	if err != nil {
-		return fmt.Errorf("bind json error : %v", err)
+		return fmt.Errorf("kubeconfig failed  %v", err)
 	}
-	return Authenticate(*auth)
-}
+	if err := auth2.CheckK8sHost(host); err != nil {
+		return fmt.Errorf("failed to check k8s host: %v", err)
+	}
 
-func Authenticate(auth Auth) error {
-	if auth.KubeConfig == "" || auth.Owner == "" {
-		return fmt.Errorf("kubeconfig and owner must be set")
+	user, err := auth2.GetKcUser(auth.KubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %v", err)
 	}
-	userNamespace := auth.Owner
-	if !strings.HasPrefix(userNamespace, "ns-") {
-		userNamespace = "ns-" + userNamespace
-	}
+
+	userNamespace := "ns-" + user
 	// Identity authentication
 	if err := auth2.Authenticate(userNamespace, auth.KubeConfig); err != nil {
 		logger.Error("failed to auth %s: %v", userNamespace, err)

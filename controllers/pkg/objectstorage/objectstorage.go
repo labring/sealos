@@ -145,10 +145,22 @@ func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.
 		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
 	}
 
+	if rcvdValues[0] <= 0 || rcvdValues[1] <= 0 {
+		fmt.Println("[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.", "bucket:", bucketName)
+		fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), rcvdValues[0], endTime.Format(timeFormat), rcvdValues[1])
+		return 0, nil
+	}
+
 	sentQuery := fmt.Sprintf("sum(minio_bucket_traffic_sent_bytes{bucket=\"%s\", instance=\"%s\"})", bucketName, instance)
 	sentValues, err := queryPrometheus(ctx, v1api, sentQuery, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
+	}
+
+	if sentValues[0] <= 0 || sentValues[1] <= 0 {
+		fmt.Println("[Warning] The metrics retrieved by vector-metrics are less than or equal to 0.", "bucket:", bucketName)
+		fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), sentValues[0], endTime.Format(timeFormat), sentValues[1])
+		return 0, nil
 	}
 
 	receivedDiff := rcvdValues[1] - rcvdValues[0]
@@ -187,6 +199,10 @@ func extractValues(result1, result2 model.Value) (int64, int64) {
 type MetricData struct {
 	// key: bucket name, value: usage
 	Usage map[string]int64
+	// key: bucket name, value: traffic sent
+	Sent map[string]int64
+	// key: bucket name, value: traffic received
+	Received map[string]int64
 }
 
 type Metrics map[string]MetricData
@@ -225,6 +241,57 @@ func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 	return obMetrics, err
 }
 
+func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
+	obMetrics := make(Metrics)
+	bucketMetrics, err := client.BucketUsageAndTrafficBytesMetrics(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bucket traffic metrics: %w", err)
+	}
+	for _, bucketMetric := range bucketMetrics {
+		if !isUsageAndTrafficBytesTargetMetric(bucketMetric.Name) {
+			continue
+		}
+
+		for _, metrics := range bucketMetric.Metrics {
+			promMetrics := metrics.(prom2json.Metric)
+			floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %s to float value", promMetrics.Value)
+			}
+			intValue := int64(floatValue)
+			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
+				//fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
+				user := getUserWithBucket(bucket)
+				if user == "" {
+					//fmt.Println("debug info", "false bucket:", bucket)
+					continue
+				}
+				//fmt.Println("debug info", "true bucket:", bucket, "user:", user)
+				metricData, exists := obMetrics[user]
+				if !exists {
+					metricData = MetricData{
+						Usage:    make(map[string]int64),
+						Sent:     make(map[string]int64),
+						Received: make(map[string]int64),
+					}
+				}
+				if bucketMetric.Name == "minio_bucket_usage_total_bytes" {
+					metricData.Usage[bucket] += intValue
+				}
+				if bucketMetric.Name == "minio_bucket_traffic_sent_bytes" {
+					metricData.Sent[bucket] += intValue
+				}
+				if bucketMetric.Name == "minio_bucket_traffic_received_bytes" {
+					metricData.Received[bucket] += intValue
+				}
+				obMetrics[user] = metricData
+			}
+		}
+	}
+
+	return obMetrics, err
+}
+
 func isUsageBytesTargetMetric(name string) bool {
 	targetMetrics := []string{
 		"minio_bucket_usage_total_bytes",
@@ -237,8 +304,27 @@ func isUsageBytesTargetMetric(name string) bool {
 	return false
 }
 
+func isUsageAndTrafficBytesTargetMetric(name string) bool {
+	targetMetrics := []string{
+		"minio_bucket_usage_total_bytes",
+		"minio_bucket_traffic_sent_bytes",
+		"minio_bucket_traffic_received_bytes",
+	}
+	for _, target := range targetMetrics {
+		if name == target {
+			return true
+		}
+	}
+	return false
+}
+
 func getUserWithBucket(bucket string) string {
-	return strings.Split(bucket, "-")[0]
+	re := regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
+	matches := re.FindStringSubmatch(bucket)
+	if len(matches) == 3 {
+		return matches[1]
+	}
+	return ""
 }
 
 /*
@@ -256,25 +342,25 @@ func getUserWithBucket(bucket string) string {
 						6/halo-faxdridb-pg-yhxnjm.tar.gz
 */
 
-func GetUserBakFileSize(client *minio.Client) map[string]int64 {
-	bucket := "file-backup"
-	userUsageMap := make(map[string]int64)
-	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
-	for object := range objectsCh {
-		user := extractNamespace(object.Key)
-		if user != "" {
-			userUsageMap[user] += object.Size
-		}
-	}
+//func GetUserBakFileSize(client *minio.Client) map[string]int64 {
+//	bucket := "file-backup"
+//	userUsageMap := make(map[string]int64)
+//	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
+//	for object := range objectsCh {
+//		user := extractNamespace(object.Key)
+//		if user != "" {
+//			userUsageMap[user] += object.Size
+//		}
+//	}
+//
+//	return userUsageMap
+//}
 
-	return userUsageMap
-}
-
-func extractNamespace(input string) string {
-	re := regexp.MustCompile(`ns-(\w+)`)
-	matches := re.FindStringSubmatch(input)
-	if len(matches) < 2 {
-		return ""
-	}
-	return matches[1]
-}
+//func extractNamespace(input string) string {
+//	re := regexp.MustCompile(`ns-(\w+)`)
+//	matches := re.FindStringSubmatch(input)
+//	if len(matches) < 2 {
+//		return ""
+//	}
+//	return matches[1]
+//}

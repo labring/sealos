@@ -45,7 +45,7 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const { cloudUrl, bd_vid } = useWindow();
+  const { cloudUrl, semParams } = useWindow();
 
   const {
     i18n: { currentLocale, defaultLocale }
@@ -143,7 +143,11 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               {i18nMap[currentLocale].label}
             </div>
           )}
-          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
+          <a
+            className="start-now-button"
+            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&s=bd-sealos-self-hosting`}
+            target="_blank"
+          >
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>

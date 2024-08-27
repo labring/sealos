@@ -134,25 +134,33 @@ rules:
   - list
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - app.sealos.io
   resources:
-  - infras
+  - instances
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - app.sealos.io
   resources:
-  - infras/finalizers
+  - instances/status
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - dataprotection.kubeblocks.io
   resources:
-  - infras/status
+  - backups
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dataprotection.kubeblocks.io
+  resources:
+  - backups/status
   verbs:
   - get
   - list

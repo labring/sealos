@@ -51,7 +51,7 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const { cloudUrl, bd_vid } = useWindow();
+  const { cloudUrl, semParams } = useWindow();
 
   const {
     i18n: { currentLocale, defaultLocale }
@@ -140,7 +140,11 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               部署、管理和扩展应用的云操作系统。就像使用个人电脑一样！
             </h3>
           )}
-          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
+          <a
+            className="start-now-button"
+            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}`}
+            target="_blank"
+          >
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
@@ -195,7 +199,11 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               {i18nMap[currentLocale].label}
             </div>
           )}
-          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
+          <a
+            className="start-now-button"
+            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}`}
+            target="_blank"
+          >
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
@@ -230,7 +238,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           </h3>
         )}
 
-        <VideoPlayer url={'https://itceb8-video.oss.laf.run/sealos-website.mp4'}></VideoPlayer>
+        <VideoPlayer url={'https://oss.laf.run/itceb8-video/sealos-web.mp4'}></VideoPlayer>
       </main>
     </div>
   );

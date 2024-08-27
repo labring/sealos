@@ -56,6 +56,16 @@ spec:
           ports:
             - containerPort: 2333
           imagePullPolicy: Always
-          volumeMounts: []
+          volumeMounts:
+          - mountPath: /config/config.json
+            name: region-info
+            subPath: ./config/config.json
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: config.json
+            path: ./config/config.json
+          name: region-info
+        name: region-info
       serviceAccountName: account-controller-manager
-      volumes: []

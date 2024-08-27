@@ -27,13 +27,11 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -526,24 +524,6 @@ func getSecretNamespace() string {
 		return DefaultSecretNamespace
 	}
 	return secretNamespace
-}
-
-func NewCache() cache.NewCacheFunc {
-	cacheLabelSelector := cache.ObjectSelector{
-		Label: labels.SelectorFromSet(labels.Set{
-			label.AppManagedBy: label.DefaultManagedBy,
-			label.AppPartOf:    AdminerPartOf,
-		}),
-	}
-
-	return cache.BuilderWithOptions(cache.Options{
-		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:    cacheLabelSelector,
-			&corev1.Service{}:       cacheLabelSelector,
-			&corev1.Secret{}:        cacheLabelSelector,
-			&networkingv1.Ingress{}: cacheLabelSelector,
-		},
-	})
 }
 
 // SetupWithManager sets up the controller with the Manager.

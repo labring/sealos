@@ -262,14 +262,7 @@ const config = {
       tagName: 'meta',
       attributes: {
         name: 'baidu-site-verification',
-        content: 'codeva-gAHDaifnOq',
-      },
-    },
-    {
-      tagName: 'meta',
-      attributes: {
-        name: 'baidu-site-verification',
-        content: 'codeva-E1X5UKtV9p',
+        content: 'codeva-IaVFkVUuDD',
       },
     },
     {

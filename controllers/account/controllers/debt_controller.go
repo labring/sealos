@@ -34,10 +34,8 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/pay"
 
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	"gorm.io/gorm"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
@@ -157,6 +155,10 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 	account, err := r.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if account == nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_, err = r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("failed to create account %s: %v", owner, err)
+			}
 			userOwner := &userv1.User{}
 			if err := r.Get(ctx, types.NamespacedName{Name: owner, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 				// if user not exist, skip
@@ -170,7 +172,9 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 				return nil
 			}
 		}
-		r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+		if err != nil {
+			r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+		}
 		return ErrAccountNotExist
 	}
 	if account.CreateRegionID == "" {
@@ -529,7 +533,9 @@ func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, no
 			} else if err != nil {
 				continue
 			}
-			if ntf.Labels != nil && ntf.Labels[readStatusLabel] == trueStatus {
+			if ntf.Labels == nil {
+				ntf.Labels = make(map[string]string)
+			} else if ntf.Labels[readStatusLabel] == trueStatus {
 				continue
 			}
 			ntf.Labels[readStatusLabel] = trueStatus
@@ -730,7 +736,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		"accountSystemNamespace", r.accountSystemNamespace)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{}))).
-		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&accountv1.Payment{}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
 }

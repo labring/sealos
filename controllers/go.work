@@ -1,11 +1,12 @@
-go 1.22
+go 1.22.0
 
-toolchain go1.22.3
+toolchain go1.22.4
 
 use (
 	./account
 	./app
 	./db/adminer
+	./devbox
 	./job/heartbeat
 	./job/init
 	./license
@@ -15,4 +16,13 @@ use (
 	./resources
 	./terminal
 	./user
+)
+
+replace (
+	k8s.io/api => k8s.io/api v0.28.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.28.3
+	k8s.io/client-go => k8s.io/client-go v0.28.3
+	k8s.io/component-base => k8s.io/component-base v0.28.3
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.2
 )

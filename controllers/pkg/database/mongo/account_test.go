@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"github.com/dustin/go-humanize"
@@ -479,25 +481,6 @@ func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
 	t.Logf("lastUpdateTime: %v", lastUpdateTime)
 }
 
-func TestMongoDB_GetAllPricesMap(t *testing.T) {
-	dbCTX := context.Background()
-
-	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
-	if err != nil {
-		t.Errorf("failed to connect mongo: error = %v", err)
-	}
-	defer func() {
-		if err = m.Disconnect(dbCTX); err != nil {
-			t.Errorf("failed to disconnect mongo: error = %v", err)
-		}
-	}()
-	pricesMap, err := m.GetAllPricesMap()
-	if err != nil {
-		t.Fatalf("failed to get all prices map: %v", err)
-	}
-	t.Logf("pricesMap: %v", pricesMap)
-}
-
 func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
 	dbCTX := context.Background()
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -613,4 +596,121 @@ func Test_mongoDB_GetDistinctMonitorCombinations(t *testing.T) {
 		t.Fatalf("failed to get distinct monitor combinations: %v", err)
 	}
 	t.Logf("monitorCombinations: %v", monitorCombinations)
+}
+
+func Test_mongoDB_CreateTTLTrafficTimeSeries(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	if err = m.CreateTTLTrafficTimeSeries(); err != nil {
+		t.Fatalf("failed to create TTL traffic time series: %v", err)
+	}
+	t.Logf("create TTL traffic time series success")
+}
+
+func Test_mongoDB_SaveObjTraffic(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	var traffic []*types.ObjectStorageTraffic
+	for i := 0; i < 10; i++ {
+		traffic = append(traffic, &types.ObjectStorageTraffic{
+			Time:      time.Now().UTC(),
+			User:      "user-" + fmt.Sprint(i),
+			Bucket:    "bucket-" + fmt.Sprint(i),
+			TotalSent: int64(1000 + i),
+			Sent:      int64(100 + i),
+		})
+	}
+	if err = m.SaveObjTraffic(traffic...); err != nil {
+		t.Fatalf("failed to save object storage traffic: %v", err)
+	}
+	t.Logf("save object storage traffic success")
+}
+
+func Test_mongoDB_GetAllLatestObjTraffic(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	traffic, err := m.GetAllLatestObjTraffic(time.Now().Add(-time.Hour), time.Now())
+	if err != nil {
+		t.Fatalf("failed to save object storage traffic: %v", err)
+	}
+	t.Logf("save object storage traffic success")
+	for _, tf := range traffic {
+		t.Logf("traffic: %#+v", tf)
+	}
+}
+
+func Test_mongoDB_HandlerTimeObjBucketSentTraffic(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	bytes, err := m.HandlerTimeObjBucketSentTraffic(time.Now().UTC().Add(-time.Hour), time.Now().UTC(), "bucket-6")
+	if err != nil {
+		t.Fatalf("failed to handle time object bucket usage: %v", err)
+	}
+	t.Logf("handle time object bucket usage success: %v", bytes)
+}
+
+func init() {
+	os.Setenv("MONGODB_URI", "")
+}
+
+func Test_mongoDB_GetTimeObjBucketBucket(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	buckets, err := m.GetTimeObjBucketBucket(time.Now().UTC().Add(-10*time.Hour), time.Now().UTC())
+	if err != nil {
+		t.Fatalf("failed to get time object bucket bucket: %v", err)
+	}
+	t.Logf("get time object bucket bucket success： len: %v", len(buckets))
+	for _, bucket := range buckets {
+		t.Logf("bucket: %#+v", bucket)
+	}
 }

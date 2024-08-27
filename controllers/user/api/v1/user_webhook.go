@@ -21,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -59,25 +60,25 @@ func (r *User) Default() {
 var _ webhook.Validator = &User{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateCreate() error {
+func (r *User) ValidateCreate() (admission.Warnings, error) {
 	userlog.Info("validate create", "name", r.Name)
 	if err := r.validateCSRExpirationSeconds(); err != nil {
-		return err
+		return admission.Warnings{}, err
 	}
-	return validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateUpdate(_ runtime.Object) error {
+func (r *User) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
 	userlog.Info("validate update", "name", r.Name)
 	if err := r.validateCSRExpirationSeconds(); err != nil {
-		return err
+		return admission.Warnings{}, err
 	}
-	return validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateDelete() error {
+func (r *User) ValidateDelete() (admission.Warnings, error) {
 	userlog.Info("validate delete", "name", r.Name)
-	return nil
+	return admission.Warnings{}, nil
 }

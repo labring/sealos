@@ -32,6 +32,18 @@ rules:
       - update
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - resourcequotas
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - objectstorage.sealos.io
     resources:
       - objectstoragebuckets

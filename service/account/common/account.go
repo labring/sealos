@@ -19,13 +19,14 @@ type AppCosts struct {
 }
 
 type AppCost struct {
-	AppName   string    `json:"app_name,omitempty" bson:"app_name,omitempty" example:"app"`
-	AppType   int32     `json:"app_type,omitempty" bson:"app_type,omitempty" example:"app"`
-	Time      time.Time `json:"time,omitempty" bson:"time,omitempty" example:"2021-01-01T00:00:00Z"`
-	OrderID   string    `json:"order_id,omitempty" bson:"order_id,omitempty" example:"order_id"`
-	Namespace string    `json:"namespace,omitempty" bson:"namespace,omitempty" example:"ns-admin"`
-	Used      Used      `json:"used,omitempty" bson:"used,omitempty"`
-	Amount    int64     `json:"amount,omitempty" bson:"amount,omitempty" example:"100000000"`
+	AppName    string    `json:"app_name,omitempty" bson:"app_name,omitempty" example:"app"`
+	AppType    int32     `json:"app_type,omitempty" bson:"app_type,omitempty" example:"app"`
+	Time       time.Time `json:"time,omitempty" bson:"time,omitempty" example:"2021-01-01T00:00:00Z"`
+	OrderID    string    `json:"order_id,omitempty" bson:"order_id,omitempty" example:"order_id"`
+	Namespace  string    `json:"namespace,omitempty" bson:"namespace,omitempty" example:"ns-admin"`
+	Used       Used      `json:"used,omitempty" bson:"used,omitempty"`
+	UsedAmount Used      `json:"used_amount,omitempty" bson:"used_amount,omitempty"`
+	Amount     int64     `json:"amount,omitempty" bson:"amount,omitempty" example:"100000000"`
 }
 
 type Used map[uint8]int64

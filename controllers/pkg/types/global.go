@@ -21,8 +21,9 @@ import (
 )
 
 type Account struct {
-	UserUID                 uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
-	ActivityBonus           int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	UserUID       uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
+	ActivityBonus int64     `gorm:"column:activityBonus;type:bigint;not null"`
+	// Discard EncryptBalance and EncryptDeductionBalance
 	EncryptBalance          string    `gorm:"column:encryptBalance;type:text;not null"`
 	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text;not null"`
 	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
@@ -244,4 +245,38 @@ type Payment struct {
 
 func (Payment) TableName() string {
 	return "Payment"
+}
+
+type InvoiceStatus string
+
+const (
+	PendingInvoiceStatus   = "PENDING"
+	CompletedInvoiceStatus = "COMPLETED"
+	RejectedInvoiceStatus  = "REJECTED"
+)
+
+type Invoice struct {
+	ID          string    `gorm:"type:text;primary_key" json:"id" bson:"id"`
+	UserID      string    `gorm:"type:text;not null" json:"userID" bson:"userID"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()" bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()" bson:"updatedAt" json:"updatedAt"`
+	Detail      string    `gorm:"type:text;not null" json:"detail" bson:"detail"`
+	Remark      string    `gorm:"type:text" json:"remark" bson:"remark"`
+	TotalAmount int64     `gorm:"type:bigint;not null" json:"totalAmount" bson:"totalAmount"`
+	// Pending, Completed, Rejected
+	Status InvoiceStatus `gorm:"type:text;not null" json:"status" bson:"status"`
+}
+
+type InvoicePayment struct {
+	InvoiceID string `gorm:"type:text"`
+	PaymentID string `gorm:"type:text;primary_key"`
+	Amount    int64  `gorm:"type:bigint;not null"`
+}
+
+func (Invoice) TableName() string {
+	return "Invoice"
+}
+
+func (InvoicePayment) TableName() string {
+	return "InvoicePayment"
 }

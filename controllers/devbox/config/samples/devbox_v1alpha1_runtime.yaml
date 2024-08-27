@@ -1,0 +1,67 @@
+# Copyright © 2024 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: devbox.sealos.io/v1alpha1
+kind: Runtime
+metadata:
+  name: go-1-22-5
+spec:
+  classRef: go
+  title: go1.22.5
+  description: go1.22.5
+  image: ghcr.io/cbluebird/devbox/go1.22.5:9259f1
+  category:
+    - ubuntu
+    - go
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: Runtime
+metadata:
+  name: go-1-23-0
+spec:
+  classRef: go
+  title: go1.23.0
+  description: go1.23.0
+  image: ghcr.io/cbluebird/devbox/go1.23.0:9259f1
+  category:
+    - ubuntu
+    - go
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: Runtime
+metadata:
+  name: gin
+spec:
+  classRef: gin
+  title: gin
+  description: gin
+  image: ghcr.io/cbluebird/devbox/gin:9259f1
+  category:
+    - ubuntu
+    - go
+    - gin
+---
+apiVersion: devbox.sealos.io/v1alpha1
+kind: Runtime
+metadata:
+  name: spring-boot
+spec:
+  classRef: spring-boot
+  title: Spring Boot
+  description: Spring Boot
+  image: ghcr.io/cbluebird/devbox/spring-boot:9259f1
+  category:
+    - ubuntu
+    - java
+    - spring-boot

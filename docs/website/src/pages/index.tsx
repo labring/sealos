@@ -27,11 +27,6 @@ const Home = () => {
         script1.setAttribute('data-website-id', 'e5a8009f-7cb6-4841-9522-d23b96216b7a');
         script1.async = true;
         document.head.appendChild(script1);
-
-        const scriptBaidu = document.createElement('script');
-        scriptBaidu.src = 'https://hm.baidu.com/hm.js?508769a0373e6443cbdf6fa135104b4b';
-        scriptBaidu.async = true;
-        document.head.appendChild(scriptBaidu);
       } else {
         const script2 = document.createElement('script');
         script2.src = 'https://umami.cloud.sealos.io/oishii';
@@ -45,8 +40,17 @@ const Home = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const bd_vidValue = urlParams.get('bd_vid');
-    sessionStorage.setItem('bd_vid', bd_vidValue);
+    const params: Record<string, string> = {};
+
+    const bd_vid = urlParams.get('bd_vid');
+    if (bd_vid) params.bd_vid = bd_vid;
+
+    const k = urlParams.get('k');
+    if (k) params.keywords = k;
+
+    if (Object.keys(params).length > 0) {
+      sessionStorage.setItem('sealos_sem', JSON.stringify(params));
+    }
   }, []);
 
   const HomeRender = (

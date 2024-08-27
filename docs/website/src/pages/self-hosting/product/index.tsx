@@ -1,12 +1,10 @@
-import Link from '@docusaurus/Link';
 import useWindow from '@site/src/hooks/useWindow';
 import CheckIcon from '@site/static/price/check.svg';
 import StarIcon from '@site/static/price/star.svg';
 import React from 'react';
 
 export default function Product() {
-  const { bd_vid } = useWindow();
-  const standard = ['工单服务', '应用管理', '高可用数据库', '应用市场', '多租户', '计量/配额'];
+  const { semParams } = useWindow();
 
   const company = [
     '工单/即时通信服务',
@@ -43,7 +41,11 @@ export default function Product() {
       </div>
       <div className="flex justify-center mt-14">
         <div
-          onClick={() => window.open('https://license.sealos.io/')}
+          onClick={() =>
+            window.open(
+              `https://license.sealos.io/signin?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&s=bd-sealos-license`
+            )
+          }
           className="rounded-md cursor-pointer hover:no-underline text-[#FFFFFFCC] hover:text-[#FFFFFFCC] bg-[#B7D8FF26] flex justify-center items-center font-semibold text-lg gap-2 py-3 px-4  lg:text-sm"
         >
           <svg
@@ -91,7 +93,9 @@ export default function Product() {
               color: '#03080C'
             }}
             onClick={() =>
-              window.open(`https://license.sealos.io/signin?external=true&bd_vid=${bd_vid}`)
+              window.open(
+                `https://license.sealos.io/signin?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&s=bd-sealos-license`
+              )
             }
           >
             获取
