@@ -32,9 +32,10 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
 
 // PaymentReconciler reconciles a Payment object
