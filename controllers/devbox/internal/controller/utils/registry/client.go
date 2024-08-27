@@ -3,7 +3,7 @@ package registry
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -95,7 +95,7 @@ func (t *Client) pullManifest(username string, password string, hostName string,
 		return nil, errors.New(resp.Status)
 	}
 
-	bodyText, err := ioutil.ReadAll(resp.Body)
+	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
