@@ -76,7 +76,7 @@ export default function WorkspaceToggle() {
       >
         <CubeIcon />
         <Text>
-          {namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName}
+          {namespace?.nstype === NSType.Private ? t('common:default_team') : namespace?.teamName}
         </Text>
         <DesktopExchangeIcon ml={'auto'} />
       </HStack>

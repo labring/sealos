@@ -33,10 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           method: 'POST',
           body: JSON.stringify({
             endTime: currentTime,
-            kubeConfig: kc.exportConfig(),
-            owner: payload.userCrName,
-            appType: '',
-            namespace,
+            kubeConfig: realKc,
+            // appType: '',
+            // namespace,
             startTime: timeOneMonthAgo
           })
         })
@@ -46,10 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           method: 'POST',
           body: JSON.stringify({
             endTime: currentTime,
-            kubeConfig: kc.exportConfig(),
-            owner: payload.userCrName,
-            appType: '',
-            namespace,
+            kubeConfig: realKc,
+            // appType: '',
+            // namespace,
             startTime: time24HoursAgo
           })
         })
@@ -62,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         prevDayTime: results[1].amount || 0
       }
     });
-  } catch (err) {
-    jsonRes(res, { code: 500, data: err });
+  } catch (err: any) {
+    jsonRes(res, { code: 500, data: err?.body });
   }
 }

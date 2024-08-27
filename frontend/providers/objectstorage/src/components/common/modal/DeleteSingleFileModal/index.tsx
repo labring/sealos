@@ -10,7 +10,8 @@ import {
   useDisclosure,
   Button,
   IconButton,
-  IconButtonProps
+  IconButtonProps,
+  Flex
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 export default function DeleteSingleFileModal({
@@ -33,29 +34,38 @@ export default function DeleteSingleFileModal({
       />
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
-        <ModalContent
-          borderRadius={'4px'}
-          maxW={'560px'}
-          bgColor={'#FFF'}
-          backdropFilter="blur(150px)"
-          p="24px"
-        >
-          <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">{t('SingleDelete')}</ModalHeader>
-          <ModalBody h="100%" w="100%" p="0" mt="22px" display={'flex'} flexDir={'column'}>
+        <ModalContent maxW={'400px'} bgColor={'#FFF'} backdropFilter="blur(150px)">
+          <ModalCloseButton />
+          <ModalHeader>{t('SingleDelete')}</ModalHeader>
+          <ModalBody h="100%" w="100" display={'flex'} flexDir={'column'}>
             <Text mb="12px">{t('confirmDeleteSingleFile')}</Text>
-            <Button
-              variant={'primary'}
-              alignSelf={'self-end'}
-              px="43px"
-              py="8px"
-              onClick={() => {
-                onDelete();
-                onClose();
-              }}
-            >
-              {t('confirm')}
-            </Button>
+            <Flex py={'16px'} justifyContent={'flex-end'} gap={'12px'}>
+              <Button
+                variant={'secondary'}
+                px="19.5px"
+                py="8px"
+                fontSize={'12px'}
+                fontWeight={'500'}
+                borderRadius={'4px'}
+                height={'auto'}
+                borderColor={'grayModern.250'}
+                onClick={() => onClose()}
+              >
+                {t('cancel', {
+                  ns: 'common'
+                })}
+              </Button>
+              <Button
+                variant={'warningConfirm'}
+                {...styles}
+                onClick={() => {
+                  onDelete();
+                  onClose();
+                }}
+              >
+                {t('confirm')}
+              </Button>
+            </Flex>
           </ModalBody>
         </ModalContent>
       </Modal>

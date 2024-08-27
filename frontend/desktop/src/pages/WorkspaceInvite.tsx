@@ -29,7 +29,7 @@ const Callback: NextPage = () => {
     mutationFn: verifyInviteCodeRequest
   });
   const inviteTips = ({ managerName, teamName, role }: Record<string, string>) =>
-    t('Receive Tips', {
+    t('common:receive_tips', {
       managerName,
       teamName,
       role
@@ -122,7 +122,7 @@ const Callback: NextPage = () => {
         {isValid ? (
           <VStack gap={'40px'} alignItems={'center'} flex={1}>
             <Text fontSize={'30px'} fontWeight={'600'} mt={'60px'}>
-              {t('Invitation reminder')}
+              {t('common:invitation_reminder')}
             </Text>
             <Text fontSize={'16px'} fontWeight={'400'} mb={'40px'} w={'330px'}>
               {inviteTips({
@@ -141,16 +141,16 @@ const Callback: NextPage = () => {
                 await acceptHandle();
               }}
             >
-              {t('Accept Invitation')}
+              {t('common:accept_invitation')}
             </Button>
           </VStack>
         ) : infoResp.isError ? (
           <VStack alignItems={'center'} gap={'40px'} flex={1} justifyContent={'center'}>
             <Text fontSize={'30px'} fontWeight={'600'}>
-              {t('Invalid invitation link')}
+              {t('common:invalid_invitation_link')}
             </Text>
             <Text fontSize={'16px'} fontWeight={'400'} maxW={'330px'}>
-              {t('Redirecting to homepage in 3 seconds')}
+              {t('common:redirecting_to_homepage_in_3_seconds')}
             </Text>
           </VStack>
         ) : null}

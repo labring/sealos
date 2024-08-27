@@ -26,7 +26,12 @@ export const MOCK_APPS: AppListItemType[] = [
     maxReplicas: 1,
     minReplicas: 1,
     storeAmount: 0,
-    labels: {}
+    labels: {},
+    source: {
+      hasSource: false,
+      sourceName: '',
+      sourceType: 'app_store'
+    }
   },
   {
     id: 'string2',
@@ -50,7 +55,12 @@ export const MOCK_APPS: AppListItemType[] = [
     maxReplicas: 1,
     minReplicas: 1,
     storeAmount: 0,
-    labels: {}
+    labels: {},
+    source: {
+      hasSource: false,
+      sourceName: '',
+      sourceType: 'app_store'
+    }
   },
   {
     id: 'string3',
@@ -74,7 +84,12 @@ export const MOCK_APPS: AppListItemType[] = [
     maxReplicas: 1,
     minReplicas: 1,
     storeAmount: 0,
-    labels: {}
+    labels: {},
+    source: {
+      hasSource: false,
+      sourceName: '',
+      sourceType: 'app_store'
+    }
   }
 ];
 export const MOCK_NAMESPACE = 'ns-34dccadb-8e62-4205-8c1b-fc2dc146cd68';
@@ -196,7 +211,8 @@ export const MOCK_PODS: PodDetailType[] = [
       yData: new Array(30).fill('0')
     },
     cpu: 0,
-    memory: 0
+    memory: 0,
+    containerStatus: podStatusMap.running
   },
   {
     podName: '2',
@@ -216,177 +232,8 @@ export const MOCK_PODS: PodDetailType[] = [
       yData: new Array(30).fill('0')
     },
     cpu: 0,
-    memory: 0
-  },
-  {
-    podName: '3',
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-
-  {
-    podName: '4',
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-
-  {
-    podName: '5',
-
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-  {
-    podName: '6',
-
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-  {
-    podName: '7',
-
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-  {
-    podName: '8',
-
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-
-  {
-    podName: '9',
-
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
-  },
-
-  {
-    podName: 'dafsdd2sgsd6gsdg',
-
-    nodeName: 'dafda-fasd-fas',
-    ip: '311.241.41.41',
-    restarts: 10,
-    age: '22',
-    status: podStatusMap.running,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    cpu: 0,
-    memory: 0
+    memory: 0,
+    containerStatus: podStatusMap.running
   }
 ];
 
@@ -440,5 +287,10 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     serverAddress: ''
   },
   storeList: [],
-  labels: {}
+  labels: {},
+  source: {
+    hasSource: false,
+    sourceName: '',
+    sourceType: 'app_store'
+  }
 };

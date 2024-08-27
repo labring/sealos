@@ -6,6 +6,8 @@ export type OAuthToken = {
 };
 
 export type UserInfo = {
+  readonly userRestrictedLevel?: number;
+  readonly realName?: string;
   readonly k8s_username: string;
   readonly name: string;
   readonly avatar: string;

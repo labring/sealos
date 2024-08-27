@@ -25,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       form = formidable({
         fileWriteStreamHandler: () => {
           const pass = new PassThrough();
+
           kubefs
             .upload({
               namespace,

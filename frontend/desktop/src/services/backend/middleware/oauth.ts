@@ -10,23 +10,32 @@ import { addOrUpdateCode } from '../db/mergeUserCode';
 import { v4 } from 'uuid';
 import { BIND_STATUS } from '@/types/response/bind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
+import { SemData } from '@/types/sem';
 
 export const OauthCodeFilter = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { code: string; inviterId?: string }) => void
+  next: (data: { code: string; inviterId?: string; semData?: SemData; bdVid?: string }) => void
 ) => {
-  const { code } = req.body as { code?: string };
-  if (!code)
+  const { code, inviterId, semData, bdVid } = req.body as {
+    code?: string;
+    inviterId?: string;
+    semData?: SemData;
+    bdVid?: string;
+  };
+  if (!code) {
     return jsonRes(res, {
       message: 'code is invalid',
       code: 400
     });
-  const { inviterId } = req.body as { inviterId?: string };
+  }
+
   await Promise.resolve(
     next?.({
       code,
-      inviterId
+      inviterId,
+      semData,
+      bdVid
     })
   );
 };

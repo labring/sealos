@@ -1,6 +1,12 @@
 import { GET, POST, DELETE } from '@/services/request';
 import { adaptDBListItem, adaptDBDetail, adaptPod, adaptEvents } from '@/utils/adapt';
-import type { BackupItemType, DBEditType, DBType, PodDetailType } from '@/types/db';
+import type {
+  BackupItemType,
+  DBEditType,
+  DBType,
+  OpsRequestItemType,
+  PodDetailType
+} from '@/types/db';
 import { json2Restart } from '@/utils/json2Yaml';
 import { json2StartOrStop } from '../utils/json2Yaml';
 import type { SecretResponse } from '@/pages/api/getSecretByName';
@@ -13,6 +19,9 @@ export const getMyDBList = () =>
 
 export const getDBByName = (name: string) =>
   GET(`/api/getDBByName?name=${name}`).then(adaptDBDetail);
+
+export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
+  GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
 
 export const createDB = (payload: {
   dbForm: DBEditType;
@@ -86,4 +95,17 @@ export const getMonitorData = (payload: {
   end: number;
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
 
-export const getOpsRequest = (name: string) => GET(`/api/opsrequest/get?name=${name}`);
+export const getOpsRequest = ({
+  name,
+  label,
+  dbType
+}: {
+  name: string;
+  label: string;
+  dbType: DBType;
+}) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, {
+    name,
+    label,
+    dbType
+  });

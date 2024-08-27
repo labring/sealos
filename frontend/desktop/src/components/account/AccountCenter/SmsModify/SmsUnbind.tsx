@@ -45,14 +45,14 @@ const smsUnBindGen = (smsType: SmsType) =>
         startTimer();
         toast({
           status: 'success',
-          title: t('Already Sent Code')
+          title: t('common:already_sent_code')
         });
       },
       onError(err) {
         getCodeMutation.reset();
         toast({
           status: 'error',
-          title: t('Get code failed')
+          title: t('common:get_code_failed')
         });
       }
     });
@@ -62,14 +62,14 @@ const smsUnBindGen = (smsType: SmsType) =>
       if (isRunning) {
         toast({
           status: 'error',
-          title: t('Already Sent Code')
+          title: t('common:already_sent_code')
         });
         return;
       }
       if (!(await trigger('id'))) {
         toast({
           status: 'error',
-          title: t('Get code failed')
+          title: t('common:get_code_failed')
         });
         return;
       }
@@ -88,7 +88,7 @@ const smsUnBindGen = (smsType: SmsType) =>
         if (data.code === 200) {
           toast({
             status: 'success',
-            title: t('Unbind Success')
+            title: t('common:unbind_success')
           });
           reset();
           await queryClient.invalidateQueries();
@@ -115,10 +115,10 @@ const smsUnBindGen = (smsType: SmsType) =>
             },
             (errors) => {
               if (errors.id) {
-                if (smsType === 'email') return toast({ title: t('Invalid Email') });
-                else return toast({ title: t('Invalid phone number') });
+                if (smsType === 'email') return toast({ title: t('common:invalid_email') });
+                else return toast({ title: t('common:invalid_phone_number') });
               }
-              if (errors.verifyCode) return toast({ title: t('verify code tips') });
+              if (errors.verifyCode) return toast({ title: t('common:verify_code_tips') });
             }
           )}
         >
@@ -132,7 +132,9 @@ const smsUnBindGen = (smsType: SmsType) =>
           >
             <FormControl isInvalid={!!formState.errors.id}>
               <HStack>
-                <FormLabel w={'120px'}>{smsType === 'phone' ? t('Phone') : t('Email')}</FormLabel>
+                <FormLabel w={'120px'}>
+                  {smsType === 'phone' ? t('common:phone') : t('common:email')}
+                </FormLabel>
                 <SettingInputGroup>
                   <SettingInput
                     {...register('id', smsIdValid(smsType))}
@@ -149,7 +151,7 @@ const smsUnBindGen = (smsType: SmsType) =>
                         fontSize={'11px'}
                         w={'60px'}
                       >
-                        {t('Get Code')}
+                        {t('common:get_code')}
                       </Link>
                     }
                   </SettingInputRightElement>
@@ -158,7 +160,7 @@ const smsUnBindGen = (smsType: SmsType) =>
             </FormControl>
             <FormControl isInvalid={!!formState.errors.verifyCode}>
               <HStack>
-                <FormLabel w={'120px'}>{t('verifyCode')}</FormLabel>
+                <FormLabel w={'120px'}>{t('common:verifycode')}</FormLabel>
                 <SettingInputGroup>
                   <SettingInput
                     {...register('verifyCode', {
@@ -176,7 +178,7 @@ const smsUnBindGen = (smsType: SmsType) =>
               </HStack>
             </FormControl>
             <Button variant={'primary'} ml="auto" type="submit" maxW={'72px'}>
-              {t('Confirm')}
+              {t('common:confirm')}
             </Button>
           </VStack>
         </form>

@@ -8,8 +8,8 @@ import { blurBackgroundStyles } from './index';
 
 export default function Monitor({ needStyles = true }: { needStyles?: boolean }) {
   const { t } = useTranslation();
-  const { data } = useQuery(['appListQuery'], getResource, {
-    cacheTime: 5 * 60 * 1000
+  const { data } = useQuery(['getResource'], getResource, {
+    staleTime: 60 * 1000
   });
 
   const info = [
@@ -20,19 +20,19 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
       unit: 'C'
     },
     {
-      label: t('Memory'),
+      label: t('common:memory'),
       value: data?.data?.totalMemory,
       icon: <MemoryIcon />,
       unit: 'GB'
     },
     {
-      label: t('Storage'),
+      label: t('common:storage'),
       value: data?.data?.totalStorage,
       icon: <StorageIcon />,
       unit: 'GB'
     },
     {
-      label: t('Flow'),
+      label: t('common:flow'),
       value: `~`,
       icon: <FlowIcon />,
       unit: 'GB'
@@ -57,7 +57,7 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
         <Flex alignItems={'center'} gap={'6px'}>
           <MonitorIcon />
           <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-            {t('Monitor')}
+            {t('common:monitor')}
           </Text>
         </Flex>
       )}
@@ -65,7 +65,7 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
       <Flex alignItems={'center'} mt={'12px'} gap={'20px'}>
         <CircularProgress
           size={'90px'}
-          trackColor={'#FF8398'}
+          trackColor={runningPodPercentage === 0 ? '#FFFFFF33' : '#FF8398'}
           value={runningPodPercentage}
           color="#2BE0B3"
         >
@@ -81,16 +81,16 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
         >
           <Flex alignItems={'center'} gap={'8px'}>
             <Box bg={'#2BE0B3'} w={'7px'} h={'7px'} borderRadius={'2px'}></Box>
-            <Text>{t('Healthy Pod', { count: runningPodCount })}</Text>
+            <Text>{t('common:healthy_pod', { count: runningPodCount })}</Text>
           </Flex>
           <Flex alignItems={'center'} gap={'8px'}>
             <Box bg={'#FF8398'} w={'7px'} h={'7px'} borderRadius={'2px'}></Box>
-            <Text>{t('Alarm Pod', { count: totalPodCount - runningPodCount })}</Text>
+            <Text>{t('common:alarm_pod', { count: totalPodCount - runningPodCount })}</Text>
           </Flex>
         </Flex>
       </Flex>
       <Text mt={'16px'} color={'rgba(255, 255, 255, 0.80)'} fontSize={'10px'} fontWeight={'bold'}>
-        {t('Used Resources')}
+        {t('common:used_resources')}
       </Text>
       <Flex mt={'8px'} flexWrap={'wrap'} gap={'8px'}>
         {info.map((item) => (

@@ -19,6 +19,7 @@ import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
+import { AppEditSyncedFields } from '@/types/app';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -132,19 +133,33 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const setupInternalAppCallListener = async () => {
       try {
-        const event = async (e: MessageEvent) => {
+        const event = async (
+          e: MessageEvent<{
+            type?: string;
+            name?: string;
+            formData?: AppEditSyncedFields;
+          }>
+        ) => {
           const whitelist = [`https://${SEALOS_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
           try {
-            if (e.data?.type === 'InternalAppCall' && e.data?.name) {
-              router.push({
-                pathname: '/app/detail',
-                query: {
-                  name: e.data.name
-                }
-              });
+            if (e.data?.type === 'InternalAppCall') {
+              const { name, formData } = e.data;
+              if (name) {
+                router.push({
+                  pathname: '/app/detail',
+                  query: {
+                    name: name
+                  }
+                });
+              } else if (formData?.imageName) {
+                router.push({
+                  pathname: '/app/edit',
+                  query: formData
+                });
+              }
             }
           } catch (error) {
             console.log(error, 'error');

@@ -21,6 +21,7 @@ import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { useEffect, useState } from 'react';
 import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { ValueOf } from '@/types';
+import { I18nErrorKey } from '@/types/i18next';
 
 function NeedToMerge({ ...props }: BoxProps & {}) {
   const { mergeUserStatus, mergeUserData, setMergeUserStatus, setMergeUserData } =
@@ -32,7 +33,6 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
   };
 
   const { t } = useTranslation();
-  const errorT = useTranslation('error').t;
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const mutation = useMutation({
@@ -41,9 +41,14 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
       queryClient.clear();
     },
     onError(err: { message: ValueOf<USER_MERGE_STATUS> }) {
+      const errMessage =
+        err.message === USER_MERGE_STATUS.INSUFFICENT_BALANCE
+          ? err.message
+          : 'MERGET_USER_INSUFFICENT_BALANCE';
+
       toast({
         status: 'error',
-        title: errorT(err.message)
+        title: t(err.message as I18nErrorKey, { ns: 'error' })
       });
     },
     onSettled() {
@@ -74,7 +79,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
           gap={'10px'}
         >
           <WarnTriangeIcon boxSize={'24px'} fill={'yellow.500'} />
-          <Text>{t('Merge Account Title')}</Text>
+          <Text>{t('common:merge_account_title')}</Text>
         </ModalHeader>
         {mutation.isLoading ? (
           <Spinner mx="auto" />
@@ -83,8 +88,8 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
             <VStack alignItems={'stretch'} gap={'0'}>
               <Text mb={'12px'}>
                 {mergeUserStatus === MergeUserStatus.CONFLICT
-                  ? t('MergeAccountTips1')
-                  : t('DeleteAccountTips2')}
+                  ? t('common:merge_account_tips1')
+                  : t('common:merge_account_tips2')}
               </Text>
               {mergeUserStatus === MergeUserStatus.CONFLICT ? (
                 <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
@@ -98,7 +103,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
                     fontWeight={'500'}
                     color={'grayModern.600'}
                   >
-                    {t('Confirm')}
+                    {t('common:confirm')}
                   </Button>
                 </HStack>
               ) : (
@@ -113,7 +118,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
                     fontWeight={'500'}
                     color={'grayModern.600'}
                   >
-                    {t('Cancel')}
+                    {t('common:cancel')}
                   </Button>
                   <Button
                     onClick={() => {
@@ -131,7 +136,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
                     p={'8px 19px'}
                     color={'white'}
                   >
-                    {t('Merge')}
+                    {t('common:merge')}
                   </Button>
                 </HStack>
               )}

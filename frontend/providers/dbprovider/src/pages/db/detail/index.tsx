@@ -17,13 +17,16 @@ import Header from './components/Header';
 import MigrateTable from './components/Migrate/Table';
 import Monitor from './components/Monitor';
 import Pods from './components/Pods';
+import { I18nCommonKey } from '@/types/i18next';
+import ReconfigureTable from './components/Reconfigure/index';
 
 enum TabEnum {
   pod = 'pod',
   backup = 'backup',
   monitor = 'monitor',
   InternetMigration = 'InternetMigration',
-  DumpImport = 'DumpImport'
+  DumpImport = 'DumpImport',
+  Reconfigure = 'reconfigure'
 }
 
 const AppDetail = ({
@@ -36,6 +39,7 @@ const AppDetail = ({
   listType: `${TabEnum}`;
 }) => {
   const BackupTableRef = useRef<ComponentRef>(null);
+  const ReconfigureTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
   const { SystemEnv } = useEnvStore();
@@ -48,12 +52,13 @@ const AppDetail = ({
       SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [
-      { label: 'Monitor List', value: TabEnum.monitor },
-      { label: 'Replicas List', value: TabEnum.pod },
-      ...(BackupSupported ? [{ label: 'Backup List', value: TabEnum.backup }] : []),
-      ...(PublicNetMigration ? [{ label: 'Online Import', value: TabEnum.InternetMigration }] : []),
+      { label: 'monitor_list', value: TabEnum.monitor },
+      { label: 'replicas_list', value: TabEnum.pod },
+      ...(PublicNetMigration ? [{ label: 'dbconfig.parameter', value: TabEnum.Reconfigure }] : []),
+      ...(BackupSupported ? [{ label: 'backup_list', value: TabEnum.backup }] : []),
+      ...(PublicNetMigration ? [{ label: 'online_import', value: TabEnum.InternetMigration }] : []),
       ...(PublicNetMigration && !!SystemEnv.minio_url
-        ? [{ label: 'Import Through File', value: TabEnum.DumpImport }]
+        ? [{ label: 'import_through_file', value: TabEnum.DumpImport }]
         : [])
     ];
 
@@ -121,7 +126,7 @@ const AppDetail = ({
           border={theme.borders.base}
           borderRadius={'lg'}
         >
-          <Flex m={'26px'} mb={'16px'} alignItems={'flex-start'}>
+          <Flex m={'26px'} mb={'8px'} alignItems={'flex-start'}>
             {listNav.map((item) => (
               <Box
                 key={item.value}
@@ -144,7 +149,7 @@ const AppDetail = ({
                         )
                     })}
               >
-                {t(item.label)}
+                {t(item.label as I18nCommonKey)}
               </Box>
             ))}
             <Box flex={1}></Box>
@@ -186,6 +191,9 @@ const AppDetail = ({
             )}
             {listType === TabEnum.InternetMigration && <MigrateTable dbName={dbName} />}
             {listType === TabEnum.DumpImport && <DumpImport db={dbDetail} />}
+            {listType === TabEnum.Reconfigure && (
+              <ReconfigureTable ref={ReconfigureTableRef} db={dbDetail} />
+            )}
           </Box>
         </Flex>
       </Flex>

@@ -25,7 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           CONSOLE_ACCESS_KEY: body.status.accessKey,
           CONSOLE_SECRET_KEY: body.status.secretKey,
           internal: body.status.internal,
-          external: body.status.external
+          external: body.status.external,
+          specVersion: body.spec?.secretKeyVersion || 0,
+          version: body.status?.secretKeyVersion || 0
         } as UserSecretData;
       else return null;
     };

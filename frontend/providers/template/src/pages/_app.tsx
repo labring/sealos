@@ -13,12 +13,10 @@ import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-
 import { useSystemConfigStore } from '@/store/config';
 import useSessionStore from '@/store/session';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
-import { getPlatformEnv } from '@/api/platform';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -127,7 +125,6 @@ const App = ({ Component, pageProps }: AppProps) => {
             type: string;
           }>
         ) => {
-          console.log(e, envs, 'template app');
           const whitelist = [`https://${envs.SEALOS_CLOUD_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;

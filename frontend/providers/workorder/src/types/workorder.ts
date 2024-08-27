@@ -18,6 +18,8 @@ export type WorkOrderDB = {
     handlingTime?: Date;
   };
   userInfo: UserDB;
+  closedBy?: string;
+  deletedBy?: string;
 };
 
 export type WorkOrderDialog = {
@@ -40,6 +42,7 @@ export enum WorkOrderType {
   ObjectStorage = 'objectstorage',
   FunctionServer = 'functionserver',
   FastGPT = 'fastgpt',
+  AccountCenter = 'account_center',
   Other = 'other'
 }
 

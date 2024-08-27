@@ -4,6 +4,7 @@ import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import type { BackupItemType, DBDetailType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 import { getErrText } from '@/utils/tools';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -54,7 +55,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
   } = useDisclosure();
 
   const { openConfirm: openConfirmDel, ConfirmChild: RestartConfirmDelChild } = useConfirm({
-    content: t('Confirm delete the backup')
+    content: t('confirm_delete_the_backup')
   });
 
   const [backupInfo, setBackupInfo] = useState<BackupItemType>();
@@ -114,27 +115,27 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
   };
 
   const columns: {
-    title: string;
+    title: I18nCommonKey;
     dataIndex?: keyof BackupItemType;
     key: string;
     render?: (item: BackupItemType, i: number) => React.ReactNode | string;
   }[] = [
     {
-      title: 'Name',
+      title: 'name',
       key: 'name',
       dataIndex: 'name'
     },
     {
-      title: 'Remark',
+      title: 'remark',
       key: 'remark',
       dataIndex: 'remark'
     },
     {
-      title: 'Status',
+      title: 'status',
       key: 'status',
       render: (item: BackupItemType) => (
         <Flex color={item.status.color} alignItems={'center'}>
-          {t(item.status.label)}
+          {t(item.status.label as I18nCommonKey)}
           {item.failureReason && (
             <Tooltip label={item.failureReason}>
               <QuestionOutlineIcon ml={1} />
@@ -144,7 +145,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       )
     },
     {
-      title: 'Backup Time',
+      title: 'backup_time',
       key: 'backupTime',
       render: (item: BackupItemType) => <>{dayjs(item.startTime).format('YYYY/MM/DD HH:mm')}</>
     },
@@ -154,17 +155,17 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       render: (item: BackupItemType) => <>{t(backupTypeMap[item.type]?.label) || '-'}</>
     },
     {
-      title: 'Operation',
+      title: 'operation',
       key: 'control',
       render: (item: BackupItemType) =>
         item.status.value !== BackupStatusEnum.InProgress ? (
           <Flex>
-            <MyTooltip label={t('Restore Backup')}>
+            <MyTooltip label={t('restore_backup')}>
               <Button variant={'square'} onClick={() => setBackupInfo(item)}>
                 <MyIcon name={'restore'} {...operationIconStyles} />
               </Button>
             </MyTooltip>
-            <MyTooltip label={t('Delete Backup')}>
+            <MyTooltip label={t('delete_backup')}>
               <Button
                 variant={'square'}
                 mr={0}
@@ -232,7 +233,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       {isSuccess && backups.length === 0 && (
         <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
           <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
-          <Box pt={'8px'}>{t('No Data Available')}</Box>
+          <Box pt={'8px'}>{t('no_data_available')}</Box>
         </Flex>
       )}
       <Loading loading={isInitialLoading} fixed={false} />

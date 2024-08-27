@@ -1,4 +1,3 @@
-import { uploadConvertData } from '@/api/platform';
 import AuthList from '@/components/signin/auth/AuthList';
 import useCustomError from '@/components/signin/auth/useCustomError';
 import Language from '@/components/signin/auth/useLanguage';
@@ -27,9 +26,11 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWechat from './auth/useWechat';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
+import { getBaiduId } from '@/utils/sessionConfig';
 
 export default function SigninComponent() {
   const conf = useConfigStore();
+  const hasBaiduToken = conf.authConfig?.hasBaiduToken;
   const needPassword = conf.authConfig?.idp.password?.enabled;
   const needSms = conf.authConfig?.idp.sms?.enabled;
   const needTabs = conf.authConfig?.idp.password?.enabled && conf.authConfig?.idp.sms?.enabled;
@@ -123,16 +124,9 @@ export default function SigninComponent() {
     if (isAgree && selectedConfig) {
       const { login } = selectedConfig;
       login();
-      uploadConvertData([3])
-        .then((res) => {
-          console.log(res);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
     } else {
       setIsInvalid(true);
-      showError(t('Read and agree'));
+      showError(t('common:read_and_agree'));
     }
   }, 500);
   return (
@@ -195,14 +189,14 @@ export default function SigninComponent() {
                 gap={'20px'}
               >
                 <Tab px="0" _selected={{ color: 'white' }}>
-                  {t('Verification Code Login')}
+                  {t('common:verification_code_login')}
                 </Tab>
                 <Tab px="0" _selected={{ color: 'white' }}>
-                  {t('Password Login')}
+                  {t('common:password_login')}
                 </Tab>
                 {conf.authConfig?.idp.wechat.enabled && (
                   <Tab px="0" _selected={{ color: 'white' }}>
-                    {t('Official account login')}
+                    {t('common:official_account_login')}
                   </Tab>
                 )}
               </TabList>
@@ -243,9 +237,11 @@ export default function SigninComponent() {
                 p="10px"
                 onClick={handleLogin}
               >
-                {isLoading ? (t('Loading') || 'Loading') + '...' : t('Log In') || 'Log In'}
+                {isLoading
+                  ? (t('common:loading') || 'Loading') + '...'
+                  : t('common:log_in') || 'Log In'}
               </Button>
-              <AuthList />
+              {hasBaiduToken && getBaiduId() ? <Box></Box> : <AuthList />}
             </>
           )}
         </Flex>

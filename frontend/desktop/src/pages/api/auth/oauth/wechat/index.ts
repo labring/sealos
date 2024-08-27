@@ -15,7 +15,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   if (!enableWechat()) {
     throw new Error('wechat clinet is not defined');
   }
-  await OauthCodeFilter(req, res, async ({ code, inviterId }) => {
+  await OauthCodeFilter(req, res, async ({ code, inviterId, semData, bdVid }) => {
     await wechatOAuthEnvFilter()(async ({ clientID, clientSecret }) => {
       await wechatOAuthGuard(
         clientID,
@@ -24,7 +24,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       )(res, async ({ id, name, avatar_url }) => {
         const persistUrl =
           (await persistImage(avatar_url, 'avatar/' + ProviderType.WECHAT + '/' + id)) || '';
-        await getGlobalTokenByWechatSvc(persistUrl, id, name, inviterId)(res);
+        await getGlobalTokenByWechatSvc(persistUrl, id, name, inviterId, semData, bdVid)(res);
       });
     });
   });

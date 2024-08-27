@@ -2,7 +2,7 @@
   "application": "应用",
   "export": "导出",
   "configForm": "配置表单",
-  "yamlFile": "yaml 文件",
+  "yamlFile": "YAML 文件",
   "edit": "编辑",
   "delete": "删除",
   "totalObjects": "总对象数量",
@@ -20,5 +20,10 @@
   "Disable Hosting": "关闭托管",
   "Enable Hosting": "打开托管",
   "Effective": "已生效",
-  "Unable to Access": "无法访问"
+  "name": "名称",
+  "reset": "重置",
+  "confirm": "确认",
+  "cancel": "取消",
+  "Unable to Access": "无法访问",
+  "reset_error": "重置错误"
 }

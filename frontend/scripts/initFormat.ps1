@@ -1,1 +1,0 @@
-Copy-Item -Path "frontend/scripts/pre-commit" -Destination ".git/hooks"

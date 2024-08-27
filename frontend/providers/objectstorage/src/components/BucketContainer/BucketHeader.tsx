@@ -18,7 +18,7 @@ export default function BucketHeader({ ...styles }: StackProps) {
           {bucket.name}
         </Text>
       </HStack>
-      <ButtonGroup variant={'secondary'} spacing={'16px'}>
+      <ButtonGroup variant={'outline'} spacing={'16px'}>
         <Button
           gap="8px"
           px="24px"
@@ -33,7 +33,7 @@ export default function BucketHeader({ ...styles }: StackProps) {
             router.push('/bucketConfig?' + params.toString());
           }}
         >
-          <EditIcon boxSize={'16px'} color="grayModern.400" />
+          <EditIcon boxSize={'16px'} fill={'currentcolor'} />
           <Text>{t('edit')}</Text>
         </Button>
         <DeleteBucketModal bucketName={bucket.name} />

@@ -38,11 +38,14 @@ const map = {
   infoCircle: require('./icons/infoCircle.svg').default,
   upperRight: require('./icons/upperRight.svg').default,
   arrowUp: require('./icons/arrowUp.svg').default,
+  search: require('./icons/search.svg').default,
+  edit: require('./icons/edit.svg').default,
   book: require('./icons/book.svg').default,
   export: require('./icons/export.svg').default,
   pods: require('./icons/pods.svg').default,
   upload: require('./icons/upload.svg').default,
   target: require('./icons/target.svg').default,
+  help: require('./icons/help.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };

@@ -11,14 +11,18 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import { DesktopExchangeIcon, ZoneIcon } from '../icons';
+import { I18nCloudProvidersKey } from '@/types/i18next';
 
 export default function RegionToggle() {
   const disclosure = useDisclosure();
   const { setWorkSpaceId, session } = useSessionStore();
   const { t, i18n } = useTranslation();
-  const { t: providerT } = useTranslation('cloudProviders');
   const router = useRouter();
-  const { data, isSuccess } = useQuery(['regionlist'], getRegionList);
+  const { data } = useQuery(['regionlist'], getRegionList, {
+    cacheTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  });
   const regionList = useMemo(() => data?.data?.regionList || [], [data]);
   const token = useSessionStore((s) => s.token);
   const curRegionUid = useMemo(() => {
@@ -68,7 +72,10 @@ export default function RegionToggle() {
           >
             <ZoneIcon />
             <Text>
-              {providerT(curRegion?.location || '')} {curRegion?.description?.serial}
+              {t((curRegion?.location as I18nCloudProvidersKey) || 'beijing', {
+                ns: 'cloudProviders'
+              })}
+              {curRegion?.description?.serial}
             </Text>
             <DesktopExchangeIcon ml={'auto'} />
           </HStack>
@@ -129,12 +136,13 @@ export default function RegionToggle() {
                           mb={'12px'}
                         >
                           <Text color={'rgba(255, 255, 255, 0.80)'}>
-                            {providerT(region?.location)} {region?.description?.serial}
+                            {t(region?.location as I18nCloudProvidersKey, { ns: 'cloudProviders' })}
+                            {region?.description?.serial}
                           </Text>
                           {cpuPrice && (
                             <Text color={'#47B2FF'} whiteSpace={'nowrap'}>
-                              {cpuPrice?.name} {cpuPrice?.unit_price || 0} {t('Yuan')}/{t('Core')}/
-                              {t('Year')}
+                              {cpuPrice?.name} {cpuPrice?.unit_price || 0} {t('common:yuan')}/
+                              {t('common:core')}/{t('common:year')}
                             </Text>
                           )}
                         </Box>
@@ -142,14 +150,16 @@ export default function RegionToggle() {
                         <Box px={'16px'} fontSize={'11px'} fontWeight={'500'}>
                           <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
                             <ProviderIcon boxSize={'12px'} />
-                            <Text>{providerT('Provider')}</Text>
+                            <Text>{t('cloudProviders:provider')}</Text>
                           </HStack>
                           <Text color={'white'} mb={'8px'}>
-                            {providerT(region?.description?.provider)}
+                            {t(region?.description?.provider as I18nCloudProvidersKey, {
+                              ns: 'cloudProviders'
+                            })}
                           </Text>
                           <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
                             <InfoIcon boxSize={'12px'} />
-                            <Text>{t('Description')}</Text>
+                            <Text>{t('common:description')}</Text>
                           </HStack>
                           <Text whiteSpace={'pre-wrap'} color={'white'} lineHeight={'20px'}>
                             {region?.description?.description?.[i18n.language as 'zh' | 'en']}

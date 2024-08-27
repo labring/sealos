@@ -3,11 +3,21 @@ import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
+import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Box, Button, Center, Flex, Image, MenuButton, useTheme } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  MenuButton,
+  useDisclosure,
+  useTheme
+} from '@chakra-ui/react';
 import { MyTable, SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -29,10 +39,16 @@ const DBList = ({
   const theme = useTheme();
   const router = useRouter();
   const { SystemEnv } = useEnvStore();
-
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onClose: onCloseUpdateModal
+  } = useDisclosure();
   const [delAppName, setDelAppName] = useState('');
+  const [updateAppName, setUpdateAppName] = useState('');
+
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: t('Pause Hint')
+    content: t('pause_hint')
   });
 
   const handleRestartApp = useCallback(
@@ -41,12 +57,12 @@ const DBList = ({
         setLoading(true);
         await restartDB({ dbName: db.name, dbType: db.dbType });
         toast({
-          title: t('Restart Success'),
+          title: t('restart_success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('Restart Success'),
+          title: typeof error === 'string' ? error : error.message || t('restart_success'),
           status: 'error'
         });
         console.error(error, '==');
@@ -62,12 +78,12 @@ const DBList = ({
         setLoading(true);
         await pauseDBByName({ dbName: db.name, dbType: db.dbType });
         toast({
-          title: t('Pause Success'),
+          title: t('pause_success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('Pause Error'),
+          title: typeof error === 'string' ? error : error.message || t('pause_error'),
           status: 'error'
         });
         console.error(error);
@@ -84,12 +100,12 @@ const DBList = ({
         setLoading(true);
         await startDBByName({ dbName: db.name, dbType: db.dbType });
         toast({
-          title: t('Start Success'),
+          title: t('start_success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('Start Error'),
+          title: typeof error === 'string' ? error : error.message || t('start_error'),
           status: 'error'
         });
         console.error(error);
@@ -107,7 +123,7 @@ const DBList = ({
     render?: (item: DBListItemType) => JSX.Element;
   }[] = [
     {
-      title: t('Name'),
+      title: t('name'),
       key: 'name',
       render: (item: DBListItemType) => {
         return (
@@ -128,34 +144,34 @@ const DBList = ({
       )
     },
     {
-      title: t('Status'),
+      title: t('status'),
       key: 'status',
       render: (item: DBListItemType) => (
         <DBStatusTag conditions={item.conditions} status={item.status} />
       )
     },
     {
-      title: t('Creation Time'),
+      title: t('creation_time'),
       dataIndex: 'createTime',
       key: 'createTime'
     },
     {
-      title: t('CPU'),
+      title: t('cpu'),
       key: 'cpu',
       render: (item: DBListItemType) => <>{item.cpu / 1000}C</>
     },
     {
-      title: t('Memory'),
+      title: t('memory'),
       key: 'memory',
       render: (item: DBListItemType) => <>{printMemory(item.memory)}</>
     },
     {
-      title: t('Storage'),
+      title: t('storage'),
       key: 'storage',
       dataIndex: 'storage'
     },
     {
-      title: t('Operation'),
+      title: t('operation'),
       key: 'control',
       render: (item: DBListItemType) => (
         <Flex>
@@ -172,7 +188,7 @@ const DBList = ({
             leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             onClick={() => router.push(`/db/detail?name=${item.name}&dbType=${item.dbType}`)}
           >
-            {t('Details')}
+            {t('details')}
           </Button>
           <SealosMenu
             width={100}
@@ -199,10 +215,17 @@ const DBList = ({
                       child: (
                         <>
                           <MyIcon name={'change'} w={'16px'} />
-                          <Box ml={2}>{t('Update')}</Box>
+                          <Box ml={2}>{t('update')}</Box>
                         </>
                       ),
-                      onClick: () => router.push(`/db/edit?name=${item.name}`),
+                      onClick: () => {
+                        if (item.source.hasSource && item.source.sourceType === 'sealaf') {
+                          setUpdateAppName(item.name);
+                          onOpenUpdateModal();
+                        } else {
+                          router.push(`/db/edit?name=${item.name}`);
+                        }
+                      },
                       isDisabled: item.status.value === 'Updating' && !item.isDiskSpaceOverflow
                     },
                     {
@@ -282,7 +305,7 @@ const DBList = ({
             leftIcon={<MyIcon name={'docs'} w={'16px'} />}
             onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
           >
-            {t('Use Docs')}
+            {t('use_docs')}
           </Button>
         )}
         <Button
@@ -292,19 +315,27 @@ const DBList = ({
           leftIcon={<MyIcon name={'plus'} w={'20px'} />}
           onClick={() => router.push('/db/edit')}
         >
-          {t('Create DB')}
+          {t('create_db')}
         </Button>
       </Flex>
       <MyTable columns={columns} data={dbList} />
       <PauseChild />
       {!!delAppName && (
         <DelModal
-          labels={dbList?.find((item) => item.name === delAppName)?.labels || {}}
+          source={dbList.find((i) => i.name === delAppName)?.source}
           dbName={delAppName}
           onClose={() => setDelAppName('')}
           onSuccess={refetchApps}
         />
       )}
+      <UpdateModal
+        source={dbList.find((i) => i.name === updateAppName)?.source}
+        isOpen={isOpenUpdateModal}
+        onClose={() => {
+          setUpdateAppName('');
+          onCloseUpdateModal();
+        }}
+      />
     </Box>
   );
 };

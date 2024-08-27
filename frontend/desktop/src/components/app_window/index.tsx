@@ -117,23 +117,25 @@ export default function AppWindow(props: {
               width={'20px'}
               height={'20px'}
             />
-            <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
+            <Box ml="8px" fontSize={'12px'} fontWeight={400}>
               {wnapp?.i18n?.[i18n?.language]?.name
                 ? wnapp.i18n?.[i18n?.language]?.name
-                : t(wnapp?.name)}
+                : wnapp?.name}
             </Box>
-            {wnapp.menuData?.helpDocs && (
-              <Text
-                color={'#24282C'}
-                ml="16px"
-                onClick={() => {
-                  typeof wnapp.menuData?.helpDocs === 'string' &&
-                    window.open(wnapp.menuData?.helpDocs);
-                }}
-              >
-                {t('Doc')}
-              </Text>
-            )}
+            {wnapp?.menuData &&
+              wnapp?.menuData?.length > 0 &&
+              wnapp?.menuData?.map((item) => (
+                <Text
+                  key={item.name}
+                  color={'#24282C'}
+                  ml="16px"
+                  onClick={() => {
+                    typeof item?.link === 'string' && window.open(item?.link);
+                  }}
+                >
+                  {item.name}
+                </Text>
+              ))}
           </Flex>
           <Flex ml={'auto'}>
             <Box

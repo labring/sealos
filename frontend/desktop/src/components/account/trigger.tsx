@@ -1,4 +1,3 @@
-import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { Center, Flex, Image } from '@chakra-ui/react';
 import { Dispatch, SetStateAction } from 'react';
@@ -11,7 +10,6 @@ export default function Trigger({
   setShowAccount: Dispatch<SetStateAction<boolean>>;
 }) {
   const user = useSessionStore((state) => state.session)?.user;
-  const logo = useConfigStore().layoutConfig?.logo;
 
   return (
     <Flex
@@ -31,11 +29,11 @@ export default function Trigger({
         borderRadius="full"
       >
         <Image
-          width={user?.avatar ? 'full' : ''}
-          height={user?.avatar ? 'full' : ''}
+          width={user?.avatar && user.avatar.trim() !== '' ? 'full' : '20px'}
+          height={user?.avatar && user.avatar.trim() !== '' ? 'full' : '20px'}
           objectFit={'cover'}
           borderRadius="full"
-          src={user?.avatar || ''}
+          src={user?.avatar}
           fallbackSrc={'/images/default-user.svg'}
           alt="user avator"
           draggable={'false'}

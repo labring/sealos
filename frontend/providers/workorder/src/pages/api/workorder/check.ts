@@ -1,7 +1,6 @@
-import { verifyDesktopToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { getUserById } from '@/services/db/user';
-import { fetchProcessingOrders, updateOrder } from '@/services/db/workorder';
+import { fetchPendingOrders, fetchProcessingOrders, updateOrder } from '@/services/db/workorder';
 import { WorkOrderDB, WorkOrderStatus } from '@/types/workorder';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -10,14 +9,17 @@ const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
 const MINUTES_IN_A_WEEK = 7 * 24 * 60;
 
 const getFeishuForm = ({
-  recentUnresponded,
+  pendings,
   overdueAutoCloseIn7Days
 }: {
-  recentUnresponded: WorkOrderDB[];
+  pendings: WorkOrderDB[];
   overdueAutoCloseIn7Days: WorkOrderDB[];
 }) => {
-  const content1 = recentUnresponded
-    .map((item) => `- [${item.orderId}](${feishuCallBackUrl}?orderId=${item.orderId})`)
+  const content1 = pendings
+    .map(
+      (item) =>
+        `- [${item.orderId}](${feishuCallBackUrl}?orderId=${item.orderId})\n${item.description}`
+    )
     .join('\n');
 
   const content2 = overdueAutoCloseIn7Days
@@ -32,7 +34,7 @@ const getFeishuForm = ({
         zh_cn: [
           {
             tag: 'markdown',
-            content: '**收到用户消息，超过30分钟的工单**',
+            content: '**待处理工单**',
             text_align: 'left',
             text_size: 'normal',
             icon: {
@@ -94,21 +96,18 @@ const getFeishuForm = ({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const adminToken = req.headers['authorization']?.split(' ')[1];
-    if (!adminToken) {
+    const { adminId } = req.query as {
+      adminId: string;
+    };
+
+    if (!adminId) {
       return jsonRes(res, {
         code: 401,
         message: "'token is invaild'"
       });
     }
-    const payload = await verifyDesktopToken(adminToken);
-    if (!payload?.userId) {
-      return jsonRes(res, {
-        code: 401,
-        message: "'token is invaild'"
-      });
-    }
-    const user = await getUserById(payload?.userId);
+
+    const user = await getUserById(adminId);
     if (!user?.isAdmin) {
       return jsonRes(res, {
         code: 403,
@@ -124,7 +123,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!order.dialogs || order.dialogs.length === 0) return;
       let lastDialog = order.dialogs[order.dialogs.length - 1];
       if (lastDialog.userId === 'robot') return;
-
       const lastDialogTime = new Date(lastDialog.time);
       const timeDiff = Math.ceil((currentTime.getTime() - lastDialogTime.getTime()) / 1000 / 60);
       if (!lastDialog.isAdmin && timeDiff > 30) {
@@ -136,28 +134,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    if (recentUnresponded.length === 0 && overdueAutoCloseIn7Days.length === 0) {
+    const _pending = await fetchPendingOrders();
+    if (
+      recentUnresponded.length === 0 &&
+      overdueAutoCloseIn7Days.length === 0 &&
+      _pending.length === 0
+    ) {
       return jsonRes(res, {
         code: 204,
         message: 'No content to send'
       });
     }
 
-    if (overdueAutoCloseIn7Days.length > 0) {
-      try {
-        for (const order of overdueAutoCloseIn7Days) {
-          await updateOrder({
-            orderId: order.orderId,
-            userId: payload.userId,
-            updates: {
-              status: WorkOrderStatus.Completed
-            }
-          });
-        }
-      } catch (error) {}
-    }
+    await Promise.all([
+      ...overdueAutoCloseIn7Days.map((order) =>
+        updateOrder({
+          orderId: order.orderId,
+          userId: user.userId,
+          updates: { status: WorkOrderStatus.Completed, closedBy: 'auto' }
+        })
+      ),
+      ...recentUnresponded.map((order) =>
+        updateOrder({
+          orderId: order.orderId,
+          userId: user.userId,
+          updates: { status: WorkOrderStatus.Pending }
+        })
+      )
+    ]);
 
-    const form = getFeishuForm({ overdueAutoCloseIn7Days, recentUnresponded });
+    const pendingOrders = await fetchPendingOrders();
+
+    const form = getFeishuForm({
+      overdueAutoCloseIn7Days,
+      pendings: pendingOrders
+    });
 
     if (!feishuUrl) {
       return jsonRes(res, {
@@ -173,8 +184,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify(form)
     });
     const result = await data.json();
+
     jsonRes(res, {
-      data: result
+      data: 'success'
     });
   } catch (error) {
     console.log(error);

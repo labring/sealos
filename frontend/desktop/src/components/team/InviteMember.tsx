@@ -71,7 +71,7 @@ export default function InviteMember({
     onError() {
       toast({
         status: 'error',
-        title: t('Failed to generate invitation link'),
+        title: t('common:failed_to_generate_invitation_link'),
         isClosable: true,
         position: 'top'
       });
@@ -102,7 +102,7 @@ export default function InviteMember({
           leftIcon={<GroupAddIcon boxSize={'16px'} />}
           onClick={onOpen}
         >
-          {t('Invite Member')}
+          {t('common:invite_member')}
         </Button>
       ) : (
         <></>
@@ -118,14 +118,14 @@ export default function InviteMember({
         >
           <ModalCloseButton right={'24px'} top="16px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0">
-            {t('Invite Member')}
+            {t('common:invite_member')}
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
               <Text>
-                {t('Invite members to workspace', {
+                {t('common:invite_members_to_workspace', {
                   workspace: workspaceName
                 })}
               </Text>
@@ -181,7 +181,7 @@ export default function InviteMember({
                   isDisabled={getLinkCode.isLoading}
                   onClick={handleGenLink}
                 >
-                  {t('Generate invitation link')}
+                  {t('common:generate_invitation_link')}
                 </Button>
               </HStack>
             </ModalBody>

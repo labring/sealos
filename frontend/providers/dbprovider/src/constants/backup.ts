@@ -1,4 +1,5 @@
 import { BackupStatusMapType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 
 export enum BackupStatusEnum {
   Completed = 'Completed',
@@ -11,27 +12,27 @@ export enum BackupStatusEnum {
 
 export const backupStatusMap: Record<`${BackupStatusEnum}`, BackupStatusMapType> = {
   [BackupStatusEnum.Completed]: {
-    label: 'Backup Completed',
+    label: 'backup_completed',
     value: BackupStatusEnum.Completed,
     color: '#039855'
   },
   [BackupStatusEnum.InProgress]: {
-    label: 'Backup Processing',
+    label: 'backup_processing',
     value: BackupStatusEnum.InProgress,
     color: '#667085'
   },
   [BackupStatusEnum.Failed]: {
-    label: 'Backup Failed',
+    label: 'backup_failed',
     value: BackupStatusEnum.Failed,
     color: '#F04438'
   },
   [BackupStatusEnum.Running]: {
-    label: 'Backup Running',
+    label: 'backup_running',
     value: BackupStatusEnum.Running,
     color: '#667085'
   },
   [BackupStatusEnum.Deleting]: {
-    label: 'Backup Deleting',
+    label: 'backup_deleting',
     value: BackupStatusEnum.Deleting,
     color: '#DC6803'
   },
@@ -53,7 +54,7 @@ export enum BackupTypeEnum {
   'UnKnow' = 'UnKnow'
 }
 
-export const backupTypeMap: Record<`${BackupTypeEnum}`, { label: string }> = {
+export const backupTypeMap: Record<`${BackupTypeEnum}`, { label: I18nCommonKey }> = {
   [BackupTypeEnum.manual]: {
     label: 'Manual'
   },

@@ -3,7 +3,6 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import JSYAML from 'js-yaml';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../getTemplateSource';
@@ -19,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const { code, message, dataSource, templateYaml, TemplateEnvs, yamlList } =
+    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({
         namespace,
         templateName
@@ -40,9 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       {}
     );
-    const yamlString = yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
 
-    const generateStr = parseTemplateString(yamlString!, /\$\{\{\s*(.*?)\s*\}\}/g, {
+    const generateStr = parseTemplateString(appYaml || '', {
       ...TemplateEnvs,
       defaults: _defaults,
       inputs: { ..._inputs, ...templateForm }

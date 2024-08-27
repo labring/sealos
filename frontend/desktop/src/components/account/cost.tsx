@@ -24,7 +24,8 @@ import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import { blurBackgroundStyles } from '../desktop_content';
 import Monitor from '../desktop_content/monitor';
-import { ClockIcon, DesktopSealosCoinIcon, InfiniteIcon } from '../icons';
+import { ClockIcon, DesktopSealosCoinIcon, HelpIcon, InfiniteIcon } from '../icons';
+import CustomTooltip from '../AppDock/CustomTooltip';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -41,11 +42,14 @@ export default function Cost() {
       request<any, ApiResp<{ balance: number; deductionBalance: number }>>(
         '/api/account/getAmount'
       ),
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 60 * 1000
   });
 
   const { data: billing, isSuccess } = useQuery(['getUserBilling'], () => getUserBilling(), {
-    cacheTime: 5 * 60 * 1000
+    cacheTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const balance = useMemo(() => {
@@ -61,9 +65,14 @@ export default function Cost() {
     const estimatedNextMonthAmount = prevDayAmount.times(30).toNumber();
     const _balance = new Decimal(balance || 0);
 
-    const estimatedDaysUsable = prevDayAmount.greaterThan(0)
-      ? _balance.div(prevDayAmount).ceil().toNumber()
-      : Number.POSITIVE_INFINITY;
+    let estimatedDaysUsable;
+    if (_balance.isNegative()) {
+      estimatedDaysUsable = 0;
+    } else if (prevDayAmount.isZero()) {
+      estimatedDaysUsable = Number.POSITIVE_INFINITY;
+    } else {
+      estimatedDaysUsable = _balance.div(prevDayAmount).ceil().toNumber();
+    }
 
     return {
       prevMonthAmount: new Decimal(billing?.data?.prevMonthTime || 0).toNumber(),
@@ -102,7 +111,7 @@ export default function Cost() {
         >
           <Box flex={1}>
             <Text color={'rgba(255, 255, 255, 0.90)'} fontSize={'11px'}>
-              {t('Balance')}
+              {t('common:balance')}
             </Text>
             <Flex alignItems={'center'} gap={'8px'}>
               <Text fontSize={'20px'} color={'#7CE7FF'}>
@@ -126,7 +135,7 @@ export default function Cost() {
               color={'rgba(255, 255, 255, 0.90)'}
               cursor={'pointer'}
             >
-              {t('Charge')}
+              {t('common:charge')}
             </Center>
           )}
         </Flex>
@@ -140,16 +149,16 @@ export default function Cost() {
             >
               <ClockIcon mr={'4px'} />
               <Text fontSize={'12px'} fontWeight={'bold'} color={'rgba(255, 255, 255, 0.90)'}>
-                {t('Expected used')}
+                {t('common:expected_used')}
               </Text>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {calculations.estimatedDaysUsable === Number.POSITIVE_INFINITY ? (
                   <>
-                    <InfiniteIcon /> {t('Day')}
+                    <InfiniteIcon /> {t('common:day')}
                   </>
                 ) : (
                   <>
-                    {calculations.estimatedDaysUsable} {t('Day')}
+                    {calculations.estimatedDaysUsable} {t('common:day')}
                   </>
                 )}
               </Text>
@@ -168,7 +177,7 @@ export default function Cost() {
                 borderRadius={'2px'}
               ></Center>
               <Text fontSize={'12px'} fontWeight={'bold'} color={'rgba(255, 255, 255, 0.90)'}>
-                {t('Used last month')}
+                {t('common:used_last_month')}
               </Text>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.prevMonthAmount).toFixed(2)}
@@ -183,9 +192,16 @@ export default function Cost() {
                 bg={'#C74FFF'}
                 borderRadius={'2px'}
               ></Center>
-              <Text fontSize={'12px'} fontWeight={'bold'} color={'rgba(255, 255, 255, 0.90)'}>
-                {t('Expected to use next month')}
-              </Text>
+              <Flex alignItems={'center'} gap={'4px'} position={'relative'}>
+                <Text fontSize={'12px'} fontWeight={'bold'} color={'rgba(255, 255, 255, 0.90)'}>
+                  {t('common:expected_to_use_next_month')}
+                </Text>
+                <CustomTooltip placement="bottom" label={t('common:amount_forecast')}>
+                  <Box cursor={'pointer'}>
+                    <HelpIcon />
+                  </Box>
+                </CustomTooltip>
+              </Flex>
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.estimatedNextMonthAmount).toFixed(2)}
               </Text>
@@ -206,7 +222,7 @@ export default function Cost() {
             >
               <MonitorIcon />
               <Text color={'rgba(255, 255, 255, 0.90)'} fontWeight={'bold'} fontSize={'14px'}>
-                {t('Monitor')}
+                {t('common:monitor')}
               </Text>
               <AccordionIcon ml={'auto'} color={'white'} />
             </AccordionButton>
@@ -217,18 +233,6 @@ export default function Cost() {
           </AccordionItem>
         </Accordion>
       )}
-
-      {/* <Box
-        id="blur-background"
-        zIndex={0}
-        position={'absolute'}
-        top={0}
-        left={0}
-        w={'full'}
-        h={'full'}
-        overflowY={'scroll'}
-        {...blurBackgroundStyles}
-      ></Box> */}
     </Box>
   );
 }

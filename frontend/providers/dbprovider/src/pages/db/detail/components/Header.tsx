@@ -10,6 +10,7 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
+import UpdateModal from './UpdateModal';
 
 const DelModal = dynamic(() => import('./DelModal'));
 
@@ -30,11 +31,18 @@ const Header = ({
     onOpen: onOpenDelModal,
     onClose: onCloseDelModal
   } = useDisclosure();
+  const {
+    isOpen: isOpenUpdateModal,
+    onOpen: onOpenUpdateModal,
+    onClose: onCloseUpdateModal
+  } = useDisclosure();
+  const [updateAppName, setUpdateAppName] = useState('');
+
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: t('Confirm Restart')
+    content: t('confirm_restart')
   });
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: t('Pause Hint')
+    content: t('pause_hint')
   });
 
   const [loading, setLoading] = useState(false);
@@ -44,15 +52,12 @@ const Header = ({
       setLoading(true);
       await restartDB(db);
       toast({
-        title: 'Restart Success',
+        title: 'restart_success',
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title:
-          typeof error === 'string'
-            ? error
-            : error.message || t('Restart Error') || 'Restart Error',
+        title: typeof error === 'string' ? error : error.message || t('restart_error'),
         status: 'error'
       });
       console.error(error);
@@ -65,13 +70,12 @@ const Header = ({
       setLoading(true);
       await pauseDBByName(db);
       toast({
-        title: t('Pause Success') || 'Pause Success',
+        title: t('pause_success'),
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title:
-          typeof error === 'string' ? error : error.message || t('Pause Error') || 'Pause Error',
+        title: typeof error === 'string' ? error : error.message || t('pause_error'),
         status: 'error'
       });
       console.error(error);
@@ -84,13 +88,12 @@ const Header = ({
       setLoading(true);
       await startDBByName(db);
       toast({
-        title: t('Start Success') || 'Start Success',
+        title: t('start_success'),
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title:
-          typeof error === 'string' ? error : error.message || t('Start Error') || 'Start Error',
+        title: typeof error === 'string' ? error : error.message || t('start_error'),
         status: 'error'
       });
       console.error(error);
@@ -116,7 +119,7 @@ const Header = ({
             leftIcon={<MyIcon name="detail" w={'16px'} />}
             onClick={() => setShowSlider(true)}
           >
-            {t('Details')}
+            {t('details')}
           </Button>
         </Box>
       )}
@@ -148,10 +151,15 @@ const Header = ({
           isLoading={loading}
           isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
           onClick={() => {
-            router.push(`/db/edit?name=${db.dbName}`);
+            if (db.source.hasSource && db.source.sourceType === 'sealaf') {
+              setUpdateAppName(db.dbName);
+              onOpenUpdateModal();
+            } else {
+              router.push(`/db/edit?name=${db.dbName}`);
+            }
           }}
         >
-          {t('Update')}
+          {t('update')}
         </Button>
       )}
       {db.status.value === 'Stopped' ? (
@@ -216,12 +224,21 @@ const Header = ({
       <PauseChild />
       {isOpenDelModal && (
         <DelModal
-          labels={db.labels}
           dbName={db.dbName}
+          source={db.source}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/dbs')}
         />
       )}
+
+      <UpdateModal
+        source={db.source}
+        isOpen={isOpenUpdateModal}
+        onClose={() => {
+          setUpdateAppName('');
+          onCloseUpdateModal();
+        }}
+      />
     </Flex>
   );
 };

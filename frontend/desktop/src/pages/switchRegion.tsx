@@ -14,7 +14,6 @@ import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 const Callback: NextPage = () => {
   const router = useRouter();
-  const setSession = useSessionStore((s) => s.setSession);
   const setToken = useSessionStore((s) => s.setToken);
   const delSession = useSessionStore((s) => s.delSession);
   const { token: curToken, session } = useSessionStore((s) => s);

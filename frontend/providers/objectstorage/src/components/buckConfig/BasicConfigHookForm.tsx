@@ -9,15 +9,15 @@ import {
   FormHelperText,
   Text
 } from '@chakra-ui/react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import ExpanMoreIcon from '../Icons/ExpandMoreIcon';
 import InfoCircleIcon from '../Icons/InfoCircleIcon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-
+import { MySelect } from '@sealos/ui';
 const BasicConfigHookForm = () => {
-  const { register, getFieldState, control } = useFormContext<FormSchema>();
+  const { register, getFieldState, control, getValues, setValue } = useFormContext<FormSchema>();
   const { t } = useTranslation(['common', 'bucket']);
   const authorityTips = useMemo(
     () => ({
@@ -28,6 +28,20 @@ const BasicConfigHookForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
+  const authorityList = [
+    {
+      label: Authority.private,
+      value: Authority.private
+    },
+    {
+      value: Authority.readonly,
+      label: Authority.readonly
+    },
+    {
+      value: Authority.readwrite,
+      label: Authority.readwrite
+    }
+  ];
   const selectedAuthority = useWatch<FormSchema, 'bucketAuthority'>({
     name: 'bucketAuthority',
     defaultValue: Authority.private,
@@ -45,9 +59,9 @@ const BasicConfigHookForm = () => {
           {t('bucket:bucketName')}
         </FormLabel>
         <Input
-          variant={'secondary'}
+          variant={'outline'}
           h="32px"
-          w="auto"
+          w="300px"
           autoFocus={true}
           isDisabled={!!router.query.bucketName}
           {...register('bucketName', {
@@ -61,32 +75,28 @@ const BasicConfigHookForm = () => {
           <FormLabel w="100px" mr="30px">
             {t('bucket:bucketPermission')}
           </FormLabel>
-          <Select
-            {...register('bucketAuthority', {})}
-            variant={'secondary'}
-            w="auto"
-            h="32px"
-            mr="30px"
-            icon={<ExpanMoreIcon />}
-            iconSize="16px"
-          >
-            <option value={Authority.private}>{Authority.private}</option>
-            <option value={Authority.readonly}>{Authority.readonly}</option>
-            <option value={Authority.readwrite}>{Authority.readwrite}</option>
-          </Select>
+          <MySelect
+            list={authorityList}
+            width="300px"
+            value={getValues('bucketAuthority')}
+            onchange={(v) => {
+              setValue('bucketAuthority', v as any);
+            }}
+          ></MySelect>
         </Flex>
         <FormHelperText
           w="auto"
           display={'inline-flex'}
-          py="7px"
-          px="11px"
-          bgColor={'blue.100'}
-          fontSize={'12px'}
+          py="6px"
+          px="12px"
+          borderRadius={'6px'}
+          bgColor={'brightBlue.50'}
+          fontSize={'11px'}
           alignItems={'center'}
           gap="4px"
         >
-          <InfoCircleIcon color="brightBlue.600" fontSize={'16px'} />
-          <Text color="brightBlue.700">{authorityTips[selectedAuthority]}</Text>
+          <InfoCircleIcon color="brightBlue.600" boxSize={'14px'} />
+          <Text color="brightBlue.600">{authorityTips[selectedAuthority]}</Text>
         </FormHelperText>
       </FormControl>
     </Stack>

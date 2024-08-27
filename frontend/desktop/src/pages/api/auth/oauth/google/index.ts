@@ -15,7 +15,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   await OauthCodeFilter(
     req,
     res,
-    async ({ code, inviterId }) =>
+    async ({ code, inviterId, semData, bdVid }) =>
       await googleOAuthEnvFilter()(async ({ clientID, clientSecret, callbackURL }) => {
         await googleOAuthGuard(
           clientID,
@@ -25,7 +25,14 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         )(res, async ({ id, name, avatar_url }) => {
           const presistAvatarUrl =
             (await persistImage(avatar_url, 'avatar/' + ProviderType.GOOGLE + '/' + id)) || '';
-          await getGlobalTokenByGoogleSvc(presistAvatarUrl, id, name, inviterId)(res);
+          await getGlobalTokenByGoogleSvc(
+            presistAvatarUrl,
+            id,
+            name,
+            inviterId,
+            semData,
+            bdVid
+          )(res);
         });
       })
   );

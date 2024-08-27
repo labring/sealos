@@ -58,7 +58,7 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
           leftIcon={<AddIcon boxSize={'20px'} color={'white'} />}
           iconSpacing={'8px'}
         >
-          {t('Create Team')}
+          {t('common:create_team')}
         </Button>
       ) : (
         <IconButton
@@ -84,7 +84,7 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
         >
           <ModalCloseButton right={'24px'} top="16px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0">
-            {t('Create Team')}
+            {t('common:create_team')}
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx={'auto'} />
@@ -96,7 +96,7 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
                     e.preventDefault();
                     setTeamName(e.target.value);
                   }}
-                  placeholder={t('Name of Team') || ''}
+                  placeholder={t('common:name_of_team') || ''}
                   value={teamName}
                 />
                 <Button
@@ -116,7 +116,7 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
                     submit();
                   }}
                 >
-                  {t('Confirm')}
+                  {t('common:confirm')}
                 </Button>
               </ModalBody>
             </>

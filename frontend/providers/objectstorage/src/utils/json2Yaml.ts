@@ -18,16 +18,21 @@ export const generateBucketCR = (data: {
 });
 export const generateUserCR = ({
   name,
-  namespace
+  namespace,
+  version = 0
 }: {
   name: string;
   namespace: string;
+  version?: number;
 }): UserCR['input'] => ({
   apiVersion: 'objectstorage.sealos.io/v1',
   kind: 'ObjectStorageUser',
   metadata: {
     name,
     namespace
+  },
+  spec: {
+    secretKeyVersion: version
   }
 });
 export const json2Bucket = (data: FormSchema) => {

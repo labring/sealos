@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { cloneDeep, forEach, isNumber, isBoolean, isObject, has } from 'lodash';
 import { templateDeployKey } from '@/constants/keys';
+import { EnvResponse } from '@/types';
 
 /**
  * copy text data
@@ -261,4 +262,18 @@ export function compareFirstLanguages(acceptLanguageHeader: string) {
   if (indexOfZh === -1) return 'en';
   if (indexOfEn === -1 || indexOfZh < indexOfEn) return 'zh';
   return 'en';
+}
+
+export function getTemplateEnvs(namespace?: string): EnvResponse {
+  const TemplateEnvs: EnvResponse = {
+    SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
+    SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
+    TEMPLATE_REPO_URL:
+      process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
+    TEMPLATE_REPO_BRANCH: process.env.TEMPLATE_REPO_BRANCH || 'main',
+    SEALOS_NAMESPACE: namespace || '',
+    SEALOS_SERVICE_ACCOUNT: namespace?.replace('ns-', '') || '',
+    SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false'
+  };
+  return TemplateEnvs;
 }

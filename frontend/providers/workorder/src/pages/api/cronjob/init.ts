@@ -2,7 +2,7 @@ import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Cron } from 'croner';
 
-const adminToken = process.env.ADMIN_API_TOKEN;
+const adminId = process.env.ADMIN_API_TOKEN;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -14,10 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         process.env.NODE_ENV === 'production' ? '0,30 10-17 * * 1-5' : '* * * * *',
         async () => {
           const result = await (
-            await fetch(`${baseurl}/api/workorder/check`, {
+            await fetch(`${baseurl}/api/workorder/check?adminId=${adminId}`, {
               method: 'GET',
               headers: {
-                Authorization: `Bearer ${adminToken}`,
+                Authorization: `Bearer ${adminId}`,
                 'Content-Type': 'application/json'
               }
             })

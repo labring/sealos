@@ -122,7 +122,7 @@ export default function TeamCenter(props: StackProps) {
         mb={'4px'}
       >
         <SettingIcon boxSize={'16px'} color={'white'} />
-        <Text>{t('Manage Team')}</Text>
+        <Text>{t('common:manage_team')}</Text>
       </HStack>
 
       <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
@@ -160,7 +160,7 @@ export default function TeamCenter(props: StackProps) {
                 borderBottom="1.5px solid rgba(0, 0, 0, 0.05)"
               >
                 <Text fontSize={'16px'} fontWeight={'600'}>
-                  {t('Team')}
+                  {t('common:team')}
                 </Text>
                 <CreateTeam />
               </Flex>
@@ -189,7 +189,7 @@ export default function TeamCenter(props: StackProps) {
                 ) : (
                   <Center w="full" h="full">
                     <Text color={'grayModern.600'} fontSize={'12px'}>
-                      {t('noWorkspaceCreated')}
+                      {t('common:noworkspacecreated')}
                     </Text>
                   </Center>
                 )}
@@ -203,7 +203,7 @@ export default function TeamCenter(props: StackProps) {
               alignItems={'stretch'}
             >
               <Text fontSize={'16px'} fontWeight={'600'} px="16px" py="20px" width={'full'}>
-                {t('Manage Team')}
+                {t('common:manage_team')}
               </Text>
               {namespace ? (
                 <>
@@ -229,7 +229,7 @@ export default function TeamCenter(props: StackProps) {
                       </Flex>
                       <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
                         <Text color={'grayModern.600'}>
-                          {t('Team')} ID: {nsid}
+                          {t('common:team')} ID: {nsid}
                         </Text>
                         <IconButton
                           variant={'white-bg-icon'}
@@ -246,7 +246,7 @@ export default function TeamCenter(props: StackProps) {
                           aria-label={'copy nsid'}
                         />
                         <Text ml="24px">
-                          {t('Created Time')}:{' '}
+                          {t('common:created_time')}:{' '}
                           {namespace.createTime ? formatTime(namespace.createTime) : ''}
                         </Text>
                       </Flex>
@@ -256,7 +256,7 @@ export default function TeamCenter(props: StackProps) {
                   <Stack mt="15px" mx="29px" flex={1}>
                     <Flex align={'center'} gap="6px" mb={'12px'}>
                       <ListIcon boxSize={'20px'} />
-                      <Text>{t('Member List')}</Text>
+                      <Text>{t('common:member_list')}</Text>
                       <Flex
                         py="0px"
                         px="6px"
@@ -295,7 +295,7 @@ export default function TeamCenter(props: StackProps) {
                       <StorageIcon boxSize={'29px'} />
                     </Circle>
                     <Text color={'grayModern.600'} fontSize={'12px'}>
-                      {t('noWorkspaceCreated')}
+                      {t('common:noworkspacecreated')}
                     </Text>
                     <CreateTeam textButton />
                   </VStack>

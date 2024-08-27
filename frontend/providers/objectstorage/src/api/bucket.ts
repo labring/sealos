@@ -27,7 +27,9 @@ export const _initUser = (request: AxiosInstance) => () =>
     }
   >('/api/user/init');
 export const initUser = _initUser(request);
-
+export const _updateSecret = (request: AxiosInstance) => () =>
+  request.post<any, ApiResp<null>>('/api/user/updateSecretKey');
+export const updateSecret = _updateSecret(request);
 export const _getHostStatus = (request: AxiosInstance) => (data: { bucket: string }) =>
   request.post<any, any[]>('/api/site/status', data);
 export const getHostStatus = _getHostStatus(request);

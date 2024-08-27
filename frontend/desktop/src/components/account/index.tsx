@@ -17,6 +17,7 @@ import GithubComponent from './github';
 import { ArrowIcon } from '../icons';
 import useAppStore from '@/stores/app';
 import AccountCenter from './AccountCenter';
+import CustomTooltip from '../AppDock/CustomTooltip';
 
 const baseItemStyle = {
   w: '52px',
@@ -65,11 +66,11 @@ export default function Account() {
         <Flex alignItems={'center'}>
           <Center width={'36px'} height={'36px'} bg={'white'} borderRadius="full" mr={'8px'}>
             <Image
-              width={user?.avatar && 'full'}
-              height={user?.avatar && 'full'}
+              width={user?.avatar && user.avatar.trim() !== '' ? 'full' : '20px'}
+              height={user?.avatar && user.avatar.trim() !== '' ? 'full' : '20px'}
               objectFit={'cover'}
               borderRadius="full"
-              src={user?.avatar || ''}
+              src={user?.avatar}
               fallbackSrc={'/images/default-user.svg'}
               alt="user avator"
               draggable={'false'}
@@ -112,25 +113,40 @@ export default function Account() {
           >
             <LogoutIcon boxSize={'14px'} fill={'white'} />
             <Text ml="4px" color={'white'} fontSize={'12px'} fontWeight={500} onClick={logout}>
-              {t('Log Out')}
+              {t('common:log_out')}
             </Text>
           </Center>
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
           {layoutConfig?.common.docsUrl && (
-            <Center
-              cursor={'pointer'}
-              {...baseItemStyle}
-              onClick={() => window.open(layoutConfig?.common?.docsUrl)}
-            >
-              <DocsIcon />
-            </Center>
+            <CustomTooltip placement={'bottom'} label={t('common:doc')}>
+              <Center
+                cursor={'pointer'}
+                {...baseItemStyle}
+                onClick={() => window.open(layoutConfig?.common?.docsUrl)}
+              >
+                <DocsIcon />
+              </Center>
+            </CustomTooltip>
           )}
-          <LangSelectSimple {...baseItemStyle} />
-          {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
-          <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
-            <NotificationIcon />
-          </Center>
+          <CustomTooltip placement={'bottom'} label={t('common:language')}>
+            <Center>
+              <LangSelectSimple {...baseItemStyle} />
+            </Center>
+          </CustomTooltip>
+          {layoutConfig?.common.githubStarEnabled && (
+            <CustomTooltip placement="bottom" label={t('common:github')}>
+              <Center>
+                <GithubComponent {...baseItemStyle} />
+              </Center>
+            </CustomTooltip>
+          )}
+
+          <CustomTooltip placement={'bottom'} label={t('common:notification')}>
+            <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
+              <NotificationIcon />
+            </Center>
+          </CustomTooltip>
           <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
         </Flex>
 
@@ -149,7 +165,7 @@ export default function Account() {
             py={'12px'}
             px={'16px'}
           >
-            <Text>{t('Account Settings')}</Text>
+            <Text>{t('common:account_settings')}</Text>
             <AccountCenter variant={'white-bg-icon'} p="4px" />
           </Flex>
         )}
@@ -164,7 +180,7 @@ export default function Account() {
             py={'12px'}
             px={'16px'}
           >
-            <Text>{t('Work Order')}</Text>
+            <Text>{t('common:work_order')}</Text>
             <IconButton
               variant={'white-bg-icon'}
               p="4px"

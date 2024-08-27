@@ -5,6 +5,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useDBStore } from '@/store/db';
 import type { PodDetailType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 import {
   Box,
   Button,
@@ -33,7 +34,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: t('Confirm Restart Pod') || 'Confirm Restart Pod'
+    content: t('confirm_restart_pod')
   });
   const { intervalLoadPods, dbPods } = useDBStore();
 
@@ -47,7 +48,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
         });
       } catch (err) {
         toast({
-          title: `${t('Restart')} ${podName} ${t('Have Error')}`,
+          title: `${t('Restart')} ${podName} ${t('have_error')}`,
           status: 'warning'
         });
       }
@@ -57,7 +58,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   // console.log(dbPods);
 
   const columns: {
-    title: string;
+    title: I18nCommonKey;
     dataIndex?: keyof PodDetailType;
     key: string;
     render?: (item: PodDetailType, i: number) => JSX.Element | string;
@@ -73,21 +74,21 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       render: (item: PodDetailType) => <PodStatus containerStatuses={item.status} />
     },
     {
-      title: 'Restarts',
+      title: 'restarts',
       key: 'restarts',
       dataIndex: 'restarts'
     },
     {
-      title: 'Age',
+      title: 'age',
       key: 'age',
       dataIndex: 'age'
     },
     {
-      title: 'Operation',
+      title: 'operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex alignItems={'center'} gap={'4px'}>
-          <MyTooltip offset={[0, 10]} label={t('Details')}>
+          <MyTooltip offset={[0, 10]} label={t('details')}>
             <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
               <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
             </Button>

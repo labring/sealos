@@ -56,7 +56,7 @@ export default function DissolveTeam({
   const submit = () => {
     if (teamName.trim() !== nsid)
       return toast({
-        title: t('Invaild Name of Team')
+        title: t('common:invaild_name_of_team')
       });
     mutation.mutate({ ns_uid });
   };
@@ -76,13 +76,13 @@ export default function DissolveTeam({
         onClick={() => {
           if (session?.user?.ns_uid === ns_uid) {
             return toast({
-              title: t('Invaild Context')
+              title: t('common:invaild_context')
             });
           }
           onOpen();
         }}
       >
-        {t('Dissolve Team')}
+        {t('common:dissolve_team')}
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
@@ -101,14 +101,14 @@ export default function DissolveTeam({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              <Text>{t('Dissovle Tips')}</Text>
-              <Text>{t(`Enter Confirm.`, { value: nsid })}</Text>
+              <Text>{t('common:dissovle_tips')}</Text>
+              <Text>{t(`common:enter_confirm`, { value: nsid })}</Text>
               <CustomInput
                 onChange={(e) => {
                   e.preventDefault();
                   setTeamName(e.target.value);
                 }}
-                placeholder={t('Name of Team') || ''}
+                placeholder={t('common:name_of_team') || ''}
                 value={teamName}
               />
               <Button
@@ -128,7 +128,7 @@ export default function DissolveTeam({
                   submit();
                 }}
               >
-                {t('Confirm')}
+                {t('common:confirm')}
               </Button>
             </ModalBody>
           )}

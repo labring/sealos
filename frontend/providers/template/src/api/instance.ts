@@ -2,6 +2,7 @@ import { GET } from '@/services/request';
 import { InstanceListType, TemplateInstanceType } from '@/types/app';
 import { AppCrdType } from '@/types/appCRD';
 import { KbPgClusterType } from '@/types/db';
+import { ObjectStorageItemType } from '@/types/objectStorage';
 import {
   adaptAppListItem,
   adaptCronJobList,
@@ -42,6 +43,9 @@ export const getCronListByName = (instanceName: string) =>
   GET<V1CronJob[]>(`/api/app/getCronListByName?instanceName=${instanceName}`).then((data) =>
     data.map(adaptCronJobList)
   );
+
+export const getObjectStorageByName = (instanceName: string) =>
+  GET<ObjectStorageItemType[]>(`/api/app/getObjectStorage?instanceName=${instanceName}`);
 
 export const listOtherByName = (instanceName: string) =>
   GET<(AppCrdType[] | V1Secret[] | V1Job[])[]>(

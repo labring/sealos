@@ -14,26 +14,26 @@ import {
   Image,
   HStack,
   VStack,
-  Center
+  Center,
+  Badge
 } from '@chakra-ui/react';
-import { type FC, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import { useTranslation } from 'next-i18next';
-import { SettingIcon, LeftArrowIcon, GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
-import LangSelectList from '@/components/LangSelect';
+import { SettingIcon, LeftArrowIcon, CloseIcon } from '@sealos/ui';
 import { UserInfo } from '@/api/auth';
 import PasswordModify from '@/components/account/AccountCenter/PasswordModify';
 import { PhoneBind, EmailBind } from './SmsModify/SmsBind';
 import { PhoneUnBind, EmailUnBind } from './SmsModify/SmsUnbind';
-import { useConfigStore } from '@/stores/config';
 import { PhoneChange, EmailChange } from './SmsModify/SmsChange';
 import { BindingModifyButton, BINDING_STATE_MODIFY_BEHAVIOR } from './BindingModifyButton';
 import { ConfigItem } from './ConfigItem';
 import { AuthModifyList } from './AuthModifyList';
-import { useRouter } from 'next/router';
 import DeleteAccount from './DeleteAccountModal';
 import { ValueOf } from '@/types';
+import { RealNameAuthForm } from '../RealNameModal';
+import { useConfigStore } from '@/stores/config';
 enum _PageState {
   INDEX = 0
   // WECHAT_BIND,
@@ -55,12 +55,18 @@ enum EmailState {
   EMAIL_CHANGE_BIND
 }
 
+enum RealNameState {
+  REALNAME_AUTH = 40
+}
+
 const PageState = Object.assign(
   Object.assign({}, _PageState, EmailState, PhoneState),
-  PasswordState
+  PasswordState,
+  RealNameState
 );
 
 export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
+  const { commonConfig } = useConfigStore();
   const { session } = useSessionStore((s) => s);
   const { t } = useTranslation();
   const logo = '/images/default-user.svg';
@@ -71,14 +77,16 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
     infoData.refetch();
   };
   const modalTitle = useMemo(() => {
-    if (pageState === PageState.INDEX) return t('Account Settings');
-    else if (pageState === PageState.PASSWORD) return t('changePassword');
+    if (pageState === PageState.INDEX) return t('common:account_settings');
+    else if (pageState === PageState.PASSWORD) return t('common:changepassword');
     else if (Object.values(PhoneState).includes(pageState as PhoneState))
-      return t('changePhone'); // bind or unbind
-    else if (Object.values(EmailState).includes(pageState as EmailState)) return t('changeEmail');
+      return t('common:changephone'); // bind or unbind
+    else if (Object.values(EmailState).includes(pageState as EmailState))
+      return t('common:changeemail');
+    else if (pageState === PageState.REALNAME_AUTH) return t('common:realName_verification');
     else return '';
   }, [t, pageState]);
-  const queryClient = useQueryClient();
+
   const infoData = useQuery({
     queryFn: UserInfo,
     queryKey: [session?.token, 'UserInfo'],
@@ -187,7 +195,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                 >
                   {/* <ConfigItem/> */}
                   <HStack>
-                    <Text w={'120px'}>{t('Avatar')}</Text>
+                    <Text w={'120px'}>{t('common:avatar')}</Text>
                     <Flex flex={1}>
                       <Center boxSize={'48px'} bg={'grayModern.150'} borderRadius="full">
                         <Image
@@ -202,16 +210,35 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     </Flex>
                   </HStack>
                   <HStack>
-                    <Text w={'120px'}>{t('Nickname')}</Text>
+                    <Text w={'120px'}>{t('common:nickname')}</Text>
                     <Flex flex={1}>{infoData.data.nickname}</Flex>
                   </HStack>
                   <HStack>
                     <Text w={'120px'}>{'ID'}</Text>
                     <Flex flex={1}>{infoData.data.id}</Flex>
                   </HStack>
+                  {commonConfig?.realNameAuthEnabled && (
+                    <ConfigItem
+                      LeftElement={<Text>{t('common:realname_info')}</Text>}
+                      RightElement={
+                        infoData.data.realName ? (
+                          <Flex flex={1}>{infoData?.data.realName}</Flex>
+                        ) : (
+                          <Badge
+                            cursor="pointer"
+                            _active={{ transform: 'scale(0.95)' }}
+                            colorScheme="red"
+                            onClick={() => setPageState(PageState.REALNAME_AUTH)}
+                          >
+                            {t('common:no_realname_auth')} <CloseIcon boxSize={3} ml={1} />
+                          </Badge>
+                        )
+                      }
+                    />
+                  )}
                   {providerState.PASSWORD.isBinding && (
                     <ConfigItem
-                      LeftElement={<Text>{t('Password')}</Text>}
+                      LeftElement={<Text>{t('common:password')}</Text>}
                       RightElement={
                         <>
                           <Text>*********</Text>
@@ -226,13 +253,13 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     />
                   )}
                   <ConfigItem
-                    LeftElement={<Text>{t('Phone')}</Text>}
+                    LeftElement={<Text>{t('common:phone')}</Text>}
                     RightElement={
                       <>
                         <Text>
                           {providerState.PHONE.isBinding
                             ? providerState.PHONE.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
-                            : t('Unbound')}
+                            : t('common:unbound')}
                         </Text>
                         <Flex gap={'5px'}>
                           <BindingModifyButton
@@ -260,13 +287,13 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     }
                   />
                   <ConfigItem
-                    LeftElement={<Text>{t('Email')}</Text>}
+                    LeftElement={<Text>{t('common:email')}</Text>}
                     RightElement={
                       <>
                         <Text>
                           {providerState.EMAIL.isBinding
                             ? providerState.EMAIL.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
-                            : t('Unbound')}
+                            : t('common:unbound')}
                         </Text>
                         <Flex gap={'5px'}>
                           <BindingModifyButton
@@ -301,10 +328,10 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     WECHATIsBinding={providerState.WECHAT.isBinding}
                   />
                   <ConfigItem
-                    LeftElement={<Text>{t('Delete account')}</Text>}
+                    LeftElement={<Text>{t('common:delete_account')}</Text>}
                     RightElement={
                       <>
-                        <Text>{t('Delete Account Tips')}</Text>
+                        <Text>{t('common:delete_account_tips')}</Text>
                         <DeleteAccount />
                       </>
                     }
@@ -333,12 +360,16 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <EmailUnBind onClose={resetPageState} />
                   ) : pageState === PageState.EMAIL_CHANGE_BIND ? (
                     <EmailChange onClose={resetPageState} />
+                  ) : pageState === PageState.REALNAME_AUTH ? (
+                    <RealNameAuthForm onFormSuccess={resetPageState} />
                   ) : null}
                 </VStack>
               )}
             </ModalBody>
           ) : (
-            <Spinner />
+            <Center h="100%">
+              <Spinner />
+            </Center>
           )}
         </ModalContent>
       </Modal>

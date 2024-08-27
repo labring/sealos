@@ -1,6 +1,6 @@
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
-import { ApiResp, Session } from '@/types';
+import { ApiResp } from '@/types';
 import {
   Image,
   Input,
@@ -15,21 +15,18 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { getRegionToken, UserInfo } from '@/api/auth';
-import { jwtDecode } from 'jwt-decode';
-import { uploadConvertData } from '@/api/platform';
-import { AccessTokenPayload } from '@/types/token';
-import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
+import { getRegionToken } from '@/api/auth';
+import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { I18nCommonKey } from '@/types/i18next';
 
 export default function useSms({
   showError
 }: {
-  showError: (errorMessage: string, duration?: number) => void;
+  showError: (errorMessage: I18nCommonKey, duration?: number) => void;
 }) {
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
-  const setSession = useSessionStore((s) => s.setSession);
   const [isLoading, setIsLoading] = useState(false);
   const setToken = useSessionStore((s) => s.setToken);
   const { register, handleSubmit, trigger, getValues } = useForm<{
@@ -38,8 +35,8 @@ export default function useSms({
   }>();
 
   const login = async () => {
-    const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('Submit Error');
+    const deepSearch = (obj: any): I18nCommonKey => {
+      if (!obj || typeof obj !== 'object') return 'submit_error';
       if (!!obj.message) {
         return obj.message;
       }
@@ -55,7 +52,9 @@ export default function useSms({
             {
               id: data.phoneNumber,
               code: data.verifyCode,
-              inviterId: getInviterId()
+              inviterId: getInviterId(),
+              semData: getUserSemData(),
+              bdVid: getBaiduId()
             }
           );
           const globalToken = result1?.data?.token;
@@ -64,18 +63,10 @@ export default function useSms({
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
             await sessionConfig(regionTokenRes.data);
-            uploadConvertData([3]).then(
-              (res) => {
-                console.log(res);
-              },
-              (err) => {
-                console.log(err);
-              }
-            );
             await router.replace('/');
           }
         } catch (error) {
-          showError(t('Invalid verification code') || 'Invalid verification code');
+          showError(t('common:invalid_verification_code') || 'Invalid verification code');
         } finally {
           setIsLoading(false);
         }
@@ -107,7 +98,7 @@ export default function useSms({
       e.preventDefault();
 
       if (!(await trigger('phoneNumber'))) {
-        showError(t('Invalid phone number') || 'Invalid phone number');
+        showError(t('common:invalid_phone_number') || 'Invalid phone number');
         return;
       }
       setRemainTime(60);
@@ -123,7 +114,7 @@ export default function useSms({
           throw new Error('Get code failed');
         }
       } catch (err) {
-        showError(t('Get code failed') || 'Get code failed');
+        showError(t('common:get_code_failed') || 'Get code failed');
         setRemainTime(0);
         _remainTime.current = 0;
       } finally {
@@ -152,7 +143,7 @@ export default function useSms({
 
           <Input
             type="tel"
-            placeholder={t('phone number tips') || ''}
+            placeholder={t('common:phone_number_tips') || ''}
             mx={'12px'}
             variant={'unstyled'}
             bg={'transparent'}
@@ -179,7 +170,7 @@ export default function useSms({
           >
             {remainTime <= 0 ? (
               <Link as={NextLink} href="" onClick={getCode}>
-                {t('Get Code')}
+                {t('common:get_code')}
               </Link>
             ) : (
               <Text>{remainTime} s</Text>
@@ -202,7 +193,7 @@ export default function useSms({
           </InputLeftAddon>
           <Input
             type="text"
-            placeholder={t('verify code tips') || ''}
+            placeholder={t('common:verify_code_tips') || ''}
             pl={'12px'}
             variant={'unstyled'}
             id="verifyCode"

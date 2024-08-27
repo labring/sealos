@@ -8,6 +8,7 @@ export type CloudConfigType = {
 };
 
 export type CommonConfigType = {
+  realNameAuthEnabled: boolean;
   guideEnabled: boolean;
   apiEnabled: boolean;
   rechargeEnabled: boolean;
@@ -73,6 +74,7 @@ export type AuthConfigType = {
   callbackURL: string;
   signUpEnabled?: boolean;
   baiduToken?: string;
+  hasBaiduToken?: boolean;
   jwt: JwtConfigType;
   billingUrl?: string;
   workorderUrl?: string;
@@ -136,6 +138,7 @@ export type AuthClientConfigType = DeepRequired<
   OmitPathArr<
     AuthConfigType,
     [
+      'baiduToken',
       'signUpEnabled',
       'invite.lafSecretKey',
       'invite.lafBaseURL',
@@ -182,6 +185,7 @@ export type AppClientConfigType = {
 };
 
 export const DefaultCommonClientConfig: CommonClientConfigType = {
+  realNameAuthEnabled: false,
   guideEnabled: false,
   rechargeEnabled: false,
   cfSiteKey: ''
@@ -223,7 +227,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
 };
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {
-  baiduToken: '',
+  hasBaiduToken: false,
   invite: {
     enabled: false
   },

@@ -55,14 +55,14 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
       startTimer();
       toast({
         status: 'success',
-        title: t('Already Sent Code')
+        title: t('common:already_sent_code')
       });
     },
     onError(err) {
       getCodeMutation.reset();
       toast({
         status: 'error',
-        title: t('Get code failed')
+        title: t('common:get_code_failed')
       });
     }
   });
@@ -72,14 +72,14 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
     if (isRunning) {
       toast({
         status: 'error',
-        title: t('Already Sent Code')
+        title: t('common:already_sent_code')
       });
       return;
     }
     if (!(await trigger('id'))) {
       toast({
         status: 'error',
-        title: t('Get code failed')
+        title: t('common:get_code_failed')
       });
       return;
     }
@@ -116,10 +116,10 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
         },
         (errors) => {
           if (errors.id) {
-            if (smsType === 'phone') return toast({ title: t('Invalid phone number') });
-            else return toast({ title: t('Invalid Email') });
+            if (smsType === 'phone') return toast({ title: t('common:invalid_phone_number') });
+            else return toast({ title: t('common:invalid_email') });
           }
-          if (errors.verifyCode) return toast({ title: t('verify code tips') });
+          if (errors.verifyCode) return toast({ title: t('common:verify_code_tips') });
         }
       )}
     >
@@ -134,7 +134,7 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
         <FormControl isInvalid={!!formState.errors.id}>
           <HStack>
             <FormLabel w={'120px'}>
-              {smsType === 'phone' ? t('Old Phone') : t('Old Email')}
+              {smsType === 'phone' ? t('common:old_phone') : t('common:old_email')}
             </FormLabel>
             <SettingInputGroup>
               <SettingInput
@@ -152,7 +152,7 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
                     fontSize={'11px'}
                     w={'60px'}
                   >
-                    {t('Get Code')}
+                    {t('common:get_code')}
                   </Link>
                 }
               </SettingInputRightElement>
@@ -161,7 +161,7 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
         </FormControl>
         <FormControl isInvalid={!!formState.errors.verifyCode}>
           <HStack>
-            <FormLabel w={'120px'}>{t('verifyCode')}</FormLabel>
+            <FormLabel w={'120px'}>{t('common:verifycode')}</FormLabel>
             <SettingInputGroup>
               <SettingInput
                 {...register('verifyCode', {
@@ -179,7 +179,7 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
           </HStack>
         </FormControl>
         <Button variant={'primary'} ml="auto" type="submit" maxW={'72px'}>
-          {t('Next')}
+          {t('common:next')}
         </Button>
       </VStack>
     </form>
@@ -216,14 +216,14 @@ function NewSms({
       startTimer();
       toast({
         status: 'success',
-        title: t('Already Sent Code')
+        title: t('common:already_sent_code')
       });
     },
     onError(err) {
       getCodeMutation.reset();
       toast({
         status: 'error',
-        title: t('Get code failed')
+        title: t('common:get_code_failed')
       });
     }
   });
@@ -233,14 +233,14 @@ function NewSms({
     if (isRunning) {
       toast({
         status: 'error',
-        title: t('Already Sent Code')
+        title: t('common:already_sent_code')
       });
       return;
     }
     if (!(await trigger('id'))) {
       toast({
         status: 'error',
-        title: smsType === 'phone' ? t('Invalid phone number') : t('Invalid Email')
+        title: smsType === 'phone' ? t('common:invalid_phone_number') : t('common:invalid_email')
       });
       return;
     }
@@ -256,7 +256,8 @@ function NewSms({
       if (data.code === 200) {
         toast({
           status: 'success',
-          title: smsType === 'phone' ? t('phoneChangeSuccess') : t('emailChangeSuccess')
+          title:
+            smsType === 'phone' ? t('common:phonechangesuccess') : t('common:emailchangesuccess')
         });
         reset();
         onClose?.();
@@ -292,10 +293,10 @@ function NewSms({
         },
         (errors) => {
           if (errors.id) {
-            if (smsType === 'phone') return toast({ title: t('Invalid phone number') });
-            else return toast({ title: t('Invalid Email') });
+            if (smsType === 'phone') return toast({ title: t('common:invalid_phone_number') });
+            else return toast({ title: t('common:invalid_email') });
           }
-          if (errors.verifyCode) return toast({ title: t('verify code tips') });
+          if (errors.verifyCode) return toast({ title: t('common:verify_code_tips') });
         }
       )}
     >
@@ -310,7 +311,7 @@ function NewSms({
         <FormControl isInvalid={!!formState.errors.id}>
           <HStack>
             <FormLabel w={'120px'}>
-              {smsType === 'phone' ? t('New Phone') : t('New Email')}
+              {smsType === 'phone' ? t('common:new_phone') : t('common:new_email')}
             </FormLabel>
             <SettingInputGroup>
               <SettingInput
@@ -328,7 +329,7 @@ function NewSms({
                     fontSize={'11px'}
                     w={'60px'}
                   >
-                    {t('Get Code')}
+                    {t('common:get_code')}
                   </Link>
                 }
               </SettingInputRightElement>
@@ -337,7 +338,7 @@ function NewSms({
         </FormControl>
         <FormControl isInvalid={!!formState.errors.verifyCode}>
           <HStack>
-            <FormLabel w={'120px'}>{t('verifyCode')}</FormLabel>
+            <FormLabel w={'120px'}>{t('common:verifycode')}</FormLabel>
             <SettingInputGroup>
               <SettingInput
                 {...register('verifyCode', {
@@ -355,7 +356,7 @@ function NewSms({
           </HStack>
         </FormControl>
         <Button variant={'primary'} ml="auto" type="submit" maxW={'72px'}>
-          {t('Confirm')}
+          {t('common:confirm')}
         </Button>
       </VStack>
     </form>

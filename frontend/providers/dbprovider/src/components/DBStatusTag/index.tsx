@@ -14,6 +14,7 @@ import type { DBConditionItemType, DBStatusMapType } from '@/types/db';
 import MyIcon from '../Icon';
 import { useTranslation } from 'next-i18next';
 import { formatPodTime } from '@/utils/tools';
+import { I18nCommonKey } from '@/types/i18next';
 
 const DBStatusTag = ({
   conditions = [],
@@ -26,6 +27,7 @@ const DBStatusTag = ({
 }) => {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const label = t(status.label as I18nCommonKey);
 
   return (
     <>
@@ -45,7 +47,7 @@ const DBStatusTag = ({
       >
         <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
         <Box ml={2} flex={1}>
-          {t(status.label)}
+          {label}
         </Box>
         <MyIcon ml={3} w={'16px'} name={'statusDetail'} cursor={'pointer'} onClick={onOpen} />
       </Flex>
@@ -53,7 +55,7 @@ const DBStatusTag = ({
         <ModalOverlay />
         <ModalContent minW={'520px'}>
           <ModalHeader display={'flex'} alignItems={'center'}>
-            <Box flex={1}>{t(status.label)}</Box>
+            <Box flex={1}>{label}</Box>
             <ModalCloseButton top={'10px'} right={'10px'} />
           </ModalHeader>
           <ModalBody>

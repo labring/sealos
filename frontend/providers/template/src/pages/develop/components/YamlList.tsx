@@ -1,7 +1,7 @@
 import YamlCode from '@/components/YamlCode';
 import type { YamlItemType } from '@/types';
 import { Box, Flex, Grid } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
 const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -55,4 +55,4 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   );
 };
 
-export default YamlList;
+export default memo(YamlList);

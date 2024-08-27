@@ -60,7 +60,7 @@ export default function SearchBox() {
           w={'full'}
           outline={'none'}
           type="text"
-          placeholder={t('Search Apps') || 'Search Apps'}
+          placeholder={t('common:search_apps') || 'Search Apps'}
           bg={'transparent'}
           outlineOffset={''}
           border={'none'}
@@ -125,9 +125,7 @@ export default function SearchBox() {
                   />
                 </Center>
 
-                {app?.i18n?.[i18n?.language]?.name
-                  ? app?.i18n?.[i18n?.language]?.name
-                  : t(app?.name)}
+                {app?.i18n?.[i18n?.language]?.name ? app?.i18n?.[i18n?.language]?.name : app?.name}
               </Flex>
             ))
           ) : (
@@ -137,7 +135,7 @@ export default function SearchBox() {
               fontWeight={500}
               color={'rgba(255, 255, 255, 0.90)'}
             >
-              {t('No Apps Found') || 'No Apps Found'}
+              {t('common:no_apps_found') || 'No Apps Found'}
             </Flex>
           )}
         </Flex>

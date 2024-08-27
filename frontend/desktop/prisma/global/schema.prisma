@@ -227,6 +227,55 @@ model InviteReward {
   inviteFrom     String   @db.Uuid
 }
 
+model UserRealNameInfo {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid             String   @unique @db.Uuid
+  realName            String?
+  idCard              String?
+  phone               String?
+  isVerified          Boolean  @default(false)
+  idVerifyFailedTimes Int      @default(0)
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo      Json?
+
+  @@map("UserRealNameInfo")
+}
+
+model RestrictedUser {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid          String   @unique @db.Uuid
+  restrictedLevel  Int
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo   Json?
+
+  @@map("RestrictedUser")
+}
+
+model RealNameAuthProvider {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backend   String
+  authType  String
+  maxFailedTimes Int
+  config    Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("RealNameAuthProvider")
+}
+
+model UserSemChannel {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid        String   @unique @db.Uuid
+  channel        String
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo Json?
+
+  @@map("UserSemChannel")
+}
+
 enum ProviderType {
   PHONE
   GITHUB

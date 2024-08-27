@@ -12,7 +12,7 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
-export const refetchIntervalTime = 3000;
+export const refetchIntervalTime = 10 * 1000;
 
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
@@ -134,7 +134,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
           <path d="M21.999 18.676L17.567 16.12L12.784 18.884V24L21.999 18.676ZM11.216 24V18.881L6.43099 16.119L2.00099 18.676L11.216 24ZM11.995 17.525L16.784 14.76V9.236L11.999 6.476L7.21599 9.236V14.763L11.997 17.524L11.995 17.525ZM1.21999 6.682V17.323L5.65199 14.764V9.239L1.21899 6.68L1.21999 6.682ZM20.835 7.803L18.351 9.239V14.761L22.781 17.32V6.678L20.835 7.803ZM2.00099 5.324L6.43599 7.883L11.217 5.121V0.003L2.00099 5.324ZM17.567 7.883L22.001 5.324L12.782 0V5.121L17.567 7.883Z" />
         </Icon>
         <Text ml="12px" fontWeight={500} fontSize={'18px'} color={'#363C42'}>
-          App Launchpad
+          {t('launchpad')}
         </Text>
       </Flex>
       <Box backgroundColor={'#F3F4F5'} mt="16px">

@@ -1,7 +1,7 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { updateOrder } from '@/services/db/workorder';
-import { WorkOrderDB } from '@/types/workorder';
+import { WorkOrderDB, WorkOrderStatus } from '@/types/workorder';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -18,10 +18,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderId: string;
     };
 
+    const isCompleted = updates.status === WorkOrderStatus.Completed;
+    const isDeleted = updates.status === WorkOrderStatus.Deleted;
+
     const result = await updateOrder({
       orderId,
       userId: payload.userId,
-      updates
+      updates: {
+        ...updates,
+        ...(isCompleted && { closedBy: payload.userId }),
+        ...(isDeleted && {
+          deletedBy: payload.userId
+        })
+      }
     });
 
     jsonRes(res, {

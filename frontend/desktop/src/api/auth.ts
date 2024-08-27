@@ -10,6 +10,7 @@ import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { BIND_STATUS } from '@/types/response/bind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { SemData } from '@/types/sem';
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
@@ -23,7 +24,13 @@ export const _passwordLoginRequest =
   (request: AxiosInstance, switchAuth: (token: string) => void) =>
   (
     data:
-      | { user: string; password: string; inviterId: string | null | undefined }
+      | {
+          user: string;
+          password: string;
+          inviterId: string | null | undefined;
+          semData: SemData | null | undefined;
+          bdVid: string | null | undefined;
+        }
       | {
           user: string;
           password: string;
@@ -48,6 +55,8 @@ export const _UserInfo = (request: AxiosInstance) => () =>
     any,
     ApiResp<{
       info: {
+        realName?: string;
+        userRestrictedLevel?: number;
         uid: string;
         createdAt: Date;
         updatedAt: Date;
@@ -105,7 +114,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string }) =>
+  (data: { code: string; inviterId?: string; semData?: SemData; bdVid?: string }) =>
     request.post<
       typeof data,
       ApiResp<{
@@ -139,6 +148,10 @@ export const _mergeUser =
 export const _deleteUser = (request: AxiosInstance) => () =>
   request<never, ApiResp<RESOURCE_STATUS>>('/api/auth/delete');
 
+export const _realNameAuthRequest =
+  (request: AxiosInstance) => (data: { name: string; phone?: string; idCard: string }) =>
+    request.post<any, ApiResp<{ name: string }>>('/api/account/realNameAuth', data);
+
 export const passwordExistRequest = _passwordExistRequest(request);
 export const passwordLoginRequest = _passwordLoginRequest(request, (token) => {
   useSessionStore.setState({ token });
@@ -160,3 +173,5 @@ export const unBindRequest = _oauthProviderUnbind(request);
 export const signInRequest = _oauthProviderSignIn(request);
 export const mergeUserRequest = _mergeUser(request);
 export const deleteUserRequest = _deleteUser(request);
+
+export const realNameAuthRequest = _realNameAuthRequest(request);

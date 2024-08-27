@@ -3,7 +3,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { parseOpenappQuery } from '@/utils/format';
-import { setInviterId } from '@/utils/sessionConfig';
+import { setBaiduId, setInviterId, setUserSemData } from '@/utils/sessionConfig';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -12,8 +12,8 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 import useCallbackStore from '@/stores/callback';
-import FloatButton from '@/components/floating_button';
-// import 'react-contexify/dist/ReactContexify.css';
+import 'react-contexify/dist/ReactContexify.css';
+import { SemData } from '@/types/sem';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -83,12 +83,22 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     }
   }, [router, init, setAutoLaunch, sealos_cloud_domain]);
 
-  // handle baidui
+  // handle baidu
   useEffect(() => {
-    const { bd_vid } = router.query;
+    const { bd_vid, s, k } = router.query;
     if (bd_vid) {
-      sessionStorage.setItem('bd_vid', bd_vid as string);
+      setBaiduId(bd_vid as string);
     }
+
+    // handle new user sem source
+    const semData: SemData = { channel: '' };
+    if (s) {
+      semData.channel = s as string;
+    }
+    if (k) {
+      semData.additionalInfo = { semKeyword: k as string };
+    }
+    setUserSemData(semData);
   }, []);
 
   // handle workspaceInvite

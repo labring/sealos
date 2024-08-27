@@ -90,7 +90,7 @@ const ChartTemplate = ({
           </Box>
           <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
             <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
-            <Box pt={'8px'}>{t('No Data Available')}</Box>
+            <Box pt={'8px'}>{t('no_data_available')}</Box>
           </Flex>
         </Flex>
       )}

@@ -1,17 +1,28 @@
 import { TemplateSourceType } from '@/types/app';
-import { reduce } from 'lodash';
+import { reduce, mapValues } from 'lodash';
 
-export const getTemplateDefaultValues = (templateSource: TemplateSourceType | undefined) => {
+export const getTemplateInputDefaultValues = (templateSource: TemplateSourceType | undefined) => {
   const inputs = templateSource?.source?.inputs;
   return reduce(
     inputs,
     (acc, item) => {
       // @ts-ignore
-      acc[item.key] = item.default;
+      acc[item.key] = item.default || '';
       return acc;
     },
     {}
   );
+};
+
+export const getTemplateDefaultValues = (templateSource: TemplateSourceType | undefined) => {
+  return mapValues(templateSource?.source.defaults, (value) => value.value || '');
+};
+
+export const getTemplateValues = (templateSource: TemplateSourceType | undefined) => {
+  return {
+    defaults: getTemplateDefaultValues(templateSource),
+    defaultInputs: getTemplateInputDefaultValues(templateSource)
+  };
 };
 
 export function findTopKeyWords(keywordsList: string[][], topCount: number) {

@@ -55,12 +55,14 @@ export default function RemoveMember({
   const { t, i18n } = useTranslation();
   const removeKey =
     status === InvitedStatus.Inviting
-      ? t('Cancel')
+      ? t('common:cancel')
       : selfUserCrUid === targetUserCrUid
-      ? t('Quit')
-      : t('Remove');
+      ? t('common:quit')
+      : t('common:remove');
   const removeTips =
-    selfUserCrUid === targetUserCrUid ? t('Quit Workspace Tips') : t('Remove Member Tips');
+    selfUserCrUid === targetUserCrUid
+      ? t('common:quit_workspace_tips')
+      : t('common:remove_member_tips');
   return (
     <>
       <Button
@@ -92,7 +94,7 @@ export default function RemoveMember({
         >
           <ModalCloseButton right={'24px'} top="16px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0">
-            {t('Warning')}
+            {t('common:warning')}
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
@@ -116,7 +118,7 @@ export default function RemoveMember({
                     onClose();
                   }}
                 >
-                  {t('Cancel')}
+                  {t('common:cancel')}
                 </Button>
                 <Button
                   variant={'unstyled'}
@@ -134,7 +136,7 @@ export default function RemoveMember({
                     submit();
                   }}
                 >
-                  {t('Confirm')}
+                  {t('common:confirm')}
                 </Button>
               </Flex>
             </ModalBody>

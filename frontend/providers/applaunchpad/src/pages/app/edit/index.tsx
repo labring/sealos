@@ -9,7 +9,7 @@ import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
-import type { AppEditType, DeployKindsType } from '@/types/app';
+import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import {
   json2ConfigMap,
@@ -154,12 +154,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     async (yamlList: YamlItemType[]) => {
       setIsLoading(true);
       try {
-        const yamls = yamlList.map((item) => item.value);
+        const parsedNewYamlList = yamlList.map((item) => item.value);
+
         if (appName) {
           const patch = patchYamlList({
-            formOldYamlList: formOldYamls.current.map((item) => item.value),
-            newYamlList: yamls,
-            crYamlList: crOldYamls.current
+            parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+            parsedNewYamlList: parsedNewYamlList,
+            originalYamlList: crOldYamls.current
           });
           await putApp({
             patch,
@@ -167,7 +168,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
           });
         } else {
-          await postDeployApp(yamls);
+          await postDeployApp(parsedNewYamlList);
         }
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
@@ -286,6 +287,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
+
+  useEffect(() => {
+    const query = router.query;
+    const updates: Partial<AppEditSyncedFields> = {
+      imageName: query.imageName as string,
+      replicas: query.replicas ? Number(query.replicas) : undefined,
+      cpu: query.cpu ? Number(query.cpu) : undefined,
+      memory: query.memory ? Number(query.memory) : undefined
+    };
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined) {
+        formHook.setValue(key as keyof AppEditSyncedFields, value);
+      }
+    });
+  }, []);
 
   return (
     <>

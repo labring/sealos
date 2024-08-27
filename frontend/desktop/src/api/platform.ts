@@ -1,28 +1,26 @@
 import request from '@/services/request';
 import {
   ApiResp,
-  NotificationItem,
   LayoutConfigType,
   CloudConfigType,
   AuthClientConfigType,
   AppClientConfigType,
-  CommonConfigType,
-  CommonClientConfigType
+  CommonClientConfigType,
+  TNotification
 } from '@/types';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
-export const uploadConvertData = (newType: number[], url?: string) => {
-  const defaultUrl = 'https://sealos.run/';
-  const main_url = url || defaultUrl;
-  const bd_vid = sessionStorage.getItem('bd_vid');
-  if (!bd_vid) {
+export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid?: string }) => {
+  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
+  const defaultUrl = 'https://sealos.run/self-hosting';
+  if (!bdVid) {
     return Promise.reject('upload convert data params error');
   }
-  return request.post('/api/platform/uploadData', {
+  return request.post(`${baseurl}/api/platform/uploadData`, {
     newType,
-    bd_vid,
-    main_url
+    bd_vid: bdVid,
+    main_url: defaultUrl
   });
 };
 
@@ -76,8 +74,11 @@ export const getWechatResult = (payload: { code: string }) =>
   });
 
 export const getGlobalNotification = () => {
-  return request.get<any, ApiResp<NotificationItem>>('/api/notification/global');
+  return request.get<any, ApiResp<TNotification>>('/api/notification/global');
 };
+
+export const listNotification = () =>
+  request.get<any, ApiResp<TNotification[]>>('/api/notification/listNotification');
 
 export const getResource = () => {
   return request.get<

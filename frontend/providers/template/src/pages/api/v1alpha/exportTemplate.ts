@@ -6,7 +6,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { parseTemplateString, generateYamlList } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
-import JSYAML from 'js-yaml';
+import JsYaml from 'js-yaml';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const { code, message, dataSource, templateYaml, TemplateEnvs, yamlList } =
+    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({
         namespace,
         templateName
@@ -40,15 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       {}
     );
-    const yamlString = yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
 
-    const generateStr = parseTemplateString(yamlString!, /\$\{\{\s*(.*?)\s*\}\}/g, {
+    const generateStr = parseTemplateString(appYaml || '', {
       ...TemplateEnvs,
       defaults: _defaults,
       inputs: { ..._inputs, ...templateForm }
     });
     const correctYaml = generateYamlList(generateStr, app_name);
-    const yaml = JSYAML.loadAll(correctYaml[0].value);
+    const yaml = JsYaml.loadAll(correctYaml[0].value);
 
     jsonRes(res, {
       code: 200,

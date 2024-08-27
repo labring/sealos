@@ -32,6 +32,15 @@ importers:
       framer-motion:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
+      i18next:
+        specifier: ^23.11.5
+        version: 23.12.1
+      next-i18next:
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.5.6)(react-i18next@14.1.2)(react@18.2.0)
+      react-i18next:
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
@@ -39,6 +48,12 @@ importers:
       '@chakra-ui/cli':
         specifier: ^2.4.1
         version: 2.4.1
+      husky:
+        specifier: ^9.1.4
+        version: 9.1.4
+      lint-staged:
+        specifier: ^15.2.9
+        version: 15.2.9
       prettier:
         specifier: ^2.8.8
         version: 2.8.8
@@ -75,6 +90,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.2.37)(react@18.2.0)
+      '@hookform/resolvers':
+        specifier: ^3.9.0
+        version: 3.9.0(react-hook-form@7.48.2)
       '@kubernetes/client-node':
         specifier: ^0.18.1
         version: 0.18.1
@@ -121,8 +139,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^10.0.2
         version: 10.0.3
@@ -154,8 +172,8 @@ importers:
         specifier: 13.3.0
         version: 13.3.0(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.3.0)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.3.0)(react-i18next@14.1.2)(react@18.2.0)
       next-pwa:
         specifier: ^5.6.0
         version: 5.6.0(@babel/core@7.23.5)(next@13.3.0)(webpack@5.89.0)
@@ -190,8 +208,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       sass:
         specifier: ^1.68.0
         version: 1.69.5
@@ -201,12 +219,18 @@ importers:
       sharp:
         specifier: ^0.32.6
         version: 0.32.6
+      tencentcloud-sdk-nodejs:
+        specifier: 4.0.905
+        version: 4.0.905
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
       xml2js:
         specifier: ^0.6.2
         version: 0.6.2
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.2.37)(immer@10.0.3)(react@18.2.0)
@@ -398,8 +422,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^10.0.2
         version: 10.0.3
@@ -410,14 +434,14 @@ importers:
         specifier: 13.4.5
         version: 13.4.5(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.4.5)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.4.5)(react-i18next@14.1.2)(react@18.2.0)
       react:
         specifier: 18.2.0
         version: 18.2.0
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
@@ -513,8 +537,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -537,8 +561,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -555,8 +579,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -682,8 +706,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -718,8 +742,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -739,8 +763,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -875,8 +899,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -896,8 +920,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -917,8 +941,8 @@ importers:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
@@ -1020,8 +1044,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -1044,8 +1068,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -1065,8 +1089,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -1183,11 +1207,14 @@ importers:
         specifier: ^5.2.0
         version: 5.4.0
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
+      ini:
+        specifier: ^4.1.3
+        version: 4.1.3
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
@@ -1213,8 +1240,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -1234,8 +1261,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -1258,6 +1285,9 @@ importers:
       '@svgr/webpack':
         specifier: ^6.5.1
         version: 6.5.1
+      '@types/ini':
+        specifier: ^4.1.1
+        version: 4.1.1
       '@types/js-cookie':
         specifier: ^3.0.4
         version: 3.0.6
@@ -1349,8 +1379,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -1376,8 +1406,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -1397,8 +1427,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -1499,6 +1529,9 @@ importers:
       framer-motion:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
+      i18next:
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^10.0.3
         version: 10.0.3
@@ -1517,6 +1550,9 @@ importers:
       next:
         specifier: 13.5.4
         version: 13.5.4(react-dom@18.2.0)(react@18.2.0)
+      next-i18next:
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.5.4)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -1529,6 +1565,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
+      react-i18next:
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-icons:
         specifier: ^5.0.1
         version: 5.0.1(react@18.2.0)
@@ -1672,8 +1711,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -1702,8 +1741,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       node-cron:
         specifier: ^3.0.3
         version: 3.0.3
@@ -1726,8 +1765,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -1844,8 +1883,8 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^10.0.3
         version: 10.0.3
@@ -1862,8 +1901,8 @@ importers:
         specifier: 13.5.6
         version: 13.5.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.5.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.5.6)(react-i18next@14.1.2)(react@18.2.0)
       react:
         specifier: ^18
         version: 18.2.0
@@ -1877,8 +1916,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -1988,6 +2027,9 @@ importers:
       cron-parser:
         specifier: ^4.9.0
         version: 4.9.0
+      croner:
+        specifier: ^8.1.0
+        version: 8.1.0
       cronstrue:
         specifier: ^2.32.0
         version: 2.44.0
@@ -2004,14 +2046,17 @@ importers:
         specifier: ^5.2.0
         version: 5.4.0
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      js-interpreter:
+        specifier: ^5.1.2
+        version: 5.1.2
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2028,11 +2073,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
-      node-cron:
-        specifier: ^3.0.3
-        version: 3.0.3
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -2052,8 +2094,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -2155,8 +2197,8 @@ importers:
         specifier: 13.2.4
         version: 13.2.4(eslint@8.36.0)(typescript@5.2.2)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -2173,8 +2215,8 @@ importers:
         specifier: 13.2.4
         version: 13.2.4(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.2.4)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.2.4)(react-i18next@14.1.2)(react@18.2.0)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -2182,8 +2224,8 @@ importers:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
@@ -2273,8 +2315,8 @@ importers:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^22.5.1
-        version: 22.5.1
+        specifier: ^23.11.5
+        version: 23.12.1
       immer:
         specifier: ^9.0.21
         version: 9.0.21
@@ -2309,8 +2351,8 @@ importers:
         specifier: 13.1.6
         version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
-        specifier: ^13.3.0
-        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+        specifier: ^15.3.0
+        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -2330,8 +2372,8 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.1.2
+        version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
@@ -6960,6 +7002,14 @@ packages:
     engines: {node: '>=16.15'}
     dev: false
 
+  /@hookform/resolvers@3.9.0(react-hook-form@7.48.2):
+    resolution: {integrity: sha512-bU0Gr4EepJ/EQsH/IwEzYLsT/PEj5C0ynLQ4m+GSHS+xKH4TfSelhluTgOaoc4kA5s7eCsQbM4wvZLzELmWzUg==}
+    peerDependencies:
+      react-hook-form: ^7.0.0
+    dependencies:
+      react-hook-form: 7.48.2(react@18.2.0)
+    dev: false
+
   /@humanwhocodes/config-array@0.11.13:
     resolution: {integrity: sha512-JSBDMiDKSzQVngfRjOdFXgFfklaXI4K9nLF49Auh21lmBWRLIK3+xTErTWD4KU54pb6coM6ESE7Awz/FNU3zgQ==}
     engines: {node: '>=10.10.0'}
@@ -9720,6 +9770,10 @@ packages:
   /@types/http-errors@2.0.4:
     resolution: {integrity: sha512-D0CFMMtydbJAegzOyHjtiKPLlvnm3iTZyZRSZoLq2mRhDdmLfIWOCYPfQJ4cu2erKghU++QvjcUjp/5h7hESpA==}
 
+  /@types/ini@4.1.1:
+    resolution: {integrity: sha512-MIyNUZipBTbyUNnhvuXJTY7B6qNI78meck9Jbv3wk0OgNwRyOOVEKDutAkOs1snB/tx0FafyR6/SN4Ps0hZPeg==}
+    dev: true
+
   /@types/istanbul-lib-coverage@2.0.6:
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
     dev: true
@@ -10435,7 +10489,6 @@ packages:
       debug: 4.3.4
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /aggregate-error@3.1.0:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
@@ -10489,6 +10542,13 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       type-fest: 0.21.3
+    dev: true
+
+  /ansi-escapes@7.0.0:
+    resolution: {integrity: sha512-GdYO7a61mR0fOlAsvC9/rIHf7L96sBc6dEWzeOu+KAea5bZyQRPIpojrVoI4AXGJS/ycu/fBTdLrUkA4ODrvjw==}
+    engines: {node: '>=18'}
+    dependencies:
+      environment: 1.1.0
     dev: true
 
   /ansi-regex@2.1.1:
@@ -11054,6 +11114,10 @@ packages:
   /big.js@5.2.2:
     resolution: {integrity: sha512-vyL2OymJxmarO8gxMr0mhChsO9QGwhynfuu4+MHTAW6czfq9humCB7rKpUjDd9YUiDPU4mzpyupFSvOClAwbmQ==}
 
+  /bignumber.js@9.1.2:
+    resolution: {integrity: sha512-2/mKyZH9K85bzOEfhXDBFZTGd1CTs+5IHpeFQo9luiBG7hghdC851Pj2WAhb6E3R6b9tZj/XKhbg4fum+Kepug==}
+    dev: false
+
   /binary-extensions@2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
     engines: {node: '>=8'}
@@ -11128,6 +11192,13 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       fill-range: 7.0.1
+
+  /braces@3.0.3:
+    resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
+    engines: {node: '>=8'}
+    dependencies:
+      fill-range: 7.1.1
+    dev: true
 
   /browser-or-node@2.1.1:
     resolution: {integrity: sha512-8CVjaLJGuSKMVTxJ2DpBl5XnlNDiT4cQFeuCJJrvJmts9YrTZDizTX7PjC2s6W4x+MBGZeEY6dGMrF04/6Hgqg==}
@@ -11322,6 +11393,11 @@ packages:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
+  /chalk@5.3.0:
+    resolution: {integrity: sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+    dev: true
+
   /char-regex@1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
     engines: {node: '>=10'}
@@ -11413,6 +11489,13 @@ packages:
       log-symbols: 3.0.0
     dev: true
 
+  /cli-cursor@5.0.0:
+    resolution: {integrity: sha512-aCj4O5wKyszjMmDT4tZj93kxyydN/K5zPWSCe6/0AV/AA1pqe5ZBIw0a2ZfPQV7lL5/yb5HsUreJ6UFAF1tEQw==}
+    engines: {node: '>=18'}
+    dependencies:
+      restore-cursor: 5.1.0
+    dev: true
+
   /cli-handle-error@4.4.0:
     resolution: {integrity: sha512-RyBCnKlc7xVr79cKb9RfBq+4fjwQeX8HKeNzIPnI/W+DWWIUUKh2ur576DpwJ3kZt2UGHlIAOF7N9txy+mgZsA==}
     dependencies:
@@ -11424,6 +11507,14 @@ packages:
     resolution: {integrity: sha512-Em91mJvU7VdgT2MxQpyY633vW1tDzRjPDbii6ZjEBHHLLh0xDoVkFt/wjvi9nSvJcz9rJmvtJSK8KL/hvF0Stg==}
     dependencies:
       cli-handle-error: 4.4.0
+    dev: true
+
+  /cli-truncate@4.0.0:
+    resolution: {integrity: sha512-nPdaFdQ0h/GEigbPClz11D0v/ZJEwxmeVZGeMo3Z5StPtUTkA9o1lD6QwoirYiSDzbcwn2XcjwmCp68W1IS4TA==}
+    engines: {node: '>=18'}
+    dependencies:
+      slice-ansi: 5.0.0
+      string-width: 7.2.0
     dev: true
 
   /cli-welcome@2.2.2:
@@ -11530,6 +11621,10 @@ packages:
     resolution: {integrity: sha512-Y2oEozpomLn7Q3HFP7dpww7AtMJplbM9lGZP6RDfHqmbeRjiwRg4n6VM6j4KLmRke85uWEI7JqF17f3pqdRA0g==}
     dev: true
 
+  /colorette@2.0.20:
+    resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
+    dev: true
+
   /colors@0.6.2:
     resolution: {integrity: sha512-OsSVtHK8Ir8r3+Fxw/b4jS1ZLPXkV6ZxDRJQzeD7qo0SqMXWrHDM71DgYzPMHY8SFJ0Ao+nNU2p1MmwdzKqPrw==}
     engines: {node: '>=0.1.90'}
@@ -11560,6 +11655,11 @@ packages:
     resolution: {integrity: sha512-0fLycpl1UMTGX257hRsu/arL/cUbcvQM4zMKwvLvzXtfdezIV4yotPS2dYtknF+NmEfWSoCEF6+hj9XLm/6hEw==}
     engines: {node: '>= 0.4.x'}
     dev: false
+
+  /commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
+    dev: true
 
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
@@ -12086,6 +12186,18 @@ packages:
     dependencies:
       ms: 2.1.2
 
+  /debug@4.3.6:
+    resolution: {integrity: sha512-O/09Bd4Z1fBrU4VzkhFqVgpPzaGbw6Sm9FEkBT1A/YBXQFGuuSxa1dN2nxgxS34JmKXqYx8CZAwEVoJFImUXIg==}
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
+    dependencies:
+      ms: 2.1.2
+    dev: true
+
   /decamelize@1.2.0:
     resolution: {integrity: sha512-z2S+W9X73hAUUki+N+9Za2lBlun89zigOyGrsax+KUQ6wKW4ZoWpEYBkGhQjwAjjDCkWxhY0VKEhk8wzY7F5cA==}
     engines: {node: '>=0.10.0'}
@@ -12473,6 +12585,10 @@ packages:
     engines: {node: '>=12'}
     dev: true
 
+  /emoji-regex@10.3.0:
+    resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
+    dev: true
+
   /emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
     dev: true
@@ -12547,6 +12663,11 @@ packages:
   /entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
+    dev: true
+
+  /environment@1.1.0:
+    resolution: {integrity: sha512-xUtoPkMggbz0MPyPiIWr1Kp4aeWJjDZ6SMvURhimjdZgsRuDplF5/s9hcgGhyXMhs+6vpnuoiZ2kFiu3FMnS8Q==}
+    engines: {node: '>=18'}
     dev: true
 
   /error-ex@1.3.2:
@@ -14011,7 +14132,6 @@ packages:
 
   /eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
-    dev: false
 
   /events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
@@ -14051,6 +14171,21 @@ packages:
       onetime: 5.1.2
       signal-exit: 3.0.7
       strip-final-newline: 2.0.0
+    dev: true
+
+  /execa@8.0.1:
+    resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
+    engines: {node: '>=16.17'}
+    dependencies:
+      cross-spawn: 7.0.3
+      get-stream: 8.0.1
+      human-signals: 5.0.0
+      is-stream: 3.0.0
+      merge-stream: 2.0.0
+      npm-run-path: 5.3.0
+      onetime: 6.0.0
+      signal-exit: 4.1.0
+      strip-final-newline: 3.0.0
     dev: true
 
   /exit@0.1.2:
@@ -14242,6 +14377,13 @@ packages:
     dependencies:
       to-regex-range: 5.0.1
 
+  /fill-range@7.1.1:
+    resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
+    engines: {node: '>=8'}
+    dependencies:
+      to-regex-range: 5.0.1
+    dev: true
+
   /filter-obj@1.1.0:
     resolution: {integrity: sha512-8rXg1ZnX7xzy2NGDVkBVaAy+lSlPNwad13BtgSlLuxfIslyt5Vg64U7tFcCt4WS1R0hvtnQybT/IyCkGZ3DpXQ==}
     engines: {node: '>=0.10.0'}
@@ -14380,6 +14522,15 @@ packages:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       mime-types: 2.1.35
+
+  /form-data@3.0.1:
+    resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
+    engines: {node: '>= 6'}
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.35
+    dev: false
 
   /form-data@4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -14531,6 +14682,11 @@ packages:
     engines: {node: 6.* || 8.* || >= 10.*}
     dev: true
 
+  /get-east-asian-width@1.2.0:
+    resolution: {integrity: sha512-2nk+7SIVb14QrgXFHcm84tD4bKQz0RxPuMT8Ag5KPOq7J5fEmAg0UbXdTOSHqNuHSU28k55qnceesxXRZGzKWA==}
+    engines: {node: '>=18'}
+    dev: true
+
   /get-intrinsic@1.2.2:
     resolution: {integrity: sha512-0gSo4ml/0j98Y3lngkFEot/zhiCeWsbYIlZ+uZOVgzLyLaUw7wxUL+nCTP0XJvJg1AXulJRI3UJi8GsbDuxdGA==}
     dependencies:
@@ -14556,6 +14712,11 @@ packages:
   /get-stream@6.0.1:
     resolution: {integrity: sha512-ts6Wi+2j3jQjqi70w5AlN8DFnkSwC+MqmxEzdEALB2qXZYV3X/b1CTfgPLGJNMeAWxdPfU8FO1ms3NUfaHCPYg==}
     engines: {node: '>=10'}
+
+  /get-stream@8.0.1:
+    resolution: {integrity: sha512-VaUJspBffn/LMCJVoMvSAdmscJyS1auj5Zulnn5UoYcY531UWmdwhRWkcGKnGU93m5HSXP9LP2usOryrBtQowA==}
+    engines: {node: '>=16'}
+    dev: true
 
   /get-symbol-description@1.0.0:
     resolution: {integrity: sha512-2EmdH1YvIQiZpltCNgkuiUnyukzxM/R6NDJX31Ke3BG1Nq5b0S2PhX59UKi9vZpPDQVdqn+1IcaAwnzTT5vCjw==}
@@ -15018,7 +15179,6 @@ packages:
       debug: 4.3.4
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /httpx@2.3.1:
     resolution: {integrity: sha512-l5rcAoKP8A9XOIlcIA87Wt9A7AX2fgOslHOF4WB5Q24y/1+aeH8b7c7NKfm+Bcf+h0u4FHNtLCriC4mAFmCYgg==}
@@ -15033,18 +15193,29 @@ packages:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
 
+  /human-signals@5.0.0:
+    resolution: {integrity: sha512-AXcZb6vzzrFAUE61HnN4mpLqd/cSIwNQjtNWR0euPm6y0iqx3G4gOXaIDdtdDwZmhwe82LA6+zinmW4UBWVePQ==}
+    engines: {node: '>=16.17.0'}
+    dev: true
+
+  /husky@9.1.4:
+    resolution: {integrity: sha512-bho94YyReb4JV7LYWRWxZ/xr6TtOTt8cMfmQ39MQYJ7f/YE268s3GdghGwi+y4zAeqewE5zYLvuhV0M0ijsDEA==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dev: true
+
   /hyphenate-style-name@1.0.4:
     resolution: {integrity: sha512-ygGZLjmXfPHj+ZWh6LwbC37l43MhfztxetbFCoYTM2VjkIUpeHgSNn7QIyVFj7YQ1Wl9Cbw5sholVJPzWvC2MQ==}
     dev: false
 
-  /i18next-fs-backend@2.3.0:
-    resolution: {integrity: sha512-N0SS2WojoVIh2x/QkajSps8RPKzXqryZsQh12VoFY4cLZgkD+62EPY2fY+ZjkNADu8xA5I5EadQQXa8TXBKN3w==}
+  /i18next-fs-backend@2.3.1:
+    resolution: {integrity: sha512-tvfXskmG/9o+TJ5Fxu54sSO5OkY6d+uMn+K6JiUGLJrwxAVfer+8V3nU8jq3ts9Pe5lXJv4b1N7foIjJ8Iy2Gg==}
     dev: false
 
-  /i18next@22.5.1:
-    resolution: {integrity: sha512-8TGPgM3pAD+VRsMtUMNknRz3kzqwp/gPALrWMsDnmC1mKqJwpWyooQRLMcbTwq8z8YwSmuj+ZYvc+xCuEpkssA==}
+  /i18next@23.12.1:
+    resolution: {integrity: sha512-l4y291ZGRgUhKuqVSiqyuU2DDzxKStlIWSaoNBR4grYmh0X+pRYbFpTMs3CnJ5ECKbOI8sQcJ3PbTUfLgPRaMA==}
     dependencies:
-      '@babel/runtime': 7.23.4
+      '@babel/runtime': 7.24.0
     dev: false
 
   /iconv-lite@0.4.4:
@@ -15125,6 +15296,11 @@ packages:
 
   /ini@1.3.8:
     resolution: {integrity: sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==}
+    dev: false
+
+  /ini@4.1.3:
+    resolution: {integrity: sha512-X7rqawQBvfdjS10YU1y1YVreA3SsLrW9dX2CewP2EbBJM4ypVNLDkO5y04gejPwKIY9lR+7r9gn3rFPt/kmWFg==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dev: false
 
   /inline-style-parser@0.1.1:
@@ -15303,6 +15479,18 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
+  /is-fullwidth-code-point@4.0.0:
+    resolution: {integrity: sha512-O4L094N2/dZ7xqVdrXhh9r1KODPJpFms8B5sGdJLPy664AgvXsreZUyCQQNItZRDlYug4xStLjNp/sz3HvBowQ==}
+    engines: {node: '>=12'}
+    dev: true
+
+  /is-fullwidth-code-point@5.0.0:
+    resolution: {integrity: sha512-OVa3u9kkBbw7b8Xw5F9P+D/T9X+Z4+JruYVNapTjPYZYUznQ5YfWeFkOj606XYYW8yugTfC8Pj0hYqvi4ryAhA==}
+    engines: {node: '>=18'}
+    dependencies:
+      get-east-asian-width: 1.2.0
+    dev: true
+
   /is-generator-fn@2.1.0:
     resolution: {integrity: sha512-cTIB4yPYL/Grw0EaSzASzg6bBy9gqCofvWN8okThAYIxKJZC+udlRAmGbM0XLeniEJSs8uEgHPGuHSe1XsOLSQ==}
     engines: {node: '>=6'}
@@ -15426,6 +15614,11 @@ packages:
   /is-stream@2.0.1:
     resolution: {integrity: sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==}
     engines: {node: '>=8'}
+
+  /is-stream@3.0.0:
+    resolution: {integrity: sha512-LnQR4bZ9IADDRSkvpqMGvt/tEJWclzklNgSw48V5EAaAeDd6qGvN8ei6k5p0tvxSR171VmGyHuTiAOfxAbr8kA==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dev: true
 
   /is-string@1.0.7:
     resolution: {integrity: sha512-tE2UXzivje6ofPW7l23cjDOMa09gb7xlAqG6jG5ej6uPV32TlWP3NKPigtaGeHNu9fohccRYvIiZMfOOnOYUtg==}
@@ -16153,6 +16346,13 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
+  /js-interpreter@5.1.2:
+    resolution: {integrity: sha512-UaGCF7yuCvMBfeVSnSdpXu8lTLW48HIr5b46qSMwqFBDO1tgb/Yxlx3LRuEDpN2DlLnFTcvfoBseUxVTjFA6zg==}
+    hasBin: true
+    dependencies:
+      minimist: 1.2.8
+    dev: false
+
   /js-sdsl@4.4.2:
     resolution: {integrity: sha512-dwXFwByc/ajSV6m5bcKAPwe4yDDF6D614pxmIi5odytzxRlwqF6nwoiCek80Ixc7Cvma5awClxrzFtxCQvcM8w==}
 
@@ -16225,6 +16425,12 @@ packages:
     resolution: {integrity: sha512-OYu7XEzjkCQ3C5Ps3QIZsQfNpqoJyZZA99wd9aWd05NCtC5pWOkShK2mkL6HXQR6/Cy2lbNdPlZBpuQHXE63gA==}
     engines: {node: '>=4'}
     hasBin: true
+
+  /json-bigint@1.0.0:
+    resolution: {integrity: sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==}
+    dependencies:
+      bignumber.js: 9.1.2
+    dev: false
 
   /json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
@@ -16468,8 +16674,44 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
+  /lilconfig@3.1.2:
+    resolution: {integrity: sha512-eop+wDAvpItUys0FWkHIKeC9ybYrTGbU41U5K7+bttZZeohvnY7M9dZ5kB21GNWiFT2q1OoPTvncPCgSOVO5ow==}
+    engines: {node: '>=14'}
+    dev: true
+
   /lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
+
+  /lint-staged@15.2.9:
+    resolution: {integrity: sha512-BZAt8Lk3sEnxw7tfxM7jeZlPRuT4M68O0/CwZhhaw6eeWu0Lz5eERE3m386InivXB64fp/mDID452h48tvKlRQ==}
+    engines: {node: '>=18.12.0'}
+    hasBin: true
+    dependencies:
+      chalk: 5.3.0
+      commander: 12.1.0
+      debug: 4.3.6
+      execa: 8.0.1
+      lilconfig: 3.1.2
+      listr2: 8.2.4
+      micromatch: 4.0.7
+      pidtree: 0.6.0
+      string-argv: 0.3.2
+      yaml: 2.5.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /listr2@8.2.4:
+    resolution: {integrity: sha512-opevsywziHd3zHCVQGAj8zu+Z3yHNkkoYhWIGnq54RrCVwLz0MozotJEDnKsIBLvkfLGN6BLOyAeRrYI0pKA4g==}
+    engines: {node: '>=18.0.0'}
+    dependencies:
+      cli-truncate: 4.0.0
+      colorette: 2.0.20
+      eventemitter3: 5.0.1
+      log-update: 6.1.0
+      rfdc: 1.4.1
+      wrap-ansi: 9.0.0
+    dev: true
 
   /loader-runner@4.3.0:
     resolution: {integrity: sha512-3R/1M+yS3j5ou80Me59j7F9IMs4PXs3VqRrm0TU3AbKPxlmpoY1TNscJV/oGJXo8qCatFGTfDbY6W6ipGOYXfg==}
@@ -16560,6 +16802,17 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       chalk: 2.4.2
+    dev: true
+
+  /log-update@6.1.0:
+    resolution: {integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==}
+    engines: {node: '>=18'}
+    dependencies:
+      ansi-escapes: 7.0.0
+      cli-cursor: 5.0.0
+      slice-ansi: 7.1.0
+      strip-ansi: 7.1.0
+      wrap-ansi: 9.0.0
     dev: true
 
   /longest-streak@3.1.0:
@@ -17160,6 +17413,14 @@ packages:
       braces: 3.0.2
       picomatch: 2.3.1
 
+  /micromatch@4.0.7:
+    resolution: {integrity: sha512-LPP/3KorzCwBxfeUuZmaR6bG2kdeHSbe0P2tY3FLRU4vYrjYz5hI4QZwV0njUx3jeuKe67YukQ1LSPZBKDqO/Q==}
+    engines: {node: '>=8.6'}
+    dependencies:
+      braces: 3.0.3
+      picomatch: 2.3.1
+    dev: true
+
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
     engines: {node: '>= 0.6'}
@@ -17182,6 +17443,16 @@ packages:
   /mimic-fn@2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
     engines: {node: '>=6'}
+
+  /mimic-fn@4.0.0:
+    resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
+    engines: {node: '>=12'}
+    dev: true
+
+  /mimic-function@5.0.1:
+    resolution: {integrity: sha512-VP79XUPxV2CigYP3jWwAUFSku2aKqBH7uTAapFWCBqutsbmDo96KY5o8uh6U+/YSIn5OxJnXp73beVkpqMIGhA==}
+    engines: {node: '>=18'}
+    dev: true
 
   /mimic-response@3.1.0:
     resolution: {integrity: sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==}
@@ -17490,104 +17761,124 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: false
 
-  /next-i18next@13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0):
-    resolution: {integrity: sha512-X4kgi51BCOoGdKbv87eZ8OU7ICQDg5IP+T5fNjqDY3os9ea0OKTY4YpAiVFiwcI9XimcUmSPbKO4a9jFUyYSgg==}
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
     engines: {node: '>=14'}
     peerDependencies:
-      i18next: ^22.0.6
+      i18next: '>= 23.7.13'
       next: '>= 12.0.0'
       react: '>= 17.0.2'
-      react-i18next: ^12.2.0
+      react-i18next: '>= 13.5.0'
     dependencies:
       '@babel/runtime': 7.24.0
       '@types/hoist-non-react-statics': 3.3.5
       core-js: 3.33.3
       hoist-non-react-statics: 3.3.2
-      i18next: 22.5.1
-      i18next-fs-backend: 2.3.0
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
       next: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
-      react-i18next: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
-  /next-i18next@13.3.0(i18next@22.5.1)(next@13.2.4)(react-i18next@12.3.1)(react@18.2.0):
-    resolution: {integrity: sha512-X4kgi51BCOoGdKbv87eZ8OU7ICQDg5IP+T5fNjqDY3os9ea0OKTY4YpAiVFiwcI9XimcUmSPbKO4a9jFUyYSgg==}
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.2.4)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
     engines: {node: '>=14'}
     peerDependencies:
-      i18next: ^22.0.6
+      i18next: '>= 23.7.13'
       next: '>= 12.0.0'
       react: '>= 17.0.2'
-      react-i18next: ^12.2.0
+      react-i18next: '>= 13.5.0'
     dependencies:
       '@babel/runtime': 7.24.0
       '@types/hoist-non-react-statics': 3.3.5
       core-js: 3.33.3
       hoist-non-react-statics: 3.3.2
-      i18next: 22.5.1
-      i18next-fs-backend: 2.3.0
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
       next: 13.2.4(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
-      react-i18next: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
-  /next-i18next@13.3.0(i18next@22.5.1)(next@13.3.0)(react-i18next@12.3.1)(react@18.2.0):
-    resolution: {integrity: sha512-X4kgi51BCOoGdKbv87eZ8OU7ICQDg5IP+T5fNjqDY3os9ea0OKTY4YpAiVFiwcI9XimcUmSPbKO4a9jFUyYSgg==}
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.3.0)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
     engines: {node: '>=14'}
     peerDependencies:
-      i18next: ^22.0.6
+      i18next: '>= 23.7.13'
       next: '>= 12.0.0'
       react: '>= 17.0.2'
-      react-i18next: ^12.2.0
+      react-i18next: '>= 13.5.0'
     dependencies:
       '@babel/runtime': 7.24.0
       '@types/hoist-non-react-statics': 3.3.5
       core-js: 3.33.3
       hoist-non-react-statics: 3.3.2
-      i18next: 22.5.1
-      i18next-fs-backend: 2.3.0
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
       next: 13.3.0(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
-      react-i18next: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
-  /next-i18next@13.3.0(i18next@22.5.1)(next@13.4.5)(react-i18next@12.3.1)(react@18.2.0):
-    resolution: {integrity: sha512-X4kgi51BCOoGdKbv87eZ8OU7ICQDg5IP+T5fNjqDY3os9ea0OKTY4YpAiVFiwcI9XimcUmSPbKO4a9jFUyYSgg==}
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.4.5)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
     engines: {node: '>=14'}
     peerDependencies:
-      i18next: ^22.0.6
+      i18next: '>= 23.7.13'
       next: '>= 12.0.0'
       react: '>= 17.0.2'
-      react-i18next: ^12.2.0
+      react-i18next: '>= 13.5.0'
     dependencies:
       '@babel/runtime': 7.24.0
       '@types/hoist-non-react-statics': 3.3.5
       core-js: 3.33.3
       hoist-non-react-statics: 3.3.2
-      i18next: 22.5.1
-      i18next-fs-backend: 2.3.0
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
       next: 13.4.5(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
-      react-i18next: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
-  /next-i18next@13.3.0(i18next@22.5.1)(next@13.5.6)(react-i18next@12.3.1)(react@18.2.0):
-    resolution: {integrity: sha512-X4kgi51BCOoGdKbv87eZ8OU7ICQDg5IP+T5fNjqDY3os9ea0OKTY4YpAiVFiwcI9XimcUmSPbKO4a9jFUyYSgg==}
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.5.4)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
     engines: {node: '>=14'}
     peerDependencies:
-      i18next: ^22.0.6
+      i18next: '>= 23.7.13'
       next: '>= 12.0.0'
       react: '>= 17.0.2'
-      react-i18next: ^12.2.0
+      react-i18next: '>= 13.5.0'
     dependencies:
       '@babel/runtime': 7.24.0
       '@types/hoist-non-react-statics': 3.3.5
       core-js: 3.33.3
       hoist-non-react-statics: 3.3.2
-      i18next: 22.5.1
-      i18next-fs-backend: 2.3.0
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
+      next: 13.5.4(react-dom@18.2.0)(react@18.2.0)
+      react: 18.2.0
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
+    dev: false
+
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.5.6)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      i18next: '>= 23.7.13'
+      next: '>= 12.0.0'
+      react: '>= 17.0.2'
+      react-i18next: '>= 13.5.0'
+    dependencies:
+      '@babel/runtime': 7.24.0
+      '@types/hoist-non-react-statics': 3.3.5
+      core-js: 3.33.3
+      hoist-non-react-statics: 3.3.2
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
       next: 13.5.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
-      react-i18next: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
   /next-pwa@5.6.0(@babel/core@7.23.5)(next@13.3.0)(webpack@5.89.0):
@@ -17890,6 +18181,18 @@ packages:
       uuid: 8.3.2
     dev: false
 
+  /node-fetch@2.7.0:
+    resolution: {integrity: sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==}
+    engines: {node: 4.x || >=6.0.0}
+    peerDependencies:
+      encoding: ^0.1.0
+    peerDependenciesMeta:
+      encoding:
+        optional: true
+    dependencies:
+      whatwg-url: 5.0.0
+    dev: false
+
   /node-int64@0.4.0:
     resolution: {integrity: sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw==}
     dev: true
@@ -17931,6 +18234,13 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       path-key: 3.1.1
+
+  /npm-run-path@5.3.0:
+    resolution: {integrity: sha512-ppwTtiJZq0O/ai0z7yfudtBpWIoxM8yE6nHi1X47eFR2EWORqfbu6CnPlNsjeN683eT0qG6H/Pyf9fCcvjnnnQ==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      path-key: 4.0.0
+    dev: true
 
   /nprogress@0.2.0:
     resolution: {integrity: sha512-I19aIingLgR1fmhftnbWWO3dXc0hSxqHQHQb3H8m+K3TnEn/iSeTZZOyvKXWqQESMwuUVnatlCnZdLBZZt2VSA==}
@@ -18068,6 +18378,20 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       mimic-fn: 2.1.0
+
+  /onetime@6.0.0:
+    resolution: {integrity: sha512-1FlR+gjXK7X+AsAHso35MnyN5KqGwJRi/31ft6x0M194ht7S+rWAvd7PHss9xSKMzE0asv1pyIHaJYq+BbacAQ==}
+    engines: {node: '>=12'}
+    dependencies:
+      mimic-fn: 4.0.0
+    dev: true
+
+  /onetime@7.0.0:
+    resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      mimic-function: 5.0.1
+    dev: true
 
   /opener@1.5.2:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
@@ -18216,6 +18540,11 @@ packages:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
 
+  /path-key@4.0.0:
+    resolution: {integrity: sha512-haREypq7xkM7ErfgIyA0z+Bj4AGKlMSdlQE2jvJo6huWD1EdkKYV+G/T4nq0YEF2vgTT8kqMFKo1uHn950r4SQ==}
+    engines: {node: '>=12'}
+    dev: true
+
   /path-parse@1.0.7:
     resolution: {integrity: sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==}
 
@@ -18256,6 +18585,12 @@ packages:
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+
+  /pidtree@0.6.0:
+    resolution: {integrity: sha512-eG2dWTVw5bzqGRztnHExczNxt5VGsE6OwTeCG3fdUf9KBsZzO3R5OIIIzWR+iZA0NtZ+RDVdaoE2dK1cn6jH4g==}
+    engines: {node: '>=0.10'}
+    hasBin: true
+    dev: true
 
   /pify@2.3.0:
     resolution: {integrity: sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==}
@@ -19365,10 +19700,10 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-5v8E2XjZDFzK7K87eSwC7AJcAkcLt5xYZ4+yTPDAW1i7C93oOY1dnr4BaQM7un4Hm+GmghuiPvevWwlca5PwDA==}
+  /react-i18next@14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-FSIcJy6oauJbGEXfhUgVeLzvWBhIBIS+/9c6Lj4niwKZyGaGb4V4vUbATXSlsHJDXXB+ociNxqFNiFuV1gmoqg==}
     peerDependencies:
-      i18next: '>= 19.0.0'
+      i18next: '>= 23.2.3'
       react: '>= 16.8.0'
       react-dom: '*'
       react-native: '*'
@@ -19378,9 +19713,9 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@babel/runtime': 7.23.4
+      '@babel/runtime': 7.24.0
       html-parse-stringify: 3.0.1
-      i18next: 22.5.1
+      i18next: 23.12.1
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -19880,6 +20215,14 @@ packages:
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
 
+  /restore-cursor@5.1.0:
+    resolution: {integrity: sha512-oMA2dcrw6u0YfxJQXm342bFKX/E4sG9rbTzO9ptUcR/e8A33cHuvStiYOwH7fszkZlZ1z/ta9AAoPk2F4qIOHA==}
+    engines: {node: '>=18'}
+    dependencies:
+      onetime: 7.0.0
+      signal-exit: 4.1.0
+    dev: true
+
   /ret@0.2.2:
     resolution: {integrity: sha512-M0b3YWQs7R3Z917WRQy1HHA7Ba7D8hvZg6UE5mLykJxQVE2ju0IXbGlaHPPlkY+WN7wFP+wUMXmBFA0aV6vYGQ==}
     engines: {node: '>=4'}
@@ -19895,6 +20238,10 @@ packages:
   /rfc6902@5.1.1:
     resolution: {integrity: sha512-8rKImbe8GTXJ7cl9v+sF3U0WQ9aaSBn4fEcGP1VJakWN335ufj75ctvWXEhrzecGRxXpY6pEFbcdWzesjV7bFg==}
     dev: false
+
+  /rfdc@1.4.1:
+    resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
+    dev: true
 
   /right-align@0.1.3:
     resolution: {integrity: sha512-yqINtL/G7vs2v+dFIZmFUDbnVyFUJFKd6gK22Kgo6R4jfJGFtisKyncWDDULgjfqf4ASQuIQyjJ7XZ+3aWpsAg==}
@@ -20299,6 +20646,22 @@ packages:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
 
+  /slice-ansi@5.0.0:
+    resolution: {integrity: sha512-FC+lgizVPfie0kkhqUScwRu1O/lF6NOgJmlCgK+/LYxDCTk8sGelYaHDhFcDN+Sn3Cv+3VSa4Byeo+IMCzpMgQ==}
+    engines: {node: '>=12'}
+    dependencies:
+      ansi-styles: 6.2.1
+      is-fullwidth-code-point: 4.0.0
+    dev: true
+
+  /slice-ansi@7.1.0:
+    resolution: {integrity: sha512-bSiSngZ/jWeX93BqeIAbImyTbEihizcwNjFoRUIY/T1wWQsfsm2Vw1agPKylXvQTU7iASGdHhyqRlqQzfz+Htg==}
+    engines: {node: '>=18'}
+    dependencies:
+      ansi-styles: 6.2.1
+      is-fullwidth-code-point: 5.0.0
+    dev: true
+
   /sm3@1.0.3:
     resolution: {integrity: sha512-KyFkIfr8QBlFG3uc3NaljaXdYcsbRy1KrSfc4tsQV8jW68jAktGeOcifu530Vx/5LC+PULHT0Rv8LiI8Gw+c1g==}
     dev: false
@@ -20592,6 +20955,11 @@ packages:
     resolution: {integrity: sha512-QwiXZgpRcKkhTj2Scnn++4PKtWsH0kpzZ62L2R6c/LUVYv7hVnZqcg2+sMuT6R7Jusu1vviK/MFsu6kNJfWlEQ==}
     engines: {node: '>=4'}
 
+  /string-argv@0.3.2:
+    resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
+    engines: {node: '>=0.6.19'}
+    dev: true
+
   /string-convert@0.2.1:
     resolution: {integrity: sha512-u/1tdPl4yQnPBjnVrmdLo9gtuLvELKsAoRapekWggdiQNvvvum+jYF329d84NAa660KQw7pB2n36KrIKVoXa3A==}
     dev: false
@@ -20619,6 +20987,15 @@ packages:
     dependencies:
       eastasianwidth: 0.2.0
       emoji-regex: 9.2.2
+      strip-ansi: 7.1.0
+    dev: true
+
+  /string-width@7.2.0:
+    resolution: {integrity: sha512-tsaTIkKW9b4N+AEj+SVA+WhJzV7/zMhcSu78mLKWSk7cXMOSHsBKFWUs0fWwq8QyK3MgJBQRX6Gbi4kYbdvGkQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      emoji-regex: 10.3.0
+      get-east-asian-width: 1.2.0
       strip-ansi: 7.1.0
     dev: true
 
@@ -20714,6 +21091,11 @@ packages:
   /strip-final-newline@2.0.0:
     resolution: {integrity: sha512-BrpvfNAE3dcvq7ll3xVumzjKjZQ5tI1sEUIKr3Uoks0XUl45St3FlatVqef9prk4jRDzhW6WZg+3bk93y6pLjA==}
     engines: {node: '>=6'}
+
+  /strip-final-newline@3.0.0:
+    resolution: {integrity: sha512-dOESqjYr96iWYylGObzd39EuNTa5VJxyvVAEm5Jnh7KGo75V43Hk1odPQkNDyXNmUR6k+gEiDVXnjB8HJ3crXw==}
+    engines: {node: '>=12'}
+    dev: true
 
   /strip-indent@3.0.0:
     resolution: {integrity: sha512-laJTa3Jb+VQpaC6DseHhF7dXVqHTfJPCRDaEbid/drOhgitgYku/letMUqOXFoWV0zIIUbjpdH2t+tYj4bQMRQ==}
@@ -20983,6 +21365,23 @@ packages:
       unique-string: 2.0.0
     dev: false
 
+  /tencentcloud-sdk-nodejs@4.0.905:
+    resolution: {integrity: sha512-oXZygzjI/smJD1I9amigZ5vukur60ZUhuc5St8gv+3krGg3vDBccHWgEnXB/OlJVCcnbmb40mzsYfTkDOtSccQ==}
+    engines: {node: '>=10'}
+    dependencies:
+      form-data: 3.0.1
+      get-stream: 6.0.1
+      https-proxy-agent: 5.0.1
+      is-stream: 2.0.1
+      json-bigint: 1.0.0
+      node-fetch: 2.7.0
+      tslib: 1.13.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+    dev: false
+
   /terser-webpack-plugin@5.3.9(webpack@5.89.0):
     resolution: {integrity: sha512-ZuXsqE07EcggTWQjXUj+Aot/OMcD0bMKGgF63f7UxYcu5/AJF53aIpK1YoP5xR9l6s/Hy2b+t1AM0bLNPRuhwA==}
     engines: {node: '>= 10.13.0'}
@@ -21166,6 +21565,10 @@ packages:
       url-parse: 1.5.10
     dev: true
 
+  /tr46@0.0.3:
+    resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
+    dev: false
+
   /tr46@1.0.1:
     resolution: {integrity: sha512-dTpowEjclQ7Kgx5SdBkqRzVhERQXov8/l9Ft9dVM9fmg0W0KQSVaXX9T4i6twCPNtYiZM53lpSSUAwJbFPOHxA==}
     dependencies:
@@ -21210,6 +21613,10 @@ packages:
       json5: 1.0.2
       minimist: 1.2.8
       strip-bom: 3.0.0
+
+  /tslib@1.13.0:
+    resolution: {integrity: sha512-i/6DQjL8Xf3be4K/E6Wgpekn5Qasl1usyw++dAA35Ue5orEn65VIxOA+YvNNl9HV3qv70T7CNwjODHZrLwvd1Q==}
+    dev: false
 
   /tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
@@ -21799,6 +22206,10 @@ packages:
     resolution: {integrity: sha512-/TllNPjGenDwjE67M16TD9ALwuY847/zIoH7r+e5rSeG4kEa3HiMTAsUDj80yzIzhtshkv215KfsnQ/RXR3nVA==}
     dev: false
 
+  /webidl-conversions@3.0.1:
+    resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
+    dev: false
+
   /webidl-conversions@4.0.2:
     resolution: {integrity: sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==}
     dev: false
@@ -21899,6 +22310,13 @@ packages:
     dependencies:
       tr46: 3.0.0
       webidl-conversions: 7.0.0
+
+  /whatwg-url@5.0.0:
+    resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
+    dependencies:
+      tr46: 0.0.3
+      webidl-conversions: 3.0.1
+    dev: false
 
   /whatwg-url@7.1.0:
     resolution: {integrity: sha512-WUu7Rg1DroM7oQvGWfOiAK21n74Gg+T4elXEQYkOhtyLeWiJFoOGLXPKI/9gzIie9CtwVLm8wtw6YJdKyxSjeg==}
@@ -22176,6 +22594,15 @@ packages:
       strip-ansi: 7.1.0
     dev: true
 
+  /wrap-ansi@9.0.0:
+    resolution: {integrity: sha512-G8ura3S+3Z2G+mkgNRq8dqaFZAuxfsxpBB8OCTGRTCtp+l/v9nbFNmCUP1BZMts3G1142MsZfn6eeUKrr4PD1Q==}
+    engines: {node: '>=18'}
+    dependencies:
+      ansi-styles: 6.2.1
+      string-width: 7.2.0
+      strip-ansi: 7.1.0
+    dev: true
+
   /wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
@@ -22296,6 +22723,12 @@ packages:
     hasBin: true
     dev: true
 
+  /yaml@2.5.0:
+    resolution: {integrity: sha512-2wWLbGbYDiSqqIKoPjar3MPgB94ErzCtrNE1FdqGuaO0pi2JGjmE8aW8TDZwzU7vuxcGRdL/4gPQwQ7hD5AMSw==}
+    engines: {node: '>= 14'}
+    hasBin: true
+    dev: true
+
   /yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
     engines: {node: '>=12'}
@@ -22329,6 +22762,10 @@ packages:
 
   /zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
+    dev: false
+
+  /zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
     dev: false
 
   /zrender@5.4.4:

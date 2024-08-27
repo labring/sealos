@@ -6,9 +6,12 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { useEffect } from 'react';
+import { useTranslation } from 'next-i18next';
+import Script from 'next/script';
 
 export default function SigninPage() {
   const { layoutConfig } = useConfigStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');
@@ -26,6 +29,9 @@ export default function SigninPage() {
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
         <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
+      {layoutConfig?.meta.scripts?.map((item, i) => {
+        return <Script key={i} {...item} />;
+      })}
       <SigninComponent />
     </Box>
   );

@@ -11,7 +11,7 @@ import { AppCrdType } from '@/types/appCRD';
 import { CronJobListItemType } from '@/types/cronJob';
 import { DBListItemType, KbPgClusterType } from '@/types/db';
 import { AppListItemType } from '@/types/launchpad';
-import { ResourceListItemType, ResourceKindType } from '@/types/resource';
+import { ResourceListItemType, AllResourceKindType } from '@/types/resource';
 import {
   V1CronJob,
   V1Deployment,
@@ -28,6 +28,7 @@ import dayjs from 'dayjs';
 import { flatMap } from 'lodash';
 import { getLangStore } from './cookieUtils';
 import { cpuFormatToM, memoryFormatToMi } from './tools';
+import { ObjectStorageCR, ObjectStorageItemType } from '@/types/objectStorage';
 
 export function sortItemsByCreateTime<T extends { createTime: string }>(items: T[]): T[] {
   return items.sort((a, b) => {
@@ -126,17 +127,29 @@ export const adaptOtherList = (
   return flatMap(data, (innerArray) => {
     return innerArray.map((item) => {
       const labels: { [key: string]: string } = item.metadata?.labels || {};
-      const kind = item.kind as ResourceKindType;
+      const kind = item.kind as AllResourceKindType;
       return {
         id: item.metadata?.uid || '',
         name: item.metadata?.name || '',
         createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
         kind: kind,
         label: labels[componentLabel] ?? '',
-        apiVersion: item.apiVersion,
+        apiVersion: item.apiVersion ?? '',
         servicePorts: kind === 'Service' ? (item as V1Service)?.spec?.ports || [] : [],
         serviceType: (item as V1Service)?.spec?.type || 'ClusterIP'
       };
     });
   });
+};
+
+export const adaptObjectStorageItem = (item: ObjectStorageCR): ObjectStorageItemType => {
+  return {
+    id: item.metadata?.uid || '',
+    name: item.metadata?.name || '',
+    policy: item.spec.policy,
+    createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    status: item.status?.name ? StatusMap[StatusEnum.Running] : StatusMap[StatusEnum.Waiting],
+    apiVersion: item.apiVersion,
+    kind: 'ObjectStorageBucket'
+  };
 };

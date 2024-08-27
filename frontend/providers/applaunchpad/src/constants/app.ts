@@ -1,3 +1,5 @@
+import { TAppSourceType } from '@/types/app';
+
 export enum AppStatusEnum {
   running = 'running',
   creating = 'creating',
@@ -85,8 +87,19 @@ export const appDeployKey = 'cloud.sealos.io/app-deploy-manager';
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
 export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';
+export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+export const sealafDeployKey = 'sealaf-app';
+
 export enum Coin {
   cny = 'cny',
   shellCoin = 'shellCoin',
   usd = 'usd'
 }
+
+export const AppSourceConfigs: Array<{
+  key: string;
+  type: TAppSourceType;
+}> = [
+  { key: templateDeployKey, type: 'app_store' },
+  { key: sealafDeployKey, type: 'sealaf' }
+];

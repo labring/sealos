@@ -56,7 +56,10 @@ export interface AppListItemType {
   maxReplicas: number;
   storeAmount: number;
   labels: { [key: string]: string };
+  source: TAppSource;
 }
+
+export type ProtocolType = 'HTTP' | 'GRPC' | 'WS';
 
 export interface AppEditType {
   appName: string;
@@ -71,7 +74,7 @@ export interface AppEditType {
     networkName: string;
     portName: string;
     port: number;
-    protocol: 'HTTP' | 'GRPC' | 'WS';
+    protocol: ProtocolType;
     openPublicDomain: boolean;
     publicDomain: string; // default domain
     customDomain: string; // custom domain
@@ -105,6 +108,15 @@ export interface AppEditType {
   }[];
 }
 
+export type AppEditSyncedFields = Pick<AppEditType, 'imageName' | 'replicas' | 'cpu' | 'memory'>;
+
+export type TAppSourceType = 'app_store' | 'sealaf';
+
+export type TAppSource = {
+  hasSource: boolean;
+  sourceName: string;
+  sourceType: TAppSourceType;
+};
 export interface AppDetailType extends AppEditType {
   id: string;
   createTime: string;
@@ -115,7 +127,7 @@ export interface AppDetailType extends AppEditType {
   usedMemory: MonitorDataResult;
   crYamlList: DeployKindsType[];
   labels: { [key: string]: string };
-
+  source: TAppSource;
   // pods: PodDetailType[];
 }
 
@@ -125,7 +137,6 @@ export interface PodStatusMapType {
   color: string;
   reason?: string;
   message?: string;
-  lastStateReason?: string;
 }
 export interface PodDetailType extends V1Pod {
   podName: string;
@@ -140,6 +151,7 @@ export interface PodDetailType extends V1Pod {
   memory: number;
   podReason?: string;
   podMessage?: string;
+  containerStatus: PodStatusMapType;
 }
 export interface PodMetrics {
   podName: string;

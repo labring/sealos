@@ -1,5 +1,6 @@
 import { getUserQuota } from '@/api/platform';
 import { DBEditType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 import { UserQuotaItemType } from '@/types/user';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -9,7 +10,7 @@ type State = {
   balance: number;
   userQuota: UserQuotaItemType[];
   loadUserQuota: () => Promise<null>;
-  checkQuotaAllow: (request: DBEditType, usedData?: DBEditType) => string;
+  checkQuotaAllow: (request: DBEditType, usedData?: DBEditType) => I18nCommonKey | undefined;
 };
 
 export const useUserStore = create<State>()(
@@ -25,7 +26,10 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, storage, replicas }, usedData) => {
+      checkQuotaAllow: (
+        { cpu, memory, storage, replicas },
+        usedData
+      ): I18nCommonKey | undefined => {
         const quote = get().userQuota;
 
         const request = {
@@ -41,10 +45,10 @@ export const useUserStore = create<State>()(
           request.storage -= storage * replicas;
         }
 
-        const overLimitTip = {
-          cpu: 'app.The applied CPU exceeds the quota',
-          memory: 'app.The applied memory exceeds the quota',
-          storage: 'app.The applied storage exceeds the quota'
+        const overLimitTip: { [key: string]: I18nCommonKey } = {
+          cpu: 'app.cpu_exceeds_quota',
+          memory: 'app.memory_exceeds_quota',
+          storage: 'app.storage_exceeds_quota'
         };
 
         const exceedQuota = quote.find((item) => {
@@ -53,7 +57,7 @@ export const useUserStore = create<State>()(
           }
         });
 
-        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : '';
+        return exceedQuota?.type ? overLimitTip[exceedQuota.type] : undefined;
       }
     }))
   )

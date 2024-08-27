@@ -98,14 +98,12 @@ const Pods = ({
           {item.status.label}
           {!!item.status.reason && (
             <MyTooltip
-              label={`${
-                item.status?.lastStateReason ? `LastReason: ${item.status?.lastStateReason}\n` : ''
-              }Reason: ${item.status.reason}${
+              label={`Reason: ${item.status.reason}${
                 item.status.message ? `\nMessage: ${item.status.message}` : ''
               }`}
               whiteSpace={'pre-wrap'}
               wordBreak={'break-all'}
-              maxW={'400px'}
+              maxW={'300px'}
             >
               <QuestionOutlineIcon ml={1} />
             </MyTooltip>
@@ -117,9 +115,14 @@ const Pods = ({
       title: 'Restarts Num',
       key: 'restarts',
       render: (item: PodDetailType) => (
-        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
+        <Flex alignItems={'center'} fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
           {item.restarts}
-        </Box>
+          {!!item.containerStatus.reason && (
+            <Flex alignItems={'center'} color={item.containerStatus?.color}>
+              (<Text>{item.containerStatus?.reason}</Text>)
+            </Flex>
+          )}
+        </Flex>
       )
     },
     {

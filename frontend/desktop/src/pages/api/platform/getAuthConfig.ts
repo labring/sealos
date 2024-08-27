@@ -53,7 +53,7 @@ function genResAuthClientConfig(conf: AuthConfigType) {
       }
     },
     proxyAddress: conf.proxyAddress || '',
-    baiduToken: conf.baiduToken || ''
+    hasBaiduToken: !!conf.baiduToken
   };
   return authClientConfig;
 }

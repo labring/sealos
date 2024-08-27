@@ -24,6 +24,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit = {
@@ -40,7 +41,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [minStorage, setMinStorage] = useState(1);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
-  const { loadDBDetail } = useDBStore();
+  const { loadDBDetail, dbDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
   const { checkQuotaAllow } = useUserStore();
 
@@ -120,7 +121,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         });
       }
       await createDB({ dbForm: formData, isEdit });
-
       toast({
         title: t(applySuccess),
         status: 'success'
@@ -136,7 +136,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('submit_error');
       if (!!obj.message) {
         return obj.message;
       }

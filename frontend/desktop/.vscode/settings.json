@@ -1,0 +1,25 @@
+{
+    "i18n-ally.localesPaths": [
+        "public/locales"
+    ],
+    "i18n-ally.enabledParsers": [
+        "json",
+        "yaml",
+        "js",
+        "ts"
+    ],
+    "i18n-ally.keystyle": "nested",
+    "i18n-ally.sortKeys": true,
+    "i18n-ally.keepFulfilled": false,
+    "i18n-ally.sourceLanguage": "zh",
+    "i18n-ally.displayLanguage": "zh",
+    "i18n-ally.namespace": true,
+    "i18n-ally.pathMatcher": "{locale}/{namespaces}.json",
+    "i18n-ally.extract.targetPickingStrategy": "most-similar-by-key",
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}

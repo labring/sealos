@@ -9,7 +9,8 @@ import {
   useDisclosure,
   IconButtonProps,
   Button,
-  Input
+  Input,
+  Flex
 } from '@chakra-ui/react';
 import CreateFolderIcon from '@/components/Icons/CreateFolderIcon';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ export default function CreateFolderModal({ ...styles }: Omit<IconButtonProps, '
   const queryClient = useQueryClient();
   const oss = useOssStore();
   const { t } = useTranslation('file');
+  const { t: commonT } = useTranslation('common');
   const { toast } = useToast();
   const mutation = useMutation({
     mutationFn: putObject(oss.client!),
@@ -58,30 +60,29 @@ export default function CreateFolderModal({ ...styles }: Omit<IconButtonProps, '
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
-        <ModalContent
-          borderRadius={'4px'}
-          maxW={'560px'}
-          bgColor={'#FFF'}
-          backdropFilter="blur(150px)"
-          p="24px"
-        >
-          <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">{t('createFolder')}</ModalHeader>
-          <ModalBody h="100%" w="100%" p="0" mt="22px" display={'flex'} flexDir={'column'}>
-            <Text mb="12px">{t('folderName')}</Text>
-            <Input
-              mb="20px"
-              type="text"
-              variant={'secondary'}
-              placeholder="name"
-              value={folderName}
-              onChange={(v) => setFolderName(v.target.value.trim())}
-            />
+        <ModalContent maxW={'530px'} backdropFilter="blur(150px)">
+          <ModalCloseButton />
+          <ModalHeader>{t('createFolder')}</ModalHeader>
+          <ModalBody h="100%" w="100%" px="52px" py="32px" display={'flex'} flexDir={'column'}>
+            <Flex gap={'70px'} alignItems={'center'} mb={'36px'}>
+              <Text color={'grayModern.900'} fontSize={'14px'} fontWeight={'500'}>
+                {commonT('name')}
+              </Text>
+              <Input
+                type="text"
+                variant={'outline'}
+                placeholder={t('folderName')}
+                value={folderName}
+                flex={1}
+                onChange={(v) => setFolderName(v.target.value.trim())}
+              />
+            </Flex>
             <Button
-              variant={'primary'}
+              variant={'solid'}
               alignSelf={'self-end'}
-              px="43px"
+              px="25.5px"
               py="8px"
+              fontWeight={'500'}
               onClick={() => {
                 const Bucket = oss.currentBucket?.name;
                 const Key = [...oss.prefix, folderName, FolderPlaceholder].join('/');
