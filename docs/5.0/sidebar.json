@@ -53,6 +53,7 @@
             "id": "user-guide/app-launchpad/app-launchpad"
           },
           "items": [
+            "user-guide/app-launchpad/use-app-launchpad",
             "user-guide/app-launchpad/update-app",
             "user-guide/app-launchpad/add-domain",
             "user-guide/app-launchpad/expose-multi-ports",
