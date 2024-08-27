@@ -51,6 +51,14 @@ async function syncDocs () {
         await fs.copy(sidebarSource, sidebarDest)
         console.log(`sidebar.json 已复制到 ${sidebarDest}`)
       }
+
+      const sidebarSourceZh = path.join(rootDir, shortVersion, 'i18n', 'zh-Hans', 'sidebar.json')
+      const sidebarDestZh = path.join(websiteDir, 'i18n/zh-Hans/docusaurus-plugin-content-docs', `version-${version}.json`)
+      if (await fs.pathExists(sidebarSourceZh)) {
+        await fs.copy(sidebarSourceZh, sidebarDestZh)
+        console.log(`zh sidebar.json 已复制到 ${sidebarDestZh}`)
+      }
+
     }
 
     // 同步博客内容

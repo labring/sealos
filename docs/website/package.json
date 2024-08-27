@@ -1,6 +1,6 @@
 {
   "name": "sealos-site",
-  "version": "0.0.0",
+  "version": "5.0.0",
   "private": true,
   "scripts": {
     "sync-docs": "node scripts/sync-docs.js",
