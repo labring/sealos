@@ -362,6 +362,8 @@ spec:
             properties:
               userName:
                 type: string
+              userID:
+                type: string
             type: object
           status:
             description: DebtStatus defines the observed state of Debt
@@ -520,6 +522,9 @@ spec:
                 type: string
               userID:
                 description: UserID is the user id who want to recharge
+                type: string
+              userCR:
+                description: UserCr is the user cr name who want to recharge
                 type: string
             type: object
           status:

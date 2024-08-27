@@ -55,6 +55,8 @@ spec:
             properties:
               userName:
                 type: string
+              userID:
+                type: string
             type: object
           status:
             description: DebtStatus defines the observed state of Debt

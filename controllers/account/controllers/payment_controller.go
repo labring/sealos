@@ -248,8 +248,23 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 	if payment.Status.TradeNO != "" {
 		return nil
 	}
-	if payment.Spec.UserID == "" {
-		return fmt.Errorf("user ID is empty")
+	// backward compatibility
+	if payment.Spec.UserCR == "" {
+		if payment.Spec.UserID == "" {
+			return fmt.Errorf("user ID is empty")
+		}
+		payment.Spec.UserCR = payment.Spec.UserID
+		user, err := r.Account.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR})
+		if err != nil {
+			return fmt.Errorf("get user failed: %w", err)
+		}
+		if user == nil {
+			return fmt.Errorf("user not found")
+		}
+		payment.Spec.UserID = user.ID
+	}
+	if err := r.Create(context.Background(), payment); err != nil {
+		return fmt.Errorf("create payment failed: %w", err)
 	}
 	// get user ID
 	account, err := r.Account.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID, IgnoreEmpty: true})

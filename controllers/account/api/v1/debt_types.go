@@ -59,6 +59,7 @@ const (
 // DebtSpec defines the desired state of Debt
 type DebtSpec struct {
 	UserName string `json:"userName,omitempty"`
+	UserID   string `json:"userID,omitempty"`
 }
 
 // DebtStatus defines the observed state of Debt
