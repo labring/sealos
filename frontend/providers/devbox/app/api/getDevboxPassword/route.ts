@@ -7,7 +7,8 @@ import { jsonRes } from '@/services/backend/response'
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = req.nextUrl
+    const queryString = req.url.split('?')[1]
+    const searchParams = new URLSearchParams(queryString)
     const devboxName = searchParams.get('devboxName') as string
     const headerList = req.headers
 
