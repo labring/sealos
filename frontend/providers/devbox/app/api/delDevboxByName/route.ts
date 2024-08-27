@@ -7,8 +7,7 @@ import { getK8s } from '@/services/backend/kubernetes'
 
 export async function DELETE(req: NextRequest) {
   try {
-    const queryString = req.url.split('?')[1]
-    const searchParams = new URLSearchParams(queryString)
+    const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName') as string
     const headerList = req.headers
 
