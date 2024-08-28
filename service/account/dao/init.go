@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/goccy/go-json"
 
@@ -25,6 +26,7 @@ type Region struct {
 
 var (
 	DBClient Interface
+	JwtMgr   *helper.JWTManager
 	Cfg      *Config
 	Debug    bool
 )
@@ -88,5 +90,10 @@ func InitDB() error {
 	}
 	Cfg.LocalRegionDomain = DBClient.GetLocalRegion().Domain
 	fmt.Println("region-info: ", Cfg)
+	jwtSecret := os.Getenv(helper.EnvJwtSecret)
+	if jwtSecret == "" {
+		return fmt.Errorf("empty jwt secret env: %s", helper.EnvJwtSecret)
+	}
+	JwtMgr = helper.NewJWTManager(os.Getenv(helper.EnvJwtSecret), time.Minute*30)
 	return nil
 }
