@@ -104,7 +104,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	logger.V(1).Info("debt status", "status", debtStatus)
 	switch debtStatus {
-	case v1.SuspendDebtNamespaceAnnoStatus:
+	case v1.SuspendDebtNamespaceAnnoStatus, v1.TerminateSuspendDebtNamespaceAnnoStatus:
 		if err := r.SuspendUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "suspend namespace resources failed")
 			return ctrl.Result{}, err

@@ -51,9 +51,10 @@ var DefaultDebtConfig = map[DebtStatusType]int64{
 const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
 
 const (
-	NormalDebtNamespaceAnnoStatus  = "Normal"
-	SuspendDebtNamespaceAnnoStatus = "Suspend"
-	ResumeDebtNamespaceAnnoStatus  = "Resume"
+	NormalDebtNamespaceAnnoStatus           = "Normal"
+	SuspendDebtNamespaceAnnoStatus          = "Suspend"
+	ResumeDebtNamespaceAnnoStatus           = "Resume"
+	TerminateSuspendDebtNamespaceAnnoStatus = "TerminateSuspend"
 )
 
 // DebtSpec defines the desired state of Debt
