@@ -19,11 +19,10 @@ export async function GET(req: NextRequest) {
 
     const response = await k8sCore.readNamespacedSecret(devboxName, 'default')
 
-    const base64Secret = response.body.data?.['SEALOS_DEVBOX_PASSWORD'] as string
+    const base64PublicKey = response.body.data?.['SEALOS_DEVBOX_PUBLIC_KEY'] as string
+    const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string
 
-    const normalSecret = Buffer.from(base64Secret, 'base64').toString('utf-8')
-
-    return jsonRes({ data: normalSecret })
+    return jsonRes({ data: { base64PublicKey, base64PrivateKey } })
   } catch (err: any) {
     // TODO: ApiResp全部去除
     return jsonRes<ApiResp>({

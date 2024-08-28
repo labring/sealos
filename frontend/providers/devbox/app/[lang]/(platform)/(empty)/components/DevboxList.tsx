@@ -137,12 +137,15 @@ const DevboxList = ({
 
   const handleGotoVSCode = useCallback(async (devbox: DevboxListItemType) => {
     try {
-      const password = await getDevboxPassword({ devboxName: devbox.name })
+      const { base64PublicKey, base64PrivateKey } = await getDevboxPassword({
+        devboxName: devbox.name
+      })
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
         SSHDOMAIN
-      )}&sshPort=${encodeURIComponent(devbox.sshPort)}&password=${encodeURIComponent(password)}`
-      console.log('vscodeUri', vscodeUri)
+      )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
+        base64PrivateKey
+      )}`
 
       window.location.href = vscodeUri
     } catch (error: any) {

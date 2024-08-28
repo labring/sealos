@@ -4,6 +4,9 @@ import { devboxStatusMap } from '@/constants/devbox'
 import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
+import { customAlphabet } from 'nanoid'
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -42,7 +45,17 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       ],
       yData: ['0.1', '0.2', '0.3', '0.4', '0.5']
     },
-    networks: devbox.networks
+    networks: devbox.networks || [
+      {
+        networkName: '',
+        portName: nanoid(),
+        port: 80,
+        protocol: 'HTTP',
+        openPublicDomain: false,
+        publicDomain: '',
+        customDomain: ''
+      }
+    ]
   }
 }
 

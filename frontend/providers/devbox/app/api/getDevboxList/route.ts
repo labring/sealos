@@ -92,8 +92,12 @@ export async function GET(req: NextRequest) {
             customDomain: matchingIngress.customDomain
           }
         }
+        console.log('network', network)
 
-        return network
+        return {
+          ...network,
+          port: network.containerPort
+        }
       })
       return item
     })
