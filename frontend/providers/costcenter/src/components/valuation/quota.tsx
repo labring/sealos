@@ -1,63 +1,86 @@
 import { valuationMap } from '@/constants/payment';
 import { UserQuotaItemType } from '@/pages/api/getQuota';
 import request from '@/service/request';
-import useEnvStore from '@/stores/env';
 import { ApiResp } from '@/types';
-import { Flex, Stack } from '@chakra-ui/react';
+import { Box, Divider, HStack, Stack, StackProps, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
-import MyTooltip from '../MyTooltip';
-
-export default function Quota() {
+import CpuIcon from '../icons/CpuIcon';
+import { MemoryIcon } from '../icons/MemoryIcon';
+import { StorageIcon } from '../icons/StorageIcon';
+const QuotaPie = dynamic(() => import('../cost_overview/components/quotaPieChart'), { ssr: false });
+export default function Quota(props: StackProps) {
   const { t } = useTranslation();
   const { data } = useQuery(['quota'], () =>
     request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota')
   );
-  const quota = (data?.data?.quota || []).flatMap((_quota) => {
-    const x = valuationMap.get(_quota.type);
-    if (!x) return [];
-    return [
-      {
-        ..._quota,
-        unit: x.unit,
-        bg: x.bg
-      }
-    ];
-  });
-  const gpuEnabled = useEnvStore((s) => s.gpuEnabled);
+  const quota = (data?.data?.quota || [])
+    .filter((d) => d.type !== 'gpu')
+    .map((d) => {
+      const _limit = Number.parseInt(d.limit * 1000 + '');
+      const _used = Number.parseInt(d.used * 1000 + '');
+      return {
+        ...d,
+        limit: _limit / 1000,
+        used: _used / 1000,
+        remain: (_limit - _used) / 1000,
+        title: t(d.type),
+        unit: valuationMap.get(d.type)?.unit,
+        bg: valuationMap.get(d.type)?.bg
+      };
+    });
   return (
-    <Stack>
-      {quota
-        .filter((x) => gpuEnabled || x.type !== 'gpu')
-        .map((item) => (
-          <MyTooltip
-            hasArrow={true}
-            placement="top"
-            key={item.type}
-            label={`${t('Total Quota')}: ${item.limit} ${item.unit}
-${t('Used Quota')}: ${item.used} ${item.unit}
-${t('Remaining Quota')}: ${item.limit - item.used} ${item.unit}
-`}
-            whiteSpace={'pre-wrap'}
-          >
-            <Flex
-              justify={'space-between'}
-              align={'center'}
-              mb="20px"
-              fontSize={'12px'}
-              textTransform={'capitalize'}
-            >
-              {t(item.type)}
-              <Flex w="170px" h="7px" bg="#DEE0E2" borderRadius={'4px'} overflow={'hidden'}>
-                <Flex
-                  borderRadius={'4px'}
-                  w={Math.floor((item.used * 100) / item.limit) + '%'}
-                  bg={item.bg}
-                />
-              </Flex>
-            </Flex>
-          </MyTooltip>
-        ))}
+    <Stack {...props}>
+      {quota.map((item) => (
+        <HStack key={item.type} gap={'30px'}>
+          <QuotaPie data={item} color={item.bg} />
+          <Box>
+            <HStack>
+              {item.type === 'cpu' ? (
+                <CpuIcon color={'grayModern.600'} boxSize={'20px'} />
+              ) : item.type === 'memory' ? (
+                <MemoryIcon color={'grayModern.600'} boxSize={'20px'} />
+              ) : item.type === 'storage' ? (
+                <StorageIcon color={'grayModern.600'} boxSize={'20px'} />
+              ) : (
+                <></>
+              )}
+              <Text fontSize={'16px'} fontWeight="500" color={'grayModern.900'}>
+                {t(item.type)}
+              </Text>
+            </HStack>
+            <HStack fontSize={'14px'} gap="10px">
+              <Text size={'sm'} color={'grayModern.600'}>
+                {t('Used')}: {item.used}
+                {item.unit}
+              </Text>
+              <Divider
+                orientation={'vertical'}
+                borderColor={'grayModern.600'}
+                bgColor={'grayModern.500'}
+                h={'10px'}
+                borderWidth={'1px'}
+              />
+              <Text size={'sm'} color={'grayModern.600'}>
+                {t('Remain')}: {item.remain}
+                {item.unit}
+              </Text>
+              <Divider
+                orientation={'vertical'}
+                borderColor={'grayModern.600'}
+                bgColor={'grayModern.500'}
+                h={'10px'}
+                borderWidth={'1px'}
+              />
+              <Text size={'sm'} color={'grayModern.600'}>
+                {t('Total')}: {item.limit}
+                {item.unit}
+              </Text>
+            </HStack>
+          </Box>
+        </HStack>
+      ))}
     </Stack>
   );
 }

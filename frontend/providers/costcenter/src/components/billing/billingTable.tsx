@@ -1,38 +1,24 @@
+import lineDown from '@/assert/lineDown.svg';
+import lineUp from '@/assert/lineUp.svg';
+import Amount from '@/components/billing/AmountTableHeader';
 import { TableHeaderID } from '@/constants/billing';
-import { BillingItem, BillingType, RechargeBillingItem, TransferBilling } from '@/types/billing';
-import {
-  Box,
-  Flex,
-  Img,
-  Table,
-  TableContainer,
-  TableContainerProps,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tr
-} from '@chakra-ui/react';
-import { format, parseISO } from 'date-fns';
-import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
-import CurrencySymbol from '../CurrencySymbol';
-import BillingDetails from './billingDetails';
+import useSessionStore from '@/stores/session';
+import { BillingItem, BillingType, TransferBilling } from '@/types/billing';
+import { Box, Flex, Img, TableContainerProps, Text } from '@chakra-ui/react';
 import {
   CellContext,
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
   HeaderContext,
-  Table as TTable,
+  createColumnHelper,
+  getCoreRowModel,
   useReactTable
 } from '@tanstack/react-table';
+import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
-import Amount from '@/components/billing/AmountTableHeader';
-import useSessionStore from '@/stores/session';
-import lineUp from '@/assert/lineUp.svg';
-import lineDown from '@/assert/lineDown.svg';
+import CurrencySymbol from '../CurrencySymbol';
+import { BaseTable } from '../table/BaseTable';
+import BillingDetails from './billingDetails';
 export function CommonBillingTable({
   data,
   isOverview = false,
@@ -50,7 +36,7 @@ export function CommonBillingTable({
             <Text mr="4px">{t(header.id)}</Text>
             {!!needCurrency && (
               <Text>
-                (<CurrencySymbol type={currency} />)
+                <CurrencySymbol type={currency} />
               </Text>
             )}
           </Flex>
@@ -187,7 +173,7 @@ export function TransferBillingTable({ data }: { data: TransferBilling[] }) {
             <Text mr="4px">{t(header.id)}</Text>
             {!!needCurrency && (
               <Text>
-                (<CurrencySymbol type={currency} />)
+                <CurrencySymbol type={currency} />
               </Text>
             )}
           </Flex>
@@ -299,7 +285,7 @@ export function BillingDetailsTable({
             <Text mr="4px">{t(header.id)}</Text>
             {!!needCurrency && (
               <Text>
-                (<CurrencySymbol type={currency} />)
+                <CurrencySymbol type={currency} />
               </Text>
             )}
           </Flex>
@@ -369,114 +355,4 @@ export function BillingDetailsTable({
     getCoreRowModel: getCoreRowModel()
   });
   return <BaseTable table={table} h="auto" {...styles} />;
-}
-
-export function BaseTable<T extends unknown>({
-  table,
-  ...styles
-}: { table: TTable<T> } & TableContainerProps) {
-  return (
-    <TableContainer w="100%" mt="0px" flex={'1'} h="0" overflowY={'auto'} {...styles}>
-      <Table variant="simple" fontSize={'12px'} width={'full'}>
-        <Thead>
-          {table.getHeaderGroups().map((headers) => {
-            return (
-              <Tr key={headers.id}>
-                {headers.headers.map((header) => {
-                  const pinState = header.column.getIsPinned();
-                  return (
-                    <Th
-                      p="14px"
-                      top={'0'}
-                      {...(!pinState
-                        ? {
-                            zIndex: 3
-                          }
-                        : {
-                            [pinState]: 0,
-                            _after: {
-                              content: '""',
-                              position: 'absolute',
-                              top: 0,
-                              bottom: '-1px',
-                              width: '30px',
-                              ...(pinState === 'right'
-                                ? {
-                                    right: '100%',
-                                    boxShadow: 'rgba(5, 5, 5, 0.06) -10px 0px 8px -8px inset'
-                                  }
-                                : {
-                                    left: '100%',
-                                    boxShadow: 'rgba(5, 5, 5, 0.06) 10px 0px 8px -8px inset'
-                                  })
-                            },
-                            bgColor: 'white',
-                            zIndex: 4
-                          })}
-                      position={'sticky'}
-                      key={header.id}
-                      bg={'#F1F4F6'}
-                      _before={{
-                        content: `""`,
-                        display: 'block',
-                        borderTopLeftRadius: '10px',
-                        borderTopRightRadius: '10px',
-                        background: '#F1F4F6'
-                      }}
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </Th>
-                  );
-                })}
-              </Tr>
-            );
-          })}
-        </Thead>
-        <Tbody whiteSpace={'nowrap'}>
-          {table.getRowModel().rows.map((item) => {
-            return (
-              <Tr key={item.id} fontSize={'12px'}>
-                {item.getAllCells().map((cell) => {
-                  const pinState = cell.column.getIsPinned();
-                  return (
-                    <Td
-                      p="10px"
-                      key={cell.id}
-                      {...(!pinState
-                        ? {}
-                        : {
-                            [pinState]: 0,
-                            position: 'sticky',
-                            zIndex: 2,
-                            _after: {
-                              content: '""',
-                              position: 'absolute',
-                              top: 0,
-                              bottom: '-1px',
-                              width: '30px',
-                              ...(pinState === 'right'
-                                ? {
-                                    right: '100%',
-                                    boxShadow: 'rgba(5, 5, 5, 0.06) -10px 0px 8px -8px inset'
-                                  }
-                                : {
-                                    left: '100%',
-                                    boxShadow: 'rgba(5, 5, 5, 0.06) 10px 0px 8px -8px inset'
-                                  })
-                            },
-                            bgColor: 'white'
-                          })}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </Td>
-                  );
-                })}
-              </Tr>
-            );
-          })}
-          {}
-        </Tbody>
-      </Table>
-    </TableContainer>
-  );
 }

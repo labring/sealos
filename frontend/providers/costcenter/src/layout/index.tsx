@@ -35,7 +35,7 @@ export default function Layout({ children }: any) {
       w="100vw"
       h="100vh"
       position="relative"
-      background="#EAEBF0"
+      background={'grayModern.100'}
       pt={'4px'}
       pb="10px"
       alignItems={'center'}

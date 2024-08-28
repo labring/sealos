@@ -11,7 +11,7 @@ export default function Index({ text, href }: { text: string; href?: string }) {
         fontStyle="normal"
         fontWeight="400"
         fontSize="12px"
-        color="#1D8CDC"
+        color="brightBlue.600"
         {...(href
           ? {
               href: href

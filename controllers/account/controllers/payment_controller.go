@@ -18,21 +18,22 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"sync"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
@@ -40,75 +41,282 @@ import (
 // PaymentReconciler reconciles a Payment object
 type PaymentReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Logger logr.Logger
-	domain string
+	Account           *AccountReconciler
+	WatchClient       client.WithWatch
+	Scheme            *runtime.Scheme
+	Logger            logr.Logger
+	reconcileDuration time.Duration
+	createDuration    time.Duration
+	domain            string
 }
+
+var (
+	// Ensure PaymentReconciler implements the LeaderElectionRunnable and Runnable interface
+	_ manager.LeaderElectionRunnable = &PaymentReconciler{}
+	_ manager.Runnable               = &PaymentReconciler{}
+)
+
+const (
+	EnvPaymentReconcileDuration = "PAYMENT_RECONCILE_DURATION"
+	EnvPaymentCreateDuration    = "PAYMENT_CREATE_DURATION"
+
+	defaultReconcileDuration = 10 * time.Second
+	defaultCreateDuration    = 5 * time.Second
+)
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=payments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=payments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=payments/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Payment object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger = log.FromContext(ctx)
-
-	p := &accountv1.Payment{}
-	if err := r.Get(ctx, req.NamespacedName, p); err != nil {
-		r.Logger.Error(err, "get payment failed")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-	if p.Status.TradeNO != "" {
-		return ctrl.Result{}, nil
-	}
-	if p.Status.Status == "" {
-		p.Status.Status = "Created"
-		if err := r.Status().Update(ctx, p); err != nil {
-			r.Logger.Error(err, "update payment failed: %v", "payment", *p)
-			return ctrl.Result{Requeue: true}, err
-		}
-	}
-
-	// get payment handler
-	payHandler, err := pay.NewPayHandler(p.Spec.PaymentMethod)
-	if err != nil {
-		r.Logger.Error(err, "get payment Interface failed")
-		return ctrl.Result{}, err
-	}
-	// get tradeNO and codeURL
-	tradeNO, codeURL, err := payHandler.CreatePayment(p.Spec.Amount/10000, p.Spec.UserID, "sealos cloud pay [domain="+r.domain+"]")
-	if err != nil {
-		r.Logger.Error(err, "get tradeNO and codeURL failed")
-		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
-	}
-	p.Status.CodeURL = codeURL
-	p.Status.TradeNO = tradeNO
-
-	if err := r.Status().Update(ctx, p); err != nil {
-		r.Logger.Error(err, "update payment failed: %v", "payment", *p)
-		return ctrl.Result{}, err
-	}
-
-	//qrterminal.Generate(codeURL, qrterminal.L, os.Stdout)
-	return ctrl.Result{}, nil
-}
-
 // SetupWithManager sets up the controller with the Manager.
-func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
+func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "payment_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
 	r.domain = os.Getenv("DOMAIN")
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&accountv1.Payment{}, builder.WithPredicates(OnlyCreatePredicate{})).
-		WithOptions(rateOpts).
-		Complete(r)
+	r.reconcileDuration = defaultReconcileDuration
+	r.createDuration = defaultCreateDuration
+	if duration := os.Getenv(EnvPaymentReconcileDuration); duration != "" {
+		reconcileDuration, err := time.ParseDuration(duration)
+		if err == nil {
+			r.reconcileDuration = reconcileDuration
+		}
+	}
+	if duration := os.Getenv(EnvPaymentCreateDuration); duration != "" {
+		createDuration, err := time.ParseDuration(duration)
+		if err == nil {
+			r.createDuration = createDuration
+		}
+	}
+	r.Logger.V(1).Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
+	if err := mgr.Add(r); err != nil {
+		return fmt.Errorf("add payment controller failed: %w", err)
+	}
+	return nil
+}
+
+// LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
+func (r *PaymentReconciler) NeedLeaderElection() bool {
+	return true
+}
+
+func (r *PaymentReconciler) Start(ctx context.Context) error {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	fc := func(wg *sync.WaitGroup, t *time.Ticker, reconcileFunc func(ctx context.Context) []error) {
+		wg.Add(1)
+		defer wg.Done()
+		for {
+			select {
+			case <-t.C:
+				if errs := reconcileFunc(ctx); len(errs) > 0 {
+					for _, err := range errs {
+						r.Logger.Error(err, "reconcile payments failed")
+					}
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+	tickerReconcilePayment := time.NewTicker(r.reconcileDuration)
+	tickerNewPayment := time.NewTicker(r.createDuration)
+	go fc(&wg, tickerReconcilePayment, r.reconcilePayments)
+	go fc(&wg, tickerNewPayment, r.reconcileCreatePayments)
+	return nil
+}
+
+func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) {
+	paymentList := &accountv1.PaymentList{}
+	err := r.Client.List(context.Background(), paymentList, &client.ListOptions{})
+	if err != nil {
+		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+		return
+	}
+	for _, payment := range paymentList.Items {
+		if err := r.reconcilePayment(&payment); err != nil {
+			errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
+		}
+	}
+	return
+}
+
+func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs []error) {
+	//paymentList := &accountv1.PaymentList{}
+	//listOpts := &client.ListOptions{
+	//	FieldSelector: fields.OneTermEqualSelector("status.tradeNO", ""),
+	//}
+	//// handler old payment
+	//err := r.Client.List(context.Background(), paymentList, listOpts)
+	//if err != nil {
+	//	errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+	//	return
+	//}
+	//for _, payment := range paymentList.Items {
+	//	if err := r.reconcileNewPayment(&payment); err != nil {
+	//		errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
+	//	}
+	//}
+	// watch new payment
+	watcher, err := r.WatchClient.Watch(context.Background(), &accountv1.PaymentList{}, &client.ListOptions{})
+	if err != nil {
+		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+		return
+	}
+	select {
+	case <-ctx.Done():
+		return
+	case event := <-watcher.ResultChan():
+		if event.Object == nil {
+			break
+		}
+		payment, ok := event.Object.(*accountv1.Payment)
+		if !ok {
+			errs = append(errs, fmt.Errorf("convert payment failed: %v", event.Object))
+			break
+		}
+		if err := r.reconcileNewPayment(payment); err != nil {
+			errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
+		}
+	}
+	return
+}
+
+func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
+	if payment.Status.TradeNO == "" {
+		if err := r.reconcileNewPayment(payment); err != nil {
+			return fmt.Errorf("reconcile new payment failed: %w", err)
+		}
+		return nil
+	}
+	if payment.Status.Status == pay.PaymentSuccess {
+		if err := r.expiredOvertimePayment(payment); err != nil {
+			return fmt.Errorf("expired payment failed: %w", err)
+		}
+		return nil
+	}
+	// get payment handler
+	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+	if err != nil {
+		return fmt.Errorf("get payment Interface failed: %w", err)
+	}
+	// TODO The GetPaymentDetails may cause issues when using Stripe
+	status, orderAmount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
+	if err != nil {
+		return fmt.Errorf("get payment details failed: %w", err)
+	}
+	switch status {
+	case pay.PaymentSuccess:
+		user, err := r.Account.AccountV2.GetUser(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		if err != nil {
+			return fmt.Errorf("get user failed: %w", err)
+		}
+		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
+		payAmount := orderAmount * 10000
+		gift := getAmountWithDiscount(payAmount, r.Account.DefaultDiscount)
+		if err = r.Account.AccountV2.Payment(&pkgtypes.Payment{
+			PaymentRaw: pkgtypes.PaymentRaw{
+				UserUID:         user.UID,
+				Amount:          payAmount,
+				Gift:            gift,
+				CreatedAt:       payment.CreationTimestamp.Time,
+				RegionUserOwner: getUsername(payment.Namespace),
+				Method:          payment.Spec.PaymentMethod,
+				TradeNO:         payment.Status.TradeNO,
+				CodeURL:         payment.Status.CodeURL,
+			},
+		}); err != nil {
+			return fmt.Errorf("payment failed: %w", err)
+		}
+		payment.Status.Status = pay.PaymentSuccess
+		if err := r.Status().Update(context.Background(), payment); err != nil {
+			return fmt.Errorf("update payment failed: %w", err)
+		}
+	//case pay.PaymentFailed, pay.PaymentExpired:
+	default:
+		if err := r.expiredOvertimePayment(payment); err != nil {
+			return fmt.Errorf("expired payment failed: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *PaymentReconciler) expiredOvertimePayment(payment *accountv1.Payment) error {
+	if payment.CreationTimestamp.Time.Add(10 * time.Minute).After(time.Now()) {
+		return nil
+	}
+	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+	if err != nil {
+		return fmt.Errorf("get payment Interface failed: %w", err)
+	}
+	currentStatus, _, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
+	if err != nil {
+		return fmt.Errorf("get payment details failed: %w", err)
+	}
+
+	if payment.Status.Status != pay.PaymentSuccess {
+		// skip if payment is success paid
+		if currentStatus == pay.PaymentSuccess {
+			return nil
+		}
+		if err = payHandler.ExpireSession(payment.Status.TradeNO); err != nil {
+			r.Logger.Error(err, "cancel payment failed")
+		}
+	}
+	if err = r.Delete(context.Background(), payment); err != nil {
+		r.Logger.Error(err, "delete payment failed")
+	}
+	r.Logger.Info("payment expired", "payment", payment)
+	return nil
+}
+
+func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) error {
+	if payment.Status.TradeNO != "" {
+		return nil
+	}
+	// backward compatibility
+	if payment.Spec.UserCR == "" {
+		if payment.Spec.UserID == "" {
+			return fmt.Errorf("user ID is empty")
+		}
+		payment.Spec.UserCR = payment.Spec.UserID
+		user, err := r.Account.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR})
+		if err != nil {
+			return fmt.Errorf("get user failed: %w", err)
+		}
+		if user == nil {
+			return fmt.Errorf("user not found")
+		}
+		payment.Spec.UserID = user.ID
+	}
+	if err := r.Update(context.Background(), payment); err != nil {
+		return fmt.Errorf("create payment failed: %w", err)
+	}
+	// get user ID
+	account, err := r.Account.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID, IgnoreEmpty: true})
+	if err != nil {
+		return fmt.Errorf("get account failed: %w", err)
+	}
+	if account == nil {
+		_, err := r.Account.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		if err != nil {
+			return fmt.Errorf("create account failed: %w", err)
+		}
+	}
+	// get payment handler
+	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+	if err != nil {
+		return fmt.Errorf("get payment Interface failed: %w", err)
+	}
+	tradeNO, codeURL, err := payHandler.CreatePayment(payment.Spec.Amount/10000, payment.Spec.UserID, "sealos cloud pay [domain="+r.domain+"]")
+	if err != nil {
+		return fmt.Errorf("get tradeNO and codeURL failed: %w", err)
+	}
+	payment.Status.CodeURL = codeURL
+	payment.Status.TradeNO = tradeNO
+	payment.Status.Status = pay.PaymentProcessing
+	if err = r.Status().Update(context.Background(), payment); err != nil {
+		return fmt.Errorf("update payment failed: %w", err)
+	}
+	return nil
 }

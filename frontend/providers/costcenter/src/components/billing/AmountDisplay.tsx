@@ -1,47 +1,65 @@
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
-import { deFormatMoney, formatMoney } from '@/utils/format';
+import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import { Text, Box, Flex } from '@chakra-ui/react';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import useOverviewStore from '@/stores/overview';
 import useBillingStore from '@/stores/billing';
+import { useMemo } from 'react';
 
-export default function AmountDisplay() {
-  const startTime = useOverviewStore((s) => s.startTime);
-  const endTime = useOverviewStore((s) => s.endTime);
-  const { namespace, appType } = useBillingStore();
-  const { data, isSuccess } = useQuery({
-    queryKey: ['billing', 'buget', { startTime, endTime, appType, namespace }],
+export default function AmountDisplay({ onlyOut = false }: { onlyOut?: boolean }) {
+  const { startTime, endTime } = useOverviewStore();
+  const { getNamespace, getAppType, getRegion, getAppName } = useBillingStore();
+  const rechargeQueryBody = {
+    startTime,
+    endTime
+  };
+  const expenditureQueryBody = {
+    appType: getAppType(),
+    namespace: getNamespace()?.[0] || '',
+    startTime,
+    endTime,
+    regionUid: getRegion()?.uid || '',
+    appName: getAppName()
+  };
+  const { data: expenditureData, isSuccess: expenditureIsSuccess } = useQuery({
+    queryKey: ['consumption', expenditureQueryBody],
     queryFn: () => {
-      return request.post<{ amount: number }[]>('/api/billing/buget', {
-        startTime,
-        endTime,
-        appType,
-        namespace
-      });
+      return request.post<{ amount: number }>('/api/billing/consumption', expenditureQueryBody);
     }
   });
-
-  const list = [
-    {
-      bgColor: '#36ADEF',
-      title: 'Deduction',
-      value: data?.data[0].amount || 0
+  const { data: rechargeData, isSuccess: rechargeIsSuccess } = useQuery({
+    queryKey: ['recharge', rechargeQueryBody],
+    queryFn: () => {
+      return request.post<{ amount: number }>('/api/billing/recharge', rechargeQueryBody);
     },
-    {
-      bgColor: '#47C8BF',
-      title: 'Charge',
-      value: data?.data[1].amount || 0
-    }
-  ] as const;
+    enabled: !onlyOut
+  });
+  // const { data } = useQuery({})
+  const list = useMemo(() => {
+    const list = [
+      {
+        bgColor: 'blue.600',
+        title: 'Total Expenditure',
+        value: expenditureData?.data.amount || 0
+      }
+    ];
+    if (!onlyOut)
+      list.push({
+        bgColor: 'teal.500',
+        title: 'Total Recharge',
+        value: rechargeData?.data.amount || 0
+      });
+    return list;
+  }, [onlyOut, rechargeData, expenditureData]);
   const { t } = useTranslation();
   return (
     <Flex gap={'32px'}>
       {list.map((item) => (
         <Flex align={'center'} gap={'8px'} fontSize={'12px'} key={item.title}>
           <Box w="8px" h="8px" bgColor={item.bgColor} borderRadius={'2px'} />
-          <Text>{t(item.title)}</Text>
+          <Text>{t(item.title)}: </Text>
           <CurrencySymbol fontSize={'14px'} />
           <Text>{formatMoney(item.value).toFixed(2)}</Text>
         </Flex>

@@ -30,15 +30,26 @@ export enum TableHeaderID {
   'TransactionTime' = 'Transaction Time',
   'APPType' = 'APP Type',
   'CPU' = 'CPU',
+  'CPUAmount' = 'CPU Amount',
   'GPU' = 'GPU',
   'Port' = 'Port',
+  'PortAmount' = 'Port Amount',
   'TrueAmount' = 'True Amount',
   'Memory' = 'Memory',
+  'MemoryAmount' = 'Memory Amount',
   'Storage' = 'Storage',
+  'StorageAmount' = 'Storage Amount',
   'Network' = 'Network',
+  'NetworkAmount' = 'Network Amount',
   'TotalAmount' = 'Total Amount',
   'Handle' = 'Handle',
-  'Namespace' = 'Namespace',
+  'Region' = 'Region',
+  'Namespace' = 'workspace',
   'TransferType' = 'Transfer Type',
-  'TraderID' = 'Trader ID'
+  'TraderID' = 'Trader ID',
+  'Status' = 'Invoice Status',
+  'InvoiceCreateTime' = 'Invoice Create Time',
+  'InvoiceUpdateTime' = 'Invoice Update Time'
 }
+
+export const resourceType = ['cpu', 'memory', 'storage', 'network', 'nodeports'] as const;

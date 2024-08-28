@@ -4,7 +4,7 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import '@/styles/globals.scss';
 import { theme } from '@/styles/chakraTheme';
 import { ChakraProvider } from '@chakra-ui/react';
-import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Hydrate, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
@@ -16,6 +16,8 @@ import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { Response as initDataRes } from '@/pages/api/platform/getAppConfig';
 import useEnvStore from '@/stores/env';
+import useAppTypeStore from '@/stores/appType';
+import useBillingStore from '@/stores/billing';
 
 // Make sure to call `loadStripe` outside a component’s render to avoid
 // recreating the `Stripe` object on every render.
@@ -36,6 +38,8 @@ Router.events.on('routeChangeError', () => NProgress.done());
 const App = ({ Component, pageProps }: AppProps) => {
   const state = useEnvStore();
   const router = useRouter();
+  const { setAppTypeMap, appTypeMap } = useAppTypeStore();
+  const { setAppTypeList } = useBillingStore();
   useEffect(() => {
     const changeI18n = (data: { currentLanguage: string }) => {
       router.replace(router.basePath, router.asPath, { locale: data.currentLanguage });
@@ -76,6 +80,23 @@ const App = ({ Component, pageProps }: AppProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await queryClient.fetchQuery({
+        queryFn() {
+          return request<any, ApiResp<{ appMap: Record<string, string> }>>(
+            '/api/billing/getAppList'
+          );
+        },
+        queryKey: ['appList']
+      });
+      const record = data?.appMap;
+      if (record) {
+        setAppTypeMap(new Map(Object.entries(record)));
+        setAppTypeList(['all_app_type', ...(Object.values(record) || [])]);
+      }
+    })();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>

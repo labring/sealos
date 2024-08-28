@@ -5,6 +5,7 @@ import {
   isValidEmail,
   isValidPhoneNumber
 } from '@/utils/tools';
+import trigIcon from '@/assert/triangle.svg';
 import {
   Flex,
   Img,
@@ -17,131 +18,54 @@ import {
   Text,
   Box,
   InputGroup,
-  InputRightAddon,
   Link,
   useToast,
-  useDisclosure,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay
+  InputRightElement,
+  Badge,
+  Image
 } from '@chakra-ui/react';
-import { Formik, FieldArray, Form, Field } from 'formik';
+import {
+  Formik,
+  FieldArray,
+  Form,
+  Field,
+  FieldInputProps,
+  ErrorMessage,
+  FormikErrors
+} from 'formik';
 import request from '@/service/request';
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import artical_icon from '@/assert/article.svg';
-import arrow_right from '@/assert/material-symbols_expand-more-rounded.svg';
-import arrow_left_icon from '@/assert/toleft.svg';
-import arrow_icon from '@/assert/Vector.svg';
+import arrow_icon from '@/assert/left2.svg';
 import email_icon from '@/assert/mdi_email-receive-outline.svg';
-import listIcon from '@/assert/list.svg';
-import { InvoiceTable } from '@/components/invoice/invoiceTable';
+import { MySelect, MyTooltip as STooltip } from '@sealos/ui';
+import { formatMoney } from '@/utils/format';
+import uil_info_circle from '@/assert/uil_info-circle.svg';
+import { TriangleUpIcon } from '@chakra-ui/icons';
 
-const BillingModal = ({
-  billings,
-  t,
-  invoiceAmount,
-  invoiceCount
-}: {
-  billings: ReturnType<typeof useRef<ReqGenInvoice['billings']>>;
-  t: (key: string) => string;
-  invoiceAmount: number;
-  invoiceCount: number;
-}) => {
-  const [pageSize, setPageSize] = useState(10);
-  const totalPage = Math.floor((billings?.current?.length || 0) / pageSize) + 1;
-  const [currentPage, setcurrentPage] = useState(1);
+function MyTooltip({ errorMessage, children }: { errorMessage: string; children: ReactNode }) {
   return (
-    <>
-      <ModalContent w={'910px'} maxW="910px" h={'auto'} maxH="620px">
-        <ModalHeader display={'flex'}>
-          {t('orders.invoiceOrder')}({invoiceCount})
-          <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <Box
-            overflow={'auto'}
-            fontFamily="PingFang SC"
-            fontSize="14px"
-            fontWeight="500"
-            lineHeight="20px"
-          >
-            <Flex mb={'16px'} align="center">
-              <Flex align={'center'}>
-                <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} />
-                <Text>{t('orders.list')}</Text>
-              </Flex>
-            </Flex>
-            <InvoiceTable
-              selectbillings={billings.current || []}
-              data={(billings.current || []).filter(
-                (item, index) =>
-                  index <= pageSize * currentPage - 1 && index >= pageSize * (currentPage - 1)
-              )}
-            ></InvoiceTable>
-          </Box>
-          <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
-            <Text>{t('Total')}:</Text> <Flex w="40px">{billings?.current?.length || 0}</Flex>
-            <Flex gap={'8px'}>
-              <Button
-                variant={'switchPage'}
-                isDisabled={currentPage === 1}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setcurrentPage(1);
-                }}
-              >
-                <Img w="6px" h="6px" src={arrow_left_icon.src}></Img>
-              </Button>
-              <Button
-                variant={'switchPage'}
-                isDisabled={currentPage === 1}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setcurrentPage(currentPage - 1);
-                }}
-              >
-                <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>
-              </Button>
-              <Flex my={'auto'}>
-                <Text>{currentPage}</Text>/<Text>{totalPage}</Text>
-              </Flex>
-              <Button
-                variant={'switchPage'}
-                isDisabled={currentPage === totalPage}
-                bg={currentPage !== totalPage ? '#EDEFF1' : '#F1F4F6'}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setcurrentPage(currentPage + 1);
-                }}
-              >
-                <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img>
-              </Button>
-              <Button
-                variant={'switchPage'}
-                isDisabled={currentPage === totalPage}
-                bg={currentPage !== totalPage ? '#EDEFF1' : '#F1F4F6'}
-                mr={'10px'}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setcurrentPage(totalPage);
-                }}
-              >
-                <Img w="6px" h="6px" src={arrow_left_icon.src} transform={'rotate(180deg)'}></Img>
-              </Button>
-            </Flex>
-            <Text>{pageSize}</Text> <Text>/{t('Page')}</Text>
-          </Flex>
-        </ModalBody>
-      </ModalContent>
-    </>
+    <STooltip
+      // marginLeft={'200px'}
+      offset={[20, 10]}
+      px={'12px'}
+      py={'9px'}
+      label={
+        <Flex alignItems={'center'}>
+          <Image src={trigIcon.src} alt="!!!" boxSize={'16px'} mr={'4px'} />
+          <Text fontSize="12px" fontWeight="500">
+            {errorMessage}
+          </Text>
+        </Flex>
+      }
+      isDisabled={!errorMessage}
+      isOpen={!!errorMessage}
+    >
+      {children}
+    </STooltip>
   );
-};
-
+}
 function InvoicdForm({
   invoiceAmount,
   invoiceCount,
@@ -153,12 +77,18 @@ function InvoicdForm({
   onSuccess: () => void;
   invoiceAmount: number;
   invoiceCount: number;
-  billings: ReturnType<typeof useRef<ReqGenInvoice['billings']>>;
+  billings: ReqGenInvoice['billings'];
 }) {
   const totast = useToast();
   const { t, i18n } = useTranslation();
   const initVal = {
     details: [
+      {
+        name: t('orders.details.type.name'),
+        placeholder: t('orders.details.type.placeholder'),
+        isRequired: true,
+        value: 'normal'
+      },
       {
         name: t('orders.details.invoiceTitle.name'),
         placeholder: t('orders.details.invoiceTitle.placeholder'),
@@ -237,10 +167,6 @@ function InvoicdForm({
     }, 1000);
     return () => clearInterval(interval);
   }, [remainTime]);
-  const totalTips = () => {
-    if (i18n.language === 'zh') return `（总计${invoiceCount}张发票）`;
-    else return `(Total ${invoiceCount} invoices)`;
-  };
   const validPhone = (phone: string) => {
     if (!isValidPhoneNumber(phone)) {
       totast({
@@ -252,6 +178,16 @@ function InvoicdForm({
       return false;
     } else return true;
   };
+  const typeList = [
+    {
+      label: t('orders.details.type.list.normal'),
+      value: 'normal'
+    },
+    {
+      label: t('orders.details.type.list.special'),
+      value: 'special'
+    }
+  ];
   const getCode = async (phone: string) => {
     if (!validPhone(phone)) return;
     setRemainTime(60);
@@ -282,59 +218,25 @@ function InvoicdForm({
     values,
     actions
   ) => {
-    if (!billings.current || billings.current.length === 0) {
+    if (!billings || billings.length === 0) {
       actions.setSubmitting(false);
-      return;
-    }
-    if (!isValidPhoneNumber(values.contract[1].value)) {
-      totast({
-        title: t('orders.phoneValidation'),
-        status: 'error',
-        position: 'top',
-        duration: 2000
-      });
-      return;
-    }
-    if (!isValidCNTaxNumber(values.details[1].value)) {
-      totast({
-        title: t('orders.taxNumberValidation'),
-        status: 'error',
-        position: 'top',
-        duration: 2000
-      });
-      return;
-    }
-    if (!isValidEmail(values.contract[2].value)) {
-      totast({
-        title: t('orders.emailValidation'),
-        status: 'error',
-        position: 'top',
-        duration: 2000
-      });
-      return;
-    }
-    if (!isValidBANKAccount(values.details[3].value)) {
-      totast({
-        title: t('orders.bankAccountValidation'),
-        status: 'error',
-        position: 'top',
-        duration: 2000
-      });
       return;
     }
     try {
       const result = await request.post<any, { status: boolean }, ReqGenInvoice>(
         '/api/invoice/verify',
         {
-          billings: billings.current!,
+          token: '',
+          billings: billings!,
           detail: {
-            title: values.details[0].value,
-            tax: values.details[1].value,
-            bank: values.details[2].value,
-            bankAccount: values.details[3].value,
-            address: values.details[4].value,
-            phone: values.details[5].value,
-            fax: values.details[6].value
+            title: values.details[1].value,
+            tax: values.details[2].value,
+            bank: values.details[3].value,
+            bankAccount: values.details[4].value,
+            address: values.details[5].value,
+            phone: values.details[6].value,
+            fax: values.details[7].value,
+            type: values.details[0].value
           },
           contract: {
             person: values.contract[0].value,
@@ -352,6 +254,7 @@ function InvoicdForm({
         duration: 2000
       });
       onSuccess();
+      backcb();
     } catch (err) {
       totast({
         title: (err as { message: string }).message || t('orders.submit fail'),
@@ -363,20 +266,65 @@ function InvoicdForm({
       actions.setSubmitting(false);
     }
   };
-  const { isOpen, onOpen, onClose } = useDisclosure();
   return (
     <>
-      <Formik initialValues={initVal} onSubmit={submit}>
-        {(props) => (
+      <Formik
+        initialValues={initVal}
+        onSubmit={submit}
+        validateOnChange={false}
+        validateOnMount={false}
+        validate={(values) => {
+          const errors = {
+            contract: [],
+            details: []
+          };
+          for (let index = 0; index < values.details.length; index++) {
+            const element = values.details[index];
+            if (element.isRequired && !element.value) {
+              errors.details[index] = t('orders.require');
+              return errors;
+            }
+            if (index === 2 && !isValidCNTaxNumber(element.value)) {
+              errors.details[2] = t('orders.taxNumberValidation');
+              return errors;
+            }
+            if (index === 4 && !isValidBANKAccount(element.value)) {
+              errors.details[4] = t('orders.bankAccountValidation');
+              return errors;
+            }
+          }
+          for (let index = 0; index < values.contract.length; index++) {
+            const element = values.contract[index];
+            if (element.isRequired && !element.value) {
+              errors.contract[index] = t('orders.require');
+              return errors;
+            }
+            if (index === 1 && !isValidPhoneNumber(element.value)) {
+              errors.contract[index] = t('orders.phoneValidation');
+              return errors;
+            }
+            if (index === 2 && !isValidEmail(element.value)) {
+              errors.contract[index] = t('orders.emailValidation');
+              return errors;
+            }
+          }
+        }}
+      >
+        {({ errors, isSubmitting, values, setFieldValue }) => (
           <FieldArray
             name="details"
-            render={(arrayHelper) => (
+            render={() => (
               <Form>
                 <Flex mr="24px" align={'center'}>
-                  <Button variant={'unstyled'} onClick={backcb}>
+                  <Button
+                    variant={'unstyled'}
+                    onClick={backcb}
+                    minH={'0'}
+                    minW={'0'}
+                    boxSize="36px"
+                  >
                     <Img
                       src={arrow_icon.src}
-                      transform="rotate(-90deg)"
                       w={'24px'}
                       h={'24px'}
                       mr={'18px'}
@@ -384,208 +332,262 @@ function InvoicdForm({
                     ></Img>
                   </Button>
                   <Heading size="lg">{t('SideBar.CreateInvoice')}</Heading>
-                  <Button
-                    variant={'unstyled'}
-                    display="flex"
-                    justifyContent={'center'}
-                    alignContent={'center'}
-                    bg="#24282C"
-                    borderRadius="4px"
-                    color={'white'}
-                    fontWeight="500"
-                    fontSize="14px"
-                    _hover={{
-                      opacity: '0.5'
-                    }}
-                    px="36px"
-                    py="10px"
-                    ml="auto"
-                    isLoading={props.isSubmitting}
-                    type="submit"
+                  <Flex
+                    align={'center'}
+                    ml={'auto'}
+                    bgColor={'brightBlue.50'}
+                    color={'brightBlue.600'}
+                    px={'12px'}
+                    py={'6px'}
+                    borderRadius={'6px'}
                   >
-                    {t('orders.invoice')}
+                    <Img src={uil_info_circle.src} w={'18px'} h="18px" mr={'5px'}></Img>
+                    <Text fontWeight="500" fontSize="11px" color="brightBlue.600">
+                      {t('orders.Apply Inovice Tips')}
+                    </Text>
+                  </Flex>
+                  <Button
+                    variant={'solid'}
+                    ml="12px"
+                    isLoading={isSubmitting}
+                    type="submit"
+                    px={'20px'}
+                    py={'8px'}
+                    h={'auto'}
+                  >
+                    {t('orders.Apply Invoice')}
                   </Button>
                 </Flex>
                 <Stack
-                  borderColor="#DEE0E2"
+                  borderColor="grayModern.250"
                   borderWidth={'1px'}
-                  borderRadius={'4px'}
+                  borderRadius={'6px'}
                   mx="auto"
-                  mt={'22px'}
+                  mt={'17px'}
                   minW="540px"
                   maxW={'970px'}
+                  gap={'0'}
                   overflow="hidden"
                 >
-                  <Flex bg={'#F4F6F8'} py="15px" pl={'42px'} align="center">
-                    <Img src={artical_icon.src}></Img>
-                    <Text ml={'8px'}>{t('orders.Invoice Details')}</Text>
-                    <Text ml={'auto'}>{t('orders.invoiceAmount')}</Text>
-                    <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>
-                    <Button
-                      display={'flex'}
-                      variant={'unstyled'}
-                      mr="22px"
-                      ml={'6px'}
-                      fontWeight={'500'}
-                      alignItems={'center'}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onOpen();
-                      }}
-                    >
-                      <Text px={'5px'}>{totalTips()}</Text>
-                      <Img src={arrow_right.src} w={'16px'} h="16px" ml={'2px'}></Img>
-                    </Button>
+                  <Flex
+                    bg={'grayModern.100'}
+                    color={'grayModern.900'}
+                    px="48px"
+                    py="15px"
+                    align="center"
+                    fontWeight={'500'}
+                  >
+                    <Img src={artical_icon.src} boxSize={'24px'}></Img>
+                    <Text ml={'8px'} fontSize={'18px'}>
+                      {t('orders.Invoice Details')}
+                    </Text>
+                    <Text ml={'auto'} fontSize={'14px'}>
+                      {t('orders.invoiceAmount')}:
+                    </Text>
+                    <Text ml="10px" color="brightBlue.600">
+                      ￥ {formatMoney(invoiceAmount)}
+                    </Text>
                   </Flex>
 
-                  <Stack px="22px" pt="21px" pb="24px" mt={'0'}>
-                    <Flex
-                      maxWidth={'420px'}
-                      flexBasis="100%"
-                      align={'center'}
-                      mx="20px"
-                      h={'32px'}
-                      mt="0px"
-                    >
-                      <Text minWidth={'max-content'}>{t('orders.Invoice Content')}</Text>
-                      <Text ml="auto" variant="unstyled" width={'280px'} color={'#5A646E'}>
-                        {t('orders.Electronic Computer Service Fee')}
-                      </Text>
-                    </Flex>
-                    <Flex wrap={'wrap'} align="center" my={'0px'} mt="0px">
-                      {props.values.details.map((item, index) => (
-                        <Field key={index} name={`details.${index}.value`}>
-                          {
-                            // @ts-ignore
-                            ({ field }) => (
-                              <FormControl
-                                isRequired={item.isRequired}
-                                display="flex"
-                                flex={'1'}
-                                maxW={'420px'}
-                                flexShrink={'0'}
-                                alignItems="center"
-                                mx={'20px'}
-                                mt="24px"
-                                minW={'max-content'}
-                              >
-                                <FormLabel mb={'0'}>{item.name}</FormLabel>
-                                <Input
-                                  {...field}
-                                  placeholder={item.placeholder}
-                                  variant="unstyled"
-                                  width={'280px'}
-                                  ml="auto"
-                                  p="8px"
-                                  h={'32px'}
-                                  border="1px solid #DEE0E2"
-                                  borderRadius={'2px'}
-                                  _focus={{
-                                    borderColor: 'blue'
-                                  }}
-                                  bg="#FBFBFC"
-                                />
-                              </FormControl>
-                            )
-                          }
-                        </Field>
-                      ))}
+                  <Stack px="48px" py="24px" mt={'0'} fontSize={'12px'}>
+                    <Flex wrap={'wrap'} align="center" my={'0px'} mt="0px" gap="20px">
+                      <Flex
+                        display="flex"
+                        flex={'1'}
+                        maxW={'420px'}
+                        flexShrink={'0'}
+                        alignItems="center"
+                        minW={'max-content'}
+                        fontWeight={'500'}
+                      >
+                        <FormLabel mb={'0'} w="100px" color={'grayModern.900'} fontWeight={500}>
+                          {t('orders.Invoice Content')}
+                        </FormLabel>
+                        <Flex
+                          // variant="unstyled"
+                          color={'grayModern.600'}
+                          width={'280px'}
+                          ml="auto"
+                          p="8px"
+                          _focus={{
+                            borderColor: 'blue'
+                          }}
+                        >
+                          {t('orders.Electronic Computer Service Fee')}
+                        </Flex>
+                      </Flex>
+
+                      {values.details.map((item, index) => {
+                        const name = `details.${index}.value`;
+                        const errorMessage = (errors.details?.[index] || '') as string;
+                        return (
+                          <Field key={index} name={name} fontSize={'12px'}>
+                            {({ field }: { field: FieldInputProps<string> }) => (
+                              <MyTooltip errorMessage={errorMessage}>
+                                <FormControl
+                                  // isRequired={item.isRequired}
+                                  display="flex"
+                                  flex={'1'}
+                                  maxW={'420px'}
+                                  flexShrink={'0'}
+                                  alignItems="center"
+                                  minW={'max-content'}
+                                  isInvalid={!!errors?.details?.[index]}
+                                >
+                                  <FormLabel mb={'0'} color={'grayModern.900'} fontWeight={500}>
+                                    {item.name}
+                                  </FormLabel>
+                                  {index === 0 ? (
+                                    <Flex ml={'auto'} fontSize={'12px'} fontWeight={500}>
+                                      <MySelect
+                                        list={typeList}
+                                        value={field.value}
+                                        onchange={(val) => {
+                                          setFieldValue(name, val);
+                                        }}
+                                        w={'280px'}
+                                        h={'32px'}
+                                        fontWeight={400}
+                                      />
+                                    </Flex>
+                                  ) : (
+                                    <Input
+                                      {...field}
+                                      _invalid={{
+                                        border: '1px solid #D92D20',
+                                        boxShadow: '0px 0px 0px 2.4px #D92D2026'
+                                      }}
+                                      placeholder={item.placeholder}
+                                      variant="outline"
+                                      width={'280px'}
+                                      ml="auto"
+                                    />
+                                  )}
+                                </FormControl>
+                              </MyTooltip>
+                            )}
+                          </Field>
+                        );
+                      })}
                     </Flex>
                   </Stack>
                 </Stack>
                 <Stack
-                  borderColor="#DEE0E2"
+                  borderColor="grayModern.250"
                   borderWidth={'1px'}
-                  mt="16px"
-                  borderRadius={'4px'}
+                  borderRadius={'6px'}
                   mx="auto"
+                  mt={'17px'}
+                  minW="540px"
                   maxW={'970px'}
-                  minW={'540px'}
+                  gap={'0'}
                   overflow="hidden"
                 >
-                  <Flex bg={'#F4F6F8'} py="15px" pl={'42px'}>
-                    <Img src={email_icon.src}></Img>
-
-                    <Text ml={'8px'}>{t('orders.Contact Information')}</Text>
+                  <Flex
+                    bg={'grayModern.100'}
+                    color={'grayModern.900'}
+                    px="48px"
+                    py="15px"
+                    align="center"
+                    fontWeight={'500'}
+                  >
+                    <Img src={email_icon.src} boxSize={'24px'}></Img>
+                    <Text ml={'12px'} fontSize={'18px'}>
+                      {t('orders.Contact Information')}
+                    </Text>
                   </Flex>
-
-                  <Flex wrap={'wrap'} align="center" px="22px" pb="21px">
-                    {props.values.contract.map((item, index) => (
-                      <Field key={index} name={`contract.${index}.value`}>
-                        {
-                          // @ts-ignore
-                          ({ field }) => (
-                            <FormControl
-                              isRequired={item.isRequired}
-                              display="flex"
-                              flex={'1'}
-                              maxWidth="420px"
-                              flexShrink={'0'}
-                              alignItems="center"
-                              mx={'20px'}
-                              mt="24px"
-                              minW={'max-content'}
-                            >
-                              <FormLabel>{item.name}</FormLabel>
-                              {index === 1 ? (
-                                <InputGroup
-                                  variant={'unstyled'}
-                                  width={'280px'}
-                                  ml="auto"
-                                  h={'32px'}
-                                  px="8px"
-                                  border="1px solid #DEE0E2"
-                                  borderRadius={'2px'}
-                                  _focusWithin={{
-                                    borderColor: 'blue'
-                                  }}
+                  <Flex wrap={'wrap'} align="center" px="48px" py="24px" gap={'20px'}>
+                    {values.contract.map((item, index) => {
+                      const errorMessage = (errors.contract?.[index] || '') as string;
+                      return (
+                        <Field key={index} name={`contract.${index}.value`}>
+                          {
+                            // @ts-ignore
+                            ({ field }) => (
+                              <MyTooltip errorMessage={errorMessage}>
+                                <FormControl
+                                  // isRequired={item.isRequired}
+                                  display="flex"
+                                  flex={'1'}
+                                  maxWidth="420px"
+                                  flexShrink={'0'}
+                                  alignItems="center"
+                                  minW={'max-content'}
+                                  isInvalid={!!errors?.contract?.[index]}
                                 >
-                                  <Input
-                                    type="tel"
-                                    variant={'unstyled'}
-                                    placeholder={item.placeholder}
-                                    {...field}
-                                    h={'30px'}
-                                    bg="#FBFBFC"
-                                  />
-                                  <InputRightAddon color="#219BF4">
-                                    {remainTime <= 0 ? (
-                                      <Link
-                                        href=""
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          getCode(item.value);
+                                  <FormLabel mb={'0'}>{item.name}</FormLabel>
+                                  {index === 1 ? (
+                                    <InputGroup
+                                      variant={'outline'}
+                                      width={'280px'}
+                                      ml="auto"
+                                      h={'32px'}
+                                    >
+                                      <Input
+                                        type="tel"
+                                        placeholder={item.placeholder}
+                                        {...field}
+                                        // css={{
+                                        // 	':focus:invalid': {
+                                        // 		'border': '1px solid #D92D20',
+                                        // 		'box-shadow': '0px 0px 0px 2.4px #D92D2026'
+                                        // 	}
+                                        // }}
+                                        // {...(errors?.contract?.[index] ? {
+                                        // 	// _focus: {
+                                        // 		'border': '1px solid #D92D20',
+                                        // 		'boxShadow': '0px 0px 0px 2.4px #D92D2026'
+                                        // 	// }
+                                        // } : {})}
+                                        _invalid={{
+                                          border: '1px solid #D92D20',
+                                          boxShadow: '0px 0px 0px 2.4px #D92D2026'
                                         }}
+                                      />
+                                      <InputRightElement
+                                        color="brightBlue.600"
+                                        width={'auto'}
+                                        p={'8px'}
+                                        right={'3px'}
                                       >
-                                        {t('Get Code')}
-                                      </Link>
-                                    ) : (
-                                      <Text>{remainTime} s</Text>
-                                    )}
-                                  </InputRightAddon>
-                                </InputGroup>
-                              ) : (
-                                <Input
-                                  {...field}
-                                  placeholder={item.placeholder}
-                                  variant="unstyled"
-                                  width={'280px'}
-                                  ml="auto"
-                                  p="8px"
-                                  h={'32px'}
-                                  bg="#FBFBFC"
-                                  border="1px solid #DEE0E2"
-                                  borderRadius={'2px'}
-                                  _focus={{
-                                    borderColor: 'blue'
-                                  }}
-                                ></Input>
-                              )}
-                            </FormControl>
-                          )
-                        }
-                      </Field>
-                    ))}
+                                        {remainTime <= 0 ? (
+                                          <Link
+                                            href=""
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              getCode(item.value);
+                                            }}
+                                          >
+                                            {t('Get Code')}
+                                          </Link>
+                                        ) : (
+                                          <Text>{remainTime} s</Text>
+                                        )}
+                                      </InputRightElement>
+                                    </InputGroup>
+                                  ) : (
+                                    <Input
+                                      {...field}
+                                      isInvalid={!!errors.contract?.[index]}
+                                      css={{
+                                        ':focus:invalid': {
+                                          border: '1px solid #D92D20',
+                                          'box-shadow': '0px 0px 0px 2.4px #D92D2026'
+                                        }
+                                      }}
+                                      placeholder={item.placeholder}
+                                      variant="outline"
+                                      width={'280px'}
+                                      ml="auto"
+                                    />
+                                  )}
+                                </FormControl>
+                              </MyTooltip>
+                            )
+                          }
+                        </Field>
+                      );
+                    })}
                   </Flex>
                 </Stack>
               </Form>
@@ -593,15 +595,6 @@ function InvoicdForm({
           />
         )}
       </Formik>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <BillingModal
-          billings={billings}
-          t={t}
-          invoiceAmount={invoiceAmount}
-          invoiceCount={invoiceCount}
-        />
-      </Modal>
     </>
   );
 }

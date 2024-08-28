@@ -6,5 +6,8 @@
 	"CLOUD-VM":"云主机",
 	"DB": "数据库",
 	"APP": "应用",
-	"All APP": "所有应用"
+	"All APP": "所有应用",
+	"APP-STORE": "应用商店",
+	"DB-BACKUP":"数据库备份",
+	"all_app_type": "所有应用类型"
 }

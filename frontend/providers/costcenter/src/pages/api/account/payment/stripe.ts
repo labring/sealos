@@ -37,7 +37,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
     const paymentCrd = generatePaymentCrd(form);
     const res = await ApplyYaml(kc, paymentCrd);
-    console.log(res);
     return jsonRes(resp, {
       data: {
         paymentName: paymentName,

@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
+import { useDesktopConfigStore } from './desktopConfig';
 
 export class AppInfo {
   pid: number;
@@ -75,6 +76,7 @@ const useAppStore = create<TOSState>()(
         },
         // should use pid to close app, but it don't support multi same app process now
         closeAppById: (pid: number) => {
+          useDesktopConfigStore.getState().temporarilyDisableAnimation();
           set((state) => {
             state.runner.closeApp(pid);
             // make sure the process is killed
@@ -123,6 +125,7 @@ const useAppStore = create<TOSState>()(
         },
 
         openApp: async (app: TApp, { query, raw, pathname = '/', appSize = 'maximize' } = {}) => {
+          useDesktopConfigStore.getState().temporarilyDisableAnimation();
           const zIndex = get().maxZIndex + 1;
           // debugger
           // 未支持多实例

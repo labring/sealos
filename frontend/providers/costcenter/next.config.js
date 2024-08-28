@@ -19,7 +19,6 @@ const nextConfig = {
     outputFileTracingRoot: path.join(__dirname, '../../')
   },
   async headers() {
-    console.log(ContentSecurityPolicy.replace(/\s{2,}/g, ' ').trim());
     return [
       {
         source: '/',

@@ -7,7 +7,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!global.AppConfig.costCenter.transferEnabled) {
       throw new Error('transfer is not enabled');
     }
-    // console.log(global)
     const { amount, to: toUser } = req.body;
     const kc = await authSession(req.headers);
 
