@@ -1,33 +1,20 @@
-import { InvoiceTableHeaders, TableHeaderID } from '@/constants/billing';
+import { TableHeaderID } from '@/constants/billing';
 import useEnvStore from '@/stores/env';
-import { ReqGenInvoice, RechargeBillingItem, BillingType, BillingItem } from '@/types';
+import { RechargeBillingItem, ReqGenInvoice } from '@/types';
+import { formatMoney } from '@/utils/format';
+import { Checkbox, Flex, Text } from '@chakra-ui/react';
 import {
-  TableContainer,
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Flex,
-  Tbody,
-  Td,
-  Checkbox,
-  Text,
-  useStatStyles
-} from '@chakra-ui/react';
-import { format, parseISO, subHours } from 'date-fns';
+  HeaderContext,
+  RowSelectionState,
+  createColumnHelper,
+  getCoreRowModel,
+  useReactTable
+} from '@tanstack/react-table';
+import { format } from 'date-fns';
 import { useTranslation } from 'next-i18next';
+import { useEffect, useMemo, useState } from 'react';
 import CurrencySymbol from '../CurrencySymbol';
 import { BaseTable } from './InoviceBaseTable';
-import {
-  createColumnHelper,
-  HeaderContext,
-  CellContext,
-  useReactTable,
-  getCoreRowModel,
-  RowSelectionState
-} from '@tanstack/react-table';
-import { useEffect, useMemo, useState } from 'react';
-import { formatMoney } from '@/utils/format';
 
 export function InvoicePaymentTable({
   data,

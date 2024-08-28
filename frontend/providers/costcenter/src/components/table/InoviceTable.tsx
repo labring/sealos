@@ -1,38 +1,21 @@
-import { InvoiceTableHeaders, TableHeaderID } from '@/constants/billing';
+import { TableHeaderID } from '@/constants/billing';
 import useEnvStore from '@/stores/env';
-import { ReqGenInvoice, InvoicePayload, BillingType, BillingItem } from '@/types';
-import {
-  TableContainer,
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Flex,
-  Tbody,
-  Td,
-  Checkbox,
-  Text,
-  Button,
-  Circle,
-  Badge,
-  useStatStyles,
-  useStyleConfig
-} from '@chakra-ui/react';
-import { format, parseISO, subHours } from 'date-fns';
-import { useTranslation } from 'next-i18next';
-import CurrencySymbol from '../CurrencySymbol';
-import { BaseTable } from './InoviceBaseTable';
-import {
-  createColumnHelper,
-  HeaderContext,
-  CellContext,
-  useReactTable,
-  getCoreRowModel
-} from '@tanstack/react-table';
-import { useMemo } from 'react';
-import InvoiceDetails from './InvoiceDetails';
+import { InvoicePayload } from '@/types';
 import { formatMoney } from '@/utils/format';
+import { Flex, Text } from '@chakra-ui/react';
+import {
+  HeaderContext,
+  createColumnHelper,
+  getCoreRowModel,
+  useReactTable
+} from '@tanstack/react-table';
+import { format } from 'date-fns';
+import { useTranslation } from 'next-i18next';
+import { useMemo } from 'react';
+import CurrencySymbol from '../CurrencySymbol';
 import { InvoiceStatus } from '../invoice/Status';
+import { BaseTable } from './InoviceBaseTable';
+import InvoiceDetails from './InvoiceDetails';
 export function InvoiceTable({
   data,
   onSelect,

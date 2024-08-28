@@ -1,5 +1,3 @@
-import request from '@/service/request';
-import useBillingStore from '@/stores/billing';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
   Button,
@@ -11,7 +9,7 @@ import {
   PopoverTrigger,
   useDisclosure
 } from '@chakra-ui/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 // 多个下拉选项异步获取，如何处理菜单
 
 export default function BaseMenu({

@@ -1,26 +1,15 @@
 import { valuationMap } from '@/constants/payment';
 import { UserQuotaItemType } from '@/pages/api/getQuota';
 import request from '@/service/request';
-import useEnvStore from '@/stores/env';
+import { ApiResp } from '@/types';
+import { Box, Divider, HStack, Stack, StackProps, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
+import { useTranslation } from 'react-i18next';
 import CpuIcon from '../icons/CpuIcon';
 import { MemoryIcon } from '../icons/MemoryIcon';
 import { StorageIcon } from '../icons/StorageIcon';
-import { ApiResp } from '@/types';
-import {
-  Box,
-  Divider,
-  Flex,
-  Heading,
-  HStack,
-  Img,
-  Stack,
-  StackProps,
-  Text
-} from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 const QuotaPie = dynamic(() => import('../cost_overview/components/quotaPieChart'), { ssr: false });
-import dynamic from 'next/dynamic';
 export default function Quota(props: StackProps) {
   const { t } = useTranslation();
   const { data } = useQuery(['quota'], () =>

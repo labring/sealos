@@ -1,26 +1,24 @@
-import {
-  TableContainerProps,
-  TableContainer,
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Tbody,
-  Td,
-  Img,
-  ImgProps,
-  TableRowProps
-} from '@chakra-ui/react';
-import { flexRender, Table as ReactTable } from '@tanstack/react-table';
 import appIcon from '@/assert/app.svg';
+import cvmIcon from '@/assert/cvm.svg';
+import dbIcon from '@/assert/db.svg';
 import jobIcon from '@/assert/job.svg';
 import osIcon from '@/assert/objectstorage.svg';
-import cvmIcon from '@/assert/cvm.svg';
-import terminalIcon from '@/assert/terminal.svg';
-import dbIcon from '@/assert/db.svg';
 import sealosIcon from '@/assert/sealos.svg';
-import { useTranslation } from 'next-i18next';
+import terminalIcon from '@/assert/terminal.svg';
 import useAppTypeStore from '@/stores/appType';
+import {
+  Img,
+  ImgProps,
+  Table,
+  TableContainer,
+  TableContainerProps,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr
+} from '@chakra-ui/react';
+import { Table as ReactTable, flexRender } from '@tanstack/react-table';
 
 export function BaseTable<T extends unknown>({
   table,

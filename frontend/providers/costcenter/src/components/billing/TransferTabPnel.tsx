@@ -1,27 +1,18 @@
+import SearchBox from '@/components/billing/SearchBox';
+import SwitchPage from '@/components/billing/SwitchPage';
+import TypeMenu from '@/components/billing/TypeMenu';
+import { TransferBillingTable } from '@/components/billing/billingTable';
+import SelectRange from '@/components/billing/selectDateRange';
+import { TRANSFER_LIST_TYPE } from '@/constants/billing';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
 import useOverviewStore from '@/stores/overview';
-import { useContext, useEffect, useState } from 'react';
-import {
-  ApiResp,
-  BillingData,
-  BillingSpec,
-  BillingType,
-  TransferBilling,
-  TransferBillingData,
-  TransferType
-} from '@/types';
+import { ApiResp, TransferBillingData } from '@/types';
+import { Flex, TabPanel, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { formatISO } from 'date-fns';
-import request from '@/service/request';
 import { useTranslation } from 'next-i18next';
-import { Text, Flex, TabPanel } from '@chakra-ui/react';
-import SelectRange from '@/components/billing/selectDateRange';
-import TypeMenu from '@/components/billing/TypeMenu';
-import SearchBox from '@/components/billing/SearchBox';
-import { TransferBillingTable } from '@/components/billing/billingTable';
-import SwitchPage from '@/components/billing/SwitchPage';
-import NotFound from '../notFound';
-import useBillingStore from '@/stores/billing';
-import { TRANSFER_LIST_TYPE } from '@/constants/billing';
+import { useEffect, useState } from 'react';
 
 export default function TransferTabPanel() {
   const startTime = useOverviewStore((state) => state.startTime);

@@ -1,13 +1,13 @@
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types';
+import { AppListItem } from '@/types/app';
 import { FlexProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import BaseMenu from './BaseMenu';
-import { AppListItem } from '@/types/app';
-import useOverviewStore from '@/stores/overview';
 
 export default function AppNameMenu({
   isDisabled,

@@ -1,8 +1,8 @@
-import { Text, Button, ButtonProps } from '@chakra-ui/react';
-import { useTranslation } from 'react-i18next';
-import DetailsIcon from '../icons/DetailsIcon';
 import useInvoiceStore from '@/stores/invoce';
 import { InvoicePayload } from '@/types';
+import { Button, ButtonProps, Text } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
+import DetailsIcon from '../icons/DetailsIcon';
 
 export default function InvoiceDetails({
   invoice,

@@ -1,10 +1,7 @@
 import { authSession } from '@/service/backend/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { makeAPIURL } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
-import { BillingData, BillingSpec, RechargeBillingData } from '@/types';
-import crypto from 'crypto';
-import { getRegionByUid, getRegionList, makeAPIURL } from '@/service/backend/region';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {

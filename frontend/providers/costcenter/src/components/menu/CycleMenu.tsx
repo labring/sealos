@@ -1,19 +1,8 @@
-import request from '@/service/request';
-import useBillingStore from '@/stores/billing';
-import {
-  Button,
-  Flex,
-  FlexProps,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  useDisclosure
-} from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
-import { useState } from 'react';
-import BaseMenu from './BaseMenu';
 import { CYCLE } from '@/constants/valuation';
-import { Cycle } from '@/types/cycle';
+import useBillingStore from '@/stores/billing';
+import { FlexProps } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import BaseMenu from './BaseMenu';
 
 export default function CycleMenu({
   isDisabled,

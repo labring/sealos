@@ -1,6 +1,10 @@
-// import { InvoiceTable } from '@/components/table/InovicePaymentTable'
+import receipt_icon from '@/assert/invoice-active.svg';
+import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
+import PaymentPanel from '@/components/invoice/PaymentPanel';
+import RecordPanel from '@/components/invoice/RecordPanel';
+import { RechargeBillingItem } from '@/types';
+import { formatMoney } from '@/utils/format';
 import {
-  Box,
   Button,
   Flex,
   Heading,
@@ -8,7 +12,6 @@ import {
   Img,
   Input,
   InputGroup,
-  InputRightAddon,
   InputRightElement,
   Tab,
   TabList,
@@ -16,19 +19,11 @@ import {
   Tabs,
   Text
 } from '@chakra-ui/react';
-import { useEffect, useRef, useState } from 'react';
-import receipt_icon from '@/assert/invoice-active.svg';
-import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { RechargeBillingData, RechargeBillingItem } from '@/types/billing';
-import SelectRange from '@/components/billing/selectDateRange';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { ApiResp, ReqGenInvoice } from '@/types';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useState } from 'react';
 import InvoicdForm from './InvoicdForm';
-import { formatMoney } from '@/utils/format';
-import PaymentPanel from '@/components/invoice/PaymentPanel';
-import RecordPanel from '@/components/invoice/RecordPanel';
 import InvoicdFormDetail from './InvoicdFormDetail';
 
 function Invoice() {

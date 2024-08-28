@@ -1,11 +1,10 @@
-import * as echarts from 'echarts/core';
+import { UserQuotaItemType } from '@/pages/api/getQuota';
+import { useBreakpointValue } from '@chakra-ui/react';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { PieChart } from 'echarts/charts';
+import * as echarts from 'echarts/core';
 import { LabelLayout } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { useMemo } from 'react';
-import { useBreakpointValue } from '@chakra-ui/react';
-import { UserQuotaItemType } from '@/pages/api/getQuota';
 
 echarts.use([PieChart, CanvasRenderer, LabelLayout]);
 

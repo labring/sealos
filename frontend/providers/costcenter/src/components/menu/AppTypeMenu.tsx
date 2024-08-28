@@ -1,20 +1,8 @@
-import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
-import { ApiResp } from '@/types';
-import {
-  Button,
-  Flex,
-  FlexProps,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  useDisclosure
-} from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { FlexProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import BaseMenu from './BaseMenu';
-import useAppTypeStore from '@/stores/appType';
 
 export default function AppTypeMenu({
   isDisabled,

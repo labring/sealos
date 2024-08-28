@@ -1,11 +1,11 @@
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import useOverviewStore from '@/stores/overview';
+import { FlexProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import BaseMenu from './BaseMenu';
-import { FlexProps, useMediaQuery } from '@chakra-ui/react';
 import { useEffect } from 'react';
+import BaseMenu from './BaseMenu';
 
 export default function NamespaceMenu({
   isDisabled,

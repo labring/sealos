@@ -1,10 +1,9 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
-import { END_TIME, NOW_MONTH, NOW_WEEK, NOW_YEAR, START_TIME } from '@/constants/payment';
-import { BillingData, BillingItem, BillingSpec } from '@/types/billing';
-import { Ref, useRef } from 'react';
+import { END_TIME } from '@/constants/payment';
+import { BillingItem } from '@/types/billing';
 import { subDays } from 'date-fns';
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 export enum By {
   month,
   week

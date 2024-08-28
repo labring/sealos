@@ -1,5 +1,5 @@
 import { InvoicePayload } from '@/types';
-import { Flex, Circle, Text, FlexProps } from '@chakra-ui/react';
+import { Circle, Flex, FlexProps, Text } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 
 export function InvoiceStatus({

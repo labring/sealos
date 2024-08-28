@@ -1,31 +1,30 @@
+import CurrencySymbol from '@/components/CurrencySymbol';
+import AmountDisplay from '@/components/billing/AmountDisplay';
+import Amount from '@/components/billing/AmountTableHeader';
+import SearchBox from '@/components/billing/SearchBox';
+import SwitchPage from '@/components/billing/SwitchPage';
+import SelectRange from '@/components/billing/selectDateRange';
+import { BaseTable } from '@/components/table/BaseTable';
+import { TableHeaderID } from '@/constants/billing';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
+import useEnvStore from '@/stores/env';
 import useOverviewStore from '@/stores/overview';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { ApiResp, BillingType, RechargeBillingData, RechargeBillingItem } from '@/types';
+import { Box, Flex, TabPanel, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import {
   CellContext,
+  HeaderContext,
   createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  HeaderContext,
-  PaginationState,
   useReactTable
 } from '@tanstack/react-table';
-import { BaseTable } from '@/components/table/BaseTable';
-import { ApiResp, BillingType, RechargeBillingData, RechargeBillingItem } from '@/types';
-import { useQuery } from '@tanstack/react-query';
-import { format, formatISO, parseISO } from 'date-fns';
-import request from '@/service/request';
+import { format, formatISO } from 'date-fns';
 import { useTranslation } from 'next-i18next';
-import { Box, Flex, TabPanel, Text } from '@chakra-ui/react';
-import SelectRange from '@/components/billing/selectDateRange';
-import AmountDisplay from '@/components/billing/AmountDisplay';
-import SwitchPage from '@/components/billing/SwitchPage';
-import useEnvStore from '@/stores/env';
-import CurrencySymbol from '@/components/CurrencySymbol';
-import { TableHeaderID } from '@/constants/billing';
-import Amount from '@/components/billing/AmountTableHeader';
-import SearchBox from '@/components/billing/SearchBox';
-import useBillingStore from '@/stores/billing';
+import { useEffect, useMemo } from 'react';
 
 export default function RechargeTabPanel() {
   const { startTime, endTime } = useOverviewStore();

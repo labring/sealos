@@ -1,8 +1,8 @@
 import { authSession } from '@/service/backend/auth';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { formatISO, subMonths } from 'date-fns';
-import { getRegionByUid, getRegionList, makeAPIURL } from '@/service/backend/region';
+import { formatISO } from 'date-fns';
+import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);

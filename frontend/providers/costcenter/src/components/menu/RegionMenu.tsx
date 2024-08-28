@@ -2,10 +2,10 @@ import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { ApiResp } from '@/types';
 import { RegionClient } from '@/types/region';
-import { FlexProps, useMediaQuery } from '@chakra-ui/react';
+import { FlexProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import BaseMenu from './BaseMenu';
 
 export default function RegionMenu({

@@ -1,3 +1,14 @@
+import vector from '@/assert/Vector.svg';
+import stripe_icon from '@/assert/bi_stripe.svg';
+import wechat_icon from '@/assert/ic_baseline-wechat.svg';
+import { default as CurrencySymbol, default as Currencysymbol } from '@/components/CurrencySymbol';
+import OuterLink from '@/components/outerLink';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import useEnvStore from '@/stores/env';
+import { ApiResp } from '@/types/api';
+import { Pay, Payment } from '@/types/payment';
+import { getFavorable } from '@/utils/favorable';
+import { deFormatMoney, formatMoney } from '@/utils/format';
 import {
   Box,
   Button,
@@ -14,29 +25,16 @@ import {
   NumberInputField,
   NumberInputStepper,
   SimpleGrid,
+  Spinner,
   Text,
-  useDisclosure,
-  useToast
+  useDisclosure
 } from '@chakra-ui/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { QRCodeSVG } from 'qrcode.react';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import wechat_icon from '@/assert/ic_baseline-wechat.svg';
-import vector from '@/assert/Vector.svg';
-import { deFormatMoney, formatMoney } from '@/utils/format';
-import { useTranslation } from 'next-i18next';
-import { getFavorable } from '@/utils/favorable';
-import { ApiResp } from '@/types/api';
-import { Pay, Payment } from '@/types/payment';
-import OuterLink from '@/components/outerLink';
-import stripe_icon from '@/assert/bi_stripe.svg';
-import { Spinner } from '@chakra-ui/react';
 import { Stripe } from '@stripe/stripe-js';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
-import useEnvStore from '@/stores/env';
-import Currencysymbol from '@/components/CurrencySymbol';
-import { useCustomToast } from '@/hooks/useCustomToast';
-import CurrencySymbol from '@/components/CurrencySymbol';
+import { useTranslation } from 'next-i18next';
+import { QRCodeSVG } from 'qrcode.react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;

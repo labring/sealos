@@ -2,7 +2,6 @@ import { CYCLE } from '@/constants/valuation';
 import { Cycle } from '@/types/cycle';
 import { RegionClient } from '@/types/region';
 import { formatMoney } from '@/utils/format';
-import { number } from 'echarts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 type BillingState = {

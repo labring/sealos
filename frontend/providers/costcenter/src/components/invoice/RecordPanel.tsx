@@ -1,23 +1,11 @@
-import useOverviewStore from '@/stores/overview';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  ApiResp,
-  APPBillingItem,
-  AppOverviewBilling,
-  BillingData,
-  BillingSpec,
-  BillingType,
-  InvoiceListData,
-  InvoicePayload,
-  RechargeBillingData,
-  RechargeBillingItem,
-  ReqGenInvoice
-} from '@/types';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import request from '@/service/request';
-import { useTranslation } from 'next-i18next';
-import { Flex, Heading, HStack, Img, TabPanel, Text, useMediaQuery } from '@chakra-ui/react';
 import SwitchPage from '@/components/billing/SwitchPage';
+import request from '@/service/request';
+import useOverviewStore from '@/stores/overview';
+import { ApiResp, InvoiceListData } from '@/types';
+import { TabPanel } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
 import { InvoiceTable } from '../table/InoviceTable';
 
 export default function RecordPanel({ toInvoiceDetail }: { toInvoiceDetail: () => void }) {

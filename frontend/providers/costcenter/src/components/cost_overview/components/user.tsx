@@ -2,18 +2,17 @@ import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { Box, Button, Center, Flex, Image, Stack, SystemStyleObject, Text } from '@chakra-ui/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
+import CurrencySymbol from '@/components/CurrencySymbol';
+import { RechargeContext } from '@/pages/cost_overview';
+import useEnvStore from '@/stores/env';
+import useOverviewStore from '@/stores/overview';
+import jsyaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { memo, useContext, useEffect, useMemo, useRef } from 'react';
-import { ApiResp } from '@/types/api';
-import jsyaml from 'js-yaml';
 import RechargeModal from '../../RechargeModal';
 import TransferModal from '../../TransferModal';
-import useEnvStore from '@/stores/env';
-import CurrencySymbol from '@/components/CurrencySymbol';
-import useOverviewStore from '@/stores/overview';
-import { RechargeContext } from '@/pages/cost_overview';
 
 export default memo(function UserCard({ balance }: { balance: number }) {
   const getSession = useSessionStore((state) => state.getSession);

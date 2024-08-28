@@ -1,31 +1,18 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  HStack,
-  Img,
-  Stack,
-  Tab,
-  TabList,
-  TabPanels,
-  Tabs,
-  Text,
-  VStack
-} from '@chakra-ui/react';
-import { createContext, useMemo, useState } from 'react';
 import receipt_icon from '@/assert/receipt_long_black.svg';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
-import NamespaceMenu from '@/components/menu/NamespaceMenu';
-import useBillingStore from '@/stores/billing';
-import RegionMenu from '@/components/menu/RegionMenu';
-import request from '@/service/request';
-import { ApiResp, AppOverviewBilling } from '@/types';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import useOverviewStore from '@/stores/overview';
-import Quota from '@/components/valuation/quota';
 import { Cost } from '@/components/cost_overview/cost';
+import NamespaceMenu from '@/components/menu/NamespaceMenu';
+import RegionMenu from '@/components/menu/RegionMenu';
 import { Refresh } from '@/components/Refresh';
+import Quota from '@/components/valuation/quota';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
+import { ApiResp, AppOverviewBilling } from '@/types';
+import { Box, Flex, Heading, HStack, Img, Stack, Text, VStack } from '@chakra-ui/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useMemo, useState } from 'react';
 
 export default function Resource() {
   const { t } = useTranslation();
@@ -50,7 +37,7 @@ export default function Resource() {
   };
   const queryClient = useQueryClient();
 
-  const { data, isPreviousData, isFetching } = useQuery({
+  const { data, isFetching } = useQuery({
     queryFn() {
       return request.post<
         any,

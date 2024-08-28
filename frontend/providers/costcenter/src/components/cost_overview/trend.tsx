@@ -1,13 +1,12 @@
-import { Heading, Box, Flex, Img, Divider } from '@chakra-ui/react';
+import chart7 from '@/assert/Chart7.svg';
+import Notfound from '@/components/notFound';
+import request from '@/service/request';
+import { Box, Divider, Flex, Heading, Img } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { subDays } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import chart7 from '@/assert/Chart7.svg';
 import { memo, useMemo, useState } from 'react';
-import Notfound from '@/components/notFound';
-import { useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { subDays } from 'date-fns';
-import useBillingStore from '@/stores/billing';
 const LineChart = dynamic(() => import('./components/lineChart'), { ssr: false });
 
 export const Trend = memo(function Trend() {
@@ -33,7 +32,6 @@ export const Trend = memo(function Trend() {
       });
     }
   });
-  const { getCycle } = useBillingStore();
   const arr = useMemo(
     () =>
       (data?.data || []).map<[[number, string][], string]>((v) => [

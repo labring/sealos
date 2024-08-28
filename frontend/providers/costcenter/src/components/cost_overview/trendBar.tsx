@@ -1,13 +1,12 @@
-import { Heading, Box, Flex, Img, Divider } from '@chakra-ui/react';
+import chart7 from '@/assert/Chart7.svg';
+import Notfound from '@/components/notFound';
+import request from '@/service/request';
+import { Box, Divider, Flex, Heading, Img } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { subMonths } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import chart7 from '@/assert/Chart7.svg';
 import { memo, useMemo, useState } from 'react';
-import Notfound from '@/components/notFound';
-import useOverviewStore from '@/stores/overview';
-import { useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { subDays, subMonths } from 'date-fns';
 const BarChart = dynamic(() => import('./components/barChart'), { ssr: false });
 
 export const TrendBar = memo(function Trend() {

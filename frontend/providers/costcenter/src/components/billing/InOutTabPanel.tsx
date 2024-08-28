@@ -1,29 +1,19 @@
-import useOverviewStore from '@/stores/overview';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  ApiResp,
-  APPBillingItem,
-  AppOverviewBilling,
-  BillingData,
-  BillingSpec,
-  BillingType
-} from '@/types';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import request from '@/service/request';
-import { useTranslation } from 'next-i18next';
-import { Flex, Heading, HStack, Img, TabPanel, Text, useMediaQuery } from '@chakra-ui/react';
-import SelectRange from '@/components/billing/selectDateRange';
 import AmountDisplay from '@/components/billing/AmountDisplay';
 import SwitchPage from '@/components/billing/SwitchPage';
+import SelectRange from '@/components/billing/selectDateRange';
+import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
+import { APPBillingItem, ApiResp } from '@/types';
+import { Flex, HStack, TabPanel, Text, useMediaQuery } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useMemo, useState } from 'react';
 import AppNameMenu from '../menu/AppNameMenu';
 import AppTypeMenu from '../menu/AppTypeMenu';
-import CycleMenu from '../menu/CycleMenu';
 import NamespaceMenu from '../menu/NamespaceMenu';
 import RegionMenu from '../menu/RegionMenu';
 import { AppBillingTable } from '../table/AppBillingTable';
-import router from 'next/router';
-import { isNumber, isString } from 'lodash';
 
 export default function InOutTabPanel() {
   const { t } = useTranslation();

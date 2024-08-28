@@ -1,45 +1,20 @@
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 // Import the echarts core module, which provides the necessary interfaces for using echarts.
-import * as echarts from 'echarts/core';
-import {
-  GridComponent,
-  VisualMapComponent,
-  MarkLineComponent,
-  DatasetComponent,
-  TooltipComponent,
-  LegendComponent
-} from 'echarts/components';
+import { Cycle } from '@/types/cycle';
+import { addDays, differenceInDays, format, isSameDay, startOfDay, subDays } from 'date-fns';
 import { LineChart } from 'echarts/charts';
+import {
+  DatasetComponent,
+  GridComponent,
+  LegendComponent,
+  MarkLineComponent,
+  TooltipComponent,
+  VisualMapComponent
+} from 'echarts/components';
+import * as echarts from 'echarts/core';
 import { UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import {
-  addDays,
-  differenceInBusinessDays,
-  differenceInDays,
-  differenceInHours,
-  differenceInMonths,
-  differenceInWeeks,
-  differenceInYears,
-  format,
-  isSameDay,
-  isSameHour,
-  isSameMonth,
-  isSameWeek,
-  isSameYear,
-  startOfDay,
-  startOfHour,
-  startOfMonth,
-  startOfWeek,
-  startOfYear,
-  subDays,
-  subHours,
-  subMonths,
-  subWeeks,
-  subYears
-} from 'date-fns';
 import { useTranslation } from 'next-i18next';
-import useOverviewStore from '@/stores/overview';
-import { Cycle } from '@/types/cycle';
 
 echarts.use([
   GridComponent,

@@ -1,24 +1,13 @@
-import * as echarts from 'echarts/core';
-import { TooltipComponent, LegendComponent, DatasetComponent } from 'echarts/components';
+import { resourceType } from '@/constants/billing';
+import { formatMoney } from '@/utils/format';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { PieChart } from 'echarts/charts';
+import { DatasetComponent, LegendComponent, TooltipComponent } from 'echarts/components';
+import * as echarts from 'echarts/core';
 import { LabelLayout } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { formatMoney } from '@/utils/format';
-import { useMemo } from 'react';
-import { ring, useBreakpointValue } from '@chakra-ui/react';
-import { BillingData, Costs } from '@/types/billing';
 import { useTranslation } from 'next-i18next';
-import useEnvStore from '@/stores/env';
-import {
-  ComposeOption,
-  DatasetComponentOption,
-  LabelLayoutOptionCallback,
-  LegendComponentOption,
-  PieSeriesOption,
-  TooltipComponentOption
-} from 'echarts';
-import { resourceType } from '@/constants/billing';
+import { useMemo } from 'react';
 
 echarts.use([
   TooltipComponent,
@@ -32,15 +21,7 @@ echarts.use([
 export default function CostChart({ data }: { data: number[]; appName: string }) {
   const { t } = useTranslation();
 
-  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const radius = ['50%', '90%'];
-  // const aspectRatio = ['5/6']
-  // useBreakpointValue({
-  // 	xl: '5/4',
-  // 	lg: '5/3',
-  // 	md: '6/2',
-  // 	sm: '5/4'
-  // });
   const result = [0, 1, 2, 3, 4].map((_, i) => {
     return [t(resourceType[i]), formatMoney(data[i]).toFixed(2)];
   });
@@ -60,7 +41,6 @@ export default function CostChart({ data }: { data: number[]; appName: string })
   };
   const option = {
     dataset: {
-      // dimensions: source[0],
       source
     },
     tooltip: {
@@ -68,7 +48,6 @@ export default function CostChart({ data }: { data: number[]; appName: string })
     },
     legend: {
       orient: 'vertical',
-      // : '100px',
       top: 'middle',
       align: 'left',
       right: '10%',
@@ -84,7 +63,6 @@ export default function CostChart({ data }: { data: number[]; appName: string })
           show: true,
           fontSize: 12,
           position: 'center',
-          // top:'middle',
           color: '#485264',
           fontWidth: '500',
           formatter: function (params: any) {

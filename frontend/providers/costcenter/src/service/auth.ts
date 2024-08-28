@@ -17,29 +17,6 @@ export type AccessTokenPayload = {
   workspaceId: string;
 } & AuthenticationTokenPayload;
 
-// export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
-//   verifyToken<AccessTokenPayload>(header).then(
-//     (payload) => {
-//       if (payload?.regionUid === regionUID()) {
-//         return payload;
-//       } else {
-//         return null;
-//       }
-//     },
-//     (err) => null
-//   );
-// export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => {
-//   try {
-//     if (!header?.authorization) {
-//       throw new Error('缺少凭证');
-//     }
-//     const token = decodeURIComponent(header.authorization);
-//     const payload = await verifyJWT<AuthenticationTokenPayload>(token, grobalJwtSecret());
-//     return payload;
-//   } catch (err) {
-//     return null;
-//   }
-// };
 export const verifyJWT = <T extends Object = AccessTokenPayload>(token: string, secret: string) =>
   new Promise<T | null>((resolve) => {
     if (!token) return resolve(null);

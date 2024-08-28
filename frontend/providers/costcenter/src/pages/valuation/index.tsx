@@ -1,48 +1,44 @@
+import nvidaIcon from '@/assert/bi_nvidia.svg';
+import CurrencySymbol from '@/components/CurrencySymbol';
+import CpuIcon from '@/components/icons/CpuIcon';
+import ListIcon from '@/components/icons/ListIcon';
+import { MemoryIcon } from '@/components/icons/MemoryIcon';
+import { NetworkIcon } from '@/components/icons/NetworkIcon';
+import { PortIcon } from '@/components/icons/PortIcon';
+import { StorageIcon } from '@/components/icons/StorageIcon';
+import BaseMenu from '@/components/menu/BaseMenu';
+import RegionMenu from '@/components/menu/RegionMenu';
+import { valuationMap } from '@/constants/payment';
+import { CYCLE } from '@/constants/valuation';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
+import useEnvStore from '@/stores/env';
+import { ApiResp } from '@/types/api';
+import { ValuationStandard } from '@/types/valuation';
 import {
   Box,
   Flex,
-  Heading,
-  Text,
+  FlexProps,
   Img,
   Stack,
-  Table,
-  TableContainer,
-  Thead,
-  Tr,
-  Th,
-  Tbody,
-  Td,
-  Icon,
   Tab,
   TabList,
-  Tabs,
   TabPanel,
   TabPanels,
-  FlexProps,
-  ImgProps
+  Table,
+  TableContainer,
+  Tabs,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr
 } from '@chakra-ui/react';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { valuationMap } from '@/constants/payment';
-import { useState } from 'react';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
-import { ApiResp } from '@/types/api';
-import nvidaIcon from '@/assert/bi_nvidia.svg';
-import { CYCLE } from '@/constants/valuation';
-import useEnvStore from '@/stores/env';
-import CurrencySymbol from '@/components/CurrencySymbol';
-import Quota from '@/components/valuation/quota';
-import ListIcon from '@/components/icons/ListIcon';
-import CpuIcon from '@/components/icons/CpuIcon';
-import { MemoryIcon } from '@/components/icons/MemoryIcon';
-import { NetworkIcon } from '@/components/icons/NetworkIcon';
-import { StorageIcon } from '@/components/icons/StorageIcon';
-import { ValuationStandard } from '@/types/valuation';
-import BaseMenu from '@/components/menu/BaseMenu';
-import RegionMenu from '@/components/menu/RegionMenu';
-import useBillingStore from '@/stores/billing';
-import { PortIcon } from '@/components/icons/PortIcon';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useState } from 'react';
 
 type CardItem = {
   title: string;

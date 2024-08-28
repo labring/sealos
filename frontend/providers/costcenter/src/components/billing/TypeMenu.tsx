@@ -1,15 +1,6 @@
 import { TRANSFER_LIST_TYPE } from '@/constants/billing';
-import { TransferType } from '@/types';
-import {
-  Button,
-  FlexProps,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  useDisclosure
-} from '@chakra-ui/react';
+import { FlexProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { Dispatch, SetStateAction } from 'react';
 import BaseMenu from '../menu/BaseMenu';
 
 export default function TypeMenu({

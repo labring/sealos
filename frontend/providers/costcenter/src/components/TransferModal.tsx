@@ -1,5 +1,10 @@
-import request from '@/service/request';
+import vector from '@/assert/Vector.svg';
 import Currencysymbol from '@/components/CurrencySymbol';
+import request from '@/service/request';
+import useEnvStore from '@/stores/env';
+import { TransferState, transferStatus } from '@/types/Transfer';
+import { ApiResp } from '@/types/api';
+import { deFormatMoney, formatMoney } from '@/utils/format';
 import {
   Button,
   Flex,
@@ -20,13 +25,8 @@ import {
   useToast
 } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
-import { forwardRef, useImperativeHandle, useState } from 'react';
-import vector from '@/assert/Vector.svg';
-import { deFormatMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
-import { ApiResp } from '@/types/api';
-import { TransferState, transferStatus } from '@/types/Transfer';
-import useEnvStore from '@/stores/env';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 
 const TransferModal = forwardRef(
   (

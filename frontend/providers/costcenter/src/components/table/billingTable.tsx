@@ -1,24 +1,22 @@
-import { resourceType, TableHeaderID } from '@/constants/billing';
-import { APPBillingItem, BillingType } from '@/types/billing';
-import { Box, Flex, Img, TableContainerProps, Text } from '@chakra-ui/react';
-import { format, parseISO, subHours } from 'date-fns';
-import { useTranslation } from 'next-i18next';
+import Amount from '@/components/billing/AmountTableHeader';
+import { TableHeaderID } from '@/constants/billing';
+import { valuationMap } from '@/constants/payment';
+import useAppTypeStore from '@/stores/appType';
 import useEnvStore from '@/stores/env';
-import CurrencySymbol from '../CurrencySymbol';
+import { APPBillingItem, BillingType } from '@/types/billing';
+import { Flex, TableContainerProps, Text } from '@chakra-ui/react';
 import {
   CellContext,
   createColumnHelper,
-  flexRender,
   getCoreRowModel,
   HeaderContext,
-  Table as TTable,
   useReactTable
 } from '@tanstack/react-table';
+import { format, parseISO, subHours } from 'date-fns';
+import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
-import Amount from '@/components/billing/AmountTableHeader';
+import CurrencySymbol from '../CurrencySymbol';
 import { AppImg, BaseTable } from '../table/BaseTable';
-import { valuationMap } from '@/constants/payment';
-import useAppTypeStore from '@/stores/appType';
 const getAmountCell = (data?: { isTotal?: boolean }) =>
   function AmountCell(props: CellContext<APPBillingItem, number>) {
     const isTotal = data?.isTotal || false;
