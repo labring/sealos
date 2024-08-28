@@ -23,6 +23,34 @@ const Button = defineStyleConfig({
     }
   }
 });
+const Tabs = defineStyleConfig({
+  variants: {
+    primary: {
+      tablist: {
+        // borderColor: '#EFF0F1',
+        alignItems: 'center',
+        border: 'unset',
+        gap: '12px',
+        fontWeight: '500'
+      },
+      tab: {
+        fontWeight: '500',
+        px: '4px',
+        py: '8px',
+        borderBottom: '1.5px solid',
+        borderColor: 'transparent',
+        color: 'grayModern.500',
+        _selected: { color: 'grayModern.900', borderColor: 'grayModern.900' },
+        _active: {
+          color: 'unset'
+        }
+      },
+      tabpanels: {
+        mt: '12px'
+      }
+    }
+  }
+});
 
 const Input = defineStyleConfig({});
 
@@ -81,7 +109,8 @@ export const theme = extendTheme(originTheme, {
   components: {
     Select,
     Heading,
-    Card
+    Card,
+    Tabs
   },
   breakpoints: { base: '0em', sm: '30em', md: '48em', lg: '62em', xl: '80em', '2xl': '96em' },
   styles: {

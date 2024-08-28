@@ -15,7 +15,7 @@ export type Response = {
   GPU_ENABLED: boolean;
 };
 
-function geAppConfig(defaultConfig: AppConfigType, initConfig: AppConfigType): AppConfigType {
+function getAppConfig(defaultConfig: AppConfigType, initConfig: AppConfigType): AppConfigType {
   function mergeConfig(defaultConfig: any, newConfig: any): any {
     if (typeof defaultConfig !== 'object' || defaultConfig === null) {
       return newConfig !== undefined ? newConfig : defaultConfig;
@@ -32,16 +32,17 @@ function geAppConfig(defaultConfig: AppConfigType, initConfig: AppConfigType): A
   }
   return mergeConfig(defaultConfig, initConfig);
 }
-
+export function initAppConfig() {
+  if (!global.AppConfig || process.env.NODE_ENV !== 'production') {
+    const filename =
+      process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
+    const yamlResult: any = yaml.load(readFileSync(filename, 'utf-8'));
+    global.AppConfig = getAppConfig(DefaultAppConfig, yamlResult);
+  }
+}
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.AppConfig || process.env.NODE_ENV !== 'production') {
-      const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
-      const res: any = yaml.load(readFileSync(filename, 'utf-8'));
-      global.AppConfig = geAppConfig(DefaultAppConfig, res);
-      console.log(global.AppConfig);
-    }
+    initAppConfig();
     jsonRes<Response>(res, {
       data: {
         RECHARGE_ENABLED: global.AppConfig.costCenter.recharge.enabled,

@@ -4,6 +4,7 @@ export type TInvoiceDetail = {
   title: string;
   tax: string;
   bank: string;
+  type?: string;
   bankAccount: string;
   address?: string;
   phone?: string;
@@ -18,6 +19,7 @@ export type ReqGenInvoice = {
   detail: TInvoiceDetail;
   contract: TInvoiceContract & { code: string };
   billings: RechargeBillingItem[];
+  token: string;
 };
 export type Tbilling = {
   order_id: string;
@@ -34,4 +36,20 @@ export type InvoicesCollection = {
   contract: TInvoiceContract;
   k8s_user: string;
   createdTime: Date;
+};
+type InoviceStatus = 'COMPLETED' | 'PENDING' | 'REJECTED';
+export type InvoicePayload = {
+  id: string;
+  userID: string;
+  createdAt: Date;
+  updatedAt: Date;
+  detail: string;
+  remark: unknown;
+  totalAmount: number;
+  status: InoviceStatus;
+};
+export type InvoiceListData = {
+  total: number;
+  totalPage: number;
+  invoices: InvoicePayload[];
 };

@@ -36,6 +36,23 @@ export type Costs = {
   port: number;
   gpu?: number;
 };
+export type AppOverviewBilling = {
+  amount: number;
+  namespace: string;
+  regionDomain: string;
+  appType: number;
+  appName: string;
+};
+export type APPBillingItem = {
+  app_name: string;
+  app_type: number;
+  time: string;
+  order_id: string;
+  namespace: string;
+  used: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
+  used_amount: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
+  amount: number;
+};
 export type BillingItem<T = Costs> = {
   amount: number;
   appType: string;
@@ -64,14 +81,11 @@ export type BillingData<T = Costs> = {
   };
 };
 export type PropertiesCost = {
-  amount: {
-    cpu: number;
-    memory: number;
-    network: number;
-    gpu?: number;
-    'services.nodeports': number;
-    storage: number;
-  };
+  0: number;
+  1: number;
+  2: number;
+  3: number;
+  4: number;
 };
 export type RechargeBillingItem = {
   ID: string;
@@ -87,7 +101,9 @@ export type RechargeBillingItem = {
   InvoicedAt: boolean;
 };
 export type RechargeBillingData = {
-  payment: RechargeBillingItem[];
+  payments: RechargeBillingItem[];
+  totalPage: number;
+  total: number;
 };
 
 export type TransferBillingData = {

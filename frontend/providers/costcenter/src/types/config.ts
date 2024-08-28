@@ -12,7 +12,18 @@ export type Mongo = {
 
 export type Invoice = {
   enabled: boolean;
-  feiShuBotURL: string;
+  feishApp: {
+    appId: string;
+    appSecret: string;
+    feiShuBotURL: string;
+    chatId: string;
+    token: string;
+    template: {
+      id: string;
+      version: string;
+    };
+  };
+  serviceToken: string;
   aliSms: AliSms;
   mongo: Mongo;
 };
@@ -41,6 +52,10 @@ export type Components = {
 };
 
 export type AppConfigType = {
+  cloud: {
+    regionUID: string;
+    domain: string;
+  };
   costCenter: {
     transferEnabled: boolean;
     currencyType: string;
@@ -48,6 +63,12 @@ export type AppConfigType = {
     recharge: Recharge;
     components: Components;
     gpuEnabled: boolean;
+    auth: {
+      jwt: {
+        internal: string;
+        external: string;
+      };
+    };
   };
 };
 
@@ -57,7 +78,18 @@ export var DefaultAppConfig: AppConfigType = {
     currencyType: 'shellCoin',
     invoice: {
       enabled: false,
-      feiShuBotURL: '',
+      feishApp: {
+        appId: '',
+        appSecret: '',
+        feiShuBotURL: '',
+        chatId: '',
+        token: '',
+        template: {
+          id: '',
+          version: ''
+        }
+      },
+      serviceToken: '',
       aliSms: {
         endpoint: '',
         accessKeyID: '',
@@ -86,10 +118,21 @@ export var DefaultAppConfig: AppConfigType = {
         url: 'http://account-service.account-system.svc:2333'
       }
     },
-    gpuEnabled: false
+    gpuEnabled: false,
+    auth: {
+      jwt: {
+        internal: '',
+        external: ''
+      }
+    }
+  },
+  cloud: {
+    regionUID: '',
+    domain: ''
   }
 };
 
 declare global {
   var AppConfig: AppConfigType;
+  var feishuClient: any;
 }

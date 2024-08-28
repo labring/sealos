@@ -36,6 +36,7 @@
     "immer": "^9.0.21",
     "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mongodb": "^5.9.0",
     "next": "13.1.6",
@@ -54,6 +55,8 @@
   "devDependencies": {
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
+    "@types/jsonwebtoken": "^9.0.3",
+    "@types/lodash": "^4.14.199",
     "@types/node": "18.15.5",
     "@types/nprogress": "^0.2.1",
     "@types/react": "18.2.37",

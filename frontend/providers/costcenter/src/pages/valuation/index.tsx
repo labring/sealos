@@ -1,46 +1,44 @@
+import nvidaIcon from '@/assert/bi_nvidia.svg';
+import CurrencySymbol from '@/components/CurrencySymbol';
+import CpuIcon from '@/components/icons/CpuIcon';
+import ListIcon from '@/components/icons/ListIcon';
+import { MemoryIcon } from '@/components/icons/MemoryIcon';
+import { NetworkIcon } from '@/components/icons/NetworkIcon';
+import { PortIcon } from '@/components/icons/PortIcon';
+import { StorageIcon } from '@/components/icons/StorageIcon';
+import BaseMenu from '@/components/menu/BaseMenu';
+import RegionMenu from '@/components/menu/RegionMenu';
+import { valuationMap } from '@/constants/payment';
+import { CYCLE } from '@/constants/valuation';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
+import useEnvStore from '@/stores/env';
+import { ApiResp } from '@/types/api';
+import { ValuationStandard } from '@/types/valuation';
 import {
   Box,
   Flex,
-  Heading,
-  Text,
+  FlexProps,
   Img,
   Stack,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
   Table,
   TableContainer,
-  Thead,
-  Tr,
-  Th,
+  Tabs,
   Tbody,
   Td,
-  Popover,
-  PopoverTrigger,
-  Button,
-  PopoverContent,
-  ButtonProps,
-  Icon,
-  Link
+  Text,
+  Th,
+  Thead,
+  Tr
 } from '@chakra-ui/react';
-import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { valuationMap } from '@/constants/payment';
-import { useState } from 'react';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
-import { ApiResp } from '@/types/api';
-import nvidaIcon from '@/assert/bi_nvidia.svg';
-import { CYCLE } from '@/constants/valuation';
-import PredictCard from '@/components/valuation/predictCard';
-import useEnvStore from '@/stores/env';
-import CurrencySymbol from '@/components/CurrencySymbol';
-import Quota from '@/components/valuation/quota';
-import ListIcon from '@/components/icons/ListIcon';
-import CpuIcon from '@/components/icons/CpuIcon';
-import { MemoryIcon } from '@/components/icons/MemoryIcon';
-import { NetworkIcon } from '@/components/icons/NetworkIcon';
-import { StorageIcon } from '@/components/icons/StorageIcon';
-import { PortIcon } from '@sealos/ui';
-import { ValuationStandard } from '@/types/valuation';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useState } from 'react';
 
 type CardItem = {
   title: string;
@@ -48,7 +46,7 @@ type CardItem = {
   unit: string;
   bg: string;
   idx: number;
-  icon: typeof Icon;
+  icon: typeof Img;
 };
 
 function CycleMenu({
@@ -58,90 +56,40 @@ function CycleMenu({
 }: {
   cycleIdx: number;
   setCycleIdx: (x: number) => void;
-} & ButtonProps) {
+} & FlexProps) {
   const { t } = useTranslation();
   return (
-    <Flex align={'center'} ml="28px">
-      <Popover>
-        <PopoverTrigger>
-          <Button
-            variant={'white-bg-icon'}
-            w="110px"
-            h="32px"
-            fontStyle="normal"
-            fontWeight="400"
-            fontSize="12px"
-            lineHeight="140%"
-            border={'1px solid #DEE0E2'}
-            bg={'#F6F8F9'}
-            _expanded={{
-              background: '#F8FAFB',
-              border: `1px solid #36ADEF`
-            }}
-            _hover={{
-              background: '#F8FAFB',
-              border: `1px solid #36ADEF`
-            }}
-            borderRadius={'2px'}
-            {...props}
-          >
-            {t(CYCLE[cycleIdx])}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          p={'6px'}
-          boxSizing="border-box"
-          w={'110px'}
-          shadow={'0px 0px 1px 0px #798D9F40, 0px 2px 4px 0px #A1A7B340'}
-          border={'none'}
-        >
-          {CYCLE.map((v, idx) => (
-            <Button
-              variant={'white-bg-icon'}
-              key={v}
-              {...(idx === cycleIdx
-                ? {
-                    color: '#0884DD',
-                    bg: '#F4F6F8'
-                  }
-                : {
-                    color: '#5A646E',
-                    bg: '#FDFDFE'
-                  })}
-              h="30px"
-              fontFamily="PingFang SC"
-              fontSize="12px"
-              fontWeight="400"
-              lineHeight="18px"
-              p={'0'}
-              onClick={() => {
-                setCycleIdx(idx);
-              }}
-            >
-              {t(v)}
-            </Button>
-          ))}
-        </PopoverContent>
-      </Popover>
-    </Flex>
+    <BaseMenu
+      itemIdx={cycleIdx}
+      isDisabled={false}
+      setItem={function (idx: number): void {
+        setCycleIdx(idx);
+      }}
+      itemlist={CYCLE.map((v) => t(v)) as unknown as string[]}
+      {...props}
+    />
   );
 }
 
-const getValuation = () =>
-  request<any, ApiResp<{ properties: ValuationStandard[] }>>('/api/properties');
+const getValuation = (regionUid: string) =>
+  request.post<any, ApiResp<{ properties: ValuationStandard[] }>>('/api/properties', {
+    regionUid
+  });
 
 function Valuation() {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const [cycleIdx, setCycleIdx] = useState(0);
-  const { data: _data } = useQuery(['valuation'], getValuation);
+  const { getRegion } = useBillingStore();
+  const regionUid = getRegion()?.uid || '';
+  const { data: _data } = useQuery(['valuation', regionUid], () => getValuation(regionUid));
   const data =
     _data?.data?.properties
       ?.filter((x) => !x.name.startsWith('gpu-'))
       ?.flatMap<CardItem>((x) => {
         const props = valuationMap.get(x.name);
         if (!props) return [];
-        let icon;
+        let icon: typeof Img;
         let title = x.name;
         if (x.name === 'cpu') icon = CpuIcon;
         else if (x.name === 'memory') icon = MemoryIcon;
@@ -165,6 +113,7 @@ function Valuation() {
         ];
       })
       ?.sort((a, b) => a.idx - b.idx) || [];
+  const networkData = data.filter((x) => x.title === 'network');
   const gpuProps = valuationMap.get('gpu')!;
   const gpuData = gpuEnabled
     ? _data?.data?.properties
@@ -179,6 +128,7 @@ function Valuation() {
         })
         ?.sort((a, b) => (a.name > b.name ? 1 : -1)) || []
     : [];
+  const headers = ['Valuation.Name', 'Valuation.Unit', 'Valuation.Price'];
   const currency = useEnvStore((s) => s.currency);
   return (
     <Flex w="100%" h="100%">
@@ -186,154 +136,215 @@ function Valuation() {
         flex={1}
         bg={'#FBFBFC'}
         alignItems="center"
-        p={'24px'}
+        px={'24px'}
+        py={'20px'}
         borderRadius={'4px'}
         overflowY={'auto'}
       >
-        <Flex alignSelf={'flex-start'} mb="30px" align={'center'}>
-          <Img src={letter_icon.src} w={'24px'} h={'24px'} mr={'18px'}></Img>
-          <Heading size="lg">{t('Valuation.Standard')}</Heading>
-        </Flex>
-        <Flex direction={'column'} w="full">
-          <Box w="full" px={['50px', '60px', '70px', '100px']}>
-            <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
-              <ListIcon w="24px" h="24px" mr="6px" />
-              <Text mr="auto">{t('common valuation')}</Text>
-              <Text>{t('Unit')}</Text>
-              <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} ml="auto" />
-            </Flex>
-            <TableContainer w="100%" mt="0px">
-              <Table variant="unstyled">
-                <Thead border="1px solid #DEE0E2" overflow={'hidden'}>
-                  <Tr borderRadius={'10px'}>
-                    {['Name', 'Unit', 'Price'].map((item) => (
-                      <Th px="24px" pt="12px" pb="14px" w="200px" background="#F1F4F6" key={item}>
-                        <Flex display={'flex'} alignItems={'center'}>
-                          <Text mr="4px">{t(item)}</Text>
-                          {['Price'].includes(item) && <CurrencySymbol type={currency} />}
-                        </Flex>
-                      </Th>
-                    ))}
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {data.map((x) => (
-                    <Tr border="1px solid #DEE0E2" key={x.title}>
-                      <Td display={'flex'} alignItems={'center'} border={'none'}>
-                        <x.icon h="16px" w="16px" mr="8px" />
-                        <Flex flexDirection={'column'} alignItems={'flex-start'}>
-                          <Text textTransform={'capitalize'} textAlign={'center'}>
-                            {t(x.title)}
-                          </Text>
-                          {x.title === 'Port' && (
-                            <Link
-                              fontStyle="normal"
-                              fontWeight="400"
-                              fontSize="12px"
-                              color="#1D8CDC"
-                            >
-                              {t('onlyChargedWhenOpenDBPublicAccess')}
-                            </Link>
-                          )}
-                        </Flex>
-                      </Td>
-                      <Td>
-                        {[x.unit, x.title !== 'network' ? `${t(CYCLE[cycleIdx])}` : '']
-                          .filter((v) => v.trim() !== '')
-                          .join('/')}
-                      </Td>
-                      <Td>{x.title === 'network' ? x.price[0] : x.price[cycleIdx]}</Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </TableContainer>
-          </Box>
-          {gpuEnabled && gpuData.length > 0 && (
-            <Box w="full" px={['50px', '60px', '70px', '100px']} mt="48px">
-              <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
-                <ListIcon w="24px" h="24px" mr="6px" />
-                <Text mr="auto">{t('Gpu valuation')}</Text>
-              </Flex>
-              <TableContainer w="100%" mt="0px">
-                <Table variant="simple">
-                  <Thead background="#F1F4F6" border="1px solid #DEE0E2">
-                    <Tr>
-                      {['Name', 'Unit', 'Price'].map((item) => (
-                        <Th key={item} bg={'#F1F4F6'} px="24px" pt="12px" pb="14px" w={'200px'}>
-                          <Flex display={'flex'} alignItems={'center'}>
-                            <Text mr="4px">{t(item)}</Text>
-                            {['Price'].includes(item) && <CurrencySymbol type={currency} />}
-                          </Flex>
-                        </Th>
-                      ))}
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {gpuData.map((x) => (
-                      <Tr border="1px solid #DEE0E2" key={x.name}>
-                        <Td display={'flex'} alignItems={'center'} border={'none'}>
-                          <Img src={nvidaIcon.src} w="16px" h="16px" mr="8px" />
-                          <Text>{t(x.name)}</Text>
-                        </Td>
-                        <Td>
-                          {t('GPU Unit')}/{t('Hour')}
-                        </Td>
-                        <Td>{x.price}</Td>
-                      </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
-              </TableContainer>
-            </Box>
-          )}
-        </Flex>
-      </Stack>
-      <Stack ml="8px" w="280px" gap="8px">
-        <Stack
-          w="280px"
-          h="250px"
-          minH={'100px'}
-          overflow={'auto'}
-          borderRadius="4px"
-          background="#FBFBFC"
-        >
-          <Text py={'24px'} px={'24px'} mr="6px" borderBottom={'solid 1px #DEE0E2'}>
-            {t('Source Quota')}
-          </Text>
-          <Stack px="24px" flex={1} justify={'center'}>
-            <Quota />
-          </Stack>
-        </Stack>
-        <Stack
-          w="280px"
-          h="320px"
-          minH={'100px'}
-          overflow={'auto'}
-          borderRadius="4px"
-          background="#FBFBFC"
-        >
-          <Flex
-            align={'center'}
-            px={'24px'}
-            py="24px"
-            mr="6px"
-            borderBottom={'solid 1px #DEE0E2'}
-            justifyContent={'space-between'}
+        、
+        <Tabs flex={1} display={'flex'} flexDir={'column'} w={'full'}>
+          <TabList
+            borderColor={'#EFF0F1'}
             alignItems={'center'}
+            border={'unset'}
+            width={'full'}
+            display={'flex'}
           >
-            <Text fontSize={'14px'} width={'500'}>
-              {t('Next month cost estimation')}
-              <Text as={'span'}>({t('Predict Detail')})</Text>
-            </Text>
-            <Text fontSize={'12px'} width={'500'}>
-              ( {t('Unit')} <CurrencySymbol boxSize={'14px'} type={currency} /> )
-            </Text>
-          </Flex>
-          <Stack pl="24px" flex={1} justify={'center'}>
-            <PredictCard />
-          </Stack>
-        </Stack>
+            <Tab
+              px="4px"
+              py={'8px'}
+              color={'grayModern.500'}
+              _selected={{ color: 'grayModern.900', borderColor: 'grayModern.900' }}
+              _active={{ color: 'unset' }}
+            >
+              {t('Price Table')}
+            </Tab>
+            <Flex ml="auto" gap={'12px'}>
+              <RegionMenu innerWidth={'230px'} isDisabled={false} />
+              <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} mr={'0'} />
+            </Flex>
+          </TabList>
+          <TabPanels>
+            <TabPanel>
+              <Flex direction={'column'} w="720px" mx={'auto'}>
+                <Box w="full" px={['50px', '60px', '70px', '100px']}>
+                  <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
+                    <ListIcon w="24px" h="24px" mr="6px" />
+                    <Text mr="auto">{t('common valuation')}</Text>
+                  </Flex>
+                  <TableContainer
+                    w="100%"
+                    mt="0px"
+                    borderRadius={'6px'}
+                    border="1px solid"
+                    borderColor={'grayModern.250'}
+                  >
+                    <Table variant="unstyled">
+                      <Thead
+                        borderBottom="1px solid"
+                        overflow={'hidden'}
+                        borderColor={'grayModern.250'}
+                      >
+                        <Tr>
+                          {headers.map((item, idx) => (
+                            <Th
+                              px="24px"
+                              pt="12px"
+                              pb="14px"
+                              w="200px"
+                              background="#F1F4F6"
+                              key={item}
+                              borderRadius={'unset'}
+                            >
+                              <Flex display={'flex'} alignItems={'center'}>
+                                <Text mr="4px" fontSize={'12px'}>
+                                  {t(item)}
+                                </Text>
+                                {idx === 2 && <CurrencySymbol type={currency} />}
+                              </Flex>
+                            </Th>
+                          ))}
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {data
+                          .filter((x) => x.title !== 'network')
+                          .map((x, i, arr) => (
+                            <Tr
+                              borderBottom={i != arr.length - 1 ? '1px solid' : ''}
+                              borderColor={'grayModern.250'}
+                              key={x.title}
+                            >
+                              <Td display={'flex'} alignItems={'center'} border={'none'}>
+                                <x.icon h="16px" w="16px" mr="8px" />
+                                <Flex flexDirection={'column'} alignItems={'flex-start'}>
+                                  <Text
+                                    textTransform={'capitalize'}
+                                    textAlign={'center'}
+                                    fontSize={'12px'}
+                                  >
+                                    {t(x.title)}
+                                  </Text>
+                                </Flex>
+                              </Td>
+                              <Td fontSize={'12px'}>
+                                {[x.unit, `${t(CYCLE[cycleIdx])}`]
+                                  // .filter((v) => v.trim() !== '')
+                                  .join('/')}
+                              </Td>
+                              <Td fontSize={'12px'} color={'brightBlue.600'}>
+                                {x.price[cycleIdx]}
+                              </Td>
+                            </Tr>
+                          ))}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+                <Box w="full" px={['50px', '60px', '70px', '100px']} mt="48px" pt={'10px'}>
+                  <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
+                    <ListIcon w="24px" h="24px" mr="6px" />
+                    <Text mr="auto">{t('Network valuation')}</Text>
+                  </Flex>
+                  <TableContainer
+                    w="100%"
+                    mt="0px"
+                    border="1px solid"
+                    borderColor={'grayModern.250'}
+                    borderRadius={'6px'}
+                  >
+                    <Table variant="simple">
+                      <Thead background="#F1F4F6">
+                        <Tr>
+                          {headers.map((item, idx) => (
+                            <Th key={item} bg={'#F1F4F6'} px="24px" pt="12px" pb="14px" w={'200px'}>
+                              <Flex display={'flex'} alignItems={'center'}>
+                                <Text mr="4px" fontSize={'12px'}>
+                                  {t(item)}
+                                </Text>
+                                {idx === 2 && <CurrencySymbol type={currency} />}
+                              </Flex>
+                            </Th>
+                          ))}
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {networkData.map((x, i, arr) => (
+                          <Tr
+                            key={x.title}
+                            borderBottom={i !== arr.length - 1 ? '1px solid' : ''}
+                            borderColor={'grayModern.250'}
+                          >
+                            <Td
+                              fontSize={'12px'}
+                              display={'flex'}
+                              alignItems={'center'}
+                              border={'none'}
+                            >
+                              <x.icon h="16px" w="16px" mr="8px" />
+                              <Text>{t(x.title)}</Text>
+                            </Td>
+                            <Td fontSize={'12px'} border={'none'}>
+                              /{t(x.unit)}
+                            </Td>
+                            <Td fontSize={'12px'} color={'brightBlue.600'} border={'none'}>
+                              {x.price[0]}
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+                {gpuEnabled && gpuData.length > 0 && (
+                  <Box w="full" px={['50px', '60px', '70px', '100px']} mt="48px">
+                    <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
+                      <ListIcon w="24px" h="24px" mr="6px" />
+                      <Text mr="auto">{t('Gpu valuation')}</Text>
+                    </Flex>
+                    <TableContainer w="100%" mt="0px">
+                      <Table variant="simple">
+                        <Thead background="#F1F4F6" border="1px solid grayModern.250">
+                          <Tr>
+                            {headers.map((item, idx) => (
+                              <Th
+                                key={item}
+                                bg={'#F1F4F6'}
+                                px="24px"
+                                pt="12px"
+                                pb="14px"
+                                w={'200px'}
+                              >
+                                <Flex display={'flex'} alignItems={'center'}>
+                                  <Text mr="4px">{t(item)}</Text>
+                                  {idx === 2 && <CurrencySymbol type={currency} />}
+                                </Flex>
+                              </Th>
+                            ))}
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {gpuData.map((x) => (
+                            <Tr border="1px solid grayModern.250" key={x.name}>
+                              <Td display={'flex'} alignItems={'center'} border={'none'}>
+                                <Img src={nvidaIcon.src} w="16px" h="16px" mr="8px" />
+                                <Text>{t(x.name)}</Text>
+                              </Td>
+                              <Td>
+                                {t('GPU Unit')}/{t('Hour')}
+                              </Td>
+                              <Td>{x.price}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
+              </Flex>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Stack>
     </Flex>
   );
@@ -343,7 +354,7 @@ export default Valuation;
 
 export async function getServerSideProps({ locale }: { locale: string }) {
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(['valuation'], getValuation);
+  await queryClient.prefetchQuery(['valuation'], () => getValuation(''));
   return {
     props: {
       ...(await serverSideTranslations(locale, ['common'], null, ['zh', 'en'])),

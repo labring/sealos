@@ -6,5 +6,8 @@
 	"CLOUD-VM":"CLOUD-VM",
 	"DB": "DATABASE",
 	"APP": "APP",
-	"All APP": "ALL"
+	"All APP": "ALL APP",
+	"APP-STORE": "APP-STORE",
+	"DB-BACKUP": "DB-BACKUP",
+	"all_app_type": "ALL APP TYPE"
 }

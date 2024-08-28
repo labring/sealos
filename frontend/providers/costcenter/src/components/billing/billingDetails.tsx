@@ -1,24 +1,23 @@
+import request from '@/service/request';
+import { BillingData, BillingSpec } from '@/types';
 import {
-  useDisclosure,
-  Text,
+  Button,
+  ButtonProps,
+  Flex,
   Modal,
-  ModalOverlay,
+  ModalBody,
+  ModalCloseButton,
   ModalContent,
   ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  Button,
-  TextProps,
-  Flex,
-  ButtonProps
+  ModalOverlay,
+  Text,
+  useDisclosure
 } from '@chakra-ui/react';
-import { BillingDetailsTable } from './billingTable';
-import { BillingData, BillingSpec } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import DetailsIcon from '../icons/DetailsIcon';
+import { BillingDetailsTable } from './billingTable';
 
 export default function BillingDetails({
   orderId,
@@ -50,9 +49,6 @@ export default function BillingDetails({
       });
     },
     {
-      onSuccess(data) {
-        console.log(data);
-      },
       enabled: isOpen
     }
   );

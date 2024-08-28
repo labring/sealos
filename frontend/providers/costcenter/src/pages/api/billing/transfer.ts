@@ -39,6 +39,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       startTime,
       transferID: orderID,
       endTime,
+      namesapce: GetUserDefaultNameSpace(user.name),
       type
     };
 

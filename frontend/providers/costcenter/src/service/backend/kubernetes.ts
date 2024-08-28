@@ -36,8 +36,6 @@ export function K8sApi(config: string): k8s.KubeConfig {
     });
   }
 
-  // console.log(kc);
-
   return kc;
 }
 

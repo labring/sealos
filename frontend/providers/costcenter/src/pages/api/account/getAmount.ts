@@ -14,8 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 401, message: 'user null' });
     }
     const body = JSON.stringify({
-      kubeConfig: kc.exportConfig(),
-      owner: user.name
+      kubeConfig: kc.exportConfig()
+      // owner: user.name
     });
     const response = await fetch(base + '/account/v1alpha1/account', {
       method: 'POST',

@@ -6,9 +6,11 @@
   "Scan with WeChat": "Scan with WeChat",
   "Balance": "Balance",
   "SideBar": {
+    "Index": "Home Page",
     "CostOverview": "Cost Overview",
     "BillingDetails": "Billing Details",
     "ValuationStandard": "Standard",
+    "resource_analysis": "Resource Analysis",
     "CreateInvoice": "Create Invoice"
   },
   "Valuation": {
@@ -20,6 +22,11 @@
   "All Namespace": "All Team ID",
   "Bonus": "Bonus",
   "Select Amount": "Select Amount",
+  "Port Amount": "Port Amount",
+  "CPU Amount": "CPU Amount",
+  "Storage Amount": "Storage Amount",
+  "Memory Amount": "Memory Amount",
+  "Network Amount": "Network Amount",
   "Recent Transactions": "Recent Transactions",
   "Cost Trend": "Cost Trend",
   "Total Cost": "Total Cost",
@@ -27,6 +34,8 @@
   "Deduction": "Deduction",
   "Cost Distribution": "Cost Distribution",
   "Expenditure": "Expenditure",
+  "Total Expenditure": "Total Expenditure",
+  "Total Recharge": "Total Recharge",
   "Recharge Amount": "Recharge Amount",
   "Confirm": "Confirm",
   "Balance Recharge": "Balance Recharge",
@@ -34,7 +43,7 @@
   "Transaction Time": "Transaction Time",
   "Type": "Type",
   "CPU": "CPU",
-  "Port": "TCP External Port",
+  "Port": "Port",
   "onlyChargedWhenOpenDBPublicAccess": "Only charged when enabling public access to the database",
   "Memory": "Memory",
   "Network": "Network",
@@ -48,6 +57,7 @@
   "Payment Result": "Payment Result",
   "Payment Successful": "Payment Successful",
   "In Payment": "In Payment ...",
+  "Region": "Region",
   "Hour": "Hour",
   "Day": "Day",
   "Week": "Week",
@@ -78,19 +88,21 @@
   "Stripe Cancel": "cancel to pay with Stripe",
   "GPU Unit": "Card",
   "Gpu valuation": "GPU Price Table",
-  "common valuation": "Price Table",
+  "common valuation": "Basic Valuation",
   "Billing Details": "Billing Details",
   "orders": {
     "list": "Order List",
     "invoiceAmount": "Invoice Amount",
     "invoice": "Generate Invoice",
     "invoiceOrder": "Invoice Order",
+		"invoiceRecord": "Invoice Record",
     "phoneValidation": "Please enter a valid phone number",
     "taxNumberValidation": "Please enter a valid tax registration number",
     "bankAccountValidation": "Please enter a valid bank account number",
     "emailValidation": "Please enter a valid email address",
     "submit success": "Submit success",
     "submit fail": "Submit fail",
+		"require": "Please enter value",
     "code success": "Verification code sent successfully",
     "code error": "Verification code sent failed",
     "Name": "Name",
@@ -124,7 +136,15 @@
       "fax": {
         "name": "Fax",
         "placeholder": "Enter fax number"
-      }
+      },
+			"type":{
+				"name": "Type",
+				"placeholder": "Enter type",
+				"list": {
+					"special": "VAT invoice (Special)",
+					"normal": "VAT invoice (Normal)"
+				}
+			}
     },
     "contract": {
       "person": {
@@ -147,8 +167,19 @@
     "Invoice Details": "Invoice Details",
     "Invoice Content": "Invoice Content",
     "Electronic Computer Service Fee": "Electronic Computer Service Fee",
-    "Contact Information": "Contact Information"
+    "Contact Information": "Contact Information",
+		"Apply Inovice Tips": "Apply for an invoice need to 3 to 5 days",
+		"Apply Invoice": "Apply Invoice",
+		
+		"status":{
+			"PENDING": "pending",
+			"COMPLETED": "completed",
+			"REJECTED": "rejected"
+		}
   },
+	"Invoice Status": "Invoice Status",
+	"Invoice Create Time": "invoice create time",
+	"Invoice Update Time": "invoice update time",
   "pay with stripe": "Pay With Stripe",
   "pay with wechat": "Pay With Wechat",
   "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",
@@ -160,9 +191,30 @@
   "APP Name": "App name",
   "APP Type": "App type",
   "Details": "Details",
-	"Transfer Type":"Transfer Type",
+  "Transfer Type": "Transfer Type",
   "Handle": "Handle",
   "currencyUnit": "Currency Unit",
-	"Trader ID":"Trader"
-
+  "Trader ID": "Trader",
+  "region_type": "region",
+  "region": "Region",
+  "all_workspace_id": "All Workspace ID",
+  "workspace": "Workspace",
+  "app_name": "App Name",
+  "Last 7 days": "Last 7 days",
+  "Last 6 Months": "last 6 months",
+  "All Regions": "All Regions",
+  "Annual Income and Expenditure": "Annual Income and Expenditure",
+  "Billing List": "Billing List",
+  "Network valuation": "Network Valuation",
+  "applist": {
+    "Other": "others"
+  },
+  "Used": "Used",
+  "Remain": "Remain",
+  "Cost Form": "Cost Form",
+  "All App Cost Form": "All App Cost Form",
+  "Price Table": "Price Table",
+  "all_workspace": "All Workspace",
+  "preferential_rules": "Preferential Rules",
+  "preferential_strength": "Preferential Strength"
 }

@@ -1,9 +1,7 @@
 import { authSession } from '@/service/backend/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { makeAPIURL } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
-import { BillingData, BillingSpec, RechargeBillingData } from '@/types';
-import crypto from 'crypto';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
@@ -13,9 +11,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = GetUserDefaultNameSpace(user.name);
-    const body = req.body;
-    let spec: BillingSpec = body.spec;
     const { endTime, startTime } = req.body as {
       endTime?: Date;
       startTime?: Date;
@@ -25,37 +20,27 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    if (!startTime)
-      return jsonRes(resp, {
-        code: 400,
-        message: 'endTime is invalid'
-      });
-    const data = {
+    const queryRaw = {
       endTime,
       kubeConfig: kc.exportConfig(),
-      owner: user.name,
       startTime
     };
 
-    const url =
-      global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/payment';
-    const response = await fetch(url, {
+    const rechagreUrl = makeAPIURL(null, '/account/v1alpha1/costs/recharge');
+    const response = await fetch(rechagreUrl, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(queryRaw)
     });
-    if (!response.clone().ok)
-      return jsonRes(resp, {
-        code: 404,
-        data: {
-          payment: []
-        }
-      });
-    const res = (await response.clone().json()) as RechargeBillingData;
+    const result = await response.json();
+    if (!response.ok) {
+      console.log(result);
+      throw Error();
+    }
     return jsonRes(resp, {
-      data: res
+      data: result
     });
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: 'get billing error' });
+    jsonRes(resp, { code: 500, message: 'get recharge error' });
   }
 }

@@ -1,5 +1,10 @@
-import request from '@/service/request';
+import vector from '@/assert/Vector.svg';
 import Currencysymbol from '@/components/CurrencySymbol';
+import request from '@/service/request';
+import useEnvStore from '@/stores/env';
+import { TransferState, transferStatus } from '@/types/Transfer';
+import { ApiResp } from '@/types/api';
+import { deFormatMoney, formatMoney } from '@/utils/format';
 import {
   Button,
   Flex,
@@ -20,13 +25,8 @@ import {
   useToast
 } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
-import { forwardRef, useImperativeHandle, useState } from 'react';
-import vector from '@/assert/Vector.svg';
-import { deFormatMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
-import { ApiResp } from '@/types/api';
-import { TransferState, transferStatus } from '@/types/Transfer';
-import useEnvStore from '@/stores/env';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 
 const TransferModal = forwardRef(
   (
@@ -157,39 +157,58 @@ const TransferModal = forwardRef(
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-
-        <ModalContent maxW="500px">
-          <ModalHeader px={'24px'} pt={'24px'} pb={'18px'} bg={'white'} border={'none'}>
-            {t('Transfer Amount')}
+        <ModalContent maxW="530px">
+          <ModalHeader
+            px={'20px'}
+            py={'12px'}
+            bg={'grayModern.25'}
+            borderBottom={'1px solid'}
+            fontWeight={500}
+            fontSize={'16px'}
+            color={'grayModern.900'}
+            borderColor={'grayModern.100'}
+          >
+            {t('Transfer')}
           </ModalHeader>
-          <ModalCloseButton top={'16px'} right={'24px'} />
+          <ModalCloseButton top={'8px'} right={'18px'} />
           <Flex
             pointerEvents={mutation.isLoading ? 'none' : 'auto'}
-            pt="4px"
             mt={'0'}
-            pb="32px"
-            w="500px"
-            px={'24px'}
+            px="36px"
+            w="full"
+            py={'24px'}
             flexDirection="column"
             justifyContent="center"
             alignItems="center"
           >
-            <Text alignSelf={'flex-start'}>{t('Recipient ID')}</Text>
+            <Text
+              alignSelf={'flex-start'}
+              fontWeight={500}
+              fontSize={'14px'}
+              mb={'8px'}
+              color={'grayModern.900'}
+            >
+              {t('Recipient ID')}
+            </Text>
             <Input
               type={'text'}
               min={0}
-              mt="12px"
-              mb={'20px'}
+              mb={'24px'}
               w="full"
               h="42px"
               boxSizing="border-box"
-              background="#F4F6F8"
+              background="grayModern.50"
               px={'14px'}
-              border="1px solid #EFF0F1"
-              borderRadius="2px"
+              _placeholder={{
+                color: 'grayModern.500'
+              }}
+              border="1px solid"
+              borderColor={'grayModern.200'}
+              borderRadius="8px"
               alignItems="center"
               display={'flex'}
               value={to}
+              placeholder={t('Recipient ID')}
               variant={'unstyled'}
               onChange={(e) => {
                 e.preventDefault();
@@ -197,57 +216,65 @@ const TransferModal = forwardRef(
               }}
               isDisabled={mutation.isLoading}
             />
-            <Text alignSelf={'flex-start'}>{t('Transfer Amount')}</Text>
+            <Text
+              alignSelf={'flex-start'}
+              fontWeight={500}
+              fontSize={'14px'}
+              mb={'8px'}
+              color={'grayModern.900'}
+            >
+              {t('Transfer Amount')}
+            </Text>
             <NumberInput
               defaultValue={15}
               clampValueOnBlur={false}
               min={0}
+              mb="24px"
               w="full"
               h="42px"
-              mt="12px"
               boxSizing="border-box"
-              background="#F4F6F8"
-              px={'14px'}
-              border="1px solid #EFF0F1"
-              borderRadius="2px"
+              background="grayModern.50"
+              px={'12px'}
+              border="1px solid"
+              borderColor={'grayModern.200'}
+              borderRadius="8px"
               alignItems="center"
               display={'flex'}
               value={amount}
               variant={'unstyled'}
               onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
-              isDisabled={mutation.isLoading}
             >
-              <Currencysymbol w="16px" type={currency} />
-              <NumberInputField ml="4px" />
-              <NumberInputStepper>
-                <NumberIncrementStepper>
+              <NumberInputField color={'grayModern.900'} />
+              <Currencysymbol boxSize="14px" mr={'32px'} type={currency} />
+
+              <NumberInputStepper borderColor={'grayModern.200'}>
+                <NumberIncrementStepper width={'24px'} borderColor={'grayModern.200'}>
                   <Img src={vector.src}></Img>
                 </NumberIncrementStepper>
-                <NumberDecrementStepper>
+                <NumberDecrementStepper w="24px" borderColor={'grayModern.200'}>
                   <Img src={vector.src} transform={'rotate(180deg)'}></Img>
                 </NumberDecrementStepper>
               </NumberInputStepper>
             </NumberInput>
-            <Flex align={'center'} w="full" mt={'28px'} fontWeight={'500'}>
-              <Text fontSize="12px" mr={'12px'}>
+            <Flex align={'center'} w="full" fontWeight={'500'}>
+              <Text fontSize="12px" mr={'12px'} color={'grayModern.900'}>
                 {t('Balance')}
               </Text>
-              <Currencysymbol w="16px" type={currency} color="rgba(33, 155, 244, 1)" />
-              <Text color="rgba(33, 155, 244, 1)" fontSize={'16px'} ml="4px">
+              <Currencysymbol w="16px" type={currency} color="rgba(33, 155, 244, 1)" mr={'6px'} />
+              <Text color="brightBlue.600" fontSize={'16px'}>
                 {formatMoney(balance).toFixed(2)}
               </Text>
               <Button
-                size="primary"
-                variant="primary"
+                variant="solid"
                 w={'auto'}
                 ml={'auto'}
                 mr={'0px'}
-                px="43px"
+                px="29.5px"
                 py="8px"
                 onClick={() => handleConfirm()}
                 isLoading={mutation.isLoading}
               >
-                {t('Confirm')}
+                {t('Transfer')}
               </Button>
             </Flex>
           </Flex>
