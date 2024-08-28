@@ -1,4 +1,3 @@
-import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
 
 const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
