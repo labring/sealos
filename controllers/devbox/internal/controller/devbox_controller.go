@@ -18,8 +18,9 @@ package controller
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	cryptorand "crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -141,17 +142,14 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	// if secret not found, create a new one
 	if err != nil && client.IgnoreNotFound(err) == nil {
 		// set password to context, if error then no need to update secret
-		//secret := &corev1.Secret{
-		//	ObjectMeta: objectMeta,
-		//	Data:       map[string][]byte{"SEALOS_DEVBOX_PASSWORD": []byte(rand.String(12))},
-		//}
-		publicKey, privateKey, err := generatePublicAndPrivateKey(512)
+		publicKey, privateKey, err := generatePublicAndPrivateKey()
 		if err != nil {
 			logger.Error(err, "generate public and private key failed")
 		}
 		secret := &corev1.Secret{
 			ObjectMeta: objectMeta,
 			Data: map[string][]byte{
+				"SEALOS_DEVBOX_PASSWORD":    []byte(rand.String(12)),
 				"SEALOS_DEVBOX_PUBLIC_KEY":  publicKey,
 				"SEALOS_DEVBOX_PRIVATE_KEY": privateKey,
 			},
@@ -168,15 +166,16 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	return nil
 }
 
-func generatePublicAndPrivateKey(bits int) ([]byte, []byte, error) {
-	private, err := rsa.GenerateKey(cryptorand.Reader, bits)
+func generatePublicAndPrivateKey() ([]byte, []byte, error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cryptorand.Reader)
 	if err != nil {
 		return []byte(""), []byte(""), err
 	}
-	public := &private.PublicKey
+	public := &privateKey.PublicKey
+	derPrivateKey, err := x509.MarshalECPrivateKey(privateKey)
 	privateKeyPem := pem.EncodeToMemory(&pem.Block{
-		Bytes: x509.MarshalPKCS1PrivateKey(private),
-		Type:  "RSA PRIVATE KEY",
+		Type:  "PRIVATE KEY",
+		Bytes: derPrivateKey,
 	})
 	publicKey, err := ssh.NewPublicKey(public)
 	if err != nil {
@@ -374,8 +373,8 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      devbox.Name + "public-key-volume",
-					MountPath: "/usr/start",
+					Name:      "devbox-ssh-public-key",
+					MountPath: "/usr/start/.ssh",
 					ReadOnly:  true,
 				},
 			},
@@ -390,7 +389,7 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
-							Path: "publicKey",
+							Path: "id_rsa.pub",
 						},
 					},
 				},
