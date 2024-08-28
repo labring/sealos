@@ -55,6 +55,7 @@ type Interface interface {
 	GetUserCrName(ops types.UserQueryOpts) (string, error)
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
+	UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, error)
 }
 
 type Account struct {
@@ -1357,4 +1358,21 @@ func (m *Account) GetInvoicePayments(invoiceID string) ([]types.Payment, error) 
 
 func (m *Account) SetStatusInvoice(req *helper.SetInvoiceStatusReq) error {
 	return m.ck.SetInvoiceStatus(req.InvoiceIDList, req.Status)
+}
+
+func (m *Account) UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, error) {
+	giftCode, err := m.ck.GetGiftCodeWithCode(req.Code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gift code: %v", err)
+	}
+
+	if giftCode.Used {
+		return nil, fmt.Errorf("gift code is already used")
+	}
+
+	if err = m.ck.UseGiftCode(giftCode, req.UserID); err != nil {
+		return nil, fmt.Errorf("failed to use gift code: %v", err)
+	}
+
+	return giftCode, nil
 }

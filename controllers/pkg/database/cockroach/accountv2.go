@@ -1054,3 +1054,48 @@ func (c *Cockroach) Close() error {
 	}
 	return db.Close()
 }
+
+func (c *Cockroach) GetGiftCodeWithCode(code string) (*types.GiftCode, error) {
+	var giftCode types.GiftCode
+	if err := c.DB.Where("code = ?", code).First(&giftCode).Error; err != nil {
+		return nil, fmt.Errorf("failed to get gift code: %w", err)
+	}
+	return &giftCode, nil
+}
+
+func (c *Cockroach) UseGiftCode(giftCode *types.GiftCode, userID string) error {
+	return c.DB.Transaction(func(tx *gorm.DB) error {
+		ops := &types.UserQueryOpts{ID: userID}
+		// Update the user's balance
+		if err := c.updateBalance(tx, ops, giftCode.CreditAmount, false, true); err != nil {
+			return fmt.Errorf("failed to update user balance: %w", err)
+		}
+
+		message := "created by gift code"
+		// Create an AccountTransaction record
+		accountTransaction := &types.AccountTransaction{
+			ID:               uuid.New(),
+			Type:             "GiftCode",
+			UserUID:          ops.UID,
+			DeductionBalance: 0,
+			Balance:          giftCode.CreditAmount,
+			Message:          &message,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+			BillingID:        giftCode.ID,
+		}
+		if err := tx.Create(accountTransaction).Error; err != nil {
+			return fmt.Errorf("failed to create account transaction: %w", err)
+		}
+
+		// Mark the gift code as used
+		giftCode.Used = true
+		giftCode.UsedBy = ops.UID
+		giftCode.UsedAt = time.Now()
+		if err := tx.Save(giftCode).Error; err != nil {
+			return fmt.Errorf("failed to update gift code: %w", err)
+		}
+
+		return nil
+	})
+}

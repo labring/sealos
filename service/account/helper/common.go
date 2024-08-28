@@ -25,11 +25,13 @@ const (
 	ApplyInvoice             = "/invoice/apply"
 	SetStatusInvoice         = "/invoice/set-status"
 	GetInvoicePayment        = "/invoice/get-payment"
+	UseGiftCode              = "/gift-code/use"
 )
 
 // env
 const (
-	ConfigPath         = "/config/config.json"
+	//ConfigPath         = "/config/config.json"
+	ConfigPath         = "/home/ubuntu/pro/sealos/sealos/service/account/config.json"
 	EnvMongoURI        = "MONGO_URI"
 	ENVGlobalCockroach = "GLOBAL_COCKROACH_URI"
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"

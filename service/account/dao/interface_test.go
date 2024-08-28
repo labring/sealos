@@ -587,3 +587,23 @@ func init() {
 	os.Setenv("LOCAL_COCKROACH_URI", "")
 	os.Setenv("LOCAL_REGION", "")
 }
+
+func TestAccount_UseGiftCode(t *testing.T) {
+	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+
+	giftcode, err := db.UseGiftCode(&helper.UseGiftCodeReq{
+		Auth: &helper.Auth{
+			UserID: "5uxfy8jl",
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("UseGiftCode() error = %v", err)
+		return
+	}
+	t.Logf("giftcode = %+v", giftcode)
+}

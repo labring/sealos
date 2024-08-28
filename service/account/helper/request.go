@@ -475,3 +475,38 @@ func ParseSetInvoiceStatusReq(c *gin.Context) (*SetInvoiceStatusReq, error) {
 	}
 	return invoiceStatus, nil
 }
+
+type UseGiftCodeRespData struct {
+	UserID string `json:"userID" bson:"userID" example:"user-123"`
+}
+
+type UseGiftCodeResp struct {
+	Data    UseGiftCodeRespData `json:"data,omitempty" bson:"data,omitempty"`
+	Message string              `json:"message,omitempty" bson:"message" example:"Gift code successfully redeemed"`
+}
+
+type UseGiftCodeReq struct {
+	// @Summary Gift code to be used
+	// @Description The code of the gift card to be redeemed
+	// @JSONSchema required
+	Code string `json:"code" bson:"code" binding:"required" example:"HAPPY2024"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	*Auth `json:",inline" bson:",inline"`
+}
+
+func ParseUseGiftCodeReq(c *gin.Context) (*UseGiftCodeReq, error) {
+	useGiftCode := &UseGiftCodeReq{}
+	if err := c.ShouldBindJSON(useGiftCode); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+
+	// Additional validation can be added here if needed
+	if useGiftCode.Code == "" {
+		return nil, fmt.Errorf("gift code cannot be empty")
+	}
+
+	return useGiftCode, nil
+}
