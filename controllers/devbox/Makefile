@@ -69,7 +69,7 @@ build: ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	go run cmd/main.go
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.

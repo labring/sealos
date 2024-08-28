@@ -18,7 +18,12 @@ package controller
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -128,17 +133,29 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 		ObjectMeta: objectMeta,
 	}
 
-	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxSecret)
+	// generate public and private key
+	publicKey, privateKey, err := generatePublicAndPrivateKey(2048)
+	if err != nil {
+		logger.Error(err, "generate public and private key failed")
+		return err
+	}
+
+	err = r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxSecret)
 	if err != nil && client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "get devbox secret failed")
 		return err
 	}
+
 	// if secret not found, create a new one
 	if err != nil && client.IgnoreNotFound(err) == nil {
 		// set password to context, if error then no need to update secret
 		secret := &corev1.Secret{
 			ObjectMeta: objectMeta,
-			Data:       map[string][]byte{"SEALOS_DEVBOX_PASSWORD": []byte(rand.String(12))},
+			Data: map[string][]byte{
+				"SEALOS_DEVBOX_PASSWORD":    []byte(rand.String(12)),
+				"SEALOS_DEVBOX_PUBLIC_KEY":  publicKey,
+				"SEALOS_DEVBOX_PRIVATE_KEY": privateKey,
+			},
 		}
 		if err := controllerutil.SetControllerReference(devbox, secret, r.Scheme); err != nil {
 			return err
@@ -349,6 +366,12 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 					"memory": devbox.Spec.Resource["memory"],
 				},
 			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "devbox-ssh-public-key",
+					MountPath: "/usr/start/.ssh",
+				},
+			},
 		},
 	}
 	terminationGracePeriodSeconds := 300
@@ -358,6 +381,22 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 			RestartPolicy:                 corev1.RestartPolicyNever,
 			Containers:                    containers,
 			TerminationGracePeriodSeconds: ptr.To(int64(terminationGracePeriodSeconds)),
+			Volumes: []corev1.Volume{
+				{
+					Name: "devbox-ssh-public-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: devbox.Name,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
+									Path: "id_rsa.pub",
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 	if err = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme); err != nil {
@@ -489,6 +528,24 @@ func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
 		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
 	}
 	return request
+}
+
+func generatePublicAndPrivateKey(bits int) ([]byte, []byte, error) {
+	private, err := rsa.GenerateKey(cryptorand.Reader, bits)
+	if err != nil {
+		return []byte(""), []byte(""), err
+	}
+	public := &private.PublicKey
+	privateKeyPem := pem.EncodeToMemory(&pem.Block{
+		Bytes: x509.MarshalPKCS1PrivateKey(private),
+		Type:  "RSA PRIVATE KEY",
+	})
+	publicKey, err := ssh.NewPublicKey(public)
+	if err != nil {
+		return []byte(""), []byte(""), err
+	}
+	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
+	return sshPublicKey, privateKeyPem, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
