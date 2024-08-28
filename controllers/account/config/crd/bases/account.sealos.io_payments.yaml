@@ -60,6 +60,9 @@ spec:
               userID:
                 description: UserID is the user id who want to recharge
                 type: string
+              userCR:
+                description: UserCr is the user cr name who want to recharge
+                type: string
             type: object
           status:
             description: PaymentStatus defines the observed state of Payment

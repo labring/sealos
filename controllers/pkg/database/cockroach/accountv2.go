@@ -113,7 +113,7 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	}
 	var user types.User
 	if err := c.DB.Where(queryUser).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("failed to get user: %v", err)
+		return nil, err
 	}
 	return &user, nil
 }
