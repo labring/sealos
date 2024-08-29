@@ -222,6 +222,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				//if pod is running,check pod need restart
 				tag := r.CheckPodConsistency(ctx, devbox, podList.Items[0])
 				if !tag {
+					fmt.Println("进行重启！")
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
