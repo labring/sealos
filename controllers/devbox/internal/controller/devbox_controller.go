@@ -284,7 +284,8 @@ func (r *DevboxReconciler) CheckPodConsistency(ctx context.Context, devbox *devb
 		return false
 	}
 	//check ports
-	if len(container.Ports) != len(devbox.Spec.NetworkSpec.ExtraPorts) {
+	if len(container.Ports) != len(devbox.Spec.NetworkSpec.ExtraPorts)+1 {
+		fmt.Println("1111111")
 		return false
 	}
 	portMap := make(map[string]int)
@@ -303,6 +304,7 @@ func (r *DevboxReconciler) CheckPodConsistency(ctx context.Context, devbox *devb
 		}
 	}
 	if len(portMap) != 0 {
+		fmt.Println("2222222")
 		return false
 	}
 	return true
