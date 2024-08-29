@@ -1057,7 +1057,7 @@ func (c *Cockroach) Close() error {
 
 func (c *Cockroach) GetGiftCodeWithCode(code string) (*types.GiftCode, error) {
 	var giftCode types.GiftCode
-	if err := c.DB.Where("code = ?", code).First(&giftCode).Error; err != nil {
+	if err := c.DB.Where(&types.GiftCode{Code: code}).First(&giftCode).Error; err != nil {
 		return nil, fmt.Errorf("failed to get gift code: %w", err)
 	}
 	return &giftCode, nil
