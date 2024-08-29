@@ -7,7 +7,8 @@ import {
   MenuButton,
   useTheme,
   Text,
-  useDisclosure
+  useDisclosure,
+  Tooltip
 } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -238,20 +239,22 @@ const DevboxList = ({
       key: 'control',
       render: (item: DevboxListItemType) => (
         <Flex>
-          <Button
-            mr={5}
-            height={'32px'}
-            size={'sm'}
-            fontSize={'base'}
-            bg={'grayModern.150'}
-            color={'grayModern.900'}
-            _hover={{
-              color: 'brightBlue.600'
-            }}
-            leftIcon={<MyIcon name={'detail'} w={'16px'} />}
-            onClick={() => handleGotoVSCode(item)}>
-            {t('open_vscode')}
-          </Button>
+          <Tooltip label={t('vscode_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
+            <Button
+              mr={5}
+              height={'32px'}
+              size={'sm'}
+              fontSize={'base'}
+              bg={'grayModern.150'}
+              color={'grayModern.900'}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
+              leftIcon={<MyIcon name={'vscode'} w={'16px'} />}
+              onClick={() => handleGotoVSCode(item)}>
+              {t('open_vscode')}
+            </Button>
+          </Tooltip>
           <SealosMenu
             width={100}
             Button={
@@ -260,15 +263,6 @@ const DevboxList = ({
               </MenuButton>
             }
             menuList={[
-              {
-                child: (
-                  <>
-                    <MyIcon name={'codeServer'} w={'16px'} />
-                    <Box ml={2}>{t('code_server')}</Box>
-                  </>
-                ),
-                onClick: () => {} // TODO： 添加跳转code server逻辑
-              },
               {
                 child: (
                   <>

@@ -17,8 +17,10 @@
   "confirm": "Confirm",
   "confirm_create_devbox": "Confirm to create the project?",
   "confirm_delete": "Confirm delete",
-  "confirm_update_devbox": "Confirm Update Devbox?",
+  "confirm_update_devbox": "When the project is changed, it will be shut down and restarted, which will cause vscode reconnection. Do you want to change the project?",
   "control": "Control",
+  "copy_failed": "Copy Failed",
+  "copy_success": "Copy Success",
   "core": "Core",
   "cpu": "CPU",
   "cpu_exceeds_quota": "CPU requested exceeds quota. Contact admin.",
@@ -61,7 +63,7 @@
   "no_versions": "There are no versions yet, please publish a version first.",
   "not_allow_standalone_use": "Not allowed to use standalone",
   "online": "Online",
-  "open_vscode": "VS Code Plugin",
+  "open_vscode": "VS Code",
   "os": "os",
   "pause": "Pause",
   "pause_error": "Pause error",
@@ -101,5 +103,6 @@
   "version_history": "Version History",
   "version_list": "Version List",
   "version_number": "Version Number",
+  "vscode_tooltip": "Click to develop in VSCode",
   "yaml_file": "YAML File"
 }

@@ -1,5 +1,6 @@
 import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
 import { useMessage } from '@sealos/ui'
+import { useTranslations } from 'next-intl'
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
@@ -76,6 +77,7 @@ export const obj2Query = (obj: Record<string, string | number>) => {
 
 export const useCopyData = () => {
   const { message: toast } = useMessage()
+  const t = useTranslations()
 
   return {
     copyData: (data: string, title: string = 'copy_success') => {
@@ -87,14 +89,14 @@ export const useCopyData = () => {
         document.execCommand('copy')
         document.body.removeChild(textarea)
         toast({
-          title: title,
+          title: t(title),
           status: 'success',
           duration: 1000
         })
       } catch (error) {
         console.error(error)
         toast({
-          title: '复制失败',
+          title: t('copy_failed'),
           status: 'error'
         })
       }

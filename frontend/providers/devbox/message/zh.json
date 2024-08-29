@@ -17,8 +17,10 @@
   "confirm": "确认",
   "confirm_create_devbox": "确认创建项目？",
   "confirm_delete": "确认删除",
-  "confirm_update_devbox": "确认变更项目？",
+  "confirm_update_devbox": "变更项目时会关机并重启，会造成vscode的重连，请问是否变更项目？",
   "control": "操作",
+  "copy_failed": "复制失败",
+  "copy_success": "复制成功",
   "core": "核",
   "cpu": "CPU",
   "cpu_exceeds_quota": "申请的 CPU 超出限制，请联系管理员",
@@ -61,7 +63,7 @@
   "no_versions": "还没有版本，请先发布一个版本",
   "not_allow_standalone_use": "不允许独立使用",
   "online": "上线",
-  "open_vscode": "VS Code 插件",
+  "open_vscode": "VS Code",
   "os": "系统",
   "pause": "暂停",
   "pause_error": "暂停失败",
@@ -101,5 +103,6 @@
   "version_history": "版本历史",
   "version_list": "版本列表",
   "version_number": "版本号",
+  "vscode_tooltip": "点击在 VSCode 中开发",
   "yaml_file": "YAML文件"
 }
