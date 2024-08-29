@@ -99,6 +99,7 @@ jobs:
           - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
           - { name: node, path: node }
+          - { name: devbox, path: devbox}
           - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
@@ -201,6 +202,7 @@ jobs:
           - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
           - { name: node, path: node }
+          - { name: devbox, path: devbox }
           - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout

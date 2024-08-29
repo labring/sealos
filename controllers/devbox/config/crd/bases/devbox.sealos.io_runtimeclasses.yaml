@@ -17,7 +17,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: runtimeclasses.devbox.sealos.io
 spec:
   group: devbox.sealos.io
@@ -57,15 +57,15 @@ spec:
                 type: string
               kind:
                 enum:
-                  - OS
-                  - Language
-                  - Framework
+                - OS
+                - Language
+                - Framework
                 type: string
               title:
                 type: string
             required:
-              - kind
-              - title
+            - kind
+            - title
             type: object
           status:
             description: RuntimeClassStatus defines the observed state of RuntimeClass
