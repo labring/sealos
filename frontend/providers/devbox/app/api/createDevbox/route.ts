@@ -1,7 +1,6 @@
 import yaml from 'js-yaml'
 import { NextRequest } from 'next/server'
 
-import { ApiResp } from '@/services/kubernet'
 import { DevboxEditType } from '@/types/devbox'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
@@ -19,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
     const headerList = req.headers
 
-    const { applyYamlList, k8sCustomObjects } = await getK8s({
+    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
     const devbox = json2Devbox(devboxForm)
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
       await k8sCustomObjects.patchNamespacedCustomObject(
         'devbox.sealos.io',
         'v1alpha1',
-        'default', // TODO: namespace动态获取
+        namespace,
         'devboxes',
         devboxForm.name,
         jsonDevbox,
@@ -53,12 +52,11 @@ export async function POST(req: NextRequest) {
 
     await applyYamlList([devbox, service, ingress], 'create')
 
-    // TODO: ApiResp的使用不太好，尝试去除
     return jsonRes({
       data: 'success create devbox'
     })
   } catch (err: any) {
-    return jsonRes<ApiResp>({
+    return jsonRes({
       code: 500,
       error: err
     })

@@ -13,7 +13,7 @@ export async function DELETE(req: NextRequest) {
     const versionName = searchParams.get('versionName') as string
     const headerList = req.headers
 
-    const { k8sCustomObjects } = await getK8s({
+    const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
@@ -21,7 +21,7 @@ export async function DELETE(req: NextRequest) {
     const response = await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      'default',
+      namespace,
       'devboxreleases',
       versionName
     )

@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 
-import { ApiResp } from '@/services/kubernet'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -13,14 +12,14 @@ export async function DELETE(req: NextRequest) {
     const devboxName = searchParams.get('devboxName') as string
     const headerList = req.headers
 
-    const { k8sCustomObjects, k8sCore } = await getK8s({
+    const { k8sCustomObjects, k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
     await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      'default',
+      namespace,
       'devboxes',
       devboxName,
       undefined,
@@ -35,7 +34,7 @@ export async function DELETE(req: NextRequest) {
       await k8sCustomObjects.deleteNamespacedCustomObject(
         'networking.k8s.io',
         'v1',
-        'default',
+        namespace,
         'ingresses',
         devboxName,
         undefined,
@@ -56,8 +55,7 @@ export async function DELETE(req: NextRequest) {
       data: 'success delete devbox'
     })
   } catch (err: any) {
-    // TODO: 这里需要处理一下
-    return jsonRes<ApiResp>({
+    return jsonRes({
       code: 500,
       error: err
     })

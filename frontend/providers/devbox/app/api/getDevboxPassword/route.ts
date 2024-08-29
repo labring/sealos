@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 
-import { ApiResp } from '@/services/kubernet'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
@@ -24,8 +23,7 @@ export async function GET(req: NextRequest) {
 
     return jsonRes({ data: { base64PublicKey, base64PrivateKey } })
   } catch (err: any) {
-    // TODO: ApiResp全部去除
-    return jsonRes<ApiResp>({
+    return jsonRes({
       code: 500,
       error: err
     })

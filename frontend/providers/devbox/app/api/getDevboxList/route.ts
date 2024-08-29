@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 
-import { ApiResp } from '@/services/kubernet'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -12,14 +11,14 @@ export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers
 
-    const { k8sCustomObjects, namespace, k8sCore } = await getK8s({
+    const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
     const { body: devboxBody }: any = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      'default', // TODO: namespace动态获取
+      namespace,
       'devboxes',
       undefined,
       undefined,
@@ -46,7 +45,7 @@ export async function GET(req: NextRequest) {
       const { body: ingresses }: any = await k8sCustomObjects.listNamespacedCustomObject(
         'networking.k8s.io',
         'v1',
-        'default',
+        namespace,
         'ingresses',
         undefined,
         undefined,
@@ -57,7 +56,7 @@ export async function GET(req: NextRequest) {
       const { body: certificates }: any = await k8sCustomObjects.listNamespacedCustomObject(
         'cert-manager.io',
         'v1',
-        'default',
+        namespace,
         'certificates',
         undefined,
         undefined,
@@ -105,8 +104,7 @@ export async function GET(req: NextRequest) {
 
     return jsonRes({ data: resp })
   } catch (err: any) {
-    // TODO: ApiResp全部去除
-    return jsonRes<ApiResp>({
+    return jsonRes({
       code: 500,
       error: err
     })

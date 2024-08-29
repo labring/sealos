@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 
-import { ApiResp } from '@/services/kubernet'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -24,12 +23,11 @@ export async function POST(req: NextRequest) {
     const devbox = json2DevboxRelease(releaseForm)
     await applyYamlList([devbox], 'create')
 
-    // TODO: ApiResp的使用不太好，尝试去除
     return jsonRes({
       data: 'success create devbox release'
     })
   } catch (err: any) {
-    return jsonRes<ApiResp>({
+    return jsonRes({
       code: 500,
       error: err
     })

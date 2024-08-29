@@ -258,7 +258,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   }
 
   // const namespace = kc.contexts[0].namespace || GetUserDefaultNameSpace(kube_user.name)
-  const namespace = kc.contexts[0].namespace || kube_user.name
+  const namespace = kc.contexts[0].namespace || 'default'
 
   const applyYamlList = async (yamlList: string[], type: 'create' | 'replace' | 'update') => {
     const formatYaml: k8s.KubernetesObject[] = yamlList
