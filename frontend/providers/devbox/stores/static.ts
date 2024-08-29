@@ -1,5 +1,10 @@
 import { LanguageTypeEnum, FrameworkTypeEnum, OSTypeEnum } from '@/constants/devbox'
-import { getRuntime as getRuntimeApi, getResourcePrice, getNamespace } from '@/api/platform'
+import {
+  getRuntime as getRuntimeApi,
+  getResourcePrice,
+  getNamespace,
+  getAppEnv
+} from '@/api/platform'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
 // TODO: 这里需要知道具体的价格
@@ -11,8 +16,12 @@ export let INSTALL_ACCOUNT = false
 export let NAMESPACE = 'default'
 
 let retryGetRuntimeVersion = 3
+let retryGetEnv = 3
 let retryGetPrice = 3
 let retryGetNamespace = 3
+
+export let SEALOS_DOMAIN = 'cloud.sealos.io'
+export let INGRESS_SECRET = 'wildcard-cert'
 
 interface valueType {
   id: string
@@ -111,5 +120,18 @@ export const getRuntime = async () => {
   }
 }
 
-export let SEALOS_DOMAIN = 'cloud.sealos.io'
-export let INGRESS_SECRET = 'wildcard-cert'
+export const getEnv = async () => {
+  try {
+    const res = await getAppEnv()
+    const { domain, ingressSecret } = res
+    SEALOS_DOMAIN = domain
+    INGRESS_SECRET = ingressSecret
+  } catch (err) {
+    retryGetEnv--
+    if (retryGetEnv >= 0) {
+      setTimeout(() => {
+        getAppEnv()
+      }, 1000)
+    }
+  }
+}

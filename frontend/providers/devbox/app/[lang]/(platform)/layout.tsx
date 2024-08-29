@@ -5,11 +5,16 @@ import throttle from 'lodash/throttle'
 import { usePathname } from 'next/navigation'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
-import { useEnvStore } from '@/stores/env'
 import { useGlobalStore } from '@/stores/global'
 import { useLoading } from '@/hooks/useLoading'
 import { useConfirm } from '@/hooks/useConfirm'
-import { getGlobalNamespace, getRuntime, getUserPrice } from '@/stores/static'
+import {
+  getEnv,
+  getGlobalNamespace,
+  getRuntime,
+  getUserPrice,
+  SEALOS_DOMAIN
+} from '@/stores/static'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ChakraProvider } from '@/components/providers/ChakraProvider'
 import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvider'
@@ -17,18 +22,23 @@ import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvide
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { Loading } = useLoading()
-  const { systemEnv, initSystemEnv } = useEnvStore()
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore()
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'jump_prompt',
     content: 'not_allow_standalone_use'
   })
 
+  useEffect(() => {
+    getUserPrice()
+    getRuntime()
+    getEnv()
+    getGlobalNamespace()
+  })
+
   // init session
   useEffect(() => {
     const response = createSealosApp()
     ;(async () => {
-      const { domain } = await initSystemEnv()
       try {
         const newSession = JSON.stringify(await sealosApp.getSession())
         const oldSession = localStorage.getItem('session')
@@ -42,7 +52,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session')
           openConfirm(() => {
-            window.open(`https://${domain}`, '_self')
+            // NOTE: 这里的SEALOS_DOMAIN可能获取不到
+            window.open(`https://${SEALOS_DOMAIN}`, '_self')
           })()
         }
       }
@@ -50,12 +61,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     return response
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  useEffect(() => {
-    getUserPrice()
-    getRuntime()
-    getGlobalNamespace()
-  })
 
   // add resize event
   useEffect(() => {

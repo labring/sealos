@@ -228,7 +228,8 @@ export const json2Service = (data: DevboxEditType) => {
         name: item.portName
       })),
       selector: {
-        app: data.name
+        ['app.kubernetes.io/name']: data.name,
+        ['app.kubernetes.io/part-of']: 'devbox'
       }
     }
   }
