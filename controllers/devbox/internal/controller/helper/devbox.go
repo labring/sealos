@@ -15,10 +15,8 @@
 package helper
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ed25519"
 	cryptorand "crypto/rand"
-	"crypto/x509"
 	"fmt"
 	corev1 "k8s.io/api/core/v1"
 
@@ -42,25 +40,23 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 }
 
 func GenerateSSHKeyPair() ([]byte, []byte, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cryptorand.Reader)
+	pubKey, privKey, err := ed25519.GenerateKey(cryptorand.Reader)
 	if err != nil {
-		return []byte(""), []byte(""), err
+		return nil, nil, err
 	}
-	public := &privateKey.PublicKey
-	derPrivateKey, err := x509.MarshalECPrivateKey(privateKey)
+	pemKey, err := ssh.MarshalPrivateKey(privKey, "")
 	if err != nil {
-		return []byte(""), []byte(""), err
+		return nil, nil, err
 	}
-	privateKeyPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: derPrivateKey,
-	})
-	publicKey, err := ssh.NewPublicKey(public)
+	privateKey := pem.EncodeToMemory(pemKey)
+	fmt.Println("私钥为：" + string(privateKey))
+	publicKey, err := ssh.NewPublicKey(pubKey)
 	if err != nil {
-		return []byte(""), []byte(""), err
+		return nil, nil, err
 	}
 	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
-	return sshPublicKey, privateKeyPem, nil
+	fmt.Print("公钥为：" + string(sshPublicKey))
+	return privateKey, sshPublicKey, nil
 }
 
 func CheckPodConsistency(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) bool {

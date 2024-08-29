@@ -323,6 +323,10 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 			Value: fmt.Sprintf("%v", devbox.Spec.Squash),
 		},
 		{
+			Name:  "SEALOS_DEVBOX_NAME",
+			Value: devbox.ObjectMeta.Namespace + devbox.ObjectMeta.Name,
+		},
+		{
 			Name: "SEALOS_DEVBOX_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
