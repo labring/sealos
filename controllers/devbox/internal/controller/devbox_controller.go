@@ -303,7 +303,7 @@ func (r *DevboxReconciler) CheckPodConsistency(ctx context.Context, devbox *devb
 			delete(portMap, key)
 		}
 	}
-	if len(portMap) != 0 {
+	if len(portMap) != 1 {
 		fmt.Println("2222222")
 		return false
 	}
