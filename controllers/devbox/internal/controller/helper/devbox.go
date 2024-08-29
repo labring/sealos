@@ -36,7 +36,7 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 	return nil
 }
 
-func GeneratePublicAndPrivateKey() ([]byte, []byte, error) {
+func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cryptorand.Reader)
 	if err != nil {
 		return []byte(""), []byte(""), err
