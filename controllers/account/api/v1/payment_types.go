@@ -45,6 +45,8 @@ type PaymentSpec struct {
 
 	// UserID is the user id who want to recharge
 	UserID string `json:"userID,omitempty"`
+	// UserCr is the user cr name who want to recharge
+	UserCR string `json:"userCR,omitempty"`
 	// Amount is the amount of recharge
 	Amount int64 `json:"amount,omitempty"`
 	// e.g. wechat, alipay, creditcard, etc.

@@ -134,11 +134,27 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if payment.Status.Status != pay.PaymentSuccess {
 			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 		}
-		reconcileErr = r.reconcile(ctx, payment.Spec.UserID)
+		reconcileErr = r.reconcile(ctx, payment.Spec.UserCR, payment.Spec.UserID)
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to get payment %s: %v", req.Name, err)
 	} else {
-		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name)
+		cr, err := r.AccountV2.GetUserCr(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name})
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				r.Logger.Info("user cr not exist, skip", "user", req.NamespacedName.Name)
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user cr %s: %v", req.NamespacedName.Name, err)
+		}
+		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name, UID: cr.UserUID})
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				r.Logger.Info("user not exist, skip", "user", req.NamespacedName.Name)
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user %s: %v", req.NamespacedName.Name, err)
+		}
+		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, user.ID)
 	}
 	if reconcileErr != nil {
 		if reconcileErr == ErrAccountNotExist {
@@ -150,22 +166,38 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{RequeueAfter: r.DebtDetectionCycle}, nil
 }
 
-func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
+//func (r *DebtReconciler) getNamespaceOwner(namespace string) (string, error) {
+//	ns := &corev1.Namespace{}
+//	if err := r.Get(context.Background(), client.ObjectKey{Name: namespace}, ns); err != nil {
+//		return "", fmt.Errorf("failed to get namespace %s: %v", namespace, err)
+//	}
+//	if ns.Labels == nil {
+//		return "", fmt.Errorf("namespace %s labels is nil", namespace)
+//	}
+//	owner, ok := ns.Labels[userv1.UserAnnotationOwnerKey]
+//	if !ok {
+//		return "", fmt.Errorf("namespace %s owner is not exist", namespace)
+//	}
+//	return owner, nil
+//}
+
+func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) error {
 	debt := &accountv1.Debt{}
-	account, err := r.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{Owner: owner})
+	userQueryOpts := &pkgtypes.UserQueryOpts{Owner: userCr, ID: userID}
+	account, err := r.AccountV2.GetAccount(userQueryOpts)
 	if account == nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_, err = r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
+			_, err = r.AccountV2.NewAccount(userQueryOpts)
 			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("failed to create account %s: %v", owner, err)
+				return fmt.Errorf("failed to create account %v: %v", userQueryOpts, err)
 			}
 			userOwner := &userv1.User{}
-			if err := r.Get(ctx, types.NamespacedName{Name: owner, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
+			if err := r.Get(ctx, types.NamespacedName{Name: userCr, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 				// if user not exist, skip
 				if client.IgnoreNotFound(err) == nil {
 					return nil
 				}
-				return fmt.Errorf("failed to get user %s: %v", owner, err)
+				return fmt.Errorf("failed to get usercr %s: %v", userCr, err)
 			}
 			// if user not exist, skip
 			if userOwner.CreationTimestamp.Add(20 * 24 * time.Hour).Before(time.Now()) {
@@ -173,29 +205,36 @@ func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 			}
 		}
 		if err != nil {
-			r.Logger.Error(fmt.Errorf("account %s not exist", owner), err.Error())
+			r.Logger.Error(fmt.Errorf("account %v not exist", userQueryOpts), err.Error())
 		}
 		return ErrAccountNotExist
 	}
 	if account.CreateRegionID == "" {
 		if err = r.AccountV2.SetAccountCreateLocalRegion(account, r.LocalRegionID); err != nil {
-			return fmt.Errorf("failed to set account %s create region: %v", owner, err)
+			return fmt.Errorf("failed to set account %v create region: %v", userQueryOpts, err)
 		}
 	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID
 
 	//r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
-	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(userCr), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
 		return err
 	} else if err != nil {
-		if err := r.syncDebt(ctx, owner, debt); err != nil {
+		if err := r.syncDebt(ctx, userCr, userID, debt); err != nil {
 			return err
 		}
 		//r.Logger.Info("create or update debt success", "debt", debt)
 	}
+	// backward compatibility
+	if debt.Spec.UserID == "" {
+		debt.Spec.UserID = userID
+		if err := r.Update(ctx, debt); err != nil {
+			return fmt.Errorf("update debt %s failed: %v", debt.Name, err)
+		}
+	}
 
-	nsList, err := getOwnNsList(r.Client, getUsername(owner))
+	nsList, err := getOwnNsList(r.Client, getUsername(userCr))
 	if err != nil {
 		r.Logger.Error(err, "get own ns list error")
 		return fmt.Errorf("get own ns list error: %v", err)
@@ -363,11 +402,12 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	return nil
 }
 
-func (r *DebtReconciler) syncDebt(ctx context.Context, owner string, debt *accountv1.Debt) error {
+func (r *DebtReconciler) syncDebt(ctx context.Context, owner, userID string, debt *accountv1.Debt) error {
 	debt.Name = GetDebtName(owner)
 	debt.Namespace = r.accountSystemNamespace
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, debt, func() error {
 		debt.Spec.UserName = owner
+		debt.Spec.UserID = userID
 		return nil
 	}); err != nil {
 		return err
