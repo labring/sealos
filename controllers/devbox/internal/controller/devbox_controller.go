@@ -219,8 +219,32 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 					return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 				}
 			case corev1.PodRunning:
-				// we do not recreate pod if it is running, even if pod does not have expected values
-				// update commit history status to success by pod name
+				//if pod is running,check pod need restart
+				tag, err := r.CheckPodConsistency(ctx, devbox, podList.Items[0])
+				if err != nil {
+					logger.Error(err, "check pod consistency failed")
+					return err
+				}
+				if !tag {
+					err := r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
+					if err != nil {
+						return err
+					}
+					_ = r.Delete(ctx, &podList.Items[0])
+					nextCommitHistory := r.generateNextCommitHistory(devbox)
+					expectPod, err := r.generateDevboxPod(ctx, devbox, nextCommitHistory)
+					if err != nil {
+						logger.Error(err, "generate pod failed")
+						return err
+					}
+					if err := r.Create(ctx, expectPod); err != nil {
+						logger.Error(err, "create pod failed")
+						return err
+					}
+					// add next commit history to status
+					devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
+					return r.Status().Update(ctx, devbox)
+				}
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 			case corev1.PodSucceeded:
 				if controllerutil.RemoveFinalizer(&podList.Items[0], FinalizerName) {
@@ -268,6 +292,28 @@ func commitSuccess(podStatus corev1.PodPhase) bool {
 		return false
 	}
 	return false
+}
+
+func (r *DevboxReconciler) CheckPodConsistency(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod corev1.Pod) (bool, error) {
+	container := pod.Spec.Containers[0]
+	//check cpu and memory
+	if !container.Resources.Limits.Cpu().Equal(devbox.Spec.Resource["cpu"]) {
+		return false, nil
+	}
+	if !container.Resources.Limits.Memory().Equal(devbox.Spec.Resource["memory"]) {
+		return false, nil
+	}
+	//check ports
+	if len(container.Ports) != len(devbox.Spec.NetworkSpec.ExtraPorts) {
+		return false, nil
+	}
+	for i, podPort := range container.Ports {
+		devboxPort := devbox.Spec.NetworkSpec.ExtraPorts[i]
+		if podPort.ContainerPort != devboxPort.ContainerPort || podPort.Protocol != devboxPort.Protocol {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func (r *DevboxReconciler) updateDevboxCommitHistory(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
