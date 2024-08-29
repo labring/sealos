@@ -19,9 +19,12 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
+
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/label"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 )
 
 const (

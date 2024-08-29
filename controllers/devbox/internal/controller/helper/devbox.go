@@ -20,8 +20,9 @@ import (
 	cryptorand "crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"golang.org/x/crypto/ssh"
+
+	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 )
 
 func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
