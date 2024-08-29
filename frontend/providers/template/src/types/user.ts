@@ -33,5 +33,6 @@ export type userPriceType = {
   cpu: number;
   memory: number;
   storage: number;
+  nodeports: number;
   gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
 };

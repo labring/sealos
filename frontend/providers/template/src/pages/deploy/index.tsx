@@ -26,7 +26,7 @@ import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/templa
 import QuotaBox from './components/QuotaBox';
 import PriceBox from './components/PriceBox';
 import { useUserStore } from '@/store/user';
-import JsYaml from 'js-yaml';
+import { getResourceUsage } from '@/utils/usage';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -53,16 +53,10 @@ export default function EditApp({ appName }: { appName?: string }) {
 
   const { userSourcePrice } = useUserStore();
 
-  const cost = useMemo(() => {
-    let cost = {};
-    // for (const item of yamlList) {
-    //   const itemYaml = JsYaml.load(item.value)
-    //   switch (itemYaml.kind) {
-    //     case 'Deployment':
-
-    //   }
-    // }
-    return cost;
+  const usage = useMemo(() => {
+    const usage = getResourceUsage(yamlList.map((item) => item.value));
+    console.log('usage: ', usage);
+    return usage;
   }, [yamlList]);
 
   const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv, {
@@ -332,7 +326,7 @@ export default function EditApp({ appName }: { appName?: string }) {
             </Box>
             {userSourcePrice && (
               <Box mt={3} overflow={'hidden'}>
-                <PriceBox cpu={[512, 1024]} memory={[2048, 4096]} storage={[0, 0]} />
+                <PriceBox {...usage} />
               </Box>
             )}
             <Form

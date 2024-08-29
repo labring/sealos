@@ -5,6 +5,7 @@ import { Text, Icon } from '@chakra-ui/react';
 import { useUserStore } from '@/store/user';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
+import { type ResourceUsage } from '@/utils/usage';
 
 function Currencysymbol({
   type = 'shellCoin',
@@ -50,26 +51,10 @@ function Currencysymbol({
     <Text {...props}>$</Text>
   );
 }
-const PriceBox = ({
-  cpu,
-  memory,
-  storage,
-  gpu
-}: {
-  cpu: [number, number];
-  memory: [number, number];
-  storage: [number, number];
-  gpu?: [
-    {
-      type: string;
-      amount: number;
-    },
-    {
-      type: string;
-      amount: number;
-    }
-  ];
-}) => {
+
+const scale = 1000000;
+
+const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
   const { t } = useTranslation();
   const { userSourcePrice } = useUserStore();
   const theme = useTheme();
@@ -77,31 +62,31 @@ const PriceBox = ({
   const priceList = useMemo(() => {
     if (!userSourcePrice) return [];
 
-    const cpuPMin = +((userSourcePrice.cpu * cpu[0] * 24) / 1000).toFixed(2);
-    const cpuPMax = +((userSourcePrice.cpu * cpu[1] * 24) / 1000).toFixed(2);
+    const cpuPMin = +((userSourcePrice.cpu * cpu.min * 24) / scale).toFixed(2);
+    const cpuPMax = +((userSourcePrice.cpu * cpu.max * 24) / scale).toFixed(2);
 
-    const memoryPMin = +((userSourcePrice.memory * memory[0] * 24) / 1024).toFixed(2);
-    const memoryPMax = +((userSourcePrice.memory * memory[1] * 24) / 1024).toFixed(2);
+    const memoryPMin = +((userSourcePrice.memory * memory.min * 24) / scale).toFixed(2);
+    const memoryPMax = +((userSourcePrice.memory * memory.max * 24) / scale).toFixed(2);
 
-    const storagePMin = +(userSourcePrice.storage * storage[0] * 24).toFixed(2);
-    const storagePMax = +(userSourcePrice.storage * storage[1] * 24).toFixed(2);
+    const storagePMin = +((userSourcePrice.storage * storage.min * 24) / scale).toFixed(2);
+    const storagePMax = +((userSourcePrice.storage * storage.max * 24) / scale).toFixed(2);
 
-    const gpuPMin = (() => {
-      if (!gpu || !gpu[0]) return 0;
-      const item = userSourcePrice?.gpu?.find((item) => item.type === gpu[0].type);
-      if (!item) return 0;
-      return +(item.price * gpu[0].amount * 24).toFixed(2);
-    })();
+    // const gpuPMin = (() => {
+    //   if (!gpu || !gpu[0]) return 0;
+    //   const item = userSourcePrice?.gpu?.find((item) => item.type === gpu[0].type);
+    //   if (!item) return 0;
+    //   return +(item.price * gpu[0].amount * 24).toFixed(2);
+    // })();
 
-    const gpuPMax = (() => {
-      if (!gpu || !gpu[1]) return 0;
-      const item = userSourcePrice?.gpu?.find((item) => item.type === gpu[1].type);
-      if (!item) return 0;
-      return +(item.price * gpu[1].amount * 24).toFixed(2);
-    })();
+    // const gpuPMax = (() => {
+    //   if (!gpu || !gpu[1]) return 0;
+    //   const item = userSourcePrice?.gpu?.find((item) => item.type === gpu[1].type);
+    //   if (!item) return 0;
+    //   return +(item.price * gpu[1].amount * 24).toFixed(2);
+    // })();
 
-    const totalPMin = +(cpuPMin + memoryPMin + storagePMin + gpuPMin).toFixed(2);
-    const totalPMax = +(cpuPMax + memoryPMax + storagePMax + gpuPMax).toFixed(2);
+    const totalPMin = +(cpuPMin + memoryPMin + storagePMin).toFixed(2);
+    const totalPMax = +(cpuPMax + memoryPMax + storagePMax).toFixed(2);
 
     const podScale = (min: number, max: number) => {
       return (
@@ -120,12 +105,12 @@ const PriceBox = ({
       },
       { label: 'Memory', color: '#36ADEF', value: podScale(memoryPMin, memoryPMax) },
       { label: 'Storage', color: '#8172D8', value: podScale(storagePMin, storagePMax) },
-      ...(userSourcePrice?.gpu
-        ? [{ label: 'GPU', color: '#89CD11', value: podScale(gpuPMin, gpuPMax) }]
-        : []),
+      // ...(userSourcePrice?.gpu
+      //   ? [{ label: 'GPU', color: '#89CD11', value: podScale(gpuPMin, gpuPMax) }]
+      //   : []),
       { label: 'TotalPrice', color: '#485058', value: podScale(totalPMin, totalPMax) }
     ];
-  }, [cpu, gpu, memory, storage, userSourcePrice]);
+  }, [cpu, memory, storage, userSourcePrice]);
 
   return (
     <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
