@@ -71,6 +71,8 @@ const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
     const storagePMin = +((userSourcePrice.storage * storage.min * 24) / scale).toFixed(2);
     const storagePMax = +((userSourcePrice.storage * storage.max * 24) / scale).toFixed(2);
 
+    const nodePortP = +((userSourcePrice.nodeports * 24) / 1000).toFixed(2);
+
     // const gpuPMin = (() => {
     //   if (!gpu || !gpu[0]) return 0;
     //   const item = userSourcePrice?.gpu?.find((item) => item.type === gpu[0].type);
@@ -85,8 +87,8 @@ const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
     //   return +(item.price * gpu[1].amount * 24).toFixed(2);
     // })();
 
-    const totalPMin = +(cpuPMin + memoryPMin + storagePMin).toFixed(2);
-    const totalPMax = +(cpuPMax + memoryPMax + storagePMax).toFixed(2);
+    const totalPMin = +(cpuPMin + memoryPMin + storagePMin + nodePortP).toFixed(2);
+    const totalPMax = +(cpuPMax + memoryPMax + storagePMax + nodePortP).toFixed(2);
 
     const podScale = (min: number, max: number) => {
       return (
@@ -100,15 +102,16 @@ const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
     return [
       {
         label: 'CPU',
-        color: '#33BABB',
+        color: '#13C4B9',
         value: podScale(cpuPMin, cpuPMax)
       },
-      { label: 'Memory', color: '#36ADEF', value: podScale(memoryPMin, memoryPMax) },
-      { label: 'Storage', color: '#8172D8', value: podScale(storagePMin, storagePMax) },
+      { label: 'Memory', color: '#219BF4', value: podScale(memoryPMin, memoryPMax) },
+      { label: 'Storage', color: '#8774EE', value: podScale(storagePMin, storagePMax) },
+      { label: 'Port', color: '#C172E7', value: podScale(storagePMin, storagePMax) },
       // ...(userSourcePrice?.gpu
       //   ? [{ label: 'GPU', color: '#89CD11', value: podScale(gpuPMin, gpuPMax) }]
       //   : []),
-      { label: 'TotalPrice', color: '#485058', value: podScale(totalPMin, totalPMax) }
+      { label: 'TotalPrice', color: '#111824', value: podScale(totalPMin, totalPMax) }
     ];
   }, [cpu, memory, storage, userSourcePrice]);
 

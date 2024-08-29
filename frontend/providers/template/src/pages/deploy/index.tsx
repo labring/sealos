@@ -12,7 +12,7 @@ import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { compareFirstLanguages, deepSearch, useCopyData } from '@/utils/tools';
-import { Box, Flex, Icon, Text } from '@chakra-ui/react';
+import { Box, Flex, Icon, Text, Grid, GridItem } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -321,20 +321,26 @@ export default function EditApp({ appName }: { appName?: string }) {
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
-            <Box mt={3} overflow={'hidden'}>
+            {/* <Box mt={3} overflow={'hidden'}>
               <QuotaBox />
-            </Box>
-            {userSourcePrice && (
-              <Box mt={3} overflow={'hidden'}>
-                <PriceBox {...usage} />
-              </Box>
-            )}
-            <Form
-              formHook={formHook}
-              pxVal={pxVal}
-              formSource={templateSource!}
-              platformEnvs={platformEnvs!}
-            />
+            </Box> */}
+            <Grid templateColumns="3fr 1fr" gap={6}>
+              <GridItem>
+                <Form
+                  formHook={formHook}
+                  pxVal={pxVal}
+                  formSource={templateSource!}
+                  platformEnvs={platformEnvs!}
+                />
+              </GridItem>
+              <GridItem>
+                {userSourcePrice && (
+                  <Box mt={3} overflow={'hidden'}>
+                    <PriceBox {...usage} />
+                  </Box>
+                )}
+              </GridItem>
+            </Grid>
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
             <ReadMe templateDetail={data?.templateYaml!} />
           </Flex>

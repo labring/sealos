@@ -4,7 +4,7 @@ export interface ResourceUsage {
   cpu: { min: number; max: number };
   memory: { min: number; max: number };
   storage: { min: number; max: number };
-  nodeport: { min: number; max: number };
+  nodeport: number;
 }
 
 export function getResourceUsage(yamlList: string[]): ResourceUsage {
@@ -14,8 +14,7 @@ export function getResourceUsage(yamlList: string[]): ResourceUsage {
   let totalMemoryMax = 0;
   let totalStorageMin = 0;
   let totalStorageMax = 0;
-  let totalNodeportMin = 0;
-  let totalNodeportMax = 0;
+  let totalNodeport = 0;
 
   for (const yaml of yamlList) {
     for (const yamlObj of JsYaml.loadAll(yaml)) {
@@ -26,8 +25,7 @@ export function getResourceUsage(yamlList: string[]): ResourceUsage {
       totalMemoryMax += resource.memory.max;
       totalStorageMin += resource.storage.min;
       totalStorageMax += resource.storage.max;
-      totalNodeportMin += resource.nodeport.min;
-      totalNodeportMax += resource.nodeport.max;
+      totalNodeport += resource.nodeport;
     }
   }
 
@@ -35,67 +33,55 @@ export function getResourceUsage(yamlList: string[]): ResourceUsage {
     cpu: { min: totalCpuMin, max: totalCpuMax },
     memory: { min: totalMemoryMin, max: totalMemoryMax },
     storage: { min: totalStorageMin, max: totalStorageMax },
-    nodeport: { min: totalNodeportMin, max: totalNodeportMax }
+    nodeport: totalNodeport
   };
 }
 
 function parseResourceUsage(yamlObj: any): ResourceUsage {
-  const kind = yamlObj.kind;
+  const kind = yamlObj?.kind;
 
-  let cpuMin = 0;
-  let cpuMax = 0;
-  let memoryMin = 0;
-  let memoryMax = 0;
-  let storageMin = 0;
-  let storageMax = 0;
-  let nodeportMin = 0;
-  let nodeportMax = 0;
+  let cpu = 0;
+  let memory = 0;
+  let storage = 0;
+  let nodeport = 0;
 
-  let replicasMin = 1;
-  let replicasMax = 1;
+  const replicasMin = parseInt(
+    yamlObj.metadata?.annotations?.['deploy.cloud.sealos.io/minReplicas'] ??
+      yamlObj.spec?.replicas?.toString() ??
+      '1'
+  );
+  const replicasMax = parseInt(
+    yamlObj.metadata?.annotations?.['deploy.cloud.sealos.io/maxReplicas'] ??
+      yamlObj.spec?.replicas?.toString() ??
+      '1'
+  );
 
   if (kind === 'Deployment' || kind === 'StatefulSet') {
-    const containers = yamlObj.spec.template.spec.containers;
-    for (const container of containers) {
-      cpuMin += convertCpu(container.resources.requests?.cpu || '0m');
-      cpuMax += convertCpu(container.resources.limits?.cpu || '0m');
-      memoryMin += convertMemory(container.resources.requests?.memory || '0');
-      memoryMax += convertMemory(container.resources.limits?.memory || '0');
-    }
-
-    if (kind === 'Deployment') {
-      replicasMin = parseInt(
-        yamlObj.metadata.annotations['deploy.cloud.sealos.io/minReplicas'] ||
-          yamlObj.spec.replicas?.toString() ||
-          '1'
-      );
-      replicasMax = parseInt(
-        yamlObj.metadata.annotations['deploy.cloud.sealos.io/maxReplicas'] ||
-          yamlObj.spec.replicas?.toString() ||
-          '1'
-      );
-    } else if (kind === 'StatefulSet') {
-      replicasMin = replicasMax = parseInt(yamlObj.spec.replicas?.toString() || '1');
-    }
-
-    if (yamlObj.spec.volumeClaimTemplates) {
-      for (const volumeClaim of yamlObj.spec.volumeClaimTemplates) {
-        storageMin += convertMemory(volumeClaim.spec.resources.requests?.storage || '0');
-        storageMax += convertMemory(volumeClaim.spec.resources.requests?.storage || '0');
+    const containers = yamlObj.spec?.template?.spec?.containers;
+    if (containers) {
+      for (const container of containers) {
+        cpu += convertCpu(container.resources?.limits?.cpu || '0m');
+        memory += convertMemory(container.resources?.limits?.memory || '0');
       }
     }
-  } else if (kind === 'Service' && yamlObj.spec.type === 'NodePort') {
-    nodeportMin = nodeportMax = yamlObj.spec.ports?.length || 0;
+
+    if (yamlObj.spec?.volumeClaimTemplates) {
+      for (const volumeClaim of yamlObj.spec?.volumeClaimTemplates) {
+        storage += convertMemory(volumeClaim.spec?.resources?.requests?.storage || '0');
+      }
+    }
+  } else if (kind === 'Service' && yamlObj.spec?.type === 'NodePort') {
+    nodeport = yamlObj.spec.ports?.length || 0;
   }
 
   return {
-    cpu: { min: cpuMin * replicasMin, max: cpuMax * replicasMax },
-    memory: { min: memoryMin * replicasMin, max: memoryMax * replicasMax },
+    cpu: { min: cpu * replicasMin, max: cpu * replicasMax },
+    memory: { min: memory * replicasMin, max: memory * replicasMax },
     storage: {
-      min: storageMin * replicasMin,
-      max: storageMax * replicasMax
+      min: storage * replicasMin,
+      max: storage * replicasMax
     },
-    nodeport: { min: nodeportMin, max: nodeportMax }
+    nodeport: nodeport
   };
 }
 
@@ -105,27 +91,41 @@ function convertCpu(cpu: string): number {
   if (cpuUnit === 'm') {
     return cpuValue;
   } else {
-    return cpuValue * 1000; // Convert to millicores
+    return cpuValue * 100;
   }
 }
 
+// https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/assign-memory-resource/#memory-units
 function convertMemory(memory: string): number {
-  const memoryValue = parseFloat(memory.slice(0, -2));
-  const memoryUnit = memory.slice(-2);
+  const memoryValue = parseFloat(memory);
+  const memoryUnit = memory.replace(/[0-9.]/g, '');
+
   switch (memoryUnit) {
-    case 'Ki':
-      return memoryValue / 1024;
-    case 'Mi':
-      return memoryValue;
-    case 'Gi':
-      return memoryValue * 1024;
-    case 'Ti':
-      return memoryValue * 1024 * 1024;
-    case 'Pi':
-      return memoryValue * 1024 * 1024 * 1024;
+    case 'E':
+      return (memoryValue * 1000 * 1000 * 1000 * 1000) / (1024 * 1024);
     case 'Ei':
       return memoryValue * 1024 * 1024 * 1024 * 1024;
+    case 'P':
+      return (memoryValue * 1000 * 1000 * 1000) / (1024 * 1024);
+    case 'Pi':
+      return memoryValue * 1024 * 1024 * 1024;
+    case 'T':
+      return (memoryValue * 1000 * 1000) / (1024 * 1024);
+    case 'Ti':
+      return memoryValue * 1024 * 1024;
+    case 'G':
+      return (memoryValue * 1000) / 1024;
+    case 'Gi':
+      return memoryValue * 1024;
+    case 'M':
+      return (memoryValue * 1000 * 1000) / (1024 * 1024);
+    case 'Mi':
+      return memoryValue;
+    case 'K':
+      return memoryValue / 1000 / 1024;
+    case 'Ki':
+      return memoryValue / 1024;
     default:
-      return memoryValue / (1024 * 1024); // Convert bytes to Mi
+      return memoryValue / (1024 * 1024); // Convert bytes to MiB
   }
 }
