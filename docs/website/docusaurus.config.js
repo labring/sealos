@@ -264,20 +264,6 @@ const config = {
         name: 'baidu-site-verification',
         content: 'codeva-IaVFkVUuDD',
       },
-    },
-    {
-      tagName: 'meta',
-      attributes: {
-        name: 'description',
-        content: '高效管理你的云原生应用程序，像使用个人电脑一样在 Kubernetes 上一键安装编程语言、低代码开发平台、WordPress、数据库、AI 软件和 IM 软件。',
-      }
-    },
-    {
-      tagName: 'meta',
-      attributes: {
-        name: 'keywords',
-        content: 'Sealos, K8s, 云操作系统, 低代码开发平台, 数据库',
-      }
     }
   ],
   plugins: [
