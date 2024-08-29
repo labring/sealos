@@ -19,6 +19,8 @@ import (
 	"crypto/elliptic"
 	cryptorand "crypto/rand"
 	"crypto/x509"
+	"fmt"
+	corev1 "k8s.io/api/core/v1"
 
 	"encoding/pem"
 
@@ -59,4 +61,38 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	}
 	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
 	return sshPublicKey, privateKeyPem, nil
+}
+
+func CheckPodConsistency(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) bool {
+	container := pod.Spec.Containers[0]
+	//check cpu and memory
+	if !container.Resources.Limits.Cpu().Equal(devbox.Spec.Resource["cpu"]) {
+		return false
+	}
+	if !container.Resources.Limits.Memory().Equal(devbox.Spec.Resource["memory"]) {
+		return false
+	}
+	//check ports
+	if len(container.Ports) != len(devbox.Spec.NetworkSpec.ExtraPorts)+1 {
+		return false
+	}
+	portMap := make(map[string]int)
+	for _, podPort := range container.Ports {
+		key := fmt.Sprintf("%d-%s", podPort.ContainerPort, podPort.Protocol)
+		portMap[key]++
+	}
+	for _, devboxPort := range devbox.Spec.NetworkSpec.ExtraPorts {
+		key := fmt.Sprintf("%d-%s", devboxPort.ContainerPort, devboxPort.Protocol)
+		if _, found := portMap[key]; !found {
+			return false
+		}
+		portMap[key]--
+		if portMap[key] == 0 {
+			delete(portMap, key)
+		}
+	}
+	if len(portMap) != 1 {
+		return false
+	}
+	return true
 }
