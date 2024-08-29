@@ -373,7 +373,7 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
-							Path: "id_rsa.pub",
+							Path: "id.pub",
 						},
 					},
 				},
