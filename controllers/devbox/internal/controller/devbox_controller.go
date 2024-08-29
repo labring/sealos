@@ -18,31 +18,23 @@ package controller
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	cryptorand "crypto/rand"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"k8s.io/utils/ptr"
-	"time"
-
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/label"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 )
 
 const (
@@ -142,7 +134,7 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	// if secret not found, create a new one
 	if err != nil && client.IgnoreNotFound(err) == nil {
 		// set password to context, if error then no need to update secret
-		publicKey, privateKey, err := generatePublicAndPrivateKey()
+		publicKey, privateKey, err := helper.GeneratePublicAndPrivateKey()
 		if err != nil {
 			logger.Error(err, "generate public and private key failed")
 		}
@@ -164,25 +156,6 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 		return nil
 	}
 	return nil
-}
-
-func generatePublicAndPrivateKey() ([]byte, []byte, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cryptorand.Reader)
-	if err != nil {
-		return []byte(""), []byte(""), err
-	}
-	public := &privateKey.PublicKey
-	derPrivateKey, err := x509.MarshalECPrivateKey(privateKey)
-	privateKeyPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: derPrivateKey,
-	})
-	publicKey, err := ssh.NewPublicKey(public)
-	if err != nil {
-		return []byte(""), []byte(""), err
-	}
-	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
-	return sshPublicKey, privateKeyPem, nil
 }
 
 func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
@@ -393,7 +366,7 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 	}
 	volume := []corev1.Volume{
 		{
-			Name: devbox.Name + "public-key-volume",
+			Name: "devbox-ssh-public-key",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: devbox.Name,
