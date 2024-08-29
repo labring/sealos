@@ -56,7 +56,7 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	}
 	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
 	fmt.Print("公钥为：" + string(sshPublicKey))
-	return privateKey, sshPublicKey, nil
+	return sshPublicKey, privateKey, nil
 }
 
 func CheckPodConsistency(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) bool {
