@@ -137,6 +137,8 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	if err != nil && client.IgnoreNotFound(err) == nil {
 		// set password to context, if error then no need to update secret
 		publicKey, privateKey, err := helper.GenerateSSHKeyPair()
+		fmt.Println("公钥为" + string(publicKey))
+		fmt.Println("私钥为" + string(privateKey))
 		if err != nil {
 			logger.Error(err, "generate public and private key failed")
 			return err
