@@ -14,7 +14,18 @@
 
 package helper
 
-import devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	cryptorand "crypto/rand"
+	"crypto/x509"
+
+	"encoding/pem"
+
+	"golang.org/x/crypto/ssh"
+
+	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+)
 
 func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
 	if devbox.Status.CommitHistory == nil {
@@ -26,4 +37,26 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 		}
 	}
 	return nil
+}
+
+func GenerateSSHKeyPair() ([]byte, []byte, error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cryptorand.Reader)
+	if err != nil {
+		return []byte(""), []byte(""), err
+	}
+	public := &privateKey.PublicKey
+	derPrivateKey, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return []byte(""), []byte(""), err
+	}
+	privateKeyPem := pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: derPrivateKey,
+	})
+	publicKey, err := ssh.NewPublicKey(public)
+	if err != nil {
+		return []byte(""), []byte(""), err
+	}
+	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
+	return sshPublicKey, privateKeyPem, nil
 }

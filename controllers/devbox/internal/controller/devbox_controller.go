@@ -21,9 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -136,9 +136,18 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	// if secret not found, create a new one
 	if err != nil && client.IgnoreNotFound(err) == nil {
 		// set password to context, if error then no need to update secret
+		publicKey, privateKey, err := helper.GenerateSSHKeyPair()
+		if err != nil {
+			logger.Error(err, "generate public and private key failed")
+			return err
+		}
 		secret := &corev1.Secret{
 			ObjectMeta: objectMeta,
-			Data:       map[string][]byte{"SEALOS_DEVBOX_PASSWORD": []byte(rand.String(12))},
+			Data: map[string][]byte{
+				"SEALOS_DEVBOX_PASSWORD":    []byte(rand.String(12)),
+				"SEALOS_DEVBOX_PUBLIC_KEY":  publicKey,
+				"SEALOS_DEVBOX_PRIVATE_KEY": privateKey,
+			},
 		}
 		if err := controllerutil.SetControllerReference(devbox, secret, r.Scheme); err != nil {
 			return err
@@ -349,6 +358,29 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 					"memory": devbox.Spec.Resource["memory"],
 				},
 			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "devbox-ssh-public-key",
+					MountPath: "/usr/start/.ssh",
+					ReadOnly:  true,
+				},
+			},
+		},
+	}
+	volume := []corev1.Volume{
+		{
+			Name: "devbox-ssh-public-key",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: devbox.Name,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
+							Path: "id.pub",
+						},
+					},
+				},
+			},
 		},
 	}
 	terminationGracePeriodSeconds := 300
@@ -358,6 +390,7 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 		Spec: corev1.PodSpec{
 			RestartPolicy:                 corev1.RestartPolicyNever,
 			Containers:                    containers,
+			Volumes:                       volume,
 			TerminationGracePeriodSeconds: ptr.To(int64(terminationGracePeriodSeconds)),
 			AutomountServiceAccountToken:  ptr.To(automountServiceAccountToken),
 		},
