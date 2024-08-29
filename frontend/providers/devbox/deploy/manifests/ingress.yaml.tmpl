@@ -5,17 +5,17 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_clear_headers "X-Frame-Options:";
-      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.dev.sealos.plus dev.sealos.plus; img-src * data: blob: resource: *.dev.sealos.plus dev.sealos.plus; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.dev.sealos.plus dev.sealos.plus resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.dev.sealos.plus dev.sealos.plus resource: *.baidu.com *.bdstatic.com; frame-src 'self' dev.sealos.plus mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://dev.sealos.plus https://*.dev.sealos.plus";
       more_set_headers "X-Xss-Protection: 1; mode=block";
     higress.io/response-header-control-remove: X-Frame-Options
     higress.io/response-header-control-update: |
-      Content-Security-Policy "default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+      Content-Security-Policy "default-src * blob: data: *.dev.sealos.plus dev.sealos.plus; img-src * data: blob: resource: *.dev.sealos.plus dev.sealos.plus; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.dev.sealos.plus dev.sealos.plus resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.dev.sealos.plus dev.sealos.plus resource: *.baidu.com *.bdstatic.com; frame-src 'self' dev.sealos.plus mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://dev.sealos.plus https://*.dev.sealos.plus"
       X-Xss-Protection "1; mode=block"
   name: devbox-frontend
   namespace: devbox-frontend
 spec:
   rules:
-    - host: devbox.{{ .cloudDomain }}
+    - host: devbox-frontend.dev.sealos.plus
       http:
         paths:
           - pathType: Prefix
@@ -27,5 +27,5 @@ spec:
                   number: 3000
   tls:
     - hosts:
-        - devbox.{{ .cloudDomain }}
-      secretName: { { .certSecretName } }
+        - devbox-frontend.dev.sealos.plus
+      secretName: wildcard-cert

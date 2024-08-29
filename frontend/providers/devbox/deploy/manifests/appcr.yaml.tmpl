@@ -1,19 +1,18 @@
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: dbprovider
+  name: devbox
   namespace: app-system
 spec:
   data:
-    desc: Database
-    url: "https://dbprovider.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-  icon: "https://dbprovider.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+    desc: Devbox
+    url: 'https://devbox.dev.sealos.plus'
+  icon: 'https://devbox.dev.sealos.plus/logo.svg'
   i18n:
     zh:
-      name: 数据库
+      name: 云沙箱
     zh-Hans:
-      name: 数据库
-  menuData:
-  name: Database
+      name: 云沙箱
+  name: devbox
   type: iframe
   displayType: normal

@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
       devboxForm: DevboxEditType
       isEdit: boolean
     }
+    console.log('devboxForm', devboxForm)
+
     const headerList = req.headers
 
     const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({

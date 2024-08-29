@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers
 
-    const { k8sCustomObjects, namespace } = await getK8s({
+    const { k8sCustomObjects, namespace, k8sCore } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
@@ -75,33 +75,39 @@ export async function GET(req: NextRequest) {
           customDomain: customDomain || ''
         }
       })
+      const { body: service } = await k8sCore.readNamespacedService(devboxName, namespace)
 
-      item.networks = item.spec.network.extraPorts.map((network: any) => {
+      item.networks = item.spec.network.extraPorts.map(async (network: any) => {
         const matchingIngress = ingressList.find(
-          (ingress: any) => ingress.port === network.hostPort
+          (ingress: any) => ingress.port === network.containerPort
         )
+
+        const servicePort = service.spec?.ports?.find(
+          (port: any) => port.port === network.containerPort
+        )
+        const servicePortName = servicePort?.name
 
         if (matchingIngress) {
           return {
             networkName: matchingIngress.networkName,
             port: matchingIngress.port,
+            portName: servicePortName,
             protocol: matchingIngress.protocol,
             openPublicDomain: matchingIngress.openPublicDomain,
             publicDomain: matchingIngress.publicDomain,
             customDomain: matchingIngress.customDomain
           }
         }
-        console.log('network', network)
 
         return {
           ...network,
           port: network.containerPort
         }
       })
+      item.networks = await Promise.all(item.networks)
       return item
     })
     const resp = await Promise.all(res)
-
     return jsonRes({ data: resp })
   } catch (err: any) {
     return jsonRes({

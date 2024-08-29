@@ -209,7 +209,7 @@ const DevboxCreatePage = () => {
         />
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} pxVal={pxVal} />
+            <Form formHook={formHook} pxVal={pxVal} isEdit={isEdit} />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}

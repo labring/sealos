@@ -54,10 +54,12 @@ const CustomAccessModal = dynamic(() => import('@/components/modals/CustomAccess
 
 const Form = ({
   formHook,
-  pxVal
+  pxVal,
+  isEdit
 }: {
   formHook: UseFormReturn<DevboxEditType, any>
   pxVal: number
+  isEdit: boolean
 }) => {
   const theme = useTheme()
   const router = useRouter()
@@ -258,6 +260,7 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('devbox_name')}</Label>
                   <Input
+                    disabled={isEdit}
                     autoFocus={true}
                     placeholder={t('enter_devbox_name')}
                     {...register('name', {
@@ -310,6 +313,7 @@ const Form = ({
                                   }
                                 })}
                             onClick={() => {
+                              if (isEdit) return
                               setValue('runtimeType', item.id)
                               setValue(
                                 'runtimeVersion',
@@ -364,6 +368,7 @@ const Form = ({
                                   }
                                 })}
                             onClick={() => {
+                              if (isEdit) return
                               setValue('runtimeType', item.id)
                               setValue(
                                 'runtimeVersion',
@@ -418,6 +423,7 @@ const Form = ({
                                   }
                                 })}
                             onClick={() => {
+                              if (isEdit) return
                               setValue('runtimeType', item.id)
                               setValue(
                                 'runtimeVersion',
@@ -448,6 +454,7 @@ const Form = ({
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
                 <MySelect
+                  disabled={isEdit}
                   width={'200px'}
                   placeholder={`${t('runtime')} ${t('version')}`}
                   defaultValue={

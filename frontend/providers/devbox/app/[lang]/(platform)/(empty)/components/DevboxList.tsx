@@ -146,6 +146,7 @@ const DevboxList = ({
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
       )}`
+      console.log(vscodeUri)
 
       window.location.href = vscodeUri
     } catch (error: any) {

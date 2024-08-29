@@ -25,6 +25,8 @@ export const useDevboxStore = create<State>()(
       setDevboxList: async () => {
         const res = await getMyDevboxList()
 
+        console.log('devboxList', res)
+
         set((state) => {
           state.devboxList = res
         })

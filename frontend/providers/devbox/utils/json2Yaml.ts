@@ -18,8 +18,7 @@ export const json2Devbox = (data: DevboxEditType) => {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
           containerPort: item.port,
-          protocol: 'TCP',
-          name: item.portName
+          protocol: 'TCP'
         }))
       },
       resource: {
