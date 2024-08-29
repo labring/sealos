@@ -242,3 +242,11 @@ export const ProtocolList = [
   { value: 'GRPC', label: 'grpcs://' },
   { value: 'WS', label: 'wss://' }
 ]
+
+export enum YamlKindEnum {
+  Devbox = 'Devbox',
+  Service = 'Service',
+  Ingress = 'Ingress',
+  Issuer = 'Issuer',
+  Certificate = 'Certificate'
+}

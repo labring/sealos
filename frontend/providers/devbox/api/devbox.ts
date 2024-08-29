@@ -1,7 +1,12 @@
 import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
 import { GET, POST, DELETE } from '@/services/request'
 import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
-import { DevboxEditType, DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
+import {
+  DevboxEditType,
+  DevboxListItemType,
+  DevboxPatchPropsType,
+  DevboxVersionListItemType
+} from '@/types/devbox'
 
 export const getMyDevboxList = () =>
   GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
@@ -12,8 +17,11 @@ export const getMyDevboxList = () =>
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
-export const createDevbox = (payload: { devboxForm: DevboxEditType; isEdit: boolean }) =>
+export const createDevbox = (payload: { devboxForm: DevboxEditType }) =>
   POST(`/api/createDevbox`, payload)
+
+export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
+  POST(`/api/updateDevbox`, payload)
 
 export const delDevboxByName = (devboxName: string) =>
   DELETE('/api/delDevboxByName', { devboxName })

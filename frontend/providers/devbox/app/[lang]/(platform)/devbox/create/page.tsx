@@ -15,14 +15,15 @@ import Yaml from './components/Yaml'
 import Header from './components/Header'
 import type { YamlItemType } from '@/types'
 import { useUserStore } from '@/stores/user'
-import { createDevbox } from '@/api/devbox'
+import { createDevbox, updateDevbox } from '@/api/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
-import type { DevboxEditType } from '@/types/devbox'
+import type { DevboxEditType, DevboxKindsType } from '@/types/devbox'
 import { defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
+import { patchYamlList } from '@/utils/tools'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -30,11 +31,32 @@ const defaultEdit = {
   ...defaultDevboxEditValue
 }
 
+export const formData2Yamls = (data: DevboxEditType) => [
+  {
+    filename: 'service.yaml',
+    value: json2Service(data)
+  },
+  {
+    filename: 'devbox.yaml',
+    value: json2Devbox(data)
+  },
+  ...(data.networks.find((item) => item.openPublicDomain)
+    ? [
+        {
+          filename: 'ingress.yaml',
+          value: json2Ingress(data)
+        }
+      ]
+    : [])
+]
+
 const DevboxCreatePage = () => {
   const router = useRouter()
   const t = useTranslations()
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
+  const crOldYamls = useRef<DevboxKindsType[]>([])
+  const formOldYamls = useRef<YamlItemType[]>([])
   const oldDevboxEditData = useRef<DevboxEditType>()
   const { checkQuotaAllow } = useUserStore()
   const { setDevboxDetail } = useDevboxStore()
@@ -65,7 +87,6 @@ const DevboxCreatePage = () => {
     return val
   }, [screenWidth])
 
-  // TODO: 这里之后有crd之后再补全
   const generateYamlList = (data: DevboxEditType) => {
     return [
       {
@@ -132,6 +153,8 @@ const DevboxCreatePage = () => {
       onSuccess(res) {
         if (!res) return
         oldDevboxEditData.current = res
+        formOldYamls.current = formData2Yamls(res)
+        crOldYamls.current = generateYamlList(res) // TODO: 这里不懂crOldYamls是什么
         formHook.reset(res)
       },
       onError(err) {
@@ -160,7 +183,21 @@ const DevboxCreatePage = () => {
           isClosable: true
         })
       }
-      await createDevbox({ devboxForm: formData, isEdit })
+      const parsedNewYamlList = yamlList.map((item) => item.value)
+      // create or update
+      if (devboxName) {
+        const patch = patchYamlList({
+          parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+          parsedNewYamlList: parsedNewYamlList,
+          originalYamlList: crOldYamls.current
+        })
+        await updateDevbox({
+          patch,
+          devboxName
+        })
+      } else {
+        await createDevbox({ devboxForm: formData })
+      }
       toast({
         title: t(applySuccess),
         status: 'success'

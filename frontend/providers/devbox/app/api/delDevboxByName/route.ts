@@ -49,7 +49,7 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
-    await k8sCore.deleteNamespacedService(devboxName, 'default')
+    await k8sCore.deleteNamespacedService(devboxName, namespace)
 
     return jsonRes({
       data: 'success delete devbox'

@@ -1357,6 +1357,9 @@ importers:
       echarts:
         specifier: ^5.4.3
         version: 5.4.3
+      fast-json-patch:
+        specifier: ^3.1.1
+        version: 3.1.1
       framer-motion:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.2.0)(react@18.2.0)

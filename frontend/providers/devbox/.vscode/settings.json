@@ -22,6 +22,7 @@
   "cSpell.words": [
     "apecloud",
     "applaunchpad",
+    "Autoscaler",
     "backuprepos",
     "bdstatic",
     "chakra",
@@ -36,6 +37,7 @@
     "formatjs",
     "hljs",
     "immer",
+    "jsonpatch",
     "kbcli",
     "kubeblocks",
     "kubeconfig",
@@ -67,6 +69,7 @@
     "weaviate",
     "weixin",
     "yalc",
+    "Yamls",
     "zustand"
   ],
   "typescript.tsdk": "node_modules\\typescript\\lib",

@@ -1,6 +1,11 @@
-import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
+import yaml from 'js-yaml'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import * as jsonpatch from 'fast-json-patch'
+
+import { YamlKindEnum } from '@/constants/devbox'
+import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
+import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
@@ -121,4 +126,140 @@ export const getValueDefault = (valueIndex: string) => {
     osVersionMap[valueIndex]?.[0]?.id ||
     undefined
   )
+}
+
+/**
+ * patch yamlList and get action
+ */
+export const patchYamlList = ({
+  parsedOldYamlList,
+  parsedNewYamlList,
+  originalYamlList
+}: {
+  parsedOldYamlList: string[]
+  parsedNewYamlList: string[]
+  originalYamlList: DevboxKindsType[]
+}) => {
+  const oldFormJsonList = parsedOldYamlList
+    .map((item) => yaml.loadAll(item))
+    .flat() as DevboxKindsType[]
+
+  const newFormJsonList = parsedNewYamlList
+    .map((item) => yaml.loadAll(item))
+    .flat() as DevboxKindsType[]
+
+  const actions: DevboxPatchPropsType = []
+
+  // find delete
+  oldFormJsonList.forEach((oldYamlJson) => {
+    const item = newFormJsonList.find(
+      (item) => item.kind === oldYamlJson.kind && item.metadata?.name === oldYamlJson.metadata?.name
+    )
+    if (!item && oldYamlJson.metadata?.name) {
+      actions.push({
+        type: 'delete',
+        kind: oldYamlJson.kind as `${YamlKindEnum}`,
+        name: oldYamlJson.metadata?.name
+      })
+    }
+  })
+
+  // find create and patch
+  newFormJsonList.forEach((newYamlJson) => {
+    const oldFormJson = oldFormJsonList.find(
+      (item) =>
+        item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+    )
+
+    if (oldFormJson) {
+      const patchRes = jsonpatch.compare(oldFormJson, newYamlJson)
+
+      if (patchRes.length === 0) return
+
+      /* Generate a new json using the formPatchResult and the crJson */
+      const actionsJson = (() => {
+        try {
+          /* find cr json */
+          let crOldYamlJson = originalYamlList.find(
+            (item) =>
+              item.kind === oldFormJson?.kind &&
+              item?.metadata?.name === oldFormJson?.metadata?.name
+          )
+
+          if (!crOldYamlJson) return newYamlJson
+          crOldYamlJson = JSON.parse(JSON.stringify(crOldYamlJson))
+
+          if (!crOldYamlJson) return newYamlJson
+
+          /* generate new json */
+          const _patchRes: jsonpatch.Operation[] = patchRes
+            .map((item) => {
+              let jsonPatchError = jsonpatch.validate([item], crOldYamlJson)
+              if (jsonPatchError?.name === 'OPERATION_PATH_UNRESOLVABLE') {
+                switch (item.op) {
+                  case 'add':
+                  case 'replace':
+                    return {
+                      ...item,
+                      op: 'add' as const,
+                      value: item.value ?? ''
+                    }
+                  default:
+                    return null
+                }
+              }
+              return item
+            })
+            .filter((op): op is jsonpatch.Operation => op !== null)
+
+          const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument
+
+          // delete invalid field
+          // @ts-ignore
+          delete patchResYamlJson.status
+          patchResYamlJson.metadata = {
+            name: patchResYamlJson.metadata?.name,
+            namespace: patchResYamlJson.metadata?.namespace,
+            labels: patchResYamlJson.metadata?.labels,
+            annotations: patchResYamlJson.metadata?.annotations,
+            ownerReferences: patchResYamlJson.metadata?.ownerReferences,
+            finalizers: patchResYamlJson.metadata?.finalizers
+          }
+
+          return patchResYamlJson
+        } catch (error) {
+          console.error('ACTIONS JSON ERROR:\n', error)
+          return newYamlJson
+        }
+      })()
+
+      if (actionsJson.kind === YamlKindEnum.Service) {
+        // @ts-ignore
+        const ports = actionsJson?.spec.ports || []
+        console.log(ports)
+
+        // @ts-ignore
+        if (ports.length > 1 && !ports[0]?.name) {
+          // @ts-ignore
+          actionsJson.spec.ports[0].name = 'adaptport'
+        }
+      }
+
+      console.log('patch result:', oldFormJson.metadata?.name, oldFormJson.kind, actionsJson)
+
+      actions.push({
+        type: 'patch',
+        kind: newYamlJson.kind as `${YamlKindEnum}`,
+        value: actionsJson as any
+      })
+    } else {
+      actions.push({
+        type: 'create',
+        kind: newYamlJson.kind as `${YamlKindEnum}`,
+        value: yaml.dump(newYamlJson)
+      })
+    }
+  })
+
+  return actions
 }

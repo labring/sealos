@@ -1,6 +1,11 @@
+import {
+  RuntimeTypeEnum,
+  DevboxStatusEnum,
+  FrameworkTypeEnum,
+  YamlKindEnum
+} from '@/constants/devbox'
 import { MonitorDataResult } from './monitor'
 import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
-import { RuntimeTypeEnum, DevboxStatusEnum, FrameworkTypeEnum } from '@/constants/devbox'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
 export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`
@@ -91,3 +96,18 @@ export interface DevboxVersionListItemType {
 }
 
 export interface Runtime {}
+
+export type DevboxPatchPropsType = (
+  | { type: 'delete'; kind: `${YamlKindEnum}`; name: string }
+  | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
+  | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
+)[]
+
+export type DevboxKindsType =
+  | V1Deployment
+  | V1StatefulSet
+  | V1ConfigMap
+  | V1Service
+  | V1Ingress
+  | V1Secret
+  | V1HorizontalPodAutoscaler
