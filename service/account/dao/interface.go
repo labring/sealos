@@ -1366,6 +1366,10 @@ func (m *Account) UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, erro
 		return nil, fmt.Errorf("failed to get gift code: %v", err)
 	}
 
+	if !giftCode.ExpiredAt.IsZero() && time.Now().After(giftCode.ExpiredAt) {
+		return nil, fmt.Errorf("gift code has expired")
+	}
+
 	if giftCode.Used {
 		return nil, fmt.Errorf("gift code is already used")
 	}

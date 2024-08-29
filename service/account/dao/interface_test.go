@@ -580,14 +580,6 @@ func TestAccount_SetStatusInvoice(t *testing.T) {
 	}
 }
 
-func init() {
-	// set env
-	os.Setenv("MONGO_URI", "")
-	os.Setenv("GLOBAL_COCKROACH_URI", "")
-	os.Setenv("LOCAL_COCKROACH_URI", "")
-	os.Setenv("LOCAL_REGION", "")
-}
-
 func TestAccount_UseGiftCode(t *testing.T) {
 	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
 	if err != nil {
@@ -596,8 +588,9 @@ func TestAccount_UseGiftCode(t *testing.T) {
 	}
 
 	giftcode, err := db.UseGiftCode(&helper.UseGiftCodeReq{
+		Code: "DfxAffaeEf",
 		Auth: &helper.Auth{
-			UserID: "5uxfy8jl",
+			UserID: "E1xAJ0fy4k",
 		},
 	})
 
@@ -606,4 +599,12 @@ func TestAccount_UseGiftCode(t *testing.T) {
 		return
 	}
 	t.Logf("giftcode = %+v", giftcode)
+}
+
+func init() {
+	// set env
+	os.Setenv("MONGO_URI", "")
+	os.Setenv("GLOBAL_COCKROACH_URI", "")
+	os.Setenv("LOCAL_COCKROACH_URI", "")
+	os.Setenv("LOCAL_REGION", "")
 }

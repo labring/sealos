@@ -754,6 +754,58 @@
                 }
             }
         },
+        "/account/v1alpha1/gift-code/use": {
+            "post": {
+                "description": "Redeem a gift code and apply the credit to the user's account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UseGiftCode"
+                ],
+                "summary": "Use a gift code",
+                "parameters": [
+                    {
+                        "description": "Use gift code request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.UseGiftCodeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully redeemed gift code",
+                        "schema": {
+                            "$ref": "#/definitions/helper.UseGiftCodeResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to parse use gift code request",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to redeem gift code",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/invoice/apply": {
             "post": {
                 "description": "Apply invoice",
@@ -1848,6 +1900,55 @@
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                }
+            }
+        },
+        "helper.UseGiftCodeReq": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "description": "@Summary Gift code to be used\n@Description The code of the gift card to be redeemed\n@JSONSchema required",
+                    "type": "string",
+                    "example": "HAPPY2024"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.UseGiftCodeResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/helper.UseGiftCodeRespData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Gift code successfully redeemed"
+                }
+            }
+        },
+        "helper.UseGiftCodeRespData": {
+            "type": "object",
+            "properties": {
+                "userID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },

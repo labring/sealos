@@ -911,7 +911,7 @@ func UseGiftCode(c *gin.Context) {
 	// Return success response
 	c.JSON(http.StatusOK, helper.UseGiftCodeResp{
 		Data: helper.UseGiftCodeRespData{
-			UserID: req.UserID, // 假设 UserID 来自认证信息
+			UserID: req.UserID,
 		},
 		Message: "Gift code successfully redeemed",
 	})

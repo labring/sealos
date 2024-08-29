@@ -1071,7 +1071,7 @@ func (c *Cockroach) UseGiftCode(giftCode *types.GiftCode, userID string) error {
 			return fmt.Errorf("failed to update user balance: %w", err)
 		}
 
-		message := "created by gift code"
+		message := "created by use gift code"
 		// Create an AccountTransaction record
 		accountTransaction := &types.AccountTransaction{
 			ID:               uuid.New(),
