@@ -45,17 +45,15 @@ export default function EditApp({ appName }: { appName?: string }) {
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setAppType } = useSearchStore();
+  const { userSourcePrice, checkQuotaAllow } = useUserStore();
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
     [templateSource]
   );
 
-  const { userSourcePrice } = useUserStore();
-
   const usage = useMemo(() => {
     const usage = getResourceUsage(yamlList.map((item) => item.value));
-    console.log('usage: ', usage);
     return usage;
   }, [yamlList]);
 
@@ -138,6 +136,20 @@ export default function EditApp({ appName }: { appName?: string }) {
   }, [formHook, formOnchangeDebounce]);
 
   const submitSuccess = async () => {
+    const quoteCheckRes = checkQuotaAllow({
+      cpu: usage.cpu.max,
+      memory: usage.memory.max,
+      storage: usage.storage.max
+    });
+    if (quoteCheckRes) {
+      return toast({
+        status: 'warning',
+        title: t(quoteCheckRes),
+        duration: 5000,
+        isClosable: true
+      });
+    }
+    console.log('quoteCheckRes', quoteCheckRes);
     setIsLoading(true);
     try {
       if (!insideCloud) {

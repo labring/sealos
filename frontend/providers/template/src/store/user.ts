@@ -12,7 +12,7 @@ type State = {
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
-  // checkQuotaAllow: (request: AppEditType, usedData?: AppEditType) => string;
+  checkQuotaAllow: (request: CheckQuotaType, usedData?: CheckQuotaType) => string;
 };
 
 let retryGetPrice = 3;
@@ -51,7 +51,7 @@ export const useUserStore = create<State>()(
       },
       checkQuotaAllow: (
         { cpu, memory, storage, gpu }: CheckQuotaType,
-        usedData: CheckQuotaType
+        usedData?: CheckQuotaType
       ) => {
         const quote = get().userQuota;
 

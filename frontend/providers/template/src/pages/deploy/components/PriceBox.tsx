@@ -107,7 +107,7 @@ const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
       },
       { label: 'Memory', color: '#219BF4', value: podScale(memoryPMin, memoryPMax) },
       { label: 'Storage', color: '#8774EE', value: podScale(storagePMin, storagePMax) },
-      { label: 'Port', color: '#C172E7', value: podScale(storagePMin, storagePMax) },
+      { label: 'Port', color: '#C172E7', value: podScale(nodePortP, nodePortP) },
       // ...(userSourcePrice?.gpu
       //   ? [{ label: 'GPU', color: '#89CD11', value: podScale(gpuPMin, gpuPMax) }]
       //   : []),
