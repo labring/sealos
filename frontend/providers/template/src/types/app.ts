@@ -178,15 +178,3 @@ export type SystemConfigType = {
   showCarousel: boolean;
   slideData: SlideDataType[];
 };
-
-export type TAppSourceType = 'app_store' | 'sealaf';
-
-export type CheckQuotaType = {
-  cpu: number;
-  memory: number;
-  storage: number;
-  gpu?: {
-    type: string;
-    amount: number;
-  };
-};
