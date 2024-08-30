@@ -22,6 +22,7 @@ let retryGetNamespace = 3
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io'
 export let INGRESS_SECRET = 'wildcard-cert'
+export let REGISTRY_ADDR = 'hub.dev.sealos.plus'
 
 interface valueType {
   id: string
@@ -123,9 +124,10 @@ export const getRuntime = async () => {
 export const getEnv = async () => {
   try {
     const res = await getAppEnv()
-    const { domain, ingressSecret } = res
+    const { domain, ingressSecret, registryAddr } = res
     SEALOS_DOMAIN = domain
     INGRESS_SECRET = ingressSecret
+    REGISTRY_ADDR = registryAddr
   } catch (err) {
     retryGetEnv--
     if (retryGetEnv >= 0) {

@@ -16,7 +16,7 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import { NAMESPACE } from '@/stores/static'
+import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { useConfirm } from '@/hooks/useConfirm'
 import { DevboxListItemType } from '@/types/devbox'
 import { pauseDevbox, releaseDevbox } from '@/api/devbox'
@@ -92,7 +92,7 @@ const ReleaseModal = ({
               <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>
                 {t('image_name')}
               </Box>
-              <Input defaultValue={`sealos.hub/${NAMESPACE}/${devbox.name}`} isReadOnly />
+              <Input defaultValue={`${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}`} isReadOnly />
             </Flex>
             <Flex alignItems={'start'} gap={'5px'}>
               <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>
