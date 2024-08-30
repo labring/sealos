@@ -137,8 +137,6 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	if err != nil && client.IgnoreNotFound(err) == nil {
 		// set password to context, if error then no need to update secret
 		publicKey, privateKey, err := helper.GenerateSSHKeyPair()
-		fmt.Println("公钥为" + string(publicKey))
-		fmt.Println("私钥为" + string(privateKey))
 		if err != nil {
 			logger.Error(err, "generate public and private key failed")
 			return err
@@ -220,14 +218,12 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				if removeFlag {
 					return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 				}
-				tag := helper.CheckPodConsistency(devbox, &podList.Items[0])
-				if !tag {
+				if !helper.CheckPodConsistency(devbox, &podList.Items[0]) {
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 			case corev1.PodRunning:
 				//if pod is running,check pod need restart
-				tag := helper.CheckPodConsistency(devbox, &podList.Items[0])
-				if !tag {
+				if !helper.CheckPodConsistency(devbox, &podList.Items[0]) {
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
