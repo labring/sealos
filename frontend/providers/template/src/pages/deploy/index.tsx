@@ -45,7 +45,10 @@ export default function EditApp({ appName }: { appName?: string }) {
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setAppType } = useSearchStore();
-  const { userSourcePrice, checkQuotaAllow } = useUserStore();
+  const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
+  useEffect(() => {
+    loadUserQuota();
+  }, []);
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
