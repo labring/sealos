@@ -580,6 +580,27 @@ func TestAccount_SetStatusInvoice(t *testing.T) {
 	}
 }
 
+func TestAccount_UseGiftCode(t *testing.T) {
+	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+
+	giftcode, err := db.UseGiftCode(&helper.UseGiftCodeReq{
+		Code: "DfxAffaeEf",
+		Auth: &helper.Auth{
+			UserID: "E1xAJ0fy4k",
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("UseGiftCode() error = %v", err)
+		return
+	}
+	t.Logf("giftcode = %+v", giftcode)
+}
+
 func init() {
 	// set env
 	os.Setenv("MONGO_URI", "")

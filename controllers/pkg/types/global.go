@@ -280,3 +280,35 @@ func (Invoice) TableName() string {
 func (InvoicePayment) TableName() string {
 	return "InvoicePayment"
 }
+
+type GiftCode struct {
+	ID           uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	Code         string    `gorm:"column:code;type:text;not null;unique"`
+	CreditAmount int64     `gorm:"column:creditAmount;type:bigint;default:0;not null"`
+	Used         bool      `gorm:"column:used;type:boolean;default:false;not null"`
+	UsedBy       uuid.UUID `gorm:"column:usedBy;type:uuid"`
+	UsedAt       time.Time `gorm:"column:usedAt;type:timestamp(3) with time zone"`
+	CreatedAt    time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	ExpiredAt    time.Time `gorm:"column:expiredAt;type:timestamp(3) with time zone"`
+	Comment      string    `gorm:"column:comment;type:text"`
+}
+
+func (GiftCode) TableName() string {
+	return "GiftCode"
+}
+
+type AccountTransaction struct {
+	ID               uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	Type             string    `gorm:"column:type;type:text"`
+	UserUID          uuid.UUID `gorm:"column:userUid;type:uuid"`
+	DeductionBalance int64     `gorm:"column:deduction_balance;type:bigint"`
+	Balance          int64     `gorm:"column:balance;type:bigint"`
+	Message          *string   `gorm:"column:message;type:text"`
+	CreatedAt        time.Time `gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"`
+	UpdatedAt        time.Time `gorm:"column:updated_at;type:timestamp(3) with time zone;default:current_timestamp()"`
+	BillingID        uuid.UUID `gorm:"column:billing_id;type:uuid"`
+}
+
+func (AccountTransaction) TableName() string {
+	return "AccountTransaction"
+}
