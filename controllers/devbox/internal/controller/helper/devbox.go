@@ -49,13 +49,11 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 	privateKey := pem.EncodeToMemory(pemKey)
-	fmt.Println("私钥为：" + string(privateKey))
 	publicKey, err := ssh.NewPublicKey(pubKey)
 	if err != nil {
 		return nil, nil, err
 	}
 	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
-	fmt.Print("公钥为：" + string(sshPublicKey))
 	return sshPublicKey, privateKey, nil
 }
 
