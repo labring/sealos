@@ -68,7 +68,7 @@ const Header = ({
 
   const handleExportApp = async () => {
     setExportLoading(true);
-    const images = formHook.getValues().containers.map((item) => {
+    const images = formHook?.getValues().containers.map((item) => {
       if (!item.imageName.includes('sealos.hub:5000')) {
         return { name: `sealos.hub:5000/${item.imageName}` };
       } else {
@@ -131,7 +131,7 @@ const Header = ({
         }}
         bg={'white'}
         width={'120px'}
-        value={formHook.getValues('nodeName')}
+        value={formHook?.getValues('nodeName') || ''}
         list={
           nodesData
             ? nodesData?.map((item) => ({
@@ -141,7 +141,7 @@ const Header = ({
             : []
         }
         onchange={(val: any) => {
-          formHook.setValue('nodeName', val);
+          formHook?.setValue('nodeName', val);
           applyCb();
         }}
       />
