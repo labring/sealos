@@ -31,7 +31,7 @@ const defaultEdit = {
   ...defaultDevboxEditValue
 }
 
-export const formData2Yamls = (data: DevboxEditType) => [
+const formData2Yamls = (data: DevboxEditType) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
