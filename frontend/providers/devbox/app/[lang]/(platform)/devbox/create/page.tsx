@@ -68,7 +68,8 @@ const DevboxCreatePage = () => {
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || null
 
-  const isEdit = useMemo(() => !!devboxName, [devboxName])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const isEdit = useMemo(() => !!devboxName, [])
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(isEdit)
 
