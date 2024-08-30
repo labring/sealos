@@ -15,14 +15,15 @@
 package helper
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ed25519"
 	cryptorand "crypto/rand"
-	"crypto/x509"
-
-	"encoding/pem"
 
 	"golang.org/x/crypto/ssh"
+
+	"encoding/pem"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 )
@@ -40,23 +41,50 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 }
 
 func GenerateSSHKeyPair() ([]byte, []byte, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), cryptorand.Reader)
+	pubKey, privKey, err := ed25519.GenerateKey(cryptorand.Reader)
 	if err != nil {
-		return []byte(""), []byte(""), err
+		return nil, nil, err
 	}
-	public := &privateKey.PublicKey
-	derPrivateKey, err := x509.MarshalECPrivateKey(privateKey)
+	pemKey, err := ssh.MarshalPrivateKey(privKey, "")
 	if err != nil {
-		return []byte(""), []byte(""), err
+		return nil, nil, err
 	}
-	privateKeyPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: derPrivateKey,
-	})
-	publicKey, err := ssh.NewPublicKey(public)
+	privateKey := pem.EncodeToMemory(pemKey)
+	publicKey, err := ssh.NewPublicKey(pubKey)
 	if err != nil {
-		return []byte(""), []byte(""), err
+		return nil, nil, err
 	}
 	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
-	return sshPublicKey, privateKeyPem, nil
+	return sshPublicKey, privateKey, nil
+}
+
+func CheckPodConsistency(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) bool {
+	container := pod.Spec.Containers[0]
+	//check cpu and memory
+	if !container.Resources.Limits.Cpu().Equal(devbox.Spec.Resource["cpu"]) {
+		return false
+	}
+	if !container.Resources.Limits.Memory().Equal(devbox.Spec.Resource["memory"]) {
+		return false
+	}
+	//check ports
+	if len(container.Ports) != len(devbox.Spec.NetworkSpec.ExtraPorts)+1 {
+		return false
+	}
+	portMap := make(map[string]int)
+	for _, podPort := range container.Ports {
+		key := fmt.Sprintf("%d-%s", podPort.ContainerPort, podPort.Protocol)
+		portMap[key]++
+	}
+	for _, devboxPort := range devbox.Spec.NetworkSpec.ExtraPorts {
+		key := fmt.Sprintf("%d-%s", devboxPort.ContainerPort, devboxPort.Protocol)
+		if _, found := portMap[key]; !found {
+			return false
+		}
+		portMap[key]--
+		if portMap[key] == 0 {
+			delete(portMap, key)
+		}
+	}
+	return len(portMap) == 1
 }

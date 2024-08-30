@@ -222,9 +222,14 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				if removeFlag {
 					return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 				}
+				if !helper.CheckPodConsistency(devbox, &podList.Items[0]) {
+					_ = r.Delete(ctx, &podList.Items[0])
+				}
 			case corev1.PodRunning:
-				// we do not recreate pod if it is running, even if pod does not have expected values
-				// update commit history status to success by pod name
+				//if pod is running,check pod need restart
+				if !helper.CheckPodConsistency(devbox, &podList.Items[0]) {
+					_ = r.Delete(ctx, &podList.Items[0])
+				}
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 			case corev1.PodSucceeded:
 				if controllerutil.RemoveFinalizer(&podList.Items[0], FinalizerName) {
@@ -316,6 +321,10 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 		{
 			Name:  "SEALOS_COMMIT_IMAGE_SQUASH",
 			Value: fmt.Sprintf("%v", devbox.Spec.Squash),
+		},
+		{
+			Name:  "SEALOS_DEVBOX_NAME",
+			Value: devbox.ObjectMeta.Namespace + devbox.ObjectMeta.Name,
 		},
 		{
 			Name: "SEALOS_DEVBOX_PASSWORD",
