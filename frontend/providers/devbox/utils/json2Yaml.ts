@@ -229,8 +229,7 @@ export const json2Service = (data: DevboxEditType) => {
       selector: {
         ['app.kubernetes.io/name']: data.name,
         ['app.kubernetes.io/part-of']: 'devbox',
-        ['app.kubernetes.io/managed-by']: 'sealos',
-        app: data.name
+        ['app.kubernetes.io/managed-by']: 'sealos'
       }
     }
   }
