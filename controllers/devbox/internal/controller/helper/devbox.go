@@ -86,8 +86,5 @@ func CheckPodConsistency(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) bool {
 			delete(portMap, key)
 		}
 	}
-	if len(portMap) != 1 {
-		return false
-	}
-	return true
+	return len(portMap) == 1
 }
