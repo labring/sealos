@@ -47,6 +47,14 @@ import { SEALOS_DOMAIN } from '@/store/static';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+export const sortAppListByTime = (apps: AppListItemType[]): AppListItemType[] => {
+  return apps.sort((a, b) => {
+    const timeA = dayjs(a.createTime, 'YYYY/MM/DD HH:mm');
+    const timeB = dayjs(b.createTime, 'YYYY/MM/DD HH:mm');
+    return timeB.valueOf() - timeA.valueOf(); // 降序排列,最新的在前
+  });
+};
+
 export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
   // compute store amount
   const storeAmount = app.spec?.volumeClaimTemplates
@@ -394,7 +402,8 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           path: item.metadata?.annotations?.path || '',
           value: Number(item.metadata?.annotations?.value || 0)
         }))
-      : []
+      : [],
+    nodeName: appDeploy.spec?.template.spec?.nodeName || ''
   };
 };
 
@@ -415,7 +424,8 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'replicas',
     'configMapList',
     'storeList',
-    'gpu'
+    'gpu',
+    'nodeName'
   ];
   const res: Record<string, any> = {};
 
@@ -423,91 +433,6 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     res[key] = app[key];
   });
   return res as AppEditType;
-};
-
-// yaml file adapt to edit form
-export const adaptYamlToEdit = (yamlList: string[]) => {
-  const configs = yamlList.map((item) => yaml.loadAll(item) as DeployKindsType).flat();
-
-  const deployKindsMap: {
-    [YamlKindEnum.Deployment]?: V1Deployment;
-    [YamlKindEnum.Service]?: V1Service;
-    [YamlKindEnum.ConfigMap]?: V1ConfigMap;
-    [YamlKindEnum.Ingress]?: V1Ingress;
-    [YamlKindEnum.HorizontalPodAutoscaler]?: V2HorizontalPodAutoscaler;
-    [YamlKindEnum.Secret]?: V1Secret;
-  } = {};
-
-  configs.forEach((item) => {
-    if (item.kind) {
-      // @ts-ignore
-      deployKindsMap[item.kind] = item;
-    }
-  });
-
-  const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
-  const cpuStr =
-    deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.resources?.requests?.cpu;
-  const memoryStr =
-    deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.resources?.requests?.memory;
-
-  const res: Record<string, any> = {
-    imageName: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.image,
-    runCMD:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
-    cmdParam:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.args?.join(' ') || '',
-    replicas: deployKindsMap?.Deployment?.spec?.replicas,
-    cpu: cpuStr ? cpuFormatToM(cpuStr) : undefined,
-    memory: memoryStr ? memoryFormatToMi(memoryStr) : undefined,
-    accessExternal: deployKindsMap?.Ingress
-      ? {
-          use: true,
-          outDomain: domain?.split('.')[0],
-          selfDomain: domain
-        }
-      : undefined,
-    containerOutPort:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort,
-    envs:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.env?.map((env) => ({
-        key: env.name,
-        value: env.value
-      })) || undefined,
-    hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
-      ? {
-          use: true,
-          target:
-            (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
-              ?.name as HpaTarget) || 'cpu',
-          value:
-            deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
-              ?.averageUtilization || 50,
-          minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.maxReplicas,
-          maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.minReplicas
-        }
-      : undefined,
-    configMapList: deployKindsMap?.ConfigMap?.data
-      ? Object.entries(deployKindsMap?.ConfigMap.data).map(([key, value]) => ({
-          mountPath: key,
-          value
-        }))
-      : undefined,
-    secret: deployKindsMap.Secret
-      ? {
-          ...defaultEditVal.containers[0].secret,
-          use: true
-        }
-      : undefined
-  };
-
-  for (const key in res) {
-    if (res[key] === undefined) {
-      delete res[key];
-    }
-  }
-
-  return res;
 };
 
 export const sliderNumber2MarkList = ({

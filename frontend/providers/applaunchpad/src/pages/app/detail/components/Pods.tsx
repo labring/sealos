@@ -155,7 +155,7 @@ const Pods = ({
               <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />
             </Button>
           </MyTooltip>
-          <MyTooltip offset={[0, 10]} label={t('Terminal')}>
+          {/* <MyTooltip offset={[0, 10]} label={t('Terminal')}>
             <Button
               variant={'square'}
               onClick={() => {
@@ -177,7 +177,7 @@ const Pods = ({
                 fill={'#485264'}
               />
             </Button>
-          </MyTooltip>
+          </MyTooltip> */}
           <MyTooltip offset={[0, 10]} label={t('Details')}>
             <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
               <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />

@@ -445,5 +445,6 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     maxReplicas: 1
   },
   configMapList: [],
-  storeList: []
+  storeList: [],
+  nodeName: ''
 };

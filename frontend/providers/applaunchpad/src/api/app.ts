@@ -5,13 +5,17 @@ import {
   adaptPod,
   adaptAppDetail,
   adaptMetrics,
-  adaptEvents
+  adaptEvents,
+  sortAppListByTime
 } from '@/utils/adapt';
 import type { AppPatchPropsType } from '@/types/app';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { ExportAppPayload } from '@/pages/api/exportApp';
+import { NodeInfo } from '@/pages/api/getNodes';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
+
+export const getNodes = () => GET<NodeInfo[]>('/api/getNodes');
 
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
 
@@ -32,9 +36,9 @@ export const putApp = (
 
 export const getMyApps = (namespace: string) =>
   //GET<V1Deployment & V1StatefulSet[]>('/api/getApps').then((res) => res.map(adaptAppListItem));
-  GET<V1Deployment & V1StatefulSet[]>(`/api/getApps?namespace=${namespace}`).then((res) =>
-    res.map(adaptAppListItem)
-  );
+  GET<V1Deployment & V1StatefulSet[]>(`/api/getApps?namespace=${namespace}`)
+    .then((res) => res.map(adaptAppListItem))
+    .then(sortAppListByTime);
 
 export const delAppByName = (namespace: string, name: string) =>
   DELETE(`/api/delApp?namespace=${namespace}`, { name });

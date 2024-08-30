@@ -62,14 +62,14 @@ export const formData2Yamls = (
         }
       ]
     : []),
-  ...(data.containers.some((container) => container.networks.some((item) => item.openPublicDomain))
-    ? [
-        {
-          filename: 'ingress.yaml',
-          value: json2Ingress(data)
-        }
-      ]
-    : []),
+  // ...(data.containers.some((container) => container.networks.some((item) => item.openPublicDomain))
+  //   ? [
+  //       {
+  //         filename: 'ingress.yaml',
+  //         value: json2Ingress(data)
+  //       }
+  //     ]
+  //   : []),
   ...(data.hpa.use
     ? [
         {

@@ -59,6 +59,7 @@ export interface AppListItemType {
 
 export interface AppEditType {
   appName: string;
+  nodeName: string;
   replicas: number | '';
   gpu?: GpuType;
   hpa: {

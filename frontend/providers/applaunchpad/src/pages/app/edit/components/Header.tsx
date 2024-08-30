@@ -1,4 +1,4 @@
-import { exportApp } from '@/api/app';
+import { exportApp, getNodes } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { useGlobalStore } from '@/store/global';
 import { AppEditType } from '@/types/app';
@@ -18,7 +18,8 @@ import {
   ModalOverlay,
   useDisclosure
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { MySelect, useMessage } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -49,6 +50,7 @@ const Header = ({
   const [exportLoading, setExportLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [downloadPath, setDownloadPath] = useState('');
+  const isEdit = !!router.query.name;
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -104,6 +106,8 @@ const Header = ({
     setExportLoading(false);
   };
 
+  const { data: nodesData } = useQuery(['getNodes'], () => getNodes());
+
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
       <Flex
@@ -118,20 +122,47 @@ const Header = ({
         </Box>
       </Flex>
       <Box flex={1}></Box>
-      <Button
-        isLoading={exportLoading}
-        h={'40px'}
+
+      <MySelect
         mr={'14px'}
-        minW={'140px'}
-        variant={'outline'}
-        onClick={handleExportApp}
-      >
-        {t('Export')}应用
-      </Button>
+        borderColor={'#02A7F0'}
+        _hover={{
+          bg: 'white'
+        }}
+        bg={'white'}
+        width={'120px'}
+        value={formHook.getValues('nodeName')}
+        list={
+          nodesData
+            ? nodesData?.map((item) => ({
+                label: item.name,
+                value: item.name
+              }))
+            : []
+        }
+        onchange={(val: any) => {
+          formHook.setValue('nodeName', val);
+          applyCb();
+        }}
+      />
+
+      {isEdit && (
+        <Button
+          isLoading={exportLoading}
+          h={'40px'}
+          mr={'14px'}
+          minW={'140px'}
+          variant={'outline'}
+          onClick={handleExportApp}
+        >
+          {t('Export')}应用
+        </Button>
+      )}
 
       <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')}编排
       </Button>
+
       <Button
         className="driver-deploy-button"
         minW={'140px'}
