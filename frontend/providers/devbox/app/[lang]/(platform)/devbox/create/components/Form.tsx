@@ -298,6 +298,7 @@ const Form = ({
                             cursor={'pointer'}
                             fontWeight={'bold'}
                             color={'grayModern.900'}
+                            opacity={isEdit ? 0.5 : 1}
                             {...(getValues('runtimeType') === item.id
                               ? {
                                   bg: '#F9FDFE',
@@ -353,6 +354,7 @@ const Form = ({
                             cursor={'pointer'}
                             fontWeight={'bold'}
                             color={'grayModern.900'}
+                            opacity={isEdit ? 0.5 : 1}
                             {...(getValues('runtimeType') === item.id
                               ? {
                                   bg: '#F9FDFE',
@@ -408,6 +410,7 @@ const Form = ({
                             cursor={'pointer'}
                             fontWeight={'bold'}
                             color={'grayModern.900'}
+                            opacity={isEdit ? 0.5 : 1}
                             {...(getValues('runtimeType') === item.id
                               ? {
                                   bg: '#F9FDFE',
