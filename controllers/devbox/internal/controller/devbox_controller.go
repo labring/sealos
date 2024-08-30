@@ -66,6 +66,13 @@ type DevboxReconciler struct {
 func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx, "devbox", req.NamespacedName)
 	devbox := &devboxv1alpha1.Devbox{}
+
+	recLabels := label.RecommendedLabels(&label.Recommended{
+		Name:      devbox.Name,
+		ManagedBy: label.DefaultManagedBy,
+		PartOf:    DevBoxPartOf,
+	})
+
 	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -80,6 +87,11 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
 			return ctrl.Result{}, r.Update(ctx, devbox)
 		}
+
+		if err := r.removeAll(ctx, devbox, recLabels); err != nil {
+			return ctrl.Result{}, err
+		}
+
 		if controllerutil.RemoveFinalizer(devbox, FinalizerName) {
 			if err := r.Update(ctx, devbox); err != nil {
 				return ctrl.Result{}, err
@@ -89,12 +101,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	_ = r.Status().Update(ctx, devbox)
-
-	recLabels := label.RecommendedLabels(&label.Recommended{
-		Name:      devbox.Name,
-		ManagedBy: label.DefaultManagedBy,
-		PartOf:    DevBoxPartOf,
-	})
 
 	// create or update secret
 	if err := r.syncSecret(ctx, devbox, recLabels); err != nil {
@@ -277,6 +283,30 @@ func commitSuccess(podStatus corev1.PodPhase) bool {
 		return false
 	}
 	return false
+}
+
+func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+	// Delete Pod
+	if err := r.deleteResourcesByLabels(ctx, &corev1.Pod{}, devbox.Namespace, recLabels); err != nil {
+		return err
+	}
+	// Delete Service
+	if err := r.deleteResourcesByLabels(ctx, &corev1.Service{}, devbox.Namespace, recLabels); err != nil {
+		return err
+	}
+	// Delete Secret
+	if err := r.deleteResourcesByLabels(ctx, &corev1.Secret{}, devbox.Namespace, recLabels); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj client.Object, namespace string, labels map[string]string) error {
+	err := r.DeleteAllOf(ctx, obj,
+		client.InNamespace(namespace),
+		client.MatchingLabels(labels),
+	)
+	return client.IgnoreNotFound(err)
 }
 
 func (r *DevboxReconciler) updateDevboxCommitHistory(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
