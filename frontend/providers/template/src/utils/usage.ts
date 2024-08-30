@@ -45,16 +45,22 @@ function parseResourceUsage(yamlObj: any): ResourceUsage {
   let storage = 0;
   let nodeport = 0;
 
-  const replicasMin = parseInt(
-    yamlObj.metadata?.annotations?.['deploy.cloud.sealos.io/minReplicas'] ??
-      yamlObj.spec?.replicas?.toString() ??
-      '1'
-  );
-  const replicasMax = parseInt(
-    yamlObj.metadata?.annotations?.['deploy.cloud.sealos.io/maxReplicas'] ??
-      yamlObj.spec?.replicas?.toString() ??
-      '1'
-  );
+  let replicasMin =
+    parseInt(
+      yamlObj.metadata?.annotations?.['deploy.cloud.sealos.io/minReplicas'] ??
+        yamlObj.spec?.replicas?.toString() ??
+        '1'
+    ) || 1;
+  if (replicasMin === 0) replicasMin = 1;
+  let replicasMax =
+    parseInt(
+      yamlObj.metadata?.annotations?.['deploy.cloud.sealos.io/maxReplicas'] ??
+        yamlObj.spec?.replicas?.toString() ??
+        '1'
+    ) || replicasMin;
+  if (replicasMin > replicasMax) {
+    replicasMax = replicasMin;
+  }
 
   if (kind === 'Deployment' || kind === 'StatefulSet') {
     const containers = yamlObj.spec?.template?.spec?.containers;
@@ -86,21 +92,20 @@ function parseResourceUsage(yamlObj: any): ResourceUsage {
 }
 
 function convertCpu(cpu: string): number {
-  const cpuValue = parseFloat(cpu.slice(0, -1));
-  const cpuUnit = cpu.slice(-1);
-  if (cpuUnit === 'm') {
-    return cpuValue;
+  cpu = String(cpu);
+  if (cpu.slice(-1) === 'm') {
+    return parseFloat(cpu.slice(0, -1)) || 0;
   } else {
-    return cpuValue * 100;
+    return parseFloat(cpu) * 100 || 0;
   }
 }
 
 // https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/assign-memory-resource/#memory-units
 function convertMemory(memory: string): number {
-  const memoryValue = parseFloat(memory);
-  const memoryUnit = memory.replace(/[0-9.]/g, '');
+  memory = String(memory);
+  const memoryValue = parseFloat(memory) || 0;
 
-  switch (memoryUnit) {
+  switch (memory.replace(/[0-9.]/g, '')) {
     case 'E':
       return (memoryValue * 1000 * 1000 * 1000 * 1000) / (1024 * 1024);
     case 'Ei':
