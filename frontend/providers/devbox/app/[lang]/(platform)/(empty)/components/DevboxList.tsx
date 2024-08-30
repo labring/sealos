@@ -23,7 +23,7 @@ import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { getDevboxPassword, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
-import { SSHDOMAIN } from '@/constants/devbox'
+import { SEALOS_DOMAIN } from '@/stores/static'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -143,7 +143,7 @@ const DevboxList = ({
       })
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
-        SSHDOMAIN
+        `sealos@${SEALOS_DOMAIN}`
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
       )}`
