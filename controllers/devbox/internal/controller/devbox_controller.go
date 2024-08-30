@@ -295,10 +295,7 @@ func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1
 		return err
 	}
 	// Delete Secret
-	if err := r.deleteResourcesByLabels(ctx, &corev1.Secret{}, devbox.Namespace, recLabels); err != nil {
-		return err
-	}
-	return nil
+	return r.deleteResourcesByLabels(ctx, &corev1.Secret{}, devbox.Namespace, recLabels)
 }
 
 func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj client.Object, namespace string, labels map[string]string) error {
