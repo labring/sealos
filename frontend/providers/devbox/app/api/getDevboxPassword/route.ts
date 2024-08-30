@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
     const devboxName = searchParams.get('devboxName') as string
     const headerList = req.headers
 
-    const { k8sCore } = await getK8s({
+    const { k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
-    const response = await k8sCore.readNamespacedSecret(devboxName, 'default')
+    const response = await k8sCore.readNamespacedSecret(devboxName, namespace)
 
     const base64PublicKey = response.body.data?.['SEALOS_DEVBOX_PUBLIC_KEY'] as string
     const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string

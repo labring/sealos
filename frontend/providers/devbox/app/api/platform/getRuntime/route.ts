@@ -32,9 +32,6 @@ export async function GET(req: NextRequest) {
       'runtimes'
     )
 
-    console.log('runtimeClasses', runtimeClasses.items)
-    console.log('runtimes', runtimes.items)
-
     // runtimeClasses
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')
     languageTypeList.push(
