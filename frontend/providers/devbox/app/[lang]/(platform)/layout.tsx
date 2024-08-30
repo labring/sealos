@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
 import throttle from 'lodash/throttle'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
 import { useGlobalStore } from '@/stores/global'
@@ -18,10 +19,12 @@ import {
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ChakraProvider } from '@/components/providers/ChakraProvider'
 import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvider'
+import { getLangStore, setLangStore } from '@/utils/cookie'
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { Loading } = useLoading()
+  const [refresh, setRefresh] = useState(false)
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore()
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'jump_prompt',
@@ -33,7 +36,31 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     getRuntime()
     getEnv()
     getGlobalNamespace()
-  })
+    const changeI18n = async (data: any) => {
+      const lastLang = getLangStore()
+      const newLang = data.currentLanguage
+      if (lastLang !== newLang) {
+        // i18n?.changeLanguage(newLang)
+        setLangStore(newLang)
+        setRefresh((state) => !state)
+      }
+    }
+
+    ;(async () => {
+      try {
+        const lang = await sealosApp.getLanguage()
+        changeI18n({
+          currentLanguage: lang.lng
+        })
+      } catch (error) {
+        changeI18n({
+          currentLanguage: 'zh'
+        })
+      }
+    })()
+
+    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
+  }, [])
 
   // init session
   useEffect(() => {
@@ -84,6 +111,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
+
+  useEffect(() => {
+    const lang = getLangStore() || 'zh'
+    // i18n?.changeLanguage?.(lang)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refresh, pathname])
 
   return (
     <ChakraProvider>

@@ -17,7 +17,7 @@
   "confirm": "Confirm",
   "confirm_create_devbox": "Confirm to create the project?",
   "confirm_delete": "Confirm delete",
-  "confirm_update_devbox": "When the project is changed, it will be shut down and restarted, which will cause vscode reconnection. Do you want to change the project?",
+  "confirm_update_devbox": "The change action will cause the project to restart and VSCode to reconnect. Do you want to continue?",
   "control": "Control",
   "copy_failed": "Copy Failed",
   "copy_success": "Copy Success",
