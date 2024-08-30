@@ -41,7 +41,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       const lastLang = getLangStore()
       const newLang = data.currentLanguage
       if (lastLang !== newLang) {
-        router.push(`/${newLang}`)
+        // router.push(`/${newLang}`)
         setLangStore(newLang)
         setRefresh((state) => !state)
       }
@@ -115,7 +115,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const lang = getLangStore() || 'zh'
-    router.push(`/${lang}`)
+    // router.push(`/${lang}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, pathname])
 
