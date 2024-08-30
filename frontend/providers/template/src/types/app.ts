@@ -178,3 +178,13 @@ export type SystemConfigType = {
   showCarousel: boolean;
   slideData: SlideDataType[];
 };
+
+export type CheckQuotaType = {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: {
+    type: string;
+    amount: number;
+  };
+};
