@@ -392,6 +392,7 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 	expectPod := &corev1.Pod{
 		ObjectMeta: objectMeta,
 		Spec: corev1.PodSpec{
+			Hostname:                      devbox.Name,
 			RestartPolicy:                 corev1.RestartPolicyNever,
 			Containers:                    containers,
 			Volumes:                       volume,
