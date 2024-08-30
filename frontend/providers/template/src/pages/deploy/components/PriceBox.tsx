@@ -54,7 +54,7 @@ function Currencysymbol({
 
 const scale = 1000000;
 
-const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
+const PriceBox = ({ cpu, memory, storage, nodeport }: ResourceUsage) => {
   const { t } = useTranslation();
   const { userSourcePrice } = useUserStore();
   const theme = useTheme();
@@ -71,7 +71,7 @@ const PriceBox = ({ cpu, memory, storage }: ResourceUsage) => {
     const storagePMin = +((userSourcePrice.storage * storage.min * 24) / scale).toFixed(2);
     const storagePMax = +((userSourcePrice.storage * storage.max * 24) / scale).toFixed(2);
 
-    const nodePortP = +((userSourcePrice.nodeports * 24) / 1000).toFixed(2);
+    const nodePortP = +((userSourcePrice.nodeports * nodeport * 24) / 1000).toFixed(2);
 
     // const gpuPMin = (() => {
     //   if (!gpu || !gpu[0]) return 0;
