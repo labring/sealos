@@ -4,7 +4,20 @@ import { useGlobalStore } from '@/store/global';
 import { AppEditType } from '@/types/app';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
-import { Box, Button, Flex } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  Link,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  useDisclosure
+} from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
@@ -34,6 +47,8 @@ const Header = ({
   const { lastRoute } = useGlobalStore();
   const { message: toast } = useMessage();
   const [exportLoading, setExportLoading] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [downloadPath, setDownloadPath] = useState('');
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -61,18 +76,25 @@ const Header = ({
 
     try {
       const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+
       const result = await exportApp({
         yaml: exportYamlString,
         images: images,
         appname: appName,
         namespace: namespace
       });
-      toast({
-        status: result?.error ? 'error' : 'success',
-        duration: null,
-        isClosable: true,
-        title: result?.error ? result.error : '打包成功，文件储存在：' + result.path
-      });
+
+      if (result?.error) {
+        toast({
+          status: 'error',
+          duration: null,
+          isClosable: true,
+          title: result.error
+        });
+      } else {
+        setDownloadPath(result.downloadPath);
+        onOpen();
+      }
     } catch (error) {
       toast({
         status: 'error',
@@ -119,6 +141,17 @@ const Header = ({
       >
         {t(applyBtnText)}
       </Button>
+      <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>打包成功</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Box>文件下载地址</Box>
+            <Link href={downloadPath}>{downloadPath}</Link>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };

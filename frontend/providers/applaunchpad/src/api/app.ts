@@ -89,6 +89,6 @@ export const getAppMonitorData = (
 
 export const exportApp = (data: ExportAppPayload) =>
   POST<{
-    path: string;
+    downloadPath: string;
     error?: string;
   }>(`/api/exportApp`, data);
