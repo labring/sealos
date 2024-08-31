@@ -85,12 +85,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 	} else {
-		if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
-			logger.Info("devbox deleted, set devbox state to stopped")
-			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
-			return ctrl.Result{}, r.Update(ctx, devbox)
-		}
-
 		logger.Info("devbox deleted, remove all resources")
 		if err := r.removeAll(ctx, devbox, recLabels); err != nil {
 			return ctrl.Result{}, err
@@ -117,7 +111,10 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// create or update pod
 	logger.Info("create or update pod", "devbox", devbox.Name)
-	if err := r.syncPod(ctx, devbox, recLabels); err != nil {
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		return r.syncPod(ctx, devbox, recLabels)
+	})
+	if err != nil {
 		logger.Error(err, "sync pod failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
 		return ctrl.Result{}, err
