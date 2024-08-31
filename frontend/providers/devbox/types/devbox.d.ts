@@ -51,10 +51,20 @@ export interface DevboxDetailType extends DevboxEditType {
   status: DevboxStatusMapType
 }
 
+export interface NetworkType {
+  networkName: string
+  portName: string
+  port: number
+  protocol: ProtocolType
+  openPublicDomain: boolean
+  publicDomain: string // default domain
+  customDomain: string // custom domain
+}
+
 export interface DevboxListItemType {
   id: string
   name: string
-  runtimeType: string // TODO: RuntimeType
+  runtimeType: string
   runtimeVersion: string
   status: DevboxStatusMapType
   createTime: string
@@ -62,15 +72,7 @@ export interface DevboxListItemType {
   memory: number
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
-  networks: {
-    networkName: string
-    portName: string
-    port: number
-    protocol: ProtocolType
-    openPublicDomain: boolean
-    publicDomain: string // default domain
-    customDomain: string // custom domain
-  }[]
+  networks: NetworkType[]
   sshPort: number
 }
 
