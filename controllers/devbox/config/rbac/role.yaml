@@ -23,8 +23,7 @@ rules:
   resources:
     - events
   verbs:
-  - create
-  - patch
+    - '*'
 - apiGroups:
     - ""
   resources:
