@@ -456,6 +456,7 @@ const Form = ({
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
                 <MySelect
+                  {...register('runtimeVersion', { required: t('This runtime field is required') })}
                   disabled={isEdit}
                   width={'200px'}
                   placeholder={`${t('runtime')} ${t('version')}`}
@@ -523,9 +524,6 @@ const Form = ({
                       w={'110px'}
                       bg={'grayModern.50'}
                       {...register(`networks.${i}.port`, {
-                        required:
-                          t('The container exposed port cannot be empty') ||
-                          'The container exposed port cannot be empty',
                         valueAsNumber: true,
                         min: {
                           value: 1,

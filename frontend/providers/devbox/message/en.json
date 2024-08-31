@@ -9,6 +9,7 @@
   "The container exposed port cannot be empty": "Container port is required",
   "The maximum number of exposed ports is 65535": "Maximum port number is 65535",
   "The minimum exposed port is 1": "Minimum port number is 1",
+  "This runtime field is required": "The runtime version field is required",
   "basic_configuration": "Basic Configuration",
   "boot": "boot",
   "cancel": "Cancel",
