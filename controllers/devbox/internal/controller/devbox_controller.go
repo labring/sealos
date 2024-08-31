@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,10 +59,11 @@ type DevboxReconciler struct {
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes/finalizers,verbs=update
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=*
+// +kubebuilder:rbac:groups="",resources=pods/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=services,verbs=*
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=*
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx, "devbox", req.NamespacedName)
@@ -84,14 +86,17 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
+			logger.Info("devbox deleted, set devbox state to stopped")
 			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
 			return ctrl.Result{}, r.Update(ctx, devbox)
 		}
 
+		logger.Info("devbox deleted, remove all resources")
 		if err := r.removeAll(ctx, devbox, recLabels); err != nil {
 			return ctrl.Result{}, err
 		}
 
+		logger.Info("devbox deleted, remove finalizer")
 		if controllerutil.RemoveFinalizer(devbox, FinalizerName) {
 			if err := r.Update(ctx, devbox); err != nil {
 				return ctrl.Result{}, err
@@ -103,12 +108,15 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_ = r.Status().Update(ctx, devbox)
 
 	// create or update secret
+	logger.Info("create or update secret", "devbox", devbox.Name)
 	if err := r.syncSecret(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "create or update secret failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Create secret failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
+	// create or update pod
+	logger.Info("create or update pod", "devbox", devbox.Name)
 	if err := r.syncPod(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync pod failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
@@ -117,12 +125,14 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// create service if network type is NodePort
 	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
+		logger.Info("create service", "devbox", devbox.Name)
 		if err := r.syncService(ctx, devbox, recLabels); err != nil {
 			logger.Error(err, "Create service failed")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Create service failed", "%v", err)
 			return ctrl.Result{RequeueAfter: time.Second * 3}, err
 		}
 	}
+	logger.Info("create devbox success", "devbox", devbox.Name)
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Created", "create devbox success: %v", devbox.ObjectMeta.Name)
 	return ctrl.Result{Requeue: false}, nil
 }
@@ -449,7 +459,7 @@ func (r *DevboxReconciler) getLastSuccessCommitImageName(ctx context.Context, de
 	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Spec.RuntimeRef.Name}, rt); err != nil {
 		return "", err
 	}
-	if devbox.Status.CommitHistory == nil || len(devbox.Status.CommitHistory) == 0 {
+	if len(devbox.Status.CommitHistory) == 0 {
 		return rt.Spec.Image, nil
 	}
 	// get image name from commit history, ues the latest commit history
@@ -503,8 +513,14 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 
 	// Retrieve the updated Service to get the NodePort
 	var updatedService corev1.Service
-	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, &updatedService); err != nil {
-		return err
+	err := retry.OnError(
+		retry.DefaultRetry,
+		func(err error) bool { return client.IgnoreNotFound(err) == nil },
+		func() error {
+			return r.Client.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, &updatedService)
+		})
+	if err != nil {
+		return fmt.Errorf("failed to get updated service: %w", err)
 	}
 
 	// Extract the NodePort
