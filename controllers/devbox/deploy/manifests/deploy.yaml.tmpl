@@ -574,15 +574,19 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - pods
+  - events
   verbs:
   - create
   - delete
   - get
   - list
   - patch
-  - update
-  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - '*'
 - apiGroups:
   - ""
   resources:
@@ -596,25 +600,13 @@ rules:
   resources:
   - secrets
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - '*'
 - apiGroups:
   - ""
   resources:
   - services
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - '*'
 - apiGroups:
   - devbox.sealos.io
   resources:
