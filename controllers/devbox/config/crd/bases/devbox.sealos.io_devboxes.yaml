@@ -28,7 +28,23 @@ spec:
     singular: devbox
   scope: Namespaced
   versions:
-  - name: v1alpha1
+    - additionalPrinterColumns:
+        - jsonPath: .spec.state
+          name: State
+          type: string
+        - jsonPath: .spec.runtimeRef.name
+          name: RuntimeRef
+          type: string
+        - jsonPath: .status.podPhase
+          name: PodPhase
+          type: string
+        - jsonPath: .status.network.type
+          name: NetworkType
+          type: string
+        - jsonPath: .status.network.nodePort
+          name: NodePort
+          type: integer
+      name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Devbox is the Schema for the devboxes API
@@ -131,7 +147,6 @@ spec:
             - state
             type: object
           status:
-            description: DevboxStatus defines the observed state of Devbox
             properties:
               commitHistory:
                 items:

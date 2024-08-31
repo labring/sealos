@@ -121,6 +121,11 @@ type DevboxStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".spec.state"
+// +kubebuilder:printcolumn:name="RuntimeRef",type="string",JSONPath=".spec.runtimeRef.name"
+// +kubebuilder:printcolumn:name="PodPhase",type="string",JSONPath=".status.podPhase"
+// +kubebuilder:printcolumn:name="NetworkType",type="string",JSONPath=".status.network.type"
+// +kubebuilder:printcolumn:name="NodePort",type="integer",JSONPath=".status.network.nodePort"
 
 // Devbox is the Schema for the devboxes API
 type Devbox struct {
