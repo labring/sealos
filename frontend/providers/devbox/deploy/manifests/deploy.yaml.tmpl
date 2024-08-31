@@ -42,6 +42,8 @@ spec:
               value: dev.sealos.plus
             - name: INGRESS_SECRET
               value: wildcard-cert
+            - name: REGISTRY_ADDR
+              value: hub.dev.sealos.plus
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

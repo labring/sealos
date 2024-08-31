@@ -20,7 +20,7 @@ let retryGetEnv = 3
 let retryGetPrice = 3
 let retryGetNamespace = 3
 
-export let SEALOS_DOMAIN = 'cloud.sealos.io'
+export let SEALOS_DOMAIN = 'dev.sealos.plus'
 export let INGRESS_SECRET = 'wildcard-cert'
 export let REGISTRY_ADDR = 'hub.dev.sealos.plus'
 

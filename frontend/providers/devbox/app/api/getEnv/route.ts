@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   return jsonRes<SystemEnvResponse>({
     data: {
-      domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
+      domain: process.env.SEALOS_DOMAIN || 'dev.sealos.plus',
       ingressSecret: process.env.INGRESS_SECRET || 'wildcard-cert',
       registryAddr: process.env.REGISTRY_ADDR || 'hub.dev.sealos.plus'
     }
