@@ -62,14 +62,14 @@ export const formData2Yamls = (
         }
       ]
     : []),
-  ...(data.containers.some((container) => container.networks.some((item) => item.openPublicDomain))
-    ? [
-        {
-          filename: 'ingress.yaml',
-          value: json2Ingress(data)
-        }
-      ]
-    : []),
+  // ...(data.containers.some((container) => container.networks.some((item) => item.openPublicDomain))
+  //   ? [
+  //       {
+  //         filename: 'ingress.yaml',
+  //         value: json2Ingress(data)
+  //       }
+  //     ]
+  //   : []),
   ...(data.hpa.use
     ? [
         {
@@ -344,17 +344,19 @@ const EditApp = ({
                   });
                 }
               }
+
               // quote check
-              console.log('oldAppEditData.current:', oldAppEditData.current);
-              const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
-              if (quoteCheckRes) {
-                return toast({
-                  status: 'warning',
-                  title: t(quoteCheckRes),
-                  duration: 5000,
-                  isClosable: true
-                });
-              }
+              // console.log('oldAppEditData.current:', oldAppEditData.current);
+              // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
+              // if (quoteCheckRes) {
+              //   return toast({
+              //     status: 'warning',
+              //     title: t(quoteCheckRes),
+              //     duration: 5000,
+              //     isClosable: true
+              //   });
+              // }
+
               // check network port
               const networks = data.containers.flatMap((item) => item.networks);
               if (!checkNetworkPorts(networks)) {

@@ -464,3 +464,23 @@ export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => 
       return bytes;
   }
 };
+
+export function parseImageName(imageName: string) {
+  imageName = imageName.replace(/^[^\/:]+:\d+\/+/, '');
+
+  const match = imageName.match(/^(.*?)(?::([^:]*))?$/);
+  if (!match) {
+    return {
+      repository: 'default',
+      tag: 'latest'
+    };
+  }
+
+  const repository = match[1];
+  const tag = match[2] || 'latest';
+
+  return {
+    repository,
+    tag
+  };
+}

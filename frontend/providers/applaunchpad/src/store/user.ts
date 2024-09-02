@@ -22,21 +22,21 @@ export const useUserStore = create<State>()(
     immer((set, get) => ({
       userSourcePrice: undefined,
       async loadUserSourcePrice() {
-        try {
-          const res = await getResourcePrice();
-          set((state) => {
-            state.userSourcePrice = res;
-          });
-          // console.log(res);
-        } catch (err) {
-          // retry fetch
-          retryGetPrice--;
-          if (retryGetPrice >= 0) {
-            setTimeout(() => {
-              get().loadUserSourcePrice();
-            }, 1000);
-          }
-        }
+        // try {
+        //   const res = await getResourcePrice();
+        //   set((state) => {
+        //     state.userSourcePrice = res;
+        //   });
+        //   // console.log(res);
+        // } catch (err) {
+        //   // retry fetch
+        //   retryGetPrice--;
+        //   if (retryGetPrice >= 0) {
+        //     setTimeout(() => {
+        //       get().loadUserSourcePrice();
+        //     }, 1000);
+        //   }
+        // }
         return null;
       },
       balance: 5,

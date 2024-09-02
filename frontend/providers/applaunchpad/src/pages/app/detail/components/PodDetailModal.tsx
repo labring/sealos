@@ -158,7 +158,7 @@ const Logs = ({
     <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered>
       <ModalOverlay />
       <ModalContent h={'90vh'} maxW={'90vw'} m={0} display={'flex'} flexDirection={'column'}>
-        <ModalCloseButton fontSize={16} top={6} right={6} />
+        <ModalCloseButton fontSize={16} top={6} right={6} color={'grayModern.900'} />
         <Flex p={7} alignItems={'center'}>
           <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
             Pod {t('Details')}

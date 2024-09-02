@@ -59,6 +59,7 @@ export interface AppListItemType {
 
 export interface AppEditType {
   appName: string;
+  nodeName: string;
   replicas: number | '';
   gpu?: GpuType;
   hpa: {
@@ -83,6 +84,8 @@ export interface AppEditType {
 export interface AppEditContainerType {
   name: string;
   imageName: string;
+  imageRepo: string;
+  imageTag: string;
   runCMD: string;
   cmdParam: string;
   cpu: number;

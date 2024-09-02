@@ -24,12 +24,15 @@ export const editModeMap = (isEdit: boolean) => {
 
 export const defaultEditVal: AppEditType = {
   appName: 'hello-world',
+  nodeName: '',
   replicas: 1,
   currentContainerName: 'hello-world',
   containers: [
     {
       name: 'container1',
-      imageName: 'nginx',
+      imageName: 'nginx:latest',
+      imageRepo: 'nginx',
+      imageTag: 'latest',
       runCMD: '',
       cmdParam: '',
       cpu: 100,

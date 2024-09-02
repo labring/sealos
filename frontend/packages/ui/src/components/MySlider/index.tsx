@@ -51,9 +51,9 @@ export const MySlider = ({
         </SliderMark>
       ))}
       <SliderTrack bg={'#EAEDF3'} borderRadius={'4px'} overflow={'hidden'} h={'4px'}>
-        <SliderFilledTrack bg={'grayModern.900'} />
+        <SliderFilledTrack bg={'#02A7F0'} />
       </SliderTrack>
-      <SliderThumb bg={'grayModern.900'}></SliderThumb>
+      <SliderThumb bg={'#02A7F0'}></SliderThumb>
     </Slider>
   );
 };

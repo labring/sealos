@@ -27,7 +27,7 @@ const AppStatusTag = ({
       fontSize={'xs'}
       fontWeight={'bold'}
       alignItems={'center'}
-      w={'68px'}
+      w={'fit-content'}
       gap={'4px'}
     >
       <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={statusMap.dotColor} />

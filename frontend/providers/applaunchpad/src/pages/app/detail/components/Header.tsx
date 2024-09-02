@@ -1,16 +1,15 @@
-import React, { Dispatch, useCallback, useState } from 'react';
-import { Box, Flex, Button, useDisclosure } from '@chakra-ui/react';
-import type { AppStatusMapType } from '@/types/app';
-import { useRouter } from 'next/router';
-import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
-import { useToast } from '@/hooks/useToast';
-import { useConfirm } from '@/hooks/useConfirm';
-import { AppStatusEnum, appStatusMap } from '@/constants/app';
+import { pauseAppByName, restartAppByName, startAppByName } from '@/api/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
-import { EditIcon } from '@chakra-ui/icons';
-import dynamic from 'next/dynamic';
+import { AppStatusEnum, appStatusMap } from '@/constants/app';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
+import type { AppStatusMapType } from '@/types/app';
+import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import React, { Dispatch, useCallback, useState } from 'react';
 
 const DelModal = dynamic(() => import('./DelModal'));
 

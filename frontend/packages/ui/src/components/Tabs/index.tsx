@@ -51,15 +51,12 @@ export const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props)
           py={sizeMap.inlineP}
           borderRadius={'base'}
           textAlign={'center'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
           {...(activeId === item.id
             ? {
                 boxShadow: '0px 2px 2px rgba(137, 156, 171, 0.25)',
-                backgroundColor: 'white',
+                backgroundColor: '#02A7F0',
                 cursor: 'default',
-                color: 'grayModern.900'
+                color: 'white'
               }
             : {
                 cursor: 'pointer',

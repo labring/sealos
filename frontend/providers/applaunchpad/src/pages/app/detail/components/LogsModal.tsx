@@ -208,7 +208,7 @@ const LogsModal = ({
             {t('Export')}
           </Button>
         </Flex>
-        <ModalCloseButton />
+        <ModalCloseButton color={'grayModern.900'} />
         <Box flex={'1 0 0'} h={0} position={'relative'}>
           <Box
             ref={LogBox}
