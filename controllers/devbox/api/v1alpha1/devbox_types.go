@@ -55,6 +55,17 @@ type RuntimeRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 }
+type RunSpec struct {
+	// +kubebuilder:validation:Optional
+	Env []corev1.EnvVar `json:"env"`
+}
+
+type ScheduleSpec struct {
+	// +kubebuilder:validation:Optional
+	Tolerations []corev1.Toleration
+	// +kubebuilder:validation:Optional
+	Affinity corev1.Affinity
+}
 
 type NetworkSpec struct {
 	// +kubebuilder:validation:Required
@@ -78,6 +89,10 @@ type DevboxSpec struct {
 	RuntimeRef RuntimeRef `json:"runtimeRef"`
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network"`
+	// +kubebuilder:validation:Optional
+	RunSpec RunSpec `json:"run"`
+	// +kubebuilder:validation:Optional
+	ScheduleSpec ScheduleSpec `json:"schedule"`
 }
 
 type NetworkStatus struct {

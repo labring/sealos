@@ -53,7 +53,7 @@ const (
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
 	CommitImageRegistry string
-
+	EquatorialStorage   string
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -384,6 +384,7 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 			},
 		},
 	}
+	envs = append(envs, devbox.Spec.RunSpec.Env...)
 
 	//get image name
 	imageName, err := r.getLastSuccessCommitImageName(ctx, devbox)
@@ -405,8 +406,9 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 					},
 				),
 				Limits: corev1.ResourceList{
-					"cpu":    devbox.Spec.Resource["cpu"],
-					"memory": devbox.Spec.Resource["memory"],
+					"cpu":               devbox.Spec.Resource["cpu"],
+					"memory":            devbox.Spec.Resource["memory"],
+					"ephemeral-storage": resource.MustParse(r.EquatorialStorage),
 				},
 			},
 			VolumeMounts: []corev1.VolumeMount{
@@ -445,6 +447,8 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 			Volumes:                       volume,
 			TerminationGracePeriodSeconds: ptr.To(int64(terminationGracePeriodSeconds)),
 			AutomountServiceAccountToken:  ptr.To(automountServiceAccountToken),
+			Tolerations:                   devbox.Spec.ScheduleSpec.Tolerations,
+			Affinity:                      &devbox.Spec.ScheduleSpec.Affinity,
 		},
 	}
 	if err = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme); err != nil {
