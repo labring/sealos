@@ -64,6 +64,7 @@ const useAppStore = create<TOSState>()(
         maxZIndex: 10,
         launchQuery: {},
         autolaunch: '',
+        autolaunchWorkspaceUid: '',
         runner: new AppStateManager([]),
         async init() {
           const res = await request('/api/desktop/getInstalledApps');
@@ -191,16 +192,18 @@ const useAppStore = create<TOSState>()(
           const appToDelete = minBy(get().runningInfo, (app) => app.zIndex);
           get().runningInfo = get().runningInfo.filter((app) => app.pid !== appToDelete?.pid);
         },
-        setAutoLaunch(autolaunch, launchQuery) {
+        setAutoLaunch(autolaunch, launchQuery, autolaunchWorkspaceUid) {
           set((state) => {
             state.autolaunch = autolaunch;
             state.launchQuery = launchQuery;
+            state.autolaunchWorkspaceUid = autolaunchWorkspaceUid;
           });
         },
         cancelAutoLaunch: () => {
           set((state) => {
             state.autolaunch = '';
             state.launchQuery = {};
+            state.autolaunchWorkspaceUid = '';
           });
         }
       })),

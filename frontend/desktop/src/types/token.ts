@@ -14,3 +14,9 @@ export type CronJobTokenPayload = {
   mergeUserUid: string;
   userUid: string;
 };
+export type BillingTokenPayload = AuthenticationTokenPayload;
+
+export type OnceTokenPayload = {
+  userUid: string;
+  type: 'deleteUser';
+};

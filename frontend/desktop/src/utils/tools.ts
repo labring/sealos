@@ -1,10 +1,9 @@
-import { InvitedStatus, UserNsStatus, UserRole } from '@/types/team';
-import dayjs from 'dayjs';
-import { JoinStatus, Role } from 'prisma/region/generated/client';
-import { Prisma as GlobalPrisma } from 'prisma/global/generated/client';
-import { OauthProvider } from '@/types/user';
-import { Prisma } from '@prisma/client/extension';
 import { globalPrisma } from '@/services/backend/db/init';
+import { InvitedStatus, UserRole } from '@/types/team';
+import { Prisma } from '@prisma/client/extension';
+import dayjs from 'dayjs';
+import { Prisma as GlobalPrisma } from 'prisma/global/generated/client';
+import { JoinStatus, Role } from 'prisma/region/generated/client';
 
 export const validateNumber = (num: number) => typeof num === 'number' && isFinite(num) && num > 0;
 
@@ -72,7 +71,6 @@ export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
 export const vaildManage = (ownRole: UserRole) => (targetRole: UserRole, isSelf: boolean) => {
   if (targetRole === UserRole.Owner) return [UserRole.Owner].includes(ownRole); // only owner
   else if (targetRole === UserRole.Manager)
-    //
     return [UserRole.Owner, ...(isSelf ? [UserRole.Manager] : [])].includes(ownRole);
   // manager via self
   else if (targetRole === UserRole.Developer)

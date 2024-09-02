@@ -1,16 +1,18 @@
+import { getRegionToken } from '@/api/auth';
+import { nsListRequest, switchRequest } from '@/api/namespace';
+import useAppStore from '@/stores/app';
+import useSessionStore from '@/stores/session';
+import { AccessTokenPayload } from '@/types/token';
+import { parseOpenappQuery } from '@/utils/format';
+import { sessionConfig } from '@/utils/sessionConfig';
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
+import { Flex, Spinner } from '@chakra-ui/react';
+import { useMutation } from '@tanstack/react-query';
+import { jwtDecode } from 'jwt-decode';
+import { isString } from 'lodash';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import useSessionStore from '@/stores/session';
-import { Flex, Spinner } from '@chakra-ui/react';
-import { getRegionToken } from '@/api/auth';
-import { isString } from 'lodash';
-import { jwtDecode } from 'jwt-decode';
-import { AccessTokenPayload } from '@/types/token';
-import { sessionConfig } from '@/utils/sessionConfig';
-import { useMutation } from '@tanstack/react-query';
-import { nsListRequest, switchRequest } from '@/api/namespace';
-import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 const Callback: NextPage = () => {
   const router = useRouter();
@@ -18,6 +20,7 @@ const Callback: NextPage = () => {
   const delSession = useSessionStore((s) => s.delSession);
   const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
+  const { setAutoLaunch } = useAppStore();
 
   const mutation = useMutation({
     mutationFn: switchRequest,
@@ -36,6 +39,13 @@ const Callback: NextPage = () => {
 
   useEffect(() => {
     if (!router.isReady) return;
+    const { query } = router;
+    const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
+    let workspaceUid: string | undefined;
+    if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
+    if (appkey && typeof appQuery === 'string') {
+      setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
+    }
     (async () => {
       try {
         if (!!curToken) {

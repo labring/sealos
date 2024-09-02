@@ -1,13 +1,19 @@
+import { JWTPayload } from '@/types';
+import {
+  AccessTokenPayload,
+  AuthenticationTokenPayload,
+  BillingTokenPayload,
+  CronJobTokenPayload,
+  OnceTokenPayload
+} from '@/types/token';
 import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
-import { JWTPayload } from '@/types';
-import { AuthenticationTokenPayload, AccessTokenPayload, CronJobTokenPayload } from '@/types/token';
 
 const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 const grobalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
 const regionalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.regional || '123456789';
 const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '123456789';
-
+const billingJwtSecret = () => global.AppConfig?.desktop.auth.jwt.billing || '123456789';
 const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
@@ -57,12 +63,18 @@ export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?
       }
     });
   });
+
+export const generateBillingToken = (props: BillingTokenPayload) =>
+  sign(props, billingJwtSecret(), { expiresIn: '3600000' });
 export const generateAccessToken = (props: AccessTokenPayload) =>
   sign(props, regionalJwtSecret(), { expiresIn: '7d' });
 export const generateAppToken = (props: AccessTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '7d' });
 export const generateAuthenticationToken = (props: AuthenticationTokenPayload) =>
   sign(props, grobalJwtSecret(), { expiresIn: '60000' });
+
+export const generateOnceToken = (props: OnceTokenPayload) =>
+  sign(props, regionalJwtSecret(), { expiresIn: '1800000' });
 
 export const generateCronJobToken = (props: CronJobTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '60000' });

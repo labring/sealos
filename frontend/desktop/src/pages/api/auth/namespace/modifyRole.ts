@@ -1,12 +1,12 @@
 import { verifyAccessToken } from '@/services/backend/auth';
+import { prisma } from '@/services/backend/db/init';
 import { jsonRes } from '@/services/backend/response';
 import { modifyBinding, modifyWorkspaceRole } from '@/services/backend/team';
 import { UserRole } from '@/types/team';
 import { isUserRole, roleToUserRole, vaildManage } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/services/backend/db/init';
-import { validate } from 'uuid';
 import { JoinStatus } from 'prisma/region/generated/client';
+import { validate } from 'uuid';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 400, message: 'ns_uid is invalid' });
     if (targetUserCrUid === payload.userCrUid)
       return jsonRes(res, { code: 403, message: 'target user is not self' });
-    // 翻出utn
+    //  get utn
     const queryResults = await prisma.userWorkspace.findMany({
       where: {
         workspaceUid: ns_uid,
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!vaildFn(roleToUserRole(targetUser.role), targetUser.userCrUid === own.userCrUid))
       return jsonRes(res, { code: 403, message: 'you are not manager' });
 
-    // 权限一致，不用管
+    // if role is same, do nothing
     if (roleToUserRole(targetUser.role) === tRole)
       return jsonRes(res, { code: 200, message: 'Successfully' });
 

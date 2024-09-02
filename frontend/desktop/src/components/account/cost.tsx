@@ -1,9 +1,8 @@
+import { getAmount } from '@/api/auth';
 import { getUserBilling } from '@/api/platform';
-import request from '@/services/request';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
-import { ApiResp } from '@/types';
 import { formatMoney } from '@/utils/format';
 import {
   Accordion,
@@ -22,10 +21,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Decimal } from 'decimal.js';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
+import CustomTooltip from '../AppDock/CustomTooltip';
 import { blurBackgroundStyles } from '../desktop_content';
 import Monitor from '../desktop_content/monitor';
 import { ClockIcon, DesktopSealosCoinIcon, HelpIcon, InfiniteIcon } from '../icons';
-import CustomTooltip from '../AppDock/CustomTooltip';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -38,10 +37,7 @@ export default function Cost() {
 
   const { data } = useQuery({
     queryKey: ['getAmount', { userId: user?.userCrUid }],
-    queryFn: () =>
-      request<any, ApiResp<{ balance: number; deductionBalance: number }>>(
-        '/api/account/getAmount'
-      ),
+    queryFn: getAmount,
     enabled: !!user,
     staleTime: 60 * 1000
   });

@@ -20,7 +20,6 @@ export default class AppStateManager {
   constructor(apps: string[]) {
     this.loadApps(apps || []);
     this.openedApps = [];
-    // this.currentPid = -1;
   }
   suspendApp(pid: number) {
     const _state = this.findState(pid);

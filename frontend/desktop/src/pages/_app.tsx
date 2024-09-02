@@ -1,23 +1,21 @@
+import { useConfigStore } from '@/stores/config';
 import { theme } from '@/styles/chakraTheme';
 import '@/styles/globals.scss';
 import { getCookie } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
+import '@sealos/driver/src/driver.css';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Router from 'next/router';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
-import '@sealos/driver/src/driver.css';
 import { useEffect } from 'react';
-import { useConfigStore } from '@/stores/config';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // refetchOnWindowFocus: false,
       retry: false
-      // cacheTime: 0
     }
   }
 });

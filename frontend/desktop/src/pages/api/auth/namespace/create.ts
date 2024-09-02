@@ -1,20 +1,19 @@
+import { verifyAccessToken } from '@/services/backend/auth';
+import { prisma } from '@/services/backend/db/init';
 import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
+import { get_k8s_username } from '@/services/backend/regionAuth';
 import { jsonRes } from '@/services/backend/response';
 import { bindingRole, modifyWorkspaceRole } from '@/services/backend/team';
 import { getTeamLimit } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/services/backend/db/init';
-import { get_k8s_username } from '@/services/backend/regionAuth';
-import { verifyAccessToken } from '@/services/backend/auth';
 
 const TEAM_LIMIT = getTeamLimit();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    // const { user: tokenUser } = payload;
     const { teamName } = req.body as { teamName?: string };
     if (!teamName) return jsonRes(res, { code: 400, message: 'teamName is required' });
     const currentNamespaces = await prisma.userWorkspace.findMany({

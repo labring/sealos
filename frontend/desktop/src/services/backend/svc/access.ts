@@ -1,9 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '../response';
-import { ProviderType } from 'prisma/global/generated/client';
-import { getGlobalToken } from '../globalAuth';
-import { use } from 'react';
 import { SemData } from '@/types/sem';
+import { NextApiResponse } from 'next';
+import { ProviderType, UserStatus } from 'prisma/global/generated/client';
+import { globalPrisma } from '../db/init';
+import { getGlobalToken } from '../globalAuth';
+import { jsonRes } from '../response';
 
 export const getGlobalTokenSvc =
   (
@@ -101,3 +101,23 @@ export const getGlobalTokenByGoogleSvc = (
     semData,
     bdVid
   );
+
+export const checkUserStatusSvc =
+  (userUid: string) => async (res: NextApiResponse, next?: () => void) => {
+    const user = await globalPrisma.user.findUnique({
+      where: {
+        uid: userUid,
+        status: UserStatus.NORMAL_USER
+      }
+    });
+    if (!user)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    jsonRes(res, {
+      code: 200,
+      message: 'Successfully'
+    });
+    next?.();
+  };

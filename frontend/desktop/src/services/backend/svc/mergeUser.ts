@@ -1,10 +1,10 @@
-import { NextApiResponse } from 'next';
-import { jsonRes } from '../response';
-import { globalPrisma } from '../db/init';
-import { v4 } from 'uuid';
-import { TransactionType, TransactionStatus, AuditAction } from 'prisma/global/generated/client';
-import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { MergeUserEvent } from '@/types/db/event';
+import { USER_MERGE_STATUS } from '@/types/response/merge';
+import { NextApiResponse } from 'next';
+import { TransactionStatus, TransactionType, UserStatus } from 'prisma/global/generated/client';
+import { v4 } from 'uuid';
+import { globalPrisma } from '../db/init';
+import { jsonRes } from '../response';
 
 export const mergeUserSvc =
   (userUid: string, mergeUserUid: string) => async (res: NextApiResponse) => {
@@ -66,6 +66,23 @@ export const mergeUserSvc =
           }
         });
       }
+      await tx.user.update({
+        where: { uid: mergeUserUid },
+        data: {
+          status: UserStatus.DELETE_USER
+        }
+      });
+      // Log the delete event
+      await tx.eventLog.create({
+        data: {
+          eventName: MergeUserEvent['<MERGE_USER>_SET_DELETE_USER'],
+          mainId: userUid,
+          data: JSON.stringify({
+            mergeUserUid,
+            message: 'Delete merge process'
+          })
+        }
+      });
       await tx.precommitTransaction.create({
         data: {
           uid: txUid,

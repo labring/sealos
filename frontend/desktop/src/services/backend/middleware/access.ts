@@ -1,7 +1,7 @@
-import { jsonRes } from '../response';
+import { AccessTokenPayload, AuthenticationTokenPayload } from '@/types/token';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAccessToken, verifyAuthenticationToken } from '../auth';
-import { AccessTokenPayload, AuthenticationTokenPayload } from '@/types/token';
+import { jsonRes } from '../response';
 
 export const filterAccessToken = async (
   req: NextApiRequest,

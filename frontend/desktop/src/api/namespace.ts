@@ -3,7 +3,6 @@ import { ApiResp } from '@/types';
 import { NamespaceDto, UserRole, teamMessageDto } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import { AxiosInstance } from 'axios';
-import { Session } from 'sealos-desktop-sdk/*';
 
 export const _abdicateRequest =
   (request: AxiosInstance) => (data: { ns_uid: string; targetUserCrUid: string }) =>

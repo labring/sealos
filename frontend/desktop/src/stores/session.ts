@@ -1,8 +1,8 @@
+import { Session, sessionKey } from '@/types';
+import { OauthProvider } from '@/types/user';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { Session, sessionKey } from '@/types';
-import { OauthProvider } from '@/types/user';
 type StatePayload = {
   rad: string;
   action: OauthAction;
@@ -67,7 +67,6 @@ const useSessionStore = create<SessionState>()(
       compareState: (state: string) => {
         // fix wechat
         let isSuccess = decodeURIComponent(state) === decodeURIComponent(get().oauth_state);
-        console.log(state, get().oauth_state);
         const [action, ...statePayload] = state.split('_');
         set({ oauth_state: undefined });
         return {
