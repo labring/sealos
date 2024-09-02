@@ -71,13 +71,43 @@ type DevboxSpec struct {
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource ResourceList `json:"resource"`
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
 	Squash bool `json:"squash"`
+
 	// +kubebuilder:validation:Required
 	RuntimeRef RuntimeRef `json:"runtimeRef"`
+
 	// +kubebuilder:validation:Required
-	NetworkSpec NetworkSpec `json:"network"`
+	NetworkSpec NetworkSpec `json:"network,omitempty"`
+
+	// todo add rewrite labels and annotations...
+	// +kubebuilder:validation:Optional
+	ExtraLabels map[string]string `json:"extraLabels,omitempty"`
+	// +kubebuilder:validation:Optional
+	ExtraAnnotations map[string]string `json:"extraAnnotations,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Command []string `json:"command,omitempty"`
+	// +kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
+	// +kubebuilder:validation:Optional
+	WorkingDir string `json:"workingDir,omitempty"`
+	// todo add rewrite env...
+	// +kubebuilder:validation:Optional
+	ExtraEnvs []corev1.EnvVar `json:"extraEnvs"`
+
+	// todo add rewrite volumes and volume mounts..
+	// +kubebuilder:validation:Optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+	// +kubebuilder:validation:Optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// +kubebuilder:validation:Optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 type NetworkStatus struct {
@@ -121,6 +151,11 @@ type DevboxStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".spec.state"
+// +kubebuilder:printcolumn:name="RuntimeRef",type="string",JSONPath=".spec.runtimeRef.name"
+// +kubebuilder:printcolumn:name="PodPhase",type="string",JSONPath=".status.podPhase"
+// +kubebuilder:printcolumn:name="NetworkType",type="string",JSONPath=".status.network.type"
+// +kubebuilder:printcolumn:name="NodePort",type="integer",JSONPath=".status.network.nodePort"
 
 // Devbox is the Schema for the devboxes API
 type Devbox struct {

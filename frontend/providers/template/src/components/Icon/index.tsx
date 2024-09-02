@@ -37,7 +37,8 @@ const map = {
   empty: require('./icons/empty.svg').default,
   dev: require('./icons/dev.svg').default,
   eyeShow: require('./icons/eyeShow.svg').default,
-  tool: require('./icons/tool.svg').default
+  tool: require('./icons/tool.svg').default,
+  help: require('./icons/help.svg').default
 };
 
 const MyIcon = ({

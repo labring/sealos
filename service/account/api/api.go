@@ -874,3 +874,44 @@ func GetInvoicePayment(c *gin.Context) {
 		"data": payments,
 	})
 }
+
+// UseGiftCode
+// @Summary Use a gift code
+// @Description Redeem a gift code and apply the credit to the user's account
+// @Tags UseGiftCode
+// @Accept json
+// @Produce json
+// @Param request body helper.UseGiftCodeReq true "Use gift code request"
+// @Success 200 {object} helper.UseGiftCodeResp "Successfully redeemed gift code"
+// @Failure 400 {object} helper.ErrorMessage "Failed to parse use gift code request"
+// @Failure 401 {object} helper.ErrorMessage "Authentication error"
+// @Failure 500 {object} helper.ErrorMessage "Failed to redeem gift code"
+// @Router /account/v1alpha1/gift-code/use [post]
+func UseGiftCode(c *gin.Context) {
+	// Parse the use gift code request
+	req, err := helper.ParseUseGiftCodeReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse use gift code request: %v", err)})
+		return
+	}
+
+	// Check authentication
+	if err := CheckAuthAndCalibrate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)})
+		return
+	}
+
+	// Use the gift code (to be implemented)
+	if _, err := dao.DBClient.UseGiftCode(req); err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to use gift code: %v", err)})
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK, helper.UseGiftCodeResp{
+		Data: helper.UseGiftCodeRespData{
+			UserID: req.UserID,
+		},
+		Message: "Gift code successfully redeemed",
+	})
+}

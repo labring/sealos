@@ -22,3 +22,17 @@ export type Session = {
 const sessionKey = 'session';
 
 export { sessionKey };
+
+export type UserQuotaItemType = {
+  type: 'cpu' | 'memory' | 'storage' | 'gpu';
+  used: number;
+  limit: number;
+};
+
+export type userPriceType = {
+  cpu: number;
+  memory: number;
+  storage: number;
+  nodeports: number;
+  gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
+};

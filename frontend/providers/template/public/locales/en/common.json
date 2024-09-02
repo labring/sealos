@@ -7,6 +7,13 @@
   "Advanced Configuration": "Advanced",
   "Age": "Uptime",
   "AnticipatedPrice": "Estimated Cost",
+  "app": {
+    "Resource Quota": "Resource Quota",
+    "The applied CPU exceeds the quota": "Requested CPU exceeds your quota. Please contact admin.",
+    "The applied GPU exceeds the quota": "Requested GPU exceeds your quota. Please contact admin.",
+    "The applied memory exceeds the quota": "Requested storage exceeds your quota. Please contact admin.",
+    "The applied storage exceeds the quota": "The applied storage exceeds the quota"
+  },
   "App Name": "App Name",
   "Application Deployment": "App Deployment",
   "Application List": " App List",
@@ -17,6 +24,7 @@
   "Auto scaling": "Scaling",
   "Basic Information": "Basic",
   "Button Effect": "Button Appearance",
+  "cpu": "CPU",
   "CPU": "CPU",
   "CPU target is the CPU utilization rate of any container": "CPU target represents the CPU utilization rate of any container",
   "CPU target value": "CPU Target",
@@ -25,6 +33,10 @@
   "Command": "Command",
   "Command parameters": "Command parameters",
   "Component": "Component",
+  "common": {
+    "Surplus": "Surplus",
+    "Used": "Used"
+  },
   "Config Form": "Form",
   "ConfigMap Path Conflict": "ConfigMap Path Conflict",
   "Configuration File": "Configmap",
@@ -67,6 +79,7 @@
   "File Value can not empty": "File content is required",
   "Filename can not empty": "File name is required",
   "Fixed instance": "Fixed",
+  "gpu": "GPU",
   "Heading to sealos soon": "Redirecting to Sealos shortly",
   "Home Page": "Project Home",
   "Html Part": "HTML Snippet",
@@ -89,6 +102,7 @@
   "Log": "Log",
   "Markdown Part": "Markdown Snippet",
   "Max Storage Value": "Maximum storage: ",
+  "memory": "Memory",
   "Memory": "Memory",
   "Memory target value": "Memory Target",
   "Min Storage Value": "Minimum storage: ",
@@ -96,6 +110,7 @@
   "Name": "Name",
   "Network Configuration": "Network",
   "Next Execution Time": "Next Scheduled",
+  "Port": "Port",
   "No Applications": "No Apps Available",
   "None": "None",
   "Not Configured": "Not Configured",
@@ -154,6 +169,7 @@
   "Stateful": "Stateful",
   "Stateless": "Stateless",
   "Status": "Status",
+  "storage": "Storage",
   "Storage": "Storage",
   "Storage Range": "Storage Range",
   "Storage Value can not empty": "Storage capacity is required",
@@ -165,6 +181,7 @@
   "Templates": "Template Marketplace",
   "Terminal": "Terminal",
   "There is no resource of this type": "No resources of this type available",
+  "Total": "Total",
   "TotalPrice": "Total Price",
   "Type": "Type",
   "Unload": "Uninstall",
@@ -213,5 +230,6 @@
   "success": "success",
   "target_value": "Target Value",
   "users installed the app": "{{count}} users have installed this app",
-  "websocket": "WebSocket"
+  "websocket": "WebSocket",
+  "total_price_tip": "The estimated cost does not include port fees and traffic fees, and is subject to actual usage."
 }

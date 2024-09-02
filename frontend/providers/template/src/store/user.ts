@@ -4,7 +4,7 @@ import { immer } from 'zustand/middleware/immer';
 import { UserQuotaItemType } from '@/types/user';
 import { getUserQuota, getResourcePrice } from '@/api/platform';
 import type { userPriceType } from '@/types/user';
-import { AppEditType } from '@/types/app';
+import { CheckQuotaType } from '@/types/app';
 
 type State = {
   balance: number;
@@ -12,7 +12,7 @@ type State = {
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
-  checkQuotaAllow: (request: AppEditType, usedData?: AppEditType) => string;
+  checkQuotaAllow: (request: CheckQuotaType, usedData?: CheckQuotaType) => string;
 };
 
 let retryGetPrice = 3;
@@ -45,29 +45,30 @@ export const useUserStore = create<State>()(
         const response = await getUserQuota();
         set((state) => {
           state.userQuota = response.quota;
-          state.balance = parseFloat(response.balance);
+          state.balance = response.balance;
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, gpu, storeList, replicas, hpa }, usedData) => {
+      checkQuotaAllow: (
+        { cpu, memory, storage, gpu }: CheckQuotaType,
+        usedData?: CheckQuotaType
+      ) => {
         const quote = get().userQuota;
 
-        const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
         const request = {
-          cpu: (cpu / 1000) * requestReplicas,
-          memory: (memory / 1024) * requestReplicas,
-          gpu: (gpu?.type ? gpu.amount : 0) * requestReplicas,
-          storage: storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas
+          cpu: cpu / 1000,
+          memory: memory / 1024,
+          gpu: gpu?.type ? gpu.amount : 0,
+          storage: storage
         };
 
         if (usedData) {
-          const { cpu, memory, gpu, storeList, replicas, hpa } = usedData;
-          const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
+          const { cpu, memory, gpu, storage } = usedData;
 
-          request.cpu -= (cpu / 1000) * requestReplicas;
-          request.memory -= (memory / 1024) * requestReplicas;
-          request.gpu -= (gpu?.type ? gpu.amount : 0) * requestReplicas;
-          request.storage -= storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas;
+          request.cpu -= cpu / 1000;
+          request.memory -= memory / 1024;
+          request.gpu -= gpu?.type ? gpu.amount : 0;
+          request.storage -= storage;
         }
 
         const overLimitTip = {

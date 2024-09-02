@@ -561,6 +561,43 @@ definitions:
     required:
     - toUser
     type: object
+  helper.UseGiftCodeReq:
+    properties:
+      code:
+        description: |-
+          @Summary Gift code to be used
+          @Description The code of the gift card to be redeemed
+          @JSONSchema required
+        example: HAPPY2024
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+    required:
+    - code
+    type: object
+  helper.UseGiftCodeResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.UseGiftCodeRespData'
+      message:
+        example: Gift code successfully redeemed
+        type: string
+    type: object
+  helper.UseGiftCodeRespData:
+    properties:
+      userID:
+        example: user-123
+        type: string
+    type: object
   helper.UserBaseReq:
     properties:
       endTime:
@@ -1093,6 +1130,40 @@ paths:
       summary: Get transfer
       tags:
       - Transfer
+  /account/v1alpha1/gift-code/use:
+    post:
+      consumes:
+      - application/json
+      description: Redeem a gift code and apply the credit to the user's account
+      parameters:
+      - description: Use gift code request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UseGiftCodeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully redeemed gift code
+          schema:
+            $ref: '#/definitions/helper.UseGiftCodeResp'
+        "400":
+          description: Failed to parse use gift code request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: Authentication error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: Failed to redeem gift code
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Use a gift code
+      tags:
+      - UseGiftCode
   /account/v1alpha1/invoice/apply:
     post:
       consumes:
