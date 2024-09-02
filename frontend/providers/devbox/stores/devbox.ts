@@ -25,6 +25,11 @@ export const useDevboxStore = create<State>()(
       setDevboxList: async () => {
         const res = await getMyDevboxList()
 
+        // order by createTime
+        res.sort((a, b) => {
+          return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+        })
+
         set((state) => {
           state.devboxList = res
         })

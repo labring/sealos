@@ -283,7 +283,7 @@ const Form = ({
                 </Label>
                 <Flex direction={'column'} gap={'10px'}>
                   {/* Language */}
-                  {languageTypeList && <Box>{t('language')}</Box>}
+                  {languageTypeList.length !== 0 && <Box>{t('language')}</Box>}
                   <Flex flexWrap={'wrap'} gap={'12px'}>
                     {languageTypeList &&
                       languageTypeList?.map((item) => {
@@ -339,7 +339,7 @@ const Form = ({
                       })}
                   </Flex>
                   {/* framework */}
-                  {frameworkTypeList && <Box>{t('framework')}</Box>}
+                  {frameworkTypeList.length !== 0 && <Box>{t('framework')}</Box>}
                   <Flex flexWrap={'wrap'} gap={'12px'}>
                     {frameworkTypeList &&
                       frameworkTypeList?.map((item) => {
@@ -395,7 +395,7 @@ const Form = ({
                       })}
                   </Flex>
                   {/* os */}
-                  {osTypeList && <Box>{t('os')}</Box>}
+                  {osTypeList.length !== 0 && <Box>{t('os')}</Box>}
                   <Flex flexWrap={'wrap'} gap={'12px'}>
                     {osTypeList &&
                       osTypeList?.map((item) => {
