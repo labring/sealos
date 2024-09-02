@@ -75,7 +75,7 @@ func (manager *JWTManager) VerifyToken(tokenString string) (*UserClaims, error) 
 func (manager *JWTManager) ParseUser(c *gin.Context) (*JwtUser, error) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
-		return nil, fmt.Errorf("missing token")
+		return nil, ErrNullAuth
 	}
 	token := strings.TrimPrefix(tokenString, "Bearer ")
 
