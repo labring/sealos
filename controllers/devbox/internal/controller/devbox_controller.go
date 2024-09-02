@@ -209,7 +209,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	}()
 
 	nextCommitHistory := r.generateNextCommitHistory(devbox)
-	expectPod, err := r.generateDevboxPod(ctx, devbox, runtime, nextCommitHistory)
+	expectPod, err := r.generateDevboxPod(devbox, runtime, nextCommitHistory)
 	if err != nil {
 		logger.Error(err, "generate pod failed")
 		return err
@@ -344,7 +344,7 @@ func (r *DevboxReconciler) updateDevboxCommitHistory(ctx context.Context, devbox
 	return nil
 }
 
-func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime, nextCommitHistory *devboxv1alpha1.CommitHistory) (*corev1.Pod, error) {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime, nextCommitHistory *devboxv1alpha1.CommitHistory) (*corev1.Pod, error) {
 	objectMeta := metav1.ObjectMeta{
 		Name:        nextCommitHistory.Pod,
 		Namespace:   devbox.Namespace,
@@ -480,14 +480,6 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	devbox.Status.Network.NodePort = nodePort
 
 	return r.Status().Update(ctx, devbox)
-}
-
-func (r *DevboxReconciler) getRecLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
-	return label.RecommendedLabels(&label.Recommended{
-		Name:      devbox.Name,
-		ManagedBy: label.DefaultManagedBy,
-		PartOf:    DevBoxPartOf,
-	})
 }
 
 func (r *DevboxReconciler) generateNextCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
