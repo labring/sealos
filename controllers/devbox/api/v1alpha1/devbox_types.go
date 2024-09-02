@@ -55,17 +55,6 @@ type RuntimeRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 }
-type RunSpec struct {
-	// +kubebuilder:validation:Optional
-	Env []corev1.EnvVar `json:"env"`
-}
-
-type ScheduleSpec struct {
-	// +kubebuilder:validation:Optional
-	Tolerations []corev1.Toleration
-	// +kubebuilder:validation:Optional
-	Affinity corev1.Affinity
-}
 
 type NetworkSpec struct {
 	// +kubebuilder:validation:Required
@@ -82,17 +71,43 @@ type DevboxSpec struct {
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource ResourceList `json:"resource"`
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
 	Squash bool `json:"squash"`
+
 	// +kubebuilder:validation:Required
 	RuntimeRef RuntimeRef `json:"runtimeRef"`
+
 	// +kubebuilder:validation:Required
-	NetworkSpec NetworkSpec `json:"network"`
+	NetworkSpec NetworkSpec `json:"network,omitempty"`
+
+	// todo add rewrite labels and annotations...
 	// +kubebuilder:validation:Optional
-	RunSpec RunSpec `json:"run"`
+	ExtraLabels map[string]string `json:"extraLabels,omitempty"`
 	// +kubebuilder:validation:Optional
-	ScheduleSpec ScheduleSpec `json:"schedule"`
+	ExtraAnnotations map[string]string `json:"extraAnnotations,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Command []string `json:"command,omitempty"`
+	// +kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
+	// +kubebuilder:validation:Optional
+	WorkingDir string `json:"workingDir,omitempty"`
+	// todo add rewrite env...
+	// +kubebuilder:validation:Optional
+	ExtraEnvs []corev1.EnvVar `json:"extraEnvs"`
+
+	// todo add rewrite volumes and volume mounts..
+	// +kubebuilder:validation:Optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+	// +kubebuilder:validation:Optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// +kubebuilder:validation:Optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 type NetworkStatus struct {

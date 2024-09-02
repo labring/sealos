@@ -26,7 +26,6 @@ import (
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -34,6 +33,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,9 +44,7 @@ import (
 )
 
 const (
-	rate          = 10
 	FinalizerName = "devbox.sealos.io/finalizer"
-	Devbox        = "devbox"
 	DevBoxPartOf  = "devbox"
 )
 
@@ -54,6 +52,7 @@ const (
 type DevboxReconciler struct {
 	CommitImageRegistry string
 	EquatorialStorage   string
+
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -135,7 +134,8 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	logger.Info("create devbox success", "devbox", devbox.Name)
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Created", "create devbox success: %v", devbox.ObjectMeta.Name)
-	return ctrl.Result{Requeue: false}, nil
+
+	return ctrl.Result{}, nil
 }
 
 func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
@@ -195,17 +195,30 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
 		return fmt.Errorf("more than one pod found")
 	}
+	runtime := &devboxv1alpha1.Runtime{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Spec.RuntimeRef.Name}, runtime); err != nil {
+		return err
+	}
+
+	// update devbox pod phase
+	defer func() {
+		if len(podList.Items) == 1 {
+			devbox.Status.DevboxPodPhase = podList.Items[0].Status.Phase
+			_ = r.Status().Update(ctx, devbox)
+		}
+	}()
+
+	nextCommitHistory := r.generateNextCommitHistory(devbox)
+	expectPod, err := r.generateDevboxPod(devbox, runtime, nextCommitHistory)
+	if err != nil {
+		logger.Error(err, "generate pod failed")
+		return err
+	}
 
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
 		// check pod status, if no pod found, create a new one, with finalizer and controller reference
 		if len(podList.Items) == 0 {
-			nextCommitHistory := r.generateNextCommitHistory(devbox)
-			expectPod, err := r.generateDevboxPod(ctx, devbox, nextCommitHistory)
-			if err != nil {
-				logger.Error(err, "generate pod failed")
-				return err
-			}
 			if err := r.Create(ctx, expectPod); err != nil {
 				logger.Error(err, "create pod failed")
 				return err
@@ -239,12 +252,12 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				if removeFlag {
 					return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 				}
-				if !helper.CheckPodConsistency(devbox, &podList.Items[0]) {
+				if !helper.CheckPodConsistency(expectPod, &podList.Items[0]) {
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 			case corev1.PodRunning:
 				//if pod is running,check pod need restart
-				if !helper.CheckPodConsistency(devbox, &podList.Items[0]) {
+				if !helper.CheckPodConsistency(expectPod, &podList.Items[0]) {
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
@@ -264,7 +277,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 			}
 		}
-
 	case devboxv1alpha1.DevboxStateStopped:
 		// check pod status, if no pod found, do nothing
 		if len(podList.Items) == 0 {
@@ -332,123 +344,67 @@ func (r *DevboxReconciler) updateDevboxCommitHistory(ctx context.Context, devbox
 	return nil
 }
 
-func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) (*corev1.Pod, error) {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime, nextCommitHistory *devboxv1alpha1.CommitHistory) (*corev1.Pod, error) {
 	objectMeta := metav1.ObjectMeta{
-		Name:      nextCommitHistory.Pod,
-		Namespace: devbox.Namespace,
-		Labels:    r.getRecLabels(devbox),
+		Name:        nextCommitHistory.Pod,
+		Namespace:   devbox.Namespace,
+		Labels:      helper.GeneratePodLabels(devbox, runtime),
+		Annotations: helper.GeneratePodAnnotations(devbox, runtime),
 	}
 
-	ports := []corev1.ContainerPort{
-		{
-			Name:          "ssh",
-			Protocol:      corev1.ProtocolTCP,
-			ContainerPort: 22,
-		},
-	}
+	// set up ports and env by using runtime ports and devbox extra ports
+	ports := runtime.Spec.Config.Ports
 	ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
-	envs := []corev1.EnvVar{
-		{
-			Name:  "SEALOS_COMMIT_ON_STOP",
-			Value: "true",
-		},
-		{
-			Name:  "SEALOS_COMMIT_IMAGE_NAME",
-			Value: nextCommitHistory.Image,
-		},
-		{
-			Name:  "SEALOS_COMMIT_IMAGE_SQUASH",
-			Value: fmt.Sprintf("%v", devbox.Spec.Squash),
-		},
-		{
-			Name:  "SEALOS_DEVBOX_NAME",
-			Value: devbox.ObjectMeta.Namespace + devbox.ObjectMeta.Name,
-		},
-		{
-			Name: "SEALOS_DEVBOX_PASSWORD",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					Key: "SEALOS_DEVBOX_PASSWORD",
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: devbox.Name,
-					},
-				},
-			},
-		},
-		{
-			Name: "SEALOS_DEVBOX_POD_UID",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.uid",
-				},
-			},
-		},
-	}
-	envs = append(envs, devbox.Spec.RunSpec.Env...)
+
+	envs := runtime.Spec.Config.Env
+	envs = append(envs, devbox.Spec.ExtraEnvs...)
+	envs = append(envs, helper.GenerateDevboxEnvVars(devbox, nextCommitHistory)...)
 
 	//get image name
-	imageName, err := r.getLastSuccessCommitImageName(ctx, devbox)
+	imageName, err := helper.GetLastSuccessCommitImageName(devbox, runtime)
 	if err != nil {
 		return nil, err
 	}
 
+	volumes := runtime.Spec.Config.Volumes
+	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
+	volumes = append(volumes, devbox.Spec.ExtraVolumes...)
+
+	volumeMounts := runtime.Spec.Config.VolumeMounts
+	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts())
+	volumeMounts = append(volumeMounts, devbox.Spec.ExtraVolumeMounts...)
+
 	containers := []corev1.Container{
 		{
-			Name:  devbox.ObjectMeta.Name,
-			Image: imageName,
-			Ports: ports,
-			Env:   envs,
-			Resources: corev1.ResourceRequirements{
-				Requests: calculateResourceRequest(
-					corev1.ResourceList{
-						corev1.ResourceCPU:    devbox.Spec.Resource["cpu"],
-						corev1.ResourceMemory: devbox.Spec.Resource["memory"],
-					},
-				),
-				Limits: corev1.ResourceList{
-					"cpu":               devbox.Spec.Resource["cpu"],
-					"memory":            devbox.Spec.Resource["memory"],
-					"ephemeral-storage": resource.MustParse(r.EquatorialStorage),
-				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      "devbox-ssh-public-key",
-					MountPath: "/usr/start/.ssh",
-					ReadOnly:  true,
-				},
-			},
+			Name:         devbox.ObjectMeta.Name,
+			Image:        imageName,
+			Env:          envs,
+			Ports:        ports,
+			VolumeMounts: volumeMounts,
+
+			WorkingDir: helper.GenerateWorkingDir(devbox, runtime),
+			Command:    helper.GenerateCommand(devbox, runtime),
+			Args:       helper.GenerateDevboxArgs(devbox, runtime),
+			Resources:  helper.GenerateResourceRequirements(devbox, r.EquatorialStorage),
 		},
 	}
-	volume := []corev1.Volume{
-		{
-			Name: "devbox-ssh-public-key",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: devbox.Name,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
-							Path: "id.pub",
-						},
-					},
-				},
-			},
-		},
-	}
+
 	terminationGracePeriodSeconds := 300
 	automountServiceAccountToken := false
+
 	expectPod := &corev1.Pod{
 		ObjectMeta: objectMeta,
 		Spec: corev1.PodSpec{
-			Hostname:                      devbox.Name,
-			RestartPolicy:                 corev1.RestartPolicyNever,
-			Containers:                    containers,
-			Volumes:                       volume,
 			TerminationGracePeriodSeconds: ptr.To(int64(terminationGracePeriodSeconds)),
 			AutomountServiceAccountToken:  ptr.To(automountServiceAccountToken),
-			Tolerations:                   devbox.Spec.ScheduleSpec.Tolerations,
-			Affinity:                      &devbox.Spec.ScheduleSpec.Affinity,
+			RestartPolicy:                 corev1.RestartPolicyNever,
+
+			Hostname:   devbox.Name,
+			Containers: containers,
+			Volumes:    volumes,
+
+			Tolerations: devbox.Spec.Tolerations,
+			Affinity:    devbox.Spec.Affinity,
 		},
 	}
 	if err = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme); err != nil {
@@ -456,25 +412,6 @@ func (r *DevboxReconciler) generateDevboxPod(ctx context.Context, devbox *devbox
 	}
 	controllerutil.AddFinalizer(expectPod, FinalizerName)
 	return expectPod, nil
-}
-
-func (r *DevboxReconciler) getLastSuccessCommitImageName(ctx context.Context, devbox *devboxv1alpha1.Devbox) (string, error) {
-	// get image name from runtime if commit history is empty
-	rt := &devboxv1alpha1.Runtime{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Spec.RuntimeRef.Name}, rt); err != nil {
-		return "", err
-	}
-	if len(devbox.Status.CommitHistory) == 0 {
-		return rt.Spec.Image, nil
-	}
-	// get image name from commit history, ues the latest commit history
-	for i := len(devbox.Status.CommitHistory) - 1; i >= 0; i-- {
-		if devbox.Status.CommitHistory[i].Status == devboxv1alpha1.CommitStatusSuccess {
-			return devbox.Status.CommitHistory[i].Image, nil
-		}
-	}
-	// if all commit history is failed, get image name from runtime
-	return rt.Spec.Image, nil
 }
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
@@ -545,14 +482,6 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	return r.Status().Update(ctx, devbox)
 }
 
-func (r *DevboxReconciler) getRecLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
-	return label.RecommendedLabels(&label.Recommended{
-		Name:      devbox.Name,
-		ManagedBy: label.DefaultManagedBy,
-		PartOf:    DevBoxPartOf,
-	})
-}
-
 func (r *DevboxReconciler) generateNextCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
 	now := time.Now()
 	return &devboxv1alpha1.CommitHistory{
@@ -566,26 +495,6 @@ func (r *DevboxReconciler) generateNextCommitHistory(devbox *devboxv1alpha1.Devb
 func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
 	now := time.Now()
 	return fmt.Sprintf("%s/%s/%s:%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, now.Format("2006-01-02-150405"))
-}
-
-func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
-	if limit == nil {
-		return nil
-	}
-	request := make(corev1.ResourceList)
-	// Calculate CPU request
-	if cpu, ok := limit[corev1.ResourceCPU]; ok {
-		cpuValue := cpu.AsApproximateFloat64()
-		cpuRequest := cpuValue / rate
-		request[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuRequest*1000), resource.DecimalSI)
-	}
-	// Calculate memory request
-	if memory, ok := limit[corev1.ResourceMemory]; ok {
-		memoryValue := memory.AsApproximateFloat64()
-		memoryRequest := memoryValue / rate
-		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
-	}
-	return request
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -20,7 +20,8 @@ spec:
   classRef: go
   title: go1.22.5
   description: go1.22.5
-  image: ghcr.io/cbluebird/devbox/go1.22.5:9259f1
+  config:
+    image: ghcr.io/cbluebird/devbox/go1.22.5:9259f1
   category:
     - ubuntu
     - go
@@ -33,7 +34,8 @@ spec:
   classRef: go
   title: go1.23.0
   description: go1.23.0
-  image: ghcr.io/cbluebird/devbox/go1.23.0:9259f1
+  config:
+    image: ghcr.io/cbluebird/devbox/go1.23.0:9259f1
   category:
     - ubuntu
     - go
@@ -46,7 +48,8 @@ spec:
   classRef: gin
   title: gin
   description: gin
-  image: ghcr.io/cbluebird/devbox/gin:9259f1
+  config:
+    image: ghcr.io/cbluebird/devbox/gin:9259f1
   category:
     - ubuntu
     - go
@@ -60,7 +63,8 @@ spec:
   classRef: spring-boot
   title: Spring Boot
   description: Spring Boot
-  image: ghcr.io/cbluebird/devbox/spring-boot:9259f1
+  config:
+    image: ghcr.io/cbluebird/devbox/spring-boot:9259f1
   category:
     - ubuntu
     - java
