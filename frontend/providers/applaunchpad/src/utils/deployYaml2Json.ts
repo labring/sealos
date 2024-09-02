@@ -243,142 +243,6 @@ export const json2Service = (data: AppEditType) => {
   return yaml.dump(template);
 };
 
-export const json2NetWorkByType = (type: 'ingress' | 'gateway', data: AppEditType) => {
-  // different protocol annotations
-  const map = {
-    HTTP: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
-      'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
-      'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
-      'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
-      'nginx.ingress.kubernetes.io/proxy-send-timeout': '300',
-      'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
-      'nginx.ingress.kubernetes.io/server-snippet':
-        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
-    },
-    GRPC: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
-      'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
-    },
-    WS: {
-      'nginx.ingress.kubernetes.io/proxy-read-timeout': '3600',
-      'nginx.ingress.kubernetes.io/proxy-send-timeout': '3600',
-      'nginx.ingress.kubernetes.io/backend-protocol': 'WS'
-    }
-  };
-
-  const result = data.networks
-    .filter((item) => item.openPublicDomain)
-    .map((network, i) => {
-      const host = network.customDomain
-        ? network.customDomain
-        : `${network.publicDomain}.${SEALOS_DOMAIN}`;
-
-      const secretName = network.customDomain ? network.networkName : INGRESS_SECRET;
-
-      const ingress = {
-        apiVersion: 'networking.k8s.io/v1',
-        kind: 'Ingress',
-        metadata: {
-          name: network.networkName,
-          labels: {
-            [appDeployKey]: data.appName,
-            [publicDomainKey]: network.publicDomain
-          },
-          annotations: {
-            'kubernetes.io/ingress.class': 'nginx',
-            'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.protocol]
-          }
-        },
-        spec: {
-          rules: [
-            {
-              host,
-              http: {
-                paths: [
-                  {
-                    pathType: 'Prefix',
-                    path: '/',
-                    backend: {
-                      service: {
-                        name: data.appName,
-                        port: {
-                          number: network.port
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
-            }
-          ]
-        }
-      };
-      const issuer = {
-        apiVersion: 'cert-manager.io/v1',
-        kind: 'Issuer',
-        metadata: {
-          name: network.networkName,
-          labels: {
-            [appDeployKey]: data.appName
-          }
-        },
-        spec: {
-          acme: {
-            server: 'https://acme-v02.api.letsencrypt.org/directory',
-            email: 'admin@sealos.io',
-            privateKeySecretRef: {
-              name: 'letsencrypt-prod'
-            },
-            solvers: [
-              {
-                http01: {
-                  ingress: {
-                    class: 'nginx',
-                    serviceType: 'ClusterIP'
-                  }
-                }
-              }
-            ]
-          }
-        }
-      };
-      const certificate = {
-        apiVersion: 'cert-manager.io/v1',
-        kind: 'Certificate',
-        metadata: {
-          name: network.networkName,
-          labels: {
-            [appDeployKey]: data.appName
-          }
-        },
-        spec: {
-          secretName,
-          dnsNames: [network.customDomain],
-          issuerRef: {
-            name: network.networkName,
-            kind: 'Issuer'
-          }
-        }
-      };
-
-      let resYaml = yaml.dump(ingress);
-      if (network.customDomain) {
-        resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
-      }
-      return resYaml;
-    });
-
-  return result.join('\n---\n');
-};
-
 export const json2Ingress = (data: AppEditType) => {
   // different protocol annotations
   const map = {
@@ -563,6 +427,8 @@ export const json2Secret = (data: AppEditType) => {
   return yaml.dump(template);
 };
 export const json2HPA = (data: AppEditType) => {
+  const isDeployment = data.storeList?.length === 0;
+
   const template = {
     apiVersion: 'autoscaling/v2',
     kind: 'HorizontalPodAutoscaler',
@@ -572,7 +438,7 @@ export const json2HPA = (data: AppEditType) => {
     spec: {
       scaleTargetRef: {
         apiVersion: 'apps/v1',
-        kind: 'Deployment',
+        kind: isDeployment ? 'Deployment' : 'StatefulSet',
         name: data.appName
       },
       minReplicas: str2Num(data.hpa?.minReplicas),

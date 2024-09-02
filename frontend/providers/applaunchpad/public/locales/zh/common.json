@@ -258,5 +258,6 @@
   "confirm_to_go": "确认前往",
   "sealaf": "云开发",
   "app_store": "应用商店",
-  "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准"
+  "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准",
+  "nodeports": "外网端口"
 }

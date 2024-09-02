@@ -45,7 +45,7 @@ export const useUserStore = create<State>()(
         const response = await getUserQuota();
         set((state) => {
           state.userQuota = response.quota;
-          state.balance = response.balance;
+          state.balance = parseFloat(response.balance);
         });
         return null;
       },

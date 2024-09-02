@@ -188,6 +188,19 @@ export async function getUserBalance(kc: k8s.KubeConfig) {
 
 export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   const kc = K8sApi(kubeconfig);
+
+  // rewrite exportConfig to stop transform domain to ip
+  kc.exportConfig = () => {
+    const domain = global.AppConfig.cloud.domain;
+    if (!domain) return kubeconfig;
+    const oldKc = yaml.load(kubeconfig);
+    const newServer = `https://${domain}:6443`;
+    //@ts-ignore
+    oldKc.clusters[0].cluster.server = newServer;
+    const newkubeconfig = yaml.dump(oldKc);
+    return newkubeconfig;
+  };
+
   const kube_user = kc.getCurrentUser();
   const client = k8s.KubernetesObjectApi.makeApiClient(kc);
 
