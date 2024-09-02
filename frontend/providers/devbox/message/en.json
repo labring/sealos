@@ -90,6 +90,8 @@
   "start_success": "boot success",
   "status": "Status",
   "submit_form_error": "Form submission error",
+  "submit_release_failed": "The release request failed to be submitted",
+  "submit_release_successful": "The release request was successfully submitted and is being released...",
   "tag_required": "need to input tag",
   "terminal": "Terminal",
   "total": "Total",

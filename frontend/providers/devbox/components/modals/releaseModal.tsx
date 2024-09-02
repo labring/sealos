@@ -61,14 +61,14 @@ const ReleaseModal = ({
         releaseDes
       })
       toast({
-        title: t('release_successful'),
+        title: t('submit_release_successful'),
         status: 'success'
       })
       onSuccess()
       onClose()
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || t('release_failed'),
+        title: typeof error === 'string' ? error : error.message || t('submit_release_failed'),
         status: 'error'
       })
       console.error(error)
