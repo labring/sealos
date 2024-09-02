@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos构建集群镜像, sealos exec, sealos scp, 集群镜像构建, Kubefile, openebs mayastor, flannel部署]
+description: 学习如何使用sealos exec和scp命令构建自定义集群镜像。本文详细介绍了openebs mayastor和flannel的部署过程，帮助开发者轻松创建高效的Kubernetes集群。
 ---
 
 # 使用 exec 和 scp 命令构建集群镜像

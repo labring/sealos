@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos image building, registry sync, image caching, skopeo copy, lightweight registry]
+description: Learn how to enhance Sealos image building with registry sync and skopeo copy for efficient and lightweight image caching.
 ---
 
 # Guide to Image Building Improvement

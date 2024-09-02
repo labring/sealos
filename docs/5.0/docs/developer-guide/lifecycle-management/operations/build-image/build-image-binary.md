@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [build cluster image, sealos tool, helm binary, create Sealfile, push image DockerHub]
+description: Learn how to use the sealos tool to package a binary file like helm into a cluster image, build it, and push it to DockerHub.
 ---
 
 # Building Cluster Images Based on Binary Files

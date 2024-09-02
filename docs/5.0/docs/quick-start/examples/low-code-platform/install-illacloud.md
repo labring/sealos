@@ -1,3 +1,8 @@
+---
+keywords: [low-code platform, ILLA Cloud, Sealos, application deployment, internal applications, drag-and-drop components, open-source]
+description: Quick installation guide for ILLA Cloud, an open-source low-code platform, using Sealos. Learn to deploy and manage internal applications effortlessly.
+---
+
 # Quick installation of ILLA Cloud
 
 [ILLA Cloud](https://www.illacloud.com) is a low-code platform that is open-source, enabling users to create, deploy,

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos create, 集群工作目录, Kubernetes, 镜像审查, Sealos 命令行]
+description: 了解如何使用 Sealos create 命令创建集群工作目录，审查 Kubernetes 镜像，支持调试和测试，确保镜像内容符合预期。
 ---
 
 # create 创建工作目录

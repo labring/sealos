@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos cluster, Docker images, cluster initialization, node management, service management]
+description: Learn how to effectively run and manage a Sealos cluster with Docker images. Get detailed tutorials on cluster initialization, node management, and service management.
 ---
 
 # Running a Sealos Cluster with Docker Images

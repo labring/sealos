@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [manage hosts, domain name resolution, sealctl command, IP mapping, DNS override]
+description: Learn how to manage the hosts file using sealctl commands to list, add, and delete domain-to-IP mappings for better control over DNS resolution.
 ---
 
 # Manage Hosts

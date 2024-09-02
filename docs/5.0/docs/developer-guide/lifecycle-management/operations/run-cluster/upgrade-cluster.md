@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Kubernetes upgrade, sealos run, upgrade cluster, Kubernetes v1.25.0, Kubernetes lifecycle management]
+description: Learn how to upgrade your Kubernetes cluster using sealos run. Follow our step-by-step guide to ensure a smooth upgrade to Kubernetes v1.25.0.
 ---
 
 # How to Upgrade the Cluster

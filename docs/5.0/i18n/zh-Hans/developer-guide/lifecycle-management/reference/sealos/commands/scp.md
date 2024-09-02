@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [sealos scp, 拷贝文件, 集群节点, 远程节点, 命令行工具]
+description: 了解如何使用 Sealos scp 命令将文件复制到指定的集群节点，详细介绍基本用法和选项，助您轻松管理文件传输。
 ---
 
 # scp 拷贝文件

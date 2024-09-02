@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [sealos exec, cluster management, shell commands, remote execution, Kubernetes administration, node selection, cluster operations, DevOps tools, container orchestration, infrastructure management]
+description: Learn how to use the sealos exec command for executing shell commands on cluster nodes. Explore options for node selection and see practical examples for efficient cluster management.
 ---
 
 # Execute Command

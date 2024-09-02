@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos tag, image management, Docker tagging, container images, Sealos CLI, image naming, Kubernetes images, container orchestration, image tagging, DevOps tools]
+description: Learn how to use the 'sealos tag' command to efficiently manage and rename container images in Sealos. Enhance your Kubernetes workflow with this powerful image tagging tool.
 ---
 
 # Tag: Add Image Names

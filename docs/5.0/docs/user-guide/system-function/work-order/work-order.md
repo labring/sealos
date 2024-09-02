@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Sealos, Work Order, Sealos desktop, issue submission, customer support]
+description: Learn how to use Sealos Work Order to submit issues and get support quickly. Follow our step-by-step guide for a seamless experience.
 ---
 
 # Work Order

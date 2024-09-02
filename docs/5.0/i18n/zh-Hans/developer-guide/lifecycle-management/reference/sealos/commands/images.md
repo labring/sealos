@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos, 镜像管理, Sealos images 命令, 镜像参数, 镜像过滤]
+description: 了解如何使用Sealos的images命令查看和管理本地存储的镜像，包括显示所有镜像、特定镜像和使用多种参数进行过滤。
 ---
 
 # image 镜像列表

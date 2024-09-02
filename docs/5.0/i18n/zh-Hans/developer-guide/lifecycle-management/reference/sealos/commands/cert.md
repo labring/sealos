@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [sealos cert, 集群证书更新, API服务器证书, sealos命令行工具, Kubernetes证书]
+description: 了解如何使用sealos cert命令更新Kubernetes集群的API服务器证书，添加域名和IP，确保集群安全。
 ---
 
 # cert 更新集群证书

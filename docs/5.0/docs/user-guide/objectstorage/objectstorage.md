@@ -1,3 +1,8 @@
+---
+keywords: [Object Storage, Sealos, unstructured data, bucket permissions, SDK access]
+description: Learn how to use Sealos Object Storage to manage unstructured data, set bucket permissions, and access via SDKs. Quick start guide included.
+---
+
 # Object Storage
 
 **Object Storage** is Sealos' built-in object storage service, which is primarily used to store and manage unstructured

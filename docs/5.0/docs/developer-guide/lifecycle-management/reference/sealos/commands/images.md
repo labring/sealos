@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos images, Docker images, container images, image management, Sealos CLI, image filtering, image listing, Go template, JSON output, container orchestration]
+description: Learn how to use the 'sealos images' command to view, filter, and manage Docker images in Sealos. Discover various parameters for efficient image handling and output customization.
 ---
 
 # Image List

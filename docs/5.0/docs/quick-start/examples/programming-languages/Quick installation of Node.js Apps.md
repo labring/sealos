@@ -1,3 +1,8 @@
+---
+keywords: [Node.js installation, Docker image, MySQL database, Sealos deployment, Node.js app]
+description: Learn how to quickly install and deploy Node.js apps with Docker and MySQL on Sealos. Follow our step-by-step guide for seamless setup.
+---
+
 # Quick installation of Node.js Apps
 
 First, make sure you have installed the following tools:

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos, Autoscaling, Horizontal Pod Autoscaler, HPA, application scaling, CPU usage, memory usage, cloud scaling, Sealos controller, performance monitoring]
+description: Learn how Sealos' Autoscaling feature dynamically adjusts application instances based on CPU and memory usage, ensuring optimal performance and resource utilization.
 ---
 
 # Autoscaling

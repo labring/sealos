@@ -1,3 +1,8 @@
+---
+keywords: [Vue应用部署, Docker镜像, Sealos云平台, 前端开发, 容器化, 快速部署, 云原生应用, DevOps实践, 微服务架构, 持续集成]
+description: 本教程详细介绍如何快速安装Vue应用并部署到Sealos云平台。从Vue CLI创建到Docker镜像构建，再到Sealos上的一键部署，助您轻松实现云原生前端开发。
+---
+
 # 快速安装 Vue 程序
 
 首先，确保你已经安装了以下工具：

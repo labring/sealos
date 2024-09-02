@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos集群镜像同步, 容器镜像备份, 镜像仓库同步, sealos registry, 增量镜像同步, 高效镜像管理, 容器镜像优化, Kubernetes镜像同步]
+description: 探索Sealos高效的集群镜像同步和备份策略，学习如何创建临时仓库、同步镜像，实现增量同步，优化容器镜像管理，提高Kubernetes集群效率。
 ---
 
 # 高效的Sealos集群镜像同步和备份策略

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos集群, 集群初始化, 节点管理, 服务管理, 实战示例]
+description: 了解如何有效运行和管理Sealos集群，包括集群初始化、节点管理、服务管理和实战示例的详细教程和资源。
 ---
 
 # Sealos 集群镜像运行

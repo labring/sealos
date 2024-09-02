@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos, manifest命令, 多架构支持, Docker镜像, OCI镜像]
+description: 了解Sealos的manifest命令，轻松创建、修改和推送多架构支持的Docker和OCI镜像清单，提升部署效率。
 ---
 
 # manifest 镜像清单

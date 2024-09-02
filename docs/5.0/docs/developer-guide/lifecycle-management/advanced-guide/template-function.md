@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+keywords: [Sealos, template rendering, Kubernetes, image building, template functions, configuration files, semantic versioning, Golang templates, cluster image, Kubernetes manifests]
+description: Learn how Sealos enhances image building with template rendering and functions for Kubernetes configurations, scripts, and manifests.
 ---
 
 # Template Inclusion and Function Enhancement

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Kubernetes证书管理, sealctl cert命令, Kubernetes集群安全, TLS加密, Kubernetes证书生成]
+description: 了解如何使用sealctl cert命令生成Kubernetes集群所需的证书，确保组件之间的安全通信和数据加密。
 ---
 
 

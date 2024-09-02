@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos, Kubernetes, image building, runtime selection, version compatibility, file storage, FAQ]
+description: Comprehensive FAQ for Sealos users covering image building, runtime selection, version compatibility, and file storage issues. Includes solutions and best practices.
 ---
 
 # Frequently Asked Questions

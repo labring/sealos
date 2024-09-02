@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos desktop, App Launchpad, cloud operating system, install applications, deploy nginx]
+description: Learn how to use Sealos desktop's App Launchpad to quickly install and deploy applications like Nginx on the cloud operating system.
 ---
 
 # Use App Launchpad

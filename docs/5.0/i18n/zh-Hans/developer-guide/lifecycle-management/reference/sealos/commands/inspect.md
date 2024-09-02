@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos命令, inspect命令, 容器配置, 镜像配置, Go模板格式, 远程镜像仓库, 本地OCI归档, Docker归档文件]
+description: 了解如何使用Sealos的inspect命令查看容器和镜像的详细配置信息，包括元数据、环境变量和启动命令等。
 ---
 
 # inspect 详细信息

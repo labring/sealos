@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos, sealctl, 集群管理, 容器管理, 证书管理, IPVS负载均衡, 静态Pod, Kubernetes, 镜像仓库, CRI配置]
+description: 了解如何使用Sealos的sealctl命令行工具进行集群管理、容器管理、证书管理、IPVS负载均衡、静态Pod部署等操作，全面掌控Kubernetes集群。
 ---
 
 # Sealctl 使用指南

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [sealos apply, Kubernetes 集群, 集群镜像, Clusterfile, sealos 命令]
+description: 了解如何使用 sealos apply 命令在 Kubernetes 集群中运行集群镜像，详细介绍基本用法和选项设置。
 ---
 
 # apply 启动集群

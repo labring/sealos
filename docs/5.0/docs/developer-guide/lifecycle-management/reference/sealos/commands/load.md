@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos load, image loading, container images, tar archive, offline image import, Kubernetes images, container management, image archiving, sealos command, Docker alternative]
+description: Learn how to use the 'sealos load' command to import container images from tar archives, perfect for offline environments or when network access is limited.
 ---
 
 # Load Image

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos, application images, runtime environment, node-local-dns, Clusterfile, Kubernetes, Helm, cloud image, configuration, customization]
+description: Learn how to configure and customize application images and their runtime environment using Sealos, including creating cloud images and Clusterfile for node-local-dns.
 ---
 
 # Configuring and Customizing Application Images and Their Runtime Environment

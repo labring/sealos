@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+keywords: [sealctl token, Kubernetes 集群, token 管理, 节点身份验证, 配置文件, 证书密钥, 工作节点, 主节点, 安全性, 节点加入]
+description: 了解如何使用 sealctl token 命令生成用于 Kubernetes 集群节点身份验证的 token，确保工作节点安全加入集群，简化管理过程。
 ---
 
 # token 管理

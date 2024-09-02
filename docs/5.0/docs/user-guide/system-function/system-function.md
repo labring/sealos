@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos, system functions, cost center, workspace, work order, team collaboration]
+description: Sealos offers system functions like cost center, workspace, and work order to enhance team collaboration and manage billing efficiently.
 ---
 
 # Overview

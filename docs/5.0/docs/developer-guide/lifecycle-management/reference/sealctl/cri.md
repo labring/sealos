@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [CRI management, Kubernetes containers, container runtime, sealctl cri, Docker management, containerd, CRI-O, Kubernetes cluster, container operations, cgroup driver]
+description: Manage and inspect the Container Runtime Interface (CRI) in Kubernetes with sealctl cri. Check runtime status, list containers, and more.
 ---
 
 # CRI Container Management

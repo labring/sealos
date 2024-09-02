@@ -1,5 +1,8 @@
 ---
 sidebar_position: 2
+keywords: [Sealos镜像构建, 镜像缓存, registry-proxy, skopeo copy, 镜像仓库同步]
+description: 了解Sealos镜像构建的改进指南，提升构建效率，使用registry-proxy和skopeo copy实现镜像仓库同步，优化镜像管理。
+---
 ---
 
 # 镜像构建改进指南

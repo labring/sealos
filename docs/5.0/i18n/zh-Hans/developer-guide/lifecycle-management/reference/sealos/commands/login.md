@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos login, 容器注册表登录, sealos命令, 镜像推送, 镜像拉取]
+description: 了解如何使用sealos login命令登录容器注册表，进行镜像的拉取和推送，确保提供正确的用户名和密码。
 ---
 
 # login 登录仓库

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos, update application, app settings, cloud platform, deploy app]
+description: Update your application settings on Sealos easily. Click the "Update" button on the app details page to make changes anytime.
 ---
 
 # Update app

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [sealos env, environment variables, Sealos CLI, Docker environment, container configuration, Buildah log level, registry sync, Sealos command-line tool, container development, DevOps]
+description: Learn how to use the 'sealos env' command to view and set environment variables for Sealos, enhancing your container development and DevOps workflows.
 ---
 
 # Environment Variables

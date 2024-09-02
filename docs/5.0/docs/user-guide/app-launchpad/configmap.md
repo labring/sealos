@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [Sealos, configuration files, Nginx container, environment variables, application settings]
+description: Learn how to effectively manage application settings in Sealos using configuration files, including Nginx container setup and environment variables.
 ---
 
 # ConfgMap

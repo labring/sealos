@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [hosts管理, sealctl命令, hosts文件, 域名解析, IP地址映射]
+description: 了解如何使用sealctl命令管理操作系统的hosts文件，包括列出、添加和删除域名与IP地址映射的详细步骤。
 ---
 
 # hosts 管理

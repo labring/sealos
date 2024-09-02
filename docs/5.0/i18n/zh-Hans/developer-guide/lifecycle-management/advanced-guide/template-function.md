@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+keywords: [Sealos模板渲染, 集群镜像构建, 模板函数增强, Kubernetes配置管理, 动态生成资源清单, semverCompare, 多版本Kubernetes支持, 镜像构建灵活性]
+description: 探索Sealos的模板渲染功能，了解如何在集群镜像构建中动态生成配置、脚本和Kubernetes资源清单，以及如何使用增强的模板函数实现多版本Kubernetes支持。
 ---
 
 # 模板引入与函数增强

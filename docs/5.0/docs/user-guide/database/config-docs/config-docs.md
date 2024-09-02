@@ -1,3 +1,8 @@
+---
+keywords: [PostgreSQL configuration, database parameters, YAML, kubectl apply, OpsRequest]
+description: Learn how to modify PostgreSQL database parameters using YAML and kubectl. Follow our step-by-step guide to ensure successful configuration changes.
+---
+
 # Tutorial on modifying database parameters with yaml
 
 Some parameters of the database cannot take effect immediately after modification. Therefore, you need to apply yaml to

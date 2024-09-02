@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 toc_max_heading_level: 5
+keywords: [Sealos 集群部署, Kubernetes 安装, Sealos 私有云, Sealos Cloud, Sealos 证书]
+description: 了解如何使用 Sealos 一键部署 Kubernetes 集群，支持多种安装方式，确保通信安全，适用于大规模集群和企业生产环境。
 ---
 
 import Tabs from '@theme/Tabs';

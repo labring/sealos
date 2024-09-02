@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos, 集群镜像, Kubernetes, run命令, 多镜像执行, 集群初始化, 应用安装]
+description: 了解如何使用Sealos的run命令进行集群初始化、应用安装和多镜像执行，掌握Kubernetes集群管理的最佳实践。
 ---
 
 # run 运行集群镜像

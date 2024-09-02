@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [WordPress安装, Sealos, MySQL数据库, 内容管理系统, 快速部署, 应用管理, 环境变量配置, 网站搭建, 博客平台, 外网访问]
+description: 学习如何使用Sealos快速安装WordPress和MySQL数据库，轻松配置环境变量和网络设置，实现高效的网站和博客搭建。本教程提供详细步骤指导，助您迅速开启内容创作之旅。
 ---
 
 # 快速安装 WordPress

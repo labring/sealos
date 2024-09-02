@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [sealos私有容器仓库, image-cri-shim, sealos login, Docker客户端配置, 推送与拉取镜像]
+description: 了解如何使用sealos作为私有容器仓库，包括image-cri-shim守护进程、sealos登录、Docker客户端配置及镜像推送与拉取的详细步骤。
 ---
 
 # 如何使用 sealos作为私有容器仓库

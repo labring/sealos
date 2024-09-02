@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos reset, 重置集群, Sealos 命令, 集群管理, Kubernetes 重置]
+description: 了解如何使用 Sealos reset 命令重置集群，包括基本用法、示例和可选参数，确保集群管理更高效。
 ---
 
 # reset 重置集群

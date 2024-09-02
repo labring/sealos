@@ -1,3 +1,8 @@
+---
+keywords: [Appsmith安装, 低代码平台, Sealos部署, 内部应用程序, 快速部署, 应用管理, 开源平台, CRUD应用, 管理面板, 自定义业务应用]
+description: 学习如何在Sealos云平台上快速安装和部署Appsmith低代码平台。本教程提供详细步骤，帮助您轻松创建和管理内部应用程序、仪表板和工作流。
+---
+
 # 快速安装 Appsmith
 
 [Appsmith](https://github.com/appsmithorg/appsmith) 是一个用于构建、部署和维护内部应用程序的开源平台。您可以构建任何东西，从简单的

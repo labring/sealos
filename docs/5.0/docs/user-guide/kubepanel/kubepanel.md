@@ -1,3 +1,8 @@
+---
+keywords: [Kubernetes IDE, Kubernetes management, Kubepanel features, Kubernetes monitoring, Kubernetes resource visualization]
+description: Kubepanel is a user-friendly Kubernetes IDE offering real-time monitoring, resource visualization, and easy management of Kubernetes clusters.
+---
+
 # Kubepanel
 
 Kubepanel is a Kubernetes IDE (Integrated Development Environment). It provides a user-friendly graphical interface for

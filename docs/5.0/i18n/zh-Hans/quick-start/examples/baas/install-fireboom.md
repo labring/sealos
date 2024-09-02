@@ -1,3 +1,8 @@
+---
+keywords: [Fireboom安装, 可视化API开发, Sealos部署, 声明式开发框架, 快速接口开发, 前端全栈, 应用管理, 控制面板配置]
+description: 学习如何在Sealos上快速安装Fireboom，一个面向开发者的可视化API开发平台。本教程涵盖从创建应用到配置和访问Fireboom的全过程，助您提升开发效率。
+---
+
 # 快速安装 Fireboom
 
 [Fireboom](https://fireboom.io) ⾯向开发者的可视化 API 开发平台，为开发者提供**声明式开发框架**、**可视化编辑套件**和**钩子机制

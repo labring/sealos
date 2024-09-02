@@ -1,3 +1,8 @@
+---
+keywords: [监控系统, 告警系统, VictoriaMetrics, Grafana, PrometheusAlert, Loki, 日志系统, 公有云服务, 系统设计, 高可用]
+description: 了解如何使用VictoriaMetrics和Grafana构建高效的监控与告警系统，结合PrometheusAlert和Loki实现日志收集与展示，提升公有云服务的稳定性与可用性。
+---
+
 # 监控与告警系统
 
 # 概述

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+keywords: [sealctl tar, sealctl untar, file compression, file decompression, Sealos commands, archive management, data backup, file migration, command-line tools, Linux utilities]
+description: Learn how to use Sealos' sealctl tar and untar commands for efficient file compression and decompression. Ideal for data backup and file migration tasks.
 ---
 
 # Tar and Untar in Sealos

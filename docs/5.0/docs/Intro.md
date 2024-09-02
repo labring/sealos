@@ -1,3 +1,8 @@
+---
+keywords: [cloud operating system, Kubernetes, Sealos, cloud-native, distributed applications, private cloud, public cloud, high-availability, cluster imaging, app store]
+description: Sealos is a cloud operating system based on Kubernetes, enabling effortless cloud usage with high-availability and flexible app store capabilities for both public and private clouds.
+---
+
 import Highlight from '@site/src/components/Highlight'
 
 # What is Sealos?

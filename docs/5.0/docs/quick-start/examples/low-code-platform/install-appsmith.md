@@ -1,3 +1,8 @@
+---
+keywords: [Appsmith, open-source platform, internal apps, Sealos, application deployment, App Launchpad, custom business apps, multi-step workflows]
+description: Quick installation guide for Appsmith on Sealos. Learn how to deploy and access internal apps using this open-source platform.
+---
+
 # Quick installation of Appsmith
 
 [Appsmith](https://github.com/appsmithorg/appsmith) is an open-source platform to build, deploy, and maintain internal

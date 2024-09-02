@@ -1,3 +1,8 @@
+---
+keywords: [Fireboom, visual API development, Sealos, application deployment, full-stack development, declarative programming, API endpoint, persistent storage, Swagger]
+description: Quick installation guide for Fireboom on Sealos. Learn how to deploy and configure Fireboom, a visual API development platform, with step-by-step instructions.
+---
+
 # Quick Installation of Fireboom
 
 [Fireboom](https://fireboom.io) is a visual API development platform designed for developers, providing a declarative

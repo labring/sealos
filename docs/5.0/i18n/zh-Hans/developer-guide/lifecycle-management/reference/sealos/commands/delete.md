@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [sealos delete, 集群节点删除, sealos 命令, 删除控制节点, sealos 使用指南]
+description: 了解如何使用 sealos delete 命令从集群中删除节点和控制节点，确保集群正常运行。详细指南和选项说明。
 ---
 
 # delete 集群节点删除

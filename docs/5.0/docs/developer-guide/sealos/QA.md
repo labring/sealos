@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Sealos Cloud, deployment issues, certificate renewal, domain name change, user registration, kubernetes cluster, iptables, system kernel, networking, resource constraints]
+description: Comprehensive guide for Sealos Cloud deployment issues, certificate management, and user registration. Includes solutions for common problems and step-by-step instructions for system administrators.
 ---
 
 # Q&A

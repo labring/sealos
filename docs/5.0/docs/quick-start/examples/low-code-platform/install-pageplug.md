@@ -1,3 +1,8 @@
+---
+keywords: [PagePlug, Appsmith, low-code platform, Sealos, application deployment]
+description: Quick installation guide for PagePlug, a Chinese low-code platform based on Appsmith, optimized for performance and integrated with Formily and Echarts.
+---
+
 # Quick installation of PagePlug
 
 [PagePlug](https://github.com/cloudtogo/pageplug) is a Chinese project

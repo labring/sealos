@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Cost Center, Billing Details, Resource Analysis, Pricing Information, Invoice Generation]
+description: Discover Sealos Cost Center with modules for cost overview, billing details, resource analysis, pricing information, and invoice generation.
 ---
 
 # Cost Center

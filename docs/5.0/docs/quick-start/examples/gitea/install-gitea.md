@@ -1,3 +1,8 @@
+---
+keywords: [Gitea installation, self-hosted Git, Sealos, CI/CD, MySQL database setup]
+description: Quick guide to install Gitea on Sealos, covering self-hosted Git, CI/CD, and MySQL database setup. Follow these steps for a seamless deployment.
+---
+
 # Quick Installation of Gitea
 
 Git with a cup of tea! Painless self-hosted all-in-one software development service, includes Git hosting, code review,

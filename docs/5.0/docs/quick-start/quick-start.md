@@ -1,3 +1,8 @@
+---
+keywords: [Flarum deployment, Sealos App Store, open source forum, deploy Flarum, Sealos desktop]
+description: Quickly deploy Flarum using Sealos. Follow our step-by-step guide to get your open source forum up and running in no time.
+---
+
 # Quick Start
 
 Deploy Flarum quickly with Sealos.

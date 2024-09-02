@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [static pod, sealctl, lvscare, Kubernetes, kubelet, IPVS, VIP, cluster management, control plane, configuration]
+description: Learn how to use sealctl static-pod command to generate and manage static Pods in Kubernetes, focusing on lvscare for IPVS rules and control plane setup.
 ---
 
 # Static Pod Configuration

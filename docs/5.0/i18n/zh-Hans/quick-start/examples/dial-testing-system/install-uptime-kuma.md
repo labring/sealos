@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Uptime Kuma, 服务器监控, Sealos, 应用部署, 开源监控工具, 实时监控, 服务器状态, 快速安装, 持久化数据, 外网访问]
+description: 学习如何在Sealos上快速安装Uptime Kuma，一款开源的服务器监控工具。本教程涵盖从应用创建到配置和访问的全过程，帮助您轻松实现服务器状态的实时监控。
 ---
 
 # 快速安装 Uptime Kuma

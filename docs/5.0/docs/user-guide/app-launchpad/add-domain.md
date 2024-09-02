@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [custom domain, Sealos, app deployment, domain provider, public access]
+description: Learn how to assign a custom domain to your project using Sealos for a tailored brand experience. Follow our step-by-step guide for seamless app deployment.
 ---
 
 # Add a domain

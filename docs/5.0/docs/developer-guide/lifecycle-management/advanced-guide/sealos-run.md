@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos run, Kubernetes deployment, cluster management, Kubernetes images, node synchronization]
+description: Learn how the Sealos run command simplifies Kubernetes deployment with detailed steps on node checks, image pulling, configuration rendering, and more.
 ---
 
 # How Sealos Run Works

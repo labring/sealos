@@ -1,3 +1,8 @@
+---
+keywords: [App Store, application templates, rapid deployment, Sealos desktop, uninstall apps]
+description: Discover the Sealos App Store for rapid deployment of various applications with pre-made templates. Easily find, view, and uninstall apps.
+---
+
 # App Store
 
 The App Store provides a series of pre-made application templates to support the rapid creation and deployment of

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [集群镜像构建, 镜像列表, Kubefile, 容器镜像, kubectl apply, Calico, 镜像tar包, docker-archive, oci-archive, Sealos]
+description: 学习如何使用镜像列表或docker存储的tar包构建Sealos集群镜像。本指南涵盖了Kubefile配置、镜像列表格式和tar包构建方法，助您轻松管理容器化应用。
 ---
 
 # 构建基于镜像清单的集群镜像

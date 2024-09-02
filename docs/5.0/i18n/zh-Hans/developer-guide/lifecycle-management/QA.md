@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos, 镜像构建, Kubernetes运行时, 版本兼容性, 文件目录位置]
+description: 了解Sealos常见问题及解决方案，包括镜像构建、Kubernetes运行时选择、版本兼容性和文件目录位置调整。
 ---
 
 # 常见问题

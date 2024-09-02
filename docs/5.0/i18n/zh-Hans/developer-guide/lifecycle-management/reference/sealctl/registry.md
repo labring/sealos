@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [Sealos, sealctl, registry serve, Docker 镜像仓库, 文件系统模式, 内存模式, 镜像管理, Docker 分发, 镜像同步]
+description: 了解如何使用Sealos的sealctl registry serve命令启动和管理Docker镜像仓库，支持文件系统和内存模式，轻松实现镜像同步和分发。
 ---
 
 # registry 镜像仓库

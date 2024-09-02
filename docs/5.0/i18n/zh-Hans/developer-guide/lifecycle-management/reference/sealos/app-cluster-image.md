@@ -1,5 +1,7 @@
 ---
 sidebar_position: 11
+keywords: [Sealos, cluster-image, Kubernetes集群, 应用镜像, Docker镜像, GitHub Action, 镜像构建, Helm chart, Kubernetes yaml, 镜像配置]
+description: Sealos 提供 cluster-image 仓库，用于构建和发布 Kubernetes 集群的应用镜像，支持 Docker 和应用集群镜像构建，使用 GitHub Action。
 ---
 
 # 应用集群镜像使用指南

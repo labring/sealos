@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos, Config对象, 应用镜像, Clusterfile, node-local-dns]
+description: 了解如何使用Sealos的Config对象在运行时对应用镜像进行补丁操作，创建和自定义node-local-dns应用镜像及其运行时环境。
 ---
 
 # 配置和自定义应用镜像及其运行时环境

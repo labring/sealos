@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [集群镜像构建, go-template, Kubefile, 环境变量, sealos, yaml模板, 服务类型自定义, 镜像运行, kubectl, helm]
+description: 学习如何使用go-template构建集群镜像，通过Kubefile和yaml模板利用环境变量自定义服务配置，掌握sealos运行镜像的高级技巧。
 ---
 
 # 构建基于 go-template 的集群镜像

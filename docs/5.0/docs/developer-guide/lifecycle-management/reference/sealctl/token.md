@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+keywords: [sealctl token, Kubernetes cluster, worker node authentication, token generation, cluster security, node joining, sealos, cluster management, authentication token, Kubernetes security]
+description: Learn how to use the sealctl token command to generate authentication tokens for securely adding worker nodes to your Kubernetes cluster with Sealos.
 ---
 
 # Token Management

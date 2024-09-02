@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [集群镜像构建, Sealos, Kubernetes, 部署清单, Kubefile, Docker镜像, nginx应用, 镜像推送, 私有镜像仓库]
+description: 学习如何使用Sealos构建基于部署清单的Kubernetes集群镜像。本教程涵盖从准备工作到镜像推送的完整流程，包括创建Kubefile和验证镜像等关键步骤。
 ---
 
 # 构建基于部署清单的集群镜像

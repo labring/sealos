@@ -1,3 +1,8 @@
+---
+description: Sealos是基于Kubernetes的云操作系统，简化云原生部署。它支持公私云环境，提供应用和数据库管理，实现高效经济的云计算体验。探索Sealos，开启简单云计算之旅。
+keywords: [Sealos, 云操作系统, Kubernetes, 云原生, 公有云, 私有云, 分布式应用, 应用管理, 数据库管理, 云计算]
+---
+
 import Highlight from '@site/src/components/Highlight'
 
 # 什么是 Sealos？

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
-keywords: [K8s, K8s 安装, K8s 部署, K8s 离线安装, K8s 离线部署]
+keywords: [Kubernetes安装, Sealos, K8s集群部署, 离线安装K8s, Containerd, 集群镜像, 高可用K8s, 节点管理]
+description: 使用Sealos快速部署Kubernetes集群，支持在线和离线安装，适用于amd64和arm64架构。轻松管理节点，安装分布式应用，支持Containerd和Docker运行时。
 ---
 
 # 安装 K8s 集群

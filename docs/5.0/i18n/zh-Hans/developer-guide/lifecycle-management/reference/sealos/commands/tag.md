@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos tag, 镜像管理, 命令行工具, 添加镜像名称, Sealos 使用指南]
+description: 了解如何使用 Sealos tag 命令为本地存储的镜像添加一个或多个附加名称，提升镜像管理效率。
 ---
 
 # tag 添加镜像名称

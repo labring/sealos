@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos logout, 镜像仓库, 认证信息, 身份验证文件, quay.io]
+description: 了解如何使用sealos logout命令移除本地缓存的镜像仓库账号和密码，包括参数和示例，帮助你轻松管理认证信息。
 ---
 
 # logout 登出仓库

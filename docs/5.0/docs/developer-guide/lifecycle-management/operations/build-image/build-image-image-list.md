@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Cluster Images, Image Manifests, Docker Tarballs, Kubernetes, Calico CNI, Image Manifest Support, OCI Container Images, Docker Archive Images]
+description: Learn how to build cluster images using image manifests or Docker tarballs with Kubernetes and Calico CNI. Follow our step-by-step guide for seamless image management.
 ---
 
 # Building Cluster Images Based on Image Manifests

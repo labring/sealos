@@ -1,3 +1,8 @@
+---
+keywords: [Python程序安装, Docker镜像, Sealos部署, Flask应用, MySQL数据库, 容器化, 云原生应用, 快速部署, 应用管理, 外网访问]
+description: 本教程详细介绍如何快速安装Python程序并部署到Sealos云平台。包括编写Flask应用、创建Docker镜像、配置MySQL数据库和使用Sealos进行应用管理与外网访问。
+---
+
 # 快速安装 Python 程序
 
 首先，确保你已经安装了以下工具：

@@ -1,3 +1,8 @@
+---
+keywords: [Python app deployment, Docker image, Sealos, MySQL database, Flask application, Docker Hub, Python Dockerfile, app management, database configuration, external network access]
+description: Learn how to quickly install and deploy Python apps using Docker, Sealos, and MySQL. Follow our step-by-step guide to create, configure, and access your Flask application.
+---
+
 # Quick installation of Python Apps
 
 First, make sure you have the following tools installed:

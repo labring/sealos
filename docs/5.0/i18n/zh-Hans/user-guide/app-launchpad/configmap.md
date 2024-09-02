@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [Sealos配置文件, 应用程序配置管理, 容器配置注入, Nginx容器配置, 应用行为调整]
+description: 探索Sealos应用程序中配置文件的重要性和优势。了解如何使用配置文件灵活管理复杂配置数据，并以Nginx容器为例说明配置文件的应用。
 ---
 
 # 配置文件

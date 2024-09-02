@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Kubernetes集群, Sealos工具, 集群生命周期管理, 分布式应用, Kubernetes安装]
+description: 使用Sealos工具轻松管理Kubernetes集群生命周期，支持分布式应用和自定义集群镜像，提供高可用性和离线安装功能。
 ---
 
 # K8s 集群生命周期管理

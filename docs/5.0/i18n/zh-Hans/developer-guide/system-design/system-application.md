@@ -1,3 +1,8 @@
+---
+keywords: [Sealos系统应用, Kubernetes API, CRD API, 应用管理, 费用中心, 定时任务, 数据库, KubePanel, 对象存储, 应用商店]
+description: 了解Sealos系统应用的基本原理与实现，包括Kubernetes API、CRD API、应用管理、费用中心、定时任务、数据库、KubePanel等。
+---
+
 # 系统应用
 
 主要介绍 Sealos 当前各个系统应用的基本原理与实现。

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Sealos gen command, Kubernetes cluster configuration, Clusterfile generation, sealos apply, cluster setup, multi-node cluster, SSH configuration, custom cluster settings]
+description: Learn how to use the Sealos gen command to generate Kubernetes cluster configurations. Create single-node or multi-node clusters with custom settings and apply them easily.
 ---
 
 # Generate Cluster Configuration

@@ -1,3 +1,8 @@
+---
+keywords: [Java Spring Boot, Docker Java app, Java MySQL integration, Spring Boot Docker, deploy Java app]
+description: Learn how to quickly install and deploy Java apps using Spring Boot, Docker, and MySQL. Follow our step-by-step guide for seamless integration and deployment.
+---
+
 # Quick installation of Java Apps
 
 First, make sure you have installed the following tools:

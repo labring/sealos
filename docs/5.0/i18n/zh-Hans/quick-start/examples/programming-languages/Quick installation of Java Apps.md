@@ -1,3 +1,8 @@
+---
+keywords: [Java应用部署, Sealos云平台, Docker镜像, Spring Boot, 数据库配置, 应用管理, 快速安装]
+description: 本教程详细介绍如何在Sealos云平台上快速部署Java应用,包括Spring Boot项目创建、Docker镜像构建、数据库配置及应用管理等步骤,助您轻松实现Java程序的云端部署。
+---
+
 # 快速安装 Java 程序
 
 首先，确保你已经安装了以下工具：

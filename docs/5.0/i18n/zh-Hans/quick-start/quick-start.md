@@ -1,3 +1,8 @@
+---
+keywords: [Sealos快速部署, Flarum论坛, 开源论坛软件, 应用商店部署, 简洁论坛搭建]
+description: 学习如何使用Sealos快速部署Flarum开源论坛。本教程提供详细步骤，从应用商店选择到成功访问论坛，助您轻松搭建简洁高效的社区平台。
+---
+
 # 快速开始
 
 使用 Sealos 快速部署 Flarum。

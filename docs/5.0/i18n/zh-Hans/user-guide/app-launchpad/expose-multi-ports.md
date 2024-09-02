@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [多端口暴露, Sealos应用管理, 网络配置, 公网访问, 多协议支持, 应用多功能, 兼容性, Prometheus监控, GRPC服务]
+description: 了解如何在Sealos平台上轻松配置应用的多端口暴露,支持多协议、多功能和监控需求,并获得独立二级域名实现便捷的公网访问。
 ---
 
 # 暴露多端口

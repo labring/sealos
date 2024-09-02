@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [build cluster images, go-template, sealos, environment variables, Kubefile, yaml template, helm command, Kubernetes service]
+description: Learn how to build cluster images using go-template with sealos, customize environment variables in Kubefile, and render yaml templates for Kubernetes services.
 ---
 
 # Building Cluster Images Based on go-template

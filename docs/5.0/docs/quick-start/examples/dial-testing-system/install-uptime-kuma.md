@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Uptime Kuma, server monitoring, open-source monitoring, Sealos, application deployment]
+description: Quickly install Uptime Kuma for real-time server monitoring with Sealos. Follow these steps to deploy and configure your application efficiently.
 ---
 
 # Quick Installation of Uptime Kuma

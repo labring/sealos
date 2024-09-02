@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Go模板语法, Clusterfile, Kubernetes集群部署, sealos, 自定义values文件]
+description: 了解如何使用Go模板语法编写Clusterfile并通过sealos部署Kubernetes集群，包含自定义values文件示例和详细步骤。
 ---
 
 # 模板配置安装

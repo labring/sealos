@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos login, container registry, image repository, authentication, kubeconfig]
+description: Learn how to use the sealos login command to access container registries. Discover parameters, usage examples, and troubleshooting tips for seamless image pulling and pushing.
 ---
 
 # Login to Repository

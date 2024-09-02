@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos image building, directory structure, Kubernetes yaml files, Helm chart, Kubefile]
+description: Learn how to build Sealos images with a standardized directory structure, including Kubernetes yaml files and Helm charts, for efficient and error-free management.
 ---
 
 # Image Building and Standard Directory Configuration

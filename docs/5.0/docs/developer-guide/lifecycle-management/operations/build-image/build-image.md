@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos cluster image, build Sealos image, Sealos image building, Sealos advanced building, Sealos multi-stage build]
+description: Learn how to effectively build Sealos cluster images with basic and advanced techniques, including multi-stage builds and custom options.
 ---
 
 # Sealos Cluster Image Building

@@ -1,3 +1,8 @@
+---
+keywords: [对象存储, Sealos, 存储桶, 文件上传, SDK访问, 静态托管, 访问权限, Go Client, Java Client, 公共读写]
+description: 探索Sealos对象存储服务：文件管理、权限控制、SDK集成和静态托管。轻松上传、下载文件，自定义访问权限，并使用Go和Java SDK实现高效存储操作。
+---
+
 # 对象存储
 
 对象存储是 Sealos 内置的对象存储服务，主要用于存储和管理非结构化数据。

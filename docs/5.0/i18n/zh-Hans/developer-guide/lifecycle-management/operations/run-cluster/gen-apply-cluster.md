@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [sealos, Clusterfile, Kubernetes集群, 自定义配置, 集群管理]
+description: 了解如何使用sealos生成和应用Clusterfile，自定义配置Kubernetes集群，实现高效的集群管理。
 ---
 
 # 自定义配置安装

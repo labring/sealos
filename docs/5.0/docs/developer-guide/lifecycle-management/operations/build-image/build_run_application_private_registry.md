@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+keywords: [helm chart, private image registry, Kubernetes deployment, build service image, sealos]
+description: Learn how to build a complete application service using a private image registry with Helm and Sealos. Step-by-step guide for Kubernetes deployment.
 ---
 
 # Building a Complete Application Service Using a Private Image

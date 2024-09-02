@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
-keywords: [sealos, sealos cli]
+keywords: [Sealos CLI, Sealos installation, Sealos download, Sealos binary, Sealos package management]
+description: Learn how to download and install Sealos CLI with our comprehensive guide, including binary and package management tool installation methods.
 ---
 
 import Tabs from '@theme/Tabs';

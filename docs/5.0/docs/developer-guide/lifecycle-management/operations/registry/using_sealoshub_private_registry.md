@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos private registry, container repository, image-cri-shim, Docker configuration, push and pull images]
+description: Learn how to use Sealos as a private container repository. Configure Docker, manage images, and ensure seamless operations with Sealos.
 ---
 
 # How to Use Sealos as a Private Container Repository

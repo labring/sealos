@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos push, image push, Docker registry, container image, OCI format, image transport, image encryption, custom resources, authentication, compression]
+description: Learn how to use the 'sealos push' command to push container images to various destinations, including Docker registries and local storage, with advanced options for encryption and custom resources.
 ---
 
 # Push Image

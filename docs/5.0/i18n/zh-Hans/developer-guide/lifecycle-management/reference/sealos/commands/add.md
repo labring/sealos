@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [Sealos, 集群节点添加, Sealos add, 控制节点, 节点添加]
+description: 了解如何使用Sealos add命令向集群中添加节点和控制节点，确保etcd正常选举，掌握基本用法和选项。
 ---
 
 # add 集群节点添加

@@ -1,3 +1,8 @@
+---
+keywords: [LVScare, Sealos, Kubernetes high availability, IPVS load balancing, Kubernetes health check]
+description: Learn how LVScare and Sealos ensure high availability and reliability of Kubernetes clusters with IPVS-based load balancing and health checks.
+---
+
 # LVScare User Guide
 
 ## Introduction

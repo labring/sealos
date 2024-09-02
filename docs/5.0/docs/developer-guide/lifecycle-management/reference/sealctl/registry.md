@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [sealctl registry serve, Docker image repository, Sealos, filesystem mode, in-memory mode, image synchronization, container registry, Kubernetes]
+description: Learn how to use the sealctl registry serve command in Sealos to manage Docker image repositories in filesystem and in-memory modes for Kubernetes environments.
 ---
 
 # Registry Image Repository

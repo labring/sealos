@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [image-cri-shim, Kubernetes, 容器运行时, CRI, kubelet, 镜像自动识别, 容器部署, 中间件, 镜像仓库]
+description: image-cri-shim 使用指南，简化Kubernetes容器部署，自动识别镜像名称，提高操作便利性，支持CRI API v1alpha2和v1。
 ---
 
 # image-cri-shim 使用指南

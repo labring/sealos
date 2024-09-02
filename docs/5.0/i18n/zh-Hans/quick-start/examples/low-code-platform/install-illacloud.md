@@ -1,3 +1,8 @@
+---
+keywords: [ILLA Cloud, 低代码平台, Sealos, 应用部署, 内部应用程序, 快速安装, 拖放组件, 应用管理, illasoft/illa-builder]
+description: 了解如何在Sealos上快速安装ILLA Cloud低代码平台。本指南详细介绍了从创建应用到部署和访问的全过程，助您轻松构建内部应用程序。
+---
+
 # 快速安装 ILLA Cloud
 
 [ILLA Cloud](https://www.illacloud.com/zh) 是一个开源的低代码平台，使用户能够创建、部署和管理内部应用程序。通过 ILLA

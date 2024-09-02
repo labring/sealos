@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [sealos delete, cluster node removal, Kubernetes cluster management, delete control node, sealos command line tool]
+description: Learn how to use the 'sealos delete' command to remove nodes from your Kubernetes cluster. Explore options for deleting control nodes and regular nodes efficiently.
 ---
 
 # Delete Cluster Node Removal

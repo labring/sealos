@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos load, 加载镜像, 存档文件, 无网络环境, 镜像导入]
+description: 了解如何使用sealos load命令从存档文件中加载镜像，特别适用于无网络环境下的镜像导入。
 ---
 
 # load 加载镜像

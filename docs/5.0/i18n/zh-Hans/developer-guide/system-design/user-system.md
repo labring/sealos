@@ -1,3 +1,8 @@
+---
+keywords: [Kubernetes用户管理, Sealos用户系统, 命名空间隔离, CockroachDB, RBAC授权]
+description: 了解Sealos如何通过Kubernetes用户管理系统实现高效隔离，使用CockroachDB持久化数据，并基于RBAC模式进行用户授权。
+---
+
 # 用户系统
 
 ## 概述

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos pull, 拉取镜像, 容器镜像仓库, 镜像下载, sealos命令]
+description: 了解如何使用sealos pull命令从容器镜像仓库下载镜像并存储在本地，提高工作效率。获取详细参数和使用示例。
 ---
 
 # pull 拉取镜像

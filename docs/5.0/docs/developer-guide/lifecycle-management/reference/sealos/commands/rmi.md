@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos rmi, delete local images, image management, container cleanup, storage optimization, Docker alternative, Kubernetes tools, image pruning, force delete images, multiple image deletion]
+description: Learn how to use the 'sealos rmi' command to efficiently delete local images, manage storage, and optimize your container environment with optional parameters for advanced cleanup.
 ---
 
 # Rmi: Delete Local Images

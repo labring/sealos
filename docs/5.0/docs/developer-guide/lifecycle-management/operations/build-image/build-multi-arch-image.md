@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [multi-architecture images, sealos tool, build cluster images, amd64 arm64, container image repository]
+description: Learn how to use the sealos tool to build and push multi-architecture cluster images for amd64 and arm64 to a container image repository.
 ---
 
 # Building Multi-Architecture Cluster Images

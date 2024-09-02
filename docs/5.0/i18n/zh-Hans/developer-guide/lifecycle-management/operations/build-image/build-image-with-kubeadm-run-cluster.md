@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [自定义Kubernetes集群, kubeadm config, 构建自定义镜像, Clusterfile配置, sealos, Calico网络配置, Pod CIDR, 集群安装]
+description: 学习如何使用kubeadm config构建自定义镜像来定制Kubernetes集群。包括构建镜像、配置Clusterfile和安装集群的详细步骤，助您轻松实现个性化部署。
 ---
 
 # 使用构建镜像自定义 Kubernetes 集群

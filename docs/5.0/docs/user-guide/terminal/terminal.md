@@ -1,3 +1,8 @@
+---
+keywords: [Sealos Terminal, Kubernetes Pod, Kubernetes Terminal, Application Container Terminal, Direct Database Connection]
+description: Discover the powerful Sealos Terminal for direct interaction with Kubernetes Pods, application containers, and databases, enhancing efficiency and control.
+---
+
 # Terminal
 
 Integrated within the [Sealos](https://cloud.sealos.io) Cloud Operating System is the Terminal, an application of

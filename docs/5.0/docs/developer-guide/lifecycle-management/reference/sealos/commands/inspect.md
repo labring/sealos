@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos inspect, container configuration, image configuration, Docker inspection, OCI archive inspection, Go template format, Buildah inspect, container metadata, image metadata, Sealos commands]
+description: Learn how to use Sealos' inspect command to view detailed configuration information of containers and images, including metadata, environment variables, and startup commands.
 ---
 
 # Inspect Details

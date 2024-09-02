@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [image-cri-shim, Kubernetes, container runtime, CRI, kubelet, container deployment, image registry, middleware]
+description: Learn how image-cri-shim simplifies Kubernetes container deployment by automatically recognizing image names, streamlining the process.
 ---
 
 # image-cri-shim User Guide

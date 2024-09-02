@@ -1,5 +1,7 @@
 ---
 sidebar_position: 10
+keywords: [Sealos, Kubernetes集群镜像, rootfs类型, 容器运行时, Kubernetes镜像版本]
+description: 了解Sealos官方提供的Kubernetes集群镜像，包括镜像名称、类型和版本，选择适合您的Kubernetes容器运行时解决方案。
 ---
 
 # Kubernetes 集群镜像说明文档

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+keywords: [sealos registry, Docker image repository, registry save, registry serve, registry passwd, registry sync, registry copy, image synchronization, container management, Kubernetes]
+description: Explore Sealos registry commands for efficient Docker image management. Learn to save, serve, sync, and copy images across registries, enhancing your container deployment workflow.
 ---
 
 # Registry Image Repository Commands

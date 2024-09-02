@@ -1,3 +1,8 @@
+---
+keywords: [FastGpt AI知识库, Sealos部署, 无服务器AI应用, 快速安装AI, 一键部署AI, 免费AI知识库, AI应用教程]
+description: 了解如何快速安装FastGpt AI知识库，无需服务器、域名或特殊网络。通过Sealos一键部署，轻松搭建您的AI知识库系统，适合初学者和专业人士。
+---
+
 # 快速安装 FastGpt AI 知识库
 
 无需服务器、无需魔法、无需域名，点击即可部署 👇

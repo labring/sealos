@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [sealos, 环境变量, sealos env, 命令行工具, sealos build]
+description: 了解如何使用Sealos命令行工具查看和设置环境变量，掌握sealos env命令的基本用法和详细说明。
 ---
 
 # env 环境变量

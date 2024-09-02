@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Sealos Run, Kubernetes集群部署, 容器编排, 节点管理, 镜像分发, 集群初始化, 证书管理, IPVS规则, Kubeadm配置, Clusterfile]
+description: 深入解析Sealos Run命令的工作原理，包括节点检查、镜像分发、集群初始化等九大步骤，助您轻松部署和管理Kubernetes集群。
 ---
 
 # Sealos Run 的工作原理

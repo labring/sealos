@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [Sealos, environment variables, container applications, configuration management, App Launchpad]
+description: Learn how to manage configuration data for container applications in Sealos using environment variables for better maintainability and scalability.
 ---
 
 # Environment

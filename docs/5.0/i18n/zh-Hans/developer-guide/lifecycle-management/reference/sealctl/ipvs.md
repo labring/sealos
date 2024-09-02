@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [IPVS负载均衡, sealctl命令, 虚拟服务器, 真实服务器, 健康检查, 代理模式, 调度算法, 清理功能]
+description: 了解如何使用sealctl ipvs命令创建和管理本地IPVS负载均衡，包括虚拟服务器和真实服务器的映射、健康检查、代理模式和调度算法配置。
 ---
 
 # ipvs 管理

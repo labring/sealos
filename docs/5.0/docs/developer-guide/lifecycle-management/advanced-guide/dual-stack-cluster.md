@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [dual-stack cluster, Calico, Kubernetes, IPv6, Sealos, cluster configuration, Kubernetes networking, VXLAN, kubeadm, Kubernetes setup]
+description: Learn how to install a dual-stack cluster with Calico on Kubernetes using Sealos. Follow our guide for configuring IPv6 and IPv4 networking.
 ---
 
 # install Dual-stack cluster with Calico

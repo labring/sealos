@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos集群镜像, 镜像构建, 基础构建, 高级构建, sealos build, 多阶段构建, 集群镜像优化]
+description: 探索Sealos集群镜像构建的多种方法，从基础到高级技术。学习如何优化镜像大小，使用sealos build命令进行定制构建，提升您的Sealos使用体验。
 ---
 
 # Sealos 集群镜像构建

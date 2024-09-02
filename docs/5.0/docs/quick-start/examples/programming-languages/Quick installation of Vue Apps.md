@@ -1,3 +1,8 @@
+---
+keywords: [Vue.js, Docker, Sealos, Vue CLI, Docker image, application deployment, cloud hosting, web development]
+description: Learn how to quickly install and deploy Vue.js applications using Docker and Sealos. Follow our step-by-step guide for seamless web development and cloud hosting.
+---
+
 # Quick installation of Vue Apps
 
 First, make sure you have installed the following tools:

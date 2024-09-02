@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos push, 上传镜像, Docker 镜像, 镜像仓库, OCI 布局, Docker 注册表, 镜像传输, 镜像推送, 镜像管理]
+description: Sealos push 命令指南，详细介绍如何将本地 Docker 镜像推送到远程镜像仓库，支持多种传输方式和可选参数，轻松管理镜像。
 ---
 
 # push 上传镜像

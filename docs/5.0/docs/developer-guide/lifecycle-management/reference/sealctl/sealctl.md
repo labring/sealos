@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [sealctl, Sealos, cluster management, container runtime, IPVS, static pods, certificate management, registry, Kubernetes]
+description: Explore Sealctl, the powerful command-line tool for Sealos cluster management. Learn about its subcommands for container runtime, IPVS, static pods, and more.
 ---
 
 # Sealctl User Guide

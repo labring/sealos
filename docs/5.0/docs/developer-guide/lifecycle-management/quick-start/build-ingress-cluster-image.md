@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [nginx ingress, Helm chart, Kubernetes, Docker image, Sealos]
+description: Learn how to build an nginx-ingress cluster image using Helm and Sealos, including steps for downloading charts, writing Dockerfiles, and pushing to image registries.
 ---
 
 # Building an Ingress Cluster Image

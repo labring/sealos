@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Helm Charts, 集群镜像, Sealos, Kubernetes, nginx, 镜像构建, 容器化, 云原生, DevOps, CI/CD]
+description: 学习如何使用Sealos和Helm Charts构建基于nginx的Kubernetes集群镜像。本教程涵盖准备工作、Charts配置、Kubefile创建、镜像构建和安装等步骤。
 ---
 
 # 构建基于 Helm Charts 的集群镜像

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [sealos cluster, kubernetes installation, self-signed certificates, domain configuration, cloud deployment, nip.io, cert-manager, cluster setup, network considerations, hardware requirements]
+description: Learn how to install and configure a Sealos cluster with Kubernetes, including domain setup, certificate management, and network considerations for optimal deployment.
 ---
 
 import Tabs from '@theme/Tabs';

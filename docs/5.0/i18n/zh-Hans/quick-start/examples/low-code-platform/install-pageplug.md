@@ -1,3 +1,8 @@
+---
+keywords: [PagePlug, 低代码平台, Sealos安装, 应用部署, 可视化开发, 前端框架, 开源项目, 快速部署, 容器化应用, 云原生开发]
+description: 学习如何在Sealos云平台上快速安装和部署PagePlug低代码平台。本教程提供详细步骤，帮助您轻松搭建可视化开发环境，实现高效的前端应用开发。
+---
+
 # 快速安装 PagePlug
 
 [PagePlug](https://github.com/cloudtogo/pageplug) 是 [Appsmith](https://github.com/appsmithorg/appsmith) 的中国化项目，基于

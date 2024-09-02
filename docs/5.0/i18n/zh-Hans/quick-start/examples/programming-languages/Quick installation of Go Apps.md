@@ -1,3 +1,8 @@
+---
+keywords: [Go程序安装, Docker镜像, Sealos部署, 容器化应用, 云原生开发, Go Web应用, Docker Hub, 应用管理, 快速部署, 外网访问]
+description: 本教程详细介绍如何快速安装Go程序，包括编写Go代码、创建Docker镜像、推送到Docker Hub，以及在Sealos平台上部署和访问应用的完整流程。
+---
+
 # 快速安装 Go 程序
 
 首先，确保你已经安装了以下工具：

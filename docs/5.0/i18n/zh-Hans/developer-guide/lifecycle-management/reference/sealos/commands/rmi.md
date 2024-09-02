@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos rmi, 删除本地镜像, sealos命令行工具, 镜像管理, sealos教程]
+description: 了解如何使用Sealos rmi命令删除本地镜像，清理无用或过时的镜像，节省存储空间。阅读详细指南获取更多信息。
 ---
 
 # rmi 删除本地镜像

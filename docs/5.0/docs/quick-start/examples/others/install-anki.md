@@ -1,3 +1,8 @@
+---
+keywords: [Anki sync server, custom Anki server, Anki installation, Anki self-hosted, Anki sync setup]
+description: Learn how to quickly install and configure a custom Anki sync server using Sealos for seamless syncing across devices.
+---
+
 # Quick Installation of a Custom Anki Sync Server
 
 Anki is a spaced repetition flashcard program. Essentially, it is a card sorting tool that **actively tests users on

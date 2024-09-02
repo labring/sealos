@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [sealos run, cluster initialization, Kubernetes cluster, Docker image, multi-image execution, single-node cluster, custom configuration, remote host authentication]
+description: Learn how to use the powerful 'sealos run' command for Kubernetes cluster initialization, application installation, and multi-image execution with various configuration options.
 ---
 
 # Run: Execute Cluster Images

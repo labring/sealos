@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos merge, image merging, Docker images, Kubernetes, container optimization, image layers, application deployment, Dockerfile, build process, image storage]
+description: Learn how to use Sealos merge command to combine multiple Docker images, optimize storage, and simplify application deployment in Kubernetes environments.
 ---
 
 # Merge Image Merging

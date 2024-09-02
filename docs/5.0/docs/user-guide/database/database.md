@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [database cluster deployment, Sealos database management, MySQL PostgreSQL MongoDB, database backup, database migration]
+description: Learn how to deploy and manage database clusters with Sealos. Supports MySQL, PostgreSQL, MongoDB, and more. Features include elastic expansion, backup, and migration.
 ---
 
 # Database

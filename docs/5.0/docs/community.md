@@ -1,3 +1,8 @@
+---
+keywords: [Sealos, open source project, Kubernetes, Discord server, GitHub Issues]
+description: Sealos is an open source project driven by user participation. Join our Discord server, tweet at @sealosio, or create GitHub Issues for support.
+---
+
 # Community
 
 Sealos is an open source project that is driven by the participation of users and contributors. If you have questions or

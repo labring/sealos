@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [弹性伸缩, Horizontal Pod Autoscaler, HPA, Sealos, 应用管理, 自动调整, CPU使用率, 资源优化, 性能监控, 动态扩缩容]
+description: 了解Sealos的弹性伸缩功能如何自动调整应用实例数量,优化资源利用。探索HPA工作原理,实现高效的应用性能管理和资源分配。
 ---
 
 # 弹性伸缩

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Kubernetes升级, sealos, 集群管理, Kubernetes版本, Kubernetes集群]
+description: 了解如何使用sealos命令轻松升级Kubernetes集群，确保集群稳定运行并保持最新版本。
 ---
 
 # 如何升级集群

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [sealos scp, file transfer, cluster management, remote file copy, sealos command, cluster nodes, IP-based copy, role-based copy, sealos CLI, DevOps tool]
+description: Learn how to use the sealos scp command for efficient file transfer to cluster nodes. Explore options for IP and role-based copying in Sealos clusters.
 ---
 
 # Scp: Copy Files

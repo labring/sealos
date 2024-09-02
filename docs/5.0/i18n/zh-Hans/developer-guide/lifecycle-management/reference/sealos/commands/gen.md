@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Sealos, Kubernetes集群, gen命令, Clusterfile, sealos apply]
+description: 了解如何使用Sealos的gen命令生成Kubernetes集群配置文件，快速创建和管理集群，提升运维效率。
 ---
 
 # gen 生成集群配置

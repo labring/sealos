@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos logout, image repository, authentication, registry, command line, Docker, container, credentials, security, DevOps]
+description: Learn how to use the 'sealos logout' command to securely remove cached credentials for image repositories. Enhance your container management and security practices.
 ---
 
 # Logout from Repository

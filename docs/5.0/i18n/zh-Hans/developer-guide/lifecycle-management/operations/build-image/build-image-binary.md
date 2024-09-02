@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [集群镜像构建, 二进制文件打包, sealos工具, helm安装, 镜像推送]
+description: 学习如何使用sealos工具将二进制文件（如helm）打包为集群镜像，并通过主节点部署实现安装。包含详细步骤和命令示例。
 ---
 
 # 构建基于二进制文件的集群镜像

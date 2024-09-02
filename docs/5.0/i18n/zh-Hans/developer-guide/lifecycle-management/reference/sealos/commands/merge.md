@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos merge, 合并镜像, Dockerfile, 镜像优化, 应用部署]
+description: 了解如何使用Sealos的merge命令将多个镜像合并为一个，优化镜像大小，简化应用部署，节省存储空间。
 ---
 
 # merge 合并镜像

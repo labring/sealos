@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos pull, container image, image repository, pull command, Docker daemon, image download, remote repositories, authentication, decryption key, pull policy]
+description: Learn how to use the sealos pull command to efficiently download container images from repositories, with options for authentication, decryption, and custom policies.
 ---
 
 # Pull Image

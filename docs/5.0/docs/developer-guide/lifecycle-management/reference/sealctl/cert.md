@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Kubernetes certificates, cert command, secure communication, TLS encryption, Kubernetes cluster]
+description: Generate secure Kubernetes certificates with the `cert` command to ensure encrypted communication within your cluster using TLS.
 ---
 
 # Certificate Management with `cert`

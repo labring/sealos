@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos, app store, app launchpad, application templates, rapid deployment]
+description: Sealos offers an app store with templates for rapid application deployment and an app launchpad for managing applications based on images.
 ---
 
 # Overview

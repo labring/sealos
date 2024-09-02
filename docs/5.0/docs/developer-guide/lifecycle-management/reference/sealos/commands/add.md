@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+keywords: [sealos add, cluster nodes, Kubernetes cluster, add control nodes, add regular nodes, cluster management, sealos command-line tool, node addition, cluster expansion, Kubernetes administration]
+description: Learn how to use the 'sealos add' command to efficiently add control and regular nodes to your Kubernetes cluster. Explore options and best practices for cluster expansion.
 ---
 
 # Adding Cluster Nodes with `sealos add`

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Sealos Cloud, 常见问题, 部署问题, 证书更新, 域名更换, 用户注册, 集群管理, Kubernetes]
+description: 探索Sealos Cloud部署和使用中的常见问题解决方案，包括系统配置、证书更新、域名更换等关键操作指南，助您轻松管理Kubernetes集群。
 ---
 
 # 常见问题

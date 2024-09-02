@@ -1,3 +1,8 @@
+---
+keywords: [LVScare, Sealos, Kubernetes高可用性, IPVS负载均衡, 健康检查工具]
+description: LVScare是一款基于IPVS的轻量级负载均衡和健康检查工具，与Sealos集成，提升Kubernetes集群的高可用性和稳定性。
+---
+
 # LVScare 使用指南
 
 ## 介绍

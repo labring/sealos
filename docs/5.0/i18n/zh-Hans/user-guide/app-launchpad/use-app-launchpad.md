@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos, 应用管理, 云操作系统, Nginx安装, Nextcloud安装, 快速部署, 外网访问, 持久化存储, 应用详情, 系统自带App]
+description: 了解如何在Sealos云操作系统中使用应用管理功能快速安装Nginx和Nextcloud。本指南详细介绍了部署过程、外网访问设置和数据持久化配置。
 ---
 
 # 使用应用管理

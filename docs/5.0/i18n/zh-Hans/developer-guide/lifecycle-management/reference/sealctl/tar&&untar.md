@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+keywords: [Sealos, sealctl tar, sealctl untar, 文件压缩, 文件解压]
+description: 了解如何使用Sealos的sealctl tar和sealctl untar命令进行文件和文件夹的压缩与解压，简化备份和迁移操作。
 ---
 
 # tar 与 untar 详解

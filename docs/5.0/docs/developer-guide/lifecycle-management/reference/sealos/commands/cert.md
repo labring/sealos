@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [sealos cert, cluster certificates, API server certificates, Kubernetes certificates, certificate management, alt-names, certificate verification, kubeadm-config, apiserver.crt]
+description: Learn how to update Kubernetes cluster certificates using the sealos cert command. Discover options for adding domain names and IP addresses, and verify your updates easily.
 ---
 
 # Updating Cluster Certificates with `sealos cert`

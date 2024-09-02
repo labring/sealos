@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [Sealos build命令, 构建OCI镜像, Dockerfile构建, 镜像构建选项, Sealos使用指南]
+description: 了解如何使用Sealos的build命令构建OCI镜像，包括主要选项和示例，提升构建效率和便捷性。
 ---
 
 # build 构建镜像

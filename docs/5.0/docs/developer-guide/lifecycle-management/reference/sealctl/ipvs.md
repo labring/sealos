@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [IPVS, load balancing, sealctl ipvs, virtual servers, real servers, Linux kernel, proxy modes, health check, scheduling algorithms]
+description: Learn how to use sealctl ipvs command for high-performance load balancing in Linux. Manage virtual and real servers, configure health checks, and optimize your network.
 ---
 
 # Manage IPVS

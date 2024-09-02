@@ -1,3 +1,8 @@
+---
+keywords: [Kubepanel, Kubernetes IDE, 集群管理, 资源可视化, Sealos, 部署资源, Workload, Config, Network, Storage]
+description: Kubepanel是一款用户友好的Kubernetes IDE,提供图形界面管理集群、实时监控和资源可视化。本文介绍如何使用Kubepanel查看和部署Kubernetes资源。
+---
+
 # Kubepanel
 
 Kubepanel 是一个款 Kubernetes IDE（集成开发环境）。它提供了一个用户友好的图形界面来管理 Kubernetes

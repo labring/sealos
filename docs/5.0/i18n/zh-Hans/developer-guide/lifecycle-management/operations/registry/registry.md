@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos镜像仓库, Docker Registry, 容器镜像管理, 镜像同步备份, 安全管理, 镜像仓库故障排除]
+description: 探索Sealos镜像仓库管理指南，涵盖安全设置、镜像管理、同步备份及故障排除，助您高效管理Docker Registry，确保容器镜像的安全性和可靠性。
 ---
 
 # Sealos 镜像仓库

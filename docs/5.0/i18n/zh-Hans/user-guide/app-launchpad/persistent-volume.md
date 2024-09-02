@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [持久化存储, Sealos, 容器数据, 数据持久性, 外挂存储, Nextcloud, 数据库, 文件存储系统]
+description: 了解Sealos中的持久化存储如何解决容器数据丢失问题。学习使用外挂存储确保数据库、文件系统等关键数据的安全性，以Nextcloud为例展示实际应用。
 ---
 
 # 持久化存储

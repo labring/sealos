@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Go template, Clusterfile, Kubernetes cluster, sealos, cluster deployment]
+description: Learn how to configure and deploy a Kubernetes cluster using Go template syntax with sealos. Follow our guide for a seamless setup.
 ---
 
 # Template Configuration Installation

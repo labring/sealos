@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [sealos apply, Kubernetes cluster, Clusterfile, cluster images, command-line tool, cluster management, sealos command options, Kubernetes deployment]
+description: Learn how to use the 'sealos apply' command to start and manage Kubernetes clusters. Explore options, Clusterfile usage, and best practices for efficient cluster deployment.
 ---
 
 # Starting a Cluster with `sealos apply`

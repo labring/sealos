@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [App Launchpad, Sealos, application deployment, private images, horizontal pod autoscaling]
+description: App Launchpad in Sealos simplifies application deployment with features like private images, HPA, custom domains, and real-time monitoring.
 ---
 
 # App Launchpad

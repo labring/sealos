@@ -1,3 +1,8 @@
+---
+keywords: [Go application deployment, Docker Go app, Sealos Go app, Go Docker image, Go app tutorial]
+description: Learn how to quickly install and deploy Go applications using Docker and Sealos with this step-by-step guide. Perfect for beginners.
+---
+
 # Quick installation of Go Apps
 
 First, make sure you have installed the following tools:

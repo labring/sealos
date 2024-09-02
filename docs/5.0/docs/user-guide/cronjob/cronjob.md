@@ -1,3 +1,8 @@
+---
+keywords: [CronJob, Sealos, task scheduling, Kubernetes, automation]
+description: Learn how to set up and manage CronJobs in Sealos for automated task scheduling in Kubernetes. Step-by-step guide included.
+---
+
 # CronJob
 
 CronJobs are used to execute tasks periodically according to a specified timetable.

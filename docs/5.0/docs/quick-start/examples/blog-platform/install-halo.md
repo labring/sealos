@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Halo Blogging Platform, Sealos, PostgreSQL deployment, open-source website tool, Halo installation]
+description: Quickly deploy the Halo Blogging Platform on Sealos with PostgreSQL. Follow our step-by-step guide for seamless setup and management.
 ---
 
 # Quick Installation of Halo Blogging Platform

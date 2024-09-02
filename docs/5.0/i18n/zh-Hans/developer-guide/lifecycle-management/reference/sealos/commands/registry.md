@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+keywords: [Sealos, registry 命令, Docker 镜像, 镜像仓库, 镜像同步, 镜像复制, 镜像管理, Docker 分发, 镜像保存, 镜像服务器]
+description: 了解Sealos registry命令的使用指南，包括save、serve、passwd、sync和copy命令，帮助您高效管理Docker镜像仓库。
 ---
 
 # registry 镜像仓库命令

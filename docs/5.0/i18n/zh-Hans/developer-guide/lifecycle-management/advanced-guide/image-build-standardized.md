@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos镜像构建, Kubernetes部署, 目录结构标准化, Kubefile参数, 容器镜像管理, 集群初始化, 应用配置, Helm chart, 环境变量设置, 镜像仓库配置]
+description: 学习Sealos镜像构建的标准化目录配置，掌握Kubefile参数使用，优化Kubernetes部署流程。本指南助您规范化构建过程，提高效率，降低错误率。
 ---
 
 # 镜像构建与标准化目录配置

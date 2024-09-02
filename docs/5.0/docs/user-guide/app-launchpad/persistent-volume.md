@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [persistent storage, data persistence, container storage, Sealos, external storage, container deployment, data retention, Nextcloud, application container]
+description: Ensure data persistence in Sealos with external storage solutions, maintaining data continuity even through container restarts or redeployments.
 ---
 
 # Persistent Volume

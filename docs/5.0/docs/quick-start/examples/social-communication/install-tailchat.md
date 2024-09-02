@@ -1,3 +1,8 @@
+---
+keywords: [Tailchat installation, open source IM, Sealos, MongoDB, Redis, Minio, enterprise application, microservice architecture, plugin architecture]
+description: Quick installation guide for Tailchat, an open source IM application with microservice and plugin architecture, using Sealos with MongoDB, Redis, and Minio.
+---
+
 # Quick installation of Tailchat
 
 [Tailchat](https://tailchat.msgbyte.com/) is an open source IM application that is pluggable and easy to expand. Plugin

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [build cluster images, deployment manifest, nginx deployment, Kubernetes yaml, sealos build]
+description: Learn how to build cluster images based on deployment manifests using a simple nginx application example with Kubernetes yaml and sealos build.
 ---
 
 # Building Cluster Images Based on Deployment Manifest

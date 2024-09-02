@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos, build cluster image, exec command, scp command, Kubernetes, openebs mayastor, flannel installation, cluster management, hugepages, kernel modules]
+description: Learn how to build cluster images using sealos exec and scp commands. Follow step-by-step examples for openebs mayastor and flannel installation.
 ---
 
 # Building Cluster Images Using exec and scp Commands

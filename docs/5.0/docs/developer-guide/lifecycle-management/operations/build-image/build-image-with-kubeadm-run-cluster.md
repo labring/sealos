@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [Kubernetes cluster, custom images, kubeadm config, Clusterfile, sealos build]
+description: Learn how to customize a Kubernetes cluster by building custom images using kubeadm config and sealos build. Follow our step-by-step guide.
 ---
 
 # Customizing a Kubernetes Cluster by Building Custom Images

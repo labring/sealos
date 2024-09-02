@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
-keywords: [K8s, K8s install, K8s deploy, Kubernetes cluster setup, multi-node Kubernetes, offline Kubernetes installation]
+keywords: [Kubernetes installation, Sealos CLI, multi-node Kubernetes, Kubernetes cluster setup, offline Kubernetes installation]
+description: Learn how to install Kubernetes clusters using Sealos CLI on both amd64 and arm64 architectures, including single-node and multi-node setups, with offline installation support.
 ---
 
 # Install Kubernetes

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 11
+keywords: [Sealos, Kubernetes cluster images, application images, cluster-image repository, GitHub Actions, Docker images, configuration images, image build workflow, Kubefile, Helm charts]
+description: Learn how to use Sealos' cluster-image repository to build and publish application images for Kubernetes clusters, including Docker and configuration images, using GitHub Actions.
 ---
 
 # Application Cluster Image Usage Guide

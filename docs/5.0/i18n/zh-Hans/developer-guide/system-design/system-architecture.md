@@ -1,3 +1,8 @@
+---
+keywords: [Sealos, Kubernetes云操作系统, 应用架构, 前后端分离, Kubernetes API]
+description: Sealos 是基于 Kubernetes 的云操作系统，采用前后端分离架构，简化用户操作，提供专业高效的工具，满足不同需求。
+---
+
 # 系统架构
 
 ## 设计哲学

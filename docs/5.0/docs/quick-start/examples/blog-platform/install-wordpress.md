@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [WordPress installation, Sealos, MySQL database, WordPress setup, CMS deployment]
+description: Quick and easy WordPress installation with Sealos. Learn how to set up WordPress and MySQL database for a seamless CMS deployment.
 ---
 
 # Quick Installation of WordPress

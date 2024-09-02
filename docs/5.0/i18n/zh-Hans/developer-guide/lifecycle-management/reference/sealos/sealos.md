@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos, 云操作系统, Kubernetes管理, 集群镜像, 命令行工具]
+description: 了解Sealos使用指南，掌握云操作系统管理Kubernetes集群的命令行工具和集群镜像的详细信息。
 ---
 
 # Sealos 使用指南

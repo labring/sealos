@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [multi-port application, expose multiple ports, Sealos platform, app launchpad, network configuration]
+description: Learn how to expose multiple ports for complex applications using Sealos App Launchpad. Simplify network configuration and enhance accessibility.
 ---
 
 # Exposing Multiple Ports

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos save, image backup, container migration, oci-archive, docker-archive, image storage, Kubernetes images, CLI tool, image archiving, container management]
+description: Learn how to use the 'sealos save' command to store and backup container images efficiently. Explore options for different archive formats and multi-image saving.
 ---
 
 # Save: Store Images

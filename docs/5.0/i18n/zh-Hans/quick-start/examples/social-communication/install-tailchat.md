@@ -1,3 +1,8 @@
+---
+keywords: [Tailchat, Sealos, 开源IM, 快速部署, 微服务架构, 企业级应用, MongoDB, Redis, MinIO, 水平扩容]
+description: 本文详细介绍如何在Sealos云平台上快速部署Tailchat开源IM应用,包括依赖服务的创建、主应用部署、服务预览及扩容等步骤,助您轻松搭建企业级即时通讯系统。
+---
+
 # 快速安装 Tailchat
 
 [Tailchat](https://tailchat.msgbyte.com/) 是一款插件化易拓展的开源 IM 应用。可拓展架构赋予 Tailchat 无限可能性。

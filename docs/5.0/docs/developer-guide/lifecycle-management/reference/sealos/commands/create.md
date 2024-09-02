@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos create, cluster working directory, Sealos command line tool, debugging, image review]
+description: Learn how to use the 'sealos create' command to generate a cluster working directory for debugging and image review without executing the actual cluster.
 ---
 
 # Create Working Directory

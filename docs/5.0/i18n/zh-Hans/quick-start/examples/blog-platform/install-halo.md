@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Halo博客平台, Sealos部署, PostgreSQL数据库, 快速安装, 环境变量配置, 外网访问, 应用管理, 开源建站工具]
+description: 本文详细介绍如何在Sealos上快速部署Halo博客平台,包括PostgreSQL数据库配置、应用部署步骤、环境变量设置等,助您轻松搭建个人博客系统。
 ---
 
 # 快速安装 Halo

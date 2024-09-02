@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [Kubernetes, CRI, 容器管理, sealctl, cgroup驱动]
+description: 了解如何使用sealctl命令管理和检查Kubernetes集群中的CRI容器运行时环境，确保其正确配置和正常运行。
 ---
 
 # CRI 容器管理

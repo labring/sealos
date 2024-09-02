@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos, cloud operating system, Kubernetes clusters, cloud-native applications, cluster management, container management, image management, cluster images, Sealos user guide, Rootfs cluster images]
+description: Explore Sealos, a unified cloud OS for managing Kubernetes clusters and cloud-native apps. Learn about cluster management, containers, and images with our comprehensive user guide.
 ---
 
 # Kubernetes Lifecycle Management

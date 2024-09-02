@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [workspace management, multi-tenant resource isolation, Sealos desktop, invite users, workspace roles]
+description: Learn how to manage workspaces in Sealos, including creating, switching, and inviting users with different roles and permissions.
 ---
 
 # Workspace

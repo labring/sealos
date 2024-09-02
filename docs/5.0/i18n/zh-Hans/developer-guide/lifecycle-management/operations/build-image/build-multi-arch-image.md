@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [多架构集群镜像, sealos构建, amd64和arm64, 容器镜像仓库, 镜像清单, Kubefile, 多平台支持, Docker优化, Kubernetes部署, 镜像推送]
+description: 学习如何使用sealos工具构建支持amd64和arm64架构的集群镜像，并将其推送到容器镜像仓库。掌握多架构镜像构建、推送和清单创建的完整流程。
 ---
 
 # 构建支持多架构的集群镜像

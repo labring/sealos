@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Helm Charts, build cluster image, Kubernetes, sealos, nginx Helm Charts]
+description: Learn how to build a cluster image using Helm Charts with sealos, featuring a step-by-step guide for Kubernetes and nginx Helm Charts.
 ---
 
 # Building Cluster Images Based on Helm Charts

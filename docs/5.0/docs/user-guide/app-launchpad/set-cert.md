@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+keywords: [custom domain certificate, cert-manager, Kubernetes secret, ingress patch, App Launchpad]
+description: Learn how to manually set up a custom domain certificate in App Launchpad using Kubernetes secrets and ingress patching.
 ---
 
 # Set a Custom Domain Certificate

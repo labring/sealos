@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos manifest, image manifest, multi-architecture support, Docker images, OCI images, manifest list, image index, container registry, image management, cross-platform deployment]
+description: Learn how to use Sealos manifest commands to create, modify, and push multi-architecture image manifests for flexible Docker and OCI image management across platforms.
 ---
 
 # Image Manifest

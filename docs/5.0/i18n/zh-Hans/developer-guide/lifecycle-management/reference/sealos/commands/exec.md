@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+keywords: [sealos exec, Sealos 命令行工具, 集群节点, Shell 命令, 执行脚本, 集群管理, Sealos 使用指南, Sealos 选项, Sealos 示例]
+description: 了解如何使用 Sealos exec 命令在集群节点上执行 Shell 命令或脚本，掌握基本用法、选项和示例，提升集群管理效率。
 ---
 
 # exec 执行命令

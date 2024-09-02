@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+keywords: [static-pod, sealctl, lvscare, Kubernetes, 静态Pod配置, kubelet, IPVS, Kubernetes集群]
+description: 了解如何使用sealctl命令生成Kubernetes静态Pod配置，特别是lvscare静态Pod，简化集群管理。
 ---
 
 # static-pod 配置

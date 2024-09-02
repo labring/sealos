@@ -1,5 +1,7 @@
 ---
 sidebar_position: 10
+keywords: [Kubernetes cluster image, Sealos, container runtime interface, image versions, rootfs-type images, Kubernetes deployment, cluster management, container orchestration, CRI options, Sealos documentation]
+description: "Explore Sealos' Kubernetes cluster images: types, versions, and CRI options. Learn about rootfs-type images for efficient Kubernetes deployment and management."
 ---
 
 # Kubernetes Cluster Image Documentation

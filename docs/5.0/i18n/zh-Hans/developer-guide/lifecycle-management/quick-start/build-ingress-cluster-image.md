@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+keywords: [Ingress集群镜像, sealos, helm, nginx-ingress, 镜像缓存代理, Dockerfile, 集群镜像构建, 镜像列表, 镜像registry]
+description: 学习如何使用sealos和helm构建Ingress集群镜像，包括下载chart、添加镜像列表、编写Dockerfile、构建和推送镜像，以及运行集群镜像的完整流程。
 ---
 
 # 构建一个 Ingress 集群镜像

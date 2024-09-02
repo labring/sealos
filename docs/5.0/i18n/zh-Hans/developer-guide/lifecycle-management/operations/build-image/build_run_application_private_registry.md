@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+keywords: [私有镜像, Helm Chart, Kubernetes应用, Sealos, 容器化部署, 镜像构建, 服务暴露, 集群管理, 应用服务, DevOps]
+description: 本文详细介绍如何使用私有镜像和Helm Chart构建完整的Kubernetes应用服务。包括镜像构建、服务配置、部署测试等关键步骤，助您轻松实现容器化应用管理。
 ---
 
 # 使用私有镜像构建一个完整应用服务

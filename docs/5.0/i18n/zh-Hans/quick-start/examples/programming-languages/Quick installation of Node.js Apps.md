@@ -1,3 +1,8 @@
+---
+keywords: [Node.js应用部署, Docker镜像构建, Sealos云平台, 数据库配置, 快速安装教程, 容器化部署, Web应用开发, 云原生应用, Express框架, MySQL数据库]
+description: 本教程详细介绍如何快速安装并部署Node.js应用到Sealos云平台。包括编写代码、构建Docker镜像、配置数据库和应用部署的完整步骤,助您轻松实现云原生应用开发。
+---
+
 # 快速安装 Node.js 程序
 
 首先，确保你已经安装了以下工具：

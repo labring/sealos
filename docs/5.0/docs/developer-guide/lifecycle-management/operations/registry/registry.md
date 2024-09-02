@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Docker Registry, container image management, image synchronization, image backup, Docker security]
+description: Learn effective Docker Registry management with guides on security, image handling, synchronization, and troubleshooting.
 ---
 
 # Sealos Image Repository

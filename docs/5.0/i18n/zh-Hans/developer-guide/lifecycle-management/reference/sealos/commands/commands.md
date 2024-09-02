@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos命令, Kubernetes集群管理, 节点管理, 容器镜像, Sealos调试模式]
+description: 了解Sealos命令，包括Kubernetes集群管理、节点管理、容器镜像操作等，开启调试模式获取详细系统运行信息。
 ---
 
 # Sealos 命令说明

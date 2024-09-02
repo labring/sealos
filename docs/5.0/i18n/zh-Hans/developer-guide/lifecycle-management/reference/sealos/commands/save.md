@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos save, 保存镜像, Sealos 命令行工具, 镜像备份, 镜像迁移]
+description: 了解如何使用 Sealos save 命令保存镜像到归档文件中，轻松备份和迁移你的镜像，支持多种格式和参数。
 ---
 
 # save 保存镜像

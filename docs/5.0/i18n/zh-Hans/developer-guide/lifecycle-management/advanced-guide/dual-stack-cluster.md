@@ -1,6 +1,7 @@
 ---
 sidebar_position: 5
-
+keywords: [双栈集群, calico安装, sealos, Kubernetes, IPv6配置, Clusterfile, k8s双栈, 网络配置, Kubernetes集群, Calico双栈]
+description: 使用calico安装双栈集群，详细步骤包括生成和编辑Clusterfile，添加IPv6的pod和svc的CIDR范围，确保Kubernetes集群的双栈网络配置。
 ---
 
 # 使用calico安装双栈集群

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Clusterfile, sealos, Kubernetes, custom configuration, cluster management, helm, calico, CIDR range, podSubnet, cluster configuration]
+description: Learn how to generate and customize a Clusterfile using sealos for Kubernetes cluster management, including setting up Helm and Calico with specific CIDR ranges.
 ---
 
 # Custom Configuration Installation

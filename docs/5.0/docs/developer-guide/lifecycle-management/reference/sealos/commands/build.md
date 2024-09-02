@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+keywords: [sealos build, OCI images, Dockerfile, image building, containerization, Sealfile, Kubefile, build options, image dependencies, Docker Registry]
+description: Learn how to use 'sealos build' command to create OCI images with various instruction files, manage dependencies, and optimize your containerization workflow.
 ---
 
 # Building Images with `sealos build`

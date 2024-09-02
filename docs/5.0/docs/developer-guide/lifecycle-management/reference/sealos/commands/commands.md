@@ -1,5 +1,7 @@
 ---
 sidebar_position: 0
+keywords: [Sealos commands, cluster management, node management, container operations, Kubernetes cluster, cloud-native applications, image registry, Clusterfile, Sealos installation]
+description: Comprehensive guide to Sealos commands for managing Kubernetes clusters, nodes, and containers. Learn about cluster operations, image handling, and cloud-native app deployment.
 ---
 
 # Sealos Command Reference

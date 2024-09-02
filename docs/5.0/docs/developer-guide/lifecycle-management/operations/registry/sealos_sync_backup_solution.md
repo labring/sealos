@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+keywords: [Sealos cluster, image synchronization, backup strategy, container images, Sealos registry]
+description: Efficient Sealos cluster image synchronization and backup strategy. Learn how to backup and sync container images to reduce bandwidth usage.
 ---
 
 # Efficient Sealos Cluster Image Synchronization and Backup Strategy

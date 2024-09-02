@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [自定义域名, Sealos, 应用部署, CNAME解析, 外网访问, 品牌体验, 域名绑定, 云平台]
+description: 学习如何在Sealos云平台上为您的应用添加自定义域名，提升品牌形象。本指南涵盖部署时和部署后的域名设置流程，包括CNAME解析和外网访问配置。
 ---
 
 # 自定义域名

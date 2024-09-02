@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+keywords: [sealos reset, cluster reset, Kubernetes cluster management, sealos command-line tool, cluster data clearing]
+description: Learn how to use the 'sealos reset' command to reset and rebuild Kubernetes clusters. Explore basic usage, optional parameters, and best practices for efficient cluster management.
 ---
 
 # Reset Cluster

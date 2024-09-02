@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
-keywords: [sealos, sealos 命令行, sealos 下载]
+keywords: [Sealos命令行工具, Sealos安装, Kubernetes集群部署, 二进制下载, 包管理工具安装, 源码安装, 版本选择, Linux系统]
+description: 本文详细介绍了如何下载和安装Sealos命令行工具，包括版本选择、二进制下载、包管理工具安装和源码安装等多种方法，助您快速部署Kubernetes集群。
 ---
 
 import Tabs from '@theme/Tabs';

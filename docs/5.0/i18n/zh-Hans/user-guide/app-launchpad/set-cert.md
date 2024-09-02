@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+keywords: [自定义域名证书, Sealos, 应用管理, cert-manager, Kubernetes, Ingress, TLS Secret, CNAME设置, 证书配置, 域名访问]
+description: 学习如何在Sealos平台上为自定义域名设置证书，解决cert-manager签发失败问题。包括创建TLS Secret、修改Ingress配置等步骤，确保安全访问您的应用。
 ---
 
 # 设置自定义域名证书
