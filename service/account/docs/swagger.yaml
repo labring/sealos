@@ -618,6 +618,38 @@ definitions:
         example: admin
         type: string
     type: object
+  helper.UserUsageReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      namespaceList:
+        description: |-
+          NamespaceList
+          @Summary Namespace list
+          @Description Namespace list
+          @JSONSchema
+        example:
+        - '["ns-admin"'
+        - '"ns-test1"]'
+        items:
+          type: string
+        type: array
+      owner:
+        example: admin
+        type: string
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+    type: object
 host: localhost:2333
 info:
   contact:
@@ -1482,4 +1514,42 @@ paths:
       summary: Transfer amount
       tags:
       - TransferAmount
+  /account/v1alpha1/user-usage:
+    post:
+      consumes:
+      - application/json
+      description: Get user usage within a specified time range
+      parameters:
+      - description: User usage request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserUsageReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user usage
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user usage request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user usage
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user usage
+      tags:
+      - UserUsage
 swagger: "2.0"

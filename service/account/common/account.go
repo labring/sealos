@@ -30,3 +30,11 @@ type AppCost struct {
 }
 
 type Used map[uint8]int64
+
+type Monitor struct {
+	Namespace  string `json:"namespace,omitempty" bson:"namespace,omitempty" example:"ns-admin"`
+	ParentType uint8  `json:"parent_type,omitempty" bson:"parent_type,omitempty" example:"parent_type"`
+	ParentName string `json:"parent_name,omitempty" bson:"parent_name,omitempty" example:"parent_name"`
+	Type       uint8  `json:"type,omitempty" bson:"type,omitempty" example:"type"`
+	Name       string `json:"name,omitempty" bson:"name,omitempty" example:"name"`
+}

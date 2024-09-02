@@ -26,6 +26,7 @@ const (
 	SetStatusInvoice         = "/invoice/set-status"
 	GetInvoicePayment        = "/invoice/get-payment"
 	UseGiftCode              = "/gift-code/use"
+	UserUsage                = "/user-usage"
 )
 
 // env

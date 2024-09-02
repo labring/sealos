@@ -510,3 +510,35 @@ func ParseUseGiftCodeReq(c *gin.Context) (*UseGiftCodeReq, error) {
 
 	return useGiftCode, nil
 }
+
+type UserUsageReq struct {
+	// @Summary Start and end time for the request
+	// @Description Start and end time for the request
+	// @JSONSchema required
+	TimeRange `json:",inline" bson:",inline"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	*Auth `json:",inline" bson:",inline"`
+
+	// NamespaceList
+	// @Summary Namespace list
+	// @Description Namespace list
+	// @JSONSchema
+	NamespaceList []string `json:"namespaceList" bson:"namespaceList" example:"[\"ns-admin\",\"ns-test1\"]"`
+}
+
+func ParseUserUsageReq(c *gin.Context) (*UserUsageReq, error) {
+	userUsage := &UserUsageReq{}
+	if err := c.ShouldBindJSON(userUsage); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if userUsage.StartTime.IsZero() {
+		userUsage.StartTime = time.Now().Add(-2 * time.Minute)
+	}
+	if userUsage.EndTime.IsZero() {
+		userUsage.EndTime = time.Now()
+	}
+	return userUsage, nil
+}

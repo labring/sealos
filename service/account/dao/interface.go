@@ -43,6 +43,7 @@ type Interface interface {
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
 	GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentReq) ([]types.Payment, types.LimitResp, error)
+	GetMonitorUniqueValues(startTime, endTime time.Time, namespaces []string) ([]common.Monitor, error)
 	ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoice, payments []types.Payment, err error)
 	GetInvoice(req *helper.GetInvoiceReq) ([]types.Invoice, types.LimitResp, error)
 	GetInvoicePayments(invoiceID string) ([]types.Payment, error)
@@ -1154,6 +1155,49 @@ func (m *MongoDB) getSumOfUsedAmount(propertyType uint8, user string, startTime,
 	return result.TotalAmount, nil
 }
 
+func (m *MongoDB) GetMonitorUniqueValues(startTime, endTime time.Time, namespaces []string) ([]common.Monitor, error) {
+	ctx := context.Background()
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{
+			"time": bson.M{
+				"$gte": startTime,
+				"$lte": endTime,
+			},
+			"category": bson.M{
+				"$in": namespaces,
+			},
+		}}},
+		{{Key: "$group", Value: bson.M{
+			"_id": bson.M{
+				"category":    "$category",
+				"parent_type": "$parent_type",
+				"parent_name": "$parent_name",
+				"type":        "$type",
+				"name":        "$name",
+			},
+		}}},
+		{{Key: "$project", Value: bson.M{
+			"_id":         0,
+			"namespace":   "$_id.category",
+			"parent_type": "$_id.parent_type",
+			"parent_name": "$_id.parent_name",
+			"type":        "$_id.type",
+			"name":        "$_id.name",
+		}}},
+	}
+
+	cursor, err := m.getMonitorCollection(startTime).Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate error: %v", err)
+	}
+	defer cursor.Close(ctx)
+	var result []common.Monitor
+	if err := cursor.All(ctx, &result); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return result, nil
+}
+
 func NewAccountInterface(mongoURI, globalCockRoachURI, localCockRoachURI string) (Interface, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
@@ -1274,6 +1318,16 @@ func (m *Account) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 
 func (m *MongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDBName).Collection(m.BillingConn)
+}
+
+func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
+	// 2020-12-01 00:00:00 - 2020-12-01 23:59:59
+	return m.Client.Database(m.AccountDBName).Collection(m.getMonitorCollectionName(collTime))
+}
+
+func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
+	// Calculate the suffix by day, for example, the suffix on the first day of 202012 is 20201201
+	return fmt.Sprintf("%s_%s", "monitor", collTime.Format("20060102"))
 }
 
 func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoice, payments []types.Payment, err error) {

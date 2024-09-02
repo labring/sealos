@@ -915,3 +915,35 @@ func UseGiftCode(c *gin.Context) {
 		Message: "Gift code successfully redeemed",
 	})
 }
+
+// UserUsage
+// @Summary Get user usage
+// @Description Get user usage within a specified time range
+// @Tags UserUsage
+// @Accept json
+// @Produce json
+// @Param request body helper.UserUsageReq true "User usage request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved user usage"
+// @Failure 400 {object} map[string]interface{} "failed to parse user usage request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get user usage"
+// @Router /account/v1alpha1/user-usage [post]
+func UserUsage(c *gin.Context) {
+	req, err := helper.ParseUserUsageReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user usage request: %v", err)})
+		return
+	}
+	if err = checkInvoiceToken(req.Token); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	usage, err := dao.DBClient.GetMonitorUniqueValues(req.StartTime, req.EndTime, req.NamespaceList)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get user usage : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": usage,
+	})
+}

@@ -608,3 +608,19 @@ func init() {
 	os.Setenv("LOCAL_COCKROACH_URI", "")
 	os.Setenv("LOCAL_REGION", "")
 }
+
+func TestMongoDB_GetMonitorUniqueValues(t *testing.T) {
+	db, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	monitors, err := db.GetMonitorUniqueValues(time.Now().UTC().Add(-2*time.Minute), time.Now().UTC(), []string{"ns-ufbih5nx", "ns-fb3qejql", "ns-pvq1d3ri", "ns-cyvisdnk"})
+	if err != nil {
+		t.Fatalf("GetMonitorUniqueValues() error = %v", err)
+		return
+	}
+	for _, monitor := range monitors {
+		t.Logf("monitor = %+v\n", monitor)
+	}
+}
