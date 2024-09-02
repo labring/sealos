@@ -5,8 +5,7 @@ import {
   DevboxEditType,
   DevboxListItemType,
   DevboxPatchPropsType,
-  DevboxVersionListItemType,
-  NetworkType
+  DevboxVersionListItemType
 } from '@/types/devbox'
 
 export const getMyDevboxList = () =>
@@ -24,8 +23,8 @@ export const createDevbox = (payload: { devboxForm: DevboxEditType }) =>
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
   POST(`/api/updateDevbox`, payload)
 
-export const delDevbox = (devboxName: string, networks: NetworkType[]) =>
-  DELETE('/api/delDevboxByName', { devboxName, networks })
+export const delDevbox = (devboxName: string, networks: string[]) =>
+  DELETE('/api/delDevbox', { devboxName, networks })
 
 export const restartDevbox = (data: { devboxName: string }) => POST('/api/restartDevbox', data)
 
