@@ -7,6 +7,7 @@ COPY manifests manifests
 
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
+ENV userDomain=""
 ENV certSecretName="wildcard-cert"
 ENV templateRepoUrl="https://github.com/labring-actions/templates"
 ENV templateRepoBranch="main"
