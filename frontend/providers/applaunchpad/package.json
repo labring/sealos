@@ -27,6 +27,7 @@
     "axios": "^1.5.1",
     "base64-stream": "^1.0.0",
     "dayjs": "^1.11.10",
+    "decimal.js": "^10.4.3",
     "dns": "^0.2.2",
     "echarts": "^5.4.3",
     "fast-json-patch": "^3.1.1",

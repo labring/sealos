@@ -323,13 +323,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             formHook.handleSubmit((data) => {
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
+
               // balance check
-              // if (balance <= 0) {
-              //   return toast({
-              //     status: 'warning',
-              //     title: t('user.Insufficient account balance')
-              //   });
-              // }
+              if (balance <= 0) {
+                return toast({
+                  status: 'warning',
+                  title: t('user.Insufficient account balance')
+                });
+              }
 
               // gpu inventory check
               if (data.gpu?.type) {

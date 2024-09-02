@@ -11,7 +11,7 @@ export const getInitData = () => GET<InitDataType>('/api/platform/getInitData');
 
 export const getUserQuota = () =>
   GET<{
-    balance: number;
+    balance: string;
     quota: UserQuotaItemType[];
   }>('/api/platform/getQuota');
 
