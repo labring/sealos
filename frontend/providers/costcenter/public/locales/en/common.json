@@ -95,14 +95,14 @@
     "invoiceAmount": "Invoice Amount",
     "invoice": "Generate Invoice",
     "invoiceOrder": "Invoice Order",
-		"invoiceRecord": "Invoice Record",
+    "invoiceRecord": "Invoice Record",
     "phoneValidation": "Please enter a valid phone number",
     "taxNumberValidation": "Please enter a valid tax registration number",
     "bankAccountValidation": "Please enter a valid bank account number",
     "emailValidation": "Please enter a valid email address",
     "submit success": "Submit success",
     "submit fail": "Submit fail",
-		"require": "Please enter value",
+    "require": "Please enter value",
     "code success": "Verification code sent successfully",
     "code error": "Verification code sent failed",
     "Name": "Name",
@@ -137,14 +137,14 @@
         "name": "Fax",
         "placeholder": "Enter fax number"
       },
-			"type":{
-				"name": "Type",
-				"placeholder": "Enter type",
-				"list": {
-					"special": "VAT invoice (Special)",
-					"normal": "VAT invoice (Normal)"
-				}
-			}
+      "type": {
+        "name": "Type",
+        "placeholder": "Enter type",
+        "list": {
+          "special": "VAT invoice (Special)",
+          "normal": "VAT invoice (Normal)"
+        }
+      }
     },
     "contract": {
       "person": {
@@ -168,18 +168,17 @@
     "Invoice Content": "Invoice Content",
     "Electronic Computer Service Fee": "Electronic Computer Service Fee",
     "Contact Information": "Contact Information",
-		"Apply Inovice Tips": "Apply for an invoice need to 3 to 5 days",
-		"Apply Invoice": "Apply Invoice",
-		
-		"status":{
-			"PENDING": "pending",
-			"COMPLETED": "completed",
-			"REJECTED": "rejected"
-		}
+    "Apply Inovice Tips": "Apply for an invoice need to 3 to 5 days",
+    "Apply Invoice": "Apply Invoice",
+    "status": {
+      "PENDING": "pending",
+      "COMPLETED": "completed",
+      "REJECTED": "rejected"
+    }
   },
-	"Invoice Status": "Invoice Status",
-	"Invoice Create Time": "invoice create time",
-	"Invoice Update Time": "invoice update time",
+  "Invoice Status": "Invoice Status",
+  "Invoice Create Time": "invoice create time",
+  "Invoice Update Time": "invoice update time",
   "pay with stripe": "Pay With Stripe",
   "pay with wechat": "Pay With Wechat",
   "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",
@@ -216,5 +215,14 @@
   "Price Table": "Price Table",
   "all_workspace": "All Workspace",
   "preferential_rules": "Preferential Rules",
-  "preferential_strength": "Preferential Strength"
+  "preferential_strength": "Preferential Strength",
+  "Redeem": "Redemption",
+  "Input Gift code": "Enter Gift Card",
+  "Gift Code": "Gift Code",
+  "Gift Card Redemption": "Gift Card Redemption",
+  "Gift code is required": "gift code is required",
+  "Gift code must be exactly 24 characters long": "Gift code must be exactly 24 characters long",
+  "Gift code can only contain letters and numbers": "Gift code can only contain letters and numbers",
+  "Failed to redeem Gift Code": "Failed to redeem",
+  "Gift Code Redeemed Successfully": "Redemption successful! \nRecharged to your balance."
 }

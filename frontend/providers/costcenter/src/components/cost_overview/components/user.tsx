@@ -63,7 +63,7 @@ export default memo(function UserCard({ balance }: { balance: number }) {
         boxShadow={'0 4px #BCBFC3,0 8px #DFE2E6'}
         pt="13px"
         pb={'19px'}
-        mb={'34px'}
+        mb={'10px'}
         px="16px"
         position={'relative'}
         width="331px"

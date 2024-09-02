@@ -12,7 +12,7 @@ import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types';
 import request from '@/service/request';
 import { useQuery } from '@tanstack/react-query';
-
+import GiftCode from '@/components/cost_overview/components/GiftCode';
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
 });
@@ -99,8 +99,10 @@ function CostOverview() {
           display={['none', 'none', 'none', 'flex']}
           direction={'column'}
           justify={'flex-start'}
+          gap="28px"
         >
           <UserCard balance={balance} />
+          <GiftCode />
           <Buget expenditureAmount={expenditureAmount}></Buget>
         </Flex>
       </Flex>
