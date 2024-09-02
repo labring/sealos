@@ -1,7 +1,7 @@
 import JSZip from 'jszip'
 import dayjs from 'dayjs'
 import React, { useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n'
 import { useTranslations } from 'next-intl'
 import { Box, Flex, Button } from '@chakra-ui/react'
 

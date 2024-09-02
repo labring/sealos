@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n'
 import { useTranslations } from 'next-intl'
 import { Button, Box } from '@chakra-ui/react'
 

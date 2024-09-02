@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from '@/i18n'
 import dynamic from 'next/dynamic'
 import debounce from 'lodash/debounce'
 import { useMessage } from '@sealos/ui'
@@ -7,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { Box, Flex } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 import Form from './components/Form'

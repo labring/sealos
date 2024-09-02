@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Tabs } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react'
 
+import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 import { obj2Query } from '@/utils/tools'
 import type { YamlItemType } from '@/types'

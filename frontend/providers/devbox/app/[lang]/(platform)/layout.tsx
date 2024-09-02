@@ -2,7 +2,7 @@
 
 import throttle from 'lodash/throttle'
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from '@/i18n'
 import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
@@ -41,7 +41,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       const lastLang = getLangStore()
       const newLang = data.currentLanguage
       if (lastLang !== newLang) {
-        // router.push(`/${newLang}`)
+        router.push(pathname, { locale: newLang })
         setLangStore(newLang)
         setRefresh((state) => !state)
       }
@@ -115,7 +115,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const lang = getLangStore() || 'zh'
-    // router.push(`/${lang}`)
+    router.push(pathname, { locale: lang })
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, pathname])
 
