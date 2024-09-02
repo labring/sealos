@@ -5,6 +5,7 @@
   "Custom Domain": "Custom Domain",
   "Input your custom domain": "Enter your custom domain",
   "Network Configuration": "Network Configuration",
+  "No changes detected": "No change detected",
   "Open Public Access": "Enable Internet Access",
   "The container exposed port cannot be empty": "Container port is required",
   "The maximum number of exposed ports is 65535": "Maximum port number is 65535",

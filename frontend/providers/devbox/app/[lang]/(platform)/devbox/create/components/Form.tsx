@@ -193,7 +193,12 @@ const Form = ({
             border={theme.borders.base}
             p={'4px'}>
             {navList.map((item) => (
-              <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
+              <Box
+                key={item.id}
+                onClick={() => {
+                  router.replace(`#${item.id}`)
+                  setActiveNav(item.id)
+                }}>
                 <Flex
                   borderRadius={'base'}
                   cursor={'pointer'}

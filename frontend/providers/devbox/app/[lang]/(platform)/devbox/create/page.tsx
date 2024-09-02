@@ -185,10 +185,27 @@ const DevboxCreatePage = () => {
         })
       }
       const parsedNewYamlList = yamlList.map((item) => item.value)
+      const parsedOldYamlList = formOldYamls.current.map((item) => item.value)
+      console.log('parsedNewYamlList', parsedNewYamlList)
+      console.log('parsedOldYamlList', parsedOldYamlList)
+
+      const areYamlListsEqual =
+        new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
+        [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item))
+      if (areYamlListsEqual) {
+        setIsLoading(false)
+        return toast({
+          status: 'info',
+          title: t('No changes detected'),
+          duration: 5000,
+          isClosable: true
+        })
+      }
+
       // create or update
       if (devboxName) {
         const patch = patchYamlList({
-          parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+          parsedOldYamlList: parsedOldYamlList,
           parsedNewYamlList: parsedNewYamlList,
           originalYamlList: crOldYamls.current
         })
