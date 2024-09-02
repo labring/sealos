@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Tabs } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/routing'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
