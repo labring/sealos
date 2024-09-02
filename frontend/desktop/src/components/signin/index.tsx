@@ -241,7 +241,7 @@ export default function SigninComponent() {
                   ? (t('common:loading') || 'Loading') + '...'
                   : t('common:log_in') || 'Log In'}
               </Button>
-              {hasBaiduToken && getBaiduId() ? <Box></Box> : <AuthList />}
+              <AuthList />
             </>
           )}
         </Flex>

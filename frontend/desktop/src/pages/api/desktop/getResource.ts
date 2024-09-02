@@ -48,11 +48,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       for (const volume of pod.spec.volumes) {
         if (!volume.persistentVolumeClaim?.claimName) continue;
         const pvcName = volume.persistentVolumeClaim.claimName;
-        const pvc = await kc
-          .makeApiClient(k8s.CoreV1Api)
-          .readNamespacedPersistentVolumeClaim(pvcName, namespace);
-        const storage = pvc?.body?.spec?.resources?.requests?.storage || '0';
-        totalStorageRequests += parseResourceValue(storage);
+        try {
+          const pvc = await kc
+            .makeApiClient(k8s.CoreV1Api)
+            .readNamespacedPersistentVolumeClaim(pvcName, namespace);
+          const storage = pvc?.body?.spec?.resources?.requests?.storage || '0';
+          totalStorageRequests += parseResourceValue(storage);
+        } catch (error) {}
       }
     }
 
