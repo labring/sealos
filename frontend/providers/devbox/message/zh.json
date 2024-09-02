@@ -71,7 +71,7 @@
   "pause_success": "暂停成功",
   "prompt": "提示",
   "release": "发布",
-  "release_confirm_info": "发版过程将暂停机器，以当前状态发版。发版时需要关机，如果您未关机，会自动为您关机，是否发版？",
+  "release_confirm_info": "发版过程将以当前状态发版且需要关机，如果您未关机，会自动为您关机，是否发版？",
   "release_failed": "发版失败",
   "release_prompt": "发版过程将暂停机器，以当前状态发版。",
   "release_successful": "发版成功",

@@ -71,7 +71,7 @@
   "pause_success": "Pause success",
   "prompt": "Prompt",
   "release": "Release",
-  "release_confirm_info": "The release process will pause the machine and release in its current state. If you do not shut down, it will automatically shut down for you. Do you want to send the version?",
+  "release_confirm_info": "The release process will be released in the current state and needs to shut down. If you do not shut down, it will automatically shut down for you. Do you want to release the version?",
   "release_failed": "Release failed",
   "release_prompt": "The release process will pause the machine and release in the current state.",
   "release_successful": "release successfully",

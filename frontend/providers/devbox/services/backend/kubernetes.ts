@@ -257,8 +257,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     return Promise.reject('用户不存在')
   }
 
-  // const namespace = kc.contexts[0].namespace || GetUserDefaultNameSpace(kube_user.name)
-  const namespace = kc.contexts[0].namespace || 'default'
+  const namespace = kc.contexts[0].namespace || GetUserDefaultNameSpace(kube_user.name)
 
   const applyYamlList = async (yamlList: string[], type: 'create' | 'replace' | 'update') => {
     const formatYaml: k8s.KubernetesObject[] = yamlList
