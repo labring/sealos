@@ -17,21 +17,55 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type Config struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=sealos
+	User string `json:"user"`
+
+	// +kubebuilder:validation:Required
+	Image string `json:"image"`
+
+	// +kubebuilder:validation:Optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// +kubebuilder:validation:Optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Command []string `json:"command,omitempty"`
+	// kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
+	// +kubebuilder:validation:Optional
+	WorkingDir string `json:"workingDir,omitempty"`
+	// +kubebuilder:validation:Optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={{name:"devbox-ssh-port",containerPort:22,protocol:TCP}}
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	// +kubebuilder:validation:Optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+}
 
 // RuntimeSpec defines the desired state of Runtime
 type RuntimeSpec struct {
 	// +kubebuilder:validation:Required
 	Title string `json:"title"`
 	// +kubebuilder:validation:Optional
-	Category []string `json:"category"`
+	Category []string `json:"category,omitempty"`
 	// +kubebuilder:validation:Required
 	ClassRef string `json:"classRef"`
-	// +kubebuilder:validation:Required
-	Image string `json:"image"`
 	// +kube:validation:Optional
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
+
+	// +kubebuilder:validation:Required
+	Config Config `json:"config"`
 }
 
 // RuntimeStatus defines the observed state of Runtime
@@ -42,7 +76,6 @@ type RuntimeStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
 
 // Runtime is the Schema for the runtimes API
 type Runtime struct {
