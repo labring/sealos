@@ -23,15 +23,15 @@ export const viewport: Viewport = {
   initialScale: 1
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-  params: { lang }
+  params: { locale }
 }: Readonly<{
   children: React.ReactNode
-  params: { lang: string }
+  params: { locale: string }
 }>) {
   return (
-    <html lang={lang}>
+    <html lang={locale}>
       <body className={inter.className}>
         <IntlProvider>{children}</IntlProvider>
       </body>

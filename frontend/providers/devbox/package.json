@@ -33,7 +33,7 @@
     "lodash": "^4.17.21",
     "nanoid": "^4.0.2",
     "next": "14.2.5",
-    "next-intl": "^3.17.2",
+    "next-intl": "^3.19.0",
     "nprogress": "^0.2.0",
     "react": "^18",
     "react-dom": "^18",

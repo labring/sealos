@@ -11,7 +11,7 @@ import {
   Tooltip
 } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/routing'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'

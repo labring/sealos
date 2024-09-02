@@ -1,8 +1,8 @@
 'use client'
 
 import throttle from 'lodash/throttle'
+import { useRouter, usePathname } from '@/i18n/routing'
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
 import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
@@ -32,37 +32,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     content: 'not_allow_standalone_use'
   })
 
-  useEffect(() => {
-    getUserPrice()
-    getRuntime()
-    getEnv()
-    getGlobalNamespace()
-    const changeI18n = async (data: any) => {
-      const lastLang = getLangStore()
-      const newLang = data.currentLanguage
-      if (lastLang !== newLang) {
-        // router.push(`/${newLang}`)
-        setLangStore(newLang)
-        setRefresh((state) => !state)
-      }
-    }
-
-    ;(async () => {
-      try {
-        const lang = await sealosApp.getLanguage()
-        changeI18n({
-          currentLanguage: lang.lng
-        })
-      } catch (error) {
-        changeI18n({
-          currentLanguage: 'zh'
-        })
-      }
-    })()
-
-    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
-  }, [])
-
   // init session
   useEffect(() => {
     const response = createSealosApp()
@@ -90,6 +59,37 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    getUserPrice()
+    getRuntime()
+    getEnv()
+    getGlobalNamespace()
+    const changeI18n = async (data: any) => {
+      const lastLang = getLangStore()
+      const newLang = data.currentLanguage
+      if (lastLang !== newLang) {
+        router.push(pathname, { locale: newLang })
+        setLangStore(newLang)
+        setRefresh((state) => !state)
+      }
+    }
+
+    ;(async () => {
+      try {
+        const lang = await sealosApp.getLanguage()
+        changeI18n({
+          currentLanguage: lang.lng
+        })
+      } catch (error) {
+        changeI18n({
+          currentLanguage: 'zh'
+        })
+      }
+    })()
+
+    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
+  }, [])
+
   // add resize event
   useEffect(() => {
     const resize = throttle((e: Event) => {
@@ -114,8 +114,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [pathname])
 
   useEffect(() => {
-    const lang = getLangStore() || 'zh'
-    // router.push(`/${lang}`)
+    const lang = getLangStore() || ('zh' as any)
+    router.push(pathname, { locale: lang })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, pathname])
 
