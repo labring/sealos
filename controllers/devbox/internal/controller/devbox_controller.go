@@ -72,15 +72,16 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger := log.FromContext(ctx, "devbox", req.NamespacedName)
 	devbox := &devboxv1alpha1.Devbox{}
 
+	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
 		PartOf:    DevBoxPartOf,
 	})
 
-	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
 	if devbox.ObjectMeta.DeletionTimestamp.IsZero() {
 		if controllerutil.AddFinalizer(devbox, FinalizerName) {
 			if err := r.Update(ctx, devbox); err != nil {
