@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
     if (!kc) {
       return jsonRes(resp, {
-        code: 400,
+        code: 401,
         message: 'kc is required'
       });
     }
