@@ -580,9 +580,10 @@ const Form = ({
                         size={'lg'}
                         isChecked={!!network.openPublicDomain}
                         onChange={(e) => {
+                          const devboxName = getValues('name')
                           updateNetworks(i, {
                             ...getValues('networks')[i],
-                            networkName: network.networkName || `network-${nanoid()}`,
+                            networkName: network.networkName || `${devboxName}-${nanoid()}`,
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
                             publicDomain: network.publicDomain || nanoid()
