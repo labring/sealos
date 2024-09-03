@@ -69,7 +69,7 @@ export default function TeamCenter(props: StackProps) {
   const users: TeamUserDto[] = [...(data?.data?.users || [])];
   const curTeamUser = users.find((user) => user.crUid === userCrUid);
   const namespace = data?.data?.namespace;
-  const isTeam = namespace?.nstype === NSType.Team;
+  const isPrivate = namespace?.nstype === NSType.Private;
   // inviting message list
   const reciveMessage = useQuery({
     queryKey: ['teamRecive', 'teamGroup'],
@@ -85,7 +85,7 @@ export default function TeamCenter(props: StackProps) {
       return data.data?.namespaces;
     }
   });
-  const namespaces = _namespaces?.filter((ns) => ns.nstype !== NSType.Private) || [];
+  const namespaces = _namespaces || [];
   useEffect(() => {
     const defaultNamespace =
       namespaces?.length > 0
@@ -211,9 +211,11 @@ export default function TeamCenter(props: StackProps) {
                     <Box mx="10px">
                       <Flex align={'center'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                          {namespace.teamName}
+                          {isPrivate
+                            ? `${t('common:default_team')} - ${namespace.teamName}`
+                            : namespace.teamName}
                         </Text>
-                        {isTeam && curTeamUser?.role === UserRole.Owner && (
+                        {!isPrivate && curTeamUser?.role === UserRole.Owner && (
                           <DissolveTeam
                             ml="auto"
                             nsid={nsid}
@@ -272,19 +274,25 @@ export default function TeamCenter(props: StackProps) {
                       >
                         {users.length}
                       </Flex>
-                      {isTeam &&
-                        curTeamUser &&
+                      {curTeamUser &&
                         [UserRole.Owner, UserRole.Manager].includes(curTeamUser.role) && (
                           <InviteMember
                             ownRole={curTeamUser?.role ?? UserRole.Developer}
                             ns_uid={ns_uid}
-                            workspaceName={namespace.teamName}
+                            workspaceName={
+                              isPrivate ? t('common:default_team') : namespace.teamName
+                            }
                             ml="auto"
                           />
                         )}
                     </Flex>
                     <Box h="250px" overflow={'scroll'}>
-                      <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />
+                      <UserTable
+                        users={users}
+                        ns_uid={ns_uid}
+                        nsid={nsid}
+                        canAbdicate={nsid === 'ns-' + k8s_username}
+                      />
                     </Box>
                   </Stack>
                 </>

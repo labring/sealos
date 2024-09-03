@@ -16,8 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 400, message: 'ns_uid is invaild' });
     const queryResult = await prisma.userWorkspace.findMany({
       where: {
-        workspaceUid: ns_uid,
-        isPrivate: false
+        workspaceUid: ns_uid
       },
       include: {
         workspace: true,
@@ -45,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       role: roleToUserRole(selfItem.role),
       createTime: workspace.createdAt,
       teamName: workspace.displayName,
-      nstype: NSType.Team
+      nstype: workspace.id === 'ns-' + payload.userCrName ? NSType.Private : NSType.Team
     };
     const users = queryResult.flatMap<TeamUserDto>((x) => {
       const user = userResult.find((user) => user.uid === x.userCr.userUid);

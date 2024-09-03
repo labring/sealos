@@ -62,7 +62,7 @@ export async function getRegionToken({
         if (userCrResult) {
           // get a exist user
           const relations = userCrResult.userWorkspace!;
-          const privateRelation = relations.find((r) => r.isPrivate === true);
+          const privateRelation = relations.find((r) => r.isPrivate);
           return {
             userUid: userCrResult.userUid,
             userCrUid: userCrResult.uid,

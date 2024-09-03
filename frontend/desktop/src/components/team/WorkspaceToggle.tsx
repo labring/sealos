@@ -18,7 +18,8 @@ export default function WorkspaceToggle() {
   const disclosure = useDisclosure();
   const { setWorkSpaceId, session } = useSessionStore();
   const { t } = useTranslation();
-  const ns_uid = session?.user?.ns_uid || '';
+  const user = session?.user;
+  const ns_uid = user?.ns_uid || '';
   const router = useRouter();
   const queryClient = useQueryClient();
   const { init } = useAppStore();
