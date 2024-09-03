@@ -166,7 +166,7 @@ function GiftCodeModal({ isOpen, onClose }: GiftCodeModalProps) {
       setError(t('Gift code is required'));
     } else if (value.length !== 24) {
       setError(t('Gift code must be exactly 24 characters long'));
-    } else if (!/^[A-Za-z0-9]+$/.test(value)) {
+    } else if (!/^[A-Za-z0-9-]+$/.test(value)) {
       setError(t('Gift code can only contain letters and numbers'));
     } else {
       setError('');
