@@ -16,12 +16,13 @@ apiVersion: devbox.sealos.io/v1alpha1
 kind: Runtime
 metadata:
   name: go-1-22-5
+  namespace: devbox-system
 spec:
   classRef: go
   title: go1.22.5
   description: go1.22.5
   config:
-    image: ghcr.io/cbluebird/devbox/go1.22.5:9259f1
+    image: ghcr.io/cbluebird/devbox/go1.22.5:2f4067
   category:
     - ubuntu
     - go
@@ -30,12 +31,13 @@ apiVersion: devbox.sealos.io/v1alpha1
 kind: Runtime
 metadata:
   name: go-1-23-0
+  namespace: devbox-system
 spec:
   classRef: go
   title: go1.23.0
   description: go1.23.0
   config:
-    image: ghcr.io/cbluebird/devbox/go1.23.0:9259f1
+    image: ghcr.io/cbluebird/devbox/go1.23.0:2f4067
   category:
     - ubuntu
     - go
@@ -44,12 +46,13 @@ apiVersion: devbox.sealos.io/v1alpha1
 kind: Runtime
 metadata:
   name: gin
+  namespace: devbox-system
 spec:
   classRef: gin
   title: gin
   description: gin
   config:
-    image: ghcr.io/cbluebird/devbox/gin:9259f1
+    image: ghcr.io/cbluebird/devbox/gin:2f4067
   category:
     - ubuntu
     - go
@@ -59,12 +62,13 @@ apiVersion: devbox.sealos.io/v1alpha1
 kind: Runtime
 metadata:
   name: spring-boot
+  namespace: devbox-system
 spec:
   classRef: spring-boot
   title: Spring Boot
   description: Spring Boot
   config:
-    image: ghcr.io/cbluebird/devbox/spring-boot:9259f1
+    image: ghcr.io/cbluebird/devbox/spring-boot:2f4067
   category:
     - ubuntu
     - java
