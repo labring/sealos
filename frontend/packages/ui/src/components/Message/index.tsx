@@ -3,14 +3,56 @@ import CloseIcon from '../icons/CloseIcon';
 import GeneralIcon from '../icons/GeneralIcon';
 import SuccessIcon from '../icons/SuccessIcon';
 import WarningIcon from '../icons/WarningIcon';
+interface CustomToastOptions extends UseToastOptions {
+  infoBoxBg?: string;
+  errorBoxBg?: string;
+  successBoxBg?: string;
+  warningBoxBg?: string;
+  loadingBoxBg?: string;
 
-export default function useMessage(props?: UseToastOptions) {
-  const statusMap: Record<AlertStatus, { bg: string; icon: JSX.Element }> = {
-    info: { bg: '#DBF3FF', icon: <GeneralIcon w={'16px'} h="16px" fill={'#0884DD'} /> },
-    error: { bg: '#FEE4E2', icon: <CloseIcon w={'16px'} h="16px" fill={'#D92D20'} /> },
-    success: { bg: '#D0F5DC', icon: <SuccessIcon w={'16px'} h="16px" fill={'#039855'} /> },
-    warning: { bg: '#FEF0C7', icon: <WarningIcon /> },
-    loading: { bg: '#FEF0C7', icon: <WarningIcon /> }
+  infoIconBg?: string;
+  infoIconFill?: string;
+
+  errorIconBg?: string;
+  errorIconFill?: string;
+
+  warningIconBg?: string;
+  warningIconFill?: string;
+
+  successIconBg?: string;
+  successIconFill?: string;
+
+  loadingIconBg?: string;
+  loadingIconFill?: string;
+}
+export default function useMessage(props?: CustomToastOptions) {
+  const statusMap: Record<AlertStatus, { bg: string; icon: JSX.Element; boxBg?: string }> = {
+    info: {
+      bg: props?.infoIconBg || '#DBF3FF',
+      icon: <GeneralIcon w={'16px'} h="16px" fill={props?.infoIconFill || '#0884DD'} />,
+      boxBg: props?.infoBoxBg
+    },
+    error: {
+      bg: props?.errorIconBg || '#FEE4E2',
+      icon: <CloseIcon w={'16px'} h="16px" fill={props?.errorIconFill || '#D92D20'} />,
+      boxBg: props?.errorBoxBg
+    },
+    success: {
+      bg: props?.successIconBg || '#D0F5DC',
+      icon: <SuccessIcon w={'16px'} h="16px" fill={props?.successIconFill || '#039855'} />,
+      boxBg: props?.successBoxBg
+    },
+    warning: {
+      bg: props?.warningIconBg || '#FEF0C7',
+      icon: <WarningIcon w={'16px'} h="16px" fill={props?.warningIconFill || '#D97706'} />,
+      boxBg: props?.warningBoxBg
+    },
+
+    loading: {
+      bg: props?.loadingIconBg || '#FEF0C7',
+      icon: <WarningIcon w={'16px'} h="16px" fill={props?.loadingIconFill || '#D97706'} />,
+      boxBg: props?.loadingBoxBg
+    }
   };
 
   const renderStatusIcon = (status: AlertStatus) => {
@@ -22,6 +64,11 @@ export default function useMessage(props?: UseToastOptions) {
     );
   };
 
+  const renderStatusBoxBg = (status: AlertStatus) => {
+    const { boxBg } = statusMap[status];
+    return boxBg;
+  };
+
   const message = useToast({
     position: 'top',
     ...props,
@@ -29,7 +76,7 @@ export default function useMessage(props?: UseToastOptions) {
       return (
         <Box
           position={'relative'}
-          background={'white'}
+          background={renderStatusBoxBg(props?.status || 'info') || 'white'}
           py={props?.description ? '16px' : '12px'}
           px={5}
           fontSize={'md'}

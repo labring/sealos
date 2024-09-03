@@ -276,6 +276,18 @@ model UserSemChannel {
   @@map("UserSemChannel")
 }
 
+model GiftCode {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code         String    @unique
+  creditAmount BigInt    @default(0)
+  used         Boolean   @default(false)
+  usedBy       String?   @db.Uuid
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+  expiredAt    DateTime?
+  comment      String?
+}
+
 enum ProviderType {
   PHONE
   GITHUB

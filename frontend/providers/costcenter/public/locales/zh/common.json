@@ -94,10 +94,10 @@
     "list": "订单列表",
     "invoiceAmount": "发票金额",
     "invoice": "开发票",
-		"invoiceRecord": "开票记录",
+    "invoiceRecord": "开票记录",
     "invoiceOrder": "发票订单",
     "phoneValidation": "请输入有效的手机号码",
-		"require": "请填写此字段",
+    "require": "请填写此字段",
     "taxNumberValidation": "请输入有效的税务登记证号",
     "bankAccountValidation": "请输入有效的银行账号",
     "emailValidation": "请输入有效的邮箱地址",
@@ -134,15 +134,14 @@
         "name": "传真",
         "placeholder": "填写传真"
       },
-			"type": {
-				"name": "发票类型",
-				"placeholder": "填写发票类型",
-				"list": {
-					"special": "增值税专用发票",
-					"normal": "增值税普通发票"
-
-				}
-			}
+      "type": {
+        "name": "发票类型",
+        "placeholder": "填写发票类型",
+        "list": {
+          "special": "增值税专用发票",
+          "normal": "增值税普通发票"
+        }
+      }
     },
     "contract": {
       "person": {
@@ -166,18 +165,17 @@
     "Electronic Computer Service Fee": "电子计算机服务费",
     "Invoice Details": "发票明细",
     "Contact Information": "联系方式",
-		"Apply Inovice Tips":"开票需要三到五个工作日处理",
-		"Apply Invoice": "提交开票申请",
-		
-		"status":{
-			"PENDING": "开票中",
-			"COMPLETED": "已完成",
-			"REJECTED": "已拒绝"
-		}
+    "Apply Inovice Tips": "开票需要三到五个工作日处理",
+    "Apply Invoice": "提交开票申请",
+    "status": {
+      "PENDING": "开票中",
+      "COMPLETED": "已完成",
+      "REJECTED": "已拒绝"
+    }
   },
-	"Invoice Status": "开票状态",
-	"Invoice Create Time": "申请开票时间",
-	"Invoice Update Time": "开票时间",
+  "Invoice Status": "开票状态",
+  "Invoice Create Time": "申请开票时间",
+  "Invoice Update Time": "开票时间",
   "pay with wechat": "微信支付",
   "pay with stripe": "Stripe 支付",
   "Total Expenditure": "总支出",
@@ -217,5 +215,14 @@
   "Price Table": "计价表",
   "all_workspace": "所有工作空间",
   "preferential_rules": "优惠规则",
-  "preferential_strength": "优惠力度"
+  "preferential_strength": "优惠力度",
+  "Redeem": "兑换",
+  "Input Gift code": "输入卡密",
+  "Gift Code": "卡密",
+  "Gift Card Redemption": "点卡兑换",
+  "Gift code is required": "卡密不能为空",
+  "Gift code must be exactly 24 characters long": "卡密长度必须是24位字符",
+  "Gift code can only contain letters and numbers": "不能包含非法字符",
+  "Failed to redeem Gift Code": "兑换失败",
+  "Gift Code Redeemed Successfully": "兑换成功！已充值到您的余额。"
 }

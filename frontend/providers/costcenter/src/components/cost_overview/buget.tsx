@@ -37,7 +37,16 @@ export function Buget({ expenditureAmount }: { expenditureAmount: number }) {
   return (
     <Flex direction={'column'} mb={'34px'}>
       <Flex alignItems={'center'} justify="space-between">
-        <Text color={'grayModern.600'} mb={'5px'}>
+        <Text
+          color={'grayModern.600'}
+          mb="5px"
+          fontFamily="PingFang SC"
+          fontSize="14px"
+          fontStyle="normal"
+          fontWeight={500}
+          lineHeight="20px"
+          letterSpacing="0.1px"
+        >
           {t('Income And Expense')}
         </Text>
       </Flex>
