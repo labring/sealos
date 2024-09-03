@@ -214,8 +214,9 @@ const Version = ({
                 my={'8px'}
                 borderRadius={'base'}
               />
+              <Box>{`${t('image_name')}:`}</Box>
               <Box ml={'8px'} fontSize={'md'} fontWeight={'bold'} color={'grayModern.500'}>
-                {t('image_name') + `: ${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}`}
+                {`${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}`}
               </Box>
               <Box flex={1}></Box>
               <Button
@@ -236,25 +237,25 @@ const Version = ({
               </>
             )}
           </Box>
+          {!!currentVersion && (
+            <EditVersionDesModal
+              version={currentVersion}
+              onSuccess={refetch}
+              isOpen={isOpenEdit}
+              onClose={onCloseEdit}
+            />
+          )}
+          {!!onOpenRelease && (
+            <ReleaseModal
+              onSuccess={refetch}
+              onClose={() => {
+                setOnOpenRelease(false)
+              }}
+              devbox={devbox}
+            />
+          )}
         </ModalBody>
       </ModalContent>
-      {!!currentVersion && (
-        <EditVersionDesModal
-          version={currentVersion}
-          onSuccess={refetch}
-          isOpen={isOpenEdit}
-          onClose={onCloseEdit}
-        />
-      )}
-      {!!onOpenRelease && (
-        <ReleaseModal
-          onSuccess={refetch}
-          onClose={() => {
-            setOnOpenRelease(false)
-          }}
-          devbox={devbox}
-        />
-      )}
     </Modal>
   )
 }

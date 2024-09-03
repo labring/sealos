@@ -77,7 +77,6 @@ const EditVersionDesModal = ({
           </Flex>
         </ModalBody>
         <ModalFooter>
-          {/* TODO: 保存逻辑 */}
           <Button ml={3} variant={'solid'} onClick={handleEditVersionDes} isLoading={loading}>
             {t('save')}
           </Button>

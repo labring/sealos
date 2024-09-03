@@ -8,7 +8,7 @@
   "No changes detected": "No change detected",
   "Open Public Access": "Enable Internet Access",
   "Running": "Running",
-  "Stopped": "Stopped",
+  "Paused": "Paused",
   "The container exposed port cannot be empty": "Container port is required",
   "The maximum number of exposed ports is 65535": "Maximum port number is 65535",
   "The minimum exposed port is 1": "Minimum port number is 1",

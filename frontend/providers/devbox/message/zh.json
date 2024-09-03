@@ -8,7 +8,7 @@
   "No changes detected": "并没有变更任何项",
   "Open Public Access": "开启公网访问",
   "Running": "运行中",
-  "Stopped": "已关机",
+  "Paused": "已关机",
   "The container exposed port cannot be empty": "容器暴露端口不能为空",
   "The maximum number of exposed ports is 65535": "暴露端口最大为 65535",
   "The minimum exposed port is 1": "暴露端口最小为 1",

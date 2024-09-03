@@ -39,7 +39,7 @@ export const json2StartOrStop = ({
   type
 }: {
   devboxName: string
-  type: 'Stopped' | 'Running'
+  type: 'Paused' | 'Running'
 }) => {
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
