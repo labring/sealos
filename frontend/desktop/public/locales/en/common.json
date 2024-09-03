@@ -224,5 +224,6 @@
   "you_can_use_the_kubectl_command_directly_from_the_terminal": "You can use the kubectl command directly from the terminal",
   "you_can_view_fees_through_the_fee_center": "You can view fees through the fee center",
   "you_have_not_purchased_the_license": "You have not purchased the License",
-  "yuan": "Yuan"
+  "yuan": "Yuan",
+  "rename": "Rename"
 }

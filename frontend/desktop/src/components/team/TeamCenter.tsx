@@ -34,6 +34,7 @@ import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/n
 import { useTranslation } from 'next-i18next';
 import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
 import NsListItem from '@/components/team/NsListItem';
+import RenameTeam from './RenameTeam';
 
 export default function TeamCenter(props: StackProps) {
   const session = useSessionStore((s) => s.session);
@@ -209,24 +210,33 @@ export default function TeamCenter(props: StackProps) {
                 <>
                   <Box px="16px" pb="20px">
                     <Box mx="10px">
-                      <Flex align={'center'}>
+                      <Flex align={'center'} justifyContent={'space-between'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
                           {isPrivate
                             ? `${t('common:default_team')} - ${namespace.teamName}`
                             : namespace.teamName}
                         </Text>
-                        {!isPrivate && curTeamUser?.role === UserRole.Owner && (
-                          <DissolveTeam
-                            ml="auto"
-                            nsid={nsid}
-                            ns_uid={ns_uid}
-                            onSuccess={(delete_ns_uid) => {
-                              if (delete_ns_uid === ns_uid) {
-                                setNs_uid('');
-                                setNsid('');
-                              }
-                            }}
-                          />
+                        {curTeamUser?.role === UserRole.Owner && (
+                          <HStack>
+                            <RenameTeam
+                              ml="auto"
+                              ns_uid={ns_uid}
+                              defaultTeamName={namespace.teamName}
+                            />
+                            {!isPrivate && (
+                              <DissolveTeam
+                                ml="auto"
+                                nsid={nsid}
+                                ns_uid={ns_uid}
+                                onSuccess={(delete_ns_uid) => {
+                                  if (delete_ns_uid === ns_uid) {
+                                    setNs_uid('');
+                                    setNsid('');
+                                  }
+                                }}
+                              />
+                            )}
+                          </HStack>
                         )}
                       </Flex>
                       <Flex align={'center'} mt={'7px'} fontSize={'12px'}>

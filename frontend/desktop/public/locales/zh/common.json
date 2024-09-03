@@ -217,5 +217,6 @@
   "you_can_use_the_kubectl_command_directly_from_the_terminal": "您可通过终端直接使用 kubectl 命令",
   "you_can_view_fees_through_the_fee_center": "您可通过费用中心查看费用",
   "you_have_not_purchased_the_license": "您还没有购买 License",
-  "yuan": "元"
+  "yuan": "元",
+  "rename": "重命名"
 }
