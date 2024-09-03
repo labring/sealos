@@ -67,7 +67,7 @@ const DevboxCreatePage = () => {
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
 
   const tabType = searchParams.get('type') || 'form'
-  const devboxName = searchParams.get('name') || null
+  const devboxName = searchParams.get('name') || ''
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, [])
@@ -173,6 +173,7 @@ const DevboxCreatePage = () => {
 
   const submitSuccess = async (formData: DevboxEditType) => {
     setIsLoading(true)
+
     try {
       // quote check
       const quoteCheckRes = checkQuotaAllow(formData, oldDevboxEditData.current)
@@ -187,8 +188,6 @@ const DevboxCreatePage = () => {
       }
       const parsedNewYamlList = yamlList.map((item) => item.value)
       const parsedOldYamlList = formOldYamls.current.map((item) => item.value)
-      console.log('parsedNewYamlList', parsedNewYamlList)
-      console.log('parsedOldYamlList', parsedOldYamlList)
 
       const areYamlListsEqual =
         new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
@@ -202,9 +201,9 @@ const DevboxCreatePage = () => {
           isClosable: true
         })
       }
-
+      console.log('devboxName', devboxName)
       // create or update
-      if (devboxName) {
+      if (isEdit) {
         const patch = patchYamlList({
           parsedOldYamlList: parsedOldYamlList,
           parsedNewYamlList: parsedNewYamlList,
@@ -212,7 +211,7 @@ const DevboxCreatePage = () => {
         })
         await updateDevbox({
           patch,
-          devboxName
+          devboxName: formData.name
         })
       } else {
         await createDevbox({ devboxForm: formData })

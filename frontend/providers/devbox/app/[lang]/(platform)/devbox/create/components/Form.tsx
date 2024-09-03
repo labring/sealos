@@ -460,18 +460,26 @@ const Form = ({
               {/* Runtime Version */}
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
-                <MySelect
-                  {...register('runtimeVersion', { required: t('This runtime field is required') })}
-                  disabled={isEdit}
-                  width={'200px'}
-                  placeholder={`${t('runtime')} ${t('version')}`}
-                  defaultValue={
-                    getValues('runtimeVersion') || getValueDefault(getValues('runtimeType'))
-                  }
-                  value={getValues('runtimeVersion')}
-                  list={getRuntimeVersionList(getValues('runtimeType'))}
-                  onchange={(val: any) => setValue('runtimeVersion', val)}
-                />
+                {isEdit ? (
+                  <Box opacity={0.5}>{getValues('runtimeVersion')}</Box>
+                ) : (
+                  <MySelect
+                    {...register('runtimeVersion', {
+                      required: t('This runtime field is required')
+                    })}
+                    width={'200px'}
+                    placeholder={`${t('runtime')} ${t('version')}`}
+                    defaultValue={
+                      getValues('runtimeVersion') || getValueDefault(getValues('runtimeType'))
+                    }
+                    value={getValues('runtimeVersion')}
+                    list={getRuntimeVersionList(getValues('runtimeType'))}
+                    onchange={(val: any) => {
+                      if (isEdit) return
+                      setValue('runtimeVersion', val)
+                    }}
+                  />
+                )}
               </Flex>
               {/* CPU */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
