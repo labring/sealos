@@ -35,8 +35,8 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
         const unit = sourceMap[type]?.unit
         const color = sourceMap[type]?.color
         const tip = `${t('total')}: ${limit} ${unit}
-          ${t('used')}: ${used.toFixed(2)} ${unit}
-          ${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
+${t('used')}: ${used.toFixed(2)} ${unit}
+${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
 
         return { ...item, tip, color }
       })

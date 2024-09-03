@@ -4,20 +4,19 @@ import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
 
 import { SOURCE_PRICE } from '@/stores/static'
 
-// TODO: 补全colorMap
 export const colorMap = {
   cpu: '#33BABB',
   memory: '#36ADEF',
-  storage: '#8172D8'
+  port: '#8172D8'
 }
 
-// TODO: 之后补全components
 const PriceBox = ({
   components = []
 }: {
   components: {
     cpu: number
     memory: number
+    port: number
   }[]
 }) => {
   const theme = useTheme()
@@ -29,12 +28,14 @@ const PriceBox = ({
   }[] = useMemo(() => {
     let cp = 0
     let mp = 0
+    let pp = 0
     let tp = 0
 
-    components.forEach(({ cpu, memory }) => {
+    components.forEach(({ cpu, memory, port }) => {
       cp = (SOURCE_PRICE.cpu * cpu * 24) / 1000
       mp = (SOURCE_PRICE.memory * memory * 24) / 1024
-      tp = cp + mp
+      pp = (SOURCE_PRICE.port * port * 24) / 1024
+      tp = cp + mp + pp
     })
 
     return [
@@ -44,6 +45,11 @@ const PriceBox = ({
         value: cp.toFixed(2)
       },
       { label: 'memory', color: '#36ADEF', value: mp.toFixed(2) },
+      {
+        label: 'port',
+        color: '#8172D8',
+        value: pp.toFixed(2)
+      },
       { label: 'total_price', color: '#485058', value: tp.toFixed(2) }
     ]
   }, [components])

@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 export type Response = {
   cpu: number
   memory: number
+  port: number
 }
 
 type ResourceType =
@@ -36,28 +37,31 @@ type PriceCrdType = {
 }
 const PRICE_SCALE = 1000000
 
-// export const valuationMap: Record<string, number> = {
-//   cpu: 1000,
-//   memory: 1024,
-//   storage: 1024
-// }
+export const valuationMap: Record<string, number> = {
+  cpu: 1000,
+  memory: 1024,
+  storage: 1024,
+  port: 2
+}
 
 export async function GET(req: NextRequest) {
   try {
-    // source price
-    // const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
-    //   kubeconfig: await authSession(req)
-    // })
+    const headerList = req.headers
 
-    // const crdJson = {
-    //   apiVersion: `account.sealos.io/v1alpha`,
-    //   kind: 'PriceQuery',
-    //   metadata: {
-    //     name: 'prices',
-    //     namespace
-    //   },
-    //   spec: {}
-    // }
+    // source price
+    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    })
+
+    const crdJson = {
+      apiVersion: `account.sealos.io/v1alpha`,
+      kind: 'PriceQuery',
+      metadata: {
+        name: 'prices',
+        namespace
+      },
+      spec: {}
+    }
 
     // const crdYaml = yaml.dump(crdJson)
 
@@ -74,6 +78,8 @@ export async function GET(req: NextRequest) {
     //   crdJson.metadata.name
     // )) as { body: PriceCrdType }
 
+    // console.log('priceResponse', priceResponse)
+
     // const data = {
     //   cpu: countSourcePrice(priceResponse, 'cpu'),
     //   memory: countSourcePrice(priceResponse, 'memory')
@@ -81,7 +87,8 @@ export async function GET(req: NextRequest) {
     return jsonRes({
       data: {
         cpu: 0.1,
-        memory: 0.2
+        memory: 0.2,
+        port: 2
       }
     })
   } catch (error) {
@@ -90,10 +97,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
-//   const rawPrice =
-//     rawData?.status?.billingRecords.find((item) => item.resourceType === type)?.price || 1
-//   const sourceScale = rawPrice * (valuationMap[type] || 1)
-//   const unitScale = sourceScale / PRICE_SCALE
-//   return unitScale
-// }
+function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
+  const rawPrice =
+    rawData?.status?.billingRecords.find((item) => item.resourceType === type)?.price || 1
+  const sourceScale = rawPrice * (valuationMap[type] || 1)
+  const unitScale = sourceScale / PRICE_SCALE
+  return unitScale
+}
