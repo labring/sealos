@@ -143,7 +143,7 @@ const DevboxList = ({
       })
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
-        `sealos@${SEALOS_DOMAIN}`
+        `root@${SEALOS_DOMAIN}`
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
       )}`
