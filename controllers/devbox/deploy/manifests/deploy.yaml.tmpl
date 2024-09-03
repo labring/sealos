@@ -2673,8 +2673,11 @@ spec:
                 properties:
                   name:
                     type: string
+                  namespace:
+                    type: string
                 required:
                 - name
+                - namespace
                 type: object
               squash:
                 default: false
@@ -2725,7 +2728,6 @@ spec:
               workingDir:
                 type: string
             required:
-            - network
             - resource
             - runtimeRef
             - state
@@ -5093,6 +5095,30 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - runtimeclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - runtimes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

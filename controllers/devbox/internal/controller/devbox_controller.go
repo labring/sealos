@@ -198,7 +198,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		return fmt.Errorf("more than one pod found")
 	}
 	runtime := &devboxv1alpha1.Runtime{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Spec.RuntimeRef.Name}, runtime); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Spec.RuntimeRef.Namespace, Name: devbox.Spec.RuntimeRef.Name}, runtime); err != nil {
 		return err
 	}
 

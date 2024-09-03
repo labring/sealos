@@ -116,7 +116,7 @@ spec:
                                     key must be defined
                                   type: boolean
                               required:
-                                - key
+                              - key
                               type: object
                               x-kubernetes-map-type: atomic
                             fieldRef:
@@ -133,7 +133,7 @@ spec:
                                     specified API version.
                                   type: string
                               required:
-                                - fieldPath
+                              - fieldPath
                               type: object
                               x-kubernetes-map-type: atomic
                             resourceFieldRef:
@@ -147,8 +147,8 @@ spec:
                                   type: string
                                 divisor:
                                   anyOf:
-                                    - type: integer
-                                    - type: string
+                                  - type: integer
+                                  - type: string
                                   description: Specifies the output format of the
                                     exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -157,7 +157,7 @@ spec:
                                   description: 'Required: resource to select'
                                   type: string
                               required:
-                                - resource
+                              - resource
                               type: object
                               x-kubernetes-map-type: atomic
                             secretKeyRef:
@@ -179,12 +179,12 @@ spec:
                                     must be defined
                                   type: boolean
                               required:
-                                - key
+                              - key
                               type: object
                               x-kubernetes-map-type: atomic
                           type: object
                       required:
-                        - name
+                      - name
                       type: object
                     type: array
                   image:
@@ -195,9 +195,9 @@ spec:
                     type: object
                   ports:
                     default:
-                      - containerPort: 22
-                        name: devbox-ssh-port
-                        protocol: TCP
+                    - containerPort: 22
+                      name: devbox-ssh-port
+                      protocol: TCP
                     items:
                       description: ContainerPort represents a network port in a single
                         container.
@@ -232,7 +232,7 @@ spec:
                             Defaults to "TCP".
                           type: string
                       required:
-                        - containerPort
+                      - containerPort
                       type: object
                     type: array
                   user:
@@ -276,8 +276,8 @@ spec:
                             SubPathExpr and SubPath are mutually exclusive.
                           type: string
                       required:
-                        - mountPath
-                        - name
+                      - mountPath
+                      - name
                       type: object
                     type: array
                   volumes:
@@ -318,7 +318,7 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
                               type: string
                           required:
-                            - volumeID
+                          - volumeID
                           type: object
                         azureDisk:
                           description: azureDisk represents an Azure Data Disk mount
@@ -355,8 +355,8 @@ spec:
                                 the ReadOnly setting in VolumeMounts.
                               type: boolean
                           required:
-                            - diskName
-                            - diskURI
+                          - diskName
+                          - diskURI
                           type: object
                         azureFile:
                           description: azureFile represents an Azure File Service
@@ -375,8 +375,8 @@ spec:
                               description: shareName is the azure share Name
                               type: string
                           required:
-                            - secretName
-                            - shareName
+                          - secretName
+                          - shareName
                           type: object
                         cephfs:
                           description: cephFS represents a Ceph FS mount on the host
@@ -423,7 +423,7 @@ spec:
                                 More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
                               type: string
                           required:
-                            - monitors
+                          - monitors
                           type: object
                         cinder:
                           description: |-
@@ -462,7 +462,7 @@ spec:
                                 More info: https://examples.k8s.io/mysql-cinder-pd/README.md
                               type: string
                           required:
-                            - volumeID
+                          - volumeID
                           type: object
                         configMap:
                           description: configMap represents a configMap that should
@@ -513,8 +513,8 @@ spec:
                                       May not start with the string '..'.
                                     type: string
                                 required:
-                                  - key
-                                  - path
+                                - key
+                                - path
                                 type: object
                               type: array
                             name:
@@ -574,7 +574,7 @@ spec:
                                 driver. Consult your driver's documentation for supported values.
                               type: object
                           required:
-                            - driver
+                          - driver
                           type: object
                         downwardAPI:
                           description: downwardAPI represents downward API about the
@@ -613,7 +613,7 @@ spec:
                                           the specified API version.
                                         type: string
                                     required:
-                                      - fieldPath
+                                    - fieldPath
                                     type: object
                                     x-kubernetes-map-type: atomic
                                   mode:
@@ -644,8 +644,8 @@ spec:
                                         type: string
                                       divisor:
                                         anyOf:
-                                          - type: integer
-                                          - type: string
+                                        - type: integer
+                                        - type: string
                                         description: Specifies the output format of
                                           the exposed resources, defaults to "1"
                                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -654,11 +654,11 @@ spec:
                                         description: 'Required: resource to select'
                                         type: string
                                     required:
-                                      - resource
+                                    - resource
                                     type: object
                                     x-kubernetes-map-type: atomic
                                 required:
-                                  - path
+                                - path
                                 type: object
                               type: array
                           type: object
@@ -676,8 +676,8 @@ spec:
                               type: string
                             sizeLimit:
                               anyOf:
-                                - type: integer
-                                - type: string
+                              - type: integer
+                              - type: string
                               description: |-
                                 sizeLimit is the total amount of local storage required for this EmptyDir volume.
                                 The size limit is also applicable for memory medium.
@@ -792,8 +792,8 @@ spec:
                                             being referenced
                                           type: string
                                       required:
-                                        - kind
-                                        - name
+                                      - kind
+                                      - name
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     dataSourceRef:
@@ -843,8 +843,8 @@ spec:
                                             (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
                                           type: string
                                       required:
-                                        - kind
-                                        - name
+                                      - kind
+                                      - name
                                       type: object
                                     resources:
                                       description: |-
@@ -876,17 +876,17 @@ spec:
                                                   inside a container.
                                                 type: string
                                             required:
-                                              - name
+                                            - name
                                             type: object
                                           type: array
                                           x-kubernetes-list-map-keys:
-                                            - name
+                                          - name
                                           x-kubernetes-list-type: map
                                         limits:
                                           additionalProperties:
                                             anyOf:
-                                              - type: integer
-                                              - type: string
+                                            - type: integer
+                                            - type: string
                                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                             x-kubernetes-int-or-string: true
                                           description: |-
@@ -896,8 +896,8 @@ spec:
                                         requests:
                                           additionalProperties:
                                             anyOf:
-                                              - type: integer
-                                              - type: string
+                                            - type: integer
+                                            - type: string
                                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                             x-kubernetes-int-or-string: true
                                           description: |-
@@ -939,8 +939,8 @@ spec:
                                                   type: string
                                                 type: array
                                             required:
-                                              - key
-                                              - operator
+                                            - key
+                                            - operator
                                             type: object
                                           type: array
                                         matchLabels:
@@ -969,7 +969,7 @@ spec:
                                       type: string
                                   type: object
                               required:
-                                - spec
+                              - spec
                               type: object
                           type: object
                         fc:
@@ -1050,7 +1050,7 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                           required:
-                            - driver
+                          - driver
                           type: object
                         flocker:
                           description: flocker represents a Flocker volume attached
@@ -1102,7 +1102,7 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
                               type: boolean
                           required:
-                            - pdName
+                          - pdName
                           type: object
                         gitRepo:
                           description: |-
@@ -1126,7 +1126,7 @@ spec:
                                 revision.
                               type: string
                           required:
-                            - repository
+                          - repository
                           type: object
                         glusterfs:
                           description: |-
@@ -1150,8 +1150,8 @@ spec:
                                 More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
                               type: boolean
                           required:
-                            - endpoints
-                            - path
+                          - endpoints
+                          - path
                           type: object
                         hostPath:
                           description: |-
@@ -1177,7 +1177,7 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
                               type: string
                           required:
-                            - path
+                          - path
                           type: object
                         iscsi:
                           description: |-
@@ -1249,9 +1249,9 @@ spec:
                                 is other than default (typically TCP ports 860 and 3260).
                               type: string
                           required:
-                            - iqn
-                            - lun
-                            - targetPortal
+                          - iqn
+                          - lun
+                          - targetPortal
                           type: object
                         name:
                           description: |-
@@ -1281,8 +1281,8 @@ spec:
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs
                               type: string
                           required:
-                            - path
-                            - server
+                          - path
+                          - server
                           type: object
                         persistentVolumeClaim:
                           description: |-
@@ -1301,7 +1301,7 @@ spec:
                                 Default false.
                               type: boolean
                           required:
-                            - claimName
+                          - claimName
                           type: object
                         photonPersistentDisk:
                           description: photonPersistentDisk represents a PhotonController
@@ -1319,7 +1319,7 @@ spec:
                                 persistent disk
                               type: string
                           required:
-                            - pdID
+                          - pdID
                           type: object
                         portworxVolume:
                           description: portworxVolume represents a portworx volume
@@ -1341,7 +1341,7 @@ spec:
                                 volume
                               type: string
                           required:
-                            - volumeID
+                          - volumeID
                           type: object
                         projected:
                           description: projected items for all in one resources secrets,
@@ -1401,8 +1401,8 @@ spec:
                                                 May not start with the string '..'.
                                               type: string
                                           required:
-                                            - key
-                                            - path
+                                          - key
+                                          - path
                                           type: object
                                         type: array
                                       name:
@@ -1444,7 +1444,7 @@ spec:
                                                     select in the specified API version.
                                                   type: string
                                               required:
-                                                - fieldPath
+                                              - fieldPath
                                               type: object
                                               x-kubernetes-map-type: atomic
                                             mode:
@@ -1477,8 +1477,8 @@ spec:
                                                   type: string
                                                 divisor:
                                                   anyOf:
-                                                    - type: integer
-                                                    - type: string
+                                                  - type: integer
+                                                  - type: string
                                                   description: Specifies the output
                                                     format of the exposed resources,
                                                     defaults to "1"
@@ -1489,11 +1489,11 @@ spec:
                                                     to select'
                                                   type: string
                                               required:
-                                                - resource
+                                              - resource
                                               type: object
                                               x-kubernetes-map-type: atomic
                                           required:
-                                            - path
+                                          - path
                                           type: object
                                         type: array
                                     type: object
@@ -1535,8 +1535,8 @@ spec:
                                                 May not start with the string '..'.
                                               type: string
                                           required:
-                                            - key
-                                            - path
+                                          - key
+                                          - path
                                           type: object
                                         type: array
                                       name:
@@ -1578,7 +1578,7 @@ spec:
                                           token into.
                                         type: string
                                     required:
-                                      - path
+                                    - path
                                     type: object
                                 type: object
                               type: array
@@ -1618,8 +1618,8 @@ spec:
                                 created Quobyte volume by name.
                               type: string
                           required:
-                            - registry
-                            - volume
+                          - registry
+                          - volume
                           type: object
                         rbd:
                           description: |-
@@ -1686,8 +1686,8 @@ spec:
                                 More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                               type: string
                           required:
-                            - image
-                            - monitors
+                          - image
+                          - monitors
                           type: object
                         scaleIO:
                           description: scaleIO represents a ScaleIO persistent volume
@@ -1749,9 +1749,9 @@ spec:
                                 that is associated with this volume source.
                               type: string
                           required:
-                            - gateway
-                            - secretRef
-                            - system
+                          - gateway
+                          - secretRef
+                          - system
                           type: object
                         secret:
                           description: |-
@@ -1803,8 +1803,8 @@ spec:
                                       May not start with the string '..'.
                                     type: string
                                 required:
-                                  - key
-                                  - path
+                                - key
+                                - path
                                 type: object
                               type: array
                             optional:
@@ -1883,16 +1883,16 @@ spec:
                                 vSphere volume vmdk
                               type: string
                           required:
-                            - volumePath
+                          - volumePath
                           type: object
                       required:
-                        - name
+                      - name
                       type: object
                     type: array
                   workingDir:
                     type: string
                 required:
-                  - image
+                - image
                 type: object
               description:
                 type: string

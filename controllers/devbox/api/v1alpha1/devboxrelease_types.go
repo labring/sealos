@@ -41,6 +41,10 @@ const (
 	DevboxReleasePhaseFailed DevboxReleasePhase = "Failed"
 )
 
+// +kubebuilder:printcolumn:name="DevboxName",type="string",JSONPath=".spec.devboxName"
+// +kubebuilder:printcolumn:name="NewTag",type="string",JSONPath=".spec.newTag"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+
 // DevBoxReleaseStatus defines the observed state of DevBoxRelease
 type DevBoxReleaseStatus struct {
 	// +kubebuilder:validation:Optional

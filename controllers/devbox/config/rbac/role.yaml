@@ -21,15 +21,15 @@ rules:
 - apiGroups:
   - ""
   resources:
-    - events
+  - events
   verbs:
-    - '*'
+  - '*'
 - apiGroups:
-    - ""
+  - ""
   resources:
-    - pods
+  - pods
   verbs:
-    - '*'
+  - '*'
 - apiGroups:
   - ""
   resources:
@@ -43,13 +43,13 @@ rules:
   resources:
   - secrets
   verbs:
-    - '*'
+  - '*'
 - apiGroups:
   - ""
   resources:
   - services
   verbs:
-    - '*'
+  - '*'
 - apiGroups:
   - devbox.sealos.io
   resources:
@@ -103,26 +103,26 @@ rules:
   - patch
   - update
 - apiGroups:
-    - devbox.sealos.io
+  - devbox.sealos.io
   resources:
-    - runtimeclasses
+  - runtimeclasses
   verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
-    - devbox.sealos.io
+  - devbox.sealos.io
   resources:
-    - runtimes
+  - runtimes
   verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
