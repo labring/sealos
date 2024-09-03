@@ -3,8 +3,8 @@ import yaml from 'js-yaml'
 import { str2Num } from './tools'
 import { getUserNamespace } from './user'
 import { DevboxEditType } from '@/types/devbox'
-import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/stores/static'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/stores/static'
 
 export const json2Devbox = (data: DevboxEditType) => {
   const json = {
@@ -74,7 +74,11 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json)
 }
 
-export const json2Ingress = (data: DevboxEditType) => {
+export const json2Ingress = (
+  data: DevboxEditType,
+  sealosDomain: string = SEALOS_DOMAIN,
+  ingressSecret: string = INGRESS_SECRET
+) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -98,14 +102,17 @@ export const json2Ingress = (data: DevboxEditType) => {
     }
   }
 
+  console.log('sealosDomain', sealosDomain)
+  console.log('ingressSecret', ingressSecret)
+
   const result = data.networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
       const host = network.customDomain
         ? network.customDomain
-        : `${network.publicDomain}.${SEALOS_DOMAIN}`
+        : `${network.publicDomain}.${sealosDomain}`
 
-      const secretName = network.customDomain ? network.networkName : INGRESS_SECRET
+      const secretName = network.customDomain ? network.networkName : ingressSecret
 
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',

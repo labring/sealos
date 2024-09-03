@@ -20,9 +20,11 @@ export async function POST(req: NextRequest) {
     const { applyYamlList } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
+
+    const { SEALOS_DOMAIN, INGRESS_SECRET } = process.env
     const devbox = json2Devbox(devboxForm)
     const service = json2Service(devboxForm)
-    const ingress = json2Ingress(devboxForm)
+    const ingress = json2Ingress(devboxForm, SEALOS_DOMAIN as string, INGRESS_SECRET as string)
 
     await applyYamlList([devbox, service, ingress], 'create')
 
