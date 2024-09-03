@@ -26,6 +26,10 @@ import (
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 )
 
+func GetUserSystemNamespace() string {
+	return "user-system"
+}
+
 func GetDefaultNamespace() string {
 	return os.Getenv("NAMESPACE_NAME")
 }
@@ -35,7 +39,7 @@ func GetUsersSubject(user string) []rbacv1.Subject {
 		{
 			Kind:      "ServiceAccount",
 			Name:      user,
-			Namespace: GetUsersNamespace(user),
+			Namespace: GetUserSystemNamespace(),
 		},
 	}
 }

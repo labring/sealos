@@ -260,7 +260,7 @@ func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleB
 			{
 				Kind:      rbacv1.ServiceAccountKind,
 				Name:      request.Spec.User,
-				Namespace: config.GetUsersNamespace(request.Spec.User),
+				Namespace: config.GetUserSystemNamespace(),
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
