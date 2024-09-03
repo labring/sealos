@@ -102,3 +102,27 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+    - devbox.sealos.io
+  resources:
+    - runtimeclasses
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - devbox.sealos.io
+  resources:
+    - runtimes
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
