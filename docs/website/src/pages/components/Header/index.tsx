@@ -14,7 +14,7 @@ const navbar = [
   {
     key: 'docs',
     label: <Translate>Docs</Translate>,
-    to: '/docs/Intro'
+    to: '/docs/5.0.0/Intro'
   },
   {
     key: 'appstore',
