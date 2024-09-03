@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import { Flex, Box } from '@chakra-ui/react'
 
 import type { DevboxStatusMapType } from '@/types/devbox'
@@ -11,6 +12,7 @@ const DevboxStatusTag = ({
   showBorder?: boolean
 }) => {
   const label = status.label
+  const t = useTranslations()
 
   return (
     <>
@@ -29,7 +31,7 @@ const DevboxStatusTag = ({
         whiteSpace={'nowrap'}>
         <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
         <Box ml={2} flex={1}>
-          {label}
+          {t(label)}
         </Box>
       </Flex>
     </>
