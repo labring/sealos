@@ -41,11 +41,41 @@ const (
 	DevboxReleasePhaseFailed DevboxReleasePhase = "Failed"
 )
 
+type ImagePullStatus string
+
+const (
+	// ImagePullStatusUnknown means the image not know the image status
+	ImagePullStatusUnknown ImagePullStatus = "Unknown"
+	// ImagePullStatusPendingPush means the image push pending
+	ImagePullStatusPendingPush ImagePullStatus = "PendingPush"
+	// ImagePullStatusPendingRelease means the image push success
+	ImagePullStatusPendingRelease ImagePullStatus = "PendingRelease"
+	// ImagePullStatusSuccess means the image push success
+	ImagePullStatusSuccess ImagePullStatus = "Success"
+	// ImagePullStatusFailed means the image push failed
+	ImagePullStatusFailed ImagePullStatus = "Failed"
+)
+
+type RestartDevboxStatus string
+
+const (
+	// RestartDevboxStatusUnknown means devbox not need to restart
+	RestartDevboxStatusUnknown RestartDevboxStatus = "UnNeed"
+	// RestartDevboxStatusRunning means devbox restart success
+	RestartDevboxStatusRunning RestartDevboxStatus = "Running"
+	// RestartDevboxStatusStopped means devbox restart not success
+	RestartDevboxStatusStopped RestartDevboxStatus = "Stopped"
+)
+
 // DevBoxReleaseStatus defines the observed state of DevBoxRelease
 type DevBoxReleaseStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=Pending
 	Phase DevboxReleasePhase `json:"phase"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=Unknown
+	ImagePullStatus     ImagePullStatus     `json:"imagePullStatus"`
+	RestartDevboxStatus RestartDevboxStatus `json:"restartDevboxStatus"`
 }
 
 // +kubebuilder:object:root=true

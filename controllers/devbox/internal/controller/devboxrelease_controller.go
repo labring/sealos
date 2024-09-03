@@ -68,6 +68,18 @@ func (r *DevBoxReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
+	namespacedName := types.NamespacedName{
+		Name:      devboxRelease.Spec.DevboxName,
+		Namespace: devboxRelease.Namespace,
+	}
+	devbox := &devboxv1alpha1.Devbox{}
+
+	err := r.Get(ctx, namespacedName, devbox)
+	if err != nil {
+		logger.Error(err, "Failed to get devbox", "devbox", devboxRelease.Spec.DevboxName)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	logger.Info("Reconciling DevBoxRelease", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag, "phase", devboxRelease.Status.Phase)
 
 	if devboxRelease.Status.Phase == "" {
@@ -79,28 +91,102 @@ func (r *DevBoxReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		return ctrl.Result{Requeue: true}, nil
 	}
-
 	if devboxRelease.Status.Phase == devboxv1alpha1.DevboxReleasePhasePending {
-		logger.Info("Creating release tag", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
-		err := r.CreateReleaseTag(ctx, devboxRelease)
-		if err != nil && errors.Is(err, registry.ErrorManifestNotFound) {
-			logger.Info("Manifest not found, retrying", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
-			return ctrl.Result{Requeue: true}, nil
-		} else if err != nil {
-			logger.Error(err, "Failed to create release tag", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
-			devboxRelease.Status.Phase = devboxv1alpha1.DevboxReleasePhaseFailed
-			_ = r.Status().Update(ctx, devboxRelease)
+		//check devbox status
+		if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
+			//stop devbox
+			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
+			if err := r.Status().Update(ctx, devbox); err != nil {
+				logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName)
+				return ctrl.Result{}, err
+			}
+			//change the restart status
+			devboxRelease.Status.RestartDevboxStatus = devboxv1alpha1.RestartDevboxStatusStopped
+			if err := r.Status().Update(ctx, devboxRelease); err != nil {
+				logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName)
+				return ctrl.Result{}, err
+			}
+		}
+		//stopped and begin check
+		devboxRelease.Status.ImagePullStatus = devboxv1alpha1.ImagePullStatusPendingPush
+		if err := r.Status().Update(ctx, devboxRelease); err != nil {
+			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName)
 			return ctrl.Result{}, err
 		}
-		logger.Info("Release tag created", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
-		devboxRelease.Status.Phase = devboxv1alpha1.DevboxReleasePhaseSuccess
-		if err = r.Status().Update(ctx, devboxRelease); err != nil {
-			logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
-			return ctrl.Result{}, err
+		if devboxRelease.Status.ImagePullStatus == devboxv1alpha1.ImagePullStatusPendingPush {
+			//check image pull status
+			tag, err := r.CheckImagePullStatus(ctx, devboxRelease, devbox)
+			if err != nil {
+				logger.Error(err, "Failed to check image pull status")
+				return ctrl.Result{}, err
+			}
+			if tag {
+				//if image not pull,return and wait the next reconcile
+				return ctrl.Result{Requeue: true}, nil
+			} else {
+				devboxRelease.Status.ImagePullStatus = devboxv1alpha1.ImagePullStatusPendingRelease
+				if err := r.Status().Update(ctx, devboxRelease); err != nil {
+					logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName)
+				}
+			}
+		}
+		if devboxRelease.Status.ImagePullStatus == devboxv1alpha1.ImagePullStatusPendingRelease {
+			//create the new tag
+			logger.Info("Creating release tag", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
+			err := r.CreateReleaseTag(ctx, devboxRelease)
+			if err != nil && errors.Is(err, registry.ErrorManifestNotFound) {
+				logger.Info("Manifest not found, retrying", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
+				return ctrl.Result{Requeue: true}, nil
+			} else if err != nil {
+				logger.Error(err, "Failed to create release tag", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
+				devboxRelease.Status.Phase = devboxv1alpha1.DevboxReleasePhaseFailed
+				_ = r.Status().Update(ctx, devboxRelease)
+				return ctrl.Result{}, err
+			}
+			logger.Info("Release tag created", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
+			devboxRelease.Status.ImagePullStatus = devboxv1alpha1.ImagePullStatusSuccess
+			if err = r.Status().Update(ctx, devboxRelease); err != nil {
+				logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
+				return ctrl.Result{}, err
+			}
+		}
+		if devboxRelease.Status.ImagePullStatus == devboxv1alpha1.ImagePullStatusSuccess {
+			//check restart status
+			if devboxRelease.Status.RestartDevboxStatus == devboxv1alpha1.RestartDevboxStatusStopped {
+				//start devbox
+				devbox.Spec.State = devboxv1alpha1.DevboxStateRunning
+				if err := r.Status().Update(ctx, devbox); err != nil {
+					logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName)
+					return ctrl.Result{}, err
+				}
+			}
+			devboxRelease.Status.Phase = devboxv1alpha1.DevboxReleasePhaseSuccess
+			if err := r.Status().Update(ctx, devboxRelease); err != nil {
+				logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName)
+			}
 		}
 	}
 	logger.Info("Reconciliation complete", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
 	return ctrl.Result{}, nil
+}
+
+func (r *DevBoxReleaseReconciler) CheckImagePullStatus(ctx context.Context, devboxRelease *devboxv1alpha1.DevBoxRelease, devbox *devboxv1alpha1.Devbox) (bool, error) {
+	//get the remote
+	hostName, imageName, _, err := r.GetHostAndImageAndTag(devbox)
+	if err != nil {
+		return false, err
+	}
+	tags, err := r.Registry.GetImageTagList(hostName, imageName)
+	if err != nil {
+		return false, err
+	}
+	targetTag := devbox.Status.CommitHistory[0].Image
+	for _, tag := range tags {
+		if tag == targetTag {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRelease *devboxv1alpha1.DevBoxRelease) error {

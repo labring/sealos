@@ -16,6 +16,7 @@ package registry
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -139,4 +140,39 @@ func (t *Client) pushManifest(username string, password string, hostName string,
 	}
 
 	return nil
+}
+
+type TagsListResponse struct {
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
+}
+
+func (t *Client) GetImageTagList(hostName string, imageName string) ([]string, error) {
+	var (
+		client = http.DefaultClient
+		url    = "http://" + hostName + "/v2/" + imageName + "tags/list"
+	)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(t.Username, t.Password)
+	req.Header.Set("Accept", "application/vnd.oci.image.manifest.v1+json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var tagsList TagsListResponse
+	err = json.Unmarshal(body, &tagsList)
+	if err != nil {
+		return nil, err
+	}
+	return tagsList.Tags, nil
 }
