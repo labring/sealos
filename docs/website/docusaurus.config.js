@@ -32,16 +32,31 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: "../4.0/docs",
-          sidebarPath: require.resolve("./sidebars.js"),
+          // path: "../5.0/docs",
+          // sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: ({ versionDocsDirPath, docPath, locale }) =>
-            "https://github.com/labring/sealos/tree/main/docs/4.0/" +
+            "https://github.com/labring/sealos/tree/main/docs/5.0/" +
             (locale === "en" ? `${versionDocsDirPath}` : `i18n/${locale}`) +
             `/${docPath}`,
           editLocalizedFiles: false,
           editCurrentVersion: false,
+          // version
+          includeCurrentVersion: false,
+          lastVersion: '4.0.0',
+          versions: {
+            '4.0.0': {
+              label: '4.0.0',
+              path: '',
+              banner: 'none'
+            },
+            '5.0.0': {
+              label: '5.0.0',
+              path: '5.0.0',
+              banner: 'none',
+            }
+          }
         },
         blog: {
           path: "../blog/en",
@@ -145,6 +160,10 @@ const config = {
           label: "Contact",
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+        },
+        {
           type: "localeDropdown",
           position: "right",
         },
@@ -227,7 +246,7 @@ const config = {
   scripts: [
     {
       src: "/wow.min.js",
-      async: true
+      async: false
     },
     {
       src: "/global.js",
@@ -245,20 +264,6 @@ const config = {
         name: 'baidu-site-verification',
         content: 'codeva-IaVFkVUuDD',
       },
-    },
-    {
-      tagName: 'meta',
-      attributes: {
-        name: 'description',
-        content: '高效管理你的云原生应用程序，像使用个人电脑一样在 Kubernetes 上一键安装编程语言、低代码开发平台、WordPress、数据库、AI 软件和 IM 软件。',
-      }
-    },
-    {
-      tagName: 'meta',
-      attributes: {
-        name: 'keywords',
-        content: 'Sealos, K8s, 云操作系统, 低代码开发平台, 数据库',
-      }
     }
   ],
   plugins: [
