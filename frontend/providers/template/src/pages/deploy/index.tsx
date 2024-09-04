@@ -379,6 +379,7 @@ export default function EditApp({
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
+            {/* <QuotaBox /> */}
             <Form
               formHook={formHook}
               pxVal={pxVal}
