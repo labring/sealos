@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import NProgress from 'nprogress'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/i18n'
 
 import { useGlobalStore } from '@/stores/global'
 
