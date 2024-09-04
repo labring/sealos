@@ -2666,11 +2666,9 @@ spec:
                   name:
                     type: string
                   namespace:
-                    default: devbox-system
                     type: string
                 required:
                 - name
-                - namespace
                 type: object
               squash:
                 default: false
