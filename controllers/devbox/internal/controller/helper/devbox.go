@@ -210,7 +210,7 @@ func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox, runtime *devbo
 
 func GenerateSSHVolumeMounts() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      "devbox-ssh-public-key",
+		Name:      "devbox-ssh-keys",
 		MountPath: "/usr/start/.ssh",
 		ReadOnly:  true,
 	}

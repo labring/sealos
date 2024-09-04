@@ -54,8 +54,8 @@ type ResourceList map[ResourceName]resource.Quantity
 type RuntimeRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
-	// +kubebuilder:validation:Required
-	Namespace string `json:"namespace"`
+	// +kubebuilder:validation:Optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type NetworkSpec struct {

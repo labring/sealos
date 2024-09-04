@@ -197,8 +197,16 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
 		return fmt.Errorf("more than one pod found")
 	}
-	runtime := &devboxv1alpha1.Runtime{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Spec.RuntimeRef.Namespace, Name: devbox.Spec.RuntimeRef.Name}, runtime); err != nil {
+
+	var runtimeNamespace string
+	if devbox.Spec.RuntimeRef.Namespace != "" {
+		runtimeNamespace = devbox.Spec.RuntimeRef.Namespace
+	} else {
+		runtimeNamespace = devbox.Namespace
+	}
+
+	runtimecr := &devboxv1alpha1.Runtime{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: runtimeNamespace, Name: devbox.Spec.RuntimeRef.Name}, runtimecr); err != nil {
 		return err
 	}
 
@@ -211,7 +219,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	}()
 
 	nextCommitHistory := r.generateNextCommitHistory(devbox)
-	expectPod, err := r.generateDevboxPod(devbox, runtime, nextCommitHistory)
+	expectPod, err := r.generateDevboxPod(devbox, runtimecr, nextCommitHistory)
 	if err != nil {
 		logger.Error(err, "generate pod failed")
 		return err
