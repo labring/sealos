@@ -301,7 +301,7 @@ export default function TeamCenter(props: StackProps) {
                         users={users}
                         ns_uid={ns_uid}
                         nsid={nsid}
-                        canAbdicate={nsid === 'ns-' + k8s_username}
+                        canAbdicate={!isPrivate}
                       />
                     </Box>
                   </Stack>
