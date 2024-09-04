@@ -155,6 +155,7 @@ export default function EditApp({
       memory: usage.memory.max,
       storage: usage.storage.max
     });
+
     if (quoteCheckRes) {
       return toast({
         status: 'warning',
@@ -163,7 +164,6 @@ export default function EditApp({
         isClosable: true
       });
     }
-    console.log('quoteCheckRes', quoteCheckRes);
     setIsLoading(true);
 
     try {

@@ -27,6 +27,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { MouseEvent, useEffect, useMemo } from 'react';
 import Head from 'next/head';
+import { ShareIcon } from '@/components/icons';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
@@ -232,18 +233,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                         ))}
                       </Flex>
                       <Center cursor={'pointer'} onClick={(e) => goGithub(e, item?.spec?.gitRepo)}>
-                        <Icon
-                          width="16px"
-                          height="17px"
-                          viewBox="0 0 16 17"
-                          fill="#5A646E"
-                          _hover={{
-                            fill: '#0884DD'
-                          }}
-                        >
-                          <path d="M13.6667 9.00004C13.4 9.00004 13.1667 9.23337 13.1667 9.50004V13.5C13.1667 13.6 13.1 13.6667 13 13.6667H3C2.9 13.6667 2.83333 13.6 2.83333 13.5V3.50004C2.83333 3.40004 2.9 3.33337 3 3.33337H7C7.26667 3.33337 7.5 3.10004 7.5 2.83337C7.5 2.56671 7.26667 2.33337 7 2.33337H3C2.36667 2.33337 1.83333 2.86671 1.83333 3.50004V13.5C1.83333 14.1334 2.36667 14.6667 3 14.6667H13C13.6333 14.6667 14.1667 14.1334 14.1667 13.5V9.50004C14.1667 9.23337 13.9333 9.00004 13.6667 9.00004Z" />
-                          <path d="M13.6667 2.33337H10C9.73333 2.33337 9.5 2.56671 9.5 2.83337C9.5 3.10004 9.73333 3.33337 10 3.33337H12.4667L7.96667 7.80004C7.76667 8.00004 7.76667 8.30004 7.96667 8.50004C8.06667 8.60004 8.2 8.63337 8.33333 8.63337C8.46667 8.63337 8.6 8.60004 8.7 8.50004L13.1667 4.03337V6.50004C13.1667 6.76671 13.4 7.00004 13.6667 7.00004C13.9333 7.00004 14.1667 6.76671 14.1667 6.50004V2.83337C14.1667 2.56671 13.9333 2.33337 13.6667 2.33337Z" />
-                        </Icon>
+                        <ShareIcon color={'#667085'} />
                       </Center>
                     </Flex>
                   </Flex>

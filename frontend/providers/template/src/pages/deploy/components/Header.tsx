@@ -163,8 +163,13 @@ const Header = ({
                 </Text>
               </Flex>
             </PopoverTrigger>
-            <PopoverContent w="208px">
-              <PopoverArrow />
+            <PopoverContent
+              w="208px"
+              border={'none'}
+              boxShadow={
+                '0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)'
+              }
+            >
               <PopoverBody p={'20px'}>
                 <Flex
                   onClick={copyTemplateLink}

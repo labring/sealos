@@ -96,7 +96,7 @@ function convertCpu(cpu: string): number {
   if (cpu.slice(-1) === 'm') {
     return parseFloat(cpu.slice(0, -1)) || 0;
   } else {
-    return parseFloat(cpu) * 100 || 0;
+    return parseFloat(cpu) * 1000 || 0;
   }
 }
 
