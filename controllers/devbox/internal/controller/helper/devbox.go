@@ -130,13 +130,17 @@ func CheckPodConsistency(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	for _, env := range container.Env {
 		found := false
 		for _, expectEnv := range expectContainer.Env {
+			if env.Name == "SEALOS_COMMIT_IMAGE_NAME" {
+				found = true
+				break
+			}
 			if env.Name == expectEnv.Name && env.Value == expectEnv.Value {
 				found = true
 				break
 			}
 		}
 		if !found {
-			slog.Info("Environment variables are not equal")
+			slog.Info("Environment variables are not equal", "env not found", env.Name, "env value", env.Value)
 			return false
 		}
 	}
