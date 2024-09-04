@@ -1,8 +1,4 @@
-import { customAlphabet } from 'nanoid'
-
 import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
-
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 export const crLabelKey = 'sealos-devbox-cr'
 export const devboxKey = 'cloud.sealos.io/devbox-manager'
@@ -93,17 +89,7 @@ export const defaultDevboxEditValue: DevboxEditType = {
   runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
-  networks: [
-    {
-      networkName: '',
-      portName: nanoid(),
-      port: 80,
-      protocol: 'HTTP',
-      openPublicDomain: false,
-      publicDomain: '',
-      customDomain: ''
-    }
-  ]
+  networks: []
 }
 
 export const devboxStatusMap = {
