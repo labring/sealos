@@ -19,6 +19,7 @@ async function syncDocs () {
       'i18n/zh-Hans/docusaurus-plugin-content-docs',
       'versioned_docs',
       'versioned_sidebars'
+      // semgrep-disable-next-line javascript.lang.security.audit.path-traversal.path-join-resolve-traversal
     ].map(dir => path.join(websiteDir, dir))
 
     await Promise.all(dirsToRemove.map(dir => fs.remove(dir)))

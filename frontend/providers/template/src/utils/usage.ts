@@ -1,9 +1,9 @@
 import JsYaml from 'js-yaml';
 
 export interface ResourceUsage {
-  cpu: { min: number; max: number };
-  memory: { min: number; max: number };
-  storage: { min: number; max: number };
+  cpu: { min: number; max: number }; // m
+  memory: { min: number; max: number }; // Mi
+  storage: { min: number; max: number }; // Mi
   nodeport: number;
 }
 

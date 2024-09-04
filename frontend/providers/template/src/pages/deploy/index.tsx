@@ -67,7 +67,7 @@ export default function EditApp({
   );
 
   const usage = useMemo(() => {
-    const usage = getResourceUsage(yamlList.map((item) => item.value));
+    const usage = getResourceUsage(yamlList?.map((item) => item.value) || []);
     return usage;
   }, [yamlList]);
 
