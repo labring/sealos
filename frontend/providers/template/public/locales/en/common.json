@@ -230,7 +230,7 @@
   "storage": "Storage",
   "success": "success",
   "target_value": "Target Value",
-  "total_price_tip": "The estimated cost does not include port fees and traffic fees, and is subject to actual usage.",
+  "total_price_tip": "The estimated cost does not include traffic fees, and is subject to actual usage.",
   "users installed the app": "{{count}} users have installed this app",
   "websocket": "WebSocket"
 }

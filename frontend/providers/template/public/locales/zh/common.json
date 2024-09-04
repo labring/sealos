@@ -230,7 +230,7 @@
   "storage": "存储卷",
   "success": "成功",
   "target_value": "目标值",
-  "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准",
+  "total_price_tip": "预估费用不包括流量费用,以实际使用为准",
   "users installed the app": "已有 {{count}} 名用户安装该应用",
   "websocket": "WebSocket"
 }
