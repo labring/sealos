@@ -198,7 +198,7 @@ const Version = ({
           <ModalCloseButton top={'10px'} right={'10px'} />
         </ModalHeader>
         <ModalBody>
-          <Box px={'32px'} minH={'700px'}>
+          <Box px={'32px'} minH={'500px'}>
             <Flex h={'90px'} alignItems={'center'}>
               <Center mr={'10px'} height={'46px'}>
                 <MyIcon name="pods" w={'20px'} h={'20px'} />
