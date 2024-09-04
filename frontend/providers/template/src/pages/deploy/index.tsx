@@ -28,6 +28,7 @@ import PriceBox from './components/PriceBox';
 import { useUserStore } from '@/store/user';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
+import { useMessage } from '@sealos/ui';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -44,7 +45,7 @@ export default function EditApp({
   };
 }) {
   const { t, i18n } = useTranslation();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { templateName } = router.query as QueryType;

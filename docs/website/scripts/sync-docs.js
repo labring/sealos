@@ -17,7 +17,7 @@ function safeJoin (base, ...parts) {
 
   const normalizedBase = path.normalize(base)
   if (!normalized.startsWith(normalizedBase) || normalized === normalizedBase) {
-    throw new Error('路径遍历尝试被阻止')
+    throw new Error('Path traversal attempt blocked')
   }
 
   return normalized

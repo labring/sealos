@@ -64,6 +64,7 @@ export const useConfirm = ({
                 </Button>
                 <Button
                   ml={3}
+                  width={'88px'}
                   variant={'primary'}
                   onClick={() => {
                     onClose();
