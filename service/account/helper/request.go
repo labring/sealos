@@ -139,6 +139,11 @@ type GetPaymentReq struct {
 	// @JSONSchema
 	PaymentID string `json:"paymentID,omitempty" bson:"paymentID" example:"payment-id-1"`
 
+	// @Summary Invoiced
+	// @Description Invoiced
+	// @JSONSchema
+	Invoiced bool `json:"invoiced,omitempty" bson:"invoiced" example:"true"`
+
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required

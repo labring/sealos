@@ -127,7 +127,7 @@ func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentR
 			StartTime: req.StartTime,
 			EndTime:   req.EndTime,
 		},
-	})
+	}, req.Invoiced)
 }
 
 func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
