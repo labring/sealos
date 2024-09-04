@@ -34,7 +34,7 @@ const PriceBox = ({
     components.forEach(({ cpu, memory, port }) => {
       cp = (SOURCE_PRICE.cpu * cpu * 24) / 1000
       mp = (SOURCE_PRICE.memory * memory * 24) / 1024
-      pp = (SOURCE_PRICE.port * port * 24) / 1024
+      pp = SOURCE_PRICE.port * port
       tp = cp + mp + pp
     })
 

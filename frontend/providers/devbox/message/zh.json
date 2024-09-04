@@ -27,6 +27,7 @@
   "copy_success": "复制成功",
   "core": "核",
   "cpu": "CPU",
+  "port": "端口",
   "cpu_exceeds_quota": "申请的 CPU 超出限制，请联系管理员",
   "create": "创建",
   "create_devbox": "新建项目",

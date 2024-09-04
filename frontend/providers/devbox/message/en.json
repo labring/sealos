@@ -27,6 +27,7 @@
   "copy_success": "Copy Success",
   "core": "Core",
   "cpu": "CPU",
+  "port": "Port",
   "cpu_exceeds_quota": "CPU requested exceeds quota. Contact admin.",
   "create": "Create",
   "create_devbox": "Create New Devbox",

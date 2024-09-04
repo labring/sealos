@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
       data: {
         cpu: 0.1,
         memory: 0.2,
-        port: 2
+        port: 0.2
       }
     })
   } catch (error) {

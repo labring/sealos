@@ -238,7 +238,8 @@ const Form = ({
                 components={[
                   {
                     cpu: getValues('cpu'),
-                    memory: getValues('memory')
+                    memory: getValues('memory'),
+                    port: networks.reduce((acc, _) => acc + 1, 0)
                   }
                 ]}
               />
