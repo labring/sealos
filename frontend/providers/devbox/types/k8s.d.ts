@@ -38,6 +38,7 @@ export type KBDevboxType = {
 export interface KBDevboxSpec {
   runtimeType: string
   runtimeVersion: string
+  runtimeNamespace: string
   network: {
     type: 'NodePort' | 'Tailnet'
     extraPorts: NetworkType[]

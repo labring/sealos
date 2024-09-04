@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 
+import { runtimeNamespace } from '@/stores/static'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -14,6 +15,7 @@ export async function GET(req: NextRequest) {
     const languageVersionMap: any = {}
     const frameworkVersionMap: any = {}
     const osVersionMap: any = {}
+    const runtimeNamespaceMap: any = {}
 
     const headerList = req.headers
 
@@ -21,16 +23,20 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const { body: runtimeClasses }: any = await k8sCustomObjects.listClusterCustomObject(
+    const { body: runtimeClasses }: any = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
+      runtimeNamespace,
       'runtimeclasses'
     )
-    const { body: runtimes }: any = await k8sCustomObjects.listClusterCustomObject(
+    const { body: runtimes }: any = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
+      runtimeNamespace,
       'runtimes'
     )
+    console.log('runtimes', runtimes)
+    console.log('runtimeClasses', runtimeClasses)
 
     // runtimeClasses
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')
@@ -63,10 +69,11 @@ export async function GET(req: NextRequest) {
       })
     )
 
-    // runtimeVersions
+    // runtimeVersions and runtimeNamespaceMap
     languageList.forEach((item: any) => {
       const language = item.metadata.name
       const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === language)
+      runtimeNamespaceMap[language] = item.metadata.namespace
       languageVersionMap[language] = []
       versions.forEach((version: any) => {
         languageVersionMap[language].push({
@@ -87,6 +94,7 @@ export async function GET(req: NextRequest) {
     frameworkList.forEach((item: any) => {
       const framework = item.metadata.name
       const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === framework)
+      runtimeNamespaceMap[framework] = item.metadata.namespace
       frameworkVersionMap[framework] = []
       versions.forEach((version: any) => {
         frameworkVersionMap[framework].push({
@@ -105,6 +113,7 @@ export async function GET(req: NextRequest) {
     osList.forEach((item: any) => {
       const os = item.metadata.name
       const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === os)
+      runtimeNamespaceMap[os] = item.metadata.namespace
       osVersionMap[os] = []
       versions.forEach((version: any) => {
         osVersionMap[os].push({
@@ -128,7 +137,8 @@ export async function GET(req: NextRequest) {
         osVersionMap,
         languageTypeList,
         frameworkTypeList,
-        osTypeList
+        osTypeList,
+        runtimeNamespaceMap
       }
     })
   } catch (error) {

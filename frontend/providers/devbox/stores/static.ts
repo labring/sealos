@@ -23,6 +23,8 @@ export let SEALOS_DOMAIN = 'dev.sealos.plus'
 export let INGRESS_SECRET = 'wildcard-cert'
 export let REGISTRY_ADDR = 'hub.dev.sealos.plus'
 
+export const runtimeNamespace = 'devbox-system'
+
 interface valueType {
   id: string
   label: string
@@ -35,6 +37,8 @@ interface VersionMapType {
 export let languageTypeList: valueType[] = []
 export let frameworkTypeList: valueType[] = []
 export let osTypeList: valueType[] = []
+
+export let runtimeNamespaceMap: { [key: string]: string } = {}
 
 export let languageVersionMap: VersionMapType = {
   // [LanguageTypeEnum.java]: [{ id: '11', label: 'java-11' }],
@@ -112,6 +116,7 @@ export const getRuntime = async () => {
     languageTypeList = res.languageTypeList
     frameworkTypeList = res.frameworkTypeList
     osTypeList = res.osTypeList
+    runtimeNamespaceMap = res.runtimeNamespaceMap
   } catch (err) {
     retryGetRuntimeVersion--
     if (retryGetRuntimeVersion >= 0) {

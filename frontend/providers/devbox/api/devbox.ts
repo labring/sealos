@@ -24,7 +24,7 @@ export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName:
   POST(`/api/updateDevbox`, payload)
 
 export const delDevbox = (devboxName: string, networks: string[]) =>
-  DELETE('/api/delDevbox', { devboxName, networks:JSON.stringify(networks) })
+  DELETE('/api/delDevbox', { devboxName, networks: JSON.stringify(networks) })
 
 export const restartDevbox = (data: { devboxName: string }) => POST('/api/restartDevbox', data)
 
@@ -46,5 +46,5 @@ export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>
 export const delDevboxVersionByName = (versionName: string) =>
   DELETE('/api/delDevboxVersionByName', { versionName })
 
-export const getDevboxPassword = (data: { devboxName: string }) =>
-  GET('/api/getDevboxPassword', data)
+export const getSSHConnectionInfo = (data: { devboxName: string; runtimeName: string }) =>
+  GET('/api/getSSHConnectionInfo', data)

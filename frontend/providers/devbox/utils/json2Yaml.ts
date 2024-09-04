@@ -4,9 +4,12 @@ import { str2Num } from './tools'
 import { getUserNamespace } from './user'
 import { DevboxEditType } from '@/types/devbox'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
-import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/stores/static'
+import { INGRESS_SECRET, SEALOS_DOMAIN, runtimeNamespaceMap } from '@/stores/static'
 
 export const json2Devbox = (data: DevboxEditType) => {
+  // runtimeNamespace inject
+  const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
+
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -17,8 +20,7 @@ export const json2Devbox = (data: DevboxEditType) => {
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({
-          containerPort: item.port,
-          protocol: 'TCP'
+          containerPort: item.port
         }))
       },
       resource: {
@@ -26,7 +28,8 @@ export const json2Devbox = (data: DevboxEditType) => {
         memory: `${str2Num(data.memory)}Mi`
       },
       runtimeRef: {
-        name: data.runtimeVersion
+        name: data.runtimeVersion,
+        namespace: runtimeNamespace
       },
       state: 'Running'
     }

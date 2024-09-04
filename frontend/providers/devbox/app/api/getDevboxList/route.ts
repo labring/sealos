@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 
+import { runtimeNamespace } from '@/stores/static'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -27,9 +28,10 @@ export async function GET(req: NextRequest) {
       undefined
     )
 
-    const { body: runtimeBody }: any = await k8sCustomObjects.listClusterCustomObject(
+    const { body: runtimeBody }: any = await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
+      runtimeNamespace,
       'runtimes'
     )
 
@@ -41,6 +43,7 @@ export async function GET(req: NextRequest) {
 
       item.spec.runtimeType = runtime?.spec.classRef
       item.spec.runtimeVersion = runtime?.metadata.name
+      item.spec.runtimeNamespace = runtime?.metadata.namespace
 
       const { body: ingresses }: any = await k8sCustomObjects.listNamespacedCustomObject(
         'networking.k8s.io',
@@ -76,7 +79,6 @@ export async function GET(req: NextRequest) {
         }
       })
       const { body: service } = await k8sCore.readNamespacedService(devboxName, namespace)
-
       item.networks = item.spec.network.extraPorts.map(async (network: any) => {
         const matchingIngress = ingressList.find(
           (ingress: any) => ingress.port === network.containerPort

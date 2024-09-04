@@ -22,7 +22,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { getDevboxPassword, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+import { getSSHConnectionInfo, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 import { SEALOS_DOMAIN } from '@/stores/static'
 
 const Version = dynamic(() => import('./Version'))
@@ -138,12 +138,13 @@ const DevboxList = ({
 
   const handleGotoVSCode = useCallback(async (devbox: DevboxListItemType) => {
     try {
-      const { base64PublicKey, base64PrivateKey } = await getDevboxPassword({
-        devboxName: devbox.name
+      const { base64PublicKey, base64PrivateKey, userName } = await getSSHConnectionInfo({
+        devboxName: devbox.name,
+        runtimeName: devbox.runtimeVersion
       })
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
-        `sealos@${SEALOS_DOMAIN}`
+        `${userName}@${SEALOS_DOMAIN}`
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
       )}`
