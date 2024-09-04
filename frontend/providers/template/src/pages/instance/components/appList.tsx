@@ -113,9 +113,13 @@ export default function AppList({ instanceName }: { instanceName: string }) {
           <Flex>
             <Button
               mr={5}
-              variant={'base'}
+              bg={'grayModern.150'}
+              color={'grayModern.900'}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
+              h={'32px'}
               leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
-              px={3}
               onClick={() => handleToDetailPage(item.name)}
             >
               {t('Details')}
@@ -147,6 +151,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
             alignItems={'center'}
             background={'white'}
             p="32px"
+            borderRadius={'6px'}
           >
             <Flex
               border={'1px dashed #9CA2A8'}

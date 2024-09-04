@@ -26,13 +26,7 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
           key={item.key}
           color={'myGray.700'}
           whiteSpace={'nowrap'}
-          _first={{
-            borderLeftRadius: 'md',
-            pl: 7
-          }}
-          _last={{
-            borderRightRadius: 'md'
-          }}
+          borderRadius={'6px'}
         >
           {t(item.title)}
         </Box>

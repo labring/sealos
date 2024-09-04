@@ -379,26 +379,12 @@ export default function EditApp({
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
-            {/* <Box mt={3} overflow={'hidden'}>
-              <QuotaBox />
-            </Box> */}
-            <Grid templateColumns="3fr 1fr" gap={6}>
-              <GridItem>
-                <Form
-                  formHook={formHook}
-                  pxVal={pxVal}
-                  formSource={templateSource!}
-                  platformEnvs={platformEnvs!}
-                />
-              </GridItem>
-              <GridItem>
-                {userSourcePrice && (
-                  <Box mt={3} overflow={'hidden'}>
-                    <PriceBox {...usage} />
-                  </Box>
-                )}
-              </GridItem>
-            </Grid>
+            <Form
+              formHook={formHook}
+              pxVal={pxVal}
+              formSource={templateSource!}
+              platformEnvs={platformEnvs!}
+            />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
             <ReadMe templateDetail={data?.templateYaml!} />
           </Flex>
