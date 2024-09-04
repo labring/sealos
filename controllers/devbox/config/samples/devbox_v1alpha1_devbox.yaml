@@ -26,6 +26,7 @@ spec:
     memory: 4000Mi
   runtimeRef:
     name: go-1-22-5
+    namespace: devbox-system
   network:
     type: NodePort
     extraPorts:

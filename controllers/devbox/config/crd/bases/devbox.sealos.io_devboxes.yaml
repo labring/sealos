@@ -2666,6 +2666,7 @@ spec:
                   name:
                     type: string
                   namespace:
+                    default: devbox-system
                     type: string
                 required:
                 - name
