@@ -20,7 +20,7 @@ import { customAlphabet } from 'nanoid'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
-import { MySelect, MySlider, Tabs } from '@sealos/ui'
+import { MySelect, MySlider, Tabs, useMessage } from '@sealos/ui'
 
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
@@ -92,6 +92,7 @@ const Form = ({
       icon: 'network'
     }
   ]
+  const { message: toast } = useMessage()
   const [activeNav, setActiveNav] = useState(navList[0].id)
 
   // listen scroll and set activeNav
@@ -522,6 +523,25 @@ const Form = ({
               {t('Network Configuration')}
             </Box>
             <Box px={'42px'} py={'24px'} userSelect={'none'}>
+              {networks.length === 0 && (
+                <Button
+                  w={'100px'}
+                  variant={'outline'}
+                  leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
+                  onClick={() =>
+                    appendNetworks({
+                      networkName: '',
+                      portName: nanoid(),
+                      port: 80,
+                      protocol: 'HTTP',
+                      openPublicDomain: false,
+                      publicDomain: '',
+                      customDomain: ''
+                    })
+                  }>
+                  {t('Add Port')}
+                </Button>
+              )}
               {networks.map((network, i) => (
                 <Flex
                   alignItems={'flex-start'}
@@ -582,6 +602,13 @@ const Form = ({
                         isChecked={!!network.openPublicDomain}
                         onChange={(e) => {
                           const devboxName = getValues('name')
+                          if (!devboxName) {
+                            toast({
+                              title: t('Please enter the devbox name first'),
+                              status: 'warning'
+                            })
+                            return
+                          }
                           updateNetworks(i, {
                             ...getValues('networks')[i],
                             networkName: network.networkName || `${devboxName}-${nanoid()}`,
@@ -599,7 +626,7 @@ const Form = ({
                         <Box mb={'8px'} h={'20px'}></Box>
                         <Flex alignItems={'center'} h={'35px'}>
                           <MySelect
-                            width={'120px'}
+                            width={'100px'}
                             height={'32px'}
                             borderTopRightRadius={0}
                             borderBottomRightRadius={0}
@@ -619,7 +646,7 @@ const Form = ({
                             alignItems={'center'}
                             h={'32px'}
                             bg={'grayModern.50'}
-                            px={4}
+                            px={2}
                             border={theme.borders.base}
                             borderLeft={0}
                             borderTopRightRadius={'md'}
@@ -646,7 +673,7 @@ const Form = ({
                       </Box>
                     </>
                   )}
-                  {networks.length > 1 && (
+                  {networks.length >= 1 && (
                     <Box ml={3}>
                       <Box mb={'8px'} h={'20px'}></Box>
                       <IconButton

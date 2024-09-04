@@ -108,7 +108,7 @@ const Version = ({
       )
     },
     {
-      title: t('creation_time'),
+      title: t('create_time'),
       dataIndex: 'createTime',
       key: 'createTime'
     },

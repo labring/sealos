@@ -94,13 +94,13 @@ const ReleaseModal = ({
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={4}>
             <Flex alignItems={'start'} gap={'5px'} mb={'24px'}>
-              <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>
+              <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
                 {t('image_name')}
               </Box>
               <Input defaultValue={`${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}`} isReadOnly />
             </Flex>
             <Flex alignItems={'start'} gap={'5px'}>
-              <Box w={'100px'} fontWeight={'bold'} fontSize={'lg'}>
+              <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
                 {t('version_config')}
               </Box>
               <Flex gap={'5px'} direction={'column'}>
@@ -131,8 +131,8 @@ const ReleaseModal = ({
             <Button
               variant={'solid'}
               onClick={handleSubmit}
-              mr={'20px'}
-              width={'60px'}
+              mr={'11px'}
+              width={'70px'}
               isLoading={loading}>
               {t('release')}
             </Button>

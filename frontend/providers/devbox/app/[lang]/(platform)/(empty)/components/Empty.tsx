@@ -21,7 +21,7 @@ const Empty = () => {
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <Box py={8}>{t('devbox_empty')}</Box>
       <Button
-        w={155}
+        w={170}
         mt={5}
         variant={'solid'}
         onClick={() => router.push('/devbox/create')}

@@ -32,6 +32,32 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     content: 'not_allow_standalone_use'
   })
 
+  // init session
+  useEffect(() => {
+    const response = createSealosApp()
+    ;(async () => {
+      try {
+        const newSession = JSON.stringify(await sealosApp.getSession())
+        const oldSession = localStorage.getItem('session')
+        if (newSession && newSession !== oldSession) {
+          localStorage.setItem('session', newSession)
+          window.location.reload()
+        }
+        console.log('devbox: app init success')
+      } catch (err) {
+        console.log('devbox: app is not running in desktop')
+        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+          localStorage.removeItem('session')
+          openConfirm(() => {
+            window.open(`https://${SEALOS_DOMAIN}`, '_self')
+          })()
+        }
+      }
+    })()
+    return response
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     getUserPrice()
     getRuntime()
@@ -55,39 +81,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         })
       } catch (error) {
         changeI18n({
-          currentLanguage: 'zh'
+          currentLanguage: 'en'
         })
       }
     })()
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
-  }, [])
-
-  // init session
-  useEffect(() => {
-    const response = createSealosApp()
-    ;(async () => {
-      try {
-        const newSession = JSON.stringify(await sealosApp.getSession())
-        const oldSession = localStorage.getItem('session')
-        if (newSession && newSession !== oldSession) {
-          localStorage.setItem('session', newSession)
-          window.location.reload()
-        }
-        console.log('devbox: app init success')
-      } catch (err) {
-        console.log('devbox: app is not running in desktop')
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          localStorage.removeItem('session')
-          openConfirm(() => {
-            // NOTE: 这里的SEALOS_DOMAIN可能获取不到
-            window.open(`https://${SEALOS_DOMAIN}`, '_self')
-          })()
-        }
-      }
-    })()
-    return response
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // add resize event
