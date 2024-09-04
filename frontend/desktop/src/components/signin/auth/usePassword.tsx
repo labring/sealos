@@ -97,8 +97,7 @@ export default function usePassword({
                         realName: infoData.data?.info.realName || undefined,
                         userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined
                       },
-                      // @ts-ignore
-                      kubeconfig: result.data.kubeconfig
+                      kubeconfig: regionResult.data.kubeconfig
                     });
                     await router.replace('/');
                   }
