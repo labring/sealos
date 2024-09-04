@@ -27,11 +27,22 @@ import QuotaBox from './components/QuotaBox';
 import PriceBox from './components/PriceBox';
 import { useUserStore } from '@/store/user';
 import { getResourceUsage } from '@/utils/usage';
+import Head from 'next/head';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
 
-export default function EditApp({ appName }: { appName?: string }) {
+export default function EditApp({
+  appName,
+  metaData
+}: {
+  appName?: string;
+  metaData: {
+    title: string;
+    keywords: string;
+    description: string;
+  };
+}) {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -154,36 +165,59 @@ export default function EditApp({ appName }: { appName?: string }) {
     }
     console.log('quoteCheckRes', quoteCheckRes);
     setIsLoading(true);
+
     try {
       if (!insideCloud) {
-        setIsLoading(false);
-        setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
-        const _name = encodeURIComponent(`?templateName=${templateName}&sealos_inside=true`);
-        const _domain = platformEnvs?.SEALOS_CLOUD_DOMAIN;
-        const href = `https://${_domain}/?openapp=system-template${_name}`;
-        return window.open(href, '_self');
+        handleOutside();
+      } else {
+        await handleInside();
       }
-      const yamls = yamlList.map((item) => item.value);
-
-      await postDeployApp(yamls, 'create');
-
-      toast({
-        title: t(applySuccess),
-        status: 'success'
-      });
-
-      deleteCached();
-      setAppType(ApplicationType.MyApp);
-      router.push({
-        pathname: '/instance',
-        query: {
-          instanceName: detailName
-        }
-      });
     } catch (error) {
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
+  };
+
+  const handleOutside = () => {
+    setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
+
+    const params = new URLSearchParams();
+    ['k', 's', 'bd_vid'].forEach((param) => {
+      const value = router.query[param];
+      if (typeof value === 'string') {
+        params.append(param, value);
+      }
+    });
+
+    const queryString = params.toString();
+
+    const baseUrl = `https://${platformEnvs?.SEALOS_CLOUD_DOMAIN}/`;
+    const encodedTemplateQuery = encodeURIComponent(
+      `?templateName=${templateName}&sealos_inside=true`
+    );
+    const templateQuery = `openapp=system-template${encodedTemplateQuery}`;
+    const href = `${baseUrl}${
+      queryString ? `?${queryString}&${templateQuery}` : `?${templateQuery}`
+    }`;
+
+    window.open(href, '_self');
+  };
+
+  const handleInside = async () => {
+    const yamls = yamlList.map((item) => item.value);
+    await postDeployApp(yamls, 'create');
+
+    toast({
+      title: t(applySuccess),
+      status: 'success'
+    });
+
+    deleteCached();
+    setAppType(ApplicationType.MyApp);
+    router.push({
+      pathname: '/instance',
+      query: { instanceName: detailName }
+    });
   };
 
   const submitError = async () => {
@@ -262,6 +296,15 @@ export default function EditApp({ appName }: { appName?: string }) {
       borderRadius={'12px'}
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
     >
+      <Head>
+        <title>{`${metaData.title}${
+          i18n.language === 'en'
+            ? 'Deployment and installation tutorial - Sealos'
+            : '部署和安装教程 - Sealos'
+        }`}</title>
+        <meta name="keywords" content={metaData.keywords} />
+        <meta name="description" content={metaData.description} />
+      </Head>
       <Flex
         zIndex={99}
         position={'sticky'}
@@ -383,9 +426,29 @@ export async function getServerSideProps(content: any) {
 
   const appName = content?.query?.templateName || '';
 
+  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
+
+  let metaData = {
+    title: `${appName}部署和安装教程 - Sealos`,
+    keywords: '',
+    description: ''
+  };
+
+  try {
+    const templateSource: { data: TemplateSourceType } = await (
+      await fetch(`${baseurl}/api/getTemplateSource?templateName=${appName}`)
+    ).json();
+    metaData = {
+      title: templateSource?.data.templateYaml.spec.title,
+      keywords: templateSource?.data.templateYaml.spec.description,
+      description: templateSource?.data.templateYaml.spec.description
+    };
+  } catch (error) {}
+
   return {
     props: {
       appName,
+      metaData,
       ...(await serviceSideProps(content))
     }
   };
