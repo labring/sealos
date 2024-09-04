@@ -263,11 +263,17 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 					return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 				}
 				if !helper.CheckPodConsistency(expectPod, &podList.Items[0]) {
+					logger.Info("pod is pending, but pod spec is not consistent, delete pod")
+					logger.Info("pod", "pod", podList.Items[0].Name, "pod spec", podList.Items[0].Spec)
+					logger.Info("expect pod", "pod", expectPod.Name, "pod spec", expectPod.Spec)
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 			case corev1.PodRunning:
 				//if pod is running,check pod need restart
 				if !helper.CheckPodConsistency(expectPod, &podList.Items[0]) {
+					logger.Info("pod is running, but pod spec is not consistent, delete pod")
+					logger.Info("pod", "pod", podList.Items[0].Name, "pod spec", podList.Items[0].Spec)
+					logger.Info("expect pod", "pod", expectPod.Name, "pod spec", expectPod.Spec)
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
