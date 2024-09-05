@@ -190,11 +190,18 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	var podList corev1.PodList
 	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		logger.Error(err, "list devbox pod failed")
+
 		return err
 	}
 	// only one pod is allowed, if more than one pod found, return error
 	if len(podList.Items) > 1 {
 		logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
+		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
+		err := r.Status().Update(ctx, devbox)
+		if err != nil {
+			logger.Error(err, "update devbox phase failed")
+			return err
+		}
 		return fmt.Errorf("more than one pod found")
 	}
 
@@ -231,6 +238,12 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		if len(podList.Items) == 0 {
 			if err := r.Create(ctx, expectPod); err != nil {
 				logger.Error(err, "create pod failed")
+				devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
+				err := r.Status().Update(ctx, devbox)
+				if err != nil {
+					logger.Error(err, "update devbox phase failed")
+					return err
+				}
 				return err
 			}
 			// add next commit history to status
@@ -269,6 +282,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 					_ = r.Delete(ctx, &podList.Items[0])
 				}
 				devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
+				err := r.Status().Update(ctx, devbox)
+				if err != nil {
+					logger.Error(err, "update devbox phase failed")
+					return err
+				}
 			case corev1.PodRunning:
 				//if pod is running,check pod need restart
 				if !helper.CheckPodConsistency(expectPod, &podList.Items[0]) {
@@ -309,12 +327,17 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	case devboxv1alpha1.DevboxStateStopped:
 		// check pod status, if no pod found, do nothing
 		if len(podList.Items) == 0 {
-			devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 			return nil
 		}
 		// if pod found, remove finalizer and delete pod
 		if len(podList.Items) == 1 {
 			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopping
+			err := r.Status().Update(ctx, devbox)
+			if err != nil {
+				logger.Error(err, "update devbox phase failed")
+				return err
+			}
 			// remove finalizer and delete pod
 			if controllerutil.RemoveFinalizer(&podList.Items[0], FinalizerName) {
 				if err := r.Update(ctx, &podList.Items[0]); err != nil {
@@ -324,12 +347,12 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 			_ = r.Delete(ctx, &podList.Items[0])
 			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
+			err = r.Status().Update(ctx, devbox)
+			if err != nil {
+				logger.Error(err, "update devbox phase failed")
+			}
 			return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 		}
-	}
-	err = r.Status().Update(ctx, devbox)
-	if err != nil {
-		logger.Error(err, "update devbox phase failed")
 	}
 	return nil
 }
