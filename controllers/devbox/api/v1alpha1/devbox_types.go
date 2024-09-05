@@ -175,6 +175,7 @@ type DevboxStatus struct {
 // +kubebuilder:printcolumn:name="PodPhase",type="string",JSONPath=".status.podPhase"
 // +kubebuilder:printcolumn:name="NetworkType",type="string",JSONPath=".status.network.type"
 // +kubebuilder:printcolumn:name="NodePort",type="integer",JSONPath=".status.network.nodePort"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 
 // Devbox is the Schema for the devboxes API
 type Devbox struct {
