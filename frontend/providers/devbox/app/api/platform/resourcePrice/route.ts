@@ -1,16 +1,24 @@
-import * as yaml from 'js-yaml'
 import { NextRequest } from 'next/server'
 
-import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
-import { authSession } from '@/services/backend/auth'
+import { userPriceType } from '@/types/user'
 
 export const dynamic = 'force-dynamic'
 
 export type Response = {
   cpu: number
   memory: number
-  port: number
+  nodeports: number
+}
+
+type ResourcePriceType = {
+  data: {
+    properties: {
+      name: string
+      unit_price: number
+      unit: string
+    }[]
+  }
 }
 
 type ResourceType =
@@ -25,82 +33,54 @@ type ResourceType =
   | 'infra-disk'
   | 'services.nodeports'
 
-type PriceCrdType = {
-  apiVersion: 'account.sealos.io/v1'
-  kind: 'PriceQuery'
-  status: {
-    billingRecords: {
-      price: number
-      resourceType: ResourceType
-    }[]
-  }
-}
 const PRICE_SCALE = 1000000
 
-// export const valuationMap: Record<string, number> = {
-//   cpu: 1000,
-//   memory: 1024,
-//   storage: 1024,
-//   port: 2
-// }
+export const valuationMap: Record<string, number> = {
+  cpu: 1000,
+  memory: 1024,
+  storage: 1024,
+  ['services.nodeports']: 1000
+}
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = req.headers
+    const { SEALOS_DOMAIN } = process.env
+    const getResourcePrice = async () => {
+      try {
+        const res = await fetch(
+          `https://account-api.${SEALOS_DOMAIN}/account/v1alpha1/properties`,
+          {
+            method: 'POST'
+          }
+        )
 
-    // source price
-    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
-      kubeconfig: await authSession(headerList)
-    })
+        const data: ResourcePriceType = await res.json()
 
-    const crdJson = {
-      apiVersion: `account.sealos.io/v1alpha`,
-      kind: 'PriceQuery',
-      metadata: {
-        name: 'prices',
-        namespace
-      },
-      spec: {}
+        return data.data.properties
+      } catch (error) {
+        console.log(error)
+      }
     }
 
-    // const crdYaml = yaml.dump(crdJson)
+    const resp = (await getResourcePrice()) as ResourcePriceType['data']['properties']
 
-    // try {
-    //   await applyYamlList([crdYaml], 'replace')
-    //   await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000))
-    // } catch (error) {}
+    const data: userPriceType = {
+      cpu: countSourcePrice(resp, 'cpu'),
+      memory: countSourcePrice(resp, 'memory'),
+      nodeports: countSourcePrice(resp, 'services.nodeports')
+    }
 
-    // const { body: priceResponse } = (await k8sCustomObjects.getNamespacedCustomObject(
-    //   'account.sealos.io',
-    //   'v1alpha',
-    //   namespace,
-    //   'pricequeries',
-    //   crdJson.metadata.name
-    // )) as { body: PriceCrdType }
-
-    // console.log('priceResponse', priceResponse)
-
-    // const data = {
-    //   cpu: countSourcePrice(priceResponse, 'cpu'),
-    //   memory: countSourcePrice(priceResponse, 'memory')
-    // }
     return jsonRes({
-      data: {
-        cpu: 0.1,
-        memory: 0.2,
-        port: 0.2
-      }
+      data
     })
   } catch (error) {
-    console.log(error)
-    jsonRes({ code: 500, message: 'get price error' })
+    return jsonRes({ code: 500, message: 'get price error' })
   }
 }
 
-// function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
-//   const rawPrice =
-//     rawData?.status?.billingRecords.find((item) => item.resourceType === type)?.price || 1
-//   const sourceScale = rawPrice * (valuationMap[type] || 1)
-//   const unitScale = sourceScale / PRICE_SCALE
-//   return unitScale
-// }
+function countSourcePrice(rawData: ResourcePriceType['data']['properties'], type: ResourceType) {
+  const rawPrice = rawData.find((item) => item.name === type)?.unit_price || 1
+  const sourceScale = rawPrice * (valuationMap[type] || 1)
+  const unitScale = sourceScale / PRICE_SCALE
+  return unitScale
+}

@@ -240,7 +240,9 @@ const Form = ({
                   {
                     cpu: getValues('cpu'),
                     memory: getValues('memory'),
-                    port: networks.reduce((acc, _) => acc + 1, 0)
+                    nodeports: getValues('networks').reduce((acc, network) => {
+                      return network.openPublicDomain ? acc + 1 : acc
+                    }, 0)
                   }
                 ]}
               />

@@ -7,7 +7,7 @@ import { SOURCE_PRICE } from '@/stores/static'
 export const colorMap = {
   cpu: '#33BABB',
   memory: '#36ADEF',
-  port: '#8172D8'
+  nodeports: '#8172D8'
 }
 
 const PriceBox = ({
@@ -16,9 +16,10 @@ const PriceBox = ({
   components: {
     cpu: number
     memory: number
-    port: number
+    nodeports: number
   }[]
 }) => {
+  console.log('components', components)
   const theme = useTheme()
   const t = useTranslations()
   const priceList: {
@@ -31,12 +32,13 @@ const PriceBox = ({
     let pp = 0
     let tp = 0
 
-    components.forEach(({ cpu, memory, port }) => {
+    components.forEach(({ cpu, memory, nodeports }) => {
       cp = (SOURCE_PRICE.cpu * cpu * 24) / 1000
       mp = (SOURCE_PRICE.memory * memory * 24) / 1024
-      pp = SOURCE_PRICE.port * port
+      pp = SOURCE_PRICE.nodeports * nodeports * 24
       tp = cp + mp + pp
     })
+    console.log('cp', cp, 'mp', mp, 'pp', pp, 'tp', tp)
 
     return [
       {
@@ -46,7 +48,7 @@ const PriceBox = ({
       },
       { label: 'memory', color: '#36ADEF', value: mp.toFixed(2) },
       {
-        label: 'port',
+        label: 'nodeports',
         color: '#8172D8',
         value: pp.toFixed(2)
       },

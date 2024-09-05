@@ -24,8 +24,7 @@ export const sessionKey = 'session'
 export type userPriceType = {
   cpu: number
   memory: number
-  storage: number
-  gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[]
+  nodeports: number
 }
 
 export type UserQuotaItemType = {
