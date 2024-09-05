@@ -236,11 +236,11 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 				Items: []corev1.KeyToPath{
 					{
 						Key:  "SEALOS_DEVBOX_PRIVATE_KEY",
-						Path: "id_rsa",
+						Path: "id",
 					},
 					{
 						Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
-						Path: "id_rsa.pub",
+						Path: "id.pub",
 					},
 				},
 			},
