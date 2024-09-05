@@ -23,35 +23,35 @@ import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 
 interface sinceItem {
-  name: string;
+  key: 'streaming_logs' | 'within_5_minutes' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
   since: number;
   previous: boolean;
 }
 
-const newSinceItems = (baseTimestamp: number) => {
+const newSinceItems = (baseTimestamp: number): sinceItem[] => {
   return [
     {
-      name: 'Streaming Logs',
+      key: 'streaming_logs',
       since: 0,
       previous: false
     },
     {
-      name: 'Within 5 minutes',
+      key: 'within_5_minutes',
       since: baseTimestamp - 5 * 60 * 1000,
       previous: false
     },
     {
-      name: 'Within 1 hour',
+      key: 'within_1_hour',
       since: baseTimestamp - 60 * 60 * 1000,
       previous: false
     },
     {
-      name: 'Within 1 day',
+      key: 'within_1_day',
       since: baseTimestamp - 24 * 60 * 60 * 1000,
       previous: false
     },
     {
-      name: 'Terminated Logs',
+      key: 'terminated_logs',
       since: 0,
       previous: true
     }
@@ -80,17 +80,17 @@ const LogsModal = ({
   const [isLoading, setIsLoading] = useState(true);
   const LogBox = useRef<HTMLDivElement>(null);
   const ansi_up = useRef(new AnsiUp());
-  const [sinceName, setSinceName] = useState('Streaming Logs');
+  const [sinceKey, setSinceKey] = useState('streaming_logs');
   const [sinceTime, setSinceTime] = useState(0);
   const [previous, setPrevious] = useState(false);
 
   const switchSince = useCallback(
     (item: sinceItem) => {
-      setSinceName(item.name);
+      setSinceKey(item.key);
       setPrevious(item.previous);
       setSinceTime(item.since);
     },
-    [setSinceName, setPrevious, setSinceTime]
+    [setSinceKey, setPrevious, setSinceTime]
   );
 
   const sinceItems = useMemo(() => newSinceItems(Date.now()), []);
@@ -214,14 +214,14 @@ const LogsModal = ({
                     borderRadius={'md'}
                   >
                     <Flex px={4} alignItems={'center'}>
-                      <Box flex={1}>{sinceName}</Box>
+                      <Box flex={1}>{t(sinceKey)}</Box>
                       <ChevronDownIcon ml={2} />
                     </Flex>
                   </MenuButton>
                 }
                 menuList={sinceItems.map((item) => ({
-                  isActive: item.name === sinceName,
-                  child: <Box>{item.name}</Box>,
+                  isActive: item.key === sinceKey,
+                  child: <Box>{t(item.key)}</Box>,
                   onClick: () => switchSince(item)
                 }))}
               />

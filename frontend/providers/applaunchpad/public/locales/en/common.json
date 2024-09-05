@@ -259,5 +259,10 @@
   "app_store": "App Store",
   "sealaf": "sealaf",
   "total_price_tip": "The estimated cost does not include port fees and traffic fees, and is subject to actual usage.",
-  "nodeports": "NodePorts"
+  "nodeports": "NodePorts",
+  "streaming_logs": "Streaming logs",
+  "within_5_minutes": "Within 5 minutes",
+  "within_1_hour": "Within 1 hour",
+  "within_1_day": "Within 1 day",
+  "terminated_logs": "Terminated logs"
 }

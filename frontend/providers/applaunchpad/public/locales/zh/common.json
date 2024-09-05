@@ -259,5 +259,10 @@
   "sealaf": "云开发",
   "app_store": "应用商店",
   "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准",
-  "nodeports": "外网端口"
+  "nodeports": "外网端口",
+  "streaming_logs": "实时日志",
+  "within_5_minutes": "五分钟内",
+  "within_1_hour": "一小时内",
+  "within_1_day": "一天内",
+  "terminated_logs": "中断前"
 }
