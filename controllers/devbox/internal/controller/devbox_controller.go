@@ -227,13 +227,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
-		// change devbox status
-		devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
-		err = r.Status().Update(ctx, devbox)
-		if err != nil {
-			logger.Error(err, "update devbox phase failed")
-			return err
-		}
 		// check pod status, if no pod found, create a new one, with finalizer and controller reference
 		if len(podList.Items) == 0 {
 			if err := r.Create(ctx, expectPod); err != nil {
@@ -325,13 +318,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 		}
 	case devboxv1alpha1.DevboxStateStopped:
-		// change Devbox status
-		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopping
-		err = r.Status().Update(ctx, devbox)
-		if err != nil {
-			logger.Error(err, "update devbox phase failed")
-			return err
-		}
 		// check pod status, if no pod found, do nothing
 		if len(podList.Items) == 0 {
 			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
