@@ -323,6 +323,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				}
 			}
 			_ = r.Delete(ctx, &podList.Items[0])
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 			return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 		}
 	}
