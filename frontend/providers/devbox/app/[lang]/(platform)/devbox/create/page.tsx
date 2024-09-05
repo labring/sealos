@@ -25,7 +25,7 @@ import type { DevboxEditType, DevboxKindsType } from '@/types/devbox'
 import { defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
 import { patchYamlList } from '@/utils/tools'
-import { runtimeNamespaceMap } from '@/stores/static'
+import { DEVBOX_AFFINITY_ENABLE, runtimeNamespaceMap } from '@/stores/static'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -40,7 +40,7 @@ const formData2Yamls = (data: DevboxEditType) => [
   },
   {
     filename: 'devbox.yaml',
-    value: json2Devbox(data, runtimeNamespaceMap)
+    value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE)
   },
   ...(data.networks.find((item) => item.openPublicDomain)
     ? [

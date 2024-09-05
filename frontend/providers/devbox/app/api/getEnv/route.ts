@@ -4,6 +4,7 @@ export type SystemEnvResponse = {
   domain: string
   ingressSecret: string
   registryAddr: string
+  devboxAffinityEnable: string
 }
 
 export const dynamic = 'force-dynamic'
@@ -13,7 +14,8 @@ export async function GET() {
     data: {
       domain: process.env.SEALOS_DOMAIN || 'dev.sealos.plus',
       ingressSecret: process.env.INGRESS_SECRET || 'wildcard-cert',
-      registryAddr: process.env.REGISTRY_ADDR || 'hub.dev.sealos.plus'
+      registryAddr: process.env.REGISTRY_ADDR || 'hub.dev.sealos.plus',
+      devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || 'true'
     }
   })
 }

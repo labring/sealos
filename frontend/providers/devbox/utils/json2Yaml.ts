@@ -12,12 +12,13 @@ import {
 
 export const json2Devbox = (
   data: DevboxEditType,
-  runtimeNamespaceMap: { [key: string]: string } = defaultRuntimeNamespaceMap
+  runtimeNamespaceMap: { [key: string]: string } = defaultRuntimeNamespaceMap,
+  devboxAffinityEnable: string = 'true'
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
 
-  const json = {
+  let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
     metadata: {
@@ -41,9 +42,34 @@ export const json2Devbox = (
       state: 'Running'
     }
   }
-
+  if (devboxAffinityEnable === 'true') {
+    json.spec.tolerations = [
+      {
+        key: 'devbox.sealos.io/node',
+        operator: 'Exists',
+        effect: 'NoSchedule'
+      }
+    ]
+    json.spec.affinity = {
+      nodeAffinity: {
+        requiredDuringSchedulingIgnoredDuringExecution: {
+          nodeSelectorTerms: [
+            {
+              matchExpressions: [
+                {
+                  key: 'devbox.sealos.io/node',
+                  operator: 'Exists'
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
   return yaml.dump(json)
 }
+
 export const json2StartOrStop = ({
   devboxName,
   type

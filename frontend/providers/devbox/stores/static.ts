@@ -22,6 +22,7 @@ let retryGetNamespace = 3
 export let SEALOS_DOMAIN = 'dev.sealos.plus'
 export let INGRESS_SECRET = 'wildcard-cert'
 export let REGISTRY_ADDR = 'hub.dev.sealos.plus'
+export let DEVBOX_AFFINITY_ENABLE = 'true'
 
 export const runtimeNamespace = 'devbox-system'
 
@@ -130,10 +131,11 @@ export const getRuntime = async () => {
 export const getEnv = async () => {
   try {
     const res = await getAppEnv()
-    const { domain, ingressSecret, registryAddr } = res
+    const { domain, ingressSecret, registryAddr, devboxAffinityEnable } = res
     SEALOS_DOMAIN = domain
     INGRESS_SECRET = ingressSecret
     REGISTRY_ADDR = registryAddr
+    DEVBOX_AFFINITY_ENABLE = devboxAffinityEnable
   } catch (err) {
     retryGetEnv--
     if (retryGetEnv >= 0) {

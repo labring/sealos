@@ -44,6 +44,8 @@ spec:
               value: wildcard-cert
             - name: REGISTRY_ADDR
               value: hub.dev.sealos.plus
+            - name: DEVBOX_AFFINITY_ENABLE
+              value: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
