@@ -35,7 +35,7 @@ type ResourceType =
 
 const PRICE_SCALE = 1000000
 
-export const valuationMap: Record<string, number> = {
+const valuationMap: Record<string, number> = {
   cpu: 1000,
   memory: 1024,
   storage: 1024,
