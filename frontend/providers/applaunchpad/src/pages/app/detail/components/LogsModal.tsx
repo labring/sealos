@@ -48,6 +48,7 @@ const LogsModal = ({
   const watchLogs = useCallback(() => {
     // podName is empty. pod may  has been deleted
     if (!podName) return closeFn();
+    setIsLoading(true);
 
     const controller = new AbortController();
     streamFetch({
@@ -60,6 +61,7 @@ const LogsModal = ({
       abortSignal: controller,
       firstResponse() {
         setIsLoading(false);
+        setLogs('');
         setTimeout(() => {
           if (!LogBox.current) return;
 
@@ -96,7 +98,7 @@ const LogsModal = ({
     return () => {
       controller?.abort();
     };
-  }, []);
+  }, [watchLogs]);
 
   const exportLogs = useCallback(async () => {
     const allLogs = await getPodLogs({
@@ -116,7 +118,7 @@ const LogsModal = ({
             <Box fontSize={'xl'} fontWeight={'bold'}>
               Pod {t('Log')}
             </Box>
-            <Box px={3}>
+            <Box px={3} zIndex={10000}>
               <SealosMenu
                 width={240}
                 Button={

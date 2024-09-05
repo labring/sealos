@@ -49,6 +49,8 @@ const Pods = ({
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const [detailFilePodIndex, setDetailFilePodIndex] = useState<number>();
 
+  const closeFn = useCallback(() => setLogsPodIndex(undefined), [setLogsPodIndex]);
+
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
@@ -306,7 +308,7 @@ const Pods = ({
           setLogsPodName={(name: string) =>
             setLogsPodIndex(pods.findIndex((item) => item.podName === name))
           }
-          closeFn={() => setLogsPodIndex(undefined)}
+          closeFn={closeFn}
         />
       )}
       {detailPodIndex !== undefined && (
