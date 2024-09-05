@@ -56,11 +56,6 @@ const getResourcePrice = async () => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // source price
-    const { applyYamlList, k8sCustomObjects, k8sCore, namespace } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
-
     const data = await getResourcePrice();
 
     jsonRes<userPriceType>(res, {
@@ -69,7 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.log('get resoure price error: ', error);
-
     jsonRes(res, { code: 500, message: 'get price error' });
   }
 }
