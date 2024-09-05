@@ -353,9 +353,11 @@ const Form = ({
               </Box>
             ))}
           </Box>
-          <Box mt={3} overflow={'hidden'}>
-            <QuotaBox />
-          </Box>
+          {userSourcePrice && (
+            <Box mt={3} overflow={'hidden'}>
+              <QuotaBox />
+            </Box>
+          )}
           {userSourcePrice && (
             <Box mt={3} overflow={'hidden'}>
               <PriceBox
