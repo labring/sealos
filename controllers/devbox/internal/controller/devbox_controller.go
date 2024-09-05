@@ -397,6 +397,9 @@ func (r *DevboxReconciler) updateDevboxCommitHistory(ctx context.Context, devbox
 			// based on pod status, update commit history status
 			if commitSuccess(pod.Status.Phase) {
 				devbox.Status.CommitHistory[i].Status = devboxv1alpha1.CommitStatusSuccess
+				//update node and containerId
+				devbox.Status.CommitHistory[i].Node = pod.Spec.NodeName
+				devbox.Status.CommitHistory[i].ContainerID = pod.Status.ContainerStatuses[0].ContainerID
 			} else {
 				devbox.Status.CommitHistory[i].Status = devboxv1alpha1.CommitStatusFailed
 			}

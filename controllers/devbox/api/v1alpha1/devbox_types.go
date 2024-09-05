@@ -135,10 +135,12 @@ const (
 )
 
 type CommitHistory struct {
-	Image  string       `json:"image"`
-	Time   metav1.Time  `json:"time"`
-	Pod    string       `json:"pod"`
-	Status CommitStatus `json:"status"`
+	Image       string       `json:"image"`
+	Time        metav1.Time  `json:"time"`
+	Pod         string       `json:"pod"`
+	Status      CommitStatus `json:"status"`
+	Node        string       `json:"node"`
+	ContainerID string       `json:"containerID"`
 }
 
 type DevboxPhase string
