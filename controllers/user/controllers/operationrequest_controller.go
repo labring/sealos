@@ -147,8 +147,13 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 			return ctrl.Result{}, r.updateRequestStatus(ctx, request, userv1.RequestFailed)
 		}
 	}
+	bindUser := &userv1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Name: request.Spec.User}, bindUser); err != nil {
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get bind user", "Failed to get bind user %s", request.Spec.User)
+		return ctrl.Result{}, err
+	}
 	setUpOwnerReferenceFc := func() error {
-		return ctrl.SetControllerReference(user, rolebinding, r.Scheme)
+		return ctrl.SetControllerReference(bindUser, rolebinding, r.Scheme)
 	}
 
 	// handle OperationRequest, create or delete rolebinding
