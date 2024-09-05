@@ -14,7 +14,7 @@ const AdapterChartData: Record<
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
       let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -27,7 +27,7 @@ const AdapterChartData: Record<
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
       let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -40,7 +40,7 @@ const AdapterChartData: Record<
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
       let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -53,7 +53,7 @@ const AdapterChartData: Record<
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
       let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -66,7 +66,7 @@ const AdapterChartData: Record<
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
       let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
