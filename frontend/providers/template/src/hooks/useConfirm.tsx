@@ -53,6 +53,7 @@ export const useConfirm = ({
 
               <AlertDialogFooter>
                 <Button
+                  variant={'outline'}
                   colorScheme={'gray'}
                   onClick={() => {
                     onClose();
@@ -63,6 +64,7 @@ export const useConfirm = ({
                 </Button>
                 <Button
                   ml={3}
+                  width={'88px'}
                   variant={'primary'}
                   onClick={() => {
                     onClose();

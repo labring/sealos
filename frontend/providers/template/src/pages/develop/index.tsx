@@ -12,7 +12,7 @@ import {
   developGenerateYamlList,
   handleTemplateToInstanceYaml,
   parseTemplateString,
-  getYamlSource,
+  getYamlSource
 } from '@/utils/json-yaml';
 import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
 import { downLoadBold } from '@/utils/tools';
@@ -42,67 +42,76 @@ export default function Develop() {
     data: EnvResponse;
   };
 
-  const generateYamlData = useCallback((
-    yamlSource: TemplateSourceType,
-    inputs: Record<string, string> = {}
-  ): YamlItemType[] => {
-    const { defaults, defaultInputs } = getTemplateValues(yamlSource);
-    const data = {
-      ...platformEnvs,
-      ...yamlSource?.source,
-      inputs: {
-        ...defaultInputs,
-        ...inputs
-      },
-      defaults: defaults
-    };
-    const generateStr = parseTemplateString(yamlSource.appYaml, data);
-    const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
-    return developGenerateYamlList(generateStr, _instanceName)
-  }, [platformEnvs]);
+  const generateYamlData = useCallback(
+    (yamlSource: TemplateSourceType, inputs: Record<string, string> = {}): YamlItemType[] => {
+      const { defaults, defaultInputs } = getTemplateValues(yamlSource);
+      const data = {
+        ...platformEnvs,
+        ...yamlSource?.source,
+        inputs: {
+          ...defaultInputs,
+          ...inputs
+        },
+        defaults: defaults
+      };
+      const generateStr = parseTemplateString(yamlSource.appYaml, data);
+      const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
+      return developGenerateYamlList(generateStr, _instanceName);
+    },
+    [platformEnvs]
+  );
 
-  const parseTemplate = useCallback((str: string) => {
-    if (!str || !str.trim()) {
-      setTemplateSource(void 0);
-      setYamlList([]);
-      return;
-    }
-    try {
-      const result = getYamlSource(str, platformEnvs);
-      const formInputs = formHook.getValues();
-      setTemplateSource(result);
-      const correctYamlList = generateYamlData(result, formInputs);
-      setYamlList(correctYamlList);
-    } catch (error: any) {
-      toast({
-        title: 'Parsing Yaml Error',
-        status: 'error',
-        description: <pre style={{ whiteSpace: 'pre-wrap' }}>{error?.message}</pre>,
-        duration: 4000,
-        isClosable: true
-      });
-    }
-  }, [platformEnvs, generateYamlData]);
+  const parseTemplate = useCallback(
+    (str: string) => {
+      if (!str || !str.trim()) {
+        setTemplateSource(void 0);
+        setYamlList([]);
+        return;
+      }
+      try {
+        const result = getYamlSource(str, platformEnvs);
+        const formInputs = formHook.getValues();
+        setTemplateSource(result);
+        const correctYamlList = generateYamlData(result, formInputs);
+        setYamlList(correctYamlList);
+      } catch (error: any) {
+        toast({
+          title: 'Parsing Yaml Error',
+          status: 'error',
+          description: <pre style={{ whiteSpace: 'pre-wrap' }}>{error?.message}</pre>,
+          duration: 4000,
+          isClosable: true
+        });
+      }
+    },
+    [platformEnvs, generateYamlData]
+  );
 
-  const onYamlChange = useCallback(debounce((doc: string) => {
-    parseTemplate(doc);
-  }, 1000), [parseTemplate]);
+  const onYamlChange = useCallback(
+    debounce((doc: string) => {
+      parseTemplate(doc);
+    }, 1000),
+    [parseTemplate]
+  );
 
   // form
   const formHook = useForm({
     defaultValues: getTemplateInputDefaultValues(templateSource)
   });
 
-  const formOnchangeDebounce = useCallback(debounce((formInputData: Record<string, string>) => {
-    try {
-      if (templateSource) {
-        const correctYamlList = generateYamlData(templateSource, formInputData);
-        setYamlList(correctYamlList);
+  const formOnchangeDebounce = useCallback(
+    debounce((formInputData: Record<string, string>) => {
+      try {
+        if (templateSource) {
+          const correctYamlList = generateYamlData(templateSource, formInputData);
+          setYamlList(correctYamlList);
+        }
+      } catch (error) {
+        console.log(error);
       }
-    } catch (error) {
-      console.log(error);
-    }
-  }, 500), [templateSource, generateYamlData]);
+    }, 500),
+    [templateSource, generateYamlData]
+  );
 
   // watch form change, compute new yaml
   useEffect(() => {

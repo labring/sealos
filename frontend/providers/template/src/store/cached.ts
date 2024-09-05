@@ -29,6 +29,7 @@ export const useCachedStore = create<State>()(
         setInsideCloud(e: boolean) {
           set((state) => {
             state.insideCloud = process.env.NODE_ENV === 'development' ? true : e;
+            // state.insideCloud = e;
           });
         }
       })),

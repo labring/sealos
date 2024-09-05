@@ -1,7 +1,9 @@
+import MyIcon from '@/components/Icon';
 import { CopyLinkIcon, HomePageIcon, HtmlIcon, MdIcon, ShareIcon } from '@/components/icons';
 import { TemplateType } from '@/types/app';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold, formatStarNumber, useCopyData } from '@/utils/tools';
+import { getResourceUsage } from '@/utils/usage';
 import {
   Avatar,
   AvatarGroup,
@@ -22,6 +24,7 @@ import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useMemo } from 'react';
+import PriceBox, { Currencysymbol, usePriceCalculation } from './PriceBox';
 
 const Header = ({
   appName,
@@ -43,7 +46,7 @@ const Header = ({
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const handleExportYaml = useCallback(async () => {
-    const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+    const exportYamlString = yamlList?.map((i) => i.value).join('---\n');
     if (!exportYamlString) return;
     downLoadBold(
       exportYamlString,
@@ -99,6 +102,13 @@ const Header = ({
     );
   }, [t, templateDetail?.spec?.deployCount]);
 
+  const usage = useMemo(() => {
+    const usage = getResourceUsage(yamlList?.map((item) => item.value) || []);
+    return usage;
+  }, [yamlList]);
+
+  const priceList = usePriceCalculation(usage);
+
   return (
     <Flex w={'100%'} h={'80px'} alignItems={'center'} backgroundColor={'rgba(255, 255, 255, 0.90)'}>
       <Flex
@@ -153,8 +163,13 @@ const Header = ({
                 </Text>
               </Flex>
             </PopoverTrigger>
-            <PopoverContent w="208px">
-              <PopoverArrow />
+            <PopoverContent
+              w="208px"
+              border={'none'}
+              boxShadow={
+                '0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)'
+              }
+            >
               <PopoverBody p={'20px'}>
                 <Flex
                   onClick={copyTemplateLink}
@@ -224,21 +239,50 @@ const Header = ({
           </Text>
         </Tooltip>
       </Flex>
+      <Popover trigger="hover" closeDelay={600}>
+        <PopoverTrigger>
+          <Flex
+            cursor={'pointer'}
+            ml={'auto'}
+            alignItems={'center'}
+            color={'brightBlue.600'}
+            fontSize={'20px'}
+            fontWeight={'bold'}
+            flexShrink={'0'}
+            gap={'4px'}
+          >
+            <Currencysymbol w={'16px'} h={'16px'} type={'shellCoin'} />
+            {priceList?.[priceList.length - 1]?.value}
+            <Text fontSize={'16px'}>/{t('Day')}</Text>
+            <MyIcon name="help" width={'16px'} height={'16px'} color={'grayModern.500'}></MyIcon>
+          </Flex>
+        </PopoverTrigger>
+        <PopoverContent
+          width={'205px'}
+          borderRadius={'8px'}
+          boxShadow={
+            '0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)'
+          }
+          border={'none'}
+        >
+          <PriceBox {...usage} />
+        </PopoverContent>
+      </Popover>
 
       <Button
         h={'40px'}
-        ml={'auto'}
-        mr={5}
+        mr={'12px'}
+        ml={'20px'}
         px={4}
-        minW={'140px'}
-        bg={'myWhite.600'}
-        borderColor={'myGray.200'}
-        variant={'base'}
+        minW={'120px'}
+        variant={'unstyled'}
+        bg={'grayModern.150'}
+        color={'grayModern.900'}
         onClick={handleExportYaml}
       >
         {t('Export')} Yaml
       </Button>
-      <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button px={4} minW={'120px'} h={'40px'} variant={'solid'} onClick={applyCb}>
         {t(applyBtnText)}
       </Button>
     </Flex>

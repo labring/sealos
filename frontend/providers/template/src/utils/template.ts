@@ -15,14 +15,14 @@ export const getTemplateInputDefaultValues = (templateSource: TemplateSourceType
 };
 
 export const getTemplateDefaultValues = (templateSource: TemplateSourceType | undefined) => {
-  return mapValues(templateSource?.source.defaults, (value) => value.value || '')
+  return mapValues(templateSource?.source.defaults, (value) => value.value || '');
 };
 
 export const getTemplateValues = (templateSource: TemplateSourceType | undefined) => {
   return {
     defaults: getTemplateDefaultValues(templateSource),
-    defaultInputs: getTemplateInputDefaultValues(templateSource),
-  }
+    defaultInputs: getTemplateInputDefaultValues(templateSource)
+  };
 };
 
 export function findTopKeyWords(keywordsList: string[][], topCount: number) {
