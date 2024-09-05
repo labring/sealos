@@ -75,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 /* get gpu nodes by configmap. */
-async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
+export async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   try {
     const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;

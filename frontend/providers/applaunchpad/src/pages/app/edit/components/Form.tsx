@@ -670,22 +670,21 @@ const Form = ({
                               key={item.value}
                               label={hasInventory ? '' : t('Under Stock')}
                             >
-                              <Box
+                              <Center
                                 mr={2}
                                 w={'32px'}
                                 h={'32px'}
-                                lineHeight={'32px'}
-                                textAlign={'center'}
                                 borderRadius={'md'}
                                 border={'1px solid'}
-                                bg={'myWhite.500'}
+                                bg={'white'}
                                 {...(getValues('gpu.amount') === item.value
                                   ? {
-                                      borderColor: 'brightBlue.600',
-                                      boxShadow: '0px 0px 4px #A8DBFF'
+                                      borderColor: 'brightBlue.500',
+                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
                                     }
                                   : {
-                                      borderColor: 'myGray.200'
+                                      borderColor: 'grayModern.200',
+                                      bgColor: 'grayModern.100'
                                     })}
                                 {...(hasInventory
                                   ? {
@@ -703,7 +702,7 @@ const Form = ({
                                     })}
                               >
                                 {item.label}
-                              </Box>
+                              </Center>
                             </MyTooltip>
                           );
                         })}

@@ -4,6 +4,7 @@ import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { UserQuotaItemType } from '@/types/user';
 import Decimal from 'decimal.js';
+import { getGpuNode } from './resourcePrice';
 
 async function getAmount(req: NextApiRequest): Promise<{
   data?: {
@@ -60,11 +61,13 @@ async function getAmount(req: NextApiRequest): Promise<{
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     // source price
-    const { getUserQuota } = await getK8s({
+    const { getUserQuota, k8sCore } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
     const quota = await getUserQuota();
+    const gpuNodes = await getGpuNode({ k8sCore });
+    const filteredQuota = gpuNodes.length > 0 ? quota : quota.filter((item) => item.type !== 'gpu');
 
     let balance = '0';
     try {
@@ -84,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       quota: UserQuotaItemType[];
     }>(res, {
       data: {
-        quota,
+        quota: filteredQuota,
         balance
       }
     });
