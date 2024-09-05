@@ -2740,7 +2740,11 @@ spec:
               commitHistory:
                 items:
                   properties:
+                    containerID:
+                      type: string
                     image:
+                      type: string
+                    node:
                       type: string
                     pod:
                       type: string
@@ -2750,7 +2754,9 @@ spec:
                       format: date-time
                       type: string
                   required:
+                  - containerID
                   - image
+                  - node
                   - pod
                   - status
                   - time
