@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getPodLogs } from '@/api/app';
 import {
   Modal,
@@ -22,6 +22,42 @@ import { streamFetch } from '@/services/streamFetch';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 
+interface sinceItem {
+  name: string;
+  since: number;
+  previous: boolean;
+}
+
+const newSinceItems = (baseTimestamp: number) => {
+  return [
+    {
+      name: 'Streaming Logs',
+      since: 0,
+      previous: false
+    },
+    {
+      name: 'Within 5 minutes',
+      since: baseTimestamp - 5 * 60 * 1000,
+      previous: false
+    },
+    {
+      name: 'Within 1 hour',
+      since: baseTimestamp - 60 * 60 * 1000,
+      previous: false
+    },
+    {
+      name: 'Within 1 day',
+      since: baseTimestamp - 24 * 60 * 60 * 1000,
+      previous: false
+    },
+    {
+      name: 'Terminated Logs',
+      since: 0,
+      previous: true
+    }
+  ];
+};
+
 const LogsModal = ({
   appName,
   podName,
@@ -44,6 +80,20 @@ const LogsModal = ({
   const [isLoading, setIsLoading] = useState(true);
   const LogBox = useRef<HTMLDivElement>(null);
   const ansi_up = useRef(new AnsiUp());
+  const [sinceName, setSinceName] = useState('Streaming Logs');
+  const [sinceTime, setSinceTime] = useState(0);
+  const [previous, setPrevious] = useState(false);
+
+  const switchSince = useCallback(
+    (item: sinceItem) => {
+      setSinceName(item.name);
+      setPrevious(item.previous);
+      setSinceTime(item.since);
+    },
+    [setSinceName, setPrevious, setSinceTime]
+  );
+
+  const sinceItems = useMemo(() => newSinceItems(Date.now()), []);
 
   const watchLogs = useCallback(() => {
     // podName is empty. pod may  has been deleted
@@ -56,12 +106,14 @@ const LogsModal = ({
       data: {
         appName,
         podName,
-        stream: true
+        stream: true,
+        sinceTime,
+        previous
       },
       abortSignal: controller,
       firstResponse() {
-        setIsLoading(false);
         setLogs('');
+        setIsLoading(false);
         setTimeout(() => {
           if (!LogBox.current) return;
 
@@ -91,7 +143,7 @@ const LogsModal = ({
       }
     });
     return controller;
-  }, [appName, closeFn, podName]);
+  }, [appName, closeFn, podName, sinceTime, previous]);
 
   useEffect(() => {
     const controller = watchLogs();
@@ -101,13 +153,19 @@ const LogsModal = ({
   }, [watchLogs]);
 
   const exportLogs = useCallback(async () => {
-    const allLogs = await getPodLogs({
-      appName,
-      podName,
-      stream: false
-    });
-    downLoadBold(allLogs, 'text/plain', 'log.txt');
-  }, [appName, podName]);
+    try {
+      const allLogs = await getPodLogs({
+        appName,
+        podName,
+        stream: false,
+        sinceTime,
+        previous
+      });
+      downLoadBold(allLogs, 'text/plain', 'log.txt');
+    } catch (e) {
+      console.log('download log error:', e);
+    }
+  }, [appName, podName, sinceTime, previous]);
 
   return (
     <Modal isOpen={true} onClose={closeFn} isCentered={true} lockFocusAcrossFrames={false}>
@@ -140,6 +198,31 @@ const LogsModal = ({
                   isActive: item.podName === podName,
                   child: <Box>{item.alias}</Box>,
                   onClick: () => setLogsPodName(item.podName)
+                }))}
+              />
+            </Box>
+            <Box px={3} zIndex={10000}>
+              <SealosMenu
+                width={200}
+                Button={
+                  <MenuButton
+                    minW={'200px'}
+                    h={'32px'}
+                    textAlign={'start'}
+                    bg={'grayModern.100'}
+                    border={theme.borders.base}
+                    borderRadius={'md'}
+                  >
+                    <Flex px={4} alignItems={'center'}>
+                      <Box flex={1}>{sinceName}</Box>
+                      <ChevronDownIcon ml={2} />
+                    </Flex>
+                  </MenuButton>
+                }
+                menuList={sinceItems.map((item) => ({
+                  isActive: item.name === sinceName,
+                  child: <Box>{item.name}</Box>,
+                  onClick: () => switchSince(item)
                 }))}
               />
             </Box>

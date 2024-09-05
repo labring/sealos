@@ -34,12 +34,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       appName,
       podName,
       stream = false,
-      logSize
+      logSize,
+      previous,
+      sinceTime
     } = req.body as {
       appName: string;
       podName: string;
       stream: boolean;
       logSize?: number;
+      previous?: boolean;
+      sinceTime?: number;
     };
 
     if (!podName) {
@@ -51,6 +55,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     if (!stream) {
+      const sinceSeconds =
+        sinceTime && !!!previous ? Math.floor((Date.now() - sinceTime) / 1000) : undefined;
       // get pods
       const { body: data } = await k8sCore.readNamespacedPodLog(
         podName,
@@ -60,8 +66,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         undefined,
         undefined,
         undefined,
-        undefined,
-        undefined,
+        previous,
+        sinceSeconds,
         logSize
       );
       return jsonRes(res, {
@@ -77,6 +83,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     logStream.pipe(res);
 
+    const reqData = {
+      follow: true,
+      pretty: false,
+      timestamps: false,
+      tailLines: 1000,
+      previous: !!previous
+    } as any;
+    if (!reqData.previous && sinceTime) {
+      reqData.sinceTime = timestampToRFC3339(sinceTime);
+    }
+
     streamResponse = await logs.log(
       namespace,
       podName,
@@ -86,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         console.log('err', err);
         destroyStream();
       },
-      { follow: true, pretty: false, timestamps: false, tailLines: 1000 }
+      reqData
     );
   } catch (err: any) {
     jsonRes(res, {
@@ -94,4 +111,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       error: err
     });
   }
+}
+
+function timestampToRFC3339(timestamp: number) {
+  return new Date(timestamp).toISOString();
 }
