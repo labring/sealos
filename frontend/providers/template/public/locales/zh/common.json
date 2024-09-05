@@ -164,7 +164,7 @@
   "TemplateNameError": "模板名称不能为空",
   "Templates": "模板市场",
   "Terminal": "终端",
-  "There is no resource of this type": "没有此类型的资源",
+  "no_resource_type": "暂无此类型的资源",
   "Total": "总计",
   "TotalPrice": "总价",
   "Type": "类型",
