@@ -6,7 +6,9 @@ import {
   MenuItem,
   Button,
   useDisclosure,
-  useOutsideClick
+  useOutsideClick,
+  MenuButton,
+  Flex
 } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
@@ -22,10 +24,21 @@ interface Props extends ButtonProps {
     value: string;
   }[];
   onchange?: (val: string) => void;
+  isInvalid?: boolean;
 }
 
 const MySelect = (
-  { placeholder, value, defaultValue, width = 'auto', list, onchange, ...props }: Props,
+  {
+    placeholder,
+    value,
+    defaultValue,
+    width = 'auto',
+    list,
+    onchange,
+    isInvalid,
+    height,
+    ...props
+  }: Props,
   selectRef: any
 ) => {
   const ref = useRef<HTMLButtonElement>(null);
@@ -64,39 +77,41 @@ const MySelect = (
           isOpen ? onClose() : onOpen();
         }}
       >
-        <Button
-          ref={ref}
+        <MenuButton
+          as={Button}
+          rightIcon={<ChevronDownIcon />}
           width={width}
-          px={3}
-          variant={'base'}
+          height={height}
+          ref={ref}
           display={'flex'}
           alignItems={'center'}
-          justifyContent={'space-between'}
+          justifyContent={'center'}
+          border={'1px solid #E8EBF0'}
+          borderRadius={'md'}
+          fontSize={'12px'}
+          fontWeight={'400'}
+          variant={'outline'}
+          _hover={{
+            borderColor: 'brightBlue.300',
+            bg: 'grayModern.50'
+          }}
           _active={{
             transform: ''
           }}
           {...(isOpen
             ? {
-                boxShadow: '0px 0px 4px #A8DBFF',
-                borderColor: 'myBlue.600'
+                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                borderColor: 'brightBlue.500',
+                bg: '#FFF'
               }
-            : { borderColor: '#DEE0E2' })}
+            : {
+                bg: '#F7F8FA',
+                borderColor: isInvalid ? 'red' : ''
+              })}
           {...props}
         >
-          {activeMenu ? (
-            <>
-              {!!activeMenu.icon && <MyIcon mr={2} name={activeMenu.icon as IconType} w={'18px'} />}
-              <Box>{activeMenu.label}</Box>
-            </>
-          ) : (
-            <>
-              <Box>{placeholder}</Box>
-            </>
-          )}
-
-          <Box flex={1} />
-          <ChevronDownIcon />
-        </Button>
+          <Flex justifyContent={'flex-start'}>{activeMenu ? activeMenu.label : placeholder}</Flex>
+        </MenuButton>
 
         <MenuList
           minW={(() => {
@@ -114,7 +129,6 @@ const MySelect = (
             '0px 2px 4px rgba(161, 167, 179, 0.25), 0px 0px 1px rgba(121, 141, 159, 0.25);'
           }
           zIndex={99}
-          transform={'translateY(35px) !important'}
         >
           {list.map((item) => (
             <MenuItem
