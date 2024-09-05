@@ -38,6 +38,7 @@ const map = {
   dev: require('./icons/dev.svg').default,
   eyeShow: require('./icons/eyeShow.svg').default,
   tool: require('./icons/tool.svg').default,
+  sealosCoin: require('./icons/sealosCoin.svg').default,
   help: require('./icons/help.svg').default
 };
 

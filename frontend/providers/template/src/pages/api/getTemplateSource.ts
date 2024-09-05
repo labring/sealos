@@ -27,9 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         kubeconfig: await authSession(req.headers)
       });
       user_namespace = namespace;
-    } catch (error) {
-      console.log(error, 'Unauthorized allowed');
-    }
+    } catch (error) {}
 
     const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
       await GetTemplateByName({

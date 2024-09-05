@@ -251,19 +251,10 @@ export const theme = extendTheme(sealosTheme, {
     base: '1px solid #DEE0E2',
     md: '1px solid #BDC1C5'
   },
-  radii: {
-    xs: '1px',
-    sm: '2px',
-    base: '2px',
-    md: '4px',
-    lg: '6px'
-  },
   fontWeights: {
     bold: 500
   },
   components: {
-    Button,
-    Input,
     Tooltip,
     Select,
     Switch,

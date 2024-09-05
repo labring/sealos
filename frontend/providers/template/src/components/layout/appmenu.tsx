@@ -24,7 +24,7 @@ export default function AppMenu() {
 
   return (
     <Flex flexDirection={'column'} px="16px" position={'relative'}>
-      <InputGroup mt="16px" background={'rgba(150, 153, 180, 0.10)'} borderRadius={'4px'}>
+      <InputGroup mt="16px" borderRadius={'4px'}>
         <InputLeftElement pointerEvents="none">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -40,6 +40,7 @@ export default function AppMenu() {
           </svg>
         </InputLeftElement>
         <Input
+          bg={'rgba(150, 153, 180, 0.10)'}
           border={'1px solid transparent'}
           borderRadius={'4px'}
           placeholder={t('Application Name') || 'Application Name'}
