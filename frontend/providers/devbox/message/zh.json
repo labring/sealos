@@ -113,5 +113,7 @@
   "version_list": "版本列表",
   "version_number": "版本号",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML文件"
+  "yaml_file": "YAML文件",
+  "nodeports_exceeds_quota": "申请的 NodePort 超出限制，请联系管理员",
+  "nodeports": "公网端口"
 }

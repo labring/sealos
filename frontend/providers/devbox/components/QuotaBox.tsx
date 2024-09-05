@@ -16,6 +16,10 @@ const sourceMap = {
   memory: {
     color: '#36ADEF',
     unit: 'Gi'
+  },
+  nodeports: {
+    color: '#FFA500',
+    unit: ''
   }
 }
 
@@ -56,7 +60,7 @@ ${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
             <Flex alignItems={'center'}>
-              <Box flex={'0 0 60px'} textTransform={'capitalize'}>
+              <Box textTransform={'capitalize'} w={'80px'}>
                 {t(item.type)}
               </Box>
               <Progress

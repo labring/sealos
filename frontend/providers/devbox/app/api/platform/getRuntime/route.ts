@@ -35,8 +35,6 @@ export async function GET(req: NextRequest) {
       runtimeNamespace,
       'runtimes'
     )
-    console.log('runtimes', runtimes)
-    console.log('runtimeClasses', runtimeClasses)
 
     // runtimeClasses
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')

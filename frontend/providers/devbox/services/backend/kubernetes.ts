@@ -223,6 +223,11 @@ export async function getUserQuota(
       type: 'memory',
       limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
       used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
+    },
+    {
+      type: 'nodeports',
+      limit: Number(status?.hard?.['services.nodeports']) || 0,
+      used: Number(status?.used?.['services.nodeports']) || 0
     }
   ]
 }

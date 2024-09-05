@@ -12,7 +12,6 @@ export async function DELETE(req: NextRequest) {
     const devboxName = searchParams.get('devboxName') as string
     const networks = JSON.parse(searchParams.get('networks') as string) as string[]
     const headerList = req.headers
-    console.log('networks', networks)
 
     const { k8sCustomObjects, k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
