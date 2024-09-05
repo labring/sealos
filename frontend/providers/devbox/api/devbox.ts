@@ -1,6 +1,7 @@
 import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
 import { GET, POST, DELETE } from '@/services/request'
 import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
+import { runtimeNamespaceMap } from '../stores/static'
 import {
   DevboxEditType,
   DevboxListItemType,
@@ -17,8 +18,10 @@ export const getMyDevboxList = () =>
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
-export const createDevbox = (payload: { devboxForm: DevboxEditType }) =>
-  POST(`/api/createDevbox`, payload)
+export const createDevbox = (payload: {
+  devboxForm: DevboxEditType
+  runtimeNamespaceMap: { [key: string]: string }
+}) => POST(`/api/createDevbox`, payload)
 
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
   POST(`/api/updateDevbox`, payload)

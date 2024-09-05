@@ -73,9 +73,9 @@ export async function GET(req: NextRequest) {
     languageList.forEach((item: any) => {
       const language = item.metadata.name
       const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === language)
-      runtimeNamespaceMap[language] = item.metadata.namespace
       languageVersionMap[language] = []
       versions.forEach((version: any) => {
+        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
         languageVersionMap[language].push({
           id: version.metadata.name,
           label: version.spec.title
@@ -94,9 +94,9 @@ export async function GET(req: NextRequest) {
     frameworkList.forEach((item: any) => {
       const framework = item.metadata.name
       const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === framework)
-      runtimeNamespaceMap[framework] = item.metadata.namespace
       frameworkVersionMap[framework] = []
       versions.forEach((version: any) => {
+        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
         frameworkVersionMap[framework].push({
           id: version.metadata.name,
           label: version.spec.title
@@ -113,9 +113,9 @@ export async function GET(req: NextRequest) {
     osList.forEach((item: any) => {
       const os = item.metadata.name
       const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === os)
-      runtimeNamespaceMap[os] = item.metadata.namespace
       osVersionMap[os] = []
       versions.forEach((version: any) => {
+        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
         osVersionMap[os].push({
           id: version.metadata.name,
           label: version.spec.title

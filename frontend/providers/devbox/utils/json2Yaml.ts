@@ -4,9 +4,16 @@ import { str2Num } from './tools'
 import { getUserNamespace } from './user'
 import { DevboxEditType } from '@/types/devbox'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
-import { INGRESS_SECRET, SEALOS_DOMAIN, runtimeNamespaceMap } from '@/stores/static'
+import {
+  INGRESS_SECRET,
+  SEALOS_DOMAIN,
+  runtimeNamespaceMap as defaultRuntimeNamespaceMap
+} from '@/stores/static'
 
-export const json2Devbox = (data: DevboxEditType) => {
+export const json2Devbox = (
+  data: DevboxEditType,
+  runtimeNamespaceMap: { [key: string]: string } = defaultRuntimeNamespaceMap
+) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
 
@@ -104,9 +111,6 @@ export const json2Ingress = (
       'nginx.ingress.kubernetes.io/backend-protocol': 'WS'
     }
   }
-
-  console.log('sealosDomain', sealosDomain)
-  console.log('ingressSecret', ingressSecret)
 
   const result = data.networks
     .filter((item) => item.openPublicDomain)
@@ -221,6 +225,9 @@ export const json2Ingress = (
 }
 
 export const json2Service = (data: DevboxEditType) => {
+  if (data.networks.length === 0) {
+    return ''
+  }
   const template = {
     apiVersion: 'v1',
     kind: 'Service',

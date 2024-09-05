@@ -32,47 +32,48 @@ export async function DELETE(req: NextRequest) {
     )
 
     // delete service and ingress at the same time
-    await k8sCore.deleteNamespacedService(devboxName, namespace)
-
-    networks.forEach(async (networkName: string) => {
-      await k8sCustomObjects.deleteNamespacedCustomObject(
-        'networking.k8s.io',
-        'v1',
-        namespace,
-        'ingresses',
-        networkName,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )
-      // delete issuer and certificate at the same time
-      await k8sCustomObjects.deleteNamespacedCustomObject(
-        'cert-manager.io',
-        'v1',
-        namespace,
-        'issuers',
-        networkName,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )
-      await k8sCustomObjects.deleteNamespacedCustomObject(
-        'cert-manager.io',
-        'v1',
-        namespace,
-        'certificates',
-        networkName,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )
-    })
+    if (networks.length > 0) {
+      await k8sCore.deleteNamespacedService(devboxName, namespace)
+      networks.forEach(async (networkName: string) => {
+        await k8sCustomObjects.deleteNamespacedCustomObject(
+          'networking.k8s.io',
+          'v1',
+          namespace,
+          'ingresses',
+          networkName,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )
+        // delete issuer and certificate at the same time
+        await k8sCustomObjects.deleteNamespacedCustomObject(
+          'cert-manager.io',
+          'v1',
+          namespace,
+          'issuers',
+          networkName,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )
+        await k8sCustomObjects.deleteNamespacedCustomObject(
+          'cert-manager.io',
+          'v1',
+          namespace,
+          'certificates',
+          networkName,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )
+      })
+    }
 
     return jsonRes({
       data: 'success delete devbox'

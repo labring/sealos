@@ -11,8 +11,9 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     //TODO: zod later
-    const { devboxForm } = (await req.json()) as {
+    const { devboxForm, runtimeNamespaceMap } = (await req.json()) as {
       devboxForm: DevboxEditType
+      runtimeNamespaceMap: { [key: string]: string }
     }
 
     const headerList = req.headers
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     })
 
     const { SEALOS_DOMAIN, INGRESS_SECRET } = process.env
-    const devbox = json2Devbox(devboxForm)
+    const devbox = json2Devbox(devboxForm, runtimeNamespaceMap)
     const service = json2Service(devboxForm)
     const ingress = json2Ingress(devboxForm, SEALOS_DOMAIN as string, INGRESS_SECRET as string)
 

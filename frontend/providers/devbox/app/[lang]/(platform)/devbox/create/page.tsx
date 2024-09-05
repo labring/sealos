@@ -25,6 +25,7 @@ import type { DevboxEditType, DevboxKindsType } from '@/types/devbox'
 import { defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
 import { patchYamlList } from '@/utils/tools'
+import { runtimeNamespaceMap } from '@/stores/static'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -39,7 +40,7 @@ const formData2Yamls = (data: DevboxEditType) => [
   },
   {
     filename: 'devbox.yaml',
-    value: json2Devbox(data)
+    value: json2Devbox(data, runtimeNamespaceMap)
   },
   ...(data.networks.find((item) => item.openPublicDomain)
     ? [
@@ -93,7 +94,7 @@ const DevboxCreatePage = () => {
     return [
       {
         filename: 'devbox.yaml',
-        value: json2Devbox(data)
+        value: json2Devbox(data, runtimeNamespaceMap)
       },
       {
         filename: 'service.yaml',
@@ -135,7 +136,7 @@ const DevboxCreatePage = () => {
         setYamlList([
           {
             filename: 'devbox.yaml',
-            value: json2Devbox(defaultEdit)
+            value: json2Devbox(defaultEdit, runtimeNamespaceMap)
           },
           {
             filename: 'service.yaml',
@@ -201,7 +202,6 @@ const DevboxCreatePage = () => {
           isClosable: true
         })
       }
-      console.log('devboxName', devboxName)
       // create or update
       if (isEdit) {
         const patch = patchYamlList({
@@ -214,7 +214,8 @@ const DevboxCreatePage = () => {
           devboxName: formData.name
         })
       } else {
-        await createDevbox({ devboxForm: formData })
+        console.log('runtimeNamespaceMap', runtimeNamespaceMap)
+        await createDevbox({ devboxForm: formData, runtimeNamespaceMap })
       }
       toast({
         title: t(applySuccess),
