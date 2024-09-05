@@ -190,7 +190,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	var podList corev1.PodList
 	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		logger.Error(err, "list devbox pod failed")
-
 		return err
 	}
 	// only one pod is allowed, if more than one pod found, return error
@@ -328,6 +327,10 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		// check pod status, if no pod found, do nothing
 		if len(podList.Items) == 0 {
 			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
+			err = r.Status().Update(ctx, devbox)
+			if err != nil {
+				logger.Error(err, "update devbox phase failed")
+			}
 			return nil
 		}
 		// if pod found, remove finalizer and delete pod
