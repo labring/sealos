@@ -235,7 +235,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 			// add next commit history to status
 			devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
-			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseRunning
 			return r.Status().Update(ctx, devbox)
 		}
 		// else if pod found, check pod status
@@ -268,13 +267,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 					logger.Info("pod", "pod", podList.Items[0].Name, "pod spec", podList.Items[0].Spec)
 					logger.Info("expect pod", "pod", expectPod.Name, "pod spec", expectPod.Spec)
 					_ = r.Delete(ctx, &podList.Items[0])
-					// change devbox status
-					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseDelete
-					err = r.Status().Update(ctx, devbox)
-					if err != nil {
-						logger.Error(err, "update devbox phase failed")
-						return err
-					}
 				}
 			case corev1.PodRunning:
 				//if pod is running,check pod need restart
@@ -283,10 +275,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 					logger.Info("pod", "pod", podList.Items[0].Name, "pod spec", podList.Items[0].Spec)
 					logger.Info("expect pod", "pod", expectPod.Name, "pod spec", expectPod.Spec)
 					_ = r.Delete(ctx, &podList.Items[0])
-					// change devbox status
-					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseDelete
-				} else {
-					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseRunning
 				}
 				err = r.Status().Update(ctx, devbox)
 				if err != nil {
@@ -302,13 +290,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 					}
 				}
 				_ = r.Delete(ctx, &podList.Items[0])
-
 				// update commit history status to success by pod name
 				return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 			case corev1.PodFailed:
 				// we can't find the reason of failure, we assume the commit status is failed
 				// todo maybe use pod condition to get the reason of failure and update commit history status to failed by pod name
-				devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
 				err = r.Status().Update(ctx, devbox)
 				if err != nil {
 					logger.Error(err, "update devbox phase failed")
@@ -320,12 +306,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	case devboxv1alpha1.DevboxStateStopped:
 		// check pod status, if no pod found, do nothing
 		if len(podList.Items) == 0 {
-			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
-			err = r.Status().Update(ctx, devbox)
-			if err != nil {
-				logger.Error(err, "update devbox phase failed")
-				return err
-			}
 			return nil
 		}
 		// if pod found, remove finalizer and delete pod
@@ -338,14 +318,33 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				}
 			}
 			_ = r.Delete(ctx, &podList.Items[0])
-			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
-			err = r.Status().Update(ctx, devbox)
-			if err != nil {
-				logger.Error(err, "update devbox phase failed")
-				return err
-			}
 			return r.updateDevboxCommitHistory(ctx, devbox, &podList.Items[0])
 		}
+	}
+	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
+		if devbox.Status.DevboxPodPhase == corev1.PodRunning {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseRunning
+		} else if devbox.Status.DevboxPodPhase == corev1.PodPending {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
+		} else if devbox.Status.DevboxPodPhase == corev1.PodFailed {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
+		} else {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseUnknown
+		}
+	} else if devbox.Spec.State == devboxv1alpha1.DevboxStateStopped {
+		if devbox.Status.DevboxPodPhase == corev1.PodRunning || devbox.Status.DevboxPodPhase == corev1.PodPending {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopping
+		} else if devbox.Status.DevboxPodPhase == corev1.PodFailed {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
+		} else {
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
+		}
+	} else {
+		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseUnknown
+	}
+	err = r.Status().Update(ctx, devbox)
+	if err != nil {
+		logger.Error(err, "update devbox phase failed")
 	}
 	return nil
 }

@@ -154,8 +154,6 @@ const (
 	DevboxPhaseStopping DevboxPhase = "Stopping"
 	//DevboxPhaseError means Devbox is error
 	DevboxPhaseError DevboxPhase = "Error"
-	//DevboxPhaseDelete DevboxPhase = "Delete"
-	DevboxPhaseDelete DevboxPhase = "Delete"
 	//DevboxPhaseUnknow means Devbox not know the status
 	DevboxPhaseUnknown DevboxPhase = "Unknown"
 )
