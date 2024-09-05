@@ -24,7 +24,7 @@ export default function Layout({ children }: { children: JSX.Element }) {
           templateColumns={`${firstColumnWidth} 1fr`}
           h="100vh"
           overflow={'hidden'}
-          background={'rgba(150, 153, 180, 0.15)'}
+          background={'#F4F4F7'}
         >
           <AppMenu />
           <>{children}</>

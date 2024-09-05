@@ -59,7 +59,7 @@ export const useUserStore = create<State>()(
           cpu: cpu / 1000,
           memory: memory / 1024,
           gpu: gpu?.type ? gpu.amount : 0,
-          storage: storage
+          storage: storage / 1024
         };
 
         if (usedData) {

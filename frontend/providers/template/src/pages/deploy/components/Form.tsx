@@ -25,7 +25,7 @@ const Form = ({
   formHook,
   pxVal,
   formSource,
-  platformEnvs,
+  platformEnvs
 }: {
   formHook: UseFormReturn;
   pxVal: number;
@@ -37,7 +37,10 @@ const Form = ({
   const theme = useTheme();
   const [_, setForceUpdate] = useState(false);
 
-  const isShowContent = useMemo(() => !!formSource?.source?.inputs?.length, [formSource?.source?.inputs?.length]);
+  const isShowContent = useMemo(
+    () => !!formSource?.source?.inputs?.length,
+    [formSource?.source?.inputs?.length]
+  );
 
   const {
     register,
@@ -49,12 +52,12 @@ const Form = ({
   const { defaults, defaultInputs } = useMemo(() => getTemplateValues(formSource), [formSource]);
 
   const hasDynamicInputs = useMemo(() => {
-    return formSource?.source?.inputs?.some(item => item.if !== undefined);
+    return formSource?.source?.inputs?.some((item) => item.if !== undefined);
   }, [formSource?.source?.inputs]);
 
   const debouncedReset = useCallback(
     debounce(() => {
-      setForceUpdate(prev => !prev);
+      setForceUpdate((prev) => !prev);
     }, 150),
     []
   );
@@ -67,35 +70,34 @@ const Form = ({
       ...getValues()
     },
     defaults: defaults
-  }
+  };
   const filteredInputs = formSource?.source?.inputs?.filter(
     (item) =>
-      item.if === undefined ||
-      item.if?.length === 0 ||
-      !!evaluateExpression(item.if, evalData)
+      item.if === undefined || item.if?.length === 0 || !!evaluateExpression(item.if, evalData)
   );
 
   const boxStyles = {
-    border: theme.borders.base,
-    borderRadius: 'sm',
+    border: '1px solid #DFE2EA',
+    borderRadius: '8px',
     bg: 'white'
   };
 
   const headerStyles = {
     py: 4,
     pl: '42px',
-    fontSize: '2xl',
+    fontSize: 'xl',
     color: 'myGray.900',
     fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'myWhite.600'
+    backgroundColor: 'grayModern.50',
+    borderTopRadius: '8px'
   };
 
   return (
     <Box flexGrow={1} id={'baseInfo'} {...boxStyles}>
-      <Box {...headerStyles}>
-        <MyIcon name={'formInfo'} mr={5} w={'24px'} color={'myGray.500'} />
+      <Box {...headerStyles} borderBottom={'1px solid #E8EBF0'}>
+        <MyIcon name={'formInfo'} mr={'8px'} w={'20px'} color={'grayModern.600'} />
         {t('Configure Project')}
       </Box>
       {isShowContent ? (

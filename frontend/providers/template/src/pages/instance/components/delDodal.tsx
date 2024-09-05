@@ -77,7 +77,7 @@ const DelModal = ({
           />
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'base'}>
+          <Button onClick={onClose} variant={'outline'}>
             {t('Cancel')}
           </Button>
           <Button

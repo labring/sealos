@@ -11,6 +11,18 @@ async function generateVersionsJson () {
   await fs.writeJson(versionsJsonPath, versions, { spaces: 2 })
 }
 
+function safeJoin (base, ...parts) {
+  const joined = [base, ...parts].join(path.sep)
+  const normalized = path.normalize(joined)
+
+  const normalizedBase = path.normalize(base)
+  if (!normalized.startsWith(normalizedBase) || normalized === normalizedBase) {
+    throw new Error('Path traversal attempt blocked')
+  }
+
+  return normalized
+}
+
 async function syncDocs () {
   try {
     // Remove specified directories
@@ -19,7 +31,7 @@ async function syncDocs () {
       'i18n/zh-Hans/docusaurus-plugin-content-docs',
       'versioned_docs',
       'versioned_sidebars'
-    ].map(dir => path.join(websiteDir, dir))
+    ].map(dir => safeJoin(websiteDir, dir))
 
     await Promise.all(dirsToRemove.map(dir => fs.remove(dir)))
 
