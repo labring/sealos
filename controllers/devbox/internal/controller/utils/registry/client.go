@@ -94,7 +94,7 @@ func (t *Client) pullManifest(username string, password string, hostName string,
 		return nil, err
 	}
 	req.SetBasicAuth(username, password)
-	req.Header.Set("Accept", "application/vnd.oci.image.manifest.v1+json")
+	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -127,7 +127,7 @@ func (t *Client) pushManifest(username string, password string, hostName string,
 	}
 
 	req.SetBasicAuth(username, password)
-	req.Header.Set("Content-type", "application/vnd.oci.image.manifest.v1+json")
+	req.Header.Set("Content-type", "application/vnd.docker.distribution.manifest.v2+json")
 
 	resp, err := client.Do(req)
 	if err != nil {
