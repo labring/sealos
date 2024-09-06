@@ -62,7 +62,8 @@ def export_app():
     for single_yaml in yaml.safe_load_all(yaml_content):
         if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
-                nodeports.append({'internal_port': str(single_yaml['spec']['ports'][0]['port'])})
+                for port_index in range(len(single_yaml['spec']['ports'])):
+                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': ''})
     print('nodeports:', nodeports, flush=True)
 
     image_pairs = []
@@ -174,6 +175,16 @@ def deploy_app_with_image():
                     if ports[internal_port] < 30000 or ports[internal_port] > 32767:
                         return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be between 30000 and 32767'}), 400
                     single_yaml['spec']['ports'][port_index]['nodePort'] = ports[internal_port]
+        if 'kind' in single_yaml and single_yaml['kind'] == 'Deployment':
+            if 'spec' in single_yaml and 'template' in single_yaml['spec'] and 'spec' in single_yaml['spec']['template']:
+                if 'containers' in single_yaml['spec']['template']['spec']:
+                    for container_index in range(len(single_yaml['spec']['template']['spec']['containers'])):
+                        container = single_yaml['spec']['template']['spec']['containers'][container_index]
+                        if 'image' in container:
+                            if not container['image'].contains('/'):
+                                container['image'] = 'library/' + container['image']
+                            if not container['image'].contains(':'):
+                                container['image'] = container['image'] + ':latest'
         new_yaml_contents.append(single_yaml)
     new_yaml_content = yaml.dump_all(new_yaml_contents)
 
