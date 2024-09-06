@@ -1,7 +1,7 @@
-import { useRouter } from '@/i18n'
 import { useTranslations } from 'next-intl'
 import { Button, Box } from '@chakra-ui/react'
 
+import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 
 import styles from './empty.module.scss'

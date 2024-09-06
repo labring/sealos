@@ -11,12 +11,12 @@ import {
   Tooltip
 } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
-import { useRouter } from '@/i18n'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 import { sealosApp } from 'sealos-desktop-sdk/app'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
+import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 import { SEALOS_DOMAIN } from '@/stores/static'
 import { useGlobalStore } from '@/stores/global'
@@ -148,7 +148,6 @@ const DevboxList = ({
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
       )}`
-      console.log(vscodeUri)
 
       window.location.href = vscodeUri
     } catch (error: any) {

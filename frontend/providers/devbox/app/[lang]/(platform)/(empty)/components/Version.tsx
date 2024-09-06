@@ -228,7 +228,7 @@ const Version = ({
               </Button>
             </Flex>
             <Loading loading={!initialized} />
-            {/* TODO: 这里美化一下 */}
+            {/* TODO: there need some beauty */}
             {devboxVersionList.length === 0 && initialized ? (
               <Box>{t('no_versions')}</Box>
             ) : (

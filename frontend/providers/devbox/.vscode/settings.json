@@ -35,6 +35,7 @@
     "devboxreleases",
     "echarts",
     "formatjs",
+    "grpcs",
     "hljs",
     "immer",
     "jsonpatch",

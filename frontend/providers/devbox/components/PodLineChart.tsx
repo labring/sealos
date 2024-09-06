@@ -18,14 +18,14 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(3, 190, 232, 0.42)' // 0% 处的颜色
+          color: 'rgba(3, 190, 232, 0.42)'
         },
         {
           offset: 1,
           color: 'rgba(0, 182, 240, 0)'
         }
       ],
-      global: false // 缺省为 false
+      global: false
     },
     lineColor: '#36ADEF'
   },
@@ -39,7 +39,7 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(47, 112, 237, 0.42)' // 0% 处的颜色
+          color: 'rgba(47, 112, 237, 0.42)'
         },
         {
           offset: 1,
@@ -60,7 +60,7 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(211, 190, 255, 0.42)' // 0% 处的颜色
+          color: 'rgba(211, 190, 255, 0.42)'
         },
         {
           offset: 1,
@@ -81,14 +81,14 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(4, 209, 148, 0.42)' // 0% 处的颜色
+          color: 'rgba(4, 209, 148, 0.42)'
         },
         {
           offset: 1,
           color: 'rgba(19, 217, 181, 0)'
         }
       ],
-      global: false // 缺省为 false
+      global: false
     },
     lineColor: '#00A9A6',
     max: 100

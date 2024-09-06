@@ -49,7 +49,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.name, toast, t, onSuccess, onClose])
+  }, [devbox.networks, devbox.name, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
