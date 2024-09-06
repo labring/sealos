@@ -22,14 +22,6 @@ import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
 import { MySelect, MySlider, Tabs, useMessage } from '@sealos/ui'
 
-import { useRouter } from '@/i18n'
-import MyIcon from '@/components/Icon'
-import { getValueDefault, obj2Query } from '@/utils/tools'
-import PriceBox from '@/components/PriceBox'
-import QuotaBox from '@/components/QuotaBox'
-import type { DevboxEditType } from '@/types/devbox'
-import { ProtocolList } from '@/constants/devbox'
-import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
 import {
   INSTALL_ACCOUNT,
   SEALOS_DOMAIN,
@@ -41,6 +33,14 @@ import {
   osVersionMap,
   getRuntimeVersionList
 } from '@/stores/static'
+import { useRouter } from '@/i18n'
+import MyIcon from '@/components/Icon'
+import PriceBox from '@/components/PriceBox'
+import QuotaBox from '@/components/QuotaBox'
+import { ProtocolList } from '@/constants/devbox'
+import type { DevboxEditType } from '@/types/devbox'
+import { getValueDefault, obj2Query } from '@/utils/tools'
+import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 

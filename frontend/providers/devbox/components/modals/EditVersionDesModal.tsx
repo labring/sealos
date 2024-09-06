@@ -1,5 +1,3 @@
-import { editDevboxVersion } from '@/api/devbox'
-import { DevboxVersionListItemType } from '@/types/devbox'
 import {
   Box,
   Button,
@@ -16,6 +14,9 @@ import {
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
+
+import { editDevboxVersion } from '@/api/devbox'
+import { DevboxVersionListItemType } from '@/types/devbox'
 
 const EditVersionDesModal = ({
   version,

@@ -1,4 +1,3 @@
-import React, { useMemo, useRef } from 'react'
 import {
   Box,
   ModalBody,
@@ -15,11 +14,13 @@ import {
   ModalHeader
 } from '@chakra-ui/react'
 import { Tip } from '@sealos/ui'
-import { SEALOS_DOMAIN } from '@/stores/static'
-import { InfoOutlineIcon } from '@chakra-ui/icons'
-import { useRequest } from '@/hooks/useRequest'
-import { postAuthCname } from '@/api/platform'
 import { useTranslations } from 'next-intl'
+import React, { useMemo, useRef } from 'react'
+import { InfoOutlineIcon } from '@chakra-ui/icons'
+
+import { postAuthCname } from '@/api/platform'
+import { useRequest } from '@/hooks/useRequest'
+import { SEALOS_DOMAIN } from '@/stores/static'
 
 export type CustomAccessModalParams = {
   publicDomain: string

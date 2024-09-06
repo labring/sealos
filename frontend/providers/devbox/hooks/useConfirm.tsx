@@ -11,7 +11,7 @@ import {
   Box
 } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 
 export const useConfirm = ({
   title = 'prompt',

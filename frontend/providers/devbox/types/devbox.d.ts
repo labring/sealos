@@ -1,3 +1,5 @@
+import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
+
 import {
   RuntimeTypeEnum,
   DevboxStatusEnum,
@@ -5,7 +7,6 @@ import {
   YamlKindEnum
 } from '@/constants/devbox'
 import { MonitorDataResult } from './monitor'
-import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
 export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`

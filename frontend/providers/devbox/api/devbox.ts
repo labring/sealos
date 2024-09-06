@@ -1,20 +1,18 @@
-import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
-import { GET, POST, DELETE } from '@/services/request'
-import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
-import { runtimeNamespaceMap } from '../stores/static'
 import {
   DevboxEditType,
   DevboxListItemType,
   DevboxPatchPropsType,
   DevboxVersionListItemType
 } from '@/types/devbox'
+import { GET, POST, DELETE } from '@/services/request'
+import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
+import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
 
 export const getMyDevboxList = () =>
   GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
     data.map(adaptDevboxListItem)
   )
 
-// for devbox operator: restart,
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 

@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server'
 
 import { runtimeNamespace } from '@/stores/static'
 import { authSession } from '@/services/backend/auth'
-import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
+import { getK8s } from '@/services/backend/kubernetes'
 
 export const dynamic = 'force-dynamic'
 

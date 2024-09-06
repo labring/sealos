@@ -87,6 +87,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     })()
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // add resize event

@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     // TODO: zod later
-    // TODO: 或许将参数拿到try外部是更好的选择
     const { patch, devboxName } = (await req.json()) as {
       patch: DevboxPatchPropsType
       devboxName: string

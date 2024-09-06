@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 
-import { jsonRes } from '@/services/backend/response'
 import { userPriceType } from '@/types/user'
+import { jsonRes } from '@/services/backend/response'
 
 export const dynamic = 'force-dynamic'
 

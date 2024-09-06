@@ -16,9 +16,9 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { useConfirm } from '@/hooks/useConfirm'
 import { DevboxListItemType } from '@/types/devbox'
+import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { pauseDevbox, releaseDevbox, restartDevbox } from '@/api/devbox'
 
 const ReleaseModal = ({

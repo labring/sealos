@@ -24,8 +24,8 @@ import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { delDevboxVersionByName } from '@/api/devbox'
-import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
+import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
 const ReleaseModal = dynamic(() => import('@/components/modals/releaseModal'))
 const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))

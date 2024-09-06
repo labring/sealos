@@ -14,16 +14,16 @@ import dynamic from 'next/dynamic'
 import { useRouter } from '@/i18n'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
+import { sealosApp } from 'sealos-desktop-sdk/app'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
 import MyIcon from '@/components/Icon'
+import { SEALOS_DOMAIN } from '@/stores/static'
 import { useGlobalStore } from '@/stores/global'
-import { sealosApp } from 'sealos-desktop-sdk/app'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { getSSHConnectionInfo, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
-import { SEALOS_DOMAIN } from '@/stores/static'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))

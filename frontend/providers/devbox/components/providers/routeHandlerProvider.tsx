@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import NProgress from 'nprogress'
-import { usePathname } from '@/i18n'
 
+import { usePathname } from '@/i18n'
 import { useGlobalStore } from '@/stores/global'
 
 import 'nprogress/nprogress.css'

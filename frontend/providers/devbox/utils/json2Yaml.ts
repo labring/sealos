@@ -1,14 +1,14 @@
 import yaml from 'js-yaml'
 
-import { str2Num } from './tools'
-import { getUserNamespace } from './user'
-import { DevboxEditType } from '@/types/devbox'
-import { devboxKey, publicDomainKey } from '@/constants/devbox'
 import {
   INGRESS_SECRET,
   SEALOS_DOMAIN,
   runtimeNamespaceMap as defaultRuntimeNamespaceMap
 } from '@/stores/static'
+import { str2Num } from './tools'
+import { getUserNamespace } from './user'
+import { DevboxEditType } from '@/types/devbox'
+import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (
   data: DevboxEditType,

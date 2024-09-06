@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   Modal,
   ModalOverlay,
@@ -8,6 +7,7 @@ import {
   ModalCloseButton,
   Box
 } from '@chakra-ui/react'
+import React from 'react'
 import { useTranslations } from 'next-intl'
 
 const ErrorModal = ({

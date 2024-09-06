@@ -157,7 +157,7 @@ const DevboxCreatePage = () => {
         if (!res) return
         oldDevboxEditData.current = res
         formOldYamls.current = formData2Yamls(res)
-        crOldYamls.current = generateYamlList(res) // TODO: 这里不懂crOldYamls是什么
+        crOldYamls.current = generateYamlList(res)
         formHook.reset(res)
       },
       onError(err) {
