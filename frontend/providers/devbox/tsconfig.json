@@ -4,7 +4,6 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
     "target": "ES2020",
     "noEmit": true,
     "esModuleInterop": true,
@@ -24,5 +23,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "../../tsconfig.web.json"]
+  "extends": "../../tsconfig.web.json"
 }
