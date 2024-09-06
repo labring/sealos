@@ -5,6 +5,7 @@ import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import { KBDevboxType, KBRuntimeType } from '@/types/k8s'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,26 +17,21 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const { body: devboxBody }: any = await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: devboxBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
-      'devboxes',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    )
+      'devboxes'
+    )) as { body: { items: KBDevboxType[] } }
 
-    const { body: runtimeBody }: any = await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: runtimeBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       runtimeNamespace,
       'runtimes'
-    )
+    )) as { body: { items: KBRuntimeType[] } }
 
-    // 对devboxBody进行处理，增加运行时和网络的一些字段
+    // add runtimeType, runtimeVersion, runtimeNamespace, networks to devbox yaml
     const res = devboxBody.items.map(async (item: any) => {
       const devboxName = item.metadata.name
       const runtimeName = item.spec.runtimeRef.name

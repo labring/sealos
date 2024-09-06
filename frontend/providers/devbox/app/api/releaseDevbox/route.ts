@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    //TODO: zod later
     const releaseForm = (await req.json()) as {
       devboxName: string
       tag: string

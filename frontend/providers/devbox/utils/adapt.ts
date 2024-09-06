@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 
 import { devboxStatusMap } from '@/constants/devbox'
 import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools'
-import { KBDevboxType, KBDevboxVersionType } from '@/types/k8s'
+import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
@@ -47,7 +47,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
 }
 
 export const adaptDevboxVersionListItem = (
-  devboxRelease: KBDevboxVersionType
+  devboxRelease: KBDevboxReleaseType
 ): DevboxVersionListItemType => {
   return {
     id: devboxRelease.metadata?.uid || '',

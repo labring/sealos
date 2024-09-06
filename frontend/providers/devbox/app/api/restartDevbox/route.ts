@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    //TODO: zod later
     const { devboxName } = (await req.json()) as { devboxName: string }
     const headerList = req.headers
 

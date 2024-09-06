@@ -4,18 +4,20 @@ import { runtimeNamespace } from '@/stores/static'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
+import { KBRuntimeClassType, KBRuntimeType } from '@/types/k8s'
+import { VersionMapType, runtimeNamespaceMapType, valueType } from '@/types/devbox'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const languageTypeList: any[] = []
-    const frameworkTypeList: any[] = []
-    const osTypeList: any[] = []
-    const languageVersionMap: any = {}
-    const frameworkVersionMap: any = {}
-    const osVersionMap: any = {}
-    const runtimeNamespaceMap: any = {}
+    const languageTypeList: valueType[] = []
+    const frameworkTypeList: valueType[] = []
+    const osTypeList: valueType[] = []
+    const languageVersionMap: VersionMapType = {}
+    const frameworkVersionMap: VersionMapType = {}
+    const osVersionMap: VersionMapType = {}
+    const runtimeNamespaceMap: runtimeNamespaceMapType = {}
 
     const headerList = req.headers
 
@@ -23,18 +25,18 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const { body: runtimeClasses }: any = await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: runtimeClasses } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       runtimeNamespace,
       'runtimeclasses'
-    )
-    const { body: runtimes }: any = await k8sCustomObjects.listNamespacedCustomObject(
+    )) as { body: { items: KBRuntimeClassType[] } }
+    const { body: runtimes } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       runtimeNamespace,
       'runtimes'
-    )
+    )) as { body: { items: KBRuntimeType[] } }
 
     // runtimeClasses
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')
@@ -81,7 +83,6 @@ export async function GET(req: NextRequest) {
       })
       if (languageVersionMap[language].length === 0) {
         delete languageVersionMap[language]
-        // 从 languageTypeList 中删除对应的语言项
         const index = languageTypeList.findIndex((item) => item.id === language)
         if (index !== -1) {
           languageTypeList.splice(index, 1)

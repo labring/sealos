@@ -1,19 +1,18 @@
 import { NextRequest } from 'next/server'
 
-import { DevboxEditType } from '@/types/devbox'
 import { jsonRes } from '@/services/backend/response'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
+import { DevboxEditType, runtimeNamespaceMapType } from '@/types/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    //TODO: zod later
     const { devboxForm, runtimeNamespaceMap } = (await req.json()) as {
       devboxForm: DevboxEditType
-      runtimeNamespaceMap: { [key: string]: string }
+      runtimeNamespaceMap: runtimeNamespaceMapType
     }
 
     const headerList = req.headers

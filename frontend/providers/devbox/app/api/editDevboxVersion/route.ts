@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    //TODO: zod later
     const { name, releaseDes } = (await req.json()) as { name: string; releaseDes: string }
     const headerList = req.headers
 
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const response = await k8sCustomObjects.patchNamespacedCustomObject(
+    await k8sCustomObjects.patchNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,

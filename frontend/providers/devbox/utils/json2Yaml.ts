@@ -7,12 +7,12 @@ import {
 } from '@/stores/static'
 import { str2Num } from './tools'
 import { getUserNamespace } from './user'
-import { DevboxEditType } from '@/types/devbox'
+import { DevboxEditType, runtimeNamespaceMapType } from '@/types/devbox'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (
   data: DevboxEditType,
-  runtimeNamespaceMap: { [key: string]: string } = defaultRuntimeNamespaceMap,
+  runtimeNamespaceMap: runtimeNamespaceMapType = defaultRuntimeNamespaceMap,
   devboxAffinityEnable: string = 'true'
 ) => {
   // runtimeNamespace inject

@@ -4,6 +4,7 @@ import {
   getNamespace,
   getAppEnv
 } from '@/api/platform'
+import { VersionMapType, runtimeNamespaceMapType, valueType } from '@/types/devbox'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
 export let SOURCE_PRICE: resourcePriceResponse = {
@@ -26,20 +27,13 @@ export let DEVBOX_AFFINITY_ENABLE = 'true'
 
 export const runtimeNamespace = 'devbox-system'
 
-interface valueType {
-  id: string
-  label: string
-}
 
-interface VersionMapType {
-  [key: string]: valueType[]
-}
 
 export let languageTypeList: valueType[] = []
 export let frameworkTypeList: valueType[] = []
 export let osTypeList: valueType[] = []
 
-export let runtimeNamespaceMap: { [key: string]: string } = {}
+export let runtimeNamespaceMap: runtimeNamespaceMapType = {}
 
 export let languageVersionMap: VersionMapType = {
   // [LanguageTypeEnum.java]: [{ id: '11', label: 'java-11' }],

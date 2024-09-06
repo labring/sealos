@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
+import { KBDevboxReleaseType } from '../../../types/k8s'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,19 +17,14 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const response: any = await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
-      'devboxreleases',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    )
+      'devboxreleases'
+    )) as { body: { items: KBDevboxReleaseType[] } }
 
-    const matchingDevboxVersions = response?.body?.items.filter((item: any) => {
+    const matchingDevboxVersions = releaseBody.items.filter((item: any) => {
       return item.spec && item.spec.devboxName === devboxName
     })
 

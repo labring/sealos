@@ -17,8 +17,7 @@ export async function DELETE(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    // TODO: 这里的name不知道确定是什么，所以导致可能删除不成功
-    const response = await k8sCustomObjects.deleteNamespacedCustomObject(
+    await k8sCustomObjects.deleteNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,

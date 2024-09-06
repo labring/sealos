@@ -22,12 +22,7 @@ export async function DELETE(req: NextRequest) {
       'v1alpha1',
       namespace,
       'devboxes',
-      devboxName,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined
+      devboxName
     )
 
     // delete service and ingress at the same time
@@ -39,12 +34,7 @@ export async function DELETE(req: NextRequest) {
           'v1',
           namespace,
           'ingresses',
-          networkName,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined
+          networkName
         )
         // delete issuer and certificate at the same time
         await k8sCustomObjects.deleteNamespacedCustomObject(
@@ -52,24 +42,14 @@ export async function DELETE(req: NextRequest) {
           'v1',
           namespace,
           'issuers',
-          networkName,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined
+          networkName
         )
         await k8sCustomObjects.deleteNamespacedCustomObject(
           'cert-manager.io',
           'v1',
           namespace,
           'certificates',
-          networkName,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined
+          networkName
         )
       })
     }
