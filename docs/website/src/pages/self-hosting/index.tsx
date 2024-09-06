@@ -27,6 +27,9 @@ export default function Pricing() {
     const k = urlParams.get('k');
     if (k) params.keywords = k;
 
+    const s = urlParams.get('s');
+    if (s) params.s = s;
+
     if (Object.keys(params).length > 0) {
       sessionStorage.setItem('sealos_sem', JSON.stringify(params));
     }
