@@ -9,7 +9,7 @@ export type KBDevboxType = {
     creationTimestamp: string
   }
   spec: KBDevboxSpec
-  networks: {
+  portInfos: {
     networkName: string
     portName: string
     port: number

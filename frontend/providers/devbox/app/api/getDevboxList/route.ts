@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       })
       if (item.spec.network.extraPorts.length !== 0) {
         const { body: service } = await k8sCore.readNamespacedService(devboxName, namespace)
-        item.networks = item.spec.network.extraPorts.map(async (network: any) => {
+        const portInfos = item.spec.network.extraPorts.map(async (network: any) => {
           const matchingIngress = ingressList.find(
             (ingress: any) => ingress.port === network.containerPort
           )
@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
             port: network.containerPort
           }
         })
-        item.networks = await Promise.all(item.networks)
+        item.portInfos = await Promise.all(portInfos)
       }
 
       return item

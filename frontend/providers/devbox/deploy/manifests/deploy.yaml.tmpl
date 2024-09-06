@@ -34,18 +34,17 @@ spec:
       labels:
         app: devbox-frontend
     spec:
-      serviceAccountName: cluster-version-reader
       containers:
         - name: devbox-frontend
           env:
             - name: SEALOS_DOMAIN
-              value: dev.sealos.plus
+              value: usw.sailos.io
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
-              value: hub.dev.sealos.plus
+              value: hub.usw.sailos.io
             - name: DEVBOX_AFFINITY_ENABLE
-              value: true
+              value: 'true'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -61,7 +60,7 @@ spec:
               cpu: 10m
               memory: 128Mi
           # do not modify this image, it is used for CI/CD
-          image: mlhiter/devbox:0.7.8
+          image: mlhiter/devbox:0.7.13
           imagePullPolicy: Always
           volumeMounts:
             - name: devbox-frontend-volume
