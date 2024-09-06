@@ -19,7 +19,7 @@ import { useCallback, useState } from 'react'
 import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { useConfirm } from '@/hooks/useConfirm'
 import { DevboxListItemType } from '@/types/devbox'
-import { pauseDevbox, releaseDevbox } from '@/api/devbox'
+import { pauseDevbox, releaseDevbox, restartDevbox } from '@/api/devbox'
 
 const ReleaseModal = ({
   onClose,
@@ -38,7 +38,9 @@ const ReleaseModal = ({
   const [tagError, setTagError] = useState(false)
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: 'release_confirm_info'
+    content: 'release_confirm_info',
+    showCheckbox: true,
+    checkboxLabel: 'pause_devbox_info'
   })
   const handleSubmit = () => {
     if (!tag) {
@@ -50,36 +52,42 @@ const ReleaseModal = ({
       })
     } else {
       setTagError(false)
-      openConfirm(() => handleReleaseDevbox())()
+      openConfirm((enableRestartMachine: boolean) => handleReleaseDevbox(enableRestartMachine))()
     }
   }
 
-  const handleReleaseDevbox = useCallback(async () => {
-    try {
-      setLoading(true)
-      if (devbox.status.value === 'Running') {
-        await pauseDevbox({ devboxName: devbox.name })
+  const handleReleaseDevbox = useCallback(
+    async (enableRestartMachine: boolean) => {
+      try {
+        setLoading(true)
+        if (devbox.status.value === 'Running') {
+          await pauseDevbox({ devboxName: devbox.name })
+        }
+        await releaseDevbox({
+          devboxName: devbox.name,
+          tag,
+          releaseDes
+        })
+        if (enableRestartMachine) {
+          await restartDevbox({ devboxName: devbox.name })
+        }
+        toast({
+          title: t('submit_release_successful'),
+          status: 'success'
+        })
+        onSuccess()
+        onClose()
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('submit_release_failed'),
+          status: 'error'
+        })
+        console.error(error)
       }
-      await releaseDevbox({
-        devboxName: devbox.name,
-        tag,
-        releaseDes
-      })
-      toast({
-        title: t('submit_release_successful'),
-        status: 'success'
-      })
-      onSuccess()
-      onClose()
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('submit_release_failed'),
-        status: 'error'
-      })
-      console.error(error)
-    }
-    setLoading(false)
-  }, [devbox.status.value, devbox.name, toast, t, tag, releaseDes, onSuccess, onClose])
+      setLoading(false)
+    },
+    [devbox.status.value, devbox.name, toast, t, tag, releaseDes, onSuccess, onClose]
+  )
 
   return (
     <Box>

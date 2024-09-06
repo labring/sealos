@@ -6,27 +6,35 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   useDisclosure,
-  Button
+  Button,
+  Checkbox,
+  Box
 } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 export const useConfirm = ({
   title = 'prompt',
   content,
   confirmText = 'confirm',
-  cancelText = 'cancel'
+  cancelText = 'cancel',
+  showCheckbox = false,
+  checkboxLabel = ''
 }: {
   title?: string
   content: string
   confirmText?: string
   cancelText?: string
+  showCheckbox?: boolean
+  checkboxLabel?: string
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const t = useTranslations()
   const cancelRef = useRef(null)
   const confirmCb = useRef<any>()
   const cancelCb = useRef<any>()
+
+  const [isChecked, setIsChecked] = useState(false)
 
   return {
     openConfirm: useCallback(
@@ -35,6 +43,7 @@ export const useConfirm = ({
           onOpen()
           confirmCb.current = confirm
           cancelCb.current = cancel
+          setIsChecked(false)
         }
       },
       [onOpen]
@@ -48,7 +57,18 @@ export const useConfirm = ({
                 {t(title)}
               </AlertDialogHeader>
 
-              <AlertDialogBody>{t(content)}</AlertDialogBody>
+              <AlertDialogBody>
+                <Box>{t(content)}</Box>
+                <Box mt={'12px'}>
+                  {showCheckbox && (
+                    <Checkbox
+                      isChecked={isChecked}
+                      onChange={(e) => setIsChecked(e.target.checked)}>
+                      {t(checkboxLabel)}
+                    </Checkbox>
+                  )}
+                </Box>
+              </AlertDialogBody>
 
               <AlertDialogFooter>
                 <Button
@@ -64,7 +84,11 @@ export const useConfirm = ({
                   variant={'solid'}
                   onClick={() => {
                     onClose()
-                    typeof confirmCb.current === 'function' && confirmCb.current()
+                    if (showCheckbox) {
+                      typeof confirmCb.current === 'function' && confirmCb.current(isChecked)
+                    } else {
+                      typeof confirmCb.current === 'function' && confirmCb.current()
+                    }
                   }}>
                   {t(confirmText)}
                 </Button>
@@ -73,7 +97,7 @@ export const useConfirm = ({
           </AlertDialogOverlay>
         </AlertDialog>
       ),
-      [cancelText, confirmText, content, isOpen, onClose, t, title]
+      [cancelText, checkboxLabel, confirmText, content, isOpen, onClose, showCheckbox, t, title]
     )
   }
 }

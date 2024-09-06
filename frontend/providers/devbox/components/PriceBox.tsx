@@ -19,7 +19,6 @@ const PriceBox = ({
     nodeports: number
   }[]
 }) => {
-  console.log('components', components)
   const theme = useTheme()
   const t = useTranslations()
   const priceList: {
@@ -38,7 +37,6 @@ const PriceBox = ({
       pp = SOURCE_PRICE.nodeports * nodeports * 24
       tp = cp + mp + pp
     })
-    console.log('cp', cp, 'mp', mp, 'pp', pp, 'tp', tp)
 
     return [
       {

@@ -75,7 +75,7 @@
   "port": "Port",
   "prompt": "Prompt",
   "release": "Release",
-  "release_confirm_info": "The release process will be released in the current state and needs to shut down. If you do not shut down, it will automatically shut down for you. Do you want to release the version?",
+  "release_confirm_info": "During the release process, the machine will be temporarily shut down and the release will be in the current state. Please save the running project.",
   "release_failed": "Release failed",
   "release_prompt": "The release process will Shutdown the machine and release in the current state.",
   "release_successful": "release succeeded",
@@ -114,5 +114,6 @@
   "vscode_tooltip": "Click to develop in VSCode",
   "yaml_file": "YAML",
   "nodeports_exceeds_quota": "NodePort requested exceeds quota. Contact admin.",
-  "nodeports": "NodePorts"
+  "nodeports": "NodePorts",
+  "pause_devbox_info": "Automatically start the machine after released"
 }
