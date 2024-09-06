@@ -493,16 +493,12 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	}
 	var servicePorts []corev1.ServicePort
 	for _, port := range runtimecr.Spec.Config.Ports {
-		if port.Name == "devbox-ssh-port" {
-			servicePorts = []corev1.ServicePort{
-				{
-					Name:       "tty",
-					Port:       port.ContainerPort,
-					TargetPort: intstr.FromInt32(port.ContainerPort),
-					Protocol:   port.Protocol,
-				},
-			}
-		}
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       port.Name,
+			Port:       port.ContainerPort,
+			TargetPort: intstr.FromInt32(port.ContainerPort),
+			Protocol:   port.Protocol,
+		})
 	}
 	if len(servicePorts) == 0 {
 		//use the default value
