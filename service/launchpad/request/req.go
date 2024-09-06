@@ -49,7 +49,6 @@ func GetQuery(query *api.VMRequest) (string, error) {
 		log.Println(query.Type)
 	}
 	podName := getPodName(query.LaunchPadName)
-	fmt.Println(podName)
 	result = strings.ReplaceAll(strings.ReplaceAll(result, "$namespace", query.NS), "$pod", podName)
 	return result, nil
 }
