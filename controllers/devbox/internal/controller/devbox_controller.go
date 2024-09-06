@@ -480,7 +480,6 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 }
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-
 	var runtimeNamespace string
 	if devbox.Spec.RuntimeRef.Namespace != "" {
 		runtimeNamespace = devbox.Spec.RuntimeRef.Namespace
