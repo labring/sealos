@@ -94,7 +94,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       reqData.sinceTime = timestampToRFC3339(sinceTime);
     }
 
-    res.flushHeaders();
+    if (!reqData.previous) {
+      res.flushHeaders();
+    }
 
     streamResponse = await logs.log(
       namespace,
