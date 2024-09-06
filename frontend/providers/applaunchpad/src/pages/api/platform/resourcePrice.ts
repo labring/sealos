@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getK8s } from '@/services/backend/kubernetes';
+import { getK8s, K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { CoreV1Api } from '@kubernetes/client-node';
@@ -43,26 +43,19 @@ export const valuationMap: Record<string, number> = {
   'services.nodeports': 1000
 };
 
-const gpuCrName = 'node-gpu-info';
-const gpuCrNS = 'node-system';
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // source price
-    const { applyYamlList, k8sCustomObjects, k8sCore, namespace } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
-
+    const gpuEnabled = global.AppConfig.common.gpuEnabled;
     const [priceResponse, gpuNodes] = await Promise.all([
       getResourcePrice(),
-      getGpuNode({ k8sCore })
+      gpuEnabled ? getGpuNode() : Promise.resolve([])
     ]);
 
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
       storage: countSourcePrice(priceResponse, 'storage'),
-      gpu: countGpuSource(priceResponse, gpuNodes)
+      gpu: gpuEnabled ? countGpuSource(priceResponse, gpuNodes) : undefined
     };
 
     jsonRes<userPriceType>(res, {
@@ -75,9 +68,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 /* get gpu nodes by configmap. */
-async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
+export async function getGpuNode() {
+  const gpuCrName = 'node-gpu-info';
+  const gpuCrNS = 'node-system';
+
   try {
-    const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, gpuCrNS);
+    const kc = K8sApiDefault();
+    const { body } = await kc.makeApiClient(CoreV1Api).readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;
     if (!gpuMap || !body?.data?.alias) return [];
     const alias = (JSON.parse(body?.data?.alias) || {}) as Record<string, string>;

@@ -31,6 +31,7 @@ export type AppConfigType = {
   common: {
     guideEnabled: boolean;
     apiEnabled: boolean;
+    gpuEnabled: boolean;
   };
   launchpad: {
     ingressTlsSecretName: string;

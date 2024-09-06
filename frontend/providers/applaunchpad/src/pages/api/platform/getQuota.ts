@@ -1,9 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { authSession } from '@/services/backend/auth';
 import { UserQuotaItemType } from '@/types/user';
 import Decimal from 'decimal.js';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 async function getAmount(req: NextApiRequest): Promise<{
   data?: {
@@ -65,6 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const quota = await getUserQuota();
+    const gpuEnabled = global.AppConfig.common.gpuEnabled;
+    const filteredQuota = gpuEnabled ? quota : quota.filter((item) => item.type !== 'gpu');
 
     let balance = '0';
     try {
@@ -84,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       quota: UserQuotaItemType[];
     }>(res, {
       data: {
-        quota,
+        quota: filteredQuota,
         balance
       }
     });

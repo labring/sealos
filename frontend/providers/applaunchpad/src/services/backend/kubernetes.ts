@@ -4,6 +4,12 @@ import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
 import { UserQuotaItemType } from '@/types/user';
 import { memoryFormatToMi, cpuFormatToM } from '@/utils/tools';
 
+export function K8sApiDefault(): k8s.KubeConfig {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+  return kc;
+}
+
 export function CheckIsInCluster(): [boolean, string] {
   if (
     process.env.KUBERNETES_SERVICE_HOST !== undefined &&

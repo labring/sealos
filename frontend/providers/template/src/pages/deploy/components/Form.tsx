@@ -114,8 +114,6 @@ const Form = ({
                     <Box maxW={'300px'} ml={'20px'} w={'100%'}>
                       <MySelect
                         w={'100%'}
-                        bg={'transparent'}
-                        borderRadius={'2px'}
                         defaultValue={getValues(item.key) || item.default}
                         list={item.options?.map((option) => {
                           return {

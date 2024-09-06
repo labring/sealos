@@ -4,6 +4,7 @@ import type { AppConfigType, FileMangerType, FormSliderListType } from '@/types'
 import { readFileSync } from 'fs';
 import * as yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getGpuNode } from './resourcePrice';
 
 // todo make response type to be more specific and clear.
 export type Response = {
@@ -24,7 +25,8 @@ export const defaultAppConfig: AppConfigType = {
   },
   common: {
     guideEnabled: false,
-    apiEnabled: false
+    apiEnabled: false,
+    gpuEnabled: false
   },
   launchpad: {
     ingressTlsSecretName: 'wildcard-cert',
@@ -66,6 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));
       console.log(res);
       global.AppConfig = res;
+      const gpuNodes = await getGpuNode();
+      global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;
     }
     jsonRes<Response>(res, {
       data: {
