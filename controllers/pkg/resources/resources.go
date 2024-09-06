@@ -378,7 +378,7 @@ const (
 	DefaultQuotaLimitsMemory        = "64Gi"
 	DefaultQuotaLimitsStorage       = "100Gi"
 	DefaultQuotaLimitsGPU           = "8"
-	DefaultQuotaLimitsNodePorts     = "3"
+	DefaultQuotaLimitsNodePorts     = "10"
 	DefaultQuotaObjectStorageSize   = "100Gi"
 	DefaultQuotaObjectStorageBucket = "5"
 )
