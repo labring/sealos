@@ -130,8 +130,8 @@ def download_app():
                 if not data:
                     break
                 yield data
-        os.system('rm -rf ' + workdir)
-        os.system('rm -rf ' + tar_path)
+        # os.system('rm -rf ' + workdir)
+        # os.system('rm -rf ' + tar_path)
 
     response = Response(generate(), content_type='application/octet-stream')
     response.headers['Content-Disposition'] = 'attachment; filename=' + appname + '.tar'
