@@ -19,15 +19,17 @@ package controllers
 import (
 	"context"
 
-	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	v1 "k8s.io/api/rbac/v1"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
