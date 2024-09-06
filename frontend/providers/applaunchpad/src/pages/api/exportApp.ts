@@ -35,15 +35,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     );
 
-    const result = await temp.json();
+    const result = (await temp.json()) as {
+      message: string;
+      path: string;
+      url: string;
+      error?: string;
+    };
 
     jsonRes<{
       downloadPath: string;
       error?: string;
     }>(res, {
       data: {
-        downloadPath: result,
-        error: 'error'
+        downloadPath: result?.url,
+        error: result?.error
       }
     });
   } catch (err: any) {
