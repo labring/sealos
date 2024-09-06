@@ -6,8 +6,8 @@ metadata:
 spec:
   data:
     desc: Devbox
-    url: 'https://devbox.usw.sailos.io'
-  icon: 'https://devbox.usw.sailos.io/logo.svg'
+    url: 'https://devbox.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}'
+  icon: 'https://devbox.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg'
   i18n:
     zh:
       name: 云沙箱

@@ -38,11 +38,11 @@ spec:
         - name: devbox-frontend
           env:
             - name: SEALOS_DOMAIN
-              value: usw.sailos.io
+              value: { { .cloudDomain } }
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
-              value: hub.usw.sailos.io
+              value: hub.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
           securityContext:
