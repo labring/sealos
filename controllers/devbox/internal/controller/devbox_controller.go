@@ -480,19 +480,47 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 }
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-	expectServiceSpec := corev1.ServiceSpec{
-		Selector: recLabels,
-		Type:     corev1.ServiceTypeNodePort,
-		Ports: []corev1.ServicePort{
+
+	var runtimeNamespace string
+	if devbox.Spec.RuntimeRef.Namespace != "" {
+		runtimeNamespace = devbox.Spec.RuntimeRef.Namespace
+	} else {
+		runtimeNamespace = devbox.Namespace
+	}
+
+	runtimecr := &devboxv1alpha1.Runtime{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: runtimeNamespace, Name: devbox.Spec.RuntimeRef.Name}, runtimecr); err != nil {
+		return err
+	}
+	var servicePorts []corev1.ServicePort
+	for _, port := range runtimecr.Spec.Config.Ports {
+		if port.Name == "devbox-ssh-port" {
+			servicePorts = []corev1.ServicePort{
+				{
+					Name:       "tty",
+					Port:       port.ContainerPort,
+					TargetPort: intstr.FromInt32(port.ContainerPort),
+					Protocol:   port.Protocol,
+				},
+			}
+		}
+	}
+	if len(servicePorts) == 0 {
+		//use the default value
+		servicePorts = []corev1.ServicePort{
 			{
 				Name:       "tty",
 				Port:       22,
 				TargetPort: intstr.FromInt32(22),
 				Protocol:   corev1.ProtocolTCP,
 			},
-		},
+		}
 	}
-
+	expectServiceSpec := corev1.ServiceSpec{
+		Selector: recLabels,
+		Type:     corev1.ServiceTypeNodePort,
+		Ports:    servicePorts,
+	}
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devbox.Name + "-svc",
