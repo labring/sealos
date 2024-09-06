@@ -559,7 +559,7 @@ func (r *DevboxReconciler) generateNextCommitHistory(devbox *devboxv1alpha1.Devb
 
 func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
 	now := time.Now()
-	return fmt.Sprintf("%s/%s/%s:%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, now.Format("2006-01-02-150405"))
+	return fmt.Sprintf("%s/%s/%s:%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5)+"-"+now.Format("2006-01-02-150405"))
 }
 
 // SetupWithManager sets up the controller with the Manager.
