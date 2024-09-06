@@ -104,14 +104,22 @@ func (Transfer) TableName() string {
 }
 
 type User struct {
-	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
-	CreatedAt time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
-	AvatarURI string    `gorm:"column:avatarUri;type:text"`
-	Nickname  string    `gorm:"type:text"`
-	ID        string    `gorm:"type:text;not null;unique"`
-	Name      string    `gorm:"type:text;not null"`
+	UID       uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
+	CreatedAt time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	UpdatedAt time.Time  `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	AvatarURI string     `gorm:"column:avatarUri;type:text"`
+	Nickname  string     `gorm:"type:text"`
+	ID        string     `gorm:"type:text;not null;unique"`
+	Name      string     `gorm:"type:text;not null"`
+	Status    UserStatus `gorm:"column:status;type:UserStatus;default:'NORMAL_USER'::defaultdb.public.'UserStatus';not null"`
 }
+
+type UserStatus string
+
+const (
+	UserStatusNormal UserStatus = "NORMAL_USER"
+	UserStatusLock   UserStatus = "LOCK_USER"
+)
 
 func (User) TableName() string {
 	return "User"
