@@ -16,7 +16,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { downLoadBold } from '@/utils/tools';
 import styles from '../index.module.scss';
 import { SealosMenu } from '@sealos/ui';
-
+import Empty from './empty';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { streamFetch } from '@/services/streamFetch';
 import { default as AnsiUp } from 'ansi_up';
@@ -233,16 +233,21 @@ const LogsModal = ({
           <ModalCloseButton />
         </ModalHeader>
         <Box flex={'1 0 0'} h={0} position={'relative'} px={'36px'} mt={'24px'}>
-          <Box
-            ref={LogBox}
-            h={'100%'}
-            whiteSpace={'pre'}
-            pb={2}
-            overflow={'auto'}
-            fontWeight={400}
-            fontFamily={'SFMono-Regular,Menlo,Monaco,Consolas,monospace'}
-            dangerouslySetInnerHTML={{ __html: logs }}
-          ></Box>
+          {logs === '' ? (
+            <Empty />
+          ) : (
+            <Box
+              ref={LogBox}
+              h={'100%'}
+              whiteSpace={'pre'}
+              pb={2}
+              overflow={'auto'}
+              fontWeight={400}
+              fontFamily={'SFMono-Regular,Menlo,Monaco,Consolas,monospace'}
+              dangerouslySetInnerHTML={{ __html: logs }}
+            ></Box>
+          )}
+
           <Loading loading={isLoading} fixed={false} />
         </Box>
       </ModalContent>
