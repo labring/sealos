@@ -12,6 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type AuthReq interface {
+	GetAuth() *Auth
+	SetAuth(auth *Auth)
+}
+
 type NamespaceBillingHistoryReq struct {
 	// @Summary Start and end time for the request
 	// @Description Start and end time for the request
@@ -21,7 +26,7 @@ type NamespaceBillingHistoryReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
+	AuthBase `json:",inline" bson:",inline"`
 
 	// @Summary Type of the request (optional)
 	// @Description Type of the request (optional)
@@ -38,7 +43,7 @@ type SetPaymentInvoiceReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
+	AuthBase `json:",inline" bson:",inline"`
 }
 
 type TransferAmountReq struct {
@@ -55,7 +60,7 @@ type TransferAmountReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
+	AuthBase `json:",inline" bson:",inline"`
 
 	// @Summary Transfer all
 	// @Description Transfer all amount
@@ -76,7 +81,7 @@ type ConsumptionRecordReq struct {
 	// @Summary Authentication information
 	// @Description Authentication information
 	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
+	AuthBase `json:",inline" bson:",inline"`
 
 	// @Summary App type
 	// @Description App type
@@ -85,6 +90,200 @@ type ConsumptionRecordReq struct {
 	// @Summary App Name
 	// @Description App Name
 	AppName string `json:"appName,omitempty" bson:"appName" example:"app"`
+}
+
+type UserBaseReq struct {
+
+	// @Summary Start and end time for the request
+	// @Description Start and end time for the request
+	// @JSONSchema required
+	TimeRange `json:",inline" bson:",inline"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+}
+
+type AppCostsReq struct {
+	// @Summary Order ID
+	// @Description Order ID
+	// @JSONSchema
+	OrderID string `json:"orderID,omitempty" bson:"orderID" example:"order-id-1"`
+
+	UserBaseReq `json:",inline" bson:",inline"`
+
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace,omitempty" bson:"namespace" example:"ns-admin"`
+	// @Summary App type
+	// @Description App type
+	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
+
+	// @Summary App Name
+	// @Description App Name
+	AppName string `json:"appName,omitempty" bson:"appName" example:"app"`
+
+	// @Summary Page
+	// @Description Page
+	Page int `json:"page,omitempty" bson:"page" example:"1"`
+
+	// @Summary Page Size
+	// @Description Page Size
+	PageSize int `json:"pageSize,omitempty" bson:"pageSize" example:"10"`
+}
+
+type GetPaymentReq struct {
+	// @Summary Payment ID
+	// @Description Payment ID
+	// @JSONSchema
+	PaymentID string `json:"paymentID,omitempty" bson:"paymentID" example:"payment-id-1"`
+
+	// @Summary Invoiced
+	// @Description Invoiced
+	// @JSONSchema
+	Invoiced bool `json:"invoiced,omitempty" bson:"invoiced" example:"true"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Limit request
+	// @Description Limit request
+	LimitReq `json:",inline" bson:",inline"`
+}
+
+type ApplyInvoiceReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// payment id list
+	// @Summary Payment ID list
+	// @Description Payment ID list
+	// @JSONSchema required
+	PaymentIDList []string `json:"paymentIDList" bson:"paymentIDList" binding:"required" example:"[\"payment-id-1\",\"payment-id-2\"]"`
+
+	// invoice detail information json
+	// @Summary Invoice detail information
+	// @Description Invoice detail information
+	// @JSONSchema required
+	Detail string `json:"detail" bson:"detail" binding:"required" example:"{\"title\":\"title\",\"amount\":100,\"taxRate\":0.06,\"tax\":6,\"total\":106,\"invoiceType\":1,\"invoiceContent\":1,\"invoiceStatus\":1,\"invoiceTime\":\"2021-01-01T00:00:00Z\",\"invoiceNumber\":\"invoice-number-1\",\"invoiceCode\":\"invoice-code-1\",\"invoiceFile\":\"invoice-file-1\"}"`
+}
+
+type LimitReq struct {
+	// @Summary Page
+	// @Description Page
+	Page int `json:"page" bson:"page"`
+
+	// @Summary Page Size
+	// @Description Page Size
+	PageSize int `json:"pageSize" bson:"pageSize"`
+
+	// @Summary Time range
+	// @Description Time range
+	TimeRange `json:",inline" bson:",inline"`
+}
+
+type SetInvoiceStatusReq struct {
+	// Invoice id list
+	// @Summary Invoice ID list
+	// @Description Invoice ID list
+	// @JSONSchema required
+	InvoiceIDList []string `json:"invoiceIDList" bson:"invoiceIDList" binding:"required" example:"[\"invoice-id-1\",\"invoice-id-2\"]"`
+
+	// Invoice status
+	// @Summary Invoice status
+	// @Description Invoice status
+	// @JSONSchema required
+	Status string `json:"status" bson:"status" binding:"required" example:"COMPLETED,REJECTED,PENDING"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+}
+
+type UseGiftCodeReq struct {
+	// @Summary Gift code to be used
+	// @Description The code of the gift card to be redeemed
+	// @JSONSchema required
+	Code string `json:"code" bson:"code" binding:"required" example:"HAPPY2024"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+}
+
+type UserUsageReq struct {
+	// @Summary Start and end time for the request
+	// @Description Start and end time for the request
+	// @JSONSchema required
+	TimeRange `json:",inline" bson:",inline"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// NamespaceList
+	// @Summary Namespace list
+	// @Description Namespace list
+	// @JSONSchema
+	NamespaceList []string `json:"namespaceList" bson:"namespaceList" example:"[\"ns-admin\",\"ns-test1\"]"`
+}
+
+type GetInvoiceReq struct {
+	// @Summary Invoice ID
+	// @Description Invoice ID
+	// @JSONSchema
+	InvoiceID string `json:"invoiceID,omitempty" bson:"invoiceID" example:"invoice-id-1"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Limit request
+	// @Description Limit request
+	LimitReq `json:",inline" bson:",inline"`
+}
+
+type GetCostAppListReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary Namespace
+	// @Description Namespace
+	Namespace string `json:"namespace" bson:"namespace"`
+
+	// @Summary App type
+	// @Description App type
+	AppType string `json:"appType" bson:"appType"`
+
+	// @Summary App Name
+	// @Description App Name
+	AppName string `json:"appName" bson:"appName"`
+
+	// @Summary Limit request
+	// @Description Limit request
+	LimitReq `json:",inline" bson:",inline"`
+}
+
+type AuthBase struct {
+	*Auth `json:",inline" bson:",inline"`
+}
+
+func (a *AuthBase) GetAuth() *Auth {
+	return a.Auth
+}
+
+func (a *AuthBase) SetAuth(auth *Auth) {
+	a.Auth = auth
 }
 
 type NamespaceBillingHistoryResp struct {
@@ -159,19 +358,6 @@ func ParseConsumptionRecordReq(c *gin.Context) (*ConsumptionRecordReq, error) {
 	return consumptionRecord, nil
 }
 
-type UserBaseReq struct {
-
-	// @Summary Start and end time for the request
-	// @Description Start and end time for the request
-	// @JSONSchema required
-	TimeRange `json:",inline" bson:",inline"`
-
-	// @Summary Authentication information
-	// @Description Authentication information
-	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
-}
-
 func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
 	userCosts := &UserBaseReq{}
 	if err := c.ShouldBindJSON(userCosts); err != nil {
@@ -194,34 +380,6 @@ func ParsePaymentReq(c *gin.Context) (*GetPaymentReq, error) {
 		payment.PageSize = 10
 	}
 	return payment, nil
-}
-
-type AppCostsReq struct {
-	// @Summary Order ID
-	// @Description Order ID
-	// @JSONSchema
-	OrderID string `json:"orderID,omitempty" bson:"orderID" example:"order-id-1"`
-
-	UserBaseReq `json:",inline" bson:",inline"`
-
-	// @Summary Namespace
-	// @Description Namespace
-	Namespace string `json:"namespace,omitempty" bson:"namespace" example:"ns-admin"`
-	// @Summary App type
-	// @Description App type
-	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
-
-	// @Summary App Name
-	// @Description App Name
-	AppName string `json:"appName,omitempty" bson:"appName" example:"app"`
-
-	// @Summary Page
-	// @Description Page
-	Page int `json:"page,omitempty" bson:"page" example:"1"`
-
-	// @Summary Page Size
-	// @Description Page Size
-	PageSize int `json:"pageSize,omitempty" bson:"pageSize" example:"10"`
 }
 
 func ParseAppCostsReq(c *gin.Context) (*AppCostsReq, error) {
@@ -261,7 +419,7 @@ func ParseGetTransferRecordReq(c *gin.Context) (*GetTransferRecordReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&transferReq.TimeRange)
-	transferReq.Owner = strings.TrimPrefix(transferReq.Owner, "ns-")
+	transferReq.Auth.Owner = strings.TrimPrefix(transferReq.Auth.Owner, "ns-")
 	return transferReq, nil
 }
 
@@ -281,22 +439,6 @@ func setDefaultTimeRange(timeRange *TimeRange) {
 	if timeRange.EndTime.IsZero() {
 		timeRange.EndTime = time.Now()
 	}
-}
-
-type GetPaymentReq struct {
-	// @Summary Payment ID
-	// @Description Payment ID
-	// @JSONSchema
-	PaymentID string `json:"paymentID,omitempty" bson:"paymentID" example:"payment-id-1"`
-
-	// @Summary Authentication information
-	// @Description Authentication information
-	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
-
-	// @Summary Limit request
-	// @Description Limit request
-	LimitReq `json:",inline" bson:",inline"`
 }
 
 type CostOverviewResp struct {
@@ -328,28 +470,6 @@ type CostOverview struct {
 	AppName string `json:"appName" bson:"appName"`
 }
 
-type GetCostAppListReq struct {
-	// @Summary Authentication information
-	// @Description Authentication information
-	*Auth `json:",inline" bson:",inline"`
-
-	// @Summary Namespace
-	// @Description Namespace
-	Namespace string `json:"namespace" bson:"namespace"`
-
-	// @Summary App type
-	// @Description App type
-	AppType string `json:"appType" bson:"appType"`
-
-	// @Summary App Name
-	// @Description App Name
-	AppName string `json:"appName" bson:"appName"`
-
-	// @Summary Limit request
-	// @Description Limit request
-	LimitReq `json:",inline" bson:",inline"`
-}
-
 type CostAppListResp struct {
 	// @Summary Cost app list
 	// @Description Cost app list
@@ -374,20 +494,6 @@ type CostApp struct {
 	AppName string `json:"appName" bson:"appName"`
 }
 
-type LimitReq struct {
-	// @Summary Page
-	// @Description Page
-	Page int `json:"page" bson:"page"`
-
-	// @Summary Page Size
-	// @Description Page Size
-	PageSize int `json:"pageSize" bson:"pageSize"`
-
-	// @Summary Time range
-	// @Description Time range
-	TimeRange `json:",inline" bson:",inline"`
-}
-
 type LimitResp struct {
 	// @Summary Total
 	// @Description Total
@@ -398,66 +504,12 @@ type LimitResp struct {
 	TotalPage int64 `json:"totalPage" bson:"totalPage"`
 }
 
-type ApplyInvoiceReq struct {
-	// @Summary Authentication information
-	// @Description Authentication information
-	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
-
-	// payment id list
-	// @Summary Payment ID list
-	// @Description Payment ID list
-	// @JSONSchema required
-	PaymentIDList []string `json:"paymentIDList" bson:"paymentIDList" binding:"required" example:"[\"payment-id-1\",\"payment-id-2\"]"`
-
-	// invoice detail information json
-	// @Summary Invoice detail information
-	// @Description Invoice detail information
-	// @JSONSchema required
-	Detail string `json:"detail" bson:"detail" binding:"required" example:"{\"title\":\"title\",\"amount\":100,\"taxRate\":0.06,\"tax\":6,\"total\":106,\"invoiceType\":1,\"invoiceContent\":1,\"invoiceStatus\":1,\"invoiceTime\":\"2021-01-01T00:00:00Z\",\"invoiceNumber\":\"invoice-number-1\",\"invoiceCode\":\"invoice-code-1\",\"invoiceFile\":\"invoice-file-1\"}"`
-}
-
 func ParseApplyInvoiceReq(c *gin.Context) (*ApplyInvoiceReq, error) {
 	applyInvoice := &ApplyInvoiceReq{}
 	if err := c.ShouldBindJSON(applyInvoice); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	return applyInvoice, nil
-}
-
-type GetInvoiceReq struct {
-	// @Summary Invoice ID
-	// @Description Invoice ID
-	// @JSONSchema
-	InvoiceID string `json:"invoiceID,omitempty" bson:"invoiceID" example:"invoice-id-1"`
-
-	// @Summary Authentication information
-	// @Description Authentication information
-	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
-
-	// @Summary Limit request
-	// @Description Limit request
-	LimitReq `json:",inline" bson:",inline"`
-}
-
-type SetInvoiceStatusReq struct {
-	// Invoice id list
-	// @Summary Invoice ID list
-	// @Description Invoice ID list
-	// @JSONSchema required
-	InvoiceIDList []string `json:"invoiceIDList" bson:"invoiceIDList" binding:"required" example:"[\"invoice-id-1\",\"invoice-id-2\"]"`
-
-	// Invoice status
-	// @Summary Invoice status
-	// @Description Invoice status
-	// @JSONSchema required
-	Status string `json:"status" bson:"status" binding:"required" example:"COMPLETED,REJECTED,PENDING"`
-
-	// @Summary Authentication token
-	// @Description Authentication token
-	// @JSONSchema required
-	Token string `json:"token" bson:"token" binding:"required" example:"token"`
 }
 
 func ParseGetInvoiceReq(c *gin.Context) (*GetInvoiceReq, error) {
@@ -485,18 +537,6 @@ type UseGiftCodeResp struct {
 	Message string              `json:"message,omitempty" bson:"message" example:"Gift code successfully redeemed"`
 }
 
-type UseGiftCodeReq struct {
-	// @Summary Gift code to be used
-	// @Description The code of the gift card to be redeemed
-	// @JSONSchema required
-	Code string `json:"code" bson:"code" binding:"required" example:"HAPPY2024"`
-
-	// @Summary Authentication information
-	// @Description Authentication information
-	// @JSONSchema required
-	*Auth `json:",inline" bson:",inline"`
-}
-
 func ParseUseGiftCodeReq(c *gin.Context) (*UseGiftCodeReq, error) {
 	useGiftCode := &UseGiftCodeReq{}
 	if err := c.ShouldBindJSON(useGiftCode); err != nil {
@@ -509,4 +549,18 @@ func ParseUseGiftCodeReq(c *gin.Context) (*UseGiftCodeReq, error) {
 	}
 
 	return useGiftCode, nil
+}
+
+func ParseUserUsageReq(c *gin.Context) (*UserUsageReq, error) {
+	userUsage := &UserUsageReq{}
+	if err := c.ShouldBindJSON(userUsage); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if userUsage.StartTime.IsZero() {
+		userUsage.StartTime = time.Now().Add(-2 * time.Minute)
+	}
+	if userUsage.EndTime.IsZero() {
+		userUsage.EndTime = time.Now()
+	}
+	return userUsage, nil
 }

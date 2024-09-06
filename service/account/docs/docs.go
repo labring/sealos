@@ -1284,6 +1284,62 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/account/v1alpha1/user-usage": {
+            "post": {
+                "description": "Get user usage within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UserUsage"
+                ],
+                "summary": "Get user usage",
+                "parameters": [
+                    {
+                        "description": "User usage request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.UserUsageReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved user usage",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse user usage request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get user usage",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1968,6 +2024,45 @@ const docTemplate = `{
                 },
                 "kubeConfig": {
                     "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "startTime": {
+                    "type": "string",
+                    "example": "2021-01-01T00:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.UserUsageReq": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string",
+                    "example": "2021-12-01T00:00:00Z"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "namespaceList": {
+                    "description": "NamespaceList\n@Summary Namespace list\n@Description Namespace list\n@JSONSchema",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"ns-admin\"",
+                        "\"ns-test1\"]"
+                    ]
                 },
                 "owner": {
                     "type": "string",

@@ -40,8 +40,10 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 				StartTime: time.Now().Add(-24 * time.Hour * 30),
 				EndTime:   time.Now(),
 			},
-			Auth: &helper.Auth{
-				Owner: "xxx",
+			AuthBase: helper.AuthBase{
+				Auth: &helper.Auth{
+					Owner: "5uxfy8jl",
+				},
 			},
 		},
 		Namespace: "ns-xxx",
@@ -103,8 +105,10 @@ func TestMongoDB_GetCostAppList(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: &helper.Auth{
-			Owner: "5uxfy8jl",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: "E1xAJ0fy4k",
+			},
 		},
 		//Namespace: "ns-hwhbg4vf",
 		//AppType: "APP-STORE",
@@ -140,8 +144,10 @@ func TestMongoDB_GetCostOverview(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: &helper.Auth{
-			Owner: "5uxfy8jl",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: "E1xAJ0fy4k",
+			},
 		},
 		//Namespace: "ns-hwhbg4vf",
 		//AppType: "APP",
@@ -332,8 +338,10 @@ func TestMongoDB_GetBasicCostDistribution(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: &helper.Auth{
-			Owner: "5uxfy8jl",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: "5uxfy8jl",
+			},
 		},
 		//Namespace: "ns-hwhbg4vf",
 		AppType: "APP-STORE",
@@ -363,8 +371,10 @@ func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: &helper.Auth{
-			Owner: "5uxfy8jl",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: "5uxfy8jl",
+			},
 		},
 		//Namespace: "ns-hwhbg4vf",
 		//AppType: "APP-STORE",
@@ -395,8 +405,10 @@ func TestMongoDB_GetConsumptionAmount(t *testing.T) {
 		}
 	}()
 	req := helper.GetCostAppListReq{
-		Auth: &helper.Auth{
-			Owner: "uy771xun",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: "5uxfy8jl",
+			},
 		},
 		Namespace: "ns-uy771xun",
 		AppType:   "APP-STORE",
@@ -421,8 +433,10 @@ func TestMongoDB_GetConsumptionAmount(t *testing.T) {
 	}
 	t.Logf("amountAll: %v", amountAll)
 	amount2, err := m.GetConsumptionAmount(helper.ConsumptionRecordReq{
-		Auth: &helper.Auth{
-			Owner: req.Owner,
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: req.Owner,
+			},
 		},
 		TimeRange: helper.TimeRange{
 			StartTime: req.StartTime,
@@ -456,8 +470,10 @@ func TestMongoDB_GetAppCost1(t *testing.T) {
 				StartTime: time.Now().Add(-24 * time.Hour * 30),
 				EndTime:   time.Now(),
 			},
-			Auth: &helper.Auth{
-				Owner: "uy771xun",
+			AuthBase: helper.AuthBase{
+				Auth: &helper.Auth{
+					Owner: "5uxfy8jl",
+				},
 			},
 		},
 		//Namespace: "ns-hwhbg4vf",
@@ -524,9 +540,11 @@ func TestAccount_ApplyInvoice(t *testing.T) {
 		}
 	}()
 	req := &helper.ApplyInvoiceReq{
-		Auth: &helper.Auth{
-			Owner:  "uy771xun",
-			UserID: "Vobqe43JUs",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner:  "5uxfy8jl",
+				UserID: "Vobqe43JUs",
+			},
 		},
 		PaymentIDList: []string{
 			"vrCBsLt1oIf0",
@@ -543,9 +561,11 @@ func TestAccount_ApplyInvoice(t *testing.T) {
 	t.Logf("success to apply invoice")
 
 	invoice, resp, err := m.GetInvoice(&helper.GetInvoiceReq{
-		Auth: &helper.Auth{
-			Owner:  "uy771xun",
-			UserID: "Vobqe43JUs",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner:  "E1xAJ0fy4k",
+				UserID: "",
+			},
 		},
 		LimitReq: helper.LimitReq{
 			Page:     1,
@@ -589,8 +609,10 @@ func TestAccount_UseGiftCode(t *testing.T) {
 
 	giftcode, err := db.UseGiftCode(&helper.UseGiftCodeReq{
 		Code: "DfxAffaeEf",
-		Auth: &helper.Auth{
-			UserID: "E1xAJ0fy4k",
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				Owner: "E1xAJ0fy4k",
+			},
 		},
 	})
 
@@ -607,4 +629,20 @@ func init() {
 	os.Setenv("GLOBAL_COCKROACH_URI", "")
 	os.Setenv("LOCAL_COCKROACH_URI", "")
 	os.Setenv("LOCAL_REGION", "")
+}
+
+func TestMongoDB_GetMonitorUniqueValues(t *testing.T) {
+	db, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+	monitors, err := db.GetMonitorUniqueValues(time.Now().UTC().Add(-2*time.Minute), time.Now().UTC(), []string{"ns-ufbih5nx", "ns-fb3qejql", "ns-pvq1d3ri", "ns-cyvisdnk"})
+	if err != nil {
+		t.Fatalf("GetMonitorUniqueValues() error = %v", err)
+		return
+	}
+	for _, monitor := range monitors {
+		t.Logf("monitor = %+v\n", monitor)
+	}
 }

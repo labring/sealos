@@ -26,6 +26,7 @@ const (
 	SetStatusInvoice         = "/invoice/set-status"
 	GetInvoicePayment        = "/invoice/get-payment"
 	UseGiftCode              = "/gift-code/use"
+	UserUsage                = "/user-usage"
 )
 
 // env
@@ -35,4 +36,5 @@ const (
 	ENVGlobalCockroach = "GLOBAL_COCKROACH_URI"
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
 	EnvLocalRegion     = "LOCAL_REGION"
+	EnvJwtSecret       = "ACCOUNT_API_JWT_SECRET"
 )
