@@ -33,8 +33,7 @@ export const useConfirm = ({
   const cancelRef = useRef(null)
   const confirmCb = useRef<any>()
   const cancelCb = useRef<any>()
-
-  const [isChecked, setIsChecked] = useState(false)
+  const isCheckedRef = useRef(false)
 
   return {
     openConfirm: useCallback(
@@ -43,7 +42,7 @@ export const useConfirm = ({
           onOpen()
           confirmCb.current = confirm
           cancelCb.current = cancel
-          setIsChecked(false)
+          isCheckedRef.current = false
         }
       },
       [onOpen]
@@ -62,8 +61,8 @@ export const useConfirm = ({
                 <Box mt={'12px'}>
                   {showCheckbox && (
                     <Checkbox
-                      isChecked={isChecked}
-                      onChange={(e) => setIsChecked(e.target.checked)}>
+                      isChecked={isCheckedRef.current}
+                      onChange={(e) => (isCheckedRef.current = e.target.checked)}>
                       {t(checkboxLabel)}
                     </Checkbox>
                   )}
@@ -85,7 +84,8 @@ export const useConfirm = ({
                   onClick={() => {
                     onClose()
                     if (showCheckbox) {
-                      typeof confirmCb.current === 'function' && confirmCb.current(isChecked)
+                      typeof confirmCb.current === 'function' &&
+                        confirmCb.current(isCheckedRef.current)
                     } else {
                       typeof confirmCb.current === 'function' && confirmCb.current()
                     }
