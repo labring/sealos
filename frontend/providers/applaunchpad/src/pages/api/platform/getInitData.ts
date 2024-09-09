@@ -76,6 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const gpuNodes = await getGpuNode();
       global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;
     }
+
     jsonRes<Response>(res, {
       data: {
         SEALOS_DOMAIN: global.AppConfig.cloud.domain,
@@ -86,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
         CURRENCY: Coin.shellCoin,
-        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain
+        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain || []
       }
     });
   } catch (error) {
