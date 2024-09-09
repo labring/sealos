@@ -236,7 +236,6 @@ export const patchYamlList = ({
       if (actionsJson.kind === YamlKindEnum.Service) {
         // @ts-ignore
         const ports = actionsJson?.spec.ports || []
-        console.log(ports)
 
         // @ts-ignore
         if (ports.length > 1 && !ports[0]?.name) {
@@ -244,8 +243,6 @@ export const patchYamlList = ({
           actionsJson.spec.ports[0].name = 'adaptport'
         }
       }
-
-      console.log('patch result:', oldFormJson.metadata?.name, oldFormJson.kind, actionsJson)
 
       actions.push({
         type: 'patch',

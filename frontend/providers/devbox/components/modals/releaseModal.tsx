@@ -58,7 +58,6 @@ const ReleaseModal = ({
 
   const handleReleaseDevbox = useCallback(
     async (enableRestartMachine: boolean) => {
-      console.log('enableRestartMachine', enableRestartMachine)
       try {
         setLoading(true)
         if (devbox.status.value === 'Running') {

@@ -214,7 +214,6 @@ const DevboxCreatePage = () => {
           devboxName: formData.name
         })
       } else {
-        console.log('runtimeNamespaceMap', runtimeNamespaceMap)
         await createDevbox({ devboxForm: formData, runtimeNamespaceMap })
       }
       toast({

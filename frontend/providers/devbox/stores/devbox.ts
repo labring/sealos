@@ -50,8 +50,6 @@ export const useDevboxStore = create<State>()(
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
 
-        console.log(detail)
-
         set((state) => {
           state.devboxDetail = detail
         })
