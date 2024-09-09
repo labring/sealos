@@ -118,7 +118,7 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 		return err
 	}
 	logger.Info("Tagging image", "host", hostName, "image", imageName, "oldTag", oldTag, "newTag", devboxRelease.Spec.NewTag)
-	devboxRelease.Status.OriginalImage = imageName + oldTag
+	devboxRelease.Status.OriginalImage = imageName + ":" + oldTag
 	if err = r.Status().Update(ctx, devboxRelease); err != nil {
 		logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
 		return err
