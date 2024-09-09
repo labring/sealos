@@ -147,7 +147,7 @@ const DevboxList = ({
         `${userName}@${SEALOS_DOMAIN}`
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
-      )}&sshHostLabel=${encodeURIComponent(`${SEALOS_DOMAIN}_${NAMESPACE}_${devbox.name}`)}`
+      )}&sshHostLabel=${encodeURIComponent(`${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`)}`
 
       window.location.href = vscodeUri
     } catch (error: any) {
