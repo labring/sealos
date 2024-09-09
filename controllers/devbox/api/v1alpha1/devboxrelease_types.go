@@ -50,6 +50,8 @@ type DevBoxReleaseStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=Pending
 	Phase DevboxReleasePhase `json:"phase"`
+	// +kubebuilder:validation:Optional
+	OldTag string `json:"oldTag"`
 }
 
 // +kubebuilder:object:root=true
