@@ -28,7 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           workspaceUid: ns_uid,
           userCrUid: payload.userCrUid
         },
-        isPrivate: false,
         status: JoinStatus.INVITED
       },
       include: {

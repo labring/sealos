@@ -34,6 +34,7 @@ import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/n
 import { useTranslation } from 'next-i18next';
 import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
 import NsListItem from '@/components/team/NsListItem';
+import RenameTeam from './RenameTeam';
 
 export default function TeamCenter(props: StackProps) {
   const session = useSessionStore((s) => s.session);
@@ -69,7 +70,7 @@ export default function TeamCenter(props: StackProps) {
   const users: TeamUserDto[] = [...(data?.data?.users || [])];
   const curTeamUser = users.find((user) => user.crUid === userCrUid);
   const namespace = data?.data?.namespace;
-  const isTeam = namespace?.nstype === NSType.Team;
+  const isPrivate = namespace?.nstype === NSType.Private;
   // inviting message list
   const reciveMessage = useQuery({
     queryKey: ['teamRecive', 'teamGroup'],
@@ -85,7 +86,7 @@ export default function TeamCenter(props: StackProps) {
       return data.data?.namespaces;
     }
   });
-  const namespaces = _namespaces?.filter((ns) => ns.nstype !== NSType.Private) || [];
+  const namespaces = _namespaces || [];
   useEffect(() => {
     const defaultNamespace =
       namespaces?.length > 0
@@ -209,22 +210,33 @@ export default function TeamCenter(props: StackProps) {
                 <>
                   <Box px="16px" pb="20px">
                     <Box mx="10px">
-                      <Flex align={'center'}>
+                      <Flex align={'center'} justifyContent={'space-between'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                          {namespace.teamName}
+                          {isPrivate
+                            ? `${t('common:default_team')} - ${namespace.teamName}`
+                            : namespace.teamName}
                         </Text>
-                        {isTeam && curTeamUser?.role === UserRole.Owner && (
-                          <DissolveTeam
-                            ml="auto"
-                            nsid={nsid}
-                            ns_uid={ns_uid}
-                            onSuccess={(delete_ns_uid) => {
-                              if (delete_ns_uid === ns_uid) {
-                                setNs_uid('');
-                                setNsid('');
-                              }
-                            }}
-                          />
+                        {curTeamUser?.role === UserRole.Owner && (
+                          <HStack>
+                            <RenameTeam
+                              ml="auto"
+                              ns_uid={ns_uid}
+                              defaultTeamName={namespace.teamName}
+                            />
+                            {!isPrivate && (
+                              <DissolveTeam
+                                ml="auto"
+                                nsid={nsid}
+                                ns_uid={ns_uid}
+                                onSuccess={(delete_ns_uid) => {
+                                  if (delete_ns_uid === ns_uid) {
+                                    setNs_uid('');
+                                    setNsid('');
+                                  }
+                                }}
+                              />
+                            )}
+                          </HStack>
                         )}
                       </Flex>
                       <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
@@ -272,19 +284,25 @@ export default function TeamCenter(props: StackProps) {
                       >
                         {users.length}
                       </Flex>
-                      {isTeam &&
-                        curTeamUser &&
+                      {curTeamUser &&
                         [UserRole.Owner, UserRole.Manager].includes(curTeamUser.role) && (
                           <InviteMember
                             ownRole={curTeamUser?.role ?? UserRole.Developer}
                             ns_uid={ns_uid}
-                            workspaceName={namespace.teamName}
+                            workspaceName={
+                              isPrivate ? t('common:default_team') : namespace.teamName
+                            }
                             ml="auto"
                           />
                         )}
                     </Flex>
                     <Box h="250px" overflow={'scroll'}>
-                      <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />
+                      <UserTable
+                        users={users}
+                        ns_uid={ns_uid}
+                        nsid={nsid}
+                        canAbdicate={!isPrivate}
+                      />
                     </Box>
                   </Stack>
                 </>

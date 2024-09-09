@@ -78,6 +78,9 @@ export const _switchRequest = (request: AxiosInstance) => (ns_uid: string) =>
   request.post<any, ApiResp<{ token: string; appToken: string }>>('/api/auth/namespace/switch', {
     ns_uid
   });
+export const _renameRequest =
+  (request: AxiosInstance) => (data: { ns_uid: string; teamName: string }) =>
+    request.post<any, ApiResp<null>>('/api/auth/namespace/rename', data);
 // for prod/dev
 export const abdicateRequest = _abdicateRequest(request);
 export const createRequest = _createRequest(request);
@@ -93,3 +96,4 @@ export const switchRequest = _switchRequest(request);
 export const getInviteCodeRequest = _getInviteCodeRequest(request);
 export const getInviteCodeInfoRequest = _getInviteCodeInfoRequest(request);
 export const verifyInviteCodeRequest = _verifyInviteCodeRequest(request);
+export const renameRequest = _renameRequest(request);

@@ -135,22 +135,37 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 		"rolebinding.roleRef", rolebinding.RoleRef,
 	)
 
+	user := &userv1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Namespace)}, user); err != nil {
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get user", "Failed to get user %s", request.Spec.User)
+		return ctrl.Result{}, err
+	}
+	if request.Spec.Role == userv1.OwnerRoleType {
+		if user.Name == user.Annotations[userv1.UserAnnotationOwnerKey] {
+			// 不允许转移个人空间
+			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to grant role", "Failed to grant role %s to user %s, cannot transfer personal workspace", request.Spec.Role, request.Spec.User)
+			return ctrl.Result{}, r.updateRequestStatus(ctx, request, userv1.RequestFailed)
+		}
+	}
+	bindUser := &userv1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Name: request.Spec.User}, bindUser); err != nil {
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get bind user", "Failed to get bind user %s", request.Spec.User)
+		return ctrl.Result{}, err
+	}
+	setUpOwnerReferenceFc := func() error {
+		return ctrl.SetControllerReference(bindUser, rolebinding, r.Scheme)
+	}
+
 	// handle OperationRequest, create or delete rolebinding
 	switch request.Spec.Action {
 	case userv1.Grant:
 		r.Recorder.Eventf(request, v1.EventTypeNormal, "Grant", "Grant role %s to user %s", request.Spec.Role, request.Spec.User)
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, func() error { return nil }); err != nil {
+		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, setUpOwnerReferenceFc); err != nil {
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
 		if request.Spec.Role == userv1.OwnerRoleType {
 			// update user annotation
-			user := &userv1.User{}
-			if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Namespace)}, user); err != nil {
-				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get user", "Failed to get user %s", request.Spec.User)
-				return ctrl.Result{}, err
-			}
-
 			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
 			if err := r.Update(ctx, user); err != nil {
 				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update user", "Failed to update user %s", request.Spec.User)
@@ -169,18 +184,12 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete rolebinding", "Failed to delete rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, func() error { return nil }); err != nil {
+		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, setUpOwnerReferenceFc); err != nil {
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
 		if request.Spec.Role == userv1.OwnerRoleType {
 			// update user annotation
-			user := &userv1.User{}
-			if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Namespace)}, user); err != nil {
-				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get user", "Failed to get user %s", request.Spec.User)
-				return ctrl.Result{}, err
-			}
-
 			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
 			if err := r.Update(ctx, user); err != nil {
 				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update user", "Failed to update user %s", request.Spec.User)
@@ -260,7 +269,7 @@ func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleB
 			{
 				Kind:      rbacv1.ServiceAccountKind,
 				Name:      request.Spec.User,
-				Namespace: config.GetUsersNamespace(request.Spec.User),
+				Namespace: config.GetUserSystemNamespace(),
 			},
 		},
 		RoleRef: rbacv1.RoleRef{

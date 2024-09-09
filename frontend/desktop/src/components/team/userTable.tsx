@@ -23,14 +23,14 @@ import { useConfigStore } from '@/stores/config';
 
 export default function UserTable({
   users = [],
-  isTeam,
   ns_uid,
-  nsid
+  nsid,
+  canAbdicate
 }: {
   users: TeamUserDto[];
-  isTeam: boolean;
   ns_uid: string;
   nsid: string;
+  canAbdicate: boolean;
 }) {
   const { t } = useTranslation();
   const headList = [
@@ -115,22 +115,23 @@ export default function UserTable({
                 {status[user.status]}
               </Td>
               <Td py="5px">
-                {isTeam &&
-                  (userCrUid &&
-                  canManage(user.role, user.crUid === userCrUid) &&
-                  otherWorkspaceUsers.length !== 0 ? (
-                    user.role === UserRole.Owner ? (
+                {userCrUid &&
+                canManage(user.role, user.crUid === userCrUid) &&
+                otherWorkspaceUsers.length !== 0 ? (
+                  user.role === UserRole.Owner ? (
+                    canAbdicate ? (
                       <Abdication ns_uid={ns_uid} users={otherWorkspaceUsers} />
-                    ) : userCrUid !== user.uid ? (
-                      <RemoveMember
-                        nsid={nsid}
-                        ns_uid={ns_uid}
-                        status={user.status}
-                        k8s_username={user.k8s_username}
-                        targetUserCrUid={user.crUid}
-                      />
                     ) : null
-                  ) : null)}
+                  ) : userCrUid !== user.uid ? (
+                    <RemoveMember
+                      nsid={nsid}
+                      ns_uid={ns_uid}
+                      status={user.status}
+                      k8s_username={user.k8s_username}
+                      targetUserCrUid={user.crUid}
+                    />
+                  ) : null
+                ) : null}
               </Td>
             </Tr>
           ))}

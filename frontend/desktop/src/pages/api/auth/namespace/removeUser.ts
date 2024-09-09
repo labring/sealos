@@ -24,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const queryResults = await prisma.userWorkspace.findMany({
       where: {
         workspaceUid: ns_uid,
-        isPrivate: false,
         userCrUid: {
           in: [payload.userCrUid, targetUserCrUid]
         }
