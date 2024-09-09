@@ -18,7 +18,7 @@ import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
-import { SEALOS_DOMAIN } from '@/stores/static'
+import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import { useGlobalStore } from '@/stores/global'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
@@ -147,7 +147,7 @@ const DevboxList = ({
         `${userName}@${SEALOS_DOMAIN}`
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
-      )}`
+      )}&sshHostLabel=${encodeURIComponent(`${SEALOS_DOMAIN}_${NAMESPACE}_${devbox.name}`)}`
 
       window.location.href = vscodeUri
     } catch (error: any) {
