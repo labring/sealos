@@ -2807,7 +2807,20 @@ spec:
     singular: devboxrelease
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.devboxNamåe
+      name: DevboxName
+      type: string
+    - jsonPath: .spec.newTag
+      name: NewTag
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.originalImage
+      name: OriginalImage
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DevBoxRelease is the Schema for the devboxreleases API
