@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect } from 'react'
 import NProgress from 'nprogress'
 
@@ -6,7 +8,7 @@ import { useGlobalStore } from '@/stores/global'
 
 import 'nprogress/nprogress.css'
 
-export const RouteHandlerProvider = ({ children }: { children: React.ReactNode }) => {
+const RouteHandlerProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
   const { setLastRoute } = useGlobalStore()
 
@@ -35,3 +37,5 @@ export const RouteHandlerProvider = ({ children }: { children: React.ReactNode }
 
   return <div>{children}</div>
 }
+
+export default RouteHandlerProvider

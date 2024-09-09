@@ -1,7 +1,7 @@
 import { Inter } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
 
-import { IntlProvider } from '@/components/providers/IntlProvider'
+import IntlProvider from '@/components/providers/IntlProvider'
 
 import './globals.css'
 

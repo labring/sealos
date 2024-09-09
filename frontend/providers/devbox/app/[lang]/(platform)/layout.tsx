@@ -16,9 +16,9 @@ import {
   getUserPrice,
   SEALOS_DOMAIN
 } from '@/stores/static'
-import { QueryProvider } from '@/components/providers/QueryProvider'
-import { ChakraProvider } from '@/components/providers/ChakraProvider'
-import { RouteHandlerProvider } from '@/components/providers/RouteHandlerProvider'
+import QueryProvider from '@/components/providers/QueryProvider'
+import ChakraProvider from '@/components/providers/ChakraProvider'
+import RouteHandlerProvider from '@/components/providers/RouteHandlerProvider'
 import { getLangStore, setLangStore } from '@/utils/cookie'
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
