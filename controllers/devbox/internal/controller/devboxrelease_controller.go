@@ -113,12 +113,12 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 	if err := r.Get(ctx, devboxInfo, devbox); err != nil {
 		return err
 	}
-	hostName, imageName, oldTag, err := r.GetHostAndImageAndTag(devbox)
+	hostName, imageName, oldTag, err := r.GetRegistryInfo(devbox)
 	if err != nil {
 		return err
 	}
 	logger.Info("Tagging image", "host", hostName, "image", imageName, "oldTag", oldTag, "newTag", devboxRelease.Spec.NewTag)
-	devboxRelease.Status.OldTag = oldTag
+	devboxRelease.Status.OriginalImage = imageName + oldTag
 	if err = r.Status().Update(ctx, devboxRelease); err != nil {
 		logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
 		return err
@@ -131,7 +131,7 @@ func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv
 	return nil
 }
 
-func (r *DevBoxReleaseReconciler) GetHostAndImageAndTag(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
+func (r *DevBoxReleaseReconciler) GetRegistryInfo(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
 	if len(devbox.Status.CommitHistory) == 0 {
 		return "", "", "", fmt.Errorf("commit history is empty")
 	}
