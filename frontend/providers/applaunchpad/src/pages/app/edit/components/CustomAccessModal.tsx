@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   Box,
   ModalBody,
@@ -15,7 +15,6 @@ import {
   ModalHeader
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { SEALOS_DOMAIN } from '@/store/static';
 import { Tip } from '@sealos/ui';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useRequest } from '@/hooks/useRequest';
@@ -24,11 +23,13 @@ import { postAuthCname } from '@/api/platform';
 export type CustomAccessModalParams = {
   publicDomain: string;
   customDomain: string;
+  domain: string;
 };
 
 const CustomAccessModal = ({
   publicDomain,
   customDomain,
+  domain,
   onClose,
   onSuccess
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
@@ -41,7 +42,7 @@ const CustomAccessModal = ({
     mb: 2
   };
 
-  const completePublicDomain = useMemo(() => `${publicDomain}.${SEALOS_DOMAIN}`, [publicDomain]);
+  const completePublicDomain = useMemo(() => `${publicDomain}.${domain}`, [publicDomain, domain]);
 
   const { mutate: authCNAME, isLoading } = useRequest({
     mutationFn: async () => {

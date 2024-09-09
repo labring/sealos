@@ -5,7 +5,7 @@ import { defaultSliderKey, ProtocolList } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN, SEALOS_USER_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
@@ -802,7 +802,8 @@ const Form = ({
                               protocol: 'HTTP',
                               openPublicDomain: false,
                               publicDomain: '',
-                              customDomain: ''
+                              customDomain: '',
+                              domain: SEALOS_USER_DOMAIN[0] ?? SEALOS_DOMAIN
                             })
                           }
                         >
@@ -867,7 +868,7 @@ const Form = ({
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
                               {network.customDomain
                                 ? network.customDomain
-                                : `${network.publicDomain}.${SEALOS_DOMAIN}`}
+                                : `${network.publicDomain}.${network.domain}`}
                             </Box>
                             <Box
                               fontSize={'11px'}
@@ -876,7 +877,8 @@ const Form = ({
                               onClick={() =>
                                 setCustomAccessModalData({
                                   publicDomain: network.publicDomain,
-                                  customDomain: network.customDomain
+                                  customDomain: network.customDomain,
+                                  domain: network.domain
                                 })
                               }
                             >

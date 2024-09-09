@@ -7,7 +7,7 @@ import {
   minReplicasKey,
   publicDomainKey
 } from '@/constants/app';
-import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/store/static';
+import { INGRESS_SECRET, SEALOS_DOMAIN, SEALOS_USER_DOMAIN } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
@@ -270,9 +270,11 @@ export const json2Ingress = (data: AppEditType) => {
   const result = data.networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
+      console.log(network, 'network');
+
       const host = network.customDomain
         ? network.customDomain
-        : `${network.publicDomain}.${SEALOS_DOMAIN}`;
+        : `${network.publicDomain}.${network.domain}`;
 
       const secretName = network.customDomain ? network.networkName : INGRESS_SECRET;
 

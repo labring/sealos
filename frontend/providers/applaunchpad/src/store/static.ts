@@ -2,6 +2,7 @@ import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
+export let SEALOS_USER_DOMAIN = ['cloud.sealos.io'];
 export let DOMAIN_PORT = '';
 export let INGRESS_SECRET = 'wildcard-cert';
 export let SHOW_EVENT_ANALYZE = false;
@@ -13,6 +14,7 @@ export const loadInitData = async () => {
   try {
     const res = await getInitData();
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
+    SEALOS_USER_DOMAIN = res.SEALOS_USER_DOMAIN;
     DOMAIN_PORT = res.DOMAIN_PORT;
     INGRESS_SECRET = res.INGRESS_SECRET;
     SHOW_EVENT_ANALYZE = res.SHOW_EVENT_ANALYZE;
