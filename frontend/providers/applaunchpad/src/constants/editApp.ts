@@ -40,7 +40,7 @@ export const defaultEditVal: AppEditType = {
       openPublicDomain: false,
       publicDomain: '',
       customDomain: '',
-      domain: SEALOS_USER_DOMAIN[0] || SEALOS_DOMAIN
+      domain: ''
     }
   ],
   envs: [],

@@ -827,7 +827,8 @@ const Form = ({
                             networkName: network.networkName || `network-${nanoid()}`,
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
-                            publicDomain: network.publicDomain || nanoid()
+                            publicDomain: network.publicDomain || nanoid(),
+                            domain: network.domain || SEALOS_USER_DOMAIN[0] || SEALOS_DOMAIN
                           });
                         }}
                       />
