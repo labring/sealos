@@ -316,8 +316,6 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
           !domain.endsWith(SEALOS_DOMAIN) &&
           !SEALOS_USER_DOMAIN.some((user) => domain.endsWith(user));
 
-        console.log(domain, domain.split('.'), isCustomDomain, SEALOS_DOMAIN, SEALOS_USER_DOMAIN);
-
         return {
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',

@@ -270,8 +270,6 @@ export const json2Ingress = (data: AppEditType) => {
   const result = data.networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
-      console.log(network, 'network');
-
       const host = network.customDomain
         ? network.customDomain
         : `${network.publicDomain}.${network.domain}`;
