@@ -70,7 +70,7 @@
   "name": "名字",
   "no_versions": "还没有版本，请先发布一个版本",
   "nodeports": "公网端口",
-  "nodeports_exceeds_quota": "申请的 NodePort 超出限制，请联系管理员",
+  "nodeports_exceeds_quota": "创建的 devbox 数量超出限制，请联系管理员",
   "not_allow_standalone_use": "不允许独立使用",
   "online": "上线",
   "open_vscode": "VS Code",

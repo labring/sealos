@@ -117,7 +117,7 @@
   "version_number": "Tag",
   "vscode_tooltip": "Click to develop in VSCode",
   "yaml_file": "YAML",
-  "nodeports_exceeds_quota": "NodePort requested exceeds quota. Contact admin.",
+  "nodeports_exceeds_quota": "The number of devbox created exceeds the limit, please contact the administrator",
   "nodeports": "NodePorts",
   "pause_devbox_info": "Automatically start the machine after released"
 }

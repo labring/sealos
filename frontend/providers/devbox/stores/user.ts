@@ -10,7 +10,10 @@ type State = {
   balance: number
   userQuota: UserQuotaItemType[]
   loadUserQuota: () => Promise<null>
-  checkQuotaAllow: (request: DevboxEditType, usedData?: DevboxEditType) => string | undefined
+  checkQuotaAllow: (
+    request: DevboxEditType & { nodeports: number },
+    usedData?: DevboxEditType & { nodeports: number }
+  ) => string | undefined
 }
 
 export const useUserStore = create<State>()(
@@ -26,12 +29,8 @@ export const useUserStore = create<State>()(
         })
         return null
       },
-      checkQuotaAllow: ({ cpu, memory, networks }, usedData): string | undefined => {
+      checkQuotaAllow: ({ cpu, memory, nodeports }, usedData): string | undefined => {
         const quote = get().userQuota
-
-        const nodeports = networks.reduce((count, network) => {
-          return network.openPublicDomain ? count + 1 : count
-        }, 0)
 
         const request = {
           cpu: cpu / 1000,
@@ -40,14 +39,11 @@ export const useUserStore = create<State>()(
         }
 
         if (usedData) {
-          const { cpu, memory, networks } = usedData
-          const usedNodeports = networks.reduce((count, network) => {
-            return network.openPublicDomain ? count + 1 : count
-          }, 0)
+          const { cpu, memory, nodeports } = usedData
 
           request.cpu -= cpu / 1000
           request.memory -= memory / 1024
-          request.nodeports -= usedNodeports
+          request.nodeports -= nodeports
         }
 
         const overLimitTip: { [key: string]: string } = {

@@ -62,7 +62,7 @@ const DevboxCreatePage = () => {
   const formOldYamls = useRef<YamlItemType[]>([])
   const oldDevboxEditData = useRef<DevboxEditType>()
   const { checkQuotaAllow } = useUserStore()
-  const { setDevboxDetail } = useDevboxStore()
+  const { setDevboxDetail, devboxList } = useDevboxStore()
   const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
@@ -178,7 +178,12 @@ const DevboxCreatePage = () => {
 
     try {
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData, oldDevboxEditData.current)
+      const quoteCheckRes = checkQuotaAllow(
+        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & { nodeports: number },
+        { ...oldDevboxEditData.current, nodeports: devboxList.length } as DevboxEditType & {
+          nodeports: number
+        }
+      )
       if (quoteCheckRes) {
         setIsLoading(false)
         return toast({

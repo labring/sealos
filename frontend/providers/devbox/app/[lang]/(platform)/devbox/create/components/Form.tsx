@@ -41,6 +41,7 @@ import { ProtocolList } from '@/constants/devbox'
 import type { DevboxEditType } from '@/types/devbox'
 import { getValueDefault, obj2Query } from '@/utils/tools'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
+import { useDevboxStore } from '@/stores/devbox'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
@@ -95,6 +96,7 @@ const Form = ({
   ]
   const { message: toast } = useMessage()
   const [activeNav, setActiveNav] = useState(navList[0].id)
+  const { devboxList } = useDevboxStore()
 
   // listen scroll and set activeNav
   useEffect(() => {
@@ -241,9 +243,7 @@ const Form = ({
                   {
                     cpu: getValues('cpu'),
                     memory: getValues('memory'),
-                    nodeports: getValues('networks').reduce((acc, network) => {
-                      return network.openPublicDomain ? acc + 1 : acc
-                    }, 0)
+                    nodeports: devboxList.length
                   }
                 ]}
               />
