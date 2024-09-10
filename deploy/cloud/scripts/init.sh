@@ -11,6 +11,7 @@ localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
+acmednsSecretPlaceholder="<acmedns-secret-placeholder>"
 saltKey=""
 
 function prepare {
@@ -154,6 +155,10 @@ function create_tls_secret {
     echo "mock tls secret"
     kubectl apply -f manifests/mock-cert.yaml
     echo "mock tls cert has been created successfully."
+  elif grep -q $acmednsSecretPlaceholder manifests/acme-cert.yaml; then
+    echo "acme tls secret"
+    kubectl apply -f manifests/acme-cert.yaml
+    echo "acme tls cert has been created successfully."
   else
     echo "tls secret is already set"
     kubectl apply -f manifests/tls-secret.yaml
