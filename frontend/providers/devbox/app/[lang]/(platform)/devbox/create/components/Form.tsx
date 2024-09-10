@@ -79,6 +79,7 @@ const Form = ({
     control,
     name: 'networks'
   })
+
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
   const navList: { id: string; label: string; icon: string }[] = [
     {

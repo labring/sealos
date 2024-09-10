@@ -23,14 +23,15 @@ import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { createDevbox, updateDevbox } from '@/api/devbox'
 import type { DevboxEditType, DevboxKindsType } from '@/types/devbox'
-import { defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
+import { LanguageTypeEnum, defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
-import { DEVBOX_AFFINITY_ENABLE, runtimeNamespaceMap } from '@/stores/static'
+import { DEVBOX_AFFINITY_ENABLE, languageVersionMap, runtimeNamespaceMap } from '@/stores/static'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
 const defaultEdit = {
-  ...defaultDevboxEditValue
+  ...defaultDevboxEditValue,
+  runtimeVersion: languageVersionMap[LanguageTypeEnum.go][0].id
 }
 
 const formData2Yamls = (data: DevboxEditType) => [
