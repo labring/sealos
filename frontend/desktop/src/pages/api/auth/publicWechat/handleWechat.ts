@@ -1,6 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { addOrUpdateWechatCode } from '@/services/backend/db/wechatCode';
 import crypto from 'crypto';
+import { NextApiRequest, NextApiResponse } from 'next';
 const xml2js = require('xml2js');
 
 type MessageType = 'event' | 'text' | 'image';
@@ -106,7 +106,6 @@ export function textMsg(message: WechatMessage, content: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.log(req.body, req.method, '===\n');
     if (req.method === 'GET') {
       const str = verifyWeChatRequest(req);
       return res.send(str);

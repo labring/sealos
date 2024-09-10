@@ -1,16 +1,25 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { verifyAccessToken } from '@/services/backend/auth';
+import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
-import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
-import { verifyAccessToken } from '@/services/backend/auth';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { globalPrisma } from '@/services/backend/db/init';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
+import { UserStatus } from 'prisma/global/generated/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
+    const user = await globalPrisma.user.findUnique({
+      where: {
+        uid: payload.userUid,
+        status: UserStatus.NORMAL_USER
+      }
+    });
+    if (!user) return jsonRes(res, { code: 401, message: 'user is locked' });
     const _kc = await getUserKubeconfigNotPatch(payload.userCrName);
     if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
     const realKc = switchKubeconfigNamespace(_kc, payload.workspaceId);

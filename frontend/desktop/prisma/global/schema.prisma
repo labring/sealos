@@ -97,6 +97,7 @@ model User {
   id                          String                     @unique
   name                        String                     @unique
   oauthProvider               OauthProvider[]
+  status                      UserStatus                 @default(NORMAL_USER)
   oldMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("oldUser")
   newMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("newUser")
   DeleteUserTransactionInfo   DeleteUserTransactionInfo?
@@ -315,4 +316,10 @@ enum AuditAction {
   UPDATE
   DELETE
   CREATE
+}
+
+enum UserStatus {
+  NORMAL_USER
+  LOCK_USER
+  DELETE_USER
 }

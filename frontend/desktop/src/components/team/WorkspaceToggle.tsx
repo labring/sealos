@@ -7,7 +7,7 @@ import { NSType } from '@/types/team';
 import { AccessTokenPayload } from '@/types/token';
 import { sessionConfig } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
-import { Box, Divider, HStack, Text, VStack, useDisclosure } from '@chakra-ui/react';
+import { Box, HStack, Text, VStack, useDisclosure } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
 import { useTranslation } from 'next-i18next';
@@ -49,12 +49,6 @@ export default function WorkspaceToggle() {
   const namespaces = data?.data?.namespaces || [];
   const namespace = namespaces.find((x) => x.uid === ns_uid);
 
-  const defaultNamespace = namespaces.find((x) => x.nstype === NSType.Private);
-
-  if (!namespace && defaultNamespace && namespaces.length > 0) {
-    // will be deleted
-    switchTeam({ uid: defaultNamespace.uid });
-  }
   return (
     <HStack position={'relative'} mt={'8px'}>
       <HStack

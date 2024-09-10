@@ -1,14 +1,11 @@
-import Account from '@/components/account';
 import Notification from '@/components/notification';
-import useSessionStore from '@/stores/session';
-import { Box, Center, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/react';
-import LangSelectSimple from '../LangSelect/simple';
-import Iconfont from '../iconfont';
-import GithubComponent from '../account/github';
-import { ReactElement, useCallback, useState } from 'react';
 import { useConfigStore } from '@/stores/config';
-import RegionToggle from '@/components/region/RegionToggle';
-import WorkspaceToggle from '@/components/team/WorkspaceToggle';
+import useSessionStore from '@/stores/session';
+import { Box, Center, Flex, FlexProps, useDisclosure } from '@chakra-ui/react';
+import { ReactElement, useCallback, useState } from 'react';
+import LangSelectSimple from '../LangSelect/simple';
+import GithubComponent from '../account/github';
+import Iconfont from '../iconfont';
 
 enum UserMenuKeys {
   LangSelect,
@@ -54,21 +51,6 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
       click: () => showDisclosure.onOpen(),
       content: <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
     }
-    // {
-    //   key: UserMenuKeys.Account,
-    //   button: (
-    //     <Image
-    //       width={'36px'}
-    //       height={'36px'}
-    //       borderRadius="full"
-    //       src={userInfo?.user?.avatar || ''}
-    //       fallbackSrc={layoutConfig?.logo}
-    //       alt="user avator"
-    //     />
-    //   ),
-    //   click: () => accountDisclosure.onOpen(),
-    //   content: <Account disclosure={accountDisclosure} key={'avatar'} />
-    // }
   ];
   return (
     <Flex {...userMenuStyleProps}>

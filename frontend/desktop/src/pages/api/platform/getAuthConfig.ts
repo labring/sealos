@@ -1,13 +1,13 @@
 import { jsonRes } from '@/services/backend/response';
 import {
   AppConfigType,
-  DefaultAuthClientConfig,
+  AuthClientConfigType,
   AuthConfigType,
-  AuthClientConfigType
+  DefaultAuthClientConfig
 } from '@/types/system';
 import { readFileSync } from 'fs';
-import type { NextApiRequest, NextApiResponse } from 'next';
 import yaml from 'js-yaml';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const config = await getAuthClientConfig();
@@ -53,7 +53,8 @@ function genResAuthClientConfig(conf: AuthConfigType) {
       }
     },
     proxyAddress: conf.proxyAddress || '',
-    hasBaiduToken: !!conf.baiduToken
+    hasBaiduToken: !!conf.baiduToken,
+    billingToken: ''
   };
   return authClientConfig;
 }

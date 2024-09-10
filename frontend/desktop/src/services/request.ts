@@ -47,7 +47,7 @@ request.interceptors.response.use(
 
     const apiResp = data as ApiResp;
     if (apiResp?.code && (apiResp.code < 200 || apiResp.code >= 300)) {
-      return Promise.reject({ code: apiResp.code, message: apiResp.message });
+      return Promise.reject({ code: apiResp.code, message: apiResp.message, data: apiResp.data });
     }
 
     return data;

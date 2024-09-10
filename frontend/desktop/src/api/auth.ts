@@ -1,16 +1,18 @@
-import request from '@/services/request';
-import { OauthProvider, TUserExist } from '@/types/user';
-import { ApiResp, Region } from '@/types';
-import { AxiosHeaders, AxiosHeaderValue, type AxiosInstance } from 'axios';
-import useSessionStore from '@/stores/session';
-import { ProviderType } from 'prisma/global/generated/client';
-import { ValueOf } from '@/types/tools';
 import { SmsType } from '@/services/backend/db/verifyCode';
-import { USER_MERGE_STATUS } from '@/types/response/merge';
+import { RegionResourceType } from '@/services/backend/svc/checkResource';
+import request from '@/services/request';
+import useSessionStore from '@/stores/session';
+import { ApiResp, Region } from '@/types';
 import { BIND_STATUS } from '@/types/response/bind';
-import { UNBIND_STATUS } from '@/types/response/unbind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { DELETE_USER_STATUS } from '@/types/response/deleteUser';
+import { USER_MERGE_STATUS } from '@/types/response/merge';
+import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
+import { ValueOf } from '@/types/tools';
+import { TUserExist } from '@/types/user';
+import { type AxiosInstance } from 'axios';
+import { ProviderType } from 'prisma/global/generated/client';
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
@@ -147,10 +149,21 @@ export const _mergeUser =
 
 export const _deleteUser = (request: AxiosInstance) => () =>
   request<never, ApiResp<RESOURCE_STATUS>>('/api/auth/delete');
+export const _checkRemainResource = (request: AxiosInstance) => () =>
+  request<
+    never,
+    ApiResp<{ regionResourceList: RegionResourceType[]; code: string }>,
+    RESOURCE_STATUS
+  >('/api/auth/delete/checkAllResource');
 
+export const _forceDeleteUser = (request: AxiosInstance) => (data: { code: string }) =>
+  request.post<never, ApiResp<DELETE_USER_STATUS>>('/api/auth/delete/force', data);
 export const _realNameAuthRequest =
   (request: AxiosInstance) => (data: { name: string; phone?: string; idCard: string }) =>
     request.post<any, ApiResp<{ name: string }>>('/api/account/realNameAuth', data);
+
+export const _getAmount = (request: AxiosInstance) => () =>
+  request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
 
 export const passwordExistRequest = _passwordExistRequest(request);
 export const passwordLoginRequest = _passwordLoginRequest(request, (token) => {
@@ -173,5 +186,9 @@ export const unBindRequest = _oauthProviderUnbind(request);
 export const signInRequest = _oauthProviderSignIn(request);
 export const mergeUserRequest = _mergeUser(request);
 export const deleteUserRequest = _deleteUser(request);
+export const checkRemainResource = _checkRemainResource(request);
+export const forceDeleteUser = _forceDeleteUser(request);
 
 export const realNameAuthRequest = _realNameAuthRequest(request);
+
+export const getAmount = _getAmount(request);

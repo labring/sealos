@@ -1,6 +1,6 @@
 import { NextApiResponse } from 'next';
-import { jsonRes } from '../response';
 import { addOrUpdateCode, SmsType } from '../db/verifyCode';
+import { jsonRes } from '../response';
 import { emailSmsReq, smsReq } from '../sms';
 
 export const sendSmsCodeResp =
@@ -13,7 +13,6 @@ export const sendSmsCodeResp =
     });
   };
 export const sendPhoneCodeSvc = (phone: string) => async (res: NextApiResponse) => {
-  console.log('svc!');
   const code = await smsReq(phone);
   return sendSmsCodeResp('phone', phone, code)(res);
 };

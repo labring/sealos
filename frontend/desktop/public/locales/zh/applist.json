@@ -1,0 +1,12 @@
+{
+	"terminal": "终端",
+	"job": "任务",
+	"other": "其他",
+	"object-storage": "对象存储",
+	"cloud-vm": "云主机",
+	"db": "数据库",
+	"app": "应用",
+	"app-store": "应用商店",
+	"db-backup": "数据库备份",
+	"app_type": "应用类型"
+}
