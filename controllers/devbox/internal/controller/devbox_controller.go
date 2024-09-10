@@ -372,6 +372,16 @@ func commitSuccess(podStatus corev1.PodPhase) bool {
 
 func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
 	// Delete Pod
+	var podList corev1.PodList
+	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+		return err
+	}
+	for _, pod := range podList.Items {
+		pod.Finalizers = nil
+		if err := r.Update(ctx, &pod); err != nil {
+			return err
+		}
+	}
 	if err := r.deleteResourcesByLabels(ctx, &corev1.Pod{}, devbox.Namespace, recLabels); err != nil {
 		return err
 	}
