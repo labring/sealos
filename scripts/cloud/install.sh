@@ -74,7 +74,7 @@ PROMPTS_EN=(
     ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["enable_acme"]="Do you want to enable ACME to automatically obtain certificates (Press n to use the self-signed certificate provided by Sealos)? (y/n): "
     ["acmedns_registration_failed"]="ACME DNS registration failed. Please check if the acmedns-host: '${GREEN}%s${RESET}' is correct."
-    ["acme_cname_record"]="Please create a CNAME record for '${GREEN}_acme-challenge.%s${RESET}' pointing to '${GREEN}%s${RESET}'."
+    ["acme_cname_record"]="Please create a CNAME record for '${GREEN}_acme-challenge.%s${RESET}'\npointing to '${GREEN}%s${RESET}'."
     ["i_have_confirmed"]="I have confirmed (Enter to continue): "
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
@@ -143,7 +143,7 @@ PROMPTS_CN=(
     ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["enable_acme"]="是否启用 ACME 自动获取证书（输入 n 使用 Sealos 提供的自签证书）? (y/n): "
     ["acmedns_registration_failed"]="注册 ACME DNS 失败, 请检查 acmedns-host: '${GREEN}%s${RESET}' 是否正确."
-    ["acme_cname_record"]="请为 '${GREEN}_acme-challenge.%s${RESET}' 创建一条 CNAME 记录, 指向 '${GREEN}%s${RESET}'."
+    ["acme_cname_record"]="请为 '${GREEN}_acme-challenge.%s${RESET}' 创建一条 CNAME 记录\n指向 '${GREEN}%s${RESET}'."
     ["i_have_confirmed"]="我已确认（回车继续）："
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
