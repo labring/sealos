@@ -157,7 +157,12 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 		}
 		svc := region.AccountSvc
 		url := fmt.Sprintf("https://%s%s%s", svc, helper.GROUP, helper.GetConsumptionAmount)
-		body, err := json.Marshal(req)
+		body, err := json.Marshal(&helper.ConsumptionRecordReq{
+			TimeRange: req.TimeRange,
+			AppType:   req.AppType,
+			Namespace: req.Namespace,
+			AppName:   req.AppName,
+		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to marshal request: %v", err)})
 			return
@@ -172,7 +177,7 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			return
 		}
 		token, err := dao.JwtMgr.GenerateToken(helper.JwtUser{
-			UserUID: req.UserID,
+			UserID: req.GetAuth().UserID,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to generate token: %v", err)})
@@ -197,13 +202,17 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to unmarshal response body: %v", err)})
 			return
 		}
-		amount, ok := respData["amount"].(int64)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "amount is not an integer"})
+		if resp.StatusCode != http.StatusOK {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get response, status code: %d, msg: %s", resp.StatusCode, respData["error"])})
 			return
 		}
-		regionAmount[region.Domain] = amount
-		allAmount += amount
+		amountResp, ok := respData["amount"].(float64)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("amount is not an integer, is %T", respData["amount"])})
+			return
+		}
+		regionAmount[region.Domain] = int64(amountResp)
+		allAmount += int64(amountResp)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"regionAmount": regionAmount,
