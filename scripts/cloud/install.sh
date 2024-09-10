@@ -674,7 +674,7 @@ EOF
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
         --env acmednsSecret="$(echo $acmednsSecret | base64 -w0)"\
-        --env acmednsHost="$acmednsHost"
+        --env acmednsHost="$acmedns_host"
     else
         sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
@@ -760,5 +760,4 @@ execute_commands
 echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${cloud_version}${RESET}\nURL: ${GREEN}https://$cloud_domain${cloud_port:+:$cloud_port}${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
 if [[ $fulldomain != "" ]]; then
   printf "$(get_prompt "acme_cname_record")\n" "$cloud_domain" "$fulldomain"
-  read -p "$(get_prompt "i_have_confirmed")" confirm
 fi
