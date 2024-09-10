@@ -377,7 +377,7 @@ func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1
 		return err
 	}
 	for _, pod := range podList.Items {
-		pod.Finalizers = nil
+		controllerutil.RemoveFinalizer(&pod, FinalizerName)
 		if err := r.Update(ctx, &pod); err != nil {
 			return err
 		}
