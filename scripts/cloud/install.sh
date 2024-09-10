@@ -672,7 +672,7 @@ EOF
         --env cloudDomain="$cloud_domain"\
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
-        --env acmednsSecret="$acmednsSecret"\
+        --env acmednsSecret="$(echo $acmednsSecret | base64 -w0)"\
         --env acmednsHost="$acmednsHost"
     else
         sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\

@@ -2,7 +2,7 @@ apiVersion: v1
 stringData:
   acmedns.json: |
     {
-      "{{ .cloudDomain }}": {{ .acmednsSecret }}
+      "{{ .cloudDomain }}": {{ .acmednsSecret | base64.Decode }}
     }
 kind: Secret
 metadata:
