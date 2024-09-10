@@ -162,7 +162,11 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to marshal request: %v", err)})
 			return
 		}
-		req2, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: os.Getenv("INSECURE_VERIFY") != "true", MinVersion: tls.VersionTLS13},
+		}
+		client := &http.Client{Transport: tr}
+		req2, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create request: %v", err)})
 			return
@@ -175,9 +179,10 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			return
 		}
 		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-		resp, err := http.DefaultClient.Do(req2)
+		req2.Header.Set("Content-Type", "application/json")
+		resp, err := client.Do(req2)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount: %v", err)})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to send request: %v", err)})
 			return
 		}
 		defer resp.Body.Close()
