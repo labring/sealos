@@ -322,7 +322,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             >
               <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
-            {db.dbType !== 'milvus' && (
+            {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
               <>
                 <Center
                   gap={'6px'}
