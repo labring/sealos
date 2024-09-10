@@ -12,9 +12,9 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
     runtimeType: devbox.spec.runtimeType || '',
     runtimeVersion: devbox.spec.runtimeVersion || '',
     status:
-      devbox.spec.state && devboxStatusMap[devbox.spec.state]
-        ? devboxStatusMap[devbox.spec.state]
-        : devboxStatusMap.UnKnow,
+      devbox.status.phase && devboxStatusMap[devbox.status.phase]
+        ? devboxStatusMap[devbox.status.phase]
+        : devboxStatusMap.Error,
     sshPort: devbox.status.network.nodePort,
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),

@@ -251,7 +251,8 @@ const DevboxList = ({
                 color: 'brightBlue.600'
               }}
               leftIcon={<MyIcon name={'vscode'} w={'16px'} />}
-              onClick={() => handleGotoVSCode(item)}>
+              onClick={() => handleGotoVSCode(item)}
+              isDisabled={item.status.value !== 'Running'}>
               {t('open_vscode')}
             </Button>
           </Tooltip>

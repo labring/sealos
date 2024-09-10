@@ -19,6 +19,7 @@ export type KBDevboxType = {
     customDomain: string
   }[]
   status: {
+    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
     commitHistory: {
       image: string
       pod: string
@@ -30,7 +31,7 @@ export type KBDevboxType = {
       tailnet: string
       type: 'NodePort' | 'Tailnet'
     }
-    podPhase: string
+    podPhase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
   }
 }
 

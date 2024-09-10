@@ -43,20 +43,12 @@ export enum DBTypeEnum {
 }
 
 export enum DevboxStatusEnum {
-  Creating = 'Creating',
-  Starting = 'Starting',
   Stopping = 'Stopping',
   Stopped = 'Stopped',
   Running = 'Running',
-  Updating = 'Updating',
-  SpecUpdating = 'SpecUpdating',
-  Rebooting = 'Rebooting',
-  Upgrade = 'Upgrade',
-  VerticalScaling = 'VerticalScaling',
-  VolumeExpanding = 'VolumeExpanding',
-  Failed = 'Failed',
-  UnKnow = 'UnKnow',
-  Deleting = 'Deleting'
+  Pending = 'Pending',
+  Error = 'Error',
+  Delete = 'Delete'
 }
 
 export const CpuSlideMarkList = [
@@ -93,29 +85,15 @@ export const defaultDevboxEditValue: DevboxEditType = {
 }
 
 export const devboxStatusMap = {
-  [DevboxStatusEnum.Creating]: {
-    label: 'Creating',
-    value: DevboxStatusEnum.Creating,
-    color: 'grayModern.500',
-    backgroundColor: 'rgba(17, 24, 36, 0.05)',
-    dotColor: 'grayModern.500'
-  },
-  [DevboxStatusEnum.Starting]: {
-    label: 'Starting',
-    value: DevboxStatusEnum.Starting,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
   [DevboxStatusEnum.Stopping]: {
-    label: 'Pausing',
+    label: 'Stopping',
     value: DevboxStatusEnum.Stopping,
     color: '#6F5DD7',
     backgroundColor: '#F0EEFF',
     dotColor: '#6F5DD7'
   },
   [DevboxStatusEnum.Stopped]: {
-    label: 'Paused',
+    label: 'Stopped',
     value: DevboxStatusEnum.Stopped,
     color: '#8172D8',
     backgroundColor: '#F2F1FB',
@@ -128,65 +106,23 @@ export const devboxStatusMap = {
     backgroundColor: '#EDFBF3',
     dotColor: '#039855'
   },
-  [DevboxStatusEnum.Updating]: {
-    label: 'Updating',
-    value: DevboxStatusEnum.Updating,
+  [DevboxStatusEnum.Pending]: {
+    label: 'Pending',
+    value: DevboxStatusEnum.Pending,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
-  [DevboxStatusEnum.SpecUpdating]: {
-    label: 'Updating',
-    value: DevboxStatusEnum.SpecUpdating,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
-  [DevboxStatusEnum.Rebooting]: {
-    label: 'Restarting',
-    value: DevboxStatusEnum.Rebooting,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
-  [DevboxStatusEnum.Upgrade]: {
-    label: 'Updating',
-    value: DevboxStatusEnum.Upgrade,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
-  [DevboxStatusEnum.VerticalScaling]: {
-    label: 'Updating',
-    value: DevboxStatusEnum.VerticalScaling,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
-  [DevboxStatusEnum.VolumeExpanding]: {
-    label: 'Updating',
-    value: DevboxStatusEnum.VolumeExpanding,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
-  [DevboxStatusEnum.Failed]: {
-    label: 'Failed',
-    value: DevboxStatusEnum.Failed,
+  [DevboxStatusEnum.Error]: {
+    label: 'Error',
+    value: DevboxStatusEnum.Error,
     color: '#F04438',
     backgroundColor: '#FEF3F2',
     dotColor: '#F04438'
   },
-  [DevboxStatusEnum.UnKnow]: {
-    label: 'Creating',
-    value: DevboxStatusEnum.UnKnow,
-    color: '#787A90',
-    backgroundColor: '#F5F5F8',
-    dotColor: '#787A90'
-  },
-  [DevboxStatusEnum.Deleting]: {
+  [DevboxStatusEnum.Delete]: {
     label: 'Deleting',
-    value: DevboxStatusEnum.Deleting,
+    value: DevboxStatusEnum.Delete,
     color: '#DC6803',
     backgroundColor: '#FFFAEB',
     dotColor: '#DC6803'
@@ -219,7 +155,7 @@ export const defaultDevboxDetail: DevboxDetailType = {
   ...defaultDevboxEditValue,
   id: '',
   createTime: '2024/8/9',
-  status: devboxStatusMap.Creating
+  status: devboxStatusMap.Running
 }
 
 export const ProtocolList = [
