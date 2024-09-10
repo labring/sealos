@@ -115,6 +115,7 @@ metadata:
   name: object-storage-api
   namespace: objectstorage-system
   annotations:
+    higress.io/response-header-control-update: Content-Disposition attachment
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: 3g
     nginx.ingress.kubernetes.io/server-snippet: |
