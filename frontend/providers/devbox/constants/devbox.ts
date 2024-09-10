@@ -121,7 +121,7 @@ export const devboxStatusMap = {
     dotColor: '#F04438'
   },
   [DevboxStatusEnum.Delete]: {
-    label: 'Deleting',
+    label: 'Delete',
     value: DevboxStatusEnum.Delete,
     color: '#DC6803',
     backgroundColor: '#FFFAEB',
