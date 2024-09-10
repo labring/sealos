@@ -82,7 +82,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data
     });
   } catch (error) {
-    console.log(error);
     jsonRes(res, { code: 500, message: 'get price error' });
   }
 }
