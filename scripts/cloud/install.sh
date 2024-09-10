@@ -367,6 +367,7 @@ collect_input() {
           read -p "$(get_prompt "i_have_confirmed")" confirm
         else
           printf "$(get_prompt "acmedns_registration_failed")\n" "$acmedns_host"
+          echo "$acmednsSecret"
           exit 1
         fi
       else
