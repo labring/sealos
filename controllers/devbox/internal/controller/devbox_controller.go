@@ -251,9 +251,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 0:
 			logger.Info("create pod")
 			logger.Info("next commit history", "commit", nextCommitHistory)
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
 			return r.createPod(ctx, devbox, expectPod, nextCommitHistory)
 		case 1:
 			pod := &podList.Items[0]
+			devbox.Status.DevboxPodPhase = pod.Status.Phase
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
@@ -269,17 +271,20 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				case corev1.PodPending, corev1.PodRunning:
 					// pod is running or pending, do nothing here
 					logger.Info("pod is running or pending")
+					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseRunning
 					// update commit history status by pod status
 					helper.UpdateCommitHistory(devbox, pod, false)
 					return nil
 				case corev1.PodFailed, corev1.PodSucceeded:
 					// pod failed or succeeded, we need delete pod and remove finalizer
+					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 					logger.Info("pod failed or succeeded, recreate pod")
 					return r.deletePod(ctx, devbox, pod)
 				}
 			case false:
 				// pod not match expectations, delete pod anyway
 				logger.Info("pod not match expectations, recreate pod")
+				devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
 				return r.deletePod(ctx, devbox, pod)
 			}
 		}
@@ -291,12 +296,14 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			return nil
 		case 1:
 			pod := &podList.Items[0]
+			devbox.Status.DevboxPodPhase = pod.Status.Phase
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
 			if !pod.DeletionTimestamp.IsZero() {
 				return r.handlePodDeleted(ctx, devbox, pod)
 			}
+			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 			// we need delete pod because devbox state is stopped
 			// we don't care about the pod status, just delete it
 			return r.deletePod(ctx, devbox, pod)
@@ -426,6 +433,7 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 	}
 	if err := r.Delete(ctx, pod); err != nil {
 		logger.Error(err, "delete pod failed")
+		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
 		return err
 	}
 	// update commit history status because pod has been deleted
