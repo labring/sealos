@@ -157,7 +157,7 @@ const Version = ({
               color: 'brightBlue.600'
             }}
             onClick={() => handleOnline(item)}>
-            {t('online')}
+            {t('deploy')}
           </Button>
           <SealosMenu
             width={100}
