@@ -119,10 +119,9 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		logger.Error(err, "sync secret failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync secret failed", "%v", err)
 		return ctrl.Result{}, err
-	} else {
-		logger.Info("sync secret success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 	}
+	logger.Info("sync secret success")
+	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 
 	// create service if network type is NodePort
 	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
@@ -150,10 +149,9 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		logger.Error(err, "sync pod failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
 		return ctrl.Result{}, err
-	} else {
-		logger.Info("sync pod success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 	}
+	logger.Info("sync pod success")
+	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
@@ -224,10 +222,9 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			logger.Error(err, "sync pod failed")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
 			return
-		} else {
-			logger.Info("sync pod success")
-			r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 		}
+		logger.Info("update devbox status success")
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 	}()
 
 	var podList corev1.PodList
@@ -546,7 +543,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 		},
 	}
 	// set controller reference and finalizer
-	controllerutil.SetControllerReference(devbox, expectPod, r.Scheme)
+	_ = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme)
 	controllerutil.AddFinalizer(expectPod, devboxv1alpha1.FinalizerName)
 	return expectPod
 }
