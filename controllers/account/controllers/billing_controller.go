@@ -172,13 +172,13 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
 				return ok && getUsername(createEvent.Object.GetName()) == own
 			},
-			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
+			UpdateFunc: func(_ event.UpdateEvent) bool {
 				return false
 			},
-			DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
+			DeleteFunc: func(_ event.DeleteEvent) bool {
 				return false
 			},
-			GenericFunc: func(genericEvent event.GenericEvent) bool {
+			GenericFunc: func(_ event.GenericEvent) bool {
 				return false
 			},
 		})).
