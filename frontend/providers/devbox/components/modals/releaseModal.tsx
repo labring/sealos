@@ -93,7 +93,7 @@ const ReleaseModal = ({
     <Box>
       <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
-        <ModalContent minW={'500px'} mt={'200px'} minH={'300px'}>
+        <ModalContent minW={'500px'} mt={'100px'} minH={'300px'}>
           <ModalHeader>
             <Flex alignItems={'center'} gap={'10px'}>
               {t('release_version')}
