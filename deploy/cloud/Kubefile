@@ -9,6 +9,6 @@ ENV cloudPort=""
 ENV mongodbUri=""
 ENV mongodbVersion="mongodb-5.0"
 ENV acmednsHost="auth.acme-dns.io"
-ENV acmednsSecret="<acmedns-secret-placeholder>"
+ENV acmednsSecret=""
 
 CMD ["bash scripts/init.sh"]
