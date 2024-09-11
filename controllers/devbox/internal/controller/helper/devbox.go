@@ -234,7 +234,7 @@ func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *dev
 		},
 		{
 			Name:  "SEALOS_DEVBOX_NAME",
-			Value: devbox.ObjectMeta.Namespace + devbox.ObjectMeta.Name,
+			Value: devbox.Namespace + "-" + devbox.Name,
 		},
 		{
 			Name: "SEALOS_DEVBOX_PASSWORD",
