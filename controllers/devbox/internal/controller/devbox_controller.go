@@ -576,7 +576,13 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.Pod{},
 			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &devboxv1alpha1.Devbox{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+			builder.WithPredicates(predicate.And(
+				predicate.ResourceVersionChangedPredicate{},
+				predicate.NewPredicateFuncs(func(object client.Object) bool {
+					pod := object.(*corev1.Pod)
+					return pod.Labels[label.AppManagedBy] == label.DefaultManagedBy && pod.Labels[label.AppPartOf] == devboxv1alpha1.DevBoxPartOf
+				}),
+			)),
 		).
 		Complete(r)
 }
