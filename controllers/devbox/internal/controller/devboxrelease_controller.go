@@ -54,13 +54,13 @@ func (r *DevBoxReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	if devboxRelease.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.AddFinalizer(devboxRelease, FinalizerName) {
+		if controllerutil.AddFinalizer(devboxRelease, devboxv1alpha1.FinalizerName) {
 			if err := r.Update(ctx, devboxRelease); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 	} else {
-		if controllerutil.RemoveFinalizer(devboxRelease, FinalizerName) {
+		if controllerutil.RemoveFinalizer(devboxRelease, devboxv1alpha1.FinalizerName) {
 			if err := r.Update(ctx, devboxRelease); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -113,7 +113,7 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 	if err := r.Get(ctx, devboxInfo, devbox); err != nil {
 		return err
 	}
-	hostName, imageName, oldTag, err := r.GetRegistryInfo(devbox)
+	hostName, imageName, oldTag, err := r.GetImageInfo(devbox)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv
 	return nil
 }
 
-func (r *DevBoxReleaseReconciler) GetRegistryInfo(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
+func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
 	if len(devbox.Status.CommitHistory) == 0 {
 		return "", "", "", fmt.Errorf("commit history is empty")
 	}

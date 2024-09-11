@@ -65,6 +65,7 @@ func main() {
 	var registryPassword string
 	var authAddr string
 	var ephemeralStorage string
+	var debugMode bool
 	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
 	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
 	flag.StringVar(&registryPassword, "registry-password", "passw0rd", "The password of the registry")
@@ -79,6 +80,7 @@ func main() {
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.BoolVar(&debugMode, "debug", false, "If set, debug mode will be enabled")
 	flag.StringVar(&ephemeralStorage, "ephemeral-storage", "2000Mi", "The maximum value of equatorial storage in devbox.")
 	opts := zap.Options{
 		Development: true,
@@ -161,6 +163,7 @@ func main() {
 		CommitImageRegistry: registryAddr,
 		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
 		EquatorialStorage:   ephemeralStorage,
+		DebugMode:           debugMode,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)

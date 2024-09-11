@@ -2739,10 +2739,20 @@ spec:
                     node:
                       type: string
                     pod:
+                      description: Pod is the pod name
+                      type: string
+                    predicatedStatus:
+                      description: predicatedStatus default `failed`, will be set
+                        to `success` if pod status is running successfully.
                       type: string
                     status:
+                      description: status will be set based on expectedStatus after
+                        devbox pod delete or stop. if expectedStatus is still pending,
+                        it means the pod is not running successfully, so we need to
+                        set it to `failed`
                       type: string
                     time:
+                      description: Time is the time when the commit is created
                       format: date-time
                       type: string
                   required:
@@ -2750,6 +2760,7 @@ spec:
                   - image
                   - node
                   - pod
+                  - predicatedStatus
                   - status
                   - time
                   type: object

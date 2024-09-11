@@ -17,6 +17,7 @@ package helper
 import (
 	"fmt"
 	"log/slog"
+	"sort"
 
 	"crypto/ed25519"
 	"crypto/rand"
@@ -75,16 +76,20 @@ func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alph
 	return annotations
 }
 
-func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
-	if devbox.Status.CommitHistory == nil {
-		return nil
+func MergeCommitHistory(devbox *devboxv1alpha1.Devbox, latestDevbox *devboxv1alpha1.Devbox) []*devboxv1alpha1.CommitHistory {
+	res := make([]*devboxv1alpha1.CommitHistory, 0)
+	historyMap := make(map[string]*devboxv1alpha1.CommitHistory)
+	for _, c := range latestDevbox.Status.CommitHistory {
+		historyMap[c.Pod] = c
 	}
-	for i := len(devbox.Status.CommitHistory) - 1; i >= 0; i-- {
-		if devbox.Status.CommitHistory[i].Status == devboxv1alpha1.CommitStatusSuccess {
-			return devbox.Status.CommitHistory[i].DeepCopy()
-		}
+	// up coming commit history will be added to the latest devbox
+	for _, c := range devbox.Status.CommitHistory {
+		historyMap[c.Pod] = c
 	}
-	return nil
+	for _, c := range historyMap {
+		res = append(res, c)
+	}
+	return res
 }
 
 func GenerateSSHKeyPair() ([]byte, []byte, error) {
@@ -105,7 +110,35 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	return sshPublicKey, privateKey, nil
 }
 
-func CheckPodConsistency(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) {
+	for i, c := range devbox.Status.CommitHistory {
+		if c.Pod == pod.Name {
+			switch pod.Status.Phase {
+			case corev1.PodPending:
+				devbox.Status.CommitHistory[i].PredicatedStatus = devboxv1alpha1.CommitStatusPending
+			case corev1.PodRunning, corev1.PodFailed, corev1.PodSucceeded:
+				devbox.Status.CommitHistory[i].PredicatedStatus = devboxv1alpha1.CommitStatusSuccess
+			}
+			break
+		}
+	}
+}
+
+func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateStatus bool) {
+	// update commit history
+	for i, c := range devbox.Status.CommitHistory {
+		if c.Pod == pod.Name {
+			if updateStatus {
+				devbox.Status.CommitHistory[i].Status = devbox.Status.CommitHistory[i].PredicatedStatus
+			}
+			devbox.Status.CommitHistory[i].Node = pod.Spec.NodeName
+			devbox.Status.CommitHistory[i].ContainerID = pod.Status.ContainerStatuses[0].ContainerID
+			break
+		}
+	}
+}
+
+func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
 		return false
@@ -206,16 +239,32 @@ func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *dev
 	}
 }
 
-func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) (string, error) {
+func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
 	if len(devbox.Status.CommitHistory) == 0 {
-		return runtime.Spec.Config.Image, nil
+		return nil
 	}
-	for i := len(devbox.Status.CommitHistory) - 1; i >= 0; i-- {
-		if devbox.Status.CommitHistory[i].Status == devboxv1alpha1.CommitStatusSuccess {
-			return devbox.Status.CommitHistory[i].Image, nil
+	// Sort commit history by time in descending order
+	sort.Slice(devbox.Status.CommitHistory, func(i, j int) bool {
+		return devbox.Status.CommitHistory[i].Time.After(devbox.Status.CommitHistory[j].Time.Time)
+	})
+
+	for _, commit := range devbox.Status.CommitHistory {
+		if commit.Status == devboxv1alpha1.CommitStatusSuccess {
+			return commit
 		}
 	}
-	return runtime.Spec.Config.Image, nil
+	return nil
+}
+
+func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) string {
+	if len(devbox.Status.CommitHistory) == 0 {
+		return runtime.Spec.Config.Image
+	}
+	commit := GetLastSuccessCommitHistory(devbox)
+	if commit == nil {
+		return runtime.Spec.Config.Image
+	}
+	return commit.Image
 }
 
 func GenerateSSHVolumeMounts() corev1.VolumeMount {

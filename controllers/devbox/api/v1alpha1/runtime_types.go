@@ -53,14 +53,24 @@ type Config struct {
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
+type Component struct {
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// +kubebuilder:validation:Required
+	Version string `json:"version"`
+}
+
 // RuntimeSpec defines the desired state of Runtime
 type RuntimeSpec struct {
 	// +kubebuilder:validation:Required
-	Title string `json:"title"`
-	// +kubebuilder:validation:Optional
-	Category []string `json:"category,omitempty"`
+	Version string `json:"version"`
 	// +kubebuilder:validation:Required
 	ClassRef string `json:"classRef"`
+
+	// +kubebuilder:validation:Optional
+	Components []Component `json:"components,omitempty"`
+	// +kubebuilder:validation:Optional
+	Category []string `json:"category,omitempty"`
 	// +kube:validation:Optional
 	Description string `json:"description,omitempty"`
 
