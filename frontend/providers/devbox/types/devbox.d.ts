@@ -49,7 +49,11 @@ export interface DevboxConditionItemType {
 export interface DevboxDetailType extends DevboxEditType {
   id: string
   createTime: string
+  startTime: string
   status: DevboxStatusMapType
+  usedCpu: MonitorDataResult
+  usedMemory: MonitorDataResult
+  sshPort: number
 }
 
 export interface NetworkType {
@@ -96,9 +100,8 @@ export interface DevboxVersionListItemType {
   tag: string
   createTime: string
   description: string
+  status: DevboxStatusMapType
 }
-
-export interface Runtime {}
 
 export type DevboxPatchPropsType = (
   | { type: 'delete'; kind: `${YamlKindEnum}`; name: string }

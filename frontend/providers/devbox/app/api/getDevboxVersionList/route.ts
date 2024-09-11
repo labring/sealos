@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       return item.spec && item.spec.devboxName === devboxName
     })
 
+    // console.log('matchingDevboxVersions', matchingDevboxVersions)
     return jsonRes({ data: matchingDevboxVersions })
   } catch (err: any) {
     return jsonRes({

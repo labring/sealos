@@ -256,6 +256,22 @@ const DevboxList = ({
               {t('open_vscode')}
             </Button>
           </Tooltip>
+          <Button
+            mr={5}
+            height={'32px'}
+            size={'sm'}
+            fontSize={'base'}
+            bg={'grayModern.150'}
+            color={'grayModern.900'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            leftIcon={<MyIcon name={'detail'} w={'16px'} />}
+            onClick={() => {
+              router.push(`/devbox/detail/${item.name}`)
+            }}>
+            {t('detail')}
+          </Button>
           <SealosMenu
             width={100}
             Button={

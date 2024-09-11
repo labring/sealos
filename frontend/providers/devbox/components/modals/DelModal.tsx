@@ -15,14 +15,14 @@ import { useCallback, useState } from 'react'
 
 import MyIcon from '@/components/Icon'
 import { delDevbox } from '@/api/devbox'
-import { DevboxListItemType } from '@/types/devbox'
+import { DevboxDetailType, DevboxListItemType } from '@/types/devbox'
 
 const DelModal = ({
   devbox,
   onClose,
   onSuccess
 }: {
-  devbox: DevboxListItemType
+  devbox: DevboxListItemType | DevboxDetailType
   onClose: () => void
   onSuccess: () => void
 }) => {

@@ -98,6 +98,10 @@ export type KBDevboxReleaseType = {
     newTag: string
     notes: string
   }
+  status: {
+    originImage?: string
+    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
+  }
 }
 
 export type KBRuntimeType = {
