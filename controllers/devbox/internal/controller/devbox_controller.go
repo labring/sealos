@@ -136,7 +136,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 		logger.Info("sync service success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Create service success", "Create service success")
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync service success", "Sync service success")
 	}
 
 	// create or update pod
