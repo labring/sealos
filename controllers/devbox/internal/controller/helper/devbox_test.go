@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestCheckPodConsistency(t *testing.T) {
+func TestPodMatchExpectations(t *testing.T) {
 	expectPod := &corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -158,7 +158,7 @@ func TestCheckPodConsistency(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CheckPodConsistency(expectPod, tt.pod)
+			result := PodMatchExpectations(expectPod, tt.pod)
 			if result != tt.expected {
 				t.Errorf("CheckPodConsistency() = %v, expected %v", result, tt.expected)
 			}
