@@ -507,7 +507,15 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 	if r.SmsConfig == nil && r.VmsConfig == nil && r.smtpConfig == nil {
 		return nil
 	}
-	outh, err := r.AccountV2.GetUserOauthProvider(&pkgtypes.UserQueryOpts{Owner: user})
+	_user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: user})
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	// skip abnormal user
+	if _user.Status != pkgtypes.UserStatusNormal {
+		return nil
+	}
+	outh, err := r.AccountV2.GetUserOauthProvider(&pkgtypes.UserQueryOpts{UID: _user.UID, ID: _user.ID})
 	if err != nil {
 		return fmt.Errorf("failed to get user oauth provider: %w", err)
 	}
