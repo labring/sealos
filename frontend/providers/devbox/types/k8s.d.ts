@@ -104,13 +104,12 @@ export type KBRuntimeType = {
   apiVersion: 'devbox.sealos.io/v1alpha1'
   kind: 'Runtime'
   metadata: {
-    name: string
+    name: string // go-v1-22-5 name+version
     namespace: string
     uid: string
     creationTimestamp: string
   }
   spec: {
-    category: string[]
     classRef: string
     config: {
       image: string
@@ -122,7 +121,12 @@ export type KBRuntimeType = {
       user: string
     }
     description: string
-    title: string
+    version: string
+    components: {
+      name: string // go
+      kind: string // language
+      version: string // v1.22.5
+    }[]
   }
 }
 

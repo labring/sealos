@@ -309,7 +309,8 @@ const DevboxList = ({
                     }
                   ]
                 : []),
-              ...(item.status.value === 'Running'
+              // maybe Error or other status,all can restart
+              ...(item.status.value !== 'Stopped'
                 ? [
                     {
                       child: (
@@ -319,7 +320,11 @@ const DevboxList = ({
                         </>
                       ),
                       onClick: () => handleRestartDevbox(item)
-                    },
+                    }
+                  ]
+                : []),
+              ...(item.status.value === 'Running'
+                ? [
                     {
                       child: (
                         <>
