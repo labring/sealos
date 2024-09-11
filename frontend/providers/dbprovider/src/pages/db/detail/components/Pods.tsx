@@ -37,6 +37,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     content: t('confirm_restart_pod')
   });
   const { intervalLoadPods, dbPods } = useDBStore();
+  const closeFn = useCallback(() => setLogsPodIndex(undefined), [setLogsPodIndex]);
 
   const handleRestartPod = useCallback(
     async (podName: string) => {
@@ -168,7 +169,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           setLogsPodName={(name: string) =>
             setLogsPodIndex(dbPods.findIndex((item) => item.podName === name))
           }
-          closeFn={() => setLogsPodIndex(undefined)}
+          closeFn={closeFn}
         />
       )}
       {detailPodIndex !== undefined && (
