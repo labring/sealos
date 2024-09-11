@@ -2,6 +2,10 @@
 
 set -e
 
+GREEN='\033[0;32m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v5.0.0"
@@ -19,6 +23,7 @@ cloud_version="latest"
 #cert_path=
 #key_path=
 #single=y/n
+#acme=y/n
 image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
 kubernetes_version=${kubernetes_version:-"1.27.11"}
@@ -30,6 +35,7 @@ ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
 kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
+acmedns_host=${acmedns_host:-"auth.acme-dns.io"}
 
 
 # Define English and Chinese prompts
@@ -49,7 +55,7 @@ PROMPTS_EN=(
     ["service_subnet"]="Please enter the Service subnet (Press enter to use the default value: 10.96.0.0/22): "
     ["cloud_domain"]="Please enter the cloud domain name (You can use the nip.io domain name if you need: [ip].nip.io, for more details, please refer to: http://nip.io, e.g: 127.0.0.1.nip.io): "
     ["cloud_port"]="Please enter the cloud port (Press enter to use the default value: 443): "
-    ["certificate_path"]="Please enter the certificate path (Press enter to use the self-signed certificate provided by Sealos): "
+    ["certificate_path"]="Please enter the certificate path (Press Enter to use ACME to automatically apply for certificates): "
     ["private_key_path"]="Please enter the private key path: "
     ["choose_language"]="Please choose a language: "
     ["enter_choice"]="Please enter your choice (zh/en): "
@@ -66,6 +72,10 @@ PROMPTS_EN=(
 1. Hosts with AMD64 or AArch64 architecture;
 2. Linux kernel> = 4.19.57 or equivalent version (e.g., 4.18 on RHEL8)."
     ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["enable_acme"]="Do you want to enable ACME to automatically obtain certificates (Press n to use the self-signed certificate provided by Sealos)? (y/n): "
+    ["acmedns_registration_failed"]="ACME DNS registration failed. Please check if the acmedns-host: '${GREEN}%s${RESET}' is correct."
+    ["acme_cname_record"]="Please create a CNAME record for '${GREEN}_acme-challenge.%s${RESET}'\npointing to '${GREEN}%s${RESET}'."
+    ["i_have_confirmed"]="I have confirmed (Enter to continue): "
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -92,6 +102,9 @@ Options:
   --cert-path                       # Certificate path
   --key-path                        # Private key path
   --single                          # Whether to install on a single node (y/n)
+  --acme                            # Enable ACME to automatically obtain certificates
+  --acmedns-host                    # ACME DNS host (default: auth.acme-dns.io)
+  --disable-acme                    # Disable ACME and use self-signed certificates
   --proxy-prefix                    # Sealos binary installation address proxy prefix
   --zh                              # Chinese prompt
   --en                              # English prompt
@@ -111,7 +124,7 @@ PROMPTS_CN=(
     ["service_subnet"]="请输入 Service 子网 (回车使用默认值: 10.96.0.0/22): "
     ["cloud_domain"]="请输入 Sealos Cloud 域名 (无自备域名可使用 nip.io 域名: [ip].nip.io, 详细参考: http://nip.io, 例:127.0.0.1.nip.io): "
     ["cloud_port"]="请输入 Sealos Cloud 端口 (回车使用默认值: 443): "
-    ["certificate_path"]="请输入证书路径 (回车使用 Sealos 提供的自签证书): "
+    ["certificate_path"]="请输入证书路径 (回车使用 ACME 自动申请证书): "
     ["private_key_path"]="请输入私钥路径: "
     ["choose_language"]="请选择语言: "
     ["enter_choice"]="请输入您的选择 (zh/en): "
@@ -128,6 +141,10 @@ PROMPTS_CN=(
 1.具有AMD64或AArch64架构的主机;
 2.Linux内核> = 4.19.57或等效版本 (例如, 在RHEL8上为4.18)."
     ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["enable_acme"]="是否启用 ACME 自动获取证书（输入 n 使用 Sealos 提供的自签证书）? (y/n): "
+    ["acmedns_registration_failed"]="注册 ACME DNS 失败, 请检查 acmedns-host: '${GREEN}%s${RESET}' 是否正确."
+    ["acme_cname_record"]="请为 '${GREEN}_acme-challenge.%s${RESET}' 创建一条 CNAME 记录\n指向 '${GREEN}%s${RESET}'."
+    ["i_have_confirmed"]="我已确认（回车继续）："
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -154,6 +171,9 @@ Options:
   --cert-path                     # 证书路径
   --key-path                      # 私钥路径
   --single                        # 是否单节点安装 (y/n)
+  --acme                          # 启用 ACME 自动获取证书
+  --acmedns-host                  # ACME DNS host (默认: auth.acme-dns.io)
+  --disable-acme                  # 禁用 ACME 并使用自签名证书
   --proxy-prefix                  # sealos二进制安装地址代理前缀
   --zh                            # 中文提示
   --en                            # 英文提示
@@ -328,11 +348,31 @@ collect_input() {
     done
     [[ $cloud_port != "" ]] || read -p "$(get_prompt "cloud_port")" cloud_port
 
-    if [[ $input_cert != "n" && ($cert_path == "" || $key_path == "") ]]; then
+    if [[ $acme != "y" && $input_cert != "n" && ($cert_path == "" || $key_path == "") ]]; then
         read -p "$(get_prompt "certificate_path")" cert_path
         if [[ $cert_path != "" ]]; then
             read -p "$(get_prompt "private_key_path")" key_path
         fi
+    fi
+
+    if [[ $cert_path == "" && $key_path == "" ]]; then
+      while [[ $acme == "" ]] ; do
+        read -p "$(get_prompt "enable_acme")" acme
+      done
+      if [[ $acme == "y" ]]; then
+        acmednsSecret="$(curl -s -X POST https://$acmedns_host/register)"
+        fulldomain=$(echo $acmednsSecret | sed -n 's/.*"fulldomain":"\([^"]*\)".*/\1/p')
+        if [[ $fulldomain != "" ]]; then
+          printf "$(get_prompt "acme_cname_record")\n" "$cloud_domain" "$fulldomain"
+          read -p "$(get_prompt "i_have_confirmed")" confirm
+        else
+          printf "$(get_prompt "acmedns_registration_failed")\n" "$acmedns_host"
+          echo "$acmednsSecret"
+          exit 1
+        fi
+      else
+        acme="n"
+      fi
     fi
 }
 
@@ -628,6 +668,13 @@ EOF
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
         --config-file $CLOUD_DIR/tls-secret.yaml
+    elif [[ $acme == "y" ]]; then
+        sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
+        --env cloudDomain="$cloud_domain"\
+        --env cloudPort="${cloud_port:-443}"\
+        --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
+        --env acmednsSecret="$(echo $acmednsSecret | base64 -w0)"\
+        --env acmednsHost="$acmedns_host"
     else
         sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
@@ -662,6 +709,9 @@ for i in "$@"; do
   --cert-path=*) cert_path="${i#*=}"; shift ;;
   --key-path=*) key_path="${i#*=}"; shift ;;
   --single) single="y"; shift ;;
+  --acme) acme="y"; shift ;;
+  --acmedns-host=*) acmedns_host="${i#*=}"; shift ;;
+  --disable-acme) acme="n"; shift ;;
   --proxy-prefix=*) proxy_prefix="${i#*=}"; shift ;;
   --zh | zh ) LANGUAGE="CN"; shift ;;
   --en | en ) LANGUAGE="EN"; shift ;;
@@ -690,6 +740,7 @@ for i in "$@"; do
   --cloud-port | cloud-port | \
   --cert-path | cert-path | \
   --key-path | key-path | \
+  --acmedns-host | acmedns-host | \
   --proxy-prefix | proxy-prefix | \
   --config | config) echo "Please use '--${i#--}=' to assign value to option"; exit 1 ;;
   -*) echo "Unknown option $i"; exit 1 ;;
@@ -706,8 +757,7 @@ collect_input
 prepare_configs
 execute_commands
 
-GREEN='\033[0;32m'
-BOLD='\033[1m'
-RESET='\033[0m'
-
 echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${cloud_version}${RESET}\nURL: ${GREEN}https://$cloud_domain${cloud_port:+:$cloud_port}${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
+if [[ $fulldomain != "" ]]; then
+  printf "$(get_prompt "acme_cname_record")\n" "$cloud_domain" "$fulldomain"
+fi

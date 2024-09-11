@@ -1,0 +1,44 @@
+apiVersion: v1
+stringData:
+  acmedns.json: |
+    {
+      "{{ .cloudDomain }}": {{ empty .acmednsSecret | ternary "<acmedns-secret-placeholder>" (.acmednsSecret | b64dec) }}
+    }
+kind: Secret
+metadata:
+  name: acme-dns
+  namespace: sealos-system
+type: Opaque
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: acme-dns-issuer
+  namespace: sealos-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@sealos.io
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        acmeDNS:
+          host: https://{{ .acmednsHost }}
+          accountSecretRef:
+            name: acme-dns
+            key: acmedns.json
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cert
+  namespace: sealos-system
+spec:
+  secretName: wildcard-cert
+  dnsNames:
+    - "{{ .cloudDomain }}"
+    - "*.{{ .cloudDomain }}"
+  issuerRef:
+    name: acme-dns-issuer
+    kind: Issuer
