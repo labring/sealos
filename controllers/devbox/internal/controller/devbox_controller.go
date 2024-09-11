@@ -143,7 +143,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("syncing pod")
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
-			return client.IgnoreNotFound(err)
+			return err
 		}
 		return r.syncPod(ctx, devbox, recLabels)
 	}); err != nil {
@@ -205,12 +205,6 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
-
-	// get latest devbox
-	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
-		return err
-	}
-
 	// update devbox status after pod is created or updated
 	defer func() {
 		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
