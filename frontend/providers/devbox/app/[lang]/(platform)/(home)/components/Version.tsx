@@ -81,10 +81,10 @@ const Version = ({
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
         pathname: '/app/edit',
-        query: { imageName: `sealos.hub/${NAMESPACE}/${devbox.name}:${version.tag}` },
+        query: { imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}` },
         messageData: {
           type: 'InternalAppCall',
-          formData: { imageName: `sealos.hub/${NAMESPACE}/${devbox.name}:${version.tag}` }
+          formData: { imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}` }
         }
       })
     },
