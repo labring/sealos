@@ -113,21 +113,18 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) {
 	for i, c := range devbox.Status.CommitHistory {
 		if c.Pod == pod.Name {
-			switch pod.Status.Phase {
-			case corev1.PodPending:
-				devbox.Status.CommitHistory[i].PredicatedStatus = devboxv1alpha1.CommitStatusPending
-			case corev1.PodRunning, corev1.PodFailed, corev1.PodSucceeded:
-				devbox.Status.CommitHistory[i].PredicatedStatus = devboxv1alpha1.CommitStatusSuccess
-			}
+			devbox.Status.CommitHistory[i].PredicatedStatus = PodPhaseToCommitStatus(pod.Status.Phase)
 			break
 		}
 	}
 }
 
 func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateStatus bool) {
-	// update commit history
+	// update commit history, if devbox commit history missed the pod, we need add it
+	found := false
 	for i, c := range devbox.Status.CommitHistory {
 		if c.Pod == pod.Name {
+			found = true
 			if updateStatus {
 				devbox.Status.CommitHistory[i].Status = devbox.Status.CommitHistory[i].PredicatedStatus
 			}
@@ -136,6 +133,28 @@ func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateS
 			break
 		}
 	}
+	if !found {
+		newCommitHistory := &devboxv1alpha1.CommitHistory{
+			Pod:              pod.Name,
+			Node:             pod.Spec.NodeName,
+			ContainerID:      pod.Status.ContainerStatuses[0].ContainerID,
+			PredicatedStatus: PodPhaseToCommitStatus(pod.Status.Phase),
+		}
+		if updateStatus {
+			newCommitHistory.Status = newCommitHistory.PredicatedStatus
+		}
+		devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, newCommitHistory)
+	}
+}
+
+func PodPhaseToCommitStatus(podPhase corev1.PodPhase) devboxv1alpha1.CommitStatus {
+	switch podPhase {
+	case corev1.PodPending:
+		return devboxv1alpha1.CommitStatusPending
+	case corev1.PodRunning, corev1.PodFailed, corev1.PodSucceeded:
+		return devboxv1alpha1.CommitStatusSuccess
+	}
+	return devboxv1alpha1.CommitStatusUnknown
 }
 
 func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
