@@ -48,6 +48,7 @@ export interface DevboxConditionItemType {
 
 export interface DevboxDetailType extends DevboxEditType {
   id: string
+  upTime?: string
   createTime: string
   sshPort: number
   startTime: string
@@ -122,6 +123,7 @@ export interface runtimeNamespaceMapType {
 
 export interface PodDetailType extends V1Pod {
   podName: string
+  upTime: string
   status: PodStatusMapType
   nodeName: string
   ip: string

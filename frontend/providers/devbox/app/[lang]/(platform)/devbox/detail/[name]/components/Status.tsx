@@ -7,7 +7,7 @@ import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 import { getSSHConnectionInfo } from '@/api/devbox'
 
 const Status = () => {
-  const { devboxDetail } = useDevboxStore()
+  const { devboxDetail, devboxDetailPods } = useDevboxStore()
   const [loading, setLoading] = useState(false)
   const t = useTranslations()
 
@@ -109,7 +109,7 @@ const Status = () => {
           <Text fontSize="lg" fontWeight="bold" width="40%" flexShrink={0}>
             {t('start_time')}
           </Text>
-          <Text width="60%">{devboxDetail?.startTime}</Text>
+          <Text width="60%">{devboxDetail?.upTime}</Text>
         </Flex>
       </GridItem>
       <GridItem>

@@ -86,10 +86,12 @@ export const useDevboxStore = create<State>()(
       devboxDetailPods: [],
       loadDetailMonitorData: async (devboxName) => {
         const pods = await getDevboxPodsByDevboxName(devboxName)
-        console.log(pods, 'pods')
         const queryName = pods[0].podName || devboxName
 
         set((state) => {
+          // add upTime by Pod
+          state.devboxDetail.upTime = pods[0].upTime
+
           state.devboxDetailPods = pods.map((pod) => {
             const oldPod = state.devboxDetailPods.find((item) => item.podName === pod.podName)
             return {

@@ -6,7 +6,7 @@ import {
   podStatusMap,
   PodStatusEnum
 } from '@/constants/devbox'
-import { cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
+import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType, PodDetailType } from '@/types/devbox'
 import { V1Pod } from '@kubernetes/client-node'
@@ -73,6 +73,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
   return {
     ...pod,
     podName: pod.metadata?.name || 'pod name',
+    upTime: calculateUptime(pod.metadata?.creationTimestamp || new Date()),
     status: (() => {
       const container = pod.status?.containerStatuses || []
       if (container.length > 0) {

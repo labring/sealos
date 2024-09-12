@@ -107,7 +107,6 @@ export async function GET(req: NextRequest) {
       end: endTime / 1000,
       step: step
     }
-    console.log(params, 'params')
 
     const result: MonitorDataResult = await monitorFetch(
       {

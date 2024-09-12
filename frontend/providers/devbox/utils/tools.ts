@@ -7,6 +7,9 @@ import { YamlKindEnum } from '@/constants/devbox'
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
 import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
 import dayjs from 'dayjs'
+import duration from 'dayjs/plugin/duration'
+
+dayjs.extend(duration)
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
@@ -295,4 +298,21 @@ export const formatPodTime = (createTimeStamp: Date = new Date()) => {
     return `${minutes}m${seconds}s`
   }
   return `${seconds}s`
+}
+
+export function calculateUptime(createdTime: Date): string {
+  const now = dayjs()
+  const created = dayjs(createdTime)
+  const diff = dayjs.duration(now.diff(created))
+
+  const days = diff.days()
+  const hours = diff.hours()
+  const minutes = diff.minutes()
+
+  let uptime = ''
+  if (days > 0) uptime += `${days}d`
+  if (hours > 0) uptime += `${hours}h`
+  if (minutes > 0) uptime += `${minutes}m`
+
+  return uptime || '刚刚启动'
 }
