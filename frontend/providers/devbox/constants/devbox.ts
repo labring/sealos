@@ -184,6 +184,7 @@ export const defaultDevboxDetail: DevboxDetailType = {
   id: '',
   createTime: '2024/8/9',
   status: devboxStatusMap.Running,
+  startTime: '20h',
   usedCpu: {
     name: 'usedCpu',
     xData: [

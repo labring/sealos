@@ -60,6 +60,13 @@ export const useDevboxStore = create<State>()(
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
 
+        // convert startTime to YYYY-MM-DD HH:mm
+        detail.createTime = detail.createTime.replace(/\//g, '-')
+
+        // cpu and memory
+        detail.cpu = detail.cpu / 1000
+        detail.memory = detail.memory / 1024
+
         set((state) => {
           state.devboxDetail = detail
         })

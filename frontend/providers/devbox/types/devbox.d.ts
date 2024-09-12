@@ -50,6 +50,7 @@ export interface DevboxDetailType extends DevboxEditType {
   id: string
   createTime: string
   sshPort: number
+  startTime: string
   status: DevboxStatusMapType
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
