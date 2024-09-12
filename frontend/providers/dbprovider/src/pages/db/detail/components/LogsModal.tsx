@@ -224,7 +224,7 @@ const LogsModal = ({
                     borderRadius={'md'}
                   >
                     <Flex px={4} alignItems={'center'}>
-                      <Box flex={1}>{t(sinceKey)}</Box>
+                      <Box flex={1}>{t(sinceKey as sinceItem['key'])}</Box>
                       <ChevronDownIcon ml={2} />
                     </Flex>
                   </MenuButton>
