@@ -27,8 +27,6 @@ export let DEVBOX_AFFINITY_ENABLE = 'true'
 
 export const runtimeNamespace = 'devbox-system'
 
-
-
 export let languageTypeList: valueType[] = []
 export let frameworkTypeList: valueType[] = []
 export let osTypeList: valueType[] = []
@@ -70,6 +68,19 @@ export const getRuntimeVersionList = (runtimeType: string) => {
     value: i.id,
     label: i.label
   }))
+}
+
+export const getRuntimeVersionItem = (runtimeType: string, runtimeVersion: string) => {
+  let versions: valueType[] = []
+
+  if (languageVersionMap[runtimeType]) {
+    versions = languageVersionMap[runtimeType]
+  } else if (frameworkVersionMap[runtimeType]) {
+    versions = frameworkVersionMap[runtimeType]
+  } else if (osVersionMap[runtimeType]) {
+    versions = osVersionMap[runtimeType]
+  }
+  return versions.find((i) => i.id === runtimeVersion)
 }
 
 export const getUserPrice = async () => {

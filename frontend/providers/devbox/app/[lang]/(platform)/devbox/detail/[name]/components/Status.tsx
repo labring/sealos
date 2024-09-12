@@ -3,7 +3,7 @@ import MyIcon from '@/components/Icon'
 import { useTranslations } from 'next-intl'
 import { useDevboxStore } from '@/stores/devbox'
 import { Box, Text, Grid, GridItem, Flex, Image, Spinner } from '@chakra-ui/react'
-import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
+import { getRuntimeVersionItem, NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 import { getSSHConnectionInfo } from '@/api/devbox'
 
 const Status = () => {
@@ -101,7 +101,9 @@ const Status = () => {
           <Text fontSize="lg" fontWeight="bold" width="40%" flexShrink={0}>
             {t('version')}
           </Text>
-          <Text width="60%">{devboxDetail?.runtimeVersion}</Text>
+          <Text width="60%">
+            {getRuntimeVersionItem(devboxDetail?.runtimeType, devboxDetail?.runtimeVersion)?.label}
+          </Text>
         </Flex>
       </GridItem>
       <GridItem>
