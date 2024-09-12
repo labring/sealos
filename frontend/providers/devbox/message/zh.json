@@ -10,7 +10,7 @@
   "No changes detected": "并没有变更任何项",
   "Open Public Access": "开启公网访问",
   "Paused": "已关机",
-  "Pending": "创建中",
+  "Pending": "进行中",
   "Please enter the devbox name first": "请先填写项目名称",
   "Running": "运行中",
   "Stopped": "已停止",
@@ -131,5 +131,7 @@
   "version_list": "版本列表",
   "version_number": "版本号",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML文件"
+  "yaml_file": "YAML文件",
+  "Success": "成功",
+  "Failed": "失败"
 }

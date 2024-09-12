@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 
-import { devboxStatusMap } from '@/constants/devbox'
+import { devboxReleaseStatusMap, devboxStatusMap } from '@/constants/devbox'
 import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
@@ -55,6 +55,10 @@ export const adaptDevboxVersionListItem = (
     devboxName: devboxRelease.spec.devboxName || 'devbox',
     createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     tag: devboxRelease.spec.newTag || 'v1.0.0',
+    status:
+      devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
+        ? devboxReleaseStatusMap[devboxRelease.status.phase]
+        : devboxReleaseStatusMap.Failed,
     description: devboxRelease.spec.notes || 'release notes'
   }
 }

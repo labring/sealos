@@ -1,5 +1,6 @@
 import MyIcon from '@/components/Icon'
 import { Box, Button, Flex, MenuButton, Text, VStack, useDisclosure } from '@chakra-ui/react'
+import { css } from '@emotion/react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
 import { useLoading } from '@/hooks/useLoading'
@@ -64,8 +65,24 @@ const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
     },
     [setIsLoading, toast, t]
   )
+  const scrollbarStyles = css`
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  `
   return (
-    <Box borderWidth={1} borderRadius="lg" p={4} bg={'white'} h={'full'}>
+    <Box borderWidth={1} borderRadius="lg" p={4} bg={'white'} h={'full'} minW={'300px'}>
       <Flex alignItems="center" justifyContent={'space-between'}>
         <Flex alignItems={'center'}>
           <MyIcon name="response" w={'20px'} />
@@ -94,84 +111,90 @@ const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
           </Box>
         </Flex>
       ) : (
-        <VStack spacing={3} align="start" mt={2}>
-          {devboxVersionList.map((version) => (
-            <Box
-              key={version.id}
-              position="relative"
-              w="100%"
-              bg={'grayModern.50'}
-              borderRadius={'lg'}
-              p={4}
-              _hover={{
-                '& .hover-actions': { visibility: 'visible' }
-              }}>
-              <Flex justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Flex alignItems="center" gap={2} mb={2}>
-                    <Text fontWeight="bold">{version.tag}</Text>
-                    <Text color={'grayModern.500'}>{version.createTime}</Text>
-                  </Flex>
-                  {/* <DevboxStatusTag status={version.status} /> */}
-                  <Text color={'grayModern.600'}>{version.description}</Text>
-                </Box>
-                {/* hover button */}
-                <Flex className="hover-actions" visibility="hidden" transition="opacity 0.2s">
-                  <Button
-                    size="sm"
-                    mr={1}
-                    bg={'white'}
-                    color={'grayModern.600'}
-                    borderWidth={1}
-                    _hover={{
-                      bg: 'grayModern.50',
-                      color: 'grayModern.600'
-                    }}
-                    onClick={() => handleDeploy(version)}>
-                    {t('deploy')}
-                  </Button>
-                  <SealosMenu
-                    width={100}
-                    Button={
-                      <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
-                        <MyIcon name={'more'} color={'grayModern.600'} />
-                      </MenuButton>
-                    }
-                    menuList={[
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'edit'} w={'16px'} />
-                            <Box ml={2}>{t('edit')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          setCurrentVersion(version)
-                          onOpenEdit()
-                        }
-                      },
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'delete'} w={'16px'} />
-                            <Box ml={2}>{t('delete')}</Box>
-                          </>
-                        ),
-                        menuItemStyle: {
-                          _hover: {
-                            color: 'red.600',
-                            bg: 'rgba(17, 24, 36, 0.05)'
+        <Box maxHeight="350px" overflowY="auto" css={scrollbarStyles}>
+          <VStack spacing={3} align="start" mr={1}>
+            {devboxVersionList.map((version) => (
+              <Box
+                key={version.id}
+                position="relative"
+                w="100%"
+                bg={'grayModern.50'}
+                borderRadius={'lg'}
+                p={4}
+                _hover={{
+                  '& .hover-actions': { visibility: 'visible' }
+                }}>
+                <Flex justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Flex alignItems="center" gap={2} mb={2}>
+                      <Text fontWeight="bold" w="40px">
+                        {version.tag}
+                      </Text>
+                      <Text color={'grayModern.500'} w="80px">
+                        {version.createTime}
+                      </Text>
+                      <DevboxStatusTag status={version.status} />
+                    </Flex>
+                    <Text color={'grayModern.600'}>{version.description}</Text>
+                  </Box>
+                  {/* hover button */}
+                  <Flex className="hover-actions" visibility="hidden" transition="opacity 0.2s">
+                    <Button
+                      size="sm"
+                      mr={1}
+                      bg={'white'}
+                      color={'grayModern.600'}
+                      borderWidth={1}
+                      _hover={{
+                        bg: 'grayModern.50',
+                        color: 'grayModern.600'
+                      }}
+                      onClick={() => handleDeploy(version)}>
+                      {t('deploy')}
+                    </Button>
+                    <SealosMenu
+                      width={100}
+                      Button={
+                        <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
+                          <MyIcon name={'more'} color={'grayModern.600'} />
+                        </MenuButton>
+                      }
+                      menuList={[
+                        {
+                          child: (
+                            <>
+                              <MyIcon name={'edit'} w={'16px'} />
+                              <Box ml={2}>{t('edit')}</Box>
+                            </>
+                          ),
+                          onClick: () => {
+                            setCurrentVersion(version)
+                            onOpenEdit()
                           }
                         },
-                        onClick: () => handleDelDevboxVersion(version.name)
-                      }
-                    ]}
-                  />
+                        {
+                          child: (
+                            <>
+                              <MyIcon name={'delete'} w={'16px'} />
+                              <Box ml={2}>{t('delete')}</Box>
+                            </>
+                          ),
+                          menuItemStyle: {
+                            _hover: {
+                              color: 'red.600',
+                              bg: 'rgba(17, 24, 36, 0.05)'
+                            }
+                          },
+                          onClick: () => handleDelDevboxVersion(version.name)
+                        }
+                      ]}
+                    />
+                  </Flex>
                 </Flex>
-              </Flex>
-            </Box>
-          ))}
-        </VStack>
+              </Box>
+            ))}
+          </VStack>
+        </Box>
       )}
       {!!currentVersion && (
         <EditVersionDesModal

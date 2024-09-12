@@ -128,5 +128,7 @@
   "version_list": "Version List",
   "version_number": "Tag",
   "vscode_tooltip": "Click to develop in VSCode",
-  "yaml_file": "YAML"
+  "yaml_file": "YAML",
+  "Success": "Success",
+  "Failed": "Failed"
 }

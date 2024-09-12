@@ -50,7 +50,11 @@ export enum DevboxStatusEnum {
   Error = 'Error',
   Delete = 'Delete'
 }
-
+export enum DevboxReleaseStatusEnum {
+  Success = 'Success',
+  Pending = 'Pending',
+  Failed = 'Failed'
+}
 export const CpuSlideMarkList = [
   { label: 0.5, value: 500 },
   { label: 1, value: 1000 },
@@ -129,6 +133,30 @@ export const devboxStatusMap = {
   }
 }
 
+export const devboxReleaseStatusMap = {
+  [DevboxReleaseStatusEnum.Success]: {
+    label: 'Success',
+    value: DevboxReleaseStatusEnum.Success,
+    color: '#039855',
+    backgroundColor: '#EDFBF3',
+    dotColor: '#039855'
+  },
+  [DevboxReleaseStatusEnum.Pending]: {
+    label: 'Pending',
+    value: DevboxReleaseStatusEnum.Pending,
+    color: '#787A90',
+    backgroundColor: '#F5F5F8',
+    dotColor: '#787A90'
+  },
+  [DevboxReleaseStatusEnum.Failed]: {
+    label: 'Failed',
+    value: DevboxReleaseStatusEnum.Failed,
+    color: '#F04438',
+    backgroundColor: '#FEF3F2',
+    dotColor: '#F04438'
+  }
+}
+
 export const editModeMap: (isEdit: boolean) => {
   [key: string]: string
 } = (isEdit: boolean) => {
@@ -155,7 +183,30 @@ export const defaultDevboxDetail: DevboxDetailType = {
   ...defaultDevboxEditValue,
   id: '',
   createTime: '2024/8/9',
-  status: devboxStatusMap.Running
+  status: devboxStatusMap.Running,
+  usedCpu: {
+    name: 'usedCpu',
+    xData: [
+      1691583720000, // '2024-08-09 12:02'
+      1691583780000, // '2024-08-09 12:03'
+      1691583840000, // '2024-08-09 12:04'
+      1691583900000, // '2024-08-09 12:05'
+      1691583960000 // '2024-08-09 12:06'
+    ],
+    yData: ['0.1', '0.2', '0.3', '0.4', '0.5']
+  },
+  usedMemory: {
+    name: 'usedMemory',
+    xData: [
+      1691583720000, // '2024-08-09 12:02'
+      1691583780000, // '2024-08-09 12:03'
+      1691583840000, // '2024-08-09 12:04'
+      1691583900000, // '2024-08-09 12:05'
+      1691583960000 // '2024-08-09 12:06'
+    ],
+    yData: ['0.1', '0.2', '0.3', '0.4', '0.5']
+  },
+  sshPort: 0
 }
 
 export const ProtocolList = [
