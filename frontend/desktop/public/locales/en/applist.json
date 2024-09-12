@@ -1,0 +1,12 @@
+{
+	"terminal": "terminal",
+	"job": "job",
+	"other": "other",
+	"object-storage": "object-storage",
+	"cloud-vm": "cloud-vm",
+	"db": "database",
+	"app": "app",
+	"app-store": "app-store",
+	"db-backup": "db-backup",
+	"app_type": "app type"
+}

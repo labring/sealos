@@ -29,6 +29,9 @@ const (
 	ResourceCPU ResourceName = "cpu"
 	// ResourceMemory Memory, in bytes. (500Gi = 500GiB = 500 * 1024 * 1024 * 1024)
 	ResourceMemory ResourceName = "memory"
+	// FinalizerName is the finalizer for Devbox
+	FinalizerName = "devbox.sealos.io/finalizer"
+	DevBoxPartOf  = "devbox"
 )
 
 type DevboxState string
@@ -135,12 +138,20 @@ const (
 )
 
 type CommitHistory struct {
-	Image       string       `json:"image"`
-	Time        metav1.Time  `json:"time"`
-	Pod         string       `json:"pod"`
-	Status      CommitStatus `json:"status"`
-	Node        string       `json:"node"`
-	ContainerID string       `json:"containerID"`
+	// Image is the image of the commit
+	Image string `json:"image"`
+	// Time is the time when the commit is created
+	Time metav1.Time `json:"time"`
+	// Pod is the pod name
+	Pod string `json:"pod"`
+	// status will be set based on expectedStatus after devbox pod delete or stop. if expectedStatus is still pending, it means the pod is not running successfully, so we need to set it to `failed`
+	Status CommitStatus `json:"status"`
+	// predicatedStatus default `pending`, will be set to `success` if pod status is running successfully.
+	PredicatedStatus CommitStatus `json:"predicatedStatus"`
+	// Node is the node name
+	Node string `json:"node"`
+	// ContainerID is the container id
+	ContainerID string `json:"containerID"`
 }
 
 type DevboxPhase string

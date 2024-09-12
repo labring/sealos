@@ -45,7 +45,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { message: toast } = useMessage();
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
       (item) => item === db.dbType
     );
   }, [db.dbType]);
@@ -322,7 +322,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             >
               <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
-            {db.dbType !== 'milvus' && (
+            {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
               <>
                 <Center
                   gap={'6px'}
@@ -353,30 +353,32 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               </>
             )}
           </Flex>
-          <Box
-            mt={'12px'}
-            p={4}
-            backgroundColor={'grayModern.50'}
-            borderRadius={'lg'}
-            position={'relative'}
-            fontSize={'base'}
-          >
-            {Object.entries(baseSecret).map(([name, value]) => (
-              <Box
-                key={name}
-                _notFirst={{
-                  mt: 4
-                }}
-              >
-                <Box color={'grayModern.900'}>{name}</Box>
-                <Box color={'grayModern.600'}>
-                  <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
-                    {showSecret ? value : '***********'}
+          {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
+            <Box
+              mt={'12px'}
+              p={4}
+              backgroundColor={'grayModern.50'}
+              borderRadius={'lg'}
+              position={'relative'}
+              fontSize={'base'}
+            >
+              {Object.entries(baseSecret).map(([name, value]) => (
+                <Box
+                  key={name}
+                  _notFirst={{
+                    mt: 4
+                  }}
+                >
+                  <Box color={'grayModern.900'}>{name}</Box>
+                  <Box color={'grayModern.600'}>
+                    <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
+                      {showSecret ? value : '***********'}
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            ))}
-          </Box>
+              ))}
+            </Box>
+          )}
           <Box
             mt={'12px'}
             p={4}

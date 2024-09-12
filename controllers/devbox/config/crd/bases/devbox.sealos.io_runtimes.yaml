@@ -59,6 +59,18 @@ spec:
                 type: array
               classRef:
                 type: string
+              components:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - version
+                  type: object
+                type: array
               config:
                 properties:
                   annotations:
@@ -1896,12 +1908,12 @@ spec:
                 type: object
               description:
                 type: string
-              title:
+              version:
                 type: string
             required:
             - classRef
             - config
-            - title
+            - version
             type: object
           status:
             description: RuntimeStatus defines the observed state of Runtime

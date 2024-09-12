@@ -1,6 +1,6 @@
-import * as k8s from '@kubernetes/client-node';
-import { k8sFormatTime } from '@/utils/format';
 import { StatusCR, UserCR } from '@/types';
+import { k8sFormatTime } from '@/utils/format';
+import * as k8s from '@kubernetes/client-node';
 import { KubeConfig } from '@kubernetes/client-node';
 
 export function K8sApiDefault(): k8s.KubeConfig {
@@ -348,3 +348,44 @@ export const setUserDelete = async (k8s_username: string) => {
   });
   return !!body;
 };
+
+export const setUserWorkspaceLock = async (namespace: string) => {
+  try {
+    const kc = K8sApiDefault();
+    const client = kc.makeApiClient(k8s.CoreV1Api);
+    const res = await client.patchNamespace(
+      namespace,
+      {
+        metadata: {
+          annotations: {
+            'debt.sealos/status': WorkspaceDebtStatus.TerminateSuspend
+          }
+        }
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/strategic-merge-patch+json'
+        }
+      }
+    );
+    return (
+      res.body.metadata?.annotations?.['debt.sealos/status'] ===
+      WorkspaceDebtStatus.TerminateSuspend
+    );
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
+};
+
+enum WorkspaceDebtStatus {
+  Normal = 'Normal',
+  Suspend = 'Suspend',
+  Resume = 'Resume',
+  TerminateSuspend = 'TerminateSuspend'
+}

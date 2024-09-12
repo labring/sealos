@@ -11,7 +11,6 @@ export const getInitData = () => GET<InitDataType>('/api/platform/getInitData');
 
 export const getUserQuota = () =>
   GET<{
-    balance: string;
     quota: UserQuotaItemType[];
   }>('/api/platform/getQuota');
 
@@ -26,3 +25,6 @@ export const updateDesktopGuide = (payload: UpdateUserGuideParams) =>
 export const getUserAccount = () => GET<AccountCRD>('/api/guide/getAccount');
 
 export const getPriceBonus = () => GET('/api/guide/getBonus');
+
+export const checkPermission = (payload: { appName: string; resourceType: 'deploy' | 'sts' }) =>
+  GET('/api/platform/checkPermission', payload);

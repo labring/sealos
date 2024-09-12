@@ -1,4 +1,4 @@
-import { DeepRequired, OmitPath, OmitPathArr } from './tools';
+import { DeepRequired, OmitPathArr } from './tools';
 
 export type CloudConfigType = {
   domain: string;
@@ -70,6 +70,7 @@ export type LayoutConfigType = {
 };
 
 export type AuthConfigType = {
+  billingToken?: string;
   proxyAddress?: string;
   callbackURL: string;
   signUpEnabled?: boolean;
@@ -161,6 +162,7 @@ export type JwtConfigType = {
   internal?: string;
   regional?: string;
   global?: string;
+  billing?: string;
 };
 
 export type DesktopConfigType<T = AuthConfigType> = {
@@ -260,7 +262,8 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       userInfoURL: ''
     }
   },
-  proxyAddress: ''
+  proxyAddress: '',
+  billingToken: ''
 };
 
 export const DefaultAppClientConfig: AppClientConfigType = {

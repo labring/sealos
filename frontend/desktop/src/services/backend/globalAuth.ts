@@ -1,12 +1,12 @@
-import { hashPassword, verifyPassword } from '@/utils/crypto';
-import { enableSignUp } from '../enable';
-import { globalPrisma, prisma } from '@/services/backend/db/init';
-import { ProviderType, User } from 'prisma/global/generated/client';
-import { nanoid } from 'nanoid';
+import { uploadConvertData } from '@/api/platform';
 import { generateAuthenticationToken } from '@/services/backend/auth';
+import { globalPrisma } from '@/services/backend/db/init';
 import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
-import { uploadConvertData } from '@/api/platform';
+import { hashPassword } from '@/utils/crypto';
+import { nanoid } from 'nanoid';
+import { ProviderType, User, UserStatus } from 'prisma/global/generated/client';
+import { enableSignUp } from '../enable';
 
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -309,9 +309,9 @@ export const getGlobalToken = async ({
       result && (user = result.user);
     }
   }
-
   if (!user) throw new Error('Failed to edit db');
-
+  // user is deleted or banned
+  if (user.status !== UserStatus.NORMAL_USER) return null;
   const token = generateAuthenticationToken({
     userUid: user.uid,
     userId: user.name

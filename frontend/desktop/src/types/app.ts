@@ -65,9 +65,14 @@ export type TOSState = {
   runningInfo: AppInfo[];
   currentAppPid: number;
   autolaunch: string;
+  autolaunchWorkspaceUid?: string;
   launchQuery: Record<string, string>;
   // store deploy template
-  setAutoLaunch: (autolaunch: string, launchQuery: Record<string, string>) => void;
+  setAutoLaunch: (
+    autolaunch: string,
+    launchQuery: Record<string, string>,
+    autolaunchWorkspaceId?: string
+  ) => void;
   cancelAutoLaunch: () => void;
   // init desktop
   init(): Promise<TOSState>;

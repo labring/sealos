@@ -1,9 +1,10 @@
-import { setUserDelete } from '../kubernetes/admin';
-import { globalPrisma, prisma } from '../db/init';
-import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
 import { CronJobStatus } from '@/services/backend/cronjob/index';
-import { DeleteUserEvent } from '@/types/db/event';
 import { getRegionUid } from '@/services/enable';
+import { DeleteUserEvent } from '@/types/db/event';
+import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
+import { Role } from 'prisma/region/generated/client';
+import { globalPrisma, prisma } from '../db/init';
+import { setUserDelete, setUserWorkspaceLock as setWorkspaceLock } from '../kubernetes/admin';
 
 export class DeleteUserCrJob implements CronJobStatus {
   private userUid = '';
@@ -25,8 +26,16 @@ export class DeleteUserCrJob implements CronJobStatus {
   async unit() {
     await this.init();
     const userUid = this.userUid;
+    // lock owner workspace
     const userCr = await prisma.userCr.findUnique({
-      where: { userUid }
+      where: { userUid },
+      include: {
+        userWorkspace: {
+          include: {
+            workspace: true
+          }
+        }
+      }
     });
     if (!userCr) {
       await globalPrisma.eventLog.create({
@@ -42,7 +51,48 @@ export class DeleteUserCrJob implements CronJobStatus {
       });
       return;
       // throw new Error('the userCR not found');
-    }
+    } // lock owner workspace
+    const workspaceList = userCr.userWorkspace
+      .filter((item) => item.role === Role.OWNER)
+      .map((item) => item.workspace);
+    await Promise.all(
+      workspaceList.map(async (workspace) => {
+        await setWorkspaceLock(workspace.id);
+        // kick out all user workspace except owner
+        await prisma.userWorkspace.deleteMany({
+          where: {
+            workspaceUid: workspace.uid,
+            role: {
+              not: Role.OWNER
+            }
+          }
+        });
+        await globalPrisma.eventLog.create({
+          data: {
+            eventName: DeleteUserEvent['<DELETE_USER>_SET_LOCK_WORKSPACE'],
+            mainId: userUid,
+            data: JSON.stringify({
+              userUid,
+              userCrName: userCr.crName,
+              workspaceId: workspace.id,
+              regionUid: getRegionUid(),
+              message: `delete user success`
+            })
+          }
+        });
+      })
+    );
+
+    // kick off self from other workspace, igonre rolebinding
+    const clearResult = await prisma.userWorkspace.deleteMany({
+      where: {
+        userCrUid: userCr.uid,
+        role: {
+          not: Role.OWNER
+        }
+      }
+    });
+
     const deleteResult = await setUserDelete(userCr.crName);
 
     if (!deleteResult) {
@@ -57,11 +107,6 @@ export class DeleteUserCrJob implements CronJobStatus {
           regionUid: getRegionUid(),
           message: `delete user success`
         })
-      }
-    });
-    await prisma.userWorkspace.deleteMany({
-      where: {
-        userCrUid: userCr.uid
       }
     });
   }

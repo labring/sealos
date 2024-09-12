@@ -2,6 +2,8 @@ module github.com/labring/sealos/controllers/devbox
 
 go 1.22.0
 
+toolchain go1.22.4
+
 require (
 	github.com/avast/retry-go v2.7.0+incompatible
 	github.com/google/go-containerregistry v0.20.2

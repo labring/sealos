@@ -1,14 +1,14 @@
-import { globalPrisma } from '../db/init';
-import {
-  TransactionStatus,
-  TransactionType,
-  Prisma as GlobalPrisma
-} from 'prisma/global/generated/client';
-import { getRegionUid } from '@/services/enable';
-import dayjs from 'dayjs';
 import { DeleteUserCrJob } from '@/services/backend/cronjob/deleteUserCr';
-import { Prisma } from '@prisma/client/extension';
 import { MergeUserCrJob } from '@/services/backend/cronjob/mergeUserCr';
+import { getRegionUid } from '@/services/enable';
+import { Prisma } from '@prisma/client/extension';
+import dayjs from 'dayjs';
+import {
+  Prisma as GlobalPrisma,
+  TransactionStatus,
+  TransactionType
+} from 'prisma/global/generated/client';
+import { globalPrisma } from '../db/init';
 
 export type CronJobStatus = {
   unit: (infoUid: string, transactionUid: string) => Promise<void>;
@@ -129,7 +129,6 @@ export const runTransactionjob = async () => {
   } else {
     return;
   }
-  // try {
   await job.unit();
   await globalPrisma.transactionDetail.update({
     where: {

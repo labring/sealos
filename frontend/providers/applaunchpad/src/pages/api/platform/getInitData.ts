@@ -37,6 +37,9 @@ export const defaultAppConfig: AppConfigType = {
     components: {
       monitor: {
         url: 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
+      },
+      billing: {
+        url: 'http://account-service.account-system.svc:2333'
       }
     },
     appResourceFormSliderConfig: {
@@ -62,7 +65,7 @@ process.on('uncaughtException', (err) => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.AppConfig || process.env.NODE_ENV !== 'production') {
+    if (!global.AppConfig) {
       const filename =
         process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));

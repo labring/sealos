@@ -1,10 +1,11 @@
-import { NextApiResponse } from 'next';
-import { globalPrisma, prisma } from '../db/init';
-import { getUserKubeconfigNotPatch, K8sApiDefault } from '../kubernetes/admin';
-import { jsonRes } from '../response';
-import { generateAuthenticationToken } from '../auth';
-import { JoinStatus } from 'prisma/region/generated/client';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { JoinStatus } from 'prisma/region/generated/client';
+import { generateAuthenticationToken } from '../auth';
+import { globalPrisma, prisma } from '../db/init';
+import { getUserKubeconfigNotPatch } from '../kubernetes/admin';
+import { jsonRes } from '../response';
+
 export const resourceGuard =
   (userUid: string) => async (res: NextApiResponse, next?: () => void) => {
     const userCr = await prisma.userCr.findUnique({
@@ -168,3 +169,17 @@ export const otherRegionResourceGuard =
     }
     await Promise.resolve(next?.());
   };
+
+export const filterForceDelete = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  next: (data: { code: string }) => void
+) => {
+  const { code } = req.body as { code: string };
+  if (!code)
+    return jsonRes(res, {
+      code: 400,
+      message: 'invalid code'
+    });
+  await Promise.resolve(next({ code }));
+};

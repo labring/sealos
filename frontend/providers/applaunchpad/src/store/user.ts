@@ -7,7 +7,6 @@ import type { userPriceType } from '@/types/user';
 import { AppEditType } from '@/types/app';
 
 type State = {
-  balance: number;
   userQuota: UserQuotaItemType[];
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
@@ -45,7 +44,6 @@ export const useUserStore = create<State>()(
         const response = await getUserQuota();
         set((state) => {
           state.userQuota = response.quota;
-          state.balance = parseFloat(response.balance);
         });
         return null;
       },
