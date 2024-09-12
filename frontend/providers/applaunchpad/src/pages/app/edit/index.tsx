@@ -324,21 +324,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 
-              // checkPermission
-              if (appName) {
-                try {
-                  await checkPermission({
-                    appName: data.appName,
-                    resourceType: !!data.storeList?.length ? 'sts' : 'deploy'
-                  });
-                } catch (error: any) {
-                  return toast({
-                    status: 'warning',
-                    title: t('user.Insufficient account balance')
-                  });
-                }
-              }
-
               // gpu inventory check
               if (data.gpu?.type) {
                 const inventory = countGpuInventory(data.gpu?.type);
@@ -367,6 +352,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   status: 'warning',
                   title: t('Network port conflict')
                 });
+              }
+
+              // checkPermission
+              if (appName) {
+                try {
+                  await checkPermission({
+                    appName: data.appName,
+                    resourceType: !!data.storeList?.length ? 'sts' : 'deploy'
+                  });
+                } catch (error: any) {
+                  return toast({
+                    status: 'warning',
+                    title: t('user.Insufficient account balance')
+                  });
+                }
               }
 
               openConfirm(() => submitSuccess(parseYamls))();
