@@ -5,6 +5,7 @@
   "Custom Domain": "自定义域名",
   "Delete": "删除中",
   "Error": "错误",
+  "Failed": "失败",
   "Input your custom domain": "输入您的自定义域名",
   "Network Configuration": "网络配置",
   "No changes detected": "并没有变更任何项",
@@ -15,6 +16,7 @@
   "Running": "运行中",
   "Stopped": "已停止",
   "Stopping": "停止中",
+  "Success": "成功",
   "The maximum number of exposed ports is 65535": "暴露端口最大为 65535",
   "The minimum exposed port is 1": "暴露端口最小为 1",
   "This runtime field is required": "运行时版本是必填项",
@@ -127,11 +129,9 @@
   "version_config": "版本配置",
   "version_description": "版本描述",
   "version_history": "版本历史",
-  "version_info": "版本信息",
+  "version_info": "版本列表",
   "version_list": "版本列表",
   "version_number": "版本号",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML文件",
-  "Success": "成功",
-  "Failed": "失败"
+  "yaml_file": "YAML文件"
 }

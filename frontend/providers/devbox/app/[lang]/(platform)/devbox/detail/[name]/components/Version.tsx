@@ -83,7 +83,7 @@ const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
   `
   return (
     <Box borderWidth={1} borderRadius="lg" p={4} bg={'white'} h={'full'} minW={'300px'}>
-      <Flex alignItems="center" justifyContent={'space-between'}>
+      <Flex alignItems="center" justifyContent={'space-between'} mb={2}>
         <Flex alignItems={'center'}>
           <MyIcon name="response" w={'20px'} />
           <Text fontSize="lg" fontWeight="bold" color={'grayModern.600'}>

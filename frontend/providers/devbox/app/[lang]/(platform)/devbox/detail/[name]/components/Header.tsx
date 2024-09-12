@@ -1,12 +1,13 @@
 import { getSSHConnectionInfo, pauseDevbox, restartDevbox } from '@/api/devbox'
+import DevboxStatusTag from '@/components/DevboxStatusTag'
 import MyIcon from '@/components/Icon'
 import DelModal from '@/components/modals/DelModal'
 import { useRouter } from '@/i18n'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
-import { DevboxDetailType, DevboxListItemType } from '@/types/devbox'
-import { Flex, Text, Button } from '@chakra-ui/react'
+import { DevboxDetailType } from '@/types/devbox'
+import { Flex, Text, Button, Box } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
@@ -104,11 +105,14 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
 
   return (
     <Flex justify="space-between" align="center">
-      <Flex>
+      <Flex alignItems={'center'} gap={2}>
         <MyIcon name="arrowLeft" w={'24px'} onClick={() => router.push('/')} />
-        <Text fontSize="2xl" fontWeight="bold">
+        <Box fontSize="2xl" fontWeight="bold">
           {devboxDetail.name}
-        </Text>
+        </Box>
+        <Box mt={1}>
+          <DevboxStatusTag status={devboxDetail.status} />
+        </Box>
       </Flex>
       <Flex>
         <Button

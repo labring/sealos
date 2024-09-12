@@ -5,6 +5,7 @@
   "Custom Domain": "Custom Domain",
   "Delete": "Deleting",
   "Error": "Error",
+  "Failed": "Failed",
   "Input your custom domain": "Enter your custom domain",
   "Network Configuration": "Network",
   "No changes detected": "No change detected",
@@ -15,6 +16,7 @@
   "Running": "Running",
   "Stopped": "Stopped",
   "Stopping": "Stopping",
+  "Success": "Success",
   "The maximum number of exposed ports is 65535": "Maximum port number is 65535",
   "The minimum exposed port is 1": "Minimum port number is 1",
   "This runtime field is required": "The runtime version field is required",
@@ -124,11 +126,9 @@
   "version_config": "Configuration",
   "version_description": "Description",
   "version_history": "Version History",
-  "version_info": "Version Information",
+  "version_info": "Version List",
   "version_list": "Version List",
   "version_number": "Tag",
   "vscode_tooltip": "Click to develop in VSCode",
-  "yaml_file": "YAML",
-  "Success": "Success",
-  "Failed": "Failed"
+  "yaml_file": "YAML"
 }
