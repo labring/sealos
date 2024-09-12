@@ -13,7 +13,7 @@ import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 import ReleaseModal from '@/components/modals/releaseModal'
 import { delDevboxVersionByName } from '@/api/devbox'
 import { sealosApp } from 'sealos-desktop-sdk/app'
-import { NAMESPACE } from '@/stores/static'
+import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 
 const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
   const t = useTranslations()
@@ -36,7 +36,7 @@ const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
         pathname: '/app/edit',
-        query: { imageName: `sealos.hub/${NAMESPACE}/${devbox.name}:${version.tag}` },
+        query: { imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}` },
         messageData: {
           type: 'InternalAppCall',
           formData: { imageName: `sealos.hub/${NAMESPACE}/${devbox.name}:${version.tag}` }
