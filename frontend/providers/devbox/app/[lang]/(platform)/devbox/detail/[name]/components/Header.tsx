@@ -106,7 +106,14 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
   return (
     <Flex justify="space-between" align="center">
       <Flex alignItems={'center'} gap={2}>
-        <MyIcon name="arrowLeft" w={'24px'} onClick={() => router.push('/')} />
+        <MyIcon
+          name="arrowLeft"
+          w={'24px'}
+          onClick={() => router.push('/')}
+          cursor={'pointer'}
+          mt={1}
+          ml={1}
+        />
         <Box fontSize="2xl" fontWeight="bold">
           {devboxDetail.name}
         </Box>
