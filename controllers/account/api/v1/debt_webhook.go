@@ -85,8 +85,11 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 			return admission.ValidationResponse(true, "")
 		}
 		// is user sa
-		if !strings.HasPrefix(g, saPrefix+":ns-") {
+		if !strings.HasPrefix(g, saPrefix+":user-system") {
 			continue
+		}
+		if strings.Contains(req.UserInfo.Username, "user-controller-manager") {
+			break
 		}
 		if isWhiteList(req) {
 			return admission.ValidationResponse(true, "")
