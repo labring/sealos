@@ -32,6 +32,8 @@ export const getLogByNameAndContainerName = (data: {
   podName: string;
   stream: boolean;
   logSize?: number;
+  sinceTime?: number;
+  previous?: boolean;
 }) => POST<string>('/api/migrate/getLogByName', data);
 
 export const getPodStatusByName = (podName: string) =>
