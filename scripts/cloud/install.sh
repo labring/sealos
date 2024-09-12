@@ -8,7 +8,7 @@ RESET='\033[0m'
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.0"
+SEALOS_VERSION="v5.0.1"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -26,7 +26,7 @@ cloud_version="latest"
 #acme=y/n
 image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
-kubernetes_version=${kubernetes_version:-"1.27.11"}
+kubernetes_version=${kubernetes_version:-"1.28.11"}
 cilium_version=${cilium_version:-"1.14.8"}
 cert_manager_version=${cert_manager_version:-"1.14.6"}
 helm_version=${helm_version:-"3.14.1"}
