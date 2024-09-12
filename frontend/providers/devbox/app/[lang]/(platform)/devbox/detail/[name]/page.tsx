@@ -14,7 +14,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name
   const { Loading } = useLoading()
   const [initialized, setInitialized] = useState(false)
-  const { devboxDetail, setDevboxDetail } = useDevboxStore()
+  const { devboxDetail, setDevboxDetail, loadDetailMonitorData } = useDevboxStore()
 
   const { refetch } = useQuery(['initDevboxDetail'], () => setDevboxDetail(devboxName), {
     refetchInterval: 3000,
@@ -22,6 +22,18 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       setInitialized(true)
     }
   })
+
+  useQuery(
+    ['loadDetailMonitorData', devboxName, devboxDetail?.isPause],
+    () => {
+      if (devboxDetail?.isPause) return null
+      return loadDetailMonitorData(devboxName)
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 2 * 60 * 1000
+    }
+  )
 
   return (
     <Box p={5} bg={'#F4F4F7'} h={'100vh'}>

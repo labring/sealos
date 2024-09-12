@@ -51,6 +51,7 @@ export interface DevboxDetailType extends DevboxEditType {
   createTime: string
   sshPort: number
   startTime: string
+  isPause: boolean
   status: DevboxStatusMapType
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
@@ -79,18 +80,6 @@ export interface DevboxListItemType {
   usedMemory: MonitorDataResult
   networks: NetworkType[]
   sshPort: number
-}
-
-export interface PodDetailType extends V1Pod {
-  podName: string
-  status: V1ContainerStatus[]
-  nodeName: string
-  ip: string
-  hostIp: string
-  restarts: number
-  age: string
-  cpu: number
-  memory: number
 }
 
 export interface DevboxVersionListItemType {
@@ -129,4 +118,20 @@ export interface VersionMapType {
 
 export interface runtimeNamespaceMapType {
   [key: string]: string
+}
+
+export interface PodDetailType extends V1Pod {
+  podName: string
+  status: PodStatusMapType
+  nodeName: string
+  ip: string
+  restarts: number
+  age: string
+  usedCpu: MonitorDataResult
+  usedMemory: MonitorDataResult
+  cpu: number
+  memory: number
+  podReason?: string
+  podMessage?: string
+  containerStatus: PodStatusMapType
 }

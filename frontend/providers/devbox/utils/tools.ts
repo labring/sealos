@@ -6,6 +6,7 @@ import * as jsonpatch from 'fast-json-patch'
 import { YamlKindEnum } from '@/constants/devbox'
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
 import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
+import dayjs from 'dayjs'
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
@@ -259,4 +260,39 @@ export const patchYamlList = ({
   })
 
   return actions
+}
+
+/**
+ * format pod createTime
+ */
+export const formatPodTime = (createTimeStamp: Date = new Date()) => {
+  const podStartTimeStamp = dayjs(createTimeStamp)
+
+  let timeDiff = Math.floor(dayjs().diff(podStartTimeStamp) / 1000)
+
+  // 计算天数
+  const days = Math.floor(timeDiff / (24 * 60 * 60))
+  timeDiff -= days * 24 * 60 * 60
+
+  // 计算小时数
+  const hours = Math.floor(timeDiff / (60 * 60))
+  timeDiff -= hours * 60 * 60
+
+  // 计算分钟数
+  const minutes = Math.floor(timeDiff / 60)
+  timeDiff -= minutes * 60
+
+  // 计算秒数
+  const seconds = timeDiff
+
+  if (days > 0) {
+    return `${days}d${hours}h`
+  }
+  if (hours > 0) {
+    return `${hours}h${minutes}m`
+  }
+  if (minutes > 0) {
+    return `${minutes}m${seconds}s`
+  }
+  return `${seconds}s`
 }

@@ -185,6 +185,7 @@ export const defaultDevboxDetail: DevboxDetailType = {
   createTime: '2024/8/9',
   status: devboxStatusMap.Running,
   startTime: '20h',
+  isPause: false,
   usedCpu: {
     name: 'usedCpu',
     xData: [
@@ -222,4 +223,32 @@ export enum YamlKindEnum {
   Ingress = 'Ingress',
   Issuer = 'Issuer',
   Certificate = 'Certificate'
+}
+
+export enum PodStatusEnum {
+  waiting = 'waiting',
+  running = 'running',
+  terminated = 'terminated'
+}
+
+export const podStatusMap = {
+  [PodStatusEnum.running]: {
+    label: 'running',
+    value: PodStatusEnum.running,
+    color: 'green.600'
+  },
+  [PodStatusEnum.waiting]: {
+    label: 'waiting',
+    value: PodStatusEnum.waiting,
+    color: '#787A90',
+    reason: '',
+    message: ''
+  },
+  [PodStatusEnum.terminated]: {
+    label: 'terminated',
+    value: PodStatusEnum.terminated,
+    color: '#8172D8',
+    reason: '',
+    message: ''
+  }
 }

@@ -6,6 +6,7 @@ import { NetworkType } from '@/types/devbox'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import MyTable from '@/components/MyTable'
 import { useTranslations } from 'next-intl'
+import dayjs from 'dayjs'
 
 const MainBody = () => {
   const t = useTranslations()
@@ -69,6 +70,10 @@ const MainBody = () => {
           <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
             {t('monitor')}
           </Text>
+          <Box ml={2} color={'grayModern.500'}>
+            ({t('update Time')}&ensp;
+            {dayjs().format('HH:mm')})
+          </Box>
         </Flex>
         <Flex bg={'grayModern.50'} p={2} borderRadius={'lg'} minH={'200px'}>
           <Box flex={1} mr={4}>

@@ -7,7 +7,9 @@ import {
 } from '@/types/devbox'
 import { GET, POST, DELETE } from '@/services/request'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
-import { adaptDevboxListItem, adaptDevboxVersionListItem } from '@/utils/adapt'
+import { adaptDevboxListItem, adaptDevboxVersionListItem, adaptPod } from '@/utils/adapt'
+import { V1Pod } from '@kubernetes/client-node'
+import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 
 export const getMyDevboxList = () =>
   GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
@@ -50,3 +52,12 @@ export const delDevboxVersionByName = (versionName: string) =>
 
 export const getSSHConnectionInfo = (data: { devboxName: string; runtimeName: string }) =>
   GET('/api/getSSHConnectionInfo', data)
+
+export const getDevboxPodsByDevboxName = (name: string) =>
+  GET<V1Pod[]>('/api/getDevboxPodsByDevboxName', { name }).then((item) => item.map(adaptPod))
+
+export const getDevboxMonitorData = (payload: {
+  queryName: string
+  queryKey: keyof MonitorQueryKey
+  step: string
+}) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload)
