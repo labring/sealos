@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -76,7 +77,7 @@ func GetProperties(c *gin.Context) {
 	// Get the properties from the database
 	properties, err := dao.DBClient.GetProperties()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, fmt.Errorf(fmt.Sprintf("failed to get properties: %v", err)))
+		c.JSON(http.StatusInternalServerError, fmt.Errorf("failed to get properties: %v", err))
 		return
 	}
 	c.JSON(http.StatusOK, helper.GetPropertiesResp{
@@ -116,6 +117,106 @@ func GetConsumptionAmount(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
+	})
+}
+
+// GetAllRegionConsumptionAmount
+// @Summary Get all region consumption amount
+// @Description Get all region consumption amount within a specified time range
+// @Tags ConsumptionAmount
+// @Accept json
+// @Produce json
+// @Param request body helper.ConsumptionRecordReq true "All region consumption amount request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved all region consumption amount"
+// @Failure 400 {object} map[string]interface{} "failed to parse all region consumption amount request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get all region consumption amount"
+// @Router /account/v1alpha1/costs/all-region-consumption [post]
+func GetAllRegionConsumptionAmount(c *gin.Context) {
+	req, err := helper.ParseConsumptionRecordReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse all region consumption amount request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	regionAmount := make(map[string]int64)
+	allAmount := int64(0)
+	for _, region := range dao.Cfg.Regions {
+		if region.Domain == dao.Cfg.LocalRegionDomain {
+			amount, err := dao.DBClient.GetConsumptionAmount(*req)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
+				return
+			}
+			regionAmount[region.Domain] = amount
+			allAmount += amount
+			continue
+		}
+		svc := region.AccountSvc
+		url := fmt.Sprintf("https://%s%s%s", svc, helper.GROUP, helper.GetConsumptionAmount)
+		body, err := json.Marshal(&helper.ConsumptionRecordReq{
+			TimeRange: req.TimeRange,
+			AppType:   req.AppType,
+			Namespace: req.Namespace,
+			AppName:   req.AppName,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to marshal request: %v", err)})
+			return
+		}
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: os.Getenv("INSECURE_VERIFY") != "true", MinVersion: tls.VersionTLS13},
+		}
+		client := &http.Client{Transport: tr}
+		req2, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create request: %v", err)})
+			return
+		}
+		token, err := dao.JwtMgr.GenerateToken(helper.JwtUser{
+			UserID: req.GetAuth().UserID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to generate token: %v", err)})
+			return
+		}
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		req2.Header.Set("Content-Type", "application/json")
+		resp, err := client.Do(req2)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to send request: %v", err)})
+			return
+		}
+		defer resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to read response body: %v", err)})
+			return
+		}
+		var respData map[string]interface{}
+		err = json.Unmarshal(body, &respData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to unmarshal response body: %v", err)})
+			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get response, status code: %d, msg: %s", resp.StatusCode, respData["error"])})
+			return
+		}
+		amountResp, ok := respData["amount"].(float64)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("amount is not an integer, is %T", respData["amount"])})
+			return
+		}
+		regionAmount[region.Domain] = int64(amountResp)
+		allAmount += int64(amountResp)
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"regionAmount": regionAmount,
+		"allAmount":    allAmount,
 	})
 }
 

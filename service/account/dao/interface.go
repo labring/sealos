@@ -208,7 +208,7 @@ func (m *MongoDB) GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap
 	}
 
 	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: matchValue}},
+		bson.D{primitive.E{Key: "$match", Value: matchValue}},
 	}
 
 	project := bson.D{
@@ -217,15 +217,15 @@ func (m *MongoDB) GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap
 	}
 	if appType != "" && appName != "" && appType != resources.AppStore {
 		pipeline = append(pipeline,
-			bson.D{{Key: "$unwind", Value: "$app_costs"}},
-			bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: appName}}}},
+			bson.D{primitive.E{Key: "$unwind", Value: "$app_costs"}},
+			bson.D{primitive.E{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: appName}}}},
 		)
 		project[1] = primitive.E{Key: "amount", Value: "$app_costs.amount"}
 	}
 
 	pipeline = append(pipeline,
-		bson.D{{Key: "$sort", Value: bson.D{{Key: "time", Value: 1}}}},
-		bson.D{{Key: "$project", Value: project}},
+		bson.D{primitive.E{Key: "$sort", Value: bson.D{{Key: "time", Value: 1}}}},
+		bson.D{primitive.E{Key: "$project", Value: project}},
 	)
 
 	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
@@ -1343,7 +1343,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoi
 		return
 	}
 	amount := int64(0)
-	var paymentIds []string
+	var paymentIDs []string
 	var invoicePayments []types.InvoicePayment
 	id, err := gonanoid.New(12)
 	if err != nil {
@@ -1352,7 +1352,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoi
 	}
 	for i := range payments {
 		amount += payments[i].Amount
-		paymentIds = append(paymentIds, payments[i].ID)
+		paymentIDs = append(paymentIDs, payments[i].ID)
 		invoicePayments = append(invoicePayments, types.InvoicePayment{
 			PaymentID: payments[i].ID,
 			Amount:    payments[i].Amount,
@@ -1371,7 +1371,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoi
 	// save invoice with transaction
 	if err = m.ck.DB.Transaction(
 		func(tx *gorm.DB) error {
-			if err = m.ck.SetPaymentInvoiceWithDB(&types.UserQueryOpts{ID: req.UserID}, paymentIds, tx); err != nil {
+			if err = m.ck.SetPaymentInvoiceWithDB(&types.UserQueryOpts{ID: req.UserID}, paymentIDs, tx); err != nil {
 				return fmt.Errorf("failed to set payment invoice: %v", err)
 			}
 			if err = m.ck.CreateInvoiceWithDB(&invoice, tx); err != nil {
