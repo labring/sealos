@@ -19,6 +19,7 @@ import { Tip } from '@sealos/ui';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname } from '@/api/platform';
+import { SEALOS_USER_DOMAIN } from '@/store/static';
 
 export type CustomAccessModalParams = {
   publicDomain: string;
@@ -43,6 +44,12 @@ const CustomAccessModal = ({
   };
 
   const completePublicDomain = useMemo(() => `${publicDomain}.${domain}`, [publicDomain, domain]);
+
+  const cnameTips = useMemo(() => {
+    return SEALOS_USER_DOMAIN.map((item) => `${publicDomain}.${item}`).join(` ${t('or')} `);
+  }, [publicDomain, t]);
+
+  console.log(customDomain, SEALOS_USER_DOMAIN, 123, cnameTips);
 
   const { mutate: authCNAME, isLoading } = useRequest({
     mutationFn: async () => {
@@ -96,7 +103,9 @@ const CustomAccessModal = ({
               size={'sm'}
               whiteSpace={'pre-wrap'}
               icon={<InfoOutlineIcon />}
-              text={`${t('CNAME Tips', { domain: completePublicDomain })}`}
+              text={`${t('CNAME Tips', {
+                domain: customDomain ? cnameTips : completePublicDomain
+              })}`}
             />
           </ModalBody>
           <ModalFooter>

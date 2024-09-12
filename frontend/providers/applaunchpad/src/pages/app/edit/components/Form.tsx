@@ -803,7 +803,7 @@ const Form = ({
                               openPublicDomain: false,
                               publicDomain: '',
                               customDomain: '',
-                              domain: SEALOS_USER_DOMAIN[0] ?? SEALOS_DOMAIN
+                              domain: SEALOS_DOMAIN
                             })
                           }
                         >
@@ -828,7 +828,7 @@ const Form = ({
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
                             publicDomain: network.publicDomain || nanoid(),
-                            domain: network.domain || SEALOS_USER_DOMAIN[0] || SEALOS_DOMAIN
+                            domain: network.domain || SEALOS_DOMAIN
                           });
                         }}
                       />

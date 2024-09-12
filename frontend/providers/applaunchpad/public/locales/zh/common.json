@@ -265,5 +265,6 @@
   "within_1_hour": "一小时内",
   "within_1_day": "一天内",
   "terminated_logs": "中断前",
-  "no_logs_for_now": "暂无日志"
+  "no_logs_for_now": "暂无日志",
+  "or": "或"
 }

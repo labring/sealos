@@ -326,7 +326,9 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
             ? ingress?.metadata?.labels?.[publicDomainKey] || ''
             : domain.split('.')[0],
           customDomain: isCustomDomain ? domain : '',
-          domain: domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+          domain: isCustomDomain
+            ? SEALOS_DOMAIN
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
