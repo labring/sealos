@@ -95,6 +95,7 @@ const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
           bg={'white'}
           color={'grayModern.600'}
           borderWidth={1}
+          mr={3}
           leftIcon={<MyIcon name="version" />}
           _hover={{
             bg: 'grayModern.50',
@@ -111,7 +112,7 @@ const Version = ({ devbox }: { devbox: DevboxDetailType }) => {
           </Box>
         </Flex>
       ) : (
-        <Box maxHeight="350px" overflowY="auto" css={scrollbarStyles}>
+        <Box maxHeight="100%" overflowY="auto" css={scrollbarStyles}>
           <VStack spacing={3} align="start" mr={1}>
             {devboxVersionList.map((version) => (
               <Box

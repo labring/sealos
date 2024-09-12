@@ -36,7 +36,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   )
 
   return (
-    <Box p={5} bg={'#F4F4F7'} h={'100vh'}>
+    <Box p={5} bg={'#F4F4F7'} h={'100%'}>
       <Loading loading={!initialized} />
       {devboxDetail !== null && initialized && (
         <>

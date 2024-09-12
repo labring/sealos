@@ -48,7 +48,7 @@ const Status = () => {
       borderWidth={1}
       p={4}
       gap={4}
-      templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
+      templateColumns={['1fr', '1fr 1fr', 'repeat(3, 1fr)', 'repeat(4, 1fr)']}>
       <GridItem>
         <Flex alignItems="center" height="100%">
           <Text fontSize="lg" fontWeight="bold" width="40%" flexShrink={0}>
