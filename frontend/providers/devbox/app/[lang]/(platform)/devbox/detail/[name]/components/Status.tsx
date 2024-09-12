@@ -1,13 +1,44 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import MyIcon from '@/components/Icon'
 import { useTranslations } from 'next-intl'
 import { useDevboxStore } from '@/stores/devbox'
-import { Box, Text, Grid, GridItem, Flex, Image } from '@chakra-ui/react'
-import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
+import { Box, Text, Grid, GridItem, Flex, Image, Spinner } from '@chakra-ui/react'
+import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
+import { getSSHConnectionInfo } from '@/api/devbox'
 
 const Status = () => {
   const { devboxDetail } = useDevboxStore()
+  const [loading, setLoading] = useState(false)
   const t = useTranslations()
+
+  const handleDownloadConfig = useCallback(async () => {
+    setLoading(true)
+    const { base64PublicKey, base64PrivateKey, userName } = await getSSHConnectionInfo({
+      devboxName: devboxDetail.name,
+      runtimeName: devboxDetail.runtimeVersion
+    })
+
+    const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
+
+    const config = {
+      sshDomain: `${userName}@${SEALOS_DOMAIN}`,
+      sshPort: devboxDetail.sshPort,
+      sshPrivateKey
+    }
+
+    const configStr = JSON.stringify(config, null, 2)
+    const blob = new Blob([configStr], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.style.display = 'none'
+    a.href = url
+    a.download = `${devboxDetail.name}.json`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    setLoading(false)
+  }, [devboxDetail])
 
   return (
     <Grid
@@ -49,7 +80,11 @@ const Status = () => {
             {t('download_config')}
           </Text>
           <Box width="60%">
-            <MyIcon name="download" w={'20px'} h={'20px'} />
+            {loading ? (
+              <Spinner size="sm" color="#0077A9" />
+            ) : (
+              <MyIcon name="download" w={'20px'} h={'20px'} onClick={handleDownloadConfig} />
+            )}
           </Box>
         </Flex>
       </GridItem>
