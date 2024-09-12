@@ -43,6 +43,9 @@ export type AppConfigType = {
       monitor: {
         url: string;
       };
+      billing: {
+        url: string;
+      };
     };
     appResourceFormSliderConfig: FormSliderListType;
     fileManger: FileMangerType;
