@@ -142,12 +142,11 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 }
 
 const getResourcePrice = async () => {
-  const res = await fetch(
-    `https://account-api.${global.AppConfig.cloud.domain}/account/v1alpha1/properties`,
-    {
-      method: 'POST'
-    }
-  );
+  const url = global.AppConfig.launchpad.components.billing.url;
+
+  const res = await fetch(`${url}/account/v1alpha1/properties`, {
+    method: 'POST'
+  });
   const data: ResourcePriceType = await res.json();
 
   return data.data.properties;

@@ -5,6 +5,11 @@ import { jsonRes } from '@/services/backend/response';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+type ConsumptionResult = {
+  allAmount: number;
+  regionAmount: Record<string, number>;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
@@ -25,9 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     timeOneMonthAgo.setMonth(currentTime.getMonth() - 1);
 
     const base = global.AppConfig.desktop.auth.billingUrl as string;
-    const consumptionUrl = base + '/account/v1alpha1/costs/consumption';
+    const consumptionUrl = base + '/account/v1alpha1/costs/all-region-consumption';
 
-    const results = await Promise.all([
+    const results: ConsumptionResult[] = await Promise.all([
       (
         await fetch(consumptionUrl, {
           method: 'POST',
@@ -56,8 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes(res, {
       data: {
-        prevMonthTime: results[0].amount || 0,
-        prevDayTime: results[1].amount || 0
+        prevMonthTime: results[0].allAmount || 0,
+        prevDayTime: results[1].allAmount || 0
       }
     });
   } catch (err: any) {
