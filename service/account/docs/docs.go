@@ -432,6 +432,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/costs/all-region-consumption": {
+            "post": {
+                "description": "Get all region consumption amount within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ConsumptionAmount"
+                ],
+                "summary": "Get all region consumption amount",
+                "parameters": [
+                    {
+                        "description": "All region consumption amount request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.ConsumptionRecordReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved all region consumption amount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse all region consumption amount request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get all region consumption amount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/costs/app": {
             "post": {
                 "description": "Get app costs within a specified time range",
@@ -1712,6 +1768,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2021-12-01T00:00:00Z"
                 },
+                "invoiced": {
+                    "description": "@Summary Invoiced\n@Description Invoiced\n@JSONSchema",
+                    "type": "boolean",
+                    "example": true
+                },
                 "kubeConfig": {
                     "type": "string"
                 },
@@ -1868,8 +1929,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "invoiceIDList",
-                "status",
-                "token"
+                "status"
             ],
             "properties": {
                 "invoiceIDList": {
@@ -1883,15 +1943,25 @@ const docTemplate = `{
                         "\"invoice-id-2\"]"
                     ]
                 },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
                 "status": {
                     "description": "Invoice status\n@Summary Invoice status\n@Description Invoice status\n@JSONSchema required",
                     "type": "string",
                     "example": "COMPLETED,REJECTED,PENDING"
                 },
                 "token": {
-                    "description": "@Summary Authentication token\n@Description Authentication token\n@JSONSchema required",
                     "type": "string",
                     "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
