@@ -214,6 +214,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 			// compare devbox status with latestDevbox status
 			latestDevbox.Status.Phase = devbox.Status.Phase
+			latestDevbox.Status.DevboxPodPhase = devbox.Status.DevboxPodPhase
 			// merge commit history, up coming commit history will be added to the latest devbox
 			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
 			latestDevbox.Status.CommitHistory = helper.MergeCommitHistory(devbox, latestDevbox)

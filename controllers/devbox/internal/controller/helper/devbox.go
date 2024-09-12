@@ -128,17 +128,21 @@ func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateS
 			if updateStatus {
 				devbox.Status.CommitHistory[i].Status = devbox.Status.CommitHistory[i].PredicatedStatus
 			}
-			devbox.Status.CommitHistory[i].Node = pod.Spec.NodeName
-			devbox.Status.CommitHistory[i].ContainerID = pod.Status.ContainerStatuses[0].ContainerID
+			if len(pod.Status.ContainerStatuses) > 0 {
+				devbox.Status.CommitHistory[i].Node = pod.Spec.NodeName
+				devbox.Status.CommitHistory[i].ContainerID = pod.Status.ContainerStatuses[0].ContainerID
+			}
 			break
 		}
 	}
 	if !found {
 		newCommitHistory := &devboxv1alpha1.CommitHistory{
 			Pod:              pod.Name,
-			Node:             pod.Spec.NodeName,
-			ContainerID:      pod.Status.ContainerStatuses[0].ContainerID,
 			PredicatedStatus: PodPhaseToCommitStatus(pod.Status.Phase),
+		}
+		if len(pod.Status.ContainerStatuses) > 0 {
+			newCommitHistory.ContainerID = pod.Status.ContainerStatuses[0].ContainerID
+			newCommitHistory.Node = pod.Spec.NodeName
 		}
 		if updateStatus {
 			newCommitHistory.Status = newCommitHistory.PredicatedStatus
