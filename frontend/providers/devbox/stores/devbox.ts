@@ -65,11 +65,15 @@ export const useDevboxStore = create<State>()(
       devboxDetail: {} as DevboxDetailType,
       setDevboxDetail: async (devboxName: string) => {
         const res = await getMyDevboxList()
+        const pods = await getDevboxPodsByDevboxName(devboxName)
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
 
         // convert startTime to YYYY-MM-DD HH:mm
         detail.createTime = detail.createTime.replace(/\//g, '-')
+
+        // add upTime by Pod
+        detail.upTime = pods[0].upTime
 
         // cpu and memory
         detail.cpu = detail.cpu / 1000
@@ -89,9 +93,6 @@ export const useDevboxStore = create<State>()(
         const queryName = pods[0].podName || devboxName
 
         set((state) => {
-          // add upTime by Pod
-          state.devboxDetail.upTime = pods[0].upTime
-
           state.devboxDetailPods = pods.map((pod) => {
             const oldPod = state.devboxDetailPods.find((item) => item.podName === pod.podName)
             return {
