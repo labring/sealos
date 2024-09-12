@@ -354,17 +354,23 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 });
               }
 
-              // checkPermission
+              // check permission
               if (appName) {
                 try {
-                  await checkPermission({
+                  const result = await checkPermission({
                     appName: data.appName,
                     resourceType: !!data.storeList?.length ? 'sts' : 'deploy'
                   });
+                  if (result === 'insufficient_funds') {
+                    return toast({
+                      status: 'warning',
+                      title: t('user.Insufficient account balance')
+                    });
+                  }
                 } catch (error: any) {
                   return toast({
                     status: 'warning',
-                    title: t('user.Insufficient account balance')
+                    title: error
                   });
                 }
               }

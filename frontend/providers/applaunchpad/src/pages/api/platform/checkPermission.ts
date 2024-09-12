@@ -63,10 +63,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: 'success'
     });
   } catch (err: any) {
-    console.log('checkBalance error', err?.body);
+    if (err?.body?.code === 403 && err?.body?.message.includes('40001')) {
+      return jsonRes(res, {
+        code: 200,
+        data: 'insufficient_funds',
+        message: err?.body?.message
+      });
+    }
+
     jsonRes(res, {
       code: 500,
-      error: 'check balance error'
+      error: err?.body
     });
   }
 }
