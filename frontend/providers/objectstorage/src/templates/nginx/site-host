@@ -13,7 +13,6 @@ http {
 
     server {
         listen 80;
-        # 主位置块
         location / {
             rewrite ^/404\.html$ /<%= bucket %>/404.html break;
             rewrite ^/$ /<%= bucket %>/index.html break;
@@ -28,13 +27,11 @@ http {
             error_page 404 = @spa;
         }
 
-        # 专门处理 SPA 路由
         location @spa {
             rewrite ^(.*)$ /<%= bucket %>/index.html break;
             proxy_pass http://object-storage.objectstorage-system.svc.cluster.local;
         }
 
-        # 处理静态资源
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json)$ {
             rewrite ^/(.+)$ /<%= bucket %>/$1 break;
             proxy_pass http://object-storage.objectstorage-system.svc.cluster.local;
