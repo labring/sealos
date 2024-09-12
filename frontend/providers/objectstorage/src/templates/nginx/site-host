@@ -23,7 +23,6 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            # 处理 404 错误，支持 History 模式路由
             error_page 404 = @spa;
         }
 
