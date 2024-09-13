@@ -90,6 +90,16 @@ func (in *Config) DeepCopyInto(out *Config) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ReleaseCommand != nil {
+		in, out := &in.ReleaseCommand, &out.ReleaseCommand
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ReleaseArgs != nil {
+		in, out := &in.ReleaseArgs, &out.ReleaseArgs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Ports != nil {
 		in, out := &in.Ports, &out.Ports
 		*out = make([]v1.ContainerPort, len(*in))
@@ -364,6 +374,11 @@ func (in *DevboxStatus) DeepCopyInto(out *DevboxStatus) {
 				(*in).DeepCopyInto(*out)
 			}
 		}
+	}
+	if in.LastTerminatedState != nil {
+		in, out := &in.LastTerminatedState, &out.LastTerminatedState
+		*out = new(v1.ContainerStateTerminated)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

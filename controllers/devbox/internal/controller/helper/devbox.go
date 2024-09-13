@@ -119,6 +119,25 @@ func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod
 	}
 }
 
+func GetLastTerminatedState(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) *corev1.ContainerStateTerminated {
+	if len(pod.Status.ContainerStatuses) == 0 {
+		return nil
+	}
+	if pod.Status.ContainerStatuses[0].State.Terminated != nil {
+		return pod.Status.ContainerStatuses[0].State.Terminated
+	}
+	return devbox.Status.LastTerminatedState
+}
+
+// UpdateDevboxStatus updates the devbox status, including phase, pod phase, last terminated state and commit history, maybe we need update more fields in the future
+// TODO: move this function to devbox types.go
+func UpdateDevboxStatus(current, latest *devboxv1alpha1.Devbox) {
+	latest.Status.Phase = current.Status.Phase
+	latest.Status.DevboxPodPhase = current.Status.DevboxPodPhase
+	latest.Status.LastTerminatedState = current.Status.LastTerminatedState
+	latest.Status.CommitHistory = MergeCommitHistory(current, latest)
+}
+
 func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateStatus bool) {
 	// update commit history, if devbox commit history missed the pod, we need add it
 	found := false

@@ -2768,6 +2768,38 @@ spec:
                   - time
                   type: object
                 type: array
+              lastTerminatedState:
+                description: ContainerStateTerminated is a terminated state of a container.
+                properties:
+                  containerID:
+                    description: Container's ID in the format '<type>://<container_id>'
+                    type: string
+                  exitCode:
+                    description: Exit status from the last termination of the container
+                    format: int32
+                    type: integer
+                  finishedAt:
+                    description: Time at which the container last terminated
+                    format: date-time
+                    type: string
+                  message:
+                    description: Message regarding the last termination of the container
+                    type: string
+                  reason:
+                    description: (brief) reason from the last termination of the container
+                    type: string
+                  signal:
+                    description: Signal from the last termination of the container
+                    format: int32
+                    type: integer
+                  startedAt:
+                    description: Time at which previous execution of the container
+                      started
+                    format: date-time
+                    type: string
+                required:
+                - exitCode
+                type: object
               network:
                 properties:
                   nodePort:

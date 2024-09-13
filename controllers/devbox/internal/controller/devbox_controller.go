@@ -212,12 +212,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				logger.Error(err, "get latest devbox failed")
 				return err
 			}
-			// compare devbox status with latestDevbox status
-			latestDevbox.Status.Phase = devbox.Status.Phase
-			latestDevbox.Status.DevboxPodPhase = devbox.Status.DevboxPodPhase
-			// merge commit history, up coming commit history will be added to the latest devbox
+			// update devbox status with latestDevbox status
+			logger.Info("updating devbox status")
 			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
-			latestDevbox.Status.CommitHistory = helper.MergeCommitHistory(devbox, latestDevbox)
+			helper.UpdateDevboxStatus(devbox, latestDevbox)
+			logger.Info("devbox latest terminated state", "state", devbox.Status.LastTerminatedState)
 			return r.Status().Update(ctx, latestDevbox)
 		}); err != nil {
 			logger.Error(err, "sync pod failed")
@@ -257,6 +256,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
+			devbox.Status.LastTerminatedState = helper.GetLastTerminatedState(devbox, pod)
+			logger.Info("last terminated state", "state", devbox.Status.LastTerminatedState)
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
@@ -298,6 +299,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
+			devbox.Status.LastTerminatedState = helper.GetLastTerminatedState(devbox, pod)
+			logger.Info("last terminated state", "state", devbox.Status.LastTerminatedState)
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
