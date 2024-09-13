@@ -76,7 +76,6 @@ debug:
 	go run ./cmd/main.go --debug
 
 .PHONY: docker-build
-.PHONY: docker-build
 docker-build: ## Build docker image with the manager.
 	mv bin/manager bin/controller-devbox-${TARGETARCH}
 	chmod +x bin/controller-devbox-${TARGETARCH}
