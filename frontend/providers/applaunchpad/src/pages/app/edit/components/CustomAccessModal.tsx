@@ -49,8 +49,6 @@ const CustomAccessModal = ({
     return SEALOS_USER_DOMAIN.map((item) => `${publicDomain}.${item}`).join(` ${t('or')} `);
   }, [publicDomain, t]);
 
-  console.log(customDomain, SEALOS_USER_DOMAIN, 123, cnameTips);
-
   const { mutate: authCNAME, isLoading } = useRequest({
     mutationFn: async () => {
       const val = ref.current?.value || '';
