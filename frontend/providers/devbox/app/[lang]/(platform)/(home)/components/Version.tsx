@@ -26,6 +26,7 @@ import { useDevboxStore } from '@/stores/devbox'
 import { delDevboxVersionByName } from '@/api/devbox'
 import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
+import DevboxStatusTag from '@/components/DevboxStatusTag'
 
 const ReleaseModal = dynamic(() => import('@/components/modals/releaseModal'))
 const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))
@@ -106,6 +107,11 @@ const Version = ({
           {item.tag}
         </Box>
       )
+    },
+    {
+      title: t('status'),
+      key: 'status',
+      render: (item: DevboxVersionListItemType) => <DevboxStatusTag status={item.status} />
     },
     {
       title: t('create_time'),

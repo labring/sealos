@@ -12,8 +12,10 @@ import {
   getDevboxMonitorData,
   getDevboxPodsByDevboxName,
   getDevboxVersionList,
-  getMyDevboxList
+  getMyDevboxList,
+  getSSHConnectionInfo
 } from '@/api/devbox'
+import { SEALOS_DOMAIN } from './static'
 
 type State = {
   devboxList: DevboxListItemType[]
@@ -95,6 +97,22 @@ export const useDevboxStore = create<State>()(
         const pods = await getDevboxPodsByDevboxName(devboxName)
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
+
+        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
+          devboxName: detail.name,
+          runtimeName: detail.runtimeVersion
+        })
+
+        const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
+        const sshConfig = {
+          sshUser: userName,
+          sshDomain: SEALOS_DOMAIN,
+          sshPort: detail.sshPort,
+          sshPrivateKey
+        }
+
+        // add sshConfig
+        detail.sshConfig = sshConfig as DevboxDetailType['sshConfig']
 
         // convert startTime to YYYY-MM-DD HH:mm
         detail.createTime = detail.createTime.replace(/\//g, '-')

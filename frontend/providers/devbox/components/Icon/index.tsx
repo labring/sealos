@@ -53,7 +53,9 @@ const map = {
   docs: require('./icons/docs.svg').default,
   vscode: require('./icons/vscode.svg').default,
   monitor: require('./icons/monitor.svg').default,
-  response: require('./icons/response.svg').default
+  response: require('./icons/response.svg').default,
+  link: require('./icons/link.svg').default,
+  list: require('./icons/list.svg').default
 }
 
 const MyIcon = ({

@@ -80,7 +80,10 @@ export const getRuntimeVersionItem = (runtimeType: string, runtimeVersion: strin
   } else if (osVersionMap[runtimeType]) {
     versions = osVersionMap[runtimeType]
   }
-  return versions.find((i) => i.id === runtimeVersion)
+  const version = versions.find((i) => i.id === runtimeVersion)
+  const resp = `${runtimeType}-${version?.label}`
+
+  return resp
 }
 
 export const getUserPrice = async () => {

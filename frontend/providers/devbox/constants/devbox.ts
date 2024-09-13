@@ -184,7 +184,7 @@ export const defaultDevboxDetail: DevboxDetailType = {
   id: '',
   createTime: '2024/8/9',
   status: devboxStatusMap.Running,
-  startTime: '20h',
+  upTime: '20h',
   isPause: false,
   usedCpu: {
     name: 'usedCpu',
@@ -208,7 +208,12 @@ export const defaultDevboxDetail: DevboxDetailType = {
     ],
     yData: ['0.1', '0.2', '0.3', '0.4', '0.5']
   },
-  sshPort: 0
+  sshConfig: {
+    sshUser: '',
+    sshDomain: '',
+    sshPort: 0,
+    sshPrivateKey: ''
+  }
 }
 
 export const ProtocolList = [

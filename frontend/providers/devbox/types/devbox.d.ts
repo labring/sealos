@@ -50,12 +50,17 @@ export interface DevboxDetailType extends DevboxEditType {
   id: string
   upTime?: string
   createTime: string
-  sshPort: number
-  startTime: string
-  isPause: boolean
+  isPause?: boolean
   status: DevboxStatusMapType
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
+  sshConfig?: {
+    sshUser: string
+    sshDomain: string
+    sshPort: number
+    sshPrivateKey: string
+  }
+  sshPort?: number
 }
 
 export interface NetworkType {

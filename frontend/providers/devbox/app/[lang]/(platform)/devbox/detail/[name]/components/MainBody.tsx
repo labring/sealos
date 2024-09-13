@@ -46,23 +46,7 @@ const MainBody = () => {
     }
   ]
   return (
-    <Box w={'62vw'} bg={'white'} borderRadius="lg" p={4} h={'full'} borderWidth={1}>
-      {/* network */}
-      <Box>
-        <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="network" w={'20px'} h={'20px'} mr={'4px'} color={'grayModern.600'} />
-          <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
-            {t('network')} ( {devboxDetail?.networks?.length} )
-          </Text>
-        </Flex>
-        {devboxDetail?.networks?.length > 0 ? (
-          <MyTable columns={networkColumn} data={devboxDetail?.networks} />
-        ) : (
-          <Flex justify={'center'} align={'center'} h={'100px'}>
-            <Text color={'grayModern.600'}>{t('no_network')}</Text>
-          </Flex>
-        )}
-      </Box>
+    <Box w={'65vw'} bg={'white'} borderRadius="lg" p={4} h={'full'} borderWidth={1}>
       {/* monitor */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
@@ -116,6 +100,22 @@ const MainBody = () => {
             </Box>
           </Box>
         </Flex>
+      </Box>
+      {/* network */}
+      <Box mt={4}>
+        <Flex alignItems={'center'} mb={2}>
+          <MyIcon name="network" w={'20px'} h={'20px'} mr={'4px'} color={'grayModern.600'} />
+          <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
+            {t('network')} ( {devboxDetail?.networks?.length} )
+          </Text>
+        </Flex>
+        {devboxDetail?.networks?.length > 0 ? (
+          <MyTable columns={networkColumn} data={devboxDetail?.networks} />
+        ) : (
+          <Flex justify={'center'} align={'center'} h={'100px'}>
+            <Text color={'grayModern.600'}>{t('no_network')}</Text>
+          </Flex>
+        )}
       </Box>
     </Box>
   )

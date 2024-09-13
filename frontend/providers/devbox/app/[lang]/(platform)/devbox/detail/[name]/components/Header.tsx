@@ -7,7 +7,7 @@ import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import { DevboxDetailType } from '@/types/devbox'
-import { Flex, Text, Button, Box } from '@chakra-ui/react'
+import { Flex, Button, Box } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
@@ -30,9 +30,11 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
         `${userName}@${SEALOS_DOMAIN}`
-      )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
-        base64PrivateKey
-      )}&sshHostLabel=${encodeURIComponent(`${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`)}`
+      )}&sshPort=${encodeURIComponent(
+        devbox.sshPort as number
+      )}&base64PrivateKey=${encodeURIComponent(base64PrivateKey)}&sshHostLabel=${encodeURIComponent(
+        `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
+      )}`
 
       window.location.href = vscodeUri
     } catch (error: any) {
