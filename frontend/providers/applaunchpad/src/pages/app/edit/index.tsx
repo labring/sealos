@@ -358,8 +358,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               if (appName) {
                 try {
                   const result = await checkPermission({
-                    appName: data.appName,
-                    resourceType: !!data.storeList?.length ? 'sts' : 'deploy'
+                    appName: data.appName
                   });
                   if (result === 'insufficient_funds') {
                     return toast({
@@ -370,7 +369,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 } catch (error: any) {
                   return toast({
                     status: 'warning',
-                    title: error
+                    title: error?.message || 'Check Error'
                   });
                 }
               }

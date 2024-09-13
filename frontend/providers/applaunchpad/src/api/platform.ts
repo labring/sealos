@@ -23,5 +23,5 @@ export const getUserAccount = () => GET<AccountCRD>('/api/guide/getAccount');
 
 export const getPriceBonus = () => GET('/api/guide/getBonus');
 
-export const checkPermission = (payload: { appName: string; resourceType: 'deploy' | 'sts' }) =>
+export const checkPermission = (payload: { appName: string }) =>
   GET('/api/platform/checkPermission', payload);
