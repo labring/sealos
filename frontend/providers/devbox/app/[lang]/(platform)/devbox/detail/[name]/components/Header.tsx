@@ -1,4 +1,4 @@
-import { getSSHConnectionInfo, pauseDevbox, restartDevbox } from '@/api/devbox'
+import { getSSHConnectionInfo, getSSHRuntimeInfo, pauseDevbox, restartDevbox } from '@/api/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import MyIcon from '@/components/Icon'
 import DelModal from '@/components/modals/DelModal'
@@ -23,10 +23,11 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
 
   const handleGotoVSCode = useCallback(async (devbox: DevboxDetailType) => {
     try {
-      const { base64PublicKey, base64PrivateKey, userName } = await getSSHConnectionInfo({
+      const { base64PrivateKey, userName } = await getSSHConnectionInfo({
         devboxName: devbox.name,
         runtimeName: devbox.runtimeVersion
       })
+      const { workingDir } = await getSSHRuntimeInfo(devbox.name)
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
         `${userName}@${SEALOS_DOMAIN}`
@@ -34,7 +35,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
         devbox.sshPort as number
       )}&base64PrivateKey=${encodeURIComponent(base64PrivateKey)}&sshHostLabel=${encodeURIComponent(
         `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
-      )}`
+      )}&workingDir=${encodeURIComponent(workingDir)}`
 
       window.location.href = vscodeUri
     } catch (error: any) {

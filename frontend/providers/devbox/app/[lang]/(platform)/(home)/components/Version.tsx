@@ -23,7 +23,7 @@ import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
-import { delDevboxVersionByName } from '@/api/devbox'
+import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
@@ -77,8 +77,10 @@ const Version = ({
     [setIsLoading, toast, t]
   )
 
-  const handleOnline = useCallback(
-    (version: DevboxVersionListItemType) => {
+  const handleDeploy = useCallback(
+    async (version: DevboxVersionListItemType) => {
+      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.name)
+
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
         pathname: '/app/edit',
@@ -166,7 +168,7 @@ const Version = ({
             _hover={{
               color: 'brightBlue.600'
             }}
-            onClick={() => handleOnline(item)}>
+            onClick={() => handleDeploy(item)}>
             {t('deploy')}
           </Button>
           <SealosMenu

@@ -2,13 +2,12 @@ import React, { useCallback, useState } from 'react'
 import MyIcon from '@/components/Icon'
 import { useTranslations } from 'next-intl'
 import { useDevboxStore } from '@/stores/devbox'
-import { Box, Text, Grid, GridItem, Flex, Image, Spinner } from '@chakra-ui/react'
+import { Box, Text, Flex, Image, Spinner } from '@chakra-ui/react'
 import { getRuntimeVersionItem, NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
-import { getSSHConnectionInfo } from '@/api/devbox'
 import { DevboxDetailType } from '@/types/devbox'
 
 const BasicInfo = () => {
-  const { devboxDetail, devboxDetailPods } = useDevboxStore()
+  const { devboxDetail } = useDevboxStore()
   const [loading, setLoading] = useState(false)
   const t = useTranslations()
 

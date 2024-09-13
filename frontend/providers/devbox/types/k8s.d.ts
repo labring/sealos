@@ -123,7 +123,11 @@ export type KBRuntimeType = {
         protocol?: string
       }[]
       user: string
+      workingDir: string
+      releaseCommand: string[]
+      releaseArgs: string[]
     }
+    category: string[]
     description: string
     version: string
     components: {

@@ -23,7 +23,13 @@ import { useGlobalStore } from '@/stores/global'
 import { DevboxListItemType } from '@/types/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { getSSHConnectionInfo, pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+import {
+  getSSHConnectionInfo,
+  getSSHRuntimeInfo,
+  pauseDevbox,
+  restartDevbox,
+  startDevbox
+} from '@/api/devbox'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -138,16 +144,19 @@ const DevboxList = ({
 
   const handleGotoVSCode = useCallback(async (devbox: DevboxListItemType) => {
     try {
-      const { base64PublicKey, base64PrivateKey, userName } = await getSSHConnectionInfo({
+      const { base64PrivateKey, userName } = await getSSHConnectionInfo({
         devboxName: devbox.name,
         runtimeName: devbox.runtimeVersion
       })
+      const { workingDir } = await getSSHRuntimeInfo(devbox.name)
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
         `${userName}@${SEALOS_DOMAIN}`
       )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
         base64PrivateKey
-      )}&sshHostLabel=${encodeURIComponent(`${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`)}`
+      )}&sshHostLabel=${encodeURIComponent(
+        `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
+      )}&workingDir=${encodeURIComponent(workingDir)}`
 
       window.location.href = vscodeUri
     } catch (error: any) {

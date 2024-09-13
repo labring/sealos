@@ -9,7 +9,7 @@ import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
-import { delDevboxVersionByName } from '@/api/devbox'
+import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { DevboxVersionListItemType } from '@/types/devbox'
@@ -34,7 +34,9 @@ const Version = () => {
     }
   })
   const handleDeploy = useCallback(
-    (version: DevboxVersionListItemType) => {
+    async (version: DevboxVersionListItemType) => {
+      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.name)
+
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
         pathname: '/app/edit',

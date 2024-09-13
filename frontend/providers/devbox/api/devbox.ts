@@ -61,3 +61,6 @@ export const getDevboxMonitorData = (payload: {
   queryKey: keyof MonitorQueryKey
   step: string
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload)
+
+export const getSSHRuntimeInfo = (runtimeName: string) =>
+  GET('/api/getSSHRuntimeInfo', { runtimeName })
