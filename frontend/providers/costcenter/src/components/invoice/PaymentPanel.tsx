@@ -31,7 +31,8 @@ export default function PaymentPanel({
     endTime,
     page,
     pageSize,
-    paymentID: orderID
+    paymentID: orderID,
+    invoiced: false
   };
   const { data } = useQuery(['billing', 'invoice', body], () => {
     return request<any, ApiResp<RechargeBillingData>>('/api/billing/rechargeBillingList', {
