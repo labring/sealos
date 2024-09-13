@@ -19,6 +19,11 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const { refetch } = useQuery(['initDevboxDetail'], () => setDevboxDetail(devboxName), {
     onSettled() {
       setInitialized(true)
+    },
+    onSuccess: (data) => {
+      if (data) {
+        loadDetailMonitorData(data.name)
+      }
     }
   })
 
