@@ -32,6 +32,8 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -289,19 +291,43 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   }, [router.query.name, tabType]);
 
   useEffect(() => {
-    const query = router.query;
-    const updates: Partial<AppEditSyncedFields> = {
-      imageName: query.imageName as string,
-      replicas: query.replicas ? Number(query.replicas) : undefined,
-      cpu: query.cpu ? Number(query.cpu) : undefined,
-      memory: query.memory ? Number(query.memory) : undefined
-    };
+    try {
+      const query = router.query as { formData?: string };
+      if (!query.formData) return;
+      const parsedData: Partial<AppEditSyncedFields> = JSON.parse(
+        decodeURIComponent(query.formData)
+      );
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formHook.setValue(key as keyof AppEditSyncedFields, value);
+      // 处理基本字段
+      const basicFields: (keyof AppEditSyncedFields)[] = [
+        'imageName',
+        'replicas',
+        'cpu',
+        'memory',
+        'cmdParam',
+        'runCMD'
+      ];
+
+      basicFields.forEach((field) => {
+        if (parsedData[field] !== undefined) {
+          formHook.setValue(field, parsedData[field] as any);
+        }
+      });
+
+      if (Array.isArray(parsedData.networks)) {
+        const completeNetworks = parsedData.networks.map((network) => ({
+          networkName: network.networkName || `network-${nanoid()}`,
+          portName: network.portName || nanoid(),
+          port: network.port || 80,
+          protocol: network.protocol || 'HTTP',
+          openPublicDomain: network.openPublicDomain || false,
+          publicDomain: network.publicDomain || nanoid(),
+          customDomain: network.customDomain || '',
+          domain: network.domain || 'gzg.sealos.run'
+        }));
+        formHook.setValue('networks', completeNetworks);
       }
-    });
+    } catch (error) {}
   }, []);
 
   return (
