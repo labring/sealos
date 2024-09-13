@@ -35,7 +35,7 @@ const Version = () => {
   })
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
-      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.name)
+      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
 
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
@@ -47,7 +47,7 @@ const Version = () => {
         }
       })
     },
-    [devbox.name]
+    [devbox.name, devbox.runtimeVersion]
   )
   const handleDelDevboxVersion = useCallback(
     async (versionName: string) => {
@@ -219,7 +219,7 @@ const Version = () => {
           onClose={() => {
             setOnOpenRelease(false)
           }}
-          devbox={devbox}
+          devbox={{ ...devbox, sshPort: devbox.sshPort || 0 }}
         />
       )}
     </Box>
