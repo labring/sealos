@@ -45,6 +45,8 @@ spec:
               value: hub.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
+            - name: MONITOR_URL
+              value: http://launchpad-monitor.sealos.svc.cluster.local:8428
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
