@@ -16,9 +16,6 @@ export const getUserQuota = () =>
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
 
-// abandoned
-export const getPlatformEnv = () => GET<EnvResponse>('/api/platform/getEnv');
-
 export const updateDesktopGuide = (payload: UpdateUserGuideParams) =>
   POST('/api/guide/updateGuide', payload);
 

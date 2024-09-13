@@ -16,12 +16,14 @@ export type Response = {
   CURRENCY: Coin;
   guideEnabled: boolean;
   fileMangerConfig: FileMangerType;
+  SEALOS_USER_DOMAIN: string[];
 };
 
 export const defaultAppConfig: AppConfigType = {
   cloud: {
     domain: 'cloud.sealos.io',
-    port: ''
+    port: '',
+    userDomain: ['cloud.sealos.io']
   },
   common: {
     guideEnabled: false,
@@ -74,6 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const gpuNodes = await getGpuNode();
       global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;
     }
+
     jsonRes<Response>(res, {
       data: {
         SEALOS_DOMAIN: global.AppConfig.cloud.domain,
@@ -83,7 +86,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
         guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
-        CURRENCY: Coin.shellCoin
+        CURRENCY: Coin.shellCoin,
+        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain || []
       }
     });
   } catch (error) {

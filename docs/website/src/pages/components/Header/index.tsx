@@ -142,7 +142,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           )}
           <a
             className="start-now-button"
-            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}`}
+            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&s=${semParams.s}`}
             target="_blank"
           >
             {i18nObj.startNow}
@@ -201,7 +201,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           )}
           <a
             className="start-now-button"
-            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}`}
+            href={`${cloudUrl}?bd_vid=${semParams.bd_vid}&k=${semParams.keywords}&s=${semParams.s}`}
             target="_blank"
           >
             {i18nObj.startNow}

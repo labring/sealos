@@ -1,3 +1,4 @@
+import { SEALOS_DOMAIN, SEALOS_USER_DOMAIN } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
@@ -38,7 +39,8 @@ export const defaultEditVal: AppEditType = {
       protocol: 'HTTP',
       openPublicDomain: false,
       publicDomain: '',
-      customDomain: ''
+      customDomain: '',
+      domain: ''
     }
   ],
   envs: [],

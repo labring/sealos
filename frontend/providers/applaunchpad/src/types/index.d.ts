@@ -27,6 +27,7 @@ export type AppConfigType = {
   cloud: {
     domain: string;
     port?: string;
+    userDomain: string[];
   };
   common: {
     guideEnabled: boolean;

@@ -4,7 +4,7 @@ import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
+import { DOMAIN_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
@@ -27,7 +27,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
               network.customDomain
                 ? network.customDomain
-                : `${network.publicDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
+                : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
             }`
           : ''
       })),

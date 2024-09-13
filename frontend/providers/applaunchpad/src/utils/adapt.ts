@@ -219,7 +219,7 @@ export enum YamlKindEnum {
 }
 
 export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
-  const { SEALOS_DOMAIN } = await getInitData();
+  const { SEALOS_DOMAIN, SEALOS_USER_DOMAIN } = await getInitData();
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
@@ -312,21 +312,23 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
         const protocol =
           backendProtocol ?? (item.protocol === 'TCP' ? 'HTTP' : (item.protocol as ProtocolType));
 
+        const isCustomDomain =
+          !domain.endsWith(SEALOS_DOMAIN) &&
+          !SEALOS_USER_DOMAIN.some((user) => domain.endsWith(user));
+
         return {
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',
           port: item.port,
           protocol: protocol,
           openPublicDomain: !!ingress,
-          ...(domain.endsWith(SEALOS_DOMAIN)
-            ? {
-                publicDomain: domain.split('.')[0],
-                customDomain: ''
-              }
-            : {
-                publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
-                customDomain: domain
-              })
+          publicDomain: isCustomDomain
+            ? ingress?.metadata?.labels?.[publicDomainKey] || ''
+            : domain.split('.')[0],
+          customDomain: isCustomDomain ? domain : '',
+          domain: isCustomDomain
+            ? SEALOS_DOMAIN
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
@@ -388,91 +390,6 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     res[key] = app[key];
   });
   return res as AppEditType;
-};
-
-// yaml file adapt to edit form
-export const adaptYamlToEdit = (yamlList: string[]) => {
-  const configs = yamlList.map((item) => yaml.loadAll(item) as DeployKindsType).flat();
-
-  const deployKindsMap: {
-    [YamlKindEnum.Deployment]?: V1Deployment;
-    [YamlKindEnum.Service]?: V1Service;
-    [YamlKindEnum.ConfigMap]?: V1ConfigMap;
-    [YamlKindEnum.Ingress]?: V1Ingress;
-    [YamlKindEnum.HorizontalPodAutoscaler]?: V2HorizontalPodAutoscaler;
-    [YamlKindEnum.Secret]?: V1Secret;
-  } = {};
-
-  configs.forEach((item) => {
-    if (item.kind) {
-      // @ts-ignore
-      deployKindsMap[item.kind] = item;
-    }
-  });
-
-  const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
-  const cpuStr =
-    deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.resources?.requests?.cpu;
-  const memoryStr =
-    deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.resources?.requests?.memory;
-
-  const res: Record<string, any> = {
-    imageName: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.image,
-    runCMD:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
-    cmdParam:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.args?.join(' ') || '',
-    replicas: deployKindsMap?.Deployment?.spec?.replicas,
-    cpu: cpuStr ? cpuFormatToM(cpuStr) : undefined,
-    memory: memoryStr ? memoryFormatToMi(memoryStr) : undefined,
-    accessExternal: deployKindsMap?.Ingress
-      ? {
-          use: true,
-          outDomain: domain?.split('.')[0],
-          selfDomain: domain
-        }
-      : undefined,
-    containerOutPort:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort,
-    envs:
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.env?.map((env) => ({
-        key: env.name,
-        value: env.value
-      })) || undefined,
-    hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
-      ? {
-          use: true,
-          target:
-            (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
-              ?.name as HpaTarget) || 'cpu',
-          value:
-            deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
-              ?.averageUtilization || 50,
-          minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.maxReplicas,
-          maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec?.minReplicas
-        }
-      : undefined,
-    configMapList: deployKindsMap?.ConfigMap?.data
-      ? Object.entries(deployKindsMap?.ConfigMap.data).map(([key, value]) => ({
-          mountPath: key,
-          value
-        }))
-      : undefined,
-    secret: deployKindsMap.Secret
-      ? {
-          ...defaultEditVal.secret,
-          use: true
-        }
-      : undefined
-  };
-
-  for (const key in res) {
-    if (res[key] === undefined) {
-      delete res[key];
-    }
-  }
-
-  return res;
 };
 
 export const sliderNumber2MarkList = ({

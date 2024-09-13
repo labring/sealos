@@ -76,8 +76,9 @@ export interface AppEditType {
     port: number;
     protocol: ProtocolType;
     openPublicDomain: boolean;
-    publicDomain: string; // default domain
+    publicDomain: string; // default domain // domainPrefix
     customDomain: string; // custom domain
+    domain: string;
   }[];
   envs: {
     key: string;

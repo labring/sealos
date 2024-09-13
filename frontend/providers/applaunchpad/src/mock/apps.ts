@@ -268,7 +268,8 @@ export const MOCK_APP_DETAIL: AppDetailType = {
       protocol: 'HTTP',
       openPublicDomain: false,
       publicDomain: '',
-      customDomain: ''
+      customDomain: '',
+      domain: ''
     }
   ],
   envs: [],
