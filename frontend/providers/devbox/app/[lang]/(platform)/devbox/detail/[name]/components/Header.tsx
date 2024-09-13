@@ -27,7 +27,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
         devboxName: devbox.name,
         runtimeName: devbox.runtimeVersion
       })
-      const { workingDir } = await getSSHRuntimeInfo(devbox.name)
+      const { workingDir } = await getSSHRuntimeInfo(devbox.runtimeVersion)
 
       const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
         `${userName}@${SEALOS_DOMAIN}`
