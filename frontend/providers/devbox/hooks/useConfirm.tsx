@@ -33,7 +33,7 @@ export const useConfirm = ({
   const cancelRef = useRef(null)
   const confirmCb = useRef<any>()
   const cancelCb = useRef<any>()
-  const isCheckedRef = useRef(false)
+  const isCheckedRef = useRef(true)
 
   return {
     openConfirm: useCallback(
@@ -42,7 +42,7 @@ export const useConfirm = ({
           onOpen()
           confirmCb.current = confirm
           cancelCb.current = cancel
-          isCheckedRef.current = false
+          isCheckedRef.current = true
         }
       },
       [onOpen]

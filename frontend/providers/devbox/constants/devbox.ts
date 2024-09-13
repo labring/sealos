@@ -56,8 +56,8 @@ export enum DevboxReleaseStatusEnum {
   Failed = 'Failed'
 }
 export const CpuSlideMarkList = [
-  { label: 0.5, value: 500 },
-  { label: 1, value: 1000 },
+  // { label: 0.5, value: 500 },
+  // { label: 1, value: 1000 },
   { label: 2, value: 2000 },
   { label: 3, value: 3000 },
   { label: 4, value: 4000 },
@@ -68,8 +68,8 @@ export const CpuSlideMarkList = [
 ]
 
 export const MemorySlideMarkList = [
-  { label: '512Mi', value: 512 },
-  { label: '1G', value: 1024 },
+  // { label: '512Mi', value: 512 },
+  // { label: '1G', value: 1024 },
   { label: '2G', value: 2048 },
   { label: '4G', value: 4096 },
   { label: '6G', value: 6144 },

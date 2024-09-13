@@ -45,7 +45,11 @@ const ReleaseModal = ({
   const handleSubmit = () => {
     if (!tag) {
       setTagError(true)
-    } else if (/^[a-z][a-z0-9.-]*[a-z0-9]$/.test(tag) === false) {
+    } else if (
+      /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/.test(
+        tag
+      ) === false
+    ) {
       toast({
         title: t('tag_format_error'),
         status: 'error'
@@ -93,7 +97,7 @@ const ReleaseModal = ({
     <Box>
       <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
-        <ModalContent minW={'500px'} mt={'100px'} minH={'300px'}>
+        <ModalContent minW={'500px'} mt={'100px'} minH={'300px'} top={'50px'}>
           <ModalHeader>
             <Flex alignItems={'center'} gap={'10px'}>
               {t('release_version')}

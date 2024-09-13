@@ -6,6 +6,7 @@ import {
   Center,
   Flex,
   FormControl,
+  FormErrorMessage,
   Grid,
   IconButton,
   Image,
@@ -265,12 +266,13 @@ const Form = ({
             </Box>
             <Box px={'42px'} py={'24px'}>
               {/* Devbox Name */}
-              <FormControl mb={7} isInvalid={!!errors.name} w={'500px'}>
+              <FormControl mb={7} isInvalid={!!errors.name} minW={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('devbox_name')}</Label>
                   <Input
                     disabled={isEdit}
                     autoFocus={true}
+                    w={'300px'}
                     placeholder={t('enter_devbox_name')}
                     {...register('name', {
                       required: t('devbox_name_required'),
@@ -280,10 +282,17 @@ const Form = ({
                       },
                       validate: {
                         pattern: (value) =>
-                          /^[a-z][a-z0-9-]*[a-z0-9]$/.test(value) || t('devbox_name_invalid')
+                          /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/.test(
+                            value
+                          ) || t('devbox_name_invalid')
                       }
                     })}
                   />
+                  <FormErrorMessage ml={'50px'}>
+                    <Box fontSize={'12px'} h={'25px'} w={'100px'}>
+                      {errors.name && errors.name.message}
+                    </Box>
+                  </FormErrorMessage>
                 </Flex>
               </FormControl>
               {/* Runtime Type */}

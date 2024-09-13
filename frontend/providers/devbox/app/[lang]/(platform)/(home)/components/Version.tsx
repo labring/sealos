@@ -116,7 +116,7 @@ const Version = ({
       title: t('version_description'),
       key: 'description',
       render: (item: DevboxVersionListItemType) => (
-        <Flex alignItems="center" className="hover-container">
+        <Flex alignItems="center" className="hover-container" minH={'20px'}>
           <Box
             color={'grayModern.900'}
             overflow={'hidden'}
@@ -127,6 +127,10 @@ const Version = ({
           </Box>
           <Box ml={'1px'} className="hover-button" display={'none'}>
             <MyIcon
+              cursor={'pointer'}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
               name="edit"
               w={'16px'}
               color={'grayModern.600'}
@@ -192,14 +196,14 @@ const Version = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
-      <ModalContent minW={'900px'}>
+      <ModalContent minW={'800px'} top={'50px'}>
         <ModalHeader display={'flex'} alignItems={'center'}>
           <Box flex={1}>{t('version_history')}</Box>
           <ModalCloseButton top={'10px'} right={'10px'} />
         </ModalHeader>
         <ModalBody>
-          <Box px={'32px'} minH={'500px'}>
-            <Flex h={'90px'} alignItems={'center'}>
+          <Box px={'15px'} minH={'500px'}>
+            <Flex h={'50px'} alignItems={'center'} mb={'20px'}>
               <Center mr={'10px'} height={'46px'}>
                 <MyIcon name="pods" w={'20px'} h={'20px'} />
               </Center>

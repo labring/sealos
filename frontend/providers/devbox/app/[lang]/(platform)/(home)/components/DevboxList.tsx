@@ -166,7 +166,7 @@ const DevboxList = ({
       key: 'name',
       render: (item: DevboxListItemType) => {
         return (
-          <Flex alignItems={'center'} gap={'6px'}>
+          <Flex alignItems={'center'} gap={'6px'} ml={4}>
             <Image
               width={'20px'}
               height={'20px'}
