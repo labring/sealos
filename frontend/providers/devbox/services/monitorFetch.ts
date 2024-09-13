@@ -9,8 +9,13 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
       Authorization: encodeURIComponent(kubeconfig)
     }
   }
-  // const doMain = 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
-  const doMain = 'http://devbox.usw.sailos.io:31798'
+
+  let doMain = ''
+  if (process.env.NODE_ENV === 'development') {
+    doMain = 'http://devbox.usw.sailos.io:31798'
+  } else {
+    doMain = 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
+  }
 
   try {
     const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions)
