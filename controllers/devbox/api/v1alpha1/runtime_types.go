@@ -39,6 +39,7 @@ type Config struct {
 	// kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=/home/sealos/project
 	WorkingDir string `json:"workingDir,omitempty"`
 	// +kubebuilder:validation:Optional
 	Env []corev1.EnvVar `json:"env,omitempty"`

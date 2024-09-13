@@ -1915,6 +1915,7 @@ spec:
                       type: object
                     type: array
                   workingDir:
+                    default: /home/sealos/project
                     type: string
                 required:
                 - image
