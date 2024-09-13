@@ -29,7 +29,7 @@ type State = {
 export const useDevboxStore = create<State>()(
   devtools(
     immer((set) => ({
-      devboxList: [],
+      devboxList: [] as DevboxListItemType[],
       setDevboxList: async () => {
         const res = await getMyDevboxList()
 
@@ -38,10 +38,37 @@ export const useDevboxStore = create<State>()(
           return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
         })
 
+        // 为每个 devbox 加载监控数据
+        const updatedRes = await Promise.all(
+          res.map(async (devbox) => {
+            const pods = await getDevboxPodsByDevboxName(devbox.name)
+            const queryName = pods[0]?.podName || devbox.name
+
+            const [averageCpuData, averageMemoryData] = await Promise.all([
+              getDevboxMonitorData({ queryKey: 'average_cpu', queryName: queryName, step: '2m' }),
+              getDevboxMonitorData({ queryKey: 'average_memory', queryName: queryName, step: '2m' })
+            ])
+
+            return {
+              ...devbox,
+              usedCpu: averageCpuData[0] || {
+                xData: new Array(30).fill(0),
+                yData: new Array(30).fill('0'),
+                name: ''
+              },
+              usedMemory: averageMemoryData[0] || {
+                xData: new Array(30).fill(0),
+                yData: new Array(30).fill('0'),
+                name: ''
+              }
+            }
+          })
+        )
+
         set((state) => {
-          state.devboxList = res
+          state.devboxList = updatedRes
         })
-        return res
+        return updatedRes
       },
       devboxVersionList: [],
       setDevboxVersionList: async (devboxName: string) => {

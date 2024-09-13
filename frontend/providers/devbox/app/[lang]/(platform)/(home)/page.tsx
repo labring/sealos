@@ -18,7 +18,6 @@ const EmptyPage = () => {
       setInitialized(true)
     }
   })
-
   return (
     <>
       {devboxList.length === 0 && initialized ? (
