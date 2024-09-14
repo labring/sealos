@@ -77,7 +77,7 @@ const BasicInfo = () => {
             {t('image_info')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{`${REGISTRY_ADDR}/${NAMESPACE}/${devboxDetail?.name}`}</Text>
+            <Text w={'full'}>{`${REGISTRY_ADDR}/${NAMESPACE}/${devboxDetail?.name}`}</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -147,7 +147,11 @@ const BasicInfo = () => {
               fontWeight={400}
               py={2}
               borderRadius={'md'}>
-              <Text cursor="pointer" _hover={{ color: 'blue.500' }} onClick={handleCopySSHCommand}>
+              <Text
+                cursor="pointer"
+                _hover={{ color: 'blue.500' }}
+                onClick={handleCopySSHCommand}
+                w={'full'}>
                 {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${SEALOS_DOMAIN} -p ${devboxDetail.sshPort}`}
               </Text>
             </Tooltip>

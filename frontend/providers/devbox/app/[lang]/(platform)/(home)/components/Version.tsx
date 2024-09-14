@@ -144,7 +144,7 @@ const Version = ({
       title: t('version_description'),
       key: 'description',
       render: (item: DevboxVersionListItemType) => (
-        <Flex alignItems="center" className="hover-container" minH={'20px'}>
+        <Flex alignItems="center" minH={'20px'}>
           <Box
             color={'grayModern.900'}
             overflow={'hidden'}
@@ -153,24 +153,8 @@ const Version = ({
             w={'250px'}>
             {item.description}
           </Box>
-          <Box ml={'1px'} className="hover-button" display={'none'}>
-            <MyIcon
-              cursor={'pointer'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              name="edit"
-              w={'16px'}
-              color={'grayModern.600'}
-              onClick={() => {
-                setCurrentVersion(item)
-                onOpenEdit()
-              }}
-            />
-          </Box>
         </Flex>
-      ),
-      minWidth: '300px'
+      )
     },
     {
       title: t('control'),
@@ -199,6 +183,18 @@ const Version = ({
               </MenuButton>
             }
             menuList={[
+              {
+                child: (
+                  <>
+                    <MyIcon name={'edit'} w={'16px'} />
+                    <Box ml={2}>{t('edit')}</Box>
+                  </>
+                ),
+                onClick: () => {
+                  setCurrentVersion(item)
+                  onOpenEdit()
+                }
+              },
               {
                 child: (
                   <>

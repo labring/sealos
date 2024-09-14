@@ -97,7 +97,7 @@ const MainBody = () => {
             <Box color={'grayModern.600'} fontWeight={500} mb={2}>
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
             </Box>
-            <Box h={'150px'} position={'relative'}>
+            <Box h={'150px'} position={'relative'} w={'full'}>
               <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
               <Text
                 color={'#0077A9'}

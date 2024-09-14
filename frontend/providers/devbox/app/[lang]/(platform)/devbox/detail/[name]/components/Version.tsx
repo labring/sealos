@@ -133,8 +133,7 @@ const Version = () => {
             {item.description}
           </Box>
         </Flex>
-      ),
-      minWidth: '300px'
+      )
     },
     {
       title: t('control'),
