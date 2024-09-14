@@ -2,7 +2,6 @@ package helper
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/labring/sealos/service/account/common"
@@ -142,7 +141,7 @@ type GetPaymentReq struct {
 	// @Summary Invoiced
 	// @Description Invoiced
 	// @JSONSchema
-	Invoiced bool `json:"invoiced,omitempty" bson:"invoiced" example:"true"`
+	Invoiced *bool `json:"invoiced,omitempty" bson:"invoiced" example:"true"`
 
 	// @Summary Authentication information
 	// @Description Authentication information
@@ -364,7 +363,6 @@ func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&userCosts.TimeRange)
-	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
 
@@ -388,7 +386,6 @@ func ParseAppCostsReq(c *gin.Context) (*AppCostsReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&userCosts.TimeRange)
-	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
 
@@ -419,7 +416,6 @@ func ParseGetTransferRecordReq(c *gin.Context) (*GetTransferRecordReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&transferReq.TimeRange)
-	transferReq.Auth.Owner = strings.TrimPrefix(transferReq.Auth.Owner, "ns-")
 	return transferReq, nil
 }
 

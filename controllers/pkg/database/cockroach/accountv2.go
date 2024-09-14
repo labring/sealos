@@ -651,7 +651,7 @@ func (c *Cockroach) GetPaymentWithID(paymentID string) (*types.Payment, error) {
 	return &payment, nil
 }
 
-func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq, invoiced bool) ([]types.Payment, types.LimitResp, error) {
+func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq, invoiced *bool) ([]types.Payment, types.LimitResp, error) {
 	var payment []types.Payment
 	var total int64
 	var limitResp types.LimitResp
@@ -662,10 +662,10 @@ func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.Limi
 	}
 
 	queryPayment := types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}
-	if invoiced {
-		queryPayment.InvoicedAt = true
-	}
 	query := c.DB.Model(&types.Payment{}).Where(queryPayment)
+	if invoiced != nil {
+		query = query.Where("invoiced_at = ?", *invoiced)
+	}
 	if !req.StartTime.IsZero() {
 		query = query.Where("created_at >= ?", req.StartTime)
 	}

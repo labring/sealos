@@ -1055,11 +1055,21 @@ func (m *MongoDB) getAppStoreList(req helper.GetCostAppListReq, skip, pageSize i
 	return
 }
 
-func (m *MongoDB) Disconnect(ctx context.Context) error {
+func (m *Account) Disconnect(ctx context.Context) error {
 	if m == nil {
 		return nil
 	}
-	return m.Client.Disconnect(ctx)
+	if m.MongoDB != nil && m.MongoDB.Client != nil {
+		if err := m.MongoDB.Client.Disconnect(ctx); err != nil {
+			return fmt.Errorf("failed to close mongodb client: %v", err)
+		}
+	}
+	if m.Cockroach != nil && m.Cockroach.ck != nil {
+		if err := m.ck.Close(); err != nil {
+			return fmt.Errorf("failed to close cockroach client: %v", err)
+		}
+	}
+	return nil
 }
 
 func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error) {
