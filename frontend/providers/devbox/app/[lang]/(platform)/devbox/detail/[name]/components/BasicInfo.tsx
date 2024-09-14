@@ -163,8 +163,23 @@ const BasicInfo = () => {
           <Text mr={2} width={'40%'}>
             {t('recent_error')}
           </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{t('none')}</Text>
+          <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
+            {devboxDetail?.lastTerminatedState?.reason ? (
+              <Text>{devboxDetail?.lastTerminatedState?.reason}</Text>
+            ) : (
+              <Text>{t('none')}</Text>
+            )}
+            <MyIcon
+              name="maximize"
+              w={'20px'}
+              h={'20px'}
+              ml={2}
+              color={'grayModern.600'}
+              mt={'1px'}
+              onClick={() => {
+                console.log('click')
+              }}
+            />
           </Flex>
         </Flex>
       </Flex>

@@ -10,6 +10,7 @@ export type KBDevboxType = {
   }
   spec: KBDevboxSpec
   portInfos: {
+    // Added by logic in app/[lang]/(platform)/devbox/detail/[name]/components/Version.tsx
     networkName: string
     portName: string
     port: number
@@ -18,6 +19,13 @@ export type KBDevboxType = {
     publicDomain: string
     customDomain: string
   }[]
+  lastTerminatedState: {
+    containerID: string
+    exitCode: number
+    finishedAt: string
+    reason: string
+    startedAt: string
+  }
   status: {
     phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
     commitHistory: {

@@ -55,7 +55,8 @@ const map = {
   monitor: require('./icons/monitor.svg').default,
   response: require('./icons/response.svg').default,
   link: require('./icons/link.svg').default,
-  list: require('./icons/list.svg').default
+  list: require('./icons/list.svg').default,
+  maximize: require('./icons/maximize.svg').default
 }
 
 const MyIcon = ({

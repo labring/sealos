@@ -35,7 +35,8 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: devbox.portInfos || []
+    networks: devbox.portInfos || [],
+    lastTerminatedState: devbox.lastTerminatedState || {}
   }
 }
 
