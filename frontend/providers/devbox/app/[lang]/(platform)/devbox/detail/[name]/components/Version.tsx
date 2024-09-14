@@ -196,11 +196,11 @@ const Version = () => {
     }
   ]
   return (
-    <Box borderWidth={1} borderRadius="lg" p={4} bg={'white'} h={'full'}>
+    <Box borderWidth={1} borderRadius="lg" pl={6} pt={4} pr={6} bg={'white'} h={'full'}>
       <Flex alignItems="center" justifyContent={'space-between'} mb={2}>
         <Flex alignItems={'center'}>
-          <MyIcon name="list" w={'20px'} h={'20px'} mr={'10px'} color={'grayModern.600'} />
-          <Text fontSize="lg" fontWeight="bold" color={'grayModern.600'}>
+          <MyIcon name="list" w={'15px'} h={'15px'} mr={'10px'} color={'grayModern.600'} />
+          <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
             {t('version_history')}
           </Text>
         </Flex>
@@ -209,7 +209,7 @@ const Version = () => {
           bg={'white'}
           color={'grayModern.600'}
           borderWidth={1}
-          mr={3}
+          mr={1}
           leftIcon={<MyIcon name="version" />}
           _hover={{
             bg: 'grayModern.50',

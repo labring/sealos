@@ -98,6 +98,8 @@ export const useDevboxStore = create<State>()(
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
 
+        console.log('detail', detail)
+
         const { base64PrivateKey, userName } = await getSSHConnectionInfo({
           devboxName: detail.name,
           runtimeName: detail.runtimeVersion

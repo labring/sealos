@@ -11,7 +11,6 @@ import { Flex, Button, Box } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
-import { sealosApp } from 'sealos-desktop-sdk/app'
 
 const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) => {
   const router = useRouter()
@@ -83,31 +82,8 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
     },
     [setLoading, t, toast]
   )
-  const handleGoToTerminal = useCallback(
-    async (devbox: DevboxDetailType) => {
-      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
-      try {
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-terminal',
-          query: {
-            defaultCommand
-          },
-          messageData: { type: 'new terminal', command: defaultCommand }
-        })
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('jump_terminal_error'),
-          status: 'error'
-        })
-        console.error(error)
-      }
-      refetchDevboxDetail()
-    },
-    [refetchDevboxDetail, t, toast]
-  )
-
   return (
-    <Flex justify="space-between" align="center">
+    <Flex justify="space-between" align="center" pl={4}>
       <Flex alignItems={'center'} gap={2}>
         <MyIcon
           name="arrowLeft"
@@ -127,11 +103,12 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
       <Flex>
         <Button
           mr={5}
-          height={'32px'}
+          w={'96px'}
+          h={'40px'}
           size={'sm'}
           fontSize={'base'}
           bg={'white'}
-          color={'grayModern.900'}
+          color={'grayModern.600'}
           _hover={{
             color: 'brightBlue.600'
           }}
@@ -139,71 +116,69 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           onClick={() => handleGotoVSCode(devboxDetail)}>
           {t('open_vscode')}
         </Button>
+        {devboxDetail.status.value === 'Running' && (
+          <Button
+            mr={5}
+            w={'96px'}
+            h={'40px'}
+            size={'sm'}
+            fontSize={'base'}
+            bg={'white'}
+            color={'grayModern.600'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            leftIcon={<MyIcon name={'pause'} w={'16px'} />}
+            onClick={() => handlePauseDevbox(devboxDetail)}>
+            {t('pause')}
+          </Button>
+        )}
         <Button
           mr={5}
-          height={'32px'}
+          w={'96px'}
+          h={'40px'}
           size={'sm'}
           fontSize={'base'}
           bg={'white'}
-          color={'grayModern.900'}
+          color={'grayModern.600'}
           _hover={{
             color: 'brightBlue.600'
           }}
-          leftIcon={<MyIcon name={'terminal'} w={'16px'} />}
-          onClick={() => handleGoToTerminal(devboxDetail)}>
-          {t('terminal')}
-        </Button>
-        <Button
-          mr={5}
-          height={'32px'}
-          size={'sm'}
-          fontSize={'base'}
-          bg={'white'}
-          color={'grayModern.900'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
-          onClick={() => handlePauseDevbox(devboxDetail)}>
-          <MyIcon name={'pause'} w={'16px'} />
-        </Button>
-        <Button
-          mr={5}
-          height={'32px'}
-          size={'sm'}
-          fontSize={'base'}
-          bg={'white'}
-          color={'grayModern.900'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
+          leftIcon={<MyIcon name={'change'} w={'16px'} />}
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
-          <MyIcon name={'change'} w={'16px'} />
+          {t('update')}
         </Button>
+        {devboxDetail.status.value !== 'Running' && (
+          <Button
+            mr={5}
+            w={'96px'}
+            h={'40px'}
+            size={'sm'}
+            fontSize={'base'}
+            bg={'white'}
+            color={'grayModern.600'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            leftIcon={<MyIcon name={'restart'} w={'16px'} />}
+            onClick={() => handleRestartDevbox(devboxDetail)}>
+            {t('restart')}
+          </Button>
+        )}
         <Button
           mr={5}
-          height={'32px'}
+          w={'96px'}
+          h={'40px'}
           size={'sm'}
           fontSize={'base'}
           bg={'white'}
-          color={'grayModern.900'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
-          onClick={() => handleRestartDevbox(devboxDetail)}>
-          <MyIcon name={'restart'} w={'16px'} />
-        </Button>
-        <Button
-          mr={5}
-          height={'32px'}
-          size={'sm'}
-          fontSize={'base'}
-          bg={'white'}
-          color={'grayModern.900'}
+          color={'grayModern.600'}
           _hover={{
             color: 'red.600'
           }}
+          leftIcon={<MyIcon name={'delete'} w={'16px'} />}
           onClick={() => setDelDevbox(devboxDetail)}>
-          <MyIcon name={'delete'} w={'16px'} />
+          {t('delete')}
         </Button>
       </Flex>
       {delDevbox && (

@@ -79,12 +79,21 @@ const MainBody = () => {
     }
   ]
   return (
-    <Box w={'65vw'} bg={'white'} borderRadius="lg" p={4} h={'full'} borderWidth={1}>
+    <Box
+      w={'65vw'}
+      bg={'white'}
+      borderRadius="lg"
+      pl={6}
+      pt={2}
+      pr={6}
+      pb={6}
+      h={'full'}
+      borderWidth={1}>
       {/* monitor */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="monitor" w={'20px'} h={'20px'} mr={'10px'} color={'grayModern.600'} />
-          <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
+          <MyIcon name="monitor" w={'15px'} h={'15px'} mr={'10px'} color={'grayModern.600'} />
+          <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
             {t('monitor')}
           </Text>
           <Box ml={2} color={'grayModern.500'}>
@@ -137,8 +146,8 @@ const MainBody = () => {
       {/* network */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="network" w={'20px'} h={'20px'} mr={'10px'} color={'grayModern.600'} />
-          <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
+          <MyIcon name="network" w={'15px'} h={'15px'} mr={'10px'} color={'grayModern.600'} />
+          <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
             {t('network')} ( {devboxDetail?.networks?.length} )
           </Text>
         </Flex>

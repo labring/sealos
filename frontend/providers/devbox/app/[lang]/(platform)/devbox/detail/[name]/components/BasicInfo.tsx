@@ -48,21 +48,21 @@ const BasicInfo = () => {
   )
 
   return (
-    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'}>
+    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} borderWidth={1}>
       {/* basic info */}
-      <Flex mb={2}>
-        <MyIcon name="info" w={'20px'} h={'20px'} mr={'4px'} color={'grayModern.600'} mt={'1px'} />
-        <Box color={'grayModern.600'} fontSize={'lg'} fontWeight={'bold'}>
+      <Flex mb={3} mt={2}>
+        <MyIcon name="info" w={'15px'} h={'15px'} mr={'4px'} color={'grayModern.600'} mt={'1px'} />
+        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           {t('basic_info')}
         </Box>
       </Flex>
       <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('name')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{devboxDetail?.name}</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.name}</Text>
             <Image
               ml={2}
               width={'20px'}
@@ -73,66 +73,68 @@ const BasicInfo = () => {
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('image_info')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text w={'full'}>{`${REGISTRY_ADDR}/${NAMESPACE}/${devboxDetail?.name}`}</Text>
+            <Text
+              fontSize={'12px'}
+              w={'full'}>{`${REGISTRY_ADDR}/${NAMESPACE}/${devboxDetail?.name}`}</Text>
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('create_time')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{devboxDetail?.createTime}</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.createTime}</Text>
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('start_runtime')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>
+            <Text fontSize={'12px'}>
               {getRuntimeVersionItem(devboxDetail?.runtimeType, devboxDetail?.runtimeVersion)}
             </Text>
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('start_time')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{devboxDetail?.upTime}</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.upTime}</Text>
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             Limit CPU
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{devboxDetail?.cpu} Core</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.cpu} Core</Text>
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             Limit Memory
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text>{devboxDetail?.memory} G</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.memory} G</Text>
           </Flex>
         </Flex>
       </Flex>
       {/* ssh config */}
-      <Flex mb={2} mt={4}>
-        <MyIcon name="link" w={'20px'} h={'20px'} mr={'4px'} color={'grayModern.600'} mt={'2px'} />
-        <Box color={'grayModern.600'} fontSize={'lg'} fontWeight={'bold'}>
+      <Flex mb={3} mt={4}>
+        <MyIcon name="link" w={'16px'} h={'16px'} mr={'4px'} color={'grayModern.600'} />
+        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           {t('ssh_config')}
         </Box>
       </Flex>
       <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('ssh_connect_info')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
@@ -149,6 +151,7 @@ const BasicInfo = () => {
               borderRadius={'md'}>
               <Text
                 cursor="pointer"
+                fontSize={'12px'}
                 _hover={{ color: 'blue.500' }}
                 onClick={handleCopySSHCommand}
                 w={'full'}>
@@ -158,7 +161,7 @@ const BasicInfo = () => {
           </Flex>
         </Flex>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('private_key')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
@@ -178,8 +181,8 @@ const BasicInfo = () => {
                   <MyIcon
                     cursor={'pointer'}
                     name="export"
-                    w={'20px'}
-                    h={'20px'}
+                    w={'16px'}
+                    h={'16px'}
                     onClick={() => handleDownloadConfig(devboxDetail?.sshConfig)}
                   />
                 </Flex>
@@ -189,22 +192,22 @@ const BasicInfo = () => {
         </Flex>
       </Flex>
       {/* event */}
-      <Flex mb={2} mt={4}>
+      <Flex mb={3} mt={4}>
         <MyIcon
           name="response"
-          w={'20px'}
-          h={'20px'}
+          w={'15px'}
+          h={'15px'}
           mr={'4px'}
           color={'grayModern.600'}
-          mt={'4px'}
+          mt={'1px'}
         />
-        <Box color={'grayModern.600'} fontSize={'lg'} fontWeight={'bold'}>
+        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           {t('event')}
         </Box>
       </Flex>
       <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
         <Flex>
-          <Text mr={2} width={'40%'}>
+          <Text mr={2} width={'40%'} fontSize={'12px'}>
             {t('recent_error')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
@@ -228,8 +231,8 @@ const BasicInfo = () => {
                 <MyIcon
                   cursor={'pointer'}
                   name="maximize"
-                  w={'20px'}
-                  h={'20px'}
+                  w={'16px'}
+                  h={'16px'}
                   ml={3}
                   color={'grayModern.600'}
                   mt={'1px'}
