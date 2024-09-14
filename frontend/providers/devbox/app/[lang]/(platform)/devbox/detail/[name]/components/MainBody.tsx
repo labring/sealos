@@ -103,7 +103,7 @@ const MainBody = () => {
         </Flex>
         <Flex bg={'grayModern.50'} p={2} borderRadius={'lg'} minH={'200px'}>
           <Box flex={1} mr={4}>
-            <Box color={'grayModern.600'} fontWeight={500} mb={2}>
+            <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
             </Box>
             <Box h={'150px'} position={'relative'} w={'full'}>
@@ -122,7 +122,7 @@ const MainBody = () => {
             </Box>
           </Box>
           <Box flex={1}>
-            <Box color={'grayModern.600'} fontWeight={500} mb={2}>
+            <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('memory')}{' '}
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
             </Box>

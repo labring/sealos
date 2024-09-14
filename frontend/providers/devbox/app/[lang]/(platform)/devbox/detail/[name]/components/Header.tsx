@@ -103,10 +103,9 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
       <Flex>
         <Button
           mr={5}
-          w={'96px'}
+          w={'110px'}
           h={'40px'}
-          size={'sm'}
-          fontSize={'base'}
+          fontSize={'14px'}
           bg={'white'}
           color={'grayModern.600'}
           _hover={{
@@ -122,8 +121,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             mr={5}
             w={'96px'}
             h={'40px'}
-            size={'sm'}
-            fontSize={'base'}
+            fontSize={'14px'}
             bg={'white'}
             color={'grayModern.600'}
             _hover={{
@@ -139,8 +137,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           mr={5}
           w={'96px'}
           h={'40px'}
-          size={'sm'}
-          fontSize={'base'}
+          fontSize={'14px'}
           bg={'white'}
           color={'grayModern.600'}
           _hover={{
@@ -156,8 +153,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             mr={5}
             w={'96px'}
             h={'40px'}
-            size={'sm'}
-            fontSize={'base'}
+            fontSize={'14px'}
             bg={'white'}
             color={'grayModern.600'}
             _hover={{
@@ -173,8 +169,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           mr={5}
           w={'96px'}
           h={'40px'}
-          size={'sm'}
-          fontSize={'base'}
+          fontSize={'14px'}
           bg={'white'}
           color={'grayModern.600'}
           _hover={{
