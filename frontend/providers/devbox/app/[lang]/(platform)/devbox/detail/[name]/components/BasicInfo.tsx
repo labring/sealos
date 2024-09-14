@@ -31,12 +31,12 @@ const BasicInfo = () => {
 
       const privateKey = config?.sshPrivateKey as string
 
-      const blob = new Blob([privateKey], { type: 'application/json' })
+      const blob = new Blob([privateKey], { type: 'text/plain' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.style.display = 'none'
       a.href = url
-      a.download = `${devboxDetail.name}.json`
+      a.download = devboxDetail.name
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

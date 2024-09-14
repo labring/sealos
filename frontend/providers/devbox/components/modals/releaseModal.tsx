@@ -45,11 +45,7 @@ const ReleaseModal = ({
   const handleSubmit = () => {
     if (!tag) {
       setTagError(true)
-    } else if (
-      /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/.test(
-        tag
-      ) === false
-    ) {
+    } else if (/[\w][\w.-]{0,127}/.test(tag) === false) {
       toast({
         title: t('tag_format_error'),
         status: 'error'
