@@ -210,7 +210,11 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
         <DelModal
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
-          onSuccess={refetchDevboxDetail}
+          onSuccess={() => {
+            setDelDevbox(null)
+            refetchDevboxDetail()
+            router.push('/')
+          }}
         />
       )}
     </Flex>
