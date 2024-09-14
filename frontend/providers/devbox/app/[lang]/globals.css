@@ -38,7 +38,9 @@ em,
 var {
   font-style: normal;
 }
-
+body {
+  background-color: #f4f4f7 !important;
+}
 small {
   font-size: 12px;
 }

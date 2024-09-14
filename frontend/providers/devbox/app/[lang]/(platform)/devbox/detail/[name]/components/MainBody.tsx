@@ -3,13 +3,15 @@ import PodLineChart from '@/components/PodLineChart'
 import { useDevboxStore } from '@/stores/devbox'
 import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import { NetworkType } from '@/types/devbox'
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Text, Tooltip } from '@chakra-ui/react'
 import MyTable from '@/components/MyTable'
 import { useTranslations } from 'next-intl'
 import dayjs from 'dayjs'
+import { useCopyData } from '@/utils/tools'
 
 const MainBody = () => {
   const t = useTranslations()
+  const { copyData } = useCopyData()
   const { devboxDetail } = useDevboxStore()
 
   const networkColumn: {
@@ -23,7 +25,26 @@ const MainBody = () => {
       key: 'internalAddress',
       render: (item: NetworkType) => {
         return (
-          <Text>{`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`}</Text>
+          <Tooltip
+            label={t('copy')}
+            hasArrow
+            bg={'#FFFFFF'}
+            color={'grayModern.900'}
+            fontSize={'12px'}
+            fontWeight={400}
+            py={2}
+            borderRadius={'md'}>
+            <Text
+              cursor="pointer"
+              _hover={{
+                textDecoration: 'underline'
+              }}
+              ml={4}
+              color={'grayModern.600'}
+              onClick={() =>
+                copyData(`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`)
+              }>{`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`}</Text>
+          </Tooltip>
         )
       }
     },
@@ -32,13 +53,25 @@ const MainBody = () => {
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
-          if (item.customDomain) {
-            return <Text>{item.customDomain}</Text>
-          }
+          const address = item.customDomain || `${item.publicDomain}.${SEALOS_DOMAIN}`
           return (
-            <Text>
-              {item.publicDomain}.{SEALOS_DOMAIN}
-            </Text>
+            <Tooltip
+              label={t('open_link')}
+              hasArrow
+              bg={'#FFFFFF'}
+              color={'grayModern.900'}
+              fontSize={'12px'}
+              fontWeight={400}
+              py={2}
+              borderRadius={'md'}>
+              <Text
+                cursor="pointer"
+                color={'grayModern.600'}
+                _hover={{ textDecoration: 'underline' }}
+                onClick={() => window.open(`https://${address}`, '_blank')}>
+                https://{address}
+              </Text>
+            </Tooltip>
           )
         }
         return <Text>-</Text>
@@ -50,7 +83,7 @@ const MainBody = () => {
       {/* monitor */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="monitor" w={'20px'} h={'20px'} mr={'4px'} color={'grayModern.600'} />
+          <MyIcon name="monitor" w={'20px'} h={'20px'} mr={'10px'} color={'grayModern.600'} />
           <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
             {t('monitor')}
           </Text>
@@ -104,13 +137,17 @@ const MainBody = () => {
       {/* network */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="network" w={'20px'} h={'20px'} mr={'4px'} color={'grayModern.600'} />
+          <MyIcon name="network" w={'20px'} h={'20px'} mr={'10px'} color={'grayModern.600'} />
           <Text fontSize="lg" fontWeight={500} color={'grayModern.600'}>
             {t('network')} ( {devboxDetail?.networks?.length} )
           </Text>
         </Flex>
         {devboxDetail?.networks?.length > 0 ? (
-          <MyTable columns={networkColumn} data={devboxDetail?.networks} />
+          <MyTable
+            columns={networkColumn}
+            data={devboxDetail?.networks}
+            alternateRowColors={true}
+          />
         ) : (
           <Flex justify={'center'} align={'center'} h={'100px'}>
             <Text color={'grayModern.600'}>{t('no_network')}</Text>

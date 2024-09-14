@@ -11,16 +11,16 @@ interface Props extends BoxProps {
   }[]
   data: any[]
   itemClass?: string
+  alternateRowColors?: boolean
 }
 
-const MyTable = ({ columns, data, itemClass = '' }: Props) => {
+const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false }: Props) => {
   return (
     <>
       <Grid
         templateColumns={`repeat(${columns.length}, 1fr)`}
         overflowX={'auto'}
-        borderRadius={'md'}
-        mb={2}
+        borderTopRadius={'md'}
         fontSize={'base'}
         color={'grayModern.600'}
         fontWeight={'bold'}
@@ -44,9 +44,8 @@ const MyTable = ({ columns, data, itemClass = '' }: Props) => {
           templateColumns={`repeat(${columns.length}, 1fr)`}
           overflowX={'auto'}
           key={index1}
-          bg={'white'}
+          bg={alternateRowColors ? (index1 % 2 === 0 ? '#FBFBFC' : '#F4F4F7') : 'white'}
           _hover={{ bg: '#FBFBFC' }}
-          borderTopRadius={index1 === 0 ? 'md' : '0px'}
           borderBottomRadius={index1 === data.length - 1 ? 'md' : '0px'}
           borderBottom={'1px solid'}
           borderBottomColor={index1 !== data.length - 1 ? 'grayModern.150' : 'transparent'}>
