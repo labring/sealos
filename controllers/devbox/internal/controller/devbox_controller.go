@@ -579,7 +579,8 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		Owns(&corev1.Pod{}).
-		Owns(&corev1.Service{}).
+		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
+		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }
