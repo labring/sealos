@@ -101,6 +101,7 @@
   "port": "端口",
   "private_key": "私钥",
   "prompt": "提示",
+  "publish": "发版",
   "read_event_detail": "查看事件详情",
   "recent_error": "最近错误",
   "release": "发布",

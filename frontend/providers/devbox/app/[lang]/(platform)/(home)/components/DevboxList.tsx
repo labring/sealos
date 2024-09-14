@@ -30,6 +30,7 @@ import {
   restartDevbox,
   startDevbox
 } from '@/api/devbox'
+import ReleaseModal from '@/components/modals/releaseModal'
 
 const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -46,15 +47,15 @@ const DevboxList = ({
   const t = useTranslations()
   const { message: toast } = useMessage()
   const { setLoading } = useGlobalStore()
+  const [onOpenRelease, setOnOpenRelease] = useState(false)
   const [delDevbox, setDelDevbox] = useState<DevboxListItemType | null>(null)
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
     null
   )
-  const { isOpen: isOpenVersion, onOpen: onOpenVersion, onClose: onCloseVersion } = useDisclosure()
 
-  const handleOpenVersion = (devbox: DevboxListItemType) => {
+  const handleOpenRelease = (devbox: DevboxListItemType) => {
     setCurrentDevboxListItem(devbox)
-    onOpenVersion()
+    setOnOpenRelease(true)
   }
 
   const handlePauseDevbox = useCallback(
@@ -293,10 +294,10 @@ const DevboxList = ({
                 child: (
                   <>
                     <MyIcon name={'version'} w={'16px'} />
-                    <Box ml={2}>{t('version')}</Box>
+                    <Box ml={2}>{t('publish')}</Box>
                   </>
                 ),
-                onClick: () => handleOpenVersion(item)
+                onClick: () => handleOpenRelease(item)
               },
               {
                 child: (
@@ -412,14 +413,23 @@ const DevboxList = ({
         </Button>
       </Flex>
       <MyTable columns={columns} data={devboxList} />
-      {!!currentDevboxListItem && (
-        <Version onClose={onCloseVersion} isOpen={isOpenVersion} devbox={currentDevboxListItem} />
-      )}
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={refetchDevboxList}
+        />
+      )}
+      {!!onOpenRelease && !!currentDevboxListItem && (
+        <ReleaseModal
+          onSuccess={() => {
+            router.push(`/devbox/detail/${currentDevboxListItem?.name}`)
+          }}
+          onClose={() => {
+            setOnOpenRelease(false)
+            setCurrentDevboxListItem(null)
+          }}
+          devbox={currentDevboxListItem}
         />
       )}
     </Box>

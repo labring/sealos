@@ -98,6 +98,7 @@
   "port": "Port",
   "private_key": "PrivateKey",
   "prompt": "Prompt",
+  "publish": "Release",
   "read_event_detail": "read event detail",
   "recent_error": "Recent Error",
   "release": "Release",
