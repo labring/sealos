@@ -212,9 +212,9 @@ const BasicInfo = () => {
           </Text>
           <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
             {devboxDetail?.lastTerminatedState?.reason ? (
-              <Text>{devboxDetail?.lastTerminatedState?.reason}</Text>
+              <Text fontSize={'12px'}>{devboxDetail?.lastTerminatedState?.reason}</Text>
             ) : (
-              <Text>{t('none')}</Text>
+              <Text fontSize={'12px'}>{t('none')}</Text>
             )}
             <Tooltip
               label={t('read_event_detail')}
