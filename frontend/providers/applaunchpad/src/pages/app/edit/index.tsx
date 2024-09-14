@@ -33,6 +33,7 @@ import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
 import { customAlphabet } from 'nanoid';
+
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
@@ -305,7 +306,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         'cpu',
         'memory',
         'cmdParam',
-        'runCMD'
+        'runCMD',
+        'appName'
       ];
 
       basicFields.forEach((field) => {
