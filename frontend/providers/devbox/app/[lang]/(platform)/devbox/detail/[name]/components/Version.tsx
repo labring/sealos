@@ -52,7 +52,17 @@ const Version = () => {
         cpu: cpu * 1000,
         memory: memory * 1024,
         imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}`,
-        networks: newNetworks,
+        networks:
+          newNetworks.length > 0
+            ? newNetworks
+            : [
+                {
+                  port: 80,
+                  protocol: 'http',
+                  openPublicDomain: false,
+                  domain: SEALOS_DOMAIN
+                }
+              ],
         runCMD: releaseCommand,
         cmdParam: releaseArgs
       }
