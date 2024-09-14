@@ -215,7 +215,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			logger.Info("updating devbox status")
 			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
 			helper.UpdateDevboxStatus(devbox, latestDevbox)
-			logger.Info("devbox latest terminated state", "state", devbox.Status.LastTerminatedState)
 			return r.Status().Update(ctx, latestDevbox)
 		}); err != nil {
 			logger.Error(err, "sync pod failed")
@@ -255,8 +254,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
-			devbox.Status.LastTerminatedState = helper.GetLastTerminatedState(devbox, pod)
-			logger.Info("last terminated state", "state", devbox.Status.LastTerminatedState)
+			devbox.Status.State = pod.Status.ContainerStatuses[0].State
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
@@ -298,8 +296,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
-			devbox.Status.LastTerminatedState = helper.GetLastTerminatedState(devbox, pod)
-			logger.Info("last terminated state", "state", devbox.Status.LastTerminatedState)
+			// update state to empty since devbox is stopped
+			devbox.Status.State = corev1.ContainerState{}
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
@@ -440,6 +438,7 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 		return err
 	}
 	// update commit history status because pod has been deleted
+	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
 	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
@@ -453,6 +452,7 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv
 	}
 	// update commit history status because pod has been deleted
 	helper.UpdateCommitHistory(devbox, pod, true)
+	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
 	return nil
 }
 

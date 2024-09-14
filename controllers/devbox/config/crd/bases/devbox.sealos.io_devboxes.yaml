@@ -2768,37 +2768,66 @@ spec:
                   - time
                   type: object
                 type: array
-              lastTerminatedState:
-                description: ContainerStateTerminated is a terminated state of a container.
+              lastState:
+                description: |-
+                  ContainerState holds a possible state of container.
+                  Only one of its members may be specified.
+                  If none of them is specified, the default one is ContainerStateWaiting.
                 properties:
-                  containerID:
-                    description: Container's ID in the format '<type>://<container_id>'
-                    type: string
-                  exitCode:
-                    description: Exit status from the last termination of the container
-                    format: int32
-                    type: integer
-                  finishedAt:
-                    description: Time at which the container last terminated
-                    format: date-time
-                    type: string
-                  message:
-                    description: Message regarding the last termination of the container
-                    type: string
-                  reason:
-                    description: (brief) reason from the last termination of the container
-                    type: string
-                  signal:
-                    description: Signal from the last termination of the container
-                    format: int32
-                    type: integer
-                  startedAt:
-                    description: Time at which previous execution of the container
-                      started
-                    format: date-time
-                    type: string
-                required:
-                - exitCode
+                  running:
+                    description: Details about a running container
+                    properties:
+                      startedAt:
+                        description: Time at which the container was last (re-)started
+                        format: date-time
+                        type: string
+                    type: object
+                  terminated:
+                    description: Details about a terminated container
+                    properties:
+                      containerID:
+                        description: Container's ID in the format '<type>://<container_id>'
+                        type: string
+                      exitCode:
+                        description: Exit status from the last termination of the
+                          container
+                        format: int32
+                        type: integer
+                      finishedAt:
+                        description: Time at which the container last terminated
+                        format: date-time
+                        type: string
+                      message:
+                        description: Message regarding the last termination of the
+                          container
+                        type: string
+                      reason:
+                        description: (brief) reason from the last termination of the
+                          container
+                        type: string
+                      signal:
+                        description: Signal from the last termination of the container
+                        format: int32
+                        type: integer
+                      startedAt:
+                        description: Time at which previous execution of the container
+                          started
+                        format: date-time
+                        type: string
+                    required:
+                    - exitCode
+                    type: object
+                  waiting:
+                    description: Details about a waiting container
+                    properties:
+                      message:
+                        description: Message regarding why the container is not yet
+                          running.
+                        type: string
+                      reason:
+                        description: (brief) reason the container is not yet running.
+                        type: string
+                    type: object
                 type: object
               network:
                 properties:
@@ -2823,6 +2852,67 @@ spec:
                 description: PodPhase is a label for the condition of a pod at the
                   current time.
                 type: string
+              state:
+                description: |-
+                  ContainerState holds a possible state of container.
+                  Only one of its members may be specified.
+                  If none of them is specified, the default one is ContainerStateWaiting.
+                properties:
+                  running:
+                    description: Details about a running container
+                    properties:
+                      startedAt:
+                        description: Time at which the container was last (re-)started
+                        format: date-time
+                        type: string
+                    type: object
+                  terminated:
+                    description: Details about a terminated container
+                    properties:
+                      containerID:
+                        description: Container's ID in the format '<type>://<container_id>'
+                        type: string
+                      exitCode:
+                        description: Exit status from the last termination of the
+                          container
+                        format: int32
+                        type: integer
+                      finishedAt:
+                        description: Time at which the container last terminated
+                        format: date-time
+                        type: string
+                      message:
+                        description: Message regarding the last termination of the
+                          container
+                        type: string
+                      reason:
+                        description: (brief) reason from the last termination of the
+                          container
+                        type: string
+                      signal:
+                        description: Signal from the last termination of the container
+                        format: int32
+                        type: integer
+                      startedAt:
+                        description: Time at which previous execution of the container
+                          started
+                        format: date-time
+                        type: string
+                    required:
+                    - exitCode
+                    type: object
+                  waiting:
+                    description: Details about a waiting container
+                    properties:
+                      message:
+                        description: Message regarding why the container is not yet
+                          running.
+                        type: string
+                      reason:
+                        description: (brief) reason the container is not yet running.
+                        type: string
+                    type: object
+                type: object
             type: object
         type: object
     served: true
