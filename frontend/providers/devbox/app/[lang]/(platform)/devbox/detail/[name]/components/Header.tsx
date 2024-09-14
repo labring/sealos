@@ -112,6 +112,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           _hover={{
             color: 'brightBlue.600'
           }}
+          borderWidth={1}
           leftIcon={<MyIcon name={'vscode'} w={'16px'} />}
           onClick={() => handleGotoVSCode(devboxDetail)}>
           {t('open_vscode')}
@@ -128,6 +129,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             _hover={{
               color: 'brightBlue.600'
             }}
+            borderWidth={1}
             leftIcon={<MyIcon name={'pause'} w={'16px'} />}
             onClick={() => handlePauseDevbox(devboxDetail)}>
             {t('pause')}
@@ -144,6 +146,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           _hover={{
             color: 'brightBlue.600'
           }}
+          borderWidth={1}
           leftIcon={<MyIcon name={'change'} w={'16px'} />}
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
           {t('update')}
@@ -160,6 +163,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             _hover={{
               color: 'brightBlue.600'
             }}
+            borderWidth={1}
             leftIcon={<MyIcon name={'restart'} w={'16px'} />}
             onClick={() => handleRestartDevbox(devboxDetail)}>
             {t('restart')}
@@ -176,6 +180,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           _hover={{
             color: 'red.600'
           }}
+          borderWidth={1}
           leftIcon={<MyIcon name={'delete'} w={'16px'} />}
           onClick={() => setDelDevbox(devboxDetail)}>
           {t('delete')}
