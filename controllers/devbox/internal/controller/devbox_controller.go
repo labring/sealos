@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -579,19 +578,8 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&devboxv1alpha1.Devbox{}).
+		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
-		Watches(
-			&corev1.Pod{},
-			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &devboxv1alpha1.Devbox{}),
-			builder.WithPredicates(predicate.And(
-				predicate.ResourceVersionChangedPredicate{},
-				predicate.NewPredicateFuncs(func(object client.Object) bool {
-					pod := object.(*corev1.Pod)
-					return pod.Labels[label.AppManagedBy] == label.DefaultManagedBy && pod.Labels[label.AppPartOf] == devboxv1alpha1.DevBoxPartOf
-				}),
-			)),
-		).
 		Complete(r)
 }
