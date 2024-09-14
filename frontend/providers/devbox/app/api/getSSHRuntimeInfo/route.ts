@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
 
     const data = {
       workingDir: runtime.spec.config.workingDir,
-      releaseCommand: runtime.spec.config.releaseCommand,
-      releaseArgs: runtime.spec.config.releaseArgs
+      releaseCommand: runtime.spec.config.releaseCommand.join(' '),
+      releaseArgs: runtime.spec.config.releaseArgs.join(' ')
     }
 
     return jsonRes({ data })

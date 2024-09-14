@@ -24,7 +24,7 @@ import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
-import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
+import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 
@@ -79,19 +79,39 @@ const Version = ({
 
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
-      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.name)
+      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
+      const { cpu, memory, networks, name } = devbox
+      const newNetworks = networks.map((network) => {
+        return {
+          port: network.port,
+          protocol: network.protocol,
+          openPublicDomain: network.openPublicDomain,
+          domain: SEALOS_DOMAIN
+        }
+      })
+
+      const transformData = {
+        appName: name,
+        cpu: cpu * 1000,
+        memory: memory * 1024,
+        imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}`,
+        networks: newNetworks,
+        runCMD: releaseCommand,
+        cmdParam: releaseArgs
+      }
+      const formData = encodeURIComponent(JSON.stringify(transformData))
 
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
         pathname: '/app/edit',
-        query: { imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}` },
+        query: { formData },
         messageData: {
           type: 'InternalAppCall',
-          formData: { imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}` }
+          formData: formData
         }
       })
     },
-    [devbox.name]
+    [devbox]
   )
 
   const columns: {
