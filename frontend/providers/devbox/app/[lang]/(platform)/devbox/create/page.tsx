@@ -9,7 +9,7 @@ import { Box, Flex } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import Form from './components/Form'
 import Yaml from './components/Yaml'
@@ -56,13 +56,15 @@ const formData2Yamls = (data: DevboxEditType) => [
 const DevboxCreatePage = () => {
   const router = useRouter()
   const t = useTranslations()
+
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
+  const { checkQuotaAllow } = useUserStore()
+  const { setDevboxDetail, devboxList } = useDevboxStore()
+
   const crOldYamls = useRef<DevboxKindsType[]>([])
   const formOldYamls = useRef<YamlItemType[]>([])
   const oldDevboxEditData = useRef<DevboxEditType>()
-  const { checkQuotaAllow } = useUserStore()
-  const { setDevboxDetail, devboxList } = useDevboxStore()
   const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
@@ -70,6 +72,18 @@ const DevboxCreatePage = () => {
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
+
+  // NOTE: need to explain why this is needed
+  // fix a bug: searchParams will disappear when go into this page
+  const [captureDevboxName, setCaptureDevboxName] = useState('')
+
+  useEffect(() => {
+    const name = searchParams.get('name')
+    if (name) {
+      setCaptureDevboxName(name)
+      router.replace(`/devbox/create?name=${captureDevboxName}`, undefined)
+    }
+  }, [searchParams, router, captureDevboxName])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, [])
