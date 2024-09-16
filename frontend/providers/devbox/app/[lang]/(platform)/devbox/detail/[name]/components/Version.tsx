@@ -9,12 +9,12 @@ import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
-import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 import { DevboxVersionListItemType } from '@/types/devbox'
 import ReleaseModal from '@/components/modals/releaseModal'
+import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
+import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 
 const Version = () => {
   const t = useTranslations()

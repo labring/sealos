@@ -1,16 +1,17 @@
-import { getSSHConnectionInfo, getSSHRuntimeInfo, pauseDevbox, restartDevbox } from '@/api/devbox'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
-import MyIcon from '@/components/Icon'
-import DelModal from '@/components/modals/DelModal'
-import { useRouter } from '@/i18n'
-import { useDevboxStore } from '@/stores/devbox'
-import { useGlobalStore } from '@/stores/global'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
-import { DevboxDetailType } from '@/types/devbox'
-import { Flex, Button, Box } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
+import { Flex, Button, Box } from '@chakra-ui/react'
+
+import { useRouter } from '@/i18n'
+import MyIcon from '@/components/Icon'
+import { useDevboxStore } from '@/stores/devbox'
+import { useGlobalStore } from '@/stores/global'
+import { DevboxDetailType } from '@/types/devbox'
+import DelModal from '@/components/modals/DelModal'
+import DevboxStatusTag from '@/components/DevboxStatusTag'
+import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
+import { getSSHConnectionInfo, getSSHRuntimeInfo, pauseDevbox, restartDevbox } from '@/api/devbox'
 
 const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) => {
   const router = useRouter()

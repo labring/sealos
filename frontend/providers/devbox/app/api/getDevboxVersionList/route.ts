@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 
+import { KBDevboxReleaseType } from '@/types/k8s'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
-import { KBDevboxReleaseType } from '../../../types/k8s'
 
 export const dynamic = 'force-dynamic'
 

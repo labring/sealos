@@ -23,10 +23,10 @@ import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
+import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 import { DevboxListItemType, DevboxVersionListItemType } from '@/types/devbox'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
 
 const ReleaseModal = dynamic(() => import('@/components/modals/releaseModal'))
 const EditVersionDesModal = dynamic(() => import('@/components/modals/EditVersionDesModal'))

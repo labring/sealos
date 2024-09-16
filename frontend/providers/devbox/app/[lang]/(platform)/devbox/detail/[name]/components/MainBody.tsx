@@ -1,13 +1,14 @@
-import MyIcon from '@/components/Icon'
-import PodLineChart from '@/components/PodLineChart'
-import { useDevboxStore } from '@/stores/devbox'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
-import { NetworkType } from '@/types/devbox'
-import { Box, Flex, Text, Tooltip } from '@chakra-ui/react'
-import MyTable from '@/components/MyTable'
-import { useTranslations } from 'next-intl'
 import dayjs from 'dayjs'
+import { useTranslations } from 'next-intl'
+import { Box, Flex, Text, Tooltip } from '@chakra-ui/react'
+
+import MyIcon from '@/components/Icon'
+import MyTable from '@/components/MyTable'
 import { useCopyData } from '@/utils/tools'
+import { NetworkType } from '@/types/devbox'
+import { useDevboxStore } from '@/stores/devbox'
+import PodLineChart from '@/components/PodLineChart'
+import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 
 const MainBody = () => {
   const t = useTranslations()

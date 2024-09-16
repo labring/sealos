@@ -6,9 +6,6 @@ import { usePathname, useRouter } from '@/i18n'
 import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
-import { useGlobalStore } from '@/stores/global'
-import { useLoading } from '@/hooks/useLoading'
-import { useConfirm } from '@/hooks/useConfirm'
 import {
   getEnv,
   getGlobalNamespace,
@@ -16,10 +13,13 @@ import {
   getUserPrice,
   SEALOS_DOMAIN
 } from '@/stores/static'
+import { useGlobalStore } from '@/stores/global'
+import { useLoading } from '@/hooks/useLoading'
+import { useConfirm } from '@/hooks/useConfirm'
+import { getLangStore, setLangStore } from '@/utils/cookie'
 import QueryProvider from '@/components/providers/MyQueryProvider'
 import ChakraProvider from '@/components/providers/MyChakraProvider'
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider'
-import { getLangStore, setLangStore } from '@/utils/cookie'
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()

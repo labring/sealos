@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import Empty from './components/Empty'
-import DevboxList from './components/DevboxList'
 import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
+import DevboxList from './components/DevboxList'
 
 const EmptyPage = () => {
   const { Loading } = useLoading()

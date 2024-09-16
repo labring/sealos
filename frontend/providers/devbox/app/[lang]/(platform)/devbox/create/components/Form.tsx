@@ -38,11 +38,11 @@ import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
+import { useDevboxStore } from '@/stores/devbox'
 import { ProtocolList } from '@/constants/devbox'
 import type { DevboxEditType } from '@/types/devbox'
 import { getValueDefault, obj2Query } from '@/utils/tools'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
-import { useDevboxStore } from '@/stores/devbox'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 

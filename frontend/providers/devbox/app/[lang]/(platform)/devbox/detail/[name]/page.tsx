@@ -1,14 +1,15 @@
 'use client'
 
-import { Box, Flex, Grid } from '@chakra-ui/react'
 import { useMemo, useState } from 'react'
-import Header from './components/Header'
-import { useDevboxStore } from '@/stores/devbox'
 import { useQuery } from '@tanstack/react-query'
+import { Box, Flex, Grid } from '@chakra-ui/react'
+
+import Header from './components/Header'
 import Version from './components/Version'
-import { useLoading } from '@/hooks/useLoading'
-import BasicInfo from './components/BasicInfo'
 import MainBody from './components/MainBody'
+import BasicInfo from './components/BasicInfo'
+import { useLoading } from '@/hooks/useLoading'
+import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {

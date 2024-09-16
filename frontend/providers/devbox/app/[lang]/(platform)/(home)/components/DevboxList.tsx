@@ -7,7 +7,6 @@ import {
   MenuButton,
   useTheme,
   Text,
-  useDisclosure,
   Tooltip
 } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
@@ -16,13 +15,6 @@ import { useCallback, useState } from 'react'
 import { sealosApp } from 'sealos-desktop-sdk/app'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
 
-import { useRouter } from '@/i18n'
-import MyIcon from '@/components/Icon'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
-import { useGlobalStore } from '@/stores/global'
-import { DevboxListItemType } from '@/types/devbox'
-import PodLineChart from '@/components/PodLineChart'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
 import {
   getSSHConnectionInfo,
   getSSHRuntimeInfo,
@@ -30,9 +22,15 @@ import {
   restartDevbox,
   startDevbox
 } from '@/api/devbox'
+import { useRouter } from '@/i18n'
+import MyIcon from '@/components/Icon'
+import { useGlobalStore } from '@/stores/global'
+import { DevboxListItemType } from '@/types/devbox'
+import PodLineChart from '@/components/PodLineChart'
+import DevboxStatusTag from '@/components/DevboxStatusTag'
+import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import ReleaseModal from '@/components/modals/releaseModal'
 
-const Version = dynamic(() => import('./Version'))
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
 const DevboxList = ({

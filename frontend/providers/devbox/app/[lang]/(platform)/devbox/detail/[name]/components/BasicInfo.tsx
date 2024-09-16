@@ -1,11 +1,12 @@
-import React, { useCallback, useState } from 'react'
-import MyIcon from '@/components/Icon'
-import { useTranslations } from 'next-intl'
-import { useDevboxStore } from '@/stores/devbox'
-import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
-import { getRuntimeVersionItem, NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
-import { DevboxDetailType } from '@/types/devbox'
 import { useMessage } from '@sealos/ui'
+import { useTranslations } from 'next-intl'
+import React, { useCallback, useState } from 'react'
+import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
+
+import MyIcon from '@/components/Icon'
+import { useDevboxStore } from '@/stores/devbox'
+import { DevboxDetailType } from '@/types/devbox'
+import { getRuntimeVersionItem, NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 
 const BasicInfo = () => {
   const { devboxDetail } = useDevboxStore()
