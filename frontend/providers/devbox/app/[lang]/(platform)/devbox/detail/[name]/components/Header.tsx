@@ -79,9 +79,10 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
         })
         console.error(error, '==')
       }
+      refetchDevboxDetail()
       setLoading(false)
     },
-    [setLoading, t, toast]
+    [setLoading, t, toast, refetchDevboxDetail]
   )
   return (
     <Flex justify="space-between" align="center" pl={4}>

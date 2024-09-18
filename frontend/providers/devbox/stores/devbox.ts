@@ -30,7 +30,7 @@ type State = {
 
 export const useDevboxStore = create<State>()(
   devtools(
-    immer((set) => ({
+    immer((set, get) => ({
       devboxList: [] as DevboxListItemType[],
       setDevboxList: async () => {
         const res = await getMyDevboxList()
@@ -94,11 +94,25 @@ export const useDevboxStore = create<State>()(
       devboxDetail: {} as DevboxDetailType,
       setDevboxDetail: async (devboxName: string) => {
         const res = await getMyDevboxList()
-        const pods = await getDevboxPodsByDevboxName(devboxName)
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
 
-        console.log('detail', detail)
+        // isPause
+        detail.isPause = detail.status.value === 'Stopped'
+
+        // cpu and memory
+        detail.cpu = detail.cpu / 1000
+        detail.memory = detail.memory / 1024
+
+        if (detail.status.value !== 'Running') {
+          set((state) => {
+            state.devboxDetail = detail
+          })
+
+          return detail
+        }
+
+        const pods = await getDevboxPodsByDevboxName(devboxName)
 
         const { base64PrivateKey, userName } = await getSSHConnectionInfo({
           devboxName: detail.name,
@@ -122,22 +136,17 @@ export const useDevboxStore = create<State>()(
         // add upTime by Pod
         detail.upTime = pods[0].upTime
 
-        // cpu and memory
-        detail.cpu = detail.cpu / 1000
-        detail.memory = detail.memory / 1024
-
-        // isPause
-        detail.isPause = detail.status.value === 'Stopped'
-
         set((state) => {
           state.devboxDetail = detail
         })
+
         return detail
       },
       devboxDetailPods: [],
       loadDetailMonitorData: async (devboxName) => {
         const pods = await getDevboxPodsByDevboxName(devboxName)
-        const queryName = pods[0].podName || devboxName
+
+        const queryName = pods.length > 0 ? pods[0].podName : devboxName
 
         set((state) => {
           state.devboxDetailPods = pods.map((pod) => {
