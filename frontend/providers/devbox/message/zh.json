@@ -43,6 +43,7 @@
   "create_success": "创建成功",
   "create_time": "创建时间",
   "creation_time": "创建时间",
+  "cursor": "Cursor",
   "daily": "/天",
   "delete": "删除",
   "delete_failed": "删除失败",
@@ -72,6 +73,7 @@
   "export_yaml": "导出YAML",
   "external_address": "外网地址",
   "framework": "框架",
+  "ide_tooltip": "点击在 IDE 中开发",
   "image": "镜像",
   "image_info": "镜像源（私有）",
   "image_name": "镜像名",
@@ -147,6 +149,8 @@
   "version_info": "版本列表",
   "version_list": "版本列表",
   "version_number": "版本号",
+  "vscode": "VS Code",
+  "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
   "yaml_file": "YAML文件"
 }

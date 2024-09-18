@@ -42,6 +42,7 @@
   "create_failed": "Creation failed",
   "create_success": "Creation succeeded",
   "create_time": "Created at",
+  "cursor": "Cursor",
   "daily": "/day",
   "delete": "Delete",
   "delete_failed": "Delete failed",
@@ -71,6 +72,7 @@
   "export_yaml": "Export YAML",
   "external_address": "External Address",
   "framework": "Framework",
+  "ide_tooltip": "Click to develop in IDE",
   "image": "Image",
   "image_name": "Image Name",
   "internal_address": "Internal Address",
@@ -143,6 +145,7 @@
   "version_info": "Version List",
   "version_list": "Version List",
   "version_number": "Tag",
+  "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
   "yaml_file": "YAML"
 }

@@ -1,12 +1,21 @@
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
-import { Flex, Button, Box } from '@chakra-ui/react'
+import {
+  Flex,
+  Button,
+  Box,
+  Menu,
+  MenuButton,
+  IconButton,
+  MenuList,
+  MenuItem
+} from '@chakra-ui/react'
 
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 import { useDevboxStore } from '@/stores/devbox'
-import { useGlobalStore } from '@/stores/global'
+import { IDEType, useGlobalStore } from '@/stores/global'
 import { DevboxDetailType } from '@/types/devbox'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
@@ -17,31 +26,86 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
-  const { setLoading } = useGlobalStore()
+  const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
   const { devboxDetail } = useDevboxStore()
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
 
-  const handleGotoVSCode = useCallback(async (devbox: DevboxDetailType) => {
-    try {
-      const { base64PrivateKey, userName } = await getSSHConnectionInfo({
-        devboxName: devbox.name,
-        runtimeName: devbox.runtimeVersion
-      })
-      const { workingDir } = await getSSHRuntimeInfo(devbox.runtimeVersion)
+  const getCurrentIDELabelAndIcon = useCallback(
+    (
+      currentIDE: IDEType
+    ): {
+      label: string
+      icon: IDEType
+    } => {
+      switch (currentIDE) {
+        case 'vscode':
+          return {
+            label: 'VSCode',
+            icon: 'vscode'
+          }
+        case 'cursor':
+          return {
+            label: 'Cursor',
+            icon: 'cursor'
+          }
+        case 'vscodeInsider':
+          return {
+            label: 'VSCode Insider',
+            icon: 'vscodeInsider'
+          }
+        default:
+          return {
+            label: 'VSCode',
+            icon: 'vscode'
+          }
+      }
+    },
+    []
+  )
+  const handleGotoIDE = useCallback(
+    async (devbox: DevboxDetailType, currentIDE: string = 'vscode') => {
+      try {
+        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
+          devboxName: devbox.name,
+          runtimeName: devbox.runtimeVersion
+        })
+        const { workingDir } = await getSSHRuntimeInfo(devbox.runtimeVersion)
 
-      const vscodeUri = `vscode://mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
-        `${userName}@${SEALOS_DOMAIN}`
-      )}&sshPort=${encodeURIComponent(
-        devbox.sshPort as number
-      )}&base64PrivateKey=${encodeURIComponent(base64PrivateKey)}&sshHostLabel=${encodeURIComponent(
-        `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
-      )}&workingDir=${encodeURIComponent(workingDir)}`
+        let editorUri = ''
+        switch (currentIDE) {
+          case 'cursor':
+            editorUri = `cursor://`
+            break
+          case 'vscodeInsider':
+            editorUri = `vscode-insiders://`
+            break
+          case 'vscode':
+            editorUri = `vscode://`
+            break
+          default:
+            editorUri = `vscode://`
+        }
 
-      window.location.href = vscodeUri
-    } catch (error: any) {
-      console.error(error, '==')
-    }
-  }, [])
+        const fullUri = `${editorUri}mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
+          `${userName}@${SEALOS_DOMAIN}`
+        )}&sshPort=${encodeURIComponent(
+          devbox.sshPort as number
+        )}&base64PrivateKey=${encodeURIComponent(
+          base64PrivateKey
+        )}&sshHostLabel=${encodeURIComponent(
+          `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
+        )}&workingDir=${encodeURIComponent(workingDir)}`
+
+        console.log(fullUri, '==')
+
+        window.location.href = fullUri
+      } catch (error: any) {
+        console.error(error, '==')
+      }
+    },
+    []
+  )
+
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxDetailType) => {
       try {
@@ -104,9 +168,8 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
       </Flex>
       <Flex>
         <Button
-          mr={5}
-          w={'110px'}
-          h={'40px'}
+          height={'40px'}
+          size={'sm'}
           fontSize={'14px'}
           bg={'white'}
           color={'grayModern.600'}
@@ -114,10 +177,71 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             color: 'brightBlue.600'
           }}
           borderWidth={1}
-          leftIcon={<MyIcon name={'vscode'} w={'16px'} />}
-          onClick={() => handleGotoVSCode(devboxDetail)}>
-          {t('open_vscode')}
+          borderRightWidth={0}
+          borderRightRadius={0}
+          onClick={() => handleGotoIDE(devboxDetail, currentIDE)}
+          leftIcon={<MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />}
+          isDisabled={devboxDetail.status.value !== 'Running'}>
+          {getCurrentIDELabelAndIcon(currentIDE).label}
         </Button>
+        <Menu placement="bottom-end">
+          <MenuButton
+            height={'40px'}
+            bg={'white'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            color={'grayModern.600'}
+            mr={6}
+            p={2}
+            borderWidth={1}
+            borderLeftRadius={0}
+            borderLeftWidth={0}
+            as={IconButton}
+            icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
+            _before={{
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '1px',
+              height: '20px',
+              backgroundColor: 'grayModern.250'
+            }}
+          />
+          <MenuList
+            color={'grayModern.600'}
+            fontWeight={500}
+            fontSize={'12px'}
+            defaultValue={currentIDE}
+            px={1}>
+            {[
+              { value: 'vscode' as IDEType, label: 'VSCode' },
+              { value: 'cursor' as IDEType, label: 'Cursor' },
+              { value: 'vscodeInsider' as IDEType, label: 'VSCode Insider' }
+            ].map((item) => (
+              <MenuItem
+                key={item.value}
+                value={item.value}
+                onClick={() => setCurrentIDE(item.value)}
+                icon={<MyIcon name={item.value} w={'16px'} />}
+                _hover={{
+                  bg: '#1118240D',
+                  borderRadius: 4
+                }}
+                _focus={{
+                  bg: '#1118240D',
+                  borderRadius: 4
+                }}>
+                <Flex justifyContent="space-between" alignItems="center" width="100%">
+                  {item.label}
+                  {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
+                </Flex>
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Menu>
         {devboxDetail.status.value === 'Running' && (
           <Button
             mr={5}
