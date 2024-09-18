@@ -254,6 +254,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
+			// check pod container size, if it is 0, it means the pod is not running, return an error
+			if len(pod.Status.ContainerStatuses) == 0 {
+				devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
+				return fmt.Errorf("pod container size is 0")
+			}
 			devbox.Status.State = pod.Status.ContainerStatuses[0].State
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
