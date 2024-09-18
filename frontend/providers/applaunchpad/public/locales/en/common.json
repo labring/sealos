@@ -265,5 +265,6 @@
   "within_1_hour": "Within 1 hour",
   "within_1_day": "Within 1 day",
   "terminated_logs": "Terminated logs",
-  "no_logs_for_now": "No logs for now"
+  "no_logs_for_now": "No logs for now",
+  "or": "or"
 }

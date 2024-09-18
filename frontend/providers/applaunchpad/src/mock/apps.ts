@@ -1,4 +1,4 @@
-import { AppListItemType, AppDetailType, PodDetailType } from '@/types/app';
+import { AppListItemType, AppDetailType, PodDetailType, AppEditSyncedFields } from '@/types/app';
 import { appStatusMap, podStatusMap } from '@/constants/app';
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
@@ -268,7 +268,8 @@ export const MOCK_APP_DETAIL: AppDetailType = {
       protocol: 'HTTP',
       openPublicDomain: false,
       publicDomain: '',
-      customDomain: ''
+      customDomain: '',
+      domain: ''
     }
   ],
   envs: [],
@@ -293,4 +294,26 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     sourceName: '',
     sourceType: 'app_store'
   }
+};
+
+export const MockAppEditSyncedFields: AppEditSyncedFields = {
+  imageName: 'nginx',
+  appName: 'hello-world-test',
+  replicas: 1,
+  cpu: 4000,
+  memory: 64,
+  networks: [
+    {
+      networkName: 'network-atyjahgvtzqm',
+      portName: 'vsjrpjzjptex',
+      port: 80,
+      protocol: 'HTTP',
+      openPublicDomain: true,
+      publicDomain: 'tkywzlpibxdl',
+      customDomain: '',
+      domain: 'gzg.sealos.run'
+    }
+  ],
+  cmdParam: 'sleep 10',
+  runCMD: '/bin/bash -c'
 };

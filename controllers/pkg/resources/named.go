@@ -81,6 +81,9 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[TerminalIDLabelKey] != "" || (labels[label.AppManagedBy] == label.DefaultManagedBy && labels[label.AppPartOf] == "terminal"):
 		p._type = TERMINAL
 		p._name = ""
+	case labels[label.AppPartOf] == "devbox":
+		p._type = DevBox
+		p._name = labels[label.AppName]
 	case labels[AppLabelKey] != "":
 		p._type = APP
 		p._name = labels[AppLabelKey]

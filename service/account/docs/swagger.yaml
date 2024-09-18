@@ -337,6 +337,13 @@ definitions:
       endTime:
         example: "2021-12-01T00:00:00Z"
         type: string
+      invoiced:
+        description: |-
+          @Summary Invoiced
+          @Description Invoiced
+          @JSONSchema
+        example: true
+        type: boolean
       kubeConfig:
         type: string
       owner:
@@ -479,6 +486,11 @@ definitions:
         items:
           type: string
         type: array
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
       status:
         description: |-
           Invoice status
@@ -488,16 +500,14 @@ definitions:
         example: COMPLETED,REJECTED,PENDING
         type: string
       token:
-        description: |-
-          @Summary Authentication token
-          @Description Authentication token
-          @JSONSchema required
         example: token
+        type: string
+      userID:
+        example: admin
         type: string
     required:
     - invoiceIDList
     - status
-    - token
     type: object
   helper.SetPaymentInvoiceReq:
     properties:
@@ -939,6 +949,44 @@ paths:
       summary: Get user costs
       tags:
       - Costs
+  /account/v1alpha1/costs/all-region-consumption:
+    post:
+      consumes:
+      - application/json
+      description: Get all region consumption amount within a specified time range
+      parameters:
+      - description: All region consumption amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.ConsumptionRecordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved all region consumption amount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse all region consumption amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get all region consumption amount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all region consumption amount
+      tags:
+      - ConsumptionAmount
   /account/v1alpha1/costs/app:
     post:
       consumes:

@@ -247,6 +247,19 @@ spec:
                       - containerPort
                       type: object
                     type: array
+                  releaseArgs:
+                    default:
+                    - /home/sealos/project/entrypoint.sh
+                    items:
+                      type: string
+                    type: array
+                  releaseCommand:
+                    default:
+                    - /bin/bash
+                    - -c
+                    items:
+                      type: string
+                    type: array
                   user:
                     default: sealos
                     type: string
@@ -1902,6 +1915,7 @@ spec:
                       type: object
                     type: array
                   workingDir:
+                    default: /home/sealos/project
                     type: string
                 required:
                 - image

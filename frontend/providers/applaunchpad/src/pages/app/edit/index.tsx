@@ -1,5 +1,5 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { updateDesktopGuide } from '@/api/platform';
+import { checkPermission, updateDesktopGuide } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -32,6 +32,9 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
+import { customAlphabet } from 'nanoid';
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -98,7 +101,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow, balance } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -210,6 +213,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       isGuided
     ]
   );
+
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -289,19 +293,43 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   }, [router.query.name, tabType]);
 
   useEffect(() => {
-    const query = router.query;
-    const updates: Partial<AppEditSyncedFields> = {
-      imageName: query.imageName as string,
-      replicas: query.replicas ? Number(query.replicas) : undefined,
-      cpu: query.cpu ? Number(query.cpu) : undefined,
-      memory: query.memory ? Number(query.memory) : undefined
-    };
+    try {
+      const query = router.query as { formData?: string };
+      if (!query.formData) return;
+      const parsedData: Partial<AppEditSyncedFields> = JSON.parse(
+        decodeURIComponent(query.formData)
+      );
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formHook.setValue(key as keyof AppEditSyncedFields, value);
+      const basicFields: (keyof AppEditSyncedFields)[] = [
+        'imageName',
+        'replicas',
+        'cpu',
+        'memory',
+        'cmdParam',
+        'runCMD',
+        'appName'
+      ];
+
+      basicFields.forEach((field) => {
+        if (parsedData[field] !== undefined) {
+          formHook.setValue(field, parsedData[field] as any);
+        }
+      });
+
+      if (Array.isArray(parsedData.networks)) {
+        const completeNetworks = parsedData.networks.map((network) => ({
+          networkName: network.networkName || `network-${nanoid()}`,
+          portName: network.portName || nanoid(),
+          port: network.port || 80,
+          protocol: network.protocol || 'HTTP',
+          openPublicDomain: network.openPublicDomain || false,
+          publicDomain: network.publicDomain || nanoid(),
+          customDomain: network.customDomain || '',
+          domain: network.domain || 'gzg.sealos.run'
+        }));
+        formHook.setValue('networks', completeNetworks);
       }
-    });
+    } catch (error) {}
   }, []);
 
   return (
@@ -320,17 +348,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyBtnText={applyBtnText}
           applyCb={() => {
             closeGuide();
-            formHook.handleSubmit((data) => {
+            formHook.handleSubmit(async (data) => {
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
-
-              // balance check
-              if (balance <= 0) {
-                return toast({
-                  status: 'warning',
-                  title: t('user.Insufficient account balance')
-                });
-              }
 
               // gpu inventory check
               if (data.gpu?.type) {
@@ -360,6 +380,26 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   status: 'warning',
                   title: t('Network port conflict')
                 });
+              }
+
+              // check permission
+              if (appName) {
+                try {
+                  const result = await checkPermission({
+                    appName: data.appName
+                  });
+                  if (result === 'insufficient_funds') {
+                    return toast({
+                      status: 'warning',
+                      title: t('user.Insufficient account balance')
+                    });
+                  }
+                } catch (error: any) {
+                  return toast({
+                    status: 'warning',
+                    title: error?.message || 'Check Error'
+                  });
+                }
               }
 
               openConfirm(() => submitSuccess(parseYamls))();

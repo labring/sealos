@@ -288,5 +288,11 @@
   "upload_dump_file": "点击上传 Dump 文件",
   "use_docs": "使用文档",
   "version": "版本",
-  "yaml_file": "YAML 文件"
+  "yaml_file": "YAML 文件",
+  "streaming_logs": "实时日志",
+  "within_5_minutes": "五分钟内",
+  "within_1_hour": "一小时内",
+  "within_1_day": "一天内",
+  "terminated_logs": "中断前",
+  "no_logs_for_now": "暂无日志"
 }

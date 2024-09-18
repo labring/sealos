@@ -4,7 +4,7 @@ interface StreamFetchProps {
   url: string;
   data: any;
   onMessage: (text: string) => void;
-  firstResponse?: (text: string) => void;
+  firstResponse?: () => void;
   abortSignal: AbortController;
 }
 export const streamFetch = ({
@@ -26,6 +26,11 @@ export const streamFetch = ({
         signal: abortSignal.signal
       });
       console.log(res, 'streamFetch');
+      if (res.status === 200) {
+        firstResponse && firstResponse();
+      } else {
+        reject('请求异常');
+      }
       const reader = res.body?.getReader();
       if (!reader) return;
       abortSignal.signal.addEventListener('abort', () => reader.cancel(), { once: true });
@@ -50,7 +55,6 @@ export const streamFetch = ({
         }
         const text = decoder.decode(value).replace(/<br\/>/g, '\n');
         if (res.status === 200) {
-          responseText === '' && firstResponse && firstResponse(text);
           onMessage(text);
           responseText += text;
         }

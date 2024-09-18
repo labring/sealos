@@ -4,6 +4,7 @@ import useIsBrowser from '@docusaurus/useIsBrowser';
 interface SemParams {
   bd_vid: string;
   keywords: string;
+  s: string;
 }
 
 export default function useWindow() {
@@ -13,7 +14,7 @@ export default function useWindow() {
     isBrowser ? document.documentElement.lang : 'en'
   );
   const [cloudUrl, setCloudUrl] = useState('https://cloud.sealos.io');
-  const [semParams, setSemParams] = useState<SemParams>({ bd_vid: '', keywords: '' });
+  const [semParams, setSemParams] = useState<SemParams>({ bd_vid: '', keywords: '', s: '' });
 
   useEffect(() => {
     if (!isBrowser) return;

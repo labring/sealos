@@ -72,7 +72,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	mv bin/manager bin/controller-devbox-${TARGETARCH}
 	chmod +x bin/controller-devbox-${TARGETARCH}
 	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}

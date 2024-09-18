@@ -11,14 +11,10 @@ export const getInitData = () => GET<InitDataType>('/api/platform/getInitData');
 
 export const getUserQuota = () =>
   GET<{
-    balance: string;
     quota: UserQuotaItemType[];
   }>('/api/platform/getQuota');
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
-
-// abandoned
-export const getPlatformEnv = () => GET<EnvResponse>('/api/platform/getEnv');
 
 export const updateDesktopGuide = (payload: UpdateUserGuideParams) =>
   POST('/api/guide/updateGuide', payload);
@@ -26,3 +22,6 @@ export const updateDesktopGuide = (payload: UpdateUserGuideParams) =>
 export const getUserAccount = () => GET<AccountCRD>('/api/guide/getAccount');
 
 export const getPriceBonus = () => GET('/api/guide/getBonus');
+
+export const checkPermission = (payload: { appName: string }) =>
+  GET('/api/platform/checkPermission', payload);

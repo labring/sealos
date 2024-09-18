@@ -1,14 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
 import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
 import { appLanuchPadClient } from '@/services/request';
+import fs from 'fs/promises';
+import _ from 'lodash';
+import path from 'path';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const client = await initK8s({ req });
     const { bucket } = req.body as { bucket?: string };
+
     if (!bucket) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
+
+    const domain = process.env.SEALOS_DOMAIN;
+
     const appName = `static-host-${bucket}`;
     const result = await appLanuchPadClient.post(
       '/createApp',
@@ -29,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               protocol: 'HTTP',
               openPublicDomain: true,
               publicDomain: appName,
-              customDomain: ''
+              customDomain: '',
+              domain: domain
             }
           ],
           envs: [],
@@ -44,40 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             {
               mountPath: '/etc/nginx/nginx.conf',
               subPath: 'nginx.conf',
-              value: `user  nginx;
-    worker_processes  auto;
-      
-    error_log  /var/log/nginx/error.log notice;
-    pid        /var/run/nginx.pid;
-      
-      
-    events {
-        worker_connections  1024;
-    }
-      
-      
-    http {
-        
-        proxy_intercept_errors on;
-        
-        server {
-            listen 80;
-            
-            error_page 404 = /404.html;
-
-            location / {
-              rewrite ^/404\\.html$ /${bucket}/404.html break;
-              rewrite ^/$ /${bucket}/index.html break;
-              rewrite ^/(.+)/$ /${bucket}/$1/index.html break;
-              rewrite ^/(.*\\..*)$ /${bucket}/$1 break;
-              rewrite ^/(.+)$ /${bucket}/$1/index.html break;
-              
-              proxy_pass http://object-storage.objectstorage-system.svc.cluster.local;
-            }
-        }
-        
-        sendfile  on;
-    }`
+              value: await generateNginxConfig(bucket)
             }
           ],
           secret: {
@@ -105,5 +78,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       code: 500,
       message: 'get bucket error'
     });
+  }
+}
+
+async function generateNginxConfig(bucketName: string) {
+  try {
+    const templatePath = path.join(process.cwd(), 'src', 'templates', 'nginx', 'site-host');
+    const template = await fs.readFile(templatePath, 'utf-8');
+
+    const compiledTemplate = _.template(template);
+
+    const nginxConfig = compiledTemplate({ bucket: bucketName });
+    return nginxConfig;
+  } catch (error) {
+    console.error('Error generating nginx conf', error);
+    throw error;
   }
 }

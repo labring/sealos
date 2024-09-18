@@ -47,6 +47,8 @@ export const getPodLogs = (data: {
   stream: boolean;
   logSize?: number;
   dbType: string;
+  sinceTime?: number;
+  previous?: boolean;
 }) => POST<string>(`/api/pod/getPodLogs`, data);
 
 export const getPodEvents = (podName: string) =>

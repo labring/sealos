@@ -27,6 +27,7 @@ export type AppConfigType = {
   cloud: {
     domain: string;
     port?: string;
+    userDomain: string[];
   };
   common: {
     guideEnabled: boolean;
@@ -41,6 +42,9 @@ export type AppConfigType = {
     };
     components: {
       monitor: {
+        url: string;
+      };
+      billing: {
         url: string;
       };
     };
