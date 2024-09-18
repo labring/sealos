@@ -119,7 +119,7 @@ const MainBody = () => {
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
             </Box>
             <Box h={'60px'}>
-              <Box h={'60px'} position={'absolute'}>
+              <Box h={'60px'}>
                 <PodLineChart type="purple" data={devboxDetail?.usedMemory} />
               </Box>
             </Box>
