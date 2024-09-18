@@ -229,6 +229,7 @@ const DevboxCreatePage = () => {
           parsedNewYamlList: parsedNewYamlList,
           originalYamlList: crOldYamls.current
         })
+
         await updateDevbox({
           patch,
           devboxName: formData.name

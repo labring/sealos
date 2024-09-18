@@ -100,10 +100,6 @@ export const useDevboxStore = create<State>()(
         // isPause
         detail.isPause = detail.status.value === 'Stopped'
 
-        // cpu and memory
-        detail.cpu = detail.cpu / 1000
-        detail.memory = detail.memory / 1024
-
         if (detail.status.value !== 'Running') {
           set((state) => {
             state.devboxDetail = detail

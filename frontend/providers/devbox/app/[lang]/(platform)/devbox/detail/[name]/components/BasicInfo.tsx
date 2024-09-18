@@ -114,7 +114,7 @@ const BasicInfo = () => {
             Limit CPU
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.cpu} Core</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.cpu / 1000} Core</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -122,7 +122,7 @@ const BasicInfo = () => {
             Limit Memory
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.memory} G</Text>
+            <Text fontSize={'12px'}>{devboxDetail?.memory / 1024} G</Text>
           </Flex>
         </Flex>
       </Flex>
