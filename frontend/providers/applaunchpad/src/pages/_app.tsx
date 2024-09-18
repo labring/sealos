@@ -137,7 +137,7 @@ const App = ({ Component, pageProps }: AppProps) => {
           e: MessageEvent<{
             type?: string;
             name?: string;
-            formData?: AppEditSyncedFields;
+            formData?: string;
           }>
         ) => {
           const whitelist = [`https://${SEALOS_DOMAIN}`];
@@ -154,10 +154,12 @@ const App = ({ Component, pageProps }: AppProps) => {
                     name: name
                   }
                 });
-              } else if (formData?.imageName) {
+              } else if (formData) {
                 router.push({
                   pathname: '/app/edit',
-                  query: formData
+                  query: {
+                    formData: formData
+                  }
                 });
               }
             }
