@@ -30,7 +30,7 @@ export const defaultEditVal: AppEditType = {
   cmdParam: '',
   replicas: 1,
   cpu: 100,
-  memory: 64,
+  memory: 128,
   networks: [
     {
       networkName: '',

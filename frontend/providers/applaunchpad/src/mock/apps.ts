@@ -300,8 +300,8 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
   imageName: 'nginx',
   appName: 'hello-world-test',
   replicas: 1,
-  cpu: 1000,
-  memory: 512,
+  cpu: 4000,
+  memory: 64,
   networks: [
     {
       networkName: 'network-atyjahgvtzqm',

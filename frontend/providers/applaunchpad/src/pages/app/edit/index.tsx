@@ -213,6 +213,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       isGuided
     ]
   );
+
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -299,7 +300,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         decodeURIComponent(query.formData)
       );
 
-      // 处理基本字段
       const basicFields: (keyof AppEditSyncedFields)[] = [
         'imageName',
         'replicas',
