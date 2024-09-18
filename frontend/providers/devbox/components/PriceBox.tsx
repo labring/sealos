@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl'
 import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
 
 import { SOURCE_PRICE } from '@/stores/static'
+import { SealosCoin } from '@sealos/ui'
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -66,9 +67,10 @@ const PriceBox = ({
         {priceList.map((item) => (
           <Flex key={item.label} alignItems={'center'}>
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-            <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
+            <Box flex={'0 0 90px'}>{t(item.label)}:</Box>
             <Flex alignItems={'center'} gap={'4px'}>
-              ￥{item.value}
+              <SealosCoin />
+              {item.value}
             </Flex>
           </Flex>
         ))}
