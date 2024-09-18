@@ -1,8 +1,8 @@
 import { sign, verify } from 'jsonwebtoken';
 
-const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 const internalJwtSecret = () => global.AppConfig?.costCenter.auth.jwt.internal || '123456789';
-const externalJwtSecret = () => global.AppConfig?.costCenter.auth.jwt.external || '123456789';
+
+const billingJwtSecret = () => global.AppConfig?.costCenter.auth.jwt.billing || '123456789';
 
 export type AuthenticationTokenPayload = {
   userUid: string;
@@ -31,5 +31,8 @@ export const verifyJWT = <T extends Object = AccessTokenPayload>(token: string, 
     });
   });
 
-export const generateAppToken = (props: AccessTokenPayload) =>
-  sign(props, internalJwtSecret(), { expiresIn: '7d' });
+export const generateBillingToken = (props: AuthenticationTokenPayload) =>
+  sign(props, billingJwtSecret(), { expiresIn: '5d' });
+
+export const verifyInternalToken = (token: string) =>
+  verifyJWT<AccessTokenPayload>(token, internalJwtSecret());

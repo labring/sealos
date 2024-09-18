@@ -1,5 +1,5 @@
 import { authSession } from '@/service/backend/auth';
-import { makeAPIURL } from '@/service/backend/region';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { RechargeBillingData } from '@/types';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -39,27 +39,26 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     const data = {
       endTime,
-      kubeConfig: kc.exportConfig(),
-      owner: user.name,
+      // kubeConfig: kc.exportConfig(),
+      // owner: user.name,
       paymentID,
       startTime,
       page,
       invoiced,
       pageSize
     };
-    const url = makeAPIURL(null, '/account/v1alpha1/payment');
-    const response = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    if (!response.clone().ok)
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/payment', data);
+
+    if (response.status !== 200)
       return jsonRes(resp, {
         code: 404,
         data: {
           payment: []
         }
       });
-    const res = (await response.clone().json()) as { data: RechargeBillingData };
+    const res = response.data as { data: RechargeBillingData };
     return jsonRes(resp, {
       data: res.data
     });

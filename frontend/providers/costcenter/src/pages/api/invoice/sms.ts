@@ -1,13 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { addOrUpdateCode, checkSendable } from '@/service/backend/db/verifyCode';
+import { jsonRes } from '@/service/backend/response';
+import { getClientIPFromRequest, retrySerially } from '@/utils/tools';
 import Dysmsapi, * as dysmsapi from '@alicloud/dysmsapi20170525';
 import * as OpenApi from '@alicloud/openapi-client';
 import * as Util from '@alicloud/tea-util';
-import { jsonRes } from '@/service/backend/response';
-import { addOrUpdateCode, checkSendable } from '@/service/backend/db/verifyCode';
-import { getClientIPFromRequest, retrySerially } from '@/utils/tools';
-import { authSession } from '@/service/backend/auth';
-import * as process from 'process';
-const requestTimestamps: Record<string, number> = {};
+import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
   const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
@@ -16,11 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (!global.AppConfig.costCenter.invoice.enabled) {
       throw new Error('invoice is not enabled');
-    }
-    const kc = await authSession(req.headers);
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(res, { code: 401, message: 'user null' });
     }
     if (process.env.NODE_ENV === 'development') {
       return jsonRes(res, {

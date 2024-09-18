@@ -24,6 +24,7 @@ request.interceptors.request.use(
     }
 
     config.headers = _headers;
+    config.data = { ...config.data, internalToken: session.token };
     // nprogress.start();
     return config;
   },

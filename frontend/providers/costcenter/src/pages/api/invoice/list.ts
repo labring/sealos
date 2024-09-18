@@ -1,19 +1,9 @@
-import { authSession } from '@/service/backend/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
-import { BillingSpec, InvoiceListData, RechargeBillingData } from '@/types';
-import { parseISO } from 'date-fns';
-import { makeAPIURL } from '@/service/backend/region';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-    // get user account payment amount
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(resp, { code: 403, message: 'user null' });
-    }
     const {
       endTime,
       startTime,
@@ -37,18 +27,15 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     const data = {
       endTime,
-      kubeConfig: kc.exportConfig(),
       startTime,
       page,
       pageSize
     };
-    const url = makeAPIURL(null, '/account/v1alpha1/invoice/get');
-    const response = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    const res = await response.json();
-    if (!response.ok) {
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/invoice/get', data);
+    const res = response.data;
+    if (response.status !== 200) {
       throw Error(res);
     }
     return jsonRes(resp, {

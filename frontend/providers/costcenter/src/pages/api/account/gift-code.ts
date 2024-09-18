@@ -1,4 +1,4 @@
-import { authSession } from '@/service/backend/auth';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -8,7 +8,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       throw new Error('gift code is not enabled');
     }
     const { code } = req.body;
-    const kc = await authSession(req.headers);
 
     if (!code) {
       return jsonRes(resp, {
@@ -23,34 +22,15 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         message: 'code is invalid'
       });
     }
-
-    if (!kc) {
-      return jsonRes(resp, {
-        code: 401,
-        message: 'kc is required'
-      });
-    }
-
-    const kubeUser = kc.getCurrentUser();
-    if (kubeUser === null) {
-      return jsonRes(resp, { code: 401, message: 'user not found' });
-    }
-
-    const base = global.AppConfig.costCenter.components.accountService.url;
-    const body = JSON.stringify({
-      kubeConfig: kc.exportConfig(),
+    const body = {
       code
-    });
+    };
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
 
-    const response = await fetch(base + '/account/v1alpha1/gift-code/use', {
-      method: 'POST',
-      body,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    const responseData = await response.json();
-    if (!response.ok || response.status !== 200) {
+    const response = await client.post('/account/v1alpha1/gift-code/use', body);
+    const responseData = await response.data;
+    if (response.status !== 200) {
       return jsonRes(resp, {
         code: 409,
         message: responseData?.error || 'use gift code failed'

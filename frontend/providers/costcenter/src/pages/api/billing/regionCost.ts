@@ -1,5 +1,5 @@
 import { authSession } from '@/service/backend/auth';
-import { getRegionByUid, getRegionList, makeAPIURL } from '@/service/backend/region';
+import { getRegionList, makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -36,23 +36,23 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     const regions = await getRegionList();
     if (!regions) throw Error('get all regions error');
-    const region = await getRegionByUid(regionUid);
-    const url = makeAPIURL(region, '/account/v1alpha1/costs');
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
     const bodyRaw = {
       endTime,
-      kubeConfig: kc.exportConfig(),
+      // kubeConfig: kc.exportConfig(),
       startTime,
       appType,
       appName,
       namespace
     };
     const body = JSON.stringify(bodyRaw);
-    const resRaw = await fetch(url, {
-      method: 'POST',
-      body
-    });
-    const result = (await resRaw.json()) as { data: { costs: [number, string][] } };
-    if (!resRaw.ok) throw Error('get costs list error');
+    const resRaw = await client.post('/account/v1alpha1/costs', bodyRaw);
+    const result = resRaw.data as { data: { costs: [number, string][] } };
+    if (resRaw.status !== 200) {
+      console.log(result);
+      throw Error('get costs list error');
+    }
     const data = result.data.costs;
     return jsonRes(resp, {
       code: 200,

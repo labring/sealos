@@ -35,12 +35,9 @@ export default function TransferTabPanel() {
       const spec = {
         page: currentPage,
         pageSize: pageSize,
-        type: selectType,
+        type: selectType.value,
         startTime: formatISO(startTime, { representation: 'complete' }),
-        // startTime,
         endTime: formatISO(endTime, { representation: 'complete' }),
-        // endTime,
-        // orderID
         orderID
       };
       return request<any, ApiResp<TransferBillingData>>('/api/billing/transfer', {
