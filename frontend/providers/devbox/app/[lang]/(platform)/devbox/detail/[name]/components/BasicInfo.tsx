@@ -152,7 +152,7 @@ const BasicInfo = () => {
               hasArrow
               bg={'#FFFFFF'}
               color={'grayModern.900'}
-              width={'38px'}
+              width={'45px'}
               height={'30px'}
               fontSize={'12px'}
               fontWeight={400}
@@ -230,7 +230,7 @@ const BasicInfo = () => {
               hasArrow
               bg={'#FFFFFF'}
               color={'grayModern.900'}
-              width={'88px'}
+              width={'120px'}
               height={'30px'}
               fontSize={'12px'}
               fontWeight={400}

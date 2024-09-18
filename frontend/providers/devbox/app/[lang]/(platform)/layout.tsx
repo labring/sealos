@@ -81,7 +81,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         })
       } catch (error) {
         changeI18n({
-          currentLanguage: 'zh'
+          currentLanguage: 'en'
         })
       }
     })()

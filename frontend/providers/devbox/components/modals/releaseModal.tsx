@@ -95,7 +95,7 @@ const ReleaseModal = ({
         <ModalOverlay />
         <ModalContent minW={'500px'} mt={'100px'} minH={'300px'} top={'50px'}>
           <ModalHeader>
-            <Flex alignItems={'center'} gap={'10px'}>
+            <Flex alignItems={'center'} gap={'10px'} ml={'14px'}>
               {t('release_version')}
             </Flex>
           </ModalHeader>
@@ -140,7 +140,7 @@ const ReleaseModal = ({
               variant={'solid'}
               onClick={handleSubmit}
               mr={'11px'}
-              width={'70px'}
+              width={'80px'}
               isLoading={loading}>
               {t('release')}
             </Button>

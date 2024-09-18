@@ -153,7 +153,7 @@ const Version = () => {
           <Button
             mr={5}
             height={'32px'}
-            w={'50px'}
+            w={'60px'}
             size={'sm'}
             fontSize={'base'}
             bg={'grayModern.150'}
