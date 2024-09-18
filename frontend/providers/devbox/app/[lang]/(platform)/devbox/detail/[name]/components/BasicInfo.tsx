@@ -32,7 +32,7 @@ const BasicInfo = () => {
 
       const privateKey = config?.sshPrivateKey as string
 
-      const blob = new Blob([privateKey], { type: 'text/plain' })
+      const blob = new Blob([privateKey], { type: 'application/octet-stream' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.style.display = 'none'
