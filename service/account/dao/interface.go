@@ -107,7 +107,7 @@ func (g *Cockroach) GetUserID(ops types.UserQueryOpts) (string, error) {
 func (g *Cockroach) GetUserCrName(ops types.UserQueryOpts) (string, error) {
 	user, err := g.ck.GetUserCr(&ops)
 	if err != nil {
-		return "", fmt.Errorf("failed to get user: %v", err)
+		return "", err
 	}
 	return user.CrName, nil
 }
