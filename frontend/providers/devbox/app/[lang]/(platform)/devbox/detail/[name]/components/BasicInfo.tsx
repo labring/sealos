@@ -128,7 +128,15 @@ const BasicInfo = () => {
       </Flex>
       {/* ssh config */}
       <Flex mb={3} mt={4}>
-        <MyIcon name="link" w={'16px'} h={'16px'} mr={'4px'} color={'grayModern.600'} />
+        <MyIcon
+          name="link"
+          w={'15px'}
+          h={'15px'}
+          mr={'4px'}
+          color={'grayModern.600'}
+          mt={'1px'}
+          ml={'1px'}
+        />
         <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           {t('ssh_config')}
         </Box>
@@ -181,7 +189,7 @@ const BasicInfo = () => {
                 <Flex>
                   <MyIcon
                     cursor={'pointer'}
-                    name="export"
+                    name="download"
                     w={'16px'}
                     h={'16px'}
                     onClick={() => handleDownloadConfig(devboxDetail?.sshConfig)}
@@ -200,7 +208,7 @@ const BasicInfo = () => {
           h={'15px'}
           mr={'4px'}
           color={'grayModern.600'}
-          mt={'1px'}
+          mt={'2px'}
         />
         <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           {t('event')}

@@ -120,7 +120,6 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
         {devboxDetail.status.value === 'Running' && (
           <Button
             mr={5}
-            w={'96px'}
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}

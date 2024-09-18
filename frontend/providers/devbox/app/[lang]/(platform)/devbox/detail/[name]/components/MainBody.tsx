@@ -102,24 +102,15 @@ const MainBody = () => {
             {dayjs().format('HH:mm')})
           </Box>
         </Flex>
-        <Flex bg={'grayModern.50'} p={2} borderRadius={'lg'} minH={'200px'}>
-          <Box flex={1} mr={4}>
+        <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} minH={'80px'} gap={4}>
+          <Box flex={1}>
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
             </Box>
-            <Box h={'150px'} position={'relative'} w={'full'}>
-              <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
-              <Text
-                color={'#0077A9'}
-                fontSize={'sm'}
-                fontWeight={'bold'}
-                position={'absolute'}
-                right={'4px'}
-                bottom={'0px'}
-                pointerEvents={'none'}
-                textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF">
-                {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
-              </Text>
+            <Box h={'60px'}>
+              <Box h={'60px'}>
+                <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
+              </Box>
             </Box>
           </Box>
           <Box flex={1}>
@@ -127,19 +118,10 @@ const MainBody = () => {
               {t('memory')}{' '}
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
             </Box>
-            <Box h={'150px'} position={'relative'}>
-              <PodLineChart type="purple" data={devboxDetail?.usedMemory} />
-              <Text
-                color={'#6F5DD7'}
-                fontSize={'sm'}
-                fontWeight={'bold'}
-                position={'absolute'}
-                right={'4px'}
-                bottom={'0px'}
-                pointerEvents={'none'}
-                textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF">
-                {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
-              </Text>
+            <Box h={'60px'}>
+              <Box h={'60px'} position={'absolute'}>
+                <PodLineChart type="purple" data={devboxDetail?.usedMemory} />
+              </Box>
             </Box>
           </Box>
         </Flex>
