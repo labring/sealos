@@ -43,6 +43,10 @@ export const useDevboxStore = create<State>()(
         // load monitor data for each devbox
         const updatedRes = await Promise.all(
           res.map(async (devbox) => {
+            if (devbox.status.value !== 'Running') {
+              return devbox
+            }
+
             const pods = await getDevboxPodsByDevboxName(devbox.name)
             const queryName = pods[0]?.podName || devbox.name
 
