@@ -237,6 +237,17 @@ func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 }
 
 func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) []corev1.EnvVar {
+	// if devbox.Spec.Squash is true, and devbox.Status.CommitHistory has success commit history, we need to set SEALOS_COMMIT_IMAGE_SQUASH to true
+	doSquash := false
+	if devbox.Spec.Squash && len(devbox.Status.CommitHistory) > 0 {
+		for _, commit := range devbox.Status.CommitHistory {
+			if commit.Status == devboxv1alpha1.CommitStatusSuccess {
+				doSquash = true
+				break
+			}
+		}
+	}
+
 	return []corev1.EnvVar{
 		{
 			Name:  "SEALOS_COMMIT_ON_STOP",
@@ -248,7 +259,7 @@ func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *dev
 		},
 		{
 			Name:  "SEALOS_COMMIT_IMAGE_SQUASH",
-			Value: fmt.Sprintf("%v", devbox.Spec.Squash),
+			Value: fmt.Sprintf("%v", doSquash),
 		},
 		{
 			Name:  "SEALOS_DEVBOX_NAME",
