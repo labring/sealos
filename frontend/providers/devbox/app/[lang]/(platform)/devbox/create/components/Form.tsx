@@ -99,12 +99,6 @@ const Form = ({
   const [activeNav, setActiveNav] = useState(navList[0].id)
   const { devboxList } = useDevboxStore()
 
-  // FIXME: activeNav is error
-  useEffect(() => {
-    const hash = window.location.hash.slice(1)
-    setActiveNav(hash)
-  }, [])
-
   // listen scroll and set activeNav
   useEffect(() => {
     const scrollFn = throttle((e: Event) => {
@@ -119,7 +113,7 @@ const Form = ({
 
       for (let i = doms.length - 1; i >= 0; i--) {
         const offsetTop = doms[i].dom?.offsetTop || 0
-        if (scrollTop + 200 >= offsetTop) {
+        if (scrollTop + 500 >= offsetTop) {
           setActiveNav(doms[i].id)
           break
         }
@@ -207,7 +201,8 @@ const Form = ({
               <Box
                 key={item.id}
                 onClick={() => {
-                  router.replace(`#${item.id}`)
+                  setActiveNav(item.id)
+                  window.location.hash = item.id
                 }}>
                 <Flex
                   borderRadius={'base'}
@@ -232,7 +227,7 @@ const Form = ({
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
-                    color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
+                    color={activeNav === item.id ? 'myGray.400' : 'grayModern.600'}
                   />
                   <Box>{item.label}</Box>
                 </Flex>
