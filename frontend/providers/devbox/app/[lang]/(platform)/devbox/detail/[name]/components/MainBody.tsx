@@ -93,7 +93,7 @@ const MainBody = () => {
       {/* monitor */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="monitor" w={'15px'} h={'15px'} mr={'10px'} color={'grayModern.600'} />
+          <MyIcon name="monitor" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
           <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
             {t('monitor')}
           </Text>
@@ -129,7 +129,7 @@ const MainBody = () => {
       {/* network */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="network" w={'15px'} h={'15px'} mr={'10px'} color={'grayModern.600'} />
+          <MyIcon name="network" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
           <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
             {t('network')} ( {devboxDetail?.networks?.length} )
           </Text>

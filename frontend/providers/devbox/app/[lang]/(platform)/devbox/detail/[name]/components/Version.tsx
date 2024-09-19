@@ -209,7 +209,7 @@ const Version = () => {
     <Box borderWidth={1} borderRadius="lg" pl={6} pt={4} pr={6} bg={'white'} h={'full'}>
       <Flex alignItems="center" justifyContent={'space-between'} mb={2}>
         <Flex alignItems={'center'}>
-          <MyIcon name="list" w={'15px'} h={'15px'} mr={'10px'} color={'grayModern.600'} />
+          <MyIcon name="list" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
           <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
             {t('version_history')}
           </Text>
