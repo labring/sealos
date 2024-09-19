@@ -96,8 +96,6 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
         )}&workingDir=${encodeURIComponent(workingDir)}`
 
-        console.log(fullUri, '==')
-
         window.location.href = fullUri
       } catch (error: any) {
         console.error(error, '==')
