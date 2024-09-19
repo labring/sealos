@@ -1,5 +1,11 @@
 import { PassThrough, Readable, Writable } from 'stream';
 import * as k8s from '@kubernetes/client-node';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export type TFile = {
   name: string;
@@ -84,6 +90,42 @@ export class KubeFileSystem {
     });
   }
 
+  async getPodTimezone(namespace: string, podName: string, containerName: string): Promise<string> {
+    try {
+      const dateOutput = await this.execCommand(namespace, podName, containerName, ['date', '+%z']);
+      const offset = dateOutput.trim();
+      if (offset) {
+        return this.getTimezoneFromOffset(offset);
+      }
+    } catch (error) {
+      console.log('Failed to get timezone offset using date command:', error);
+    }
+
+    try {
+      const timezoneFile = await this.execCommand(namespace, podName, containerName, [
+        'cat',
+        '/etc/timezone'
+      ]);
+      if (timezoneFile.trim()) {
+        return timezoneFile.trim();
+      }
+    } catch (error) {}
+
+    try {
+      const localtimeLink = await this.execCommand(namespace, podName, containerName, [
+        'readlink',
+        '-f',
+        '/etc/localtime'
+      ]);
+      const match = localtimeLink.match(/zoneinfo\/(.+)$/);
+      if (match) {
+        return match[1];
+      }
+    } catch (error) {}
+
+    return 'Etc/UTC';
+  }
+
   async ls({
     namespace,
     podName,
@@ -127,6 +169,8 @@ export class KubeFileSystem {
     const files: TFile[] = [];
     const symlinks: TFile[] = [];
 
+    const podTimezone = await this.getPodTimezone(namespace, podName, containerName);
+
     lines.forEach((line) => {
       const parts = line.split('"');
       const name = parts[1];
@@ -134,6 +178,7 @@ export class KubeFileSystem {
       if (!name || name === '.' || name === '..') return;
 
       const attrs = parts[0].split(' ').filter((v) => !!v);
+
       const file: TFile = {
         name: name,
         path: (name.startsWith('/') ? '' : path + '/') + name,
@@ -144,18 +189,18 @@ export class KubeFileSystem {
         owner: attrs[2],
         group: attrs[3],
         size: parseInt(attrs[4]),
-        updateTime: new Date(attrs.slice(5, 7).join(' '))
+        updateTime: this.convertToUTC(attrs.slice(5, 7).join(' '), podTimezone)
       };
 
       if (isCompatibleMode) {
-        file.updateTime = new Date(attrs.slice(5, 10).join(' '));
+        file.updateTime = this.convertToUTC(attrs.slice(5, 10).join(' '), podTimezone);
       }
 
       if (file.kind === 'c') {
         if (isCompatibleMode) {
-          file.updateTime = new Date(attrs.slice(7, 11).join(' '));
+          file.updateTime = this.convertToUTC(attrs.slice(7, 11).join(' '), podTimezone);
         } else {
-          file.updateTime = new Date(attrs.slice(6, 8).join(' '));
+          file.updateTime = this.convertToUTC(attrs.slice(6, 8).join(' '), podTimezone);
         }
         file.size = parseInt(attrs[5]);
       }
@@ -334,5 +379,29 @@ export class KubeFileSystem {
     path: string;
   }) {
     return await this.execCommand(namespace, podName, containerName, ['md5sum', path]);
+  }
+
+  getTimezoneFromOffset(offset: string): string {
+    const hours = parseInt(offset.slice(1, 3));
+    const sign = offset.startsWith('-') ? '+' : '-';
+    return `Etc/GMT${sign}${hours}`;
+  }
+
+  convertToUTC(dateString: string, timezone: string): Date {
+    dateString = dateString.trim();
+    timezone = timezone.trim();
+
+    if (timezone === 'Etc/UTC') {
+      timezone = 'UTC';
+    }
+
+    const dt = dayjs.tz(dateString, timezone).utc();
+
+    if (!dt.isValid()) {
+      console.error(`Failed to parse date: "${dateString}" with timezone "${timezone}"`);
+      return new Date();
+    }
+
+    return dt.toDate();
   }
 }
