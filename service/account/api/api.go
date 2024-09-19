@@ -720,7 +720,7 @@ func GetAppCostTimeRange(c *gin.Context) {
 func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 	user, err := dao.JwtMgr.ParseUser(c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse user: %v", err)
 	}
 	if user.UserID == "" {
 		return nil, fmt.Errorf("invalid user: %v", user)
