@@ -96,7 +96,7 @@
   "open_vscode": "VS Code",
   "os": "OS",
   "pause": "Shutdown",
-  "pause_devbox_info": "Automatically start the machine after released",
+  "pause_devbox_info": "Automatically start the machine after released.",
   "pause_error": "Shutdown error",
   "pause_success": "Shutdown succeeded",
   "please_enter_devbox_name_confirm": "Please enter <strong>{name}</strong> to confirm: ",

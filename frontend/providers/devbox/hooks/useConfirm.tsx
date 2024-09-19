@@ -62,6 +62,7 @@ export const useConfirm = ({
                   {showCheckbox && (
                     <Checkbox
                       isChecked={isCheckedRef.current}
+                      spacing={4}
                       onChange={(e) => (isCheckedRef.current = e.target.checked)}>
                       {t(checkboxLabel)}
                     </Checkbox>

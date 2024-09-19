@@ -42,6 +42,7 @@ const ReleaseModal = ({
     showCheckbox: true,
     checkboxLabel: 'pause_devbox_info'
   })
+
   const handleSubmit = () => {
     if (!tag) {
       setTagError(true)
