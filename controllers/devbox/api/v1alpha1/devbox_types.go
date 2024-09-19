@@ -179,6 +179,11 @@ type DevboxStatus struct {
 	CommitHistory []*CommitHistory `json:"commitHistory"`
 	// +kubebuilder:validation:Optional
 	Phase DevboxPhase `json:"phase"`
+
+	// +kubebuilder:validation:Optional
+	State corev1.ContainerState `json:"state"`
+	// +kubebuilder:validation:Optional
+	LastTerminationState corev1.ContainerState `json:"lastState"`
 }
 
 // +kubebuilder:object:root=true
