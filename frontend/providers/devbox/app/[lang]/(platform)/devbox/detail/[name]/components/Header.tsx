@@ -161,7 +161,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           {devboxDetail.name}
         </Box>
         <Box mt={1}>
-          <DevboxStatusTag status={devboxDetail.status} />
+          <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
         </Box>
       </Flex>
       <Flex>

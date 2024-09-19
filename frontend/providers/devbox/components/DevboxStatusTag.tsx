@@ -6,10 +6,14 @@ import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/de
 
 const DevboxStatusTag = ({
   status,
-  showBorder = false
+  showBorder = false,
+  ...props
 }: {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType
   showBorder?: boolean
+  size?: 'sm' | 'md' | 'lg'
+  w?: string
+  h?: string
 }) => {
   const label = status.label
   const t = useTranslations()
@@ -27,7 +31,8 @@ const DevboxStatusTag = ({
       fontWeight={'bold'}
       alignItems={'center'}
       minW={'60px'}
-      whiteSpace={'nowrap'}>
+      whiteSpace={'nowrap'}
+      {...props}>
       <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
       <Box ml={2} flex={1}>
         {t(label)}

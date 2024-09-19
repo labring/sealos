@@ -246,7 +246,7 @@ const DevboxList = ({
     {
       title: t('status'),
       key: 'status',
-      render: (item: DevboxListItemType) => <DevboxStatusTag status={item.status} />
+      render: (item: DevboxListItemType) => <DevboxStatusTag status={item.status} h={'27px'} />
     },
     {
       title: t('create_time'),
