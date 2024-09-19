@@ -10,7 +10,7 @@ export type KBDevboxType = {
   }
   spec: KBDevboxSpec
   portInfos: {
-    // Added by logic in app/[lang]/(platform)/devbox/detail/[name]/components/Version.tsx
+    // Added by logic in api/getDevboxList/route.ts
     networkName: string
     portName: string
     port: number
@@ -48,6 +48,7 @@ export interface KBDevboxSpec {
   runtimeType?: string
   runtimeVersion?: string
   runtimeNamespace?: string
+  squash?: boolean
   network: {
     type: 'NodePort' | 'Tailnet'
     extraPorts: {

@@ -13,7 +13,8 @@ import { devboxKey, publicDomainKey } from '@/constants/devbox'
 export const json2Devbox = (
   data: DevboxEditType,
   runtimeNamespaceMap: runtimeNamespaceMapType = defaultRuntimeNamespaceMap,
-  devboxAffinityEnable: string = 'true'
+  devboxAffinityEnable: string = 'true',
+  squashEnable: string = 'false'
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
@@ -25,6 +26,7 @@ export const json2Devbox = (
       name: data.name
     },
     spec: {
+      squash: squashEnable === 'true',
       network: {
         type: 'NodePort',
         extraPorts: data.networks.map((item) => ({

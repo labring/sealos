@@ -47,6 +47,8 @@ spec:
               value: 'true'
             - name: MONITOR_URL
               value: http://launchpad-monitor.sealos.svc.cluster.local:8428
+            - name: SQUASH_ENABLE
+              value: 'true'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

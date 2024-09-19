@@ -25,7 +25,12 @@ import { createDevbox, updateDevbox } from '@/api/devbox'
 import type { DevboxEditType, DevboxKindsType } from '@/types/devbox'
 import { LanguageTypeEnum, defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
-import { DEVBOX_AFFINITY_ENABLE, languageVersionMap, runtimeNamespaceMap } from '@/stores/static'
+import {
+  DEVBOX_AFFINITY_ENABLE,
+  SQUASH_ENABLE,
+  languageVersionMap,
+  runtimeNamespaceMap
+} from '@/stores/static'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -41,7 +46,7 @@ const formData2Yamls = (data: DevboxEditType) => [
   },
   {
     filename: 'devbox.yaml',
-    value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE)
+    value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE)
   },
   ...(data.networks.find((item) => item.openPublicDomain)
     ? [
@@ -109,7 +114,7 @@ const DevboxCreatePage = () => {
     return [
       {
         filename: 'devbox.yaml',
-        value: json2Devbox(data, runtimeNamespaceMap)
+        value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE)
       },
       {
         filename: 'service.yaml',
@@ -151,7 +156,12 @@ const DevboxCreatePage = () => {
         setYamlList([
           {
             filename: 'devbox.yaml',
-            value: json2Devbox(defaultEdit, runtimeNamespaceMap)
+            value: json2Devbox(
+              defaultEdit,
+              runtimeNamespaceMap,
+              DEVBOX_AFFINITY_ENABLE,
+              SQUASH_ENABLE
+            )
           },
           {
             filename: 'service.yaml',
