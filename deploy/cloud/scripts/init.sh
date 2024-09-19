@@ -213,7 +213,7 @@ function sealos_run_controller {
   --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
   --env LOCAL_REGION="$localRegionUID"
 
-  sealos run tars/account-service.tar
+  sealos run tars/account-service.tar --env cloudDomain="$cloudDomain" --env cloudPort="$cloudPort"
 
   # run license controller
   sealos run tars/license.tar

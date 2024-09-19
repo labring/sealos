@@ -257,6 +257,7 @@ func (c *Cockroach) performTransferQuery(ops *types.GetTransfersReq, limit, offs
 	query = query.Where(userCondition, args...)
 	countQuery = countQuery.Where(userCondition, args...)
 
+	query = query.Order("created_at DESC")
 	err = query.Find(transfers).Error
 	if err != nil {
 		return fmt.Errorf("failed to get transfer: %v", err)
