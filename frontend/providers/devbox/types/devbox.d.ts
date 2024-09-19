@@ -3,12 +3,14 @@ import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
 import {
   RuntimeTypeEnum,
   DevboxStatusEnum,
+  DevboxReleaseStatusEnum,
   FrameworkTypeEnum,
   YamlKindEnum
 } from '@/constants/devbox'
 import { MonitorDataResult } from './monitor'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
+export type DevboxReleaseStatusValueType = `${DevboxReleaseStatusEnum}`
 export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`
 export type ProtocolType = 'HTTP' | 'GRPC' | 'WS'
 
@@ -32,6 +34,13 @@ export interface DevboxEditType {
 export interface DevboxStatusMapType {
   label: string
   value: DevboxStatusValueType
+  color: string
+  backgroundColor: string
+  dotColor: string
+}
+export interface DevboxReleaseStatusMapType {
+  label: string
+  value: DevboxReleaseStatusValueType
   color: string
   backgroundColor: string
   dotColor: string

@@ -15,6 +15,7 @@ import ReleaseModal from '@/components/modals/releaseModal'
 import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
+import { DevboxReleaseStatusEnum } from '@/constants/devbox'
 
 const Version = () => {
   const t = useTranslations()
@@ -161,6 +162,7 @@ const Version = () => {
             _hover={{
               color: 'brightBlue.600'
             }}
+            isDisabled={item.status.value !== DevboxReleaseStatusEnum.Success}
             onClick={() => handleDeploy(item)}>
             {t('deploy')}
           </Button>

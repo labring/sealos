@@ -2,13 +2,13 @@ import React from 'react'
 import { useTranslations } from 'next-intl'
 import { Flex, Box } from '@chakra-ui/react'
 
-import type { DevboxStatusMapType } from '@/types/devbox'
+import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/devbox'
 
 const DevboxStatusTag = ({
   status,
   showBorder = false
 }: {
-  status: DevboxStatusMapType
+  status: DevboxStatusMapType | DevboxReleaseStatusMapType
   showBorder?: boolean
 }) => {
   const label = status.label
