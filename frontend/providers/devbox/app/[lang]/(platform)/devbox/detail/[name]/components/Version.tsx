@@ -49,8 +49,8 @@ const Version = () => {
 
       const transformData = {
         appName: name,
-        cpu: cpu * 1000,
-        memory: memory * 1024,
+        cpu: cpu,
+        memory: memory,
         imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}`,
         networks:
           newNetworks.length > 0
