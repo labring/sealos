@@ -2,6 +2,7 @@ import { generatePaymentCrd, PaymentForm } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
 import { ApplyYaml, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
+import { deFormatMoney } from '@/utils/format';
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -16,13 +17,22 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const { amount, paymentMethod } = req.body;
     const kc = await authSession(req.headers);
 
-    if (!kc || amount <= 0) {
+    if (!kc)
+      return jsonRes(resp, {
+        code: 401
+      });
+    if (amount <= 0) {
       return jsonRes(resp, {
         code: 400,
         message: 'Amount cannot be less than 0'
       });
     }
-
+    if (amount >= deFormatMoney(10_000_000)) {
+      return jsonRes(resp, {
+        code: 400,
+        message: 'Amount cannot be more than 10,000,000'
+      });
+    }
     const kubeUser = kc.getCurrentUser();
     if (kubeUser === null) {
       return jsonRes(resp, { code: 401, message: 'user not found' });

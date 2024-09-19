@@ -1,5 +1,5 @@
 import { authSession } from '@/service/backend/auth';
-import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
+import { getRegionByUid, makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -11,15 +11,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
     const { regionUid } = req.body as { regionUid: string };
     const region = await getRegionByUid(regionUid);
-    const url = makeAPIURL(region, '/account/v1alpha1/properties');
-    const res = await (
-      await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({
-          kubeConfig: kc.exportConfig()
-        })
-      })
-    ).json();
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/properties');
+    const res = response.data;
     return jsonRes(resp, {
       code: 200,
       data: res.data,

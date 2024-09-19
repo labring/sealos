@@ -1,4 +1,5 @@
 import { authSession } from '@/service/backend/auth';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { PropertiesCost } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -23,20 +24,13 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    const url =
-      global.AppConfig.costCenter.components.accountService.url +
-      '/account/v1alpha1/costs/properties';
-    const res = (await (
-      await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({
-          endTime,
-          kubeConfig: kc.exportConfig(),
-          owner: user.name,
-          startTime
-        })
-      })
-    ).json()) as PropertiesCost;
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/costs/properties', {
+      endTime,
+      startTime
+    });
+    const res = response.data as PropertiesCost;
     return jsonRes(resp, {
       code: 200,
       data: res

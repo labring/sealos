@@ -1,8 +1,8 @@
 import { authSession } from '@/service/backend/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { BillingSpec, RechargeBillingData } from '@/types';
-import { makeAPIURL } from '@/service/backend/region';
+import { RechargeBillingData } from '@/types';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
@@ -17,13 +17,15 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       startTime,
       paymentID,
       page = 1,
-      pageSize = 100
+      pageSize = 100,
+      invoiced
     } = req.body as {
       endTime?: Date;
       startTime?: Date;
       paymentID?: string;
       page?: number;
       pageSize?: number;
+      invoiced?: boolean;
     };
     if (!endTime)
       return jsonRes(resp, {
@@ -37,26 +39,26 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     const data = {
       endTime,
-      kubeConfig: kc.exportConfig(),
-      owner: user.name,
+      // kubeConfig: kc.exportConfig(),
+      // owner: user.name,
       paymentID,
       startTime,
       page,
+      invoiced,
       pageSize
     };
-    const url = makeAPIURL(null, '/account/v1alpha1/payment');
-    const response = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    if (!response.clone().ok)
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/payment', data);
+
+    if (response.status !== 200)
       return jsonRes(resp, {
         code: 404,
         data: {
           payment: []
         }
       });
-    const res = (await response.clone().json()) as { data: RechargeBillingData };
+    const res = response.data as { data: RechargeBillingData };
     return jsonRes(resp, {
       data: res.data
     });

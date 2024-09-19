@@ -1,14 +1,10 @@
-import Invoice from '@/pages/create_invoice';
-import { authSession } from '@/service/backend/auth';
-import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
-import { jsonRes } from '@/service/backend/response';
+import { makeAPIClient } from '@/service/backend/region';
 import {
+  callbackToUpdateBot,
   getInvoicePayments,
-  updateTenantAccessToken,
-  callbackToUpdateBot
+  updateTenantAccessToken
 } from '@/service/sendToBot';
 import { InvoiceListData, InvoicePayload } from '@/types';
-import { getToken } from '@chakra-ui/system';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
@@ -76,33 +72,29 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         throw Error(`invoiceId is null`);
       }
       if (!(await updateTenantAccessToken())) throw Error('updateTenantAccessToken error');
-      const url = makeAPIURL(null, '/account/v1alpha1/invoice/set-status');
-      const setStatusRes = await fetch(url, {
-        method: 'post',
-        body: JSON.stringify({
-          invoiceIDList: [invoiceId],
-          status,
-          token: AppConfig.costCenter.invoice.serviceToken
-        })
+      // const url = makeAPIClient(null, '/account/v1alpha1/invoice/set-status');
+      const client = await makeAPIClient(null);
+      if (!client) return;
+      const setStatusRes = await client.post('/account/v1alpha1/invoice/set-status', {
+        invoiceIDList: [invoiceId],
+        status,
+        token: AppConfig.costCenter.invoice.serviceToken
       });
-      if (!setStatusRes.ok) {
-        console.log(await setStatusRes.json());
+      if (setStatusRes.status !== 200) {
+        console.log(setStatusRes.data);
         throw Error('set invoice status error');
       }
 
-      const getUrl = makeAPIURL(null, '/account/v1alpha1/invoice/get');
-      const getInvoiceRes = await fetch(getUrl, {
-        method: 'post',
-        body: JSON.stringify({
-          token: AppConfig.costCenter.invoice.serviceToken,
-          invoiceID: invoiceId,
-          page: 1,
-          pageSize: 10,
-          startTime: '2023-01-01T00:00:00Z',
-          endTime: new Date()
-        })
+      // const getUrl = makeAPIClient(null, '/account/v1alpha1/invoice/get');
+      const getInvoiceRes = await client.post('/account/v1alpha1/invoice/get', {
+        token: AppConfig.costCenter.invoice.serviceToken,
+        invoiceID: invoiceId,
+        page: 1,
+        pageSize: 10,
+        startTime: '2023-01-01T00:00:00Z',
+        endTime: new Date()
       });
-      const invoiceListData = (await getInvoiceRes.json()) as {
+      const invoiceListData = getInvoiceRes.data as {
         data: InvoiceListData;
       };
       const payments = await getInvoicePayments(invoiceId);

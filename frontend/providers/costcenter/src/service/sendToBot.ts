@@ -5,7 +5,7 @@ import { formatMoney } from '@/utils/format';
 import axios from 'axios';
 import { parseISO } from 'date-fns';
 import { NextApiResponse } from 'next';
-import { makeAPIURL } from './backend/region';
+import { makeAPIClient } from './backend/region';
 const feishuAxios = axios.create({
   baseURL: 'https://open.feishu.cn/open-apis',
   headers: {
@@ -129,17 +129,14 @@ export const getInvoicePayments = async (invoiceID: string): Promise<RechargeBil
   try {
     const token = AppConfig.costCenter.invoice.serviceToken;
     if (!token) throw Error('token is null');
-    const url = makeAPIURL(null, `/account/v1alpha1/invoice/get-payment`);
-    const res = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        token,
-        invoiceID
-      })
+    const client = await makeAPIClient(null);
+    const res = await client.post(`/account/v1alpha1/invoice/get-payment`, {
+      token,
+      invoiceID
     });
-    const result = await res.json();
+    const result = res.data;
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       console.log(result);
       return [];
     }

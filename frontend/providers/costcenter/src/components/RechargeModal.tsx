@@ -32,6 +32,7 @@ import {
 import { Stripe } from '@stripe/stripe-js';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
+import { isNumber } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
@@ -416,7 +417,16 @@ const RechargeModal = forwardRef(
                       display={'flex'}
                       value={amount}
                       variant={'unstyled'}
-                      onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
+                      onChange={(str, v) => {
+                        const maxAmount = 10_000_000;
+                        if (!isNumber(v) || isNaN(v)) {
+                          setAmount(0);
+                        }
+                        if (v > maxAmount) {
+                          setAmount(maxAmount);
+                        }
+                        setAmount(v);
+                      }}
                     >
                       <NumberInputField color={'grayModern.900'} />
                       <Currencysymbol boxSize="14px" mr={'32px'} type={currency} />

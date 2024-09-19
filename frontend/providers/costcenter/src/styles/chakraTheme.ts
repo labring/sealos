@@ -35,6 +35,7 @@ const Tabs = defineStyleConfig({
       },
       tab: {
         fontWeight: '500',
+        fontSize: '16px',
         px: '4px',
         py: '8px',
         borderBottom: '1.5px solid',

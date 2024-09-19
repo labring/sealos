@@ -1,14 +1,8 @@
-import { authSession } from '@/service/backend/auth';
-import { getRegionList } from '@/service/backend/region';
+import { getRegionList, makeRegionListAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(resp, { code: 403, message: 'user null' });
-    }
     const { endTime, startTime } = req.body as {
       endTime?: Date;
       startTime?: Date;
@@ -25,25 +19,17 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     const regions = await getRegionList();
     if (!regions) throw Error('get all regions error');
-    const urls = regions.map(
-      (region: { accountSvc: string }) => 'http://' + region.accountSvc + '/account/v1alpha1/costs'
-    ) as string[];
-    const body = JSON.stringify({
-      endTime,
-      kubeConfig: kc.exportConfig(),
-      startTime
-    });
-    const reslistRaw = await Promise.all(
-      urls.map((url) =>
-        fetch(url, {
-          method: 'POST',
-          body
-        })
-      )
-    );
-    // if (reslistRaw.some((res) => !res.ok)) throw Error('get costs list error');
-    const resultList = await Promise.all(reslistRaw.map((res) => res.json()));
 
+    const body = {
+      endTime,
+      startTime
+    };
+    const clientList = await makeRegionListAPIClientByHeader(req, resp);
+    if (!clientList) return;
+    const reslistRaw = await Promise.all(
+      clientList.map((client) => client.post('/account/v1alpha1/costs', body))
+    );
+    const resultList = reslistRaw.map((res) => res.data);
     const someArr = resultList
       .map<{ data: [number, string][]; region: { name: { zh: string; en: string } } }>(
         (result, i) => ({

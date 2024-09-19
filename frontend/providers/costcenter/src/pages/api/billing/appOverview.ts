@@ -1,15 +1,9 @@
-import { authSession } from '@/service/backend/auth';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { formatISO } from 'date-fns';
-import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
+import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(resp, { code: 403, message: 'user null' });
-    }
     const {
       endTime = formatISO(new Date(), {
         representation: 'complete'
@@ -17,7 +11,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       startTime = formatISO(new Date(), {
         representation: 'complete'
       }),
-      regionUid,
       appType,
       appName,
       namespace,
@@ -26,7 +19,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     } = req.body as {
       endTime?: Date;
       startTime?: Date;
-      regionUid: string;
       appType: string;
       appName: string;
       namespace: string;
@@ -53,11 +45,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'pageSize is invalid'
       });
-    const region = await getRegionByUid(regionUid);
-    const url = makeAPIURL(region, '/account/v1alpha1/cost-overview');
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return null;
     const bodyRaw = {
       endTime,
-      kubeConfig: kc.exportConfig(),
       startTime,
       appType,
       appName,
@@ -65,13 +56,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       page,
       pageSize
     };
-    const body = JSON.stringify(bodyRaw);
-    const response = await fetch(url, {
-      method: 'POST',
-      body
-    });
-    const result = await response.json();
-    if (!response.ok) {
+
+    const response = await client.post('/account/v1alpha1/cost-overview', bodyRaw);
+    const result = response.data;
+    if (response.status !== 200) {
       console.log(result);
       throw Error('get cost overview error');
     }
