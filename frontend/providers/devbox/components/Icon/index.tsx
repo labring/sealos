@@ -60,7 +60,8 @@ const map = {
   chevronDown: require('./icons/chevronDown.svg').default,
   vscodeInsider: require('./icons/vscodeInsider.svg').default,
   cursor: require('./icons/cursor.svg').default,
-  check: require('./icons/check.svg').default
+  check: require('./icons/check.svg').default,
+  empty: require('./icons/empty.svg').default
 }
 
 const MyIcon = ({

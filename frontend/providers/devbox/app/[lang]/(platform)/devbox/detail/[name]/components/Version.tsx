@@ -232,7 +232,13 @@ const Version = () => {
       </Flex>
       <Loading loading={!initialized} />
       {devboxVersionList.length === 0 && initialized ? (
-        <Flex justifyContent={'center'} alignItems={'center'} mt={10}>
+        <Flex
+          justifyContent={'center'}
+          alignItems={'center'}
+          mt={10}
+          flexDirection={'column'}
+          gap={4}>
+          <MyIcon name="empty" w={'40px'} h={'40px'} color={'white'} />
           <Box textAlign={'center'} color={'grayModern.600'}>
             {t('no_versions')}
           </Box>
