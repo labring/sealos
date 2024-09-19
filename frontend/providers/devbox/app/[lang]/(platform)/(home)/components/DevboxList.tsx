@@ -333,6 +333,7 @@ const DevboxList = ({
               borderWidth={0}
               boxShadow={'none'}
               as={IconButton}
+              isDisabled={item.status.value !== 'Running'}
               icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
               _before={{
                 content: '""',

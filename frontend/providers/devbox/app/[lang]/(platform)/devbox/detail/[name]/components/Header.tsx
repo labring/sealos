@@ -197,6 +197,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             borderLeftWidth={0}
             boxShadow={'none'}
             as={IconButton}
+            isDisabled={devboxDetail.status.value !== 'Running'}
             icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
             _before={{
               content: '""',
