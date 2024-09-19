@@ -195,6 +195,7 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
             borderWidth={1}
             borderLeftRadius={0}
             borderLeftWidth={0}
+            boxShadow={'none'}
             as={IconButton}
             icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
             _before={{

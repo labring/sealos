@@ -331,6 +331,7 @@ const DevboxList = ({
               p={2}
               borderLeftRadius={0}
               borderWidth={0}
+              boxShadow={'none'}
               as={IconButton}
               icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
               _before={{
