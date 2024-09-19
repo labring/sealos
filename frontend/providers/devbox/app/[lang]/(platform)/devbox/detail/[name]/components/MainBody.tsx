@@ -107,8 +107,8 @@ const MainBody = () => {
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
             </Box>
-            <Box h={'60px'}>
-              <Box h={'60px'}>
+            <Box h={'60px'} minW={'180px'}>
+              <Box h={'60px'} minW={'180px'}>
                 <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
               </Box>
             </Box>
