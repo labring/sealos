@@ -55,7 +55,7 @@ function init_minio() {
       mc admin policy create objectstorage userNormal etc/minio/policy/user_normal.json
       mc admin policy create objectstorage userDenyWrite etc/minio/policy/user_deny_write.json
       mc admin policy create objectstorage kubeblocks etc/minio/policy/kubeblocks.json
-      mc admin user add objectstorage kubeblocks sealos.12345
+      mc admin user add objectstorage kubeblocks ${minioKubeblocksPassword}
       mc admin user add objectstorage testuser sealos2023
       mc admin group add objectstorage userNormal testuser
       mc admin group add objectstorage userDenyWrite testuser
