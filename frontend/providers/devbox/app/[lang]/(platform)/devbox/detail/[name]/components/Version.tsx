@@ -123,7 +123,9 @@ const Version = () => {
     {
       title: t('status'),
       key: 'status',
-      render: (item: DevboxVersionListItemType) => <DevboxStatusTag status={item.status} />
+      render: (item: DevboxVersionListItemType) => (
+        <DevboxStatusTag status={item.status} h={'27px'} />
+      )
     },
     {
       title: t('create_time'),
@@ -153,7 +155,7 @@ const Version = () => {
         <Flex>
           <Button
             mr={5}
-            height={'32px'}
+            height={'27px'}
             w={'60px'}
             size={'sm'}
             fontSize={'base'}
