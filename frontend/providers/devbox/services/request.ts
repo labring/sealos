@@ -14,42 +14,42 @@ const showStatus = (status: number) => {
   let message = ''
   switch (status) {
     case 400:
-      message = '请求错误(400)'
+      message = 'request error(400)'
       break
     case 401:
-      message = '未授权，请重新登录(401)'
+      message = 'unauthorized, please login again(401)'
       break
     case 403:
-      message = '拒绝访问(403)'
+      message = 'access denied(403)'
       break
     case 404:
-      message = '请求出错(404)'
+      message = 'request error(404)'
       break
     case 408:
-      message = '请求超时(408)'
+      message = 'request timeout(408)'
       break
     case 500:
-      message = '服务器错误(500)'
+      message = 'server error(500)'
       break
     case 501:
-      message = '服务未实现(501)'
+      message = 'service not implemented(501)'
       break
     case 502:
-      message = '网络错误(502)'
+      message = 'network error(502)'
       break
     case 503:
-      message = '服务不可用(503)'
+      message = 'service unavailable(503)'
       break
     case 504:
-      message = '网络超时(504)'
+      message = 'network timeout(504)'
       break
     case 505:
-      message = 'HTTP版本不受支持(505)'
+      message = 'HTTP version not supported(505)'
       break
     default:
-      message = `连接出错(${status})!`
+      message = `connection error(${status})!`
   }
-  return `${message}，请检查网络或联系管理员！`
+  return `${message}, please check the network or contact the administrator!`
 }
 
 const request = axios.create({
@@ -78,7 +78,7 @@ request.interceptors.request.use(
   },
   (error: any) => {
     error.data = {}
-    error.data.msg = '服务器异常，请联系管理员！'
+    error.data.msg = 'server error, please contact the administrator!'
     return Promise.resolve(error)
   }
 )
@@ -105,7 +105,8 @@ request.interceptors.response.use(
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error))
     } else {
-      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！'
+      error.errMessage =
+        'request timeout or server error, please check the network or contact the administrator!'
     }
     return Promise.reject(error)
   }

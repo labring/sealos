@@ -40,7 +40,7 @@ export const useDevboxStore = create<State>()(
           return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
         })
 
-        // 为每个 devbox 加载监控数据
+        // load monitor data for each devbox
         const updatedRes = await Promise.all(
           res.map(async (devbox) => {
             const pods = await getDevboxPodsByDevboxName(devbox.name)

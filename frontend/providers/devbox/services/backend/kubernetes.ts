@@ -259,7 +259,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
   if (kube_user === null) {
-    return Promise.reject('用户不存在')
+    return Promise.reject('user not found')
   }
 
   const namespace = kc.contexts[0].namespace || GetUserDefaultNameSpace(kube_user.name)

@@ -1,13 +1,13 @@
 export const ERROR_TEXT: Record<string, string> = {
-  ETIMEDOUT: '服务器超时'
+  ETIMEDOUT: 'server timeout'
 }
 export const openaiError: Record<string, string> = {
-  context_length_exceeded: '内容超长了，请重置对话',
-  Unauthorized: 'API-KEY 不合法',
-  rate_limit_reached: 'API被限制，请稍后再试',
-  'Bad Request': 'Bad Request~ 可能内容太多了',
-  'Too Many Requests': '请求次数太多了，请慢点~',
-  'Bad Gateway': '网关异常，请重试'
+  context_length_exceeded: 'content too long, please reset the conversation',
+  Unauthorized: 'API-KEY is invalid',
+  rate_limit_reached: 'API is limited, please try again later',
+  'Bad Request': 'Bad Request~ maybe content too many',
+  'Too Many Requests': 'request too many, please slow down~',
+  'Bad Gateway': 'gateway error, please try again'
 }
 export const proxyError: Record<string, boolean> = {
   ECONNABORTED: true,
@@ -29,6 +29,6 @@ export const ERROR_RESPONSE: Record<
   [ERROR_ENUM.unAuthorization]: {
     code: 403,
     statusText: ERROR_ENUM.unAuthorization,
-    message: '凭证错误'
+    message: 'credential error'
   }
 }

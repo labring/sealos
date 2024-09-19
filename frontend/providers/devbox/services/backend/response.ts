@@ -16,7 +16,7 @@ export const jsonRes = <T = any>(props: {
 
   let msg = message
   if ((code < 200 || code >= 400) && !message) {
-    msg = error?.body?.message || error?.message || '请求错误'
+    msg = error?.body?.message || error?.message || 'request error'
     if (typeof error === 'string') {
       msg = error
     } else if (error?.code && error.code in ERROR_TEXT) {
