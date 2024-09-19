@@ -320,7 +320,7 @@ const DevboxList = ({
               {getCurrentIDELabelAndIcon(currentIDE).label}
             </Button>
           </Tooltip>
-          <Menu placement="bottom-end">
+          <Menu placement="bottom-end" isLazy>
             <MenuButton
               height={'32px'}
               bg={'grayModern.150'}
