@@ -114,7 +114,13 @@ const DelModal = ({
             {activePage === Page.DELETION_WARNING && (
               <Box my={3}>
                 {t('Please enter')}
-                <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
+                <Box
+                  as={'span'}
+                  px={'4px'}
+                  color={'myGray.900'}
+                  fontWeight={'bold'}
+                  userSelect={'all'}
+                >
                   {appName}
                 </Box>
                 {t('To Confirm')}
