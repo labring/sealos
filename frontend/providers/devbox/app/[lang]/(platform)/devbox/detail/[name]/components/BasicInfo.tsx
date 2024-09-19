@@ -186,7 +186,12 @@ const BasicInfo = () => {
                 fontWeight={400}
                 py={2}
                 borderRadius={'md'}>
-                <Flex>
+                <Flex
+                  p={1}
+                  borderRadius={'6px'}
+                  _hover={{
+                    bg: 'rgba(17, 24, 36, 0.05)'
+                  }}>
                   <MyIcon
                     cursor={'pointer'}
                     name="download"
@@ -236,13 +241,18 @@ const BasicInfo = () => {
               fontWeight={400}
               py={2}
               borderRadius={'md'}>
-              <Flex>
+              <Flex
+                ml={3}
+                p={1}
+                borderRadius={'6px'}
+                _hover={{
+                  bg: 'rgba(17, 24, 36, 0.05)'
+                }}>
                 <MyIcon
                   cursor={'pointer'}
                   name="maximize"
                   w={'16px'}
                   h={'16px'}
-                  ml={3}
                   color={'grayModern.600'}
                   mt={'1px'}
                   onClick={() => {
