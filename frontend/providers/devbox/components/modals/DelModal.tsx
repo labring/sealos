@@ -1,13 +1,16 @@
 import {
+  Box,
   Button,
   Flex,
+  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalOverlay
+  ModalOverlay,
+  Text
 } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
@@ -27,8 +30,9 @@ const DelModal = ({
   onSuccess: () => void
 }) => {
   const t = useTranslations()
-  const [loading, setLoading] = useState(false)
   const { message: toast } = useMessage()
+  const [loading, setLoading] = useState(false)
+  const [inputValue, setInputValue] = useState('')
 
   const handleDelDevbox = useCallback(async () => {
     try {
@@ -52,7 +56,7 @@ const DelModal = ({
   }, [devbox.networks, devbox.name, toast, t, onSuccess, onClose])
 
   return (
-    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
+    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
@@ -62,12 +66,49 @@ const DelModal = ({
           </Flex>
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />
-        <ModalBody pb={4}>{t('delete_warning_content')}</ModalBody>
+        <ModalBody pb={4}>
+          <Box>{t('delete_warning_content')}</Box>
+          <Box
+            fontSize={'12px'}
+            color={'grayModern.600'}
+            mt={2}
+            bg={'grayModern.50'}
+            borderRadius={'4px'}
+            p={2}>
+            {t('delete_warning_content_2')}
+          </Box>
+          <Box mt={4}>
+            {t.rich('please_enter_devbox_name_confirm', {
+              name: devbox.name,
+              strong: (chunks) => (
+                <Text fontWeight={'bold'} display={'inline-block'}>
+                  {chunks}
+                </Text>
+              )
+            })}
+          </Box>
+          <Input
+            placeholder={devbox.name}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            mt={4}
+            w={'100%'}
+            border={'1px solid'}
+            borderColor={'grayModern.300'}
+            borderRadius={'4px'}
+            p={2}
+          />
+        </ModalBody>
         <ModalFooter>
           <Button onClick={onClose} variant={'outline'}>
             {t('cancel')}
           </Button>
-          <Button ml={3} variant={'solid'} isLoading={loading} onClick={handleDelDevbox}>
+          <Button
+            ml={3}
+            variant={'solid'}
+            isLoading={loading}
+            onClick={handleDelDevbox}
+            isDisabled={inputValue !== devbox.name}>
             {t('confirm_delete')}
           </Button>
         </ModalFooter>
