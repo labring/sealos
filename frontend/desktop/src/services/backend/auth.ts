@@ -13,7 +13,6 @@ const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 const grobalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
 const regionalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.regional || '123456789';
 const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '123456789';
-const billingJwtSecret = () => global.AppConfig?.desktop.auth.jwt.billing || '123456789';
 const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
@@ -65,7 +64,7 @@ export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?
   });
 
 export const generateBillingToken = (props: BillingTokenPayload) =>
-  sign(props, billingJwtSecret(), { expiresIn: '3600000' });
+  sign(props, internalJwtSecret(), { expiresIn: '3600000' });
 export const generateAccessToken = (props: AccessTokenPayload) =>
   sign(props, regionalJwtSecret(), { expiresIn: '7d' });
 export const generateAppToken = (props: AccessTokenPayload) =>
