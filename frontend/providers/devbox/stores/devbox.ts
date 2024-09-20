@@ -87,7 +87,7 @@ export const useDevboxStore = create<State>()(
 
         // createTime：2024/09/11 17:37-> 2024-09-11
         res.forEach((item) => {
-          item.createTime = item.createTime.replace(/\d{2}:\d{2}/, '').replace(/\//g, '-')
+          item.createTime = item.createTime.replace(/\//g, '-')
         })
 
         set((state) => {
