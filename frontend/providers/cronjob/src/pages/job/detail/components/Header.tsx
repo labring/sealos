@@ -1,4 +1,4 @@
-import { updateCronJobStatus } from '@/api/job';
+import { implementJob, updateCronJobStatus } from '@/api/job';
 import MyIcon from '@/components/Icon';
 import StatusTag from '@/components/StatusTag';
 import { CronJobStatusMap } from '@/constants/job';
@@ -67,6 +67,26 @@ const Header = ({
     refetch();
   }, [appName, refetch, toast]);
 
+  const handleRunJob = useCallback(async () => {
+    try {
+      setLoading(true);
+      await implementJob({ jobName: appName });
+      toast({
+        title: 'Job已执行',
+        status: 'success'
+      });
+      router.replace(`/job/detail?name=${appName}`);
+    } catch (error: any) {
+      toast({
+        title: typeof error === 'string' ? error : error.message || '执行Job出现了意外',
+        status: 'error'
+      });
+      console.error(error);
+    }
+    setLoading(false);
+    refetch();
+  }, [appName, refetch, toast]);
+
   const handleStartApp = useCallback(async () => {
     try {
       setLoading(true);
@@ -113,6 +133,18 @@ const Header = ({
       <Box flex={1} />
 
       {/* btns */}
+      <Button
+        mr={5}
+        h={'40px'}
+        borderColor={'myGray.200'}
+        leftIcon={<MyIcon name="continue" w={'14px'} />}
+        isLoading={loading}
+        variant={'base'}
+        bg={'white'}
+        onClick={handleRunJob}
+      >
+        {t('implement')}
+      </Button>
       {isPause ? (
         <Button
           mr={5}

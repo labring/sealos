@@ -27,6 +27,9 @@ export const updateCronJobStatus = ({
   type: 'Stop' | 'Start';
 }) => POST('/api/cronjob/startAndStop', { jobName, type });
 
+export const implementJob = ({ jobName }: { jobName: string }) =>
+  POST('/api/cronjob/implementJob', { jobName });
+
 export const getJobList = (name: string) =>
   GET(`/api/job/list?cronJobName=${name}`).then(adaptJobItemList);
 
