@@ -11,21 +11,24 @@ type UpdateReplicaParams = {
   appName: string;
   replica: string;
 };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { appName, replica } = req.body as UpdateReplicaParams;
-    console.log(appName, replica);
 
     if (!appName) {
       throw new Error('appName is empty');
     }
 
+    const kubeconfig = await authSession(req.headers);
+    const k8sContext = await getK8s({ kubeconfig });
+
     let result;
 
     if (Number(replica) === 0) {
-      result = await PauseApp({ appName, replica, req });
+      result = await PauseApp({ appName, replica, k8sContext });
     } else {
-      result = await StartApp({ appName, replica, req });
+      result = await StartApp({ appName, replica, k8sContext });
     }
 
     jsonRes(res, { data: result });
@@ -40,11 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 export async function PauseApp({
   appName,
   replica,
-  req
-}: UpdateReplicaParams & { req: NextApiRequest }) {
-  const { apiClient, k8sAutoscaling, getDeployApp, namespace } = await getK8s({
-    kubeconfig: await authSession(req.headers)
-  });
+  k8sContext
+}: UpdateReplicaParams & { k8sContext: Awaited<ReturnType<typeof getK8s>> }) {
+  const { apiClient, k8sAutoscaling, getDeployApp, namespace } = k8sContext;
 
   const app = await getDeployApp(appName);
   if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
@@ -88,11 +89,9 @@ export async function PauseApp({
 export async function StartApp({
   appName,
   replica,
-  req
-}: UpdateReplicaParams & { req: NextApiRequest }) {
-  const { apiClient, getDeployApp, applyYamlList } = await getK8s({
-    kubeconfig: await authSession(req.headers)
-  });
+  k8sContext
+}: UpdateReplicaParams & { k8sContext: Awaited<ReturnType<typeof getK8s>> }) {
+  const { apiClient, getDeployApp, applyYamlList } = k8sContext;
 
   const app = await getDeployApp(appName);
 
