@@ -50,10 +50,11 @@ const AdapterChartData: Record<
     return newDataArray
   },
   average_cpu: (data: MonitorServiceResult) => {
+    console.log('cpu', data.data.result[0])
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod
       let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2))
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2))
       return {
         name: name,
         xData: xData,
@@ -63,10 +64,11 @@ const AdapterChartData: Record<
     return newDataArray
   },
   average_memory: (data: MonitorServiceResult) => {
+    console.log('memory', data.data.result[0])
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod
       let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2))
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2))
       return {
         name: name,
         xData: xData,
