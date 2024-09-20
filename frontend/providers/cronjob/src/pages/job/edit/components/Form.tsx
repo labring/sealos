@@ -102,7 +102,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
         gpuAmount: 1
       }),
       memory: sliderNumber2MarkList({
-        val: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384],
+        val: [128, 256, 512, 1024, 2048, 4096, 8192, 16384],
         type: 'memory',
         gpuAmount: 1
       })

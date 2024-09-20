@@ -6,7 +6,6 @@ import { cronJobKey } from '@/constants/keys';
 import useEnvStore from '@/store/env';
 
 export const json2CronJob = (data: CronJobEditType) => {
-  const serviceAccount = getUserServiceAccount();
   const timeZone = getUserTimeZone();
   const kcHeader = encodeURIComponent(getUserKubeConfig());
   const { applaunchpadUrl } = useEnvStore.getState().SystemEnv;
@@ -49,15 +48,14 @@ export const json2CronJob = (data: CronJobEditType) => {
       }
     };
     const getArgs = () => {
-      let command = '';
+      let command = `echo "${Buffer.from(decodeURIComponent(kcHeader)).toString(
+        'base64'
+      )}" | base64 -d > ~/.kube/config`;
       if (data.enableNumberCopies && applaunchpadUrl) {
-        command += `curl -X POST -H "Authorization: ${kcHeader}" -d "appName=${data.launchpadName}&replica=${data.replicas}" http://${applaunchpadUrl}/api/v1alpha/updateReplica`;
+        command += ` && curl -k -X POST -H "Authorization: $(cat ~/.kube/config | base64 -w0)" -d "appName=${data.launchpadName}&replica=${data.replicas}" https://${applaunchpadUrl}/api/v2alpha/updateReplica`;
       }
       if (data.enableResources) {
-        if (command) {
-          command += ' && ';
-        }
-        command += `kubectl set resources deployment ${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
+        command += ` && kubectl set resources deployment ${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
       }
 
       return command.replace(/\n/g, '') || '';
@@ -121,7 +119,8 @@ export const json2CronJob = (data: CronJobEditType) => {
         spec: {
           template: {
             spec: {
-              serviceAccountName: serviceAccount,
+              serviceAccountName: 'default',
+              automountServiceAccountToken: false,
               imagePullSecrets,
               containers: [
                 {
