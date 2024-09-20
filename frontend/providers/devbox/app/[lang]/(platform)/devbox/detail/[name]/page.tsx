@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Box, Flex, Grid } from '@chakra-ui/react'
+import { Box, Flex } from '@chakra-ui/react'
 
 import Header from './components/Header'
 import Version from './components/Version'
@@ -53,17 +53,15 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
           <Box mb={6}>
             <Header refetchDevboxDetail={refetch} />
           </Box>
-          <Grid
-            pl={4}
-            templateColumns="1fr 2fr"
-            gap={4}
-            {...(isLargeScreen ? { minH: '90%' } : { minH: '60vh' })}>
-            <BasicInfo />
-            <Flex gap={2} flexDirection={'column'}>
+          <Flex gap={4} px={4} {...(isLargeScreen ? { minH: '90%' } : { minH: '90%' })}>
+            <Flex w={'435px'} flexShrink={0} flexGrow={0}>
+              <BasicInfo />
+            </Flex>
+            <Flex gap={2} flexDirection={'column'} flexGrow={1}>
               <MainBody />
               <Version />
             </Flex>
-          </Grid>
+          </Flex>
         </>
       )}
     </Box>

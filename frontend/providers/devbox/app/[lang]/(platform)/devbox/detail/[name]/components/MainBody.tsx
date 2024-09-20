@@ -80,16 +80,7 @@ const MainBody = () => {
     }
   ]
   return (
-    <Box
-      w={'65vw'}
-      bg={'white'}
-      borderRadius="lg"
-      pl={6}
-      pt={2}
-      pr={6}
-      pb={6}
-      h={'full'}
-      borderWidth={1}>
+    <Box bg={'white'} borderRadius="lg" pl={6} pt={2} pr={6} pb={6} h={'full'} borderWidth={1}>
       {/* monitor */}
       <Box mt={4}>
         <Flex alignItems={'center'} mb={2}>
