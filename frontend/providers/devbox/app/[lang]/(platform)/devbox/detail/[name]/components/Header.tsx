@@ -244,6 +244,9 @@ const Header = ({
             borderWidth={1}
             borderLeftRadius={0}
             borderLeftWidth={0}
+            boxShadow={
+              '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
+            }
             as={IconButton}
             _hover={{
               color: 'brightBlue.600'
