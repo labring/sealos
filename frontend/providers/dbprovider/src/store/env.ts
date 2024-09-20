@@ -14,6 +14,7 @@ type EnvState = {
 const useEnvStore = create<EnvState>()(
   immer((set, get) => ({
     SystemEnv: {
+      desktopDomain: '',
       domain: '',
       env_storage_className: '',
       migrate_file_image: '',
