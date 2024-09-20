@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
+import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { Box, Flex, Text, Tooltip } from '@chakra-ui/react'
+import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
@@ -10,10 +11,13 @@ import { useDevboxStore } from '@/stores/devbox'
 import PodLineChart from '@/components/PodLineChart'
 import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 
+const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
+
 const MainBody = () => {
   const t = useTranslations()
   const { copyData } = useCopyData()
   const { devboxDetail } = useDevboxStore()
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   const networkColumn: {
     title: string
@@ -94,7 +98,7 @@ const MainBody = () => {
           </Box>
         </Flex>
         <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} minH={'80px'} gap={4}>
-          <Box flex={1}>
+          <Box flex={1} position={'relative'}>
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
             </Box>
@@ -104,7 +108,15 @@ const MainBody = () => {
               </Box>
             </Box>
           </Box>
-          <Box flex={1}>
+          <Box flex={1} position={'relative'}>
+            <Button
+              variant={'square'}
+              position={'absolute'}
+              right={'2px'}
+              top={'-6px'}
+              onClick={onOpen}>
+              <MyIcon name="maximize" width={'16px'} fill={'#667085'} />
+            </Button>
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('memory')}{' '}
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
@@ -137,6 +149,7 @@ const MainBody = () => {
           </Flex>
         )}
       </Box>
+      <MonitorModal isOpen={isOpen} onClose={onClose} />
     </Box>
   )
 }
