@@ -469,7 +469,7 @@ const DevboxList = ({
                     {
                       child: (
                         <>
-                          <MyIcon name={'pause'} w={'16px'} />
+                          <MyIcon name={'shutdown'} w={'16px'} />
                           <Box ml={2}>{t('shutdown')}</Box>
                         </>
                       ),

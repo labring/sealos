@@ -61,7 +61,8 @@ const map = {
   vscodeInsider: require('./icons/vscodeInsider.svg').default,
   cursor: require('./icons/cursor.svg').default,
   check: require('./icons/check.svg').default,
-  empty: require('./icons/empty.svg').default
+  empty: require('./icons/empty.svg').default,
+  shutdown: require('./icons/shutdown.svg').default
 }
 
 const MyIcon = ({
