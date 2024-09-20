@@ -1,3 +1,4 @@
+'use client';
 import { createIcon } from '@chakra-ui/react';
 
 const UploadIcon = createIcon({

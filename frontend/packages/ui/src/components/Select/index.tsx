@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useRef, forwardRef, useMemo } from 'react';
 import {
   Menu,

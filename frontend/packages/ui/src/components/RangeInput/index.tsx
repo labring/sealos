@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { HStack, Input, useNumberInput, IconButton, InputProps } from '@chakra-ui/react';
 import { AddIcon, MinusIcon } from '@chakra-ui/icons';

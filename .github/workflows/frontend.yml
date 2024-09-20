@@ -67,6 +67,7 @@ jobs:
             providers/objectstorage,
             providers/kubepanel,
             providers/workorder,
+            providers/devbox,
             desktop,
           ]
     steps:
@@ -165,6 +166,7 @@ jobs:
             providers/objectstorage,
             providers/kubepanel,
             providers/workorder,
+            providers/devbox,
             desktop,
           ]
     steps:
