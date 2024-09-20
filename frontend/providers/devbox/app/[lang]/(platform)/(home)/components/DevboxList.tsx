@@ -251,7 +251,10 @@ const DevboxList = ({
     {
       title: t('create_time'),
       dataIndex: 'createTime',
-      key: 'createTime'
+      key: 'createTime',
+      render: (item: DevboxListItemType) => {
+        return <Text color={'grayModern.600'}>{item.createTime}</Text>
+      }
     },
     {
       title: t('cpu'),

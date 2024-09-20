@@ -109,7 +109,6 @@ const Version = () => {
     dataIndex?: keyof DevboxVersionListItemType
     key: string
     render?: (item: DevboxVersionListItemType) => JSX.Element
-    minWidth?: string
   }[] = [
     {
       title: t('version_number'),
@@ -130,7 +129,10 @@ const Version = () => {
     {
       title: t('create_time'),
       dataIndex: 'createTime',
-      key: 'createTime'
+      key: 'createTime',
+      render: (item: DevboxVersionListItemType) => {
+        return <Text color={'grayModern.600'}>{item.createTime}</Text>
+      }
     },
     {
       title: t('version_description'),
@@ -138,7 +140,7 @@ const Version = () => {
       render: (item: DevboxVersionListItemType) => (
         <Flex alignItems="center" minH={'20px'}>
           <Box
-            color={'grayModern.900'}
+            color={'grayModern.600'}
             overflow={'hidden'}
             textOverflow={'ellipsis'}
             whiteSpace={'nowrap'}
