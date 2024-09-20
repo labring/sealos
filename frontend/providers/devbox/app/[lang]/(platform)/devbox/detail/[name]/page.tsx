@@ -68,7 +68,6 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
               zIndex={1}
               transition={'0.4s'}
               bg={'white'}
-              border={'base'}
               borderRadius={'lg'}
               {...(isLargeScreen
                 ? {}
@@ -81,16 +80,10 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
               <BasicInfo />
             </Box>
             <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
-              <Box
-                mb={4}
-                bg={'white'}
-                border={'theme'}
-                borderRadius={'lg'}
-                flexShrink={0}
-                minH={'257px'}>
+              <Box mb={4} bg={'white'} borderRadius={'lg'} flexShrink={0} minH={'257px'}>
                 <MainBody />
               </Box>
-              <Box bg={'white'} border={'base'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
+              <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
                 <Version />
               </Box>
             </Flex>
