@@ -49,7 +49,7 @@ const Version = () => {
       })
 
       const transformData = {
-        appName: name,
+        appName: `${name}-release`,
         cpu: cpu,
         memory: memory,
         imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}`,
