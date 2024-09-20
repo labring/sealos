@@ -327,6 +327,7 @@ const DevboxList = ({
             <MenuButton
               height={'32px'}
               bg={'grayModern.150'}
+              color={'grayModern.600'}
               _hover={{
                 color: 'brightBlue.600'
               }}
