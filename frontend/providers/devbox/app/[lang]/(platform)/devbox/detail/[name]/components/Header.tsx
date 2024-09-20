@@ -20,7 +20,13 @@ import { DevboxDetailType } from '@/types/devbox'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
-import { getSSHConnectionInfo, getSSHRuntimeInfo, pauseDevbox, restartDevbox } from '@/api/devbox'
+import {
+  getSSHConnectionInfo,
+  getSSHRuntimeInfo,
+  pauseDevbox,
+  restartDevbox,
+  startDevbox
+} from '@/api/devbox'
 
 const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) => {
   const router = useRouter()
@@ -146,6 +152,27 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
     },
     [setLoading, t, toast, refetchDevboxDetail]
   )
+  const handleStartDevbox = useCallback(
+    async (devbox: DevboxDetailType) => {
+      try {
+        setLoading(true)
+        await startDevbox({ devboxName: devbox.name })
+        toast({
+          title: t('start_success'),
+          status: 'success'
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('start_error'),
+          status: 'error'
+        })
+        console.error(error, '==')
+      }
+      refetchDevboxDetail()
+      setLoading(false)
+    },
+    [setLoading, t, toast, refetchDevboxDetail]
+  )
   return (
     <Flex justify="space-between" align="center" pl={4}>
       <Flex alignItems={'center'} gap={2}>
@@ -253,9 +280,25 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={<MyIcon name={'pause'} w={'16px'} />}
+            leftIcon={<MyIcon name={'shutdown'} w={'16px'} />}
             onClick={() => handlePauseDevbox(devboxDetail)}>
             {t('pause')}
+          </Button>
+        )}
+        {devboxDetail.status.value === 'Stopped' && (
+          <Button
+            mr={5}
+            h={'40px'}
+            fontSize={'14px'}
+            bg={'white'}
+            color={'grayModern.600'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            borderWidth={1}
+            leftIcon={<MyIcon name={'start'} w={'16px'} />}
+            onClick={() => handleStartDevbox(devboxDetail)}>
+            {t('boot')}
           </Button>
         )}
         <Button
@@ -273,23 +316,21 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
           {t('update')}
         </Button>
-        {devboxDetail.status.value !== 'Running' && (
-          <Button
-            mr={5}
-            w={'96px'}
-            h={'40px'}
-            fontSize={'14px'}
-            bg={'white'}
-            color={'grayModern.600'}
-            _hover={{
-              color: 'brightBlue.600'
-            }}
-            borderWidth={1}
-            leftIcon={<MyIcon name={'restart'} w={'16px'} />}
-            onClick={() => handleRestartDevbox(devboxDetail)}>
-            {t('restart')}
-          </Button>
-        )}
+        <Button
+          mr={5}
+          w={'96px'}
+          h={'40px'}
+          fontSize={'14px'}
+          bg={'white'}
+          color={'grayModern.600'}
+          _hover={{
+            color: 'brightBlue.600'
+          }}
+          borderWidth={1}
+          leftIcon={<MyIcon name={'restart'} w={'16px'} />}
+          onClick={() => handleRestartDevbox(devboxDetail)}>
+          {t('restart')}
+        </Button>
         <Button
           mr={5}
           w={'96px'}
