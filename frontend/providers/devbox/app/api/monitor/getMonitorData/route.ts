@@ -115,7 +115,6 @@ export async function GET(req: NextRequest) {
       },
       kubeconfig
     ).then((res) => {
-      // console.log(res.data.result, res.data.result[0].values.length, 'AdapterChartData');
       // @ts-ignore
       return AdapterChartData[queryKey]
         ? // @ts-ignore

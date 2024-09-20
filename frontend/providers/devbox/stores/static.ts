@@ -91,7 +91,6 @@ export const getUserPrice = async () => {
   try {
     const res = await getResourcePrice()
     SOURCE_PRICE = res
-    console.log('SOURCE_PRICE', SOURCE_PRICE)
     INSTALL_ACCOUNT = true
   } catch (err) {
     retryGetPrice--
