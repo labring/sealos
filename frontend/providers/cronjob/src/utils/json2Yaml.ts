@@ -52,7 +52,7 @@ export const json2CronJob = (data: CronJobEditType) => {
         'base64'
       )}" | base64 -d > ~/.kube/config`;
       if (data.enableNumberCopies && applaunchpadUrl) {
-        command += ` && curl -k -X POST -H "Authorization: $(cat ~/.kube/config | base64 -w0)" -d "appName=${data.launchpadName}&replica=${data.replicas}" https://${applaunchpadUrl}/api/v2alpha/updateReplica`;
+        command += ` && curl -k -X POST -H "Authorization: $(cat ~/.kube/config | jq -sRr @uri)" -d "appName=${data.launchpadName}&replica=${data.replicas}" https://${applaunchpadUrl}/api/v1alpha/updateReplica`;
       }
       if (data.enableResources) {
         command += ` && kubectl set resources deployment ${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
