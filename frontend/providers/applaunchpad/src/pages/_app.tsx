@@ -140,10 +140,10 @@ const App = ({ Component, pageProps }: AppProps) => {
             formData?: string;
           }>
         ) => {
-          const whitelist = [`https://${SEALOS_DOMAIN}`];
-          if (!whitelist.includes(e.origin)) {
-            return;
-          }
+          // const whitelist = [`https://${SEALOS_DOMAIN}`];
+          // if (!whitelist.includes(e.origin)) {
+          //   return;
+          // }
           try {
             if (e.data?.type === 'InternalAppCall') {
               const { name, formData } = e.data;
