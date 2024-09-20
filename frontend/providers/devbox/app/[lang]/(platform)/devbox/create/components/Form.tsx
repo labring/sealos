@@ -591,7 +591,7 @@ const Form = ({
                             appendNetworks({
                               networkName: '',
                               portName: nanoid(),
-                              port: 80,
+                              port: 8080,
                               protocol: 'HTTP',
                               openPublicDomain: false,
                               publicDomain: '',
