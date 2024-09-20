@@ -18,6 +18,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const [initialized, setInitialized] = useState(false)
   const { devboxDetail, setDevboxDetail, loadDetailMonitorData } = useDevboxStore()
   const { screenWidth } = useGlobalStore()
+  const [showSlider, setShowSlider] = useState(false)
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth])
 
   const { refetch } = useQuery(['initDevboxDetail'], () => setDevboxDetail(devboxName), {
@@ -46,25 +47,68 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   )
 
   return (
-    <Box p={5} h={'100vh'} {...(isLargeScreen ? { minH: '100%' } : {})}>
+    <Flex p={5} h={'100vh'} px={'32px'} flexDirection={'column'}>
       <Loading loading={!initialized} />
       {devboxDetail !== null && initialized && (
         <>
           <Box mb={6}>
-            <Header refetchDevboxDetail={refetch} />
+            <Header
+              refetchDevboxDetail={refetch}
+              setShowSlider={setShowSlider}
+              isLargeScreen={isLargeScreen}
+            />
           </Box>
-          <Flex gap={4} px={4} {...(isLargeScreen ? { minH: '90%' } : { minH: '90%' })}>
-            <Flex w={'435px'} flexShrink={0} flexGrow={0}>
+          <Flex position={'relative'} flex={'1 0 0'} h={0}>
+            <Box
+              h={'100%'}
+              flex={'0 0 410px'}
+              w={'410px'}
+              mr={4}
+              overflow={'overlay'}
+              zIndex={1}
+              transition={'0.4s'}
+              bg={'white'}
+              border={'base'}
+              borderRadius={'lg'}
+              {...(isLargeScreen
+                ? {}
+                : {
+                    position: 'absolute',
+                    left: 0,
+                    boxShadow: '7px 4px 12px rgba(165, 172, 185, 0.25)',
+                    transform: `translateX(${showSlider ? '0' : '-500'}px)`
+                  })}>
               <BasicInfo />
-            </Flex>
-            <Flex gap={2} flexDirection={'column'} flexGrow={1}>
-              <MainBody />
-              <Version />
+            </Box>
+            <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
+              <Box
+                mb={4}
+                bg={'white'}
+                border={'theme'}
+                borderRadius={'lg'}
+                flexShrink={0}
+                minH={'257px'}>
+                <MainBody />
+              </Box>
+              <Box bg={'white'} border={'base'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
+                <Version />
+              </Box>
             </Flex>
           </Flex>
+          {/* mask */}
+          {!isLargeScreen && showSlider && (
+            <Box
+              position={'fixed'}
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              onClick={() => setShowSlider(false)}
+            />
+          )}
         </>
       )}
-    </Box>
+    </Flex>
   )
 }
 

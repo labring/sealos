@@ -228,8 +228,7 @@ const Version = () => {
           mr={1}
           leftIcon={<MyIcon name="version" />}
           _hover={{
-            bg: 'grayModern.50',
-            color: 'grayModern.600'
+            color: 'brightBlue.600'
           }}>
           {t('release_version')}
         </Button>

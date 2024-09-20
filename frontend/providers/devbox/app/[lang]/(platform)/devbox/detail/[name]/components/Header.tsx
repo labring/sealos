@@ -1,6 +1,6 @@
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
+import { Dispatch, useCallback, useState } from 'react'
 import {
   Flex,
   Button,
@@ -28,7 +28,15 @@ import {
   startDevbox
 } from '@/api/devbox'
 
-const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) => {
+const Header = ({
+  refetchDevboxDetail,
+  setShowSlider,
+  isLargeScreen = true
+}: {
+  refetchDevboxDetail: () => void
+  setShowSlider: Dispatch<boolean>
+  isLargeScreen: boolean
+}) => {
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
@@ -187,9 +195,26 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
         <Box fontSize="2xl" fontWeight="bold">
           {devboxDetail.name}
         </Box>
-        <Box mt={1}>
+        <Flex alignItems={'center'}>
           <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
-        </Box>
+          {!isLargeScreen && (
+            <Box mx={4}>
+              <Button
+                width={'96px'}
+                height={'40px'}
+                bg={'white'}
+                borderWidth={1}
+                color={'grayModern.600'}
+                leftIcon={<MyIcon name="detail" w="16px" h="16px" />}
+                _hover={{
+                  color: 'brightBlue.600'
+                }}
+                onClick={() => setShowSlider(true)}>
+                {t('detail')}
+              </Button>
+            </Box>
+          )}
+        </Flex>
       </Flex>
       <Flex>
         <Button
@@ -213,17 +238,16 @@ const Header = ({ refetchDevboxDetail }: { refetchDevboxDetail: () => void }) =>
           <MenuButton
             height={'40px'}
             bg={'white'}
-            _hover={{
-              color: 'brightBlue.600'
-            }}
             color={'grayModern.600'}
             mr={6}
             p={2}
             borderWidth={1}
             borderLeftRadius={0}
             borderLeftWidth={0}
-            boxShadow={'none'}
             as={IconButton}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
             isDisabled={devboxDetail.status.value !== 'Running'}
             icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
             _before={{
