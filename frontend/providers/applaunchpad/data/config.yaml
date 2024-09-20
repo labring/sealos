@@ -1,6 +1,9 @@
 cloud:
   domain: 127.0.0.1.nip.io
-  port: ''
+  desktopDomain: 127.0.0.1.nip.io
+  port: ""
+  userDomain:
+    - 127.0.0.1.nip.io
 common:
   guideEnabled: false
   apiEnabled: false
@@ -8,7 +11,7 @@ launchpad:
   ingressTlsSecretName: wildcard-cert
   eventAnalyze:
     enabled: false
-    fastGPTKey: ''
+    fastGPTKey: ""
   components:
     monitor:
       url: http://launchpad-monitor.sealos.svc.cluster.local:8428

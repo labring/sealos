@@ -17,13 +17,15 @@ export type Response = {
   guideEnabled: boolean;
   fileMangerConfig: FileMangerType;
   SEALOS_USER_DOMAIN: string[];
+  DESKTOP_DOMAIN: string;
 };
 
 export const defaultAppConfig: AppConfigType = {
   cloud: {
     domain: 'cloud.sealos.io',
     port: '',
-    userDomain: ['cloud.sealos.io']
+    userDomain: ['cloud.sealos.io'],
+    desktopDomain: 'cloud.sealos.io'
   },
   common: {
     guideEnabled: false,
@@ -87,7 +89,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
         CURRENCY: Coin.shellCoin,
-        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain || []
+        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain || [],
+        DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain
       }
     });
   } catch (error) {

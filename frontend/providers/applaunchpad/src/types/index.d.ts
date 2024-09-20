@@ -28,6 +28,7 @@ export type AppConfigType = {
     domain: string;
     port?: string;
     userDomain: string[];
+    desktopDomain: string;
   };
   common: {
     guideEnabled: boolean;
