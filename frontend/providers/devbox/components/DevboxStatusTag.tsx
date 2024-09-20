@@ -7,11 +7,13 @@ import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/de
 const DevboxStatusTag = ({
   status,
   showBorder = false,
+  thinMode = false,
   ...props
 }: {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType
   showBorder?: boolean
   size?: 'sm' | 'md' | 'lg'
+  thinMode?: boolean
   w?: string
   h?: string
 }) => {
@@ -21,11 +23,11 @@ const DevboxStatusTag = ({
   return (
     <Flex
       color={status.color}
-      backgroundColor={status.backgroundColor}
+      backgroundColor={thinMode ? 'transparent' : status.backgroundColor}
       border={showBorder ? '1px solid' : 'none'}
       borderColor={status.color}
       py={1}
-      px={4}
+      px={thinMode ? 0 : 4}
       borderRadius={'24px'}
       fontSize={'xs'}
       fontWeight={'bold'}
@@ -33,8 +35,13 @@ const DevboxStatusTag = ({
       minW={'60px'}
       whiteSpace={'nowrap'}
       {...props}>
-      <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
-      <Box ml={2} flex={1}>
+      <Box
+        w={'6px'}
+        h={'6px'}
+        borderRadius={'10px'}
+        backgroundColor={status.dotColor}
+        display={thinMode ? 'none' : 'block'}></Box>
+      <Box ml={thinMode ? 0 : 2} flex={1}>
         {t(label)}
       </Box>
     </Flex>

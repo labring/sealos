@@ -124,7 +124,7 @@ const Version = () => {
       title: t('status'),
       key: 'status',
       render: (item: DevboxVersionListItemType) => (
-        <DevboxStatusTag status={item.status} h={'27px'} />
+        <DevboxStatusTag status={item.status} h={'27px'} thinMode />
       )
     },
     {
