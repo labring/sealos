@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       result = await StartApp({ appName, replica, k8sContext });
     }
 
-    jsonRes(res, { data: result });
+    jsonRes(res, { data: 'update replica success' });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
