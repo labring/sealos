@@ -17,6 +17,8 @@ limitations under the License.
 package server
 
 import (
+	"strings"
+
 	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/docker/docker/api/types"
@@ -83,6 +85,9 @@ func replaceImage(image, action string, authConfig map[string]types.AuthConfig) 
 	//for image id] this is mistake, we should replace the image name, not the image id.
 	newImage, _, cfg, err := crane.GetImageManifestFromAuth(image, authConfig)
 	if err != nil {
+		if strings.Contains(image, "@") {
+			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
+		}
 		logger.Warn("get image %s manifest error %s", newImage, err.Error())
 		logger.Debug("image %s not found in registry, skipping", image)
 		return image, false, nil
