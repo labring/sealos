@@ -19,14 +19,16 @@ const Header = ({
   isPause = false,
   isLargeScreen = true,
   setShowSlider,
-  refetch
+  refetchCronJob,
+  refetchJob
 }: {
   appStatus: CronJobStatusMapType;
   appName?: string;
   isPause?: boolean;
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
-  refetch: () => void;
+  refetchCronJob: () => void;
+  refetchJob: () => void;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -64,28 +66,27 @@ const Header = ({
       console.error(error);
     }
     setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    refetchCronJob();
+  }, [appName, refetchCronJob, toast]);
 
   const handleRunJob = useCallback(async () => {
     try {
       setLoading(true);
       await implementJob({ jobName: appName });
       toast({
-        title: 'Job已执行',
+        title: t('job_implement_success'),
         status: 'success'
       });
-      router.replace(`/job/detail?name=${appName}`);
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '执行Job出现了意外',
+        title: typeof error === 'string' ? error : error.message || t('job_implement_error'),
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    refetchJob();
+  }, [appName, refetchJob, toast]);
 
   const handleStartApp = useCallback(async () => {
     try {
@@ -103,8 +104,8 @@ const Header = ({
       console.error(error);
     }
     setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    refetchCronJob();
+  }, [appName, refetchCronJob, toast]);
 
   return (
     <Flex h={'86px'} alignItems={'center'}>

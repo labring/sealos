@@ -55,20 +55,19 @@ const JobList = ({
     },
     [refetchApps, setLoading, t, toast]
   );
-
   const handleImplementJob = useCallback(
     async (job: CronJobListItemType) => {
       try {
         setLoading(true);
         await implementJob({ jobName: job.name });
         toast({
-          title: t('Job已执行'),
+          title: t('job_implement_success'),
           status: 'success'
         });
         router.replace(`/job/detail?name=${job.name}`);
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('执行Job出现了意外'),
+          title: typeof error === 'string' ? error : error.message || t('job_implement_error'),
           status: 'error'
         });
         console.error(error);
