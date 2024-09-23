@@ -12,7 +12,7 @@ export default function AppBaseInfo({ data }: { data?: JobList }) {
   const { JobDetail, loadJobDetail } = useJobStore();
   const { copyData } = useCopyData();
 
-  const [successAmount, failAmount] = useMemo(() => {
+  const [totalAmount, successAmount, failAmount] = useMemo(() => {
     if (data?.total) {
       return [data?.total, data?.successAmount, data.total - data.successAmount];
     } else {
