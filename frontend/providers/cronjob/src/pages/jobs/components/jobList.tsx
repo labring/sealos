@@ -1,4 +1,4 @@
-import { updateCronJobStatus } from '@/api/job';
+import { updateCronJobStatus, implementJob } from '@/api/job';
 import MyIcon from '@/components/Icon';
 import MyMenu from '@/components/Menu';
 import StatusTag from '@/components/StatusTag';
@@ -54,6 +54,28 @@ const JobList = ({
       refetchApps();
     },
     [refetchApps, setLoading, t, toast]
+  );
+  const handleImplementJob = useCallback(
+    async (job: CronJobListItemType) => {
+      try {
+        setLoading(true);
+        await implementJob({ jobName: job.name });
+        toast({
+          title: t('job_implement_success'),
+          status: 'success'
+        });
+        router.replace(`/job/detail?name=${job.name}`);
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('job_implement_error'),
+          status: 'error'
+        });
+        console.error(error);
+      }
+      setLoading(false);
+      refetchApps();
+    },
+    [refetchApps, setLoading, t, toast, router]
   );
 
   const columns: {
@@ -133,6 +155,15 @@ const JobList = ({
               </MenuButton>
             }
             menuList={[
+              {
+                child: (
+                  <>
+                    <MyIcon name={'continue'} w={'14px'} />
+                    <Box ml={2}>{t('implement')}</Box>
+                  </>
+                ),
+                onClick: () => handleImplementJob(item)
+              },
               ...(item.status.value === StatusEnum.Stopped
                 ? [
                     {

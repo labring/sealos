@@ -243,5 +243,9 @@
   "The password cannot be empty": "密码不能为空",
   "Env Placeholder": "环境变量，每行一个，可用冒号或等号分隔，例如：\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test",
   "Edit Environment Variables": "编辑环境变量",
-  "Environment Variables": "环境变量"
+  "Environment Variables": "环境变量",
+  "implement": "执行",
+  "job_implement_success": "Job 执行成功",
+  "job_implement_error": "Job 执行失败",
+  "Executing": "执行中"
 }

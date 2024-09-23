@@ -1,23 +1,22 @@
 import { getJobListEventsAndLogs, getPodLogs } from '@/api/job';
 import MyIcon from '@/components/Icon';
+import { JobList } from '@/types/job';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo, useState } from 'react';
 
-export default function AppBaseInfo({ appName }: { appName: string }) {
+export default function AppBaseInfo({
+  joblist,
+  isLoading
+}: {
+  joblist?: JobList;
+  isLoading: boolean;
+}) {
   const { t } = useTranslation();
   const [active, setActive] = useState(0);
-  const { data, isLoading } = useQuery(
-    ['getJobListEventsAndLogs', appName],
-    () => getJobListEventsAndLogs(appName),
-    {
-      onError(err) {
-        console.log(err);
-      }
-    }
-  );
-  const ActivePod = useMemo(() => data?.history[active], [active, data]);
+  const [logs, setLogs] = useState('');
+  const ActivePod = useMemo(() => joblist?.history[active], [active, joblist]);
   useQuery(
     ['getPodLogs', ActivePod?.podName],
     () => ActivePod?.podName && getPodLogs(ActivePod.podName),
@@ -25,14 +24,15 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
       enabled: !!ActivePod?.podName,
       onSuccess(data) {
         if (ActivePod) {
-          ActivePod['logs'] = data || '';
+          setLogs(data || '');
         }
       },
       onError(err) {
         if (ActivePod) {
-          ActivePod['logs'] = typeof err === 'string' ? err : '';
+          setLogs(typeof err === 'string' ? err : '');
         }
-      }
+      },
+      refetchInterval: ActivePod?.status === 'active' ? 1000 : false
     }
   );
 
@@ -53,11 +53,11 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
           </Icon>
           <Text ml="12px">{t('Historical Mission')}</Text>
         </Flex>
-        <Text>{data?.total}</Text>
+        <Text>{joblist?.total}</Text>
       </Flex>
       <Flex flex={1} overflow={'hidden'}>
         <Box flex={'0 0 300px'} overflowY={'auto'} borderRight={'1px solid #EFF0F1'} pt="14px">
-          {data?.history?.map((jobItem, i) => (
+          {joblist?.history?.map((jobItem, i) => (
             <Box
               cursor={'pointer'}
               px="20px"
@@ -76,7 +76,7 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
                   left: '-1.5px',
                   w: '2px',
                   h: '100%',
-                  backgroundColor: `${i === data.history.length - 1 ? 'transparent' : '#DCE7F1'}`
+                  backgroundColor: `${i === joblist.history.length - 1 ? 'transparent' : '#DCE7F1'}`
                 }}
                 _before={{
                   content: '""',
@@ -89,11 +89,23 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
                   backgroundColor: '#fff',
                   border: '2px solid',
                   zIndex: 2,
-                  borderColor: jobItem.status ? '#33BABB' : '#FF8492'
+                  borderColor:
+                    jobItem.status === 'succeeded'
+                      ? '#33BABB'
+                      : jobItem.status === 'failed'
+                      ? '#FF8492'
+                      : '#FF8492'
                 }}
               >
                 <Flex mb={2} alignItems={'center'} fontWeight={'bold'}>
-                  {jobItem.status ? t('base.Success') : t('Pause Error')}, {t('Executed')}
+                  {jobItem.status === 'succeeded'
+                    ? t('base.Success')
+                    : jobItem.status === 'failed'
+                    ? t('Pause Error')
+                    : jobItem.status === 'active'
+                    ? t('Executing')
+                    : t('Running')}
+                  , {t('Executed')}
                   {jobItem.startTime}
                 </Flex>
                 <Box color={'blackAlpha.700'}>
@@ -122,7 +134,7 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
             <Text>
               {t('Log')} (pod: {ActivePod?.podName})
             </Text>
-            <Text mt="12px">{ActivePod?.logs}</Text>
+            <Text mt="12px">{logs}</Text>
           </Flex>
         ) : (
           <Flex
