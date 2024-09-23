@@ -99,7 +99,6 @@ export type JobList = {
     uid: string | undefined;
     name: string | undefined;
     events: JobEvent[];
-    logs: string;
     podName: string;
     startTimeTimestamp: number;
   }[];

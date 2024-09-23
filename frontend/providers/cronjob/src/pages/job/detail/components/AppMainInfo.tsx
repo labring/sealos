@@ -15,6 +15,7 @@ export default function AppBaseInfo({
 }) {
   const { t } = useTranslation();
   const [active, setActive] = useState(0);
+  const [logs, setLogs] = useState('');
   const ActivePod = useMemo(() => joblist?.history[active], [active, joblist]);
   useQuery(
     ['getPodLogs', ActivePod?.podName],
@@ -23,14 +24,15 @@ export default function AppBaseInfo({
       enabled: !!ActivePod?.podName,
       onSuccess(data) {
         if (ActivePod) {
-          ActivePod['logs'] = data || '';
+          setLogs(data || '');
         }
       },
       onError(err) {
         if (ActivePod) {
-          ActivePod['logs'] = typeof err === 'string' ? err : '';
+          setLogs(typeof err === 'string' ? err : '');
         }
-      }
+      },
+      refetchInterval: !ActivePod?.status ? 1000 : false
     }
   );
 
@@ -120,7 +122,7 @@ export default function AppBaseInfo({
             <Text>
               {t('Log')} (pod: {ActivePod?.podName})
             </Text>
-            <Text mt="12px">{ActivePod?.logs}</Text>
+            <Text mt="12px">{logs}</Text>
           </Flex>
         ) : (
           <Flex

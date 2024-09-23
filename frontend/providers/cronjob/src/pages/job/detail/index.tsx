@@ -26,7 +26,8 @@ export default function DetailPage({ appName }: { appName: string }) {
   } = useQuery(['getJobListEventsAndLogs', appName], () => getJobListEventsAndLogs(appName), {
     onError(err) {
       console.log(err);
-    }
+    },
+    refetchInterval: 3000
   });
 
   const { refetch: refetchJobDetail } = useQuery(
