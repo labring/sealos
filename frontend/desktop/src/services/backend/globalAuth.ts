@@ -5,8 +5,19 @@ import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
-import { ProviderType, User, UserStatus } from 'prisma/global/generated/client';
+import {
+  PrismaClient,
+  ProviderType,
+  TaskStatus,
+  User,
+  UserStatus
+} from 'prisma/global/generated/client';
 import { enableSignUp } from '../enable';
+
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -87,6 +98,27 @@ export async function signInByPassword({ id, password }: { id: string; password:
   };
 }
 
+async function createNewUserTasks(tx: TransactionClient, userUid: string) {
+  const newUserTasks = await tx.task.findMany({
+    where: {
+      isNewUserTask: true,
+      isActive: true
+    }
+  });
+
+  for (const task of newUserTasks) {
+    await tx.userTask.create({
+      data: {
+        userUid,
+        taskId: task.id,
+        status: TaskStatus.NOT_COMPLETED,
+        rewardStatus: 'PENDING',
+        completedAt: new Date(0)
+      }
+    });
+  }
+}
+
 async function signUp({
   provider,
   id,
@@ -127,6 +159,8 @@ async function signUp({
           }
         });
       }
+
+      await createNewUserTasks(tx, user.uid);
 
       return { user };
     });
@@ -180,6 +214,8 @@ export async function signUpByPassword({
           }
         });
       }
+
+      await createNewUserTasks(tx, user.uid);
 
       return { user };
     });
@@ -244,6 +280,7 @@ export const getGlobalToken = async ({
       }
     }
   });
+
   if (provider === ProviderType.PASSWORD) {
     if (!password) {
       return null;

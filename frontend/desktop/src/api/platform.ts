@@ -8,6 +8,7 @@ import {
   CommonClientConfigType,
   TNotification
 } from '@/types';
+import { UserTask } from '@/types/task';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
@@ -24,12 +25,22 @@ export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid
   });
 };
 
+// Deprecated
 export const updateDesktopGuide = () => {
   return request.post('/api/account/updateGuide');
 };
 
+// Deprecated
 export const getUserAccount = () => {
   return request.get<AccountCRD>('/api/account/getAccount');
+};
+
+export const getUserTasks = () => {
+  return request.get<UserTask[]>('/api/account/getTasks');
+};
+
+export const updateTask = (taskId: string) => {
+  return request.post('/api/account/updateTask', { taskId });
 };
 
 export const getAppConfig = () => {

@@ -109,6 +109,7 @@ export default function Apps() {
           gap={`${gridSpacing}px`}
           templateColumns={`repeat(auto-fill, minmax(${appWidth}px, 1fr))`}
           templateRows={`repeat(auto-fit, ${appHeight}px)`}
+          className="apps-container"
         >
           {paginatedApps &&
             paginatedApps.map((item: TApp, index) => (

@@ -25,6 +25,7 @@ const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
     return null;
   }
 };
+
 export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
   verifyToken<AccessTokenPayload>(header).then(
     (payload) => {
@@ -36,6 +37,7 @@ export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
     },
     (err) => null
   );
+
 export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {

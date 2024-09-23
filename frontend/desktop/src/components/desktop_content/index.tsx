@@ -1,6 +1,6 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-// import useDriver from '@/hooks/useDriver';
+import useDriver from '@/hooks/useDriver';
 import { LicenseFrontendKey } from '@/constants/account';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
@@ -104,6 +104,8 @@ export default function Desktop(props: any) {
     },
     [apps, openApp, runningInfo, setToHighestLayerById]
   );
+
+  const { UserGuide, showGuide } = useDriver({ openDesktopApp });
 
   useEffect(() => {
     const cleanup = createMasterAPP();
@@ -234,7 +236,7 @@ export default function Desktop(props: any) {
           </Box>
         </Box>
 
-        {/* {showGuide ? (
+        {showGuide ? (
           <>
             <UserGuide />
             <Box
@@ -243,13 +245,13 @@ export default function Desktop(props: any) {
               left="0"
               width="100%"
               height="100%"
-              backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
-              zIndex="11000" // 保证蒙层在最上层
+              backgroundColor="rgba(0, 0, 0, 0.7)"
+              zIndex="11000"
             />
           </>
         ) : (
           <></>
-        )} */}
+        )}
       </Flex>
 
       {isAppBar ? <AppDock /> : <FloatButton />}
