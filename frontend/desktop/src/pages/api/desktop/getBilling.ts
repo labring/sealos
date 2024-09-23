@@ -1,4 +1,4 @@
-import { verifyAccessToken } from '@/services/backend/auth';
+import { generateBillingToken, verifyAccessToken } from '@/services/backend/auth';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { K8sApi } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
@@ -31,16 +31,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const base = global.AppConfig.desktop.auth.billingUrl as string;
     const consumptionUrl = base + '/account/v1alpha1/costs/all-region-consumption';
+    const billingToken = generateBillingToken({
+      userUid: payload.userUid,
+      userId: payload.userId
+    });
+    const headers = {
+      Authorization: `Bearer ${billingToken}`,
+      'Content-Type': 'application/json'
+    };
 
     const results: ConsumptionResult[] = await Promise.all([
       (
         await fetch(consumptionUrl, {
           method: 'POST',
+          headers,
           body: JSON.stringify({
             endTime: currentTime,
-            kubeConfig: realKc,
-            // appType: '',
-            // namespace,
             startTime: timeOneMonthAgo
           })
         })
@@ -48,17 +54,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       (
         await fetch(consumptionUrl, {
           method: 'POST',
+          headers,
           body: JSON.stringify({
             endTime: currentTime,
-            kubeConfig: realKc,
-            // appType: '',
-            // namespace,
             startTime: time24HoursAgo
           })
         })
       ).json()
     ]);
-
     jsonRes(res, {
       data: {
         prevMonthTime: results[0].allAmount || 0,

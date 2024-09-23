@@ -31,7 +31,7 @@ export default function Resource() {
     regionUid,
     appType: getAppType(),
     appName: getAppName(),
-    namespace: getNamespace(),
+    namespace: getNamespace()?.[0] || '',
     page,
     pageSize
   };

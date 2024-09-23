@@ -1,31 +1,14 @@
-import { authSession } from '@/service/backend/auth';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const base = global.AppConfig.costCenter.components.accountService.url as string;
-    if (!base) throw Error("can't ot get alapha1");
-    const kc = await authSession(req.headers);
+    const client = await makeAPIClientByHeader(req, res);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/account', {});
 
-    // get user account payment amount
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(res, { code: 401, message: 'user null' });
-    }
-    const body = JSON.stringify({
-      kubeConfig: kc.exportConfig()
-      // owner: user.name
-    });
-    const response = await fetch(base + '/account/v1alpha1/account', {
-      method: 'POST',
-      body,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const data = (await response.clone().json()) as {
+    const data = response.data as {
       account?: {
         UserUID: string;
         ActivityBonus: number;
@@ -36,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         DeductionBalance: number;
       };
     };
-    if (!kc || !data?.account) return jsonRes(res, { code: 404, message: 'user is not found' });
+    if (!data?.account) return jsonRes(res, { code: 404, message: 'user is not found' });
     return jsonRes<{ balance: number; deductionBalance: number }>(res, {
       data: {
         balance: data.account.Balance,

@@ -153,7 +153,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 					return err
 				}
 				renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), targetDir)
-				return execer.CmdAsync(master0, envProcessor.WrapShell(master0, renderCommand))
+				return execer.CmdAsync(master0, stringsutil.RenderShellWithEnv(renderCommand, mountInfo.Env))
 			}
 			return nil
 		})

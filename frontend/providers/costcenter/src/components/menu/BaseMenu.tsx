@@ -19,6 +19,8 @@ export default function BaseMenu({
   itemIdx,
   innerWidth = 'auto',
   neeReset = false,
+  triggerRender,
+  itemRender,
   ...props
 }: {
   isDisabled: boolean;
@@ -26,6 +28,8 @@ export default function BaseMenu({
   itemIdx: number;
   itemlist: string[];
   neeReset?: boolean;
+  triggerRender?: (props: { text: string; idx: number }) => JSX.Element;
+  itemRender?: (props: { text: string; idx: number }) => JSX.Element;
   innerWidth?: ButtonProps['width'];
 } & FlexProps) {
   const { isOpen, onClose, onOpen } = useDisclosure();
@@ -75,7 +79,11 @@ export default function BaseMenu({
             }}
             borderRadius={'6px'}
           >
-            {itemlist[itemIdx]}
+            {itemlist.length === 0
+              ? ''
+              : triggerRender
+              ? triggerRender({ text: itemlist[itemIdx], idx: itemIdx })
+              : itemlist[itemIdx]}
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -118,7 +126,7 @@ export default function BaseMenu({
               textOverflow={'ellipsis'}
               onClick={() => onClick(idx)}
             >
-              {v}
+              {itemRender ? itemRender({ text: v, idx }) : v}
             </Button>
           ))}
         </PopoverContent>

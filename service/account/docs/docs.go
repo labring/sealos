@@ -31,17 +31,6 @@ const docTemplate = `{
                     "Account"
                 ],
                 "summary": "Get user account",
-                "parameters": [
-                    {
-                        "description": "auth request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/helper.Auth"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "successfully retrieved user account",
@@ -67,62 +56,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/v1alpha1/basic-cost-distribution": {
-            "post": {
-                "description": "Get basic cost distribution",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "BasicCostDistribution"
-                ],
-                "summary": "Get basic cost distribution",
-                "parameters": [
-                    {
-                        "description": "Basic cost distribution request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/helper.GetCostAppListReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successfully get basic cost distribution",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "failed to parse basic cost distribution request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "authenticate error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "failed to get basic cost distribution",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/account/v1alpha1/check-permission": {
             "post": {
                 "description": "Check permission",
@@ -136,17 +69,6 @@ const docTemplate = `{
                     "Permission"
                 ],
                 "summary": "Check permission",
-                "parameters": [
-                    {
-                        "description": "Check permission request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "successfully check permission",
@@ -313,6 +235,62 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "failed to get app type list",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/cost-basic-distribution": {
+            "post": {
+                "description": "Get basic cost distribution",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BasicCostDistribution"
+                ],
+                "summary": "Get basic cost distribution",
+                "parameters": [
+                    {
+                        "description": "Basic cost distribution request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetCostAppListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get basic cost distribution",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse basic cost distribution request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get basic cost distribution",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -676,7 +654,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
+                            "$ref": "#/definitions/helper.UserTimeRangeReq"
                         }
                     }
                 ],
@@ -732,7 +710,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserBaseReq"
+                            "$ref": "#/definitions/helper.UserTimeRangeReq"
                         }
                     }
                 ],
@@ -2085,7 +2063,7 @@ const docTemplate = `{
                 }
             }
         },
-        "helper.UserBaseReq": {
+        "helper.UserTimeRangeReq": {
             "type": "object",
             "properties": {
                 "endTime": {

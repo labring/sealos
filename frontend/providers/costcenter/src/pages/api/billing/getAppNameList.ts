@@ -1,19 +1,10 @@
-import { authSession } from '@/service/backend/auth';
-import { CRDMeta, GetCRD, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { ApplyYaml } from '@/service/backend/kubernetes';
-import { formatISO } from 'date-fns';
-import * as yaml from 'js-yaml';
-import { getRegionByUid, makeAPIURL } from '@/service/backend/region';
 import { AppListItem } from '@/types/app';
+import { formatISO } from 'date-fns';
+import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(resp, { code: 403, message: 'user null' });
-    }
     const {
       endTime = formatISO(new Date(), {
         representation: 'complete'
@@ -21,14 +12,12 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       startTime = formatISO(new Date(), {
         representation: 'complete'
       }),
-      regionUid,
       appType,
       appName,
       namespace
     } = req.body as {
       endTime?: Date;
       startTime?: Date;
-      regionUid: string;
       appType: string;
       appName: string;
       namespace: string;
@@ -43,24 +32,20 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    const region = await getRegionByUid(regionUid);
-    const url = makeAPIURL(region, '/account/v1alpha1/cost-app-list');
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+
     const bodyRaw = {
       endTime,
-      kubeConfig: kc.exportConfig(),
       startTime,
       appType,
       appName,
       namespace
     };
-    const body = JSON.stringify(bodyRaw);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      body
-    });
-    const res = await response.json();
-    if (!response.ok) {
+    const response = await client.post('/account/v1alpha1/cost-app-list', bodyRaw);
+    const res = await response.data;
+    if (response.status !== 200) {
       console.log(res);
       throw Error('get applist error');
     }
@@ -72,8 +57,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     };
     return jsonRes(resp, {
       code: 200,
-      data,
-      message: res
+      data
     });
   } catch (error) {
     console.log(error);

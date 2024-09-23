@@ -1,6 +1,6 @@
 import SwitchPage from '@/components/billing/SwitchPage';
+import { END_TIME, START_TIME } from '@/constants/payment';
 import request from '@/service/request';
-import useOverviewStore from '@/stores/overview';
 import { ApiResp, InvoiceListData } from '@/types';
 import { TabPanel } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +14,8 @@ export default function RecordPanel({ toInvoiceDetail }: { toInvoiceDetail: () =
   const [totalPage, setTotalPage] = useState(1);
   const [totalItem, setTotalItem] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const { startTime, endTime } = useOverviewStore();
+  const startTime = START_TIME;
+  const endTime = END_TIME;
   const queryBody = {
     startTime,
     endTime,

@@ -2,7 +2,6 @@ package helper
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/labring/sealos/service/account/common"
@@ -92,7 +91,7 @@ type ConsumptionRecordReq struct {
 	AppName string `json:"appName,omitempty" bson:"appName" example:"app"`
 }
 
-type UserBaseReq struct {
+type UserTimeRangeReq struct {
 
 	// @Summary Start and end time for the request
 	// @Description Start and end time for the request
@@ -111,7 +110,7 @@ type AppCostsReq struct {
 	// @JSONSchema
 	OrderID string `json:"orderID,omitempty" bson:"orderID" example:"order-id-1"`
 
-	UserBaseReq `json:",inline" bson:",inline"`
+	UserTimeRangeReq `json:",inline" bson:",inline"`
 
 	// @Summary Namespace
 	// @Description Namespace
@@ -142,7 +141,7 @@ type GetPaymentReq struct {
 	// @Summary Invoiced
 	// @Description Invoiced
 	// @JSONSchema
-	Invoiced bool `json:"invoiced,omitempty" bson:"invoiced" example:"true"`
+	Invoiced *bool `json:"invoiced,omitempty" bson:"invoiced" example:"true"`
 
 	// @Summary Authentication information
 	// @Description Authentication information
@@ -365,13 +364,12 @@ func ParseConsumptionRecordReq(c *gin.Context) (*ConsumptionRecordReq, error) {
 	return consumptionRecord, nil
 }
 
-func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
-	userCosts := &UserBaseReq{}
+func ParseUserTimeRangeReq(c *gin.Context) (*UserTimeRangeReq, error) {
+	userCosts := &UserTimeRangeReq{}
 	if err := c.ShouldBindJSON(userCosts); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&userCosts.TimeRange)
-	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
 
@@ -395,12 +393,11 @@ func ParseAppCostsReq(c *gin.Context) (*AppCostsReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&userCosts.TimeRange)
-	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
 
 type GetTransferRecordReq struct {
-	UserBaseReq `json:",inline" bson:",inline"`
+	UserTimeRangeReq `json:",inline" bson:",inline"`
 
 	// 0: all, 1: in, 2: out
 	// @Summary Type of the request
@@ -426,7 +423,6 @@ func ParseGetTransferRecordReq(c *gin.Context) (*GetTransferRecordReq, error) {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	setDefaultTimeRange(&transferReq.TimeRange)
-	transferReq.Auth.Owner = strings.TrimPrefix(transferReq.Auth.Owner, "ns-")
 	return transferReq, nil
 }
 

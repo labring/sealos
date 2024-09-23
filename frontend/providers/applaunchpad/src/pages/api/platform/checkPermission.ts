@@ -7,14 +7,8 @@ import * as k8s from '@kubernetes/client-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { appName, resourceType } = req.query as {
-      appName: string;
-      resourceType: 'deploy' | 'sts';
-    };
-
-    if (!appName || !resourceType) {
-      throw new Error('appName or resourceType is empty');
-    }
+    const { appName } = req.query as { appName: string };
+    if (!appName) throw new Error('appName is empty');
 
     const { k8sApp, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
@@ -32,7 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH }
     };
 
-    if (resourceType === 'deploy') {
+    let deploymentUpdated = false;
+
+    try {
       await k8sApp.patchNamespacedDeployment(
         appName,
         namespace,
@@ -44,7 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         undefined,
         options
       );
-    } else if (resourceType === 'sts') {
+      deploymentUpdated = true;
+    } catch (deployErr: any) {
+      if (deployErr?.response?.statusCode !== 404) {
+        throw deployErr;
+      }
+    }
+
+    if (!deploymentUpdated) {
       await k8sApp.patchNamespacedStatefulSet(
         appName,
         namespace,
@@ -58,22 +61,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
     }
 
-    jsonRes(res, {
-      code: 200,
-      data: 'success'
-    });
+    jsonRes(res, { code: 200, data: 'success' });
   } catch (err: any) {
     if (err?.body?.code === 403 && err?.body?.message.includes('40001')) {
       return jsonRes(res, {
         code: 200,
         data: 'insufficient_funds',
-        message: err?.body?.message
+        message: err.body.message
       });
     }
 
     jsonRes(res, {
       code: 500,
-      error: err?.body
+      error: err?.body || err?.message
     });
   }
 }

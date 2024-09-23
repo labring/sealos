@@ -40,6 +40,8 @@ spec:
           env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: DESKTOP_DOMAIN
+              value: {{ .cloudDomain }}
             - name: SEALOS_PORT
               value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
             - name: MONITOR_URL

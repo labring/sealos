@@ -288,5 +288,11 @@
   "upload_dump_file": "Upload Dump File",
   "use_docs": "Documentation",
   "version": "Version",
-  "yaml_file": "YAML"
+  "yaml_file": "YAML",
+  "streaming_logs": "Streaming logs",
+  "within_5_minutes": "Within 5 minutes",
+  "within_1_hour": "Within 1 hour",
+  "within_1_day": "Within 1 day",
+  "terminated_logs": "Terminated logs",
+  "no_logs_for_now": "No logs for now"
 }

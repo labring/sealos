@@ -23,6 +23,12 @@ spec:
   description: go1.22.5
   config:
     image: ghcr.io/cbluebird/devbox/go1.22.5:2f4067
+    workingDir: /home/sealos/project
+    releaseCommand:
+      - /bin/bash
+      - -c
+    releaseArgs:
+      - /home/sealos/project/entrypoint.sh
   category:
     - ubuntu
     - go

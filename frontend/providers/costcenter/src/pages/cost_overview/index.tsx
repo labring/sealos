@@ -1,18 +1,18 @@
-import useNotEnough from '@/hooks/useNotEnough';
-import { Box, Flex, useToast } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { MutableRefObject, createContext, useEffect, useRef } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
+import GiftCode from '@/components/cost_overview/components/GiftCode';
 import UserCard from '@/components/cost_overview/components/user';
 import { Trend } from '@/components/cost_overview/trend';
 import { TrendBar } from '@/components/cost_overview/trendBar';
-import { useRouter } from 'next/router';
+import useNotEnough from '@/hooks/useNotEnough';
+import request from '@/service/request';
 import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types';
-import request from '@/service/request';
+import { Box, Flex, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import GiftCode from '@/components/cost_overview/components/GiftCode';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useRouter } from 'next/router';
+import { MutableRefObject, createContext, useEffect, useRef } from 'react';
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
 });
@@ -55,7 +55,10 @@ function CostOverview() {
   const { data: balance_raw } = useQuery({
     queryKey: ['getAccount'],
     queryFn: () =>
-      request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
+      request.post<any, ApiResp<{ deductionBalance: number; balance: number }>>(
+        '/api/account/getAmount'
+      ),
+    staleTime: 0
   });
 
   let rechargAmount = balance_raw?.data?.balance || 0;

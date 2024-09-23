@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -212,12 +211,10 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				logger.Error(err, "get latest devbox failed")
 				return err
 			}
-			// compare devbox status with latestDevbox status
-			latestDevbox.Status.Phase = devbox.Status.Phase
-			latestDevbox.Status.DevboxPodPhase = devbox.Status.DevboxPodPhase
-			// merge commit history, up coming commit history will be added to the latest devbox
+			// update devbox status with latestDevbox status
+			logger.Info("updating devbox status")
 			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
-			latestDevbox.Status.CommitHistory = helper.MergeCommitHistory(devbox, latestDevbox)
+			helper.UpdateDevboxStatus(devbox, latestDevbox)
 			return r.Status().Update(ctx, latestDevbox)
 		}); err != nil {
 			logger.Error(err, "sync pod failed")
@@ -257,6 +254,12 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
+			// check pod container size, if it is 0, it means the pod is not running, return an error
+			if len(pod.Status.ContainerStatuses) == 0 {
+				devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
+				return fmt.Errorf("pod container size is 0")
+			}
+			devbox.Status.State = pod.Status.ContainerStatuses[0].State
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
@@ -298,6 +301,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 1:
 			pod := &podList.Items[0]
 			devbox.Status.DevboxPodPhase = pod.Status.Phase
+			// update state to empty since devbox is stopped
+			devbox.Status.State = corev1.ContainerState{}
 			// update commit predicated status by pod status, this should be done once find a pod
 			helper.UpdatePredicatedCommitStatus(devbox, pod)
 			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
@@ -438,6 +443,7 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 		return err
 	}
 	// update commit history status because pod has been deleted
+	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
 	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
@@ -451,6 +457,7 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv
 	}
 	// update commit history status because pod has been deleted
 	helper.UpdateCommitHistory(devbox, pod, true)
+	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
 	return nil
 }
 
@@ -576,19 +583,9 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&devboxv1alpha1.Devbox{}).
-		Owns(&corev1.Pod{}).
-		Owns(&corev1.Service{}).
-		Watches(
-			&corev1.Pod{},
-			handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &devboxv1alpha1.Devbox{}),
-			builder.WithPredicates(predicate.And(
-				predicate.ResourceVersionChangedPredicate{},
-				predicate.NewPredicateFuncs(func(object client.Object) bool {
-					pod := object.(*corev1.Pod)
-					return pod.Labels[label.AppManagedBy] == label.DefaultManagedBy && pod.Labels[label.AppPartOf] == devboxv1alpha1.DevBoxPartOf
-				}),
-			)),
-		).
+		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
+		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }

@@ -87,6 +87,7 @@
   "Stripe Success": "pay with Stripe successfully",
   "Stripe Cancel": "cancel to pay with Stripe",
   "GPU Unit": "Card",
+	"port_unit": "",
   "Gpu valuation": "GPU Price Table",
   "common valuation": "Basic Valuation",
   "Billing Details": "Billing Details",
@@ -224,5 +225,13 @@
   "Gift code must be exactly 24 characters long": "Gift code must be exactly 24 characters long",
   "Gift code can only contain letters and numbers": "Gift code can only contain letters and numbers",
   "Failed to redeem Gift Code": "Failed to redeem",
-  "Gift Code Redeemed Successfully": "Redemption successful! \nRecharged to your balance."
+  "Gift Code Redeemed Successfully": "Redemption successful! \nRecharged to your balance.",
+  "price_calculator": "price calculator",
+  "amount": "amount",
+  "quantity": "quantity",
+  "time": "time",
+  "duration": "duration",
+  "GPU": "GPU",
+  "usage": "usage",
+  "resource": "resource"
 }

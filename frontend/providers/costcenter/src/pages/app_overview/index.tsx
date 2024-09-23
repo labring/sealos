@@ -1,41 +1,24 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Grid,
-  GridItem,
-  Heading,
-  HStack,
-  Img,
-  Tab,
-  TabList,
-  TabPanels,
-  Tabs,
-  Text,
-  useMediaQuery
-} from '@chakra-ui/react';
-import { createContext, useEffect, useMemo, useState } from 'react';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
 import linechart_icon from '@/assert/lineChart.svg';
-import NamespaceMenu from '@/components/menu/NamespaceMenu';
-import useBillingStore from '@/stores/billing';
+import AmountDisplay from '@/components/billing/AmountDisplay';
+import { BillingTrend } from '@/components/billing/BillingTrend';
 import SelectRange from '@/components/billing/selectDateRange';
-import RegionMenu from '@/components/menu/RegionMenu';
-import CycleMenu from '@/components/menu/CycleMenu';
+import SwitchPage from '@/components/billing/SwitchPage';
 import AppNameMenu from '@/components/menu/AppNameMenu';
 import AppTypeMenu from '@/components/menu/AppTypeMenu';
-import request from '@/service/request';
-import { ApiResp, AppOverviewBilling } from '@/types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import useOverviewStore from '@/stores/overview';
-import { AppListItem } from '@/types/app';
-import { AppOverviewTable } from '@/components/table/AppOverviewTable';
-import AmountDisplay from '@/components/billing/AmountDisplay';
-import SwitchPage from '@/components/billing/SwitchPage';
-import { BillingTrend } from '@/components/billing/BillingTrend';
+import CycleMenu from '@/components/menu/CycleMenu';
+import NamespaceMenu from '@/components/menu/NamespaceMenu';
+import RegionMenu from '@/components/menu/RegionMenu';
 import { Refresh } from '@/components/Refresh';
-import useAppTypeStore from '@/stores/appType';
+import { AppOverviewTable } from '@/components/table/AppOverviewTable';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
+import { ApiResp, AppOverviewBilling } from '@/types';
+import { Box, Flex, Heading, HStack, Img, Text, useMediaQuery } from '@chakra-ui/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useMemo, useState } from 'react';
 
 function Billing() {
   const { t } = useTranslation();
@@ -48,13 +31,15 @@ function Billing() {
   const [totalPage, setTotalPage] = useState(1);
   const [totalItem, setTotalItem] = useState(0);
   const [pageSize, setPageSize] = useState(3);
+  const namespace = getNamespace()?.[0] || '';
+  // console.log('namespace', namespace)
   const queryBody = {
     endTime,
     startTime,
     regionUid,
     appType: getAppType(),
     appName: getAppName(),
-    namespace: getNamespace()?.[0] || '',
+    namespace,
     page,
     pageSize
   };

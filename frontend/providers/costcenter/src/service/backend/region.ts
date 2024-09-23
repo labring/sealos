@@ -1,5 +1,8 @@
 import { Region } from '@/types/region';
-
+import axios from 'axios';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { AccessTokenPayload, generateBillingToken, verifyInternalToken } from '../auth';
+import { jsonRes } from './response';
 export async function getRegionList() {
   const regionUrl =
     global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/regions';
@@ -29,10 +32,63 @@ export async function getRegionByUid(regionUid?: string) {
   }
   return regions[currentRegionIdx];
 }
-export function makeAPIURL(region: Region | undefined | null, api: string) {
-  const baseUrl = region?.accountSvc
+const accountServiceCient = axios.create({
+  baseURL: 'https://open.feishu.cn/open-apis',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept-Encoding': 'gzip,deflate,compress'
+  }
+});
+export async function makeRegionListAPIClientByHeader(req: NextApiRequest, res: NextApiResponse) {
+  const token = req.body.internalToken;
+  const payload = await verifyInternalToken(token);
+  if (!payload) {
+    jsonRes(res, { code: 401, message: 'Authorization failed' });
+    return null;
+  }
+  const regionList = await getRegionList();
+  const clientList = regionList?.map((region) => {
+    const client = makeAPIClient(region, payload);
+    return client;
+  });
+  return clientList;
+}
+export function makeAPIClient(region: Region | undefined | null, payload?: AccessTokenPayload) {
+  const baseURL = region?.accountSvc
     ? `http://${region?.accountSvc}`
     : global.AppConfig.costCenter.components.accountService.url;
-  const url = baseUrl + api;
-  return url;
+  // console.log(baseURL);
+  if (!payload) {
+    return axios.create({
+      baseURL,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept-Encoding': 'gzip,deflate,compress'
+      }
+    });
+  }
+  const token = generateBillingToken({
+    userUid: payload.userUid,
+    userId: payload.userId
+  });
+  return axios.create({
+    baseURL,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept-Encoding': 'gzip,deflate,compress'
+    }
+  });
+}
+export async function makeAPIClientByHeader(req: NextApiRequest, res: NextApiResponse) {
+  const token = req.body.internalToken;
+  const regionUid = req.body.regionUid;
+  const payload = await verifyInternalToken(token);
+  if (!payload) {
+    jsonRes(res, { code: 401, message: 'Authorization failed' });
+    return null;
+  }
+  const region = await getRegionByUid(regionUid);
+  const client = makeAPIClient(region, payload);
+  return client;
 }

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -29,6 +30,11 @@ func RegisterPayRouter() {
 	if err := dao.InitDB(); err != nil {
 		log.Fatalf("Error initializing database: %v", err)
 	}
+	defer func() {
+		if err := dao.DBClient.Disconnect(context.Background()); err != nil {
+			log.Fatalf("Error disconnecting database: %v", err)
+		}
+	}()
 	// /account/v1alpha1/{/namespaces | /properties | {/costs | /costs/recharge | /costs/consumption | /costs/properties}}
 	router.Group(helper.GROUP).
 		POST(helper.GetHistoryNamespaces, api.GetBillingHistoryNamespaceList).

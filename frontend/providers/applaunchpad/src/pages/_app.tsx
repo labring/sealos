@@ -2,7 +2,7 @@ import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
+import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -52,7 +52,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const response = createSealosApp();
     (async () => {
-      const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
+      const { FORM_SLIDER_LIST_CONFIG, DESKTOP_DOMAIN } = await (() => loadInitData())();
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
       loadUserSourcePrice();
 
@@ -69,7 +69,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
           openConfirm(() => {
-            window.open(`https://${SEALOS_DOMAIN}`, '_self');
+            window.open(`https://${DESKTOP_DOMAIN}`, '_self');
           })();
         }
       }
@@ -137,10 +137,10 @@ const App = ({ Component, pageProps }: AppProps) => {
           e: MessageEvent<{
             type?: string;
             name?: string;
-            formData?: AppEditSyncedFields;
+            formData?: string;
           }>
         ) => {
-          const whitelist = [`https://${SEALOS_DOMAIN}`];
+          const whitelist = [`https://${DESKTOP_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
@@ -154,10 +154,12 @@ const App = ({ Component, pageProps }: AppProps) => {
                     name: name
                   }
                 });
-              } else if (formData?.imageName) {
+              } else if (formData) {
                 router.push({
                   pathname: '/app/edit',
-                  query: formData
+                  query: {
+                    formData: formData
+                  }
                 });
               }
             }

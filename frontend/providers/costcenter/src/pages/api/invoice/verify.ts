@@ -1,8 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '@/service/backend/response';
 import { checkCode } from '@/service/backend/db/verifyCode';
-import { InvoicePayload, RechargeBillingItem, ReqGenInvoice } from '@/types';
-import { authSession } from '@/service/backend/auth';
+import { makeAPIClientByHeader } from '@/service/backend/region';
+import { jsonRes } from '@/service/backend/response';
 import {
   getInvoicePayments,
   sendToBot,
@@ -10,6 +8,7 @@ import {
   sendToWithdrawBot,
   updateTenantAccessToken
 } from '@/service/sendToBot';
+import { InvoicePayload, RechargeBillingItem, ReqGenInvoice } from '@/types';
 import {
   isValidBANKAccount,
   isValidCNTaxNumber,
@@ -17,20 +16,12 @@ import {
   isValidPhoneNumber,
   retrySerially
 } from '@/utils/tools';
-import { makeAPIURL } from '@/service/backend/region';
-import { AxiosError } from 'axios';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!global.AppConfig.costCenter.invoice.enabled) {
       throw new Error('invoice is not enabled');
-    }
-    const kc = await authSession(req.headers);
-
-    // get user account payment amount
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(res, { code: 401, message: 'user null' });
     }
     await updateTenantAccessToken();
     const { detail, contract, billings } = req.body as ReqGenInvoice;
@@ -84,30 +75,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     };
     const bodyRaw = {
-      kubeConfig: kc.exportConfig(),
+      // kubeConfig: kc.exportConfig(),
       paymentIDList: billings.map((item) => item.ID),
       detail: JSON.stringify(invoiceDetail)
     };
-    const message_id = await retrySerially<string>(()=>sendToBot({
-      invoiceDetail,
-      payments: billings
-    }), 3) as string;
+    const message_id = (await retrySerially<string>(
+      () =>
+        sendToBot({
+          invoiceDetail,
+          payments: billings
+        }),
+      3
+    )) as string;
     if (!message_id) {
       console.log('sendMessage Error');
       throw Error('');
     }
-    const url = makeAPIURL(null, '/account/v1alpha1/invoice/apply');
-    const result = await fetch(url, {
-      method: 'post',
-      body: JSON.stringify(bodyRaw)
-    });
-    const invoiceRes = (await result.json()) as {
+    const client = await makeAPIClientByHeader(req, res);
+    if (!client) return;
+    const result = await client.post('/account/v1alpha1/invoice/apply', bodyRaw);
+    const invoiceRes = result.data as {
       data: {
         invoice: InvoicePayload;
         payments: RechargeBillingItem[];
       };
     };
-    if (!result.ok) {
+    if (result.status !== 200) {
       console.log(invoiceRes);
       await sendToWithdrawBot({ message_id });
       if (result.status === 403)
@@ -122,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw new Error('Failed to apply for the invoice.');
       }
     }
-		
+
     const invoice = invoiceRes.data.invoice;
     const payments = await getInvoicePayments(invoice.id);
     const botResult = await sendToUpdateBot({

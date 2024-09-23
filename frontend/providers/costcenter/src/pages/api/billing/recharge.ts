@@ -1,5 +1,5 @@
 import { authSession } from '@/service/backend/auth';
-import { makeAPIURL } from '@/service/backend/region';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -22,17 +22,16 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       });
     const queryRaw = {
       endTime,
-      kubeConfig: kc.exportConfig(),
+      // kubeConfig: kc.exportConfig(),
       startTime
     };
 
-    const rechagreUrl = makeAPIURL(null, '/account/v1alpha1/costs/recharge');
-    const response = await fetch(rechagreUrl, {
-      method: 'POST',
-      body: JSON.stringify(queryRaw)
-    });
-    const result = await response.json();
-    if (!response.ok) {
+    // const rechagreUrl = makeAPIClient(null, '/account/v1alpha1/costs/recharge');
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/costs/recharge', queryRaw);
+    const result = response.data;
+    if (response.status !== 200) {
       console.log(result);
       throw Error();
     }

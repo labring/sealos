@@ -1,20 +1,13 @@
-import { authSession } from '@/service/backend/auth';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { END_TIME, START_TIME } from '@/constants/payment';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
-import { BillingData, BillingSpec, RechargeBillingData, TransferType } from '@/types';
-
+import { TransferType } from '@/types';
+import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-    // get user account payment amount
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(resp, { code: 403, message: 'user null' });
-    }
     const {
-      endTime,
-      startTime,
+      endTime = END_TIME,
+      startTime = START_TIME,
       type = 0,
       orderID
     } = req.body as {
@@ -34,22 +27,17 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         message: 'endTime is invalid'
       });
     const data = {
-      kubeConfig: kc.exportConfig(),
-      owner: user.name,
       startTime,
       transferID: orderID,
       endTime,
-      namesapce: GetUserDefaultNameSpace(user.name),
       type
     };
 
-    const url =
-      global.AppConfig.costCenter.components.accountService.url + '/account/v1alpha1/get-transfer';
-    const response = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    if (!response.clone().ok)
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+    const response = await client.post('/account/v1alpha1/get-transfer', data);
+    if (response.status !== 200) {
+      console.log(response.data);
       return jsonRes(resp, {
         data: {
           transfer: [],
@@ -57,7 +45,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
           pageSize: 0
         }
       });
-    const res = await response.clone().json();
+    }
+    const res = response.data;
     return jsonRes(resp, {
       data: res.data
     });

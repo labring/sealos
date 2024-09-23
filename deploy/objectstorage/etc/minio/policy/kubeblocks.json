@@ -39,6 +39,26 @@
       "Resource": [
         "arn:aws:s3:::file-backup/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:DeleteObject",
+        "s3:GetBucketTagging",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:PutBucketTagging",
+        "s3:AbortMultipartUpload",
+        "s3:CreateBucket",
+        "s3:GetBucketLocation",
+        "s3:GetBucketPolicy",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListMultipartUploadParts",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::cockroaches-*"
+      ]
     }
   ]
 }

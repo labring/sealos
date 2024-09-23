@@ -12,6 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     if (!bucket) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
 
+    const domain = process.env.SEALOS_DOMAIN;
+
     const appName = `static-host-${bucket}`;
     const result = await appLanuchPadClient.post(
       '/createApp',
@@ -32,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               protocol: 'HTTP',
               openPublicDomain: true,
               publicDomain: appName,
-              customDomain: ''
+              customDomain: '',
+              domain: domain
             }
           ],
           envs: [],

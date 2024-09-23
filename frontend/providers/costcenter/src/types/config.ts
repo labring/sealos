@@ -67,7 +67,7 @@ export type AppConfigType = {
     auth: {
       jwt: {
         internal: string;
-        external: string;
+        billing: string;
       };
     };
   };
@@ -124,7 +124,7 @@ export var DefaultAppConfig: AppConfigType = {
     auth: {
       jwt: {
         internal: '',
-        external: ''
+        billing: ''
       }
     }
   },

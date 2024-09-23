@@ -35,7 +35,7 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 		return
 	}
 	appCosts, err := db.GetAppCosts(&helper.AppCostsReq{
-		UserBaseReq: helper.UserBaseReq{
+		UserTimeRangeReq: helper.UserTimeRangeReq{
 			TimeRange: helper.TimeRange{
 				StartTime: time.Now().Add(-24 * time.Hour * 30),
 				EndTime:   time.Now(),
@@ -465,7 +465,7 @@ func TestMongoDB_GetAppCost1(t *testing.T) {
 		}
 	}()
 	req := &helper.AppCostsReq{
-		UserBaseReq: helper.UserBaseReq{
+		UserTimeRangeReq: helper.UserTimeRangeReq{
 			TimeRange: helper.TimeRange{
 				StartTime: time.Now().Add(-24 * time.Hour * 30),
 				EndTime:   time.Now(),

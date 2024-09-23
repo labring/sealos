@@ -232,7 +232,7 @@ func (c *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 
 func (c *Cockroach) performTransferQuery(ops *types.GetTransfersReq, limit, offset int, start, end time.Time, transfers *[]types.Transfer, count *int64) error {
 	var err error
-	query := c.DB.Limit(limit).Offset(offset).
+	query := c.DB.Model(&types.Transfer{}).Limit(limit).Offset(offset).
 		Where("created_at BETWEEN ? AND ?", start, end)
 	countQuery := c.DB.Model(&types.Transfer{}).
 		Where("created_at BETWEEN ? AND ?", start, end)
@@ -244,13 +244,13 @@ func (c *Cockroach) performTransferQuery(ops *types.GetTransfersReq, limit, offs
 	} else {
 		switch ops.Type {
 		case types.TypeTransferIn:
-			userCondition = `"toUserUid" = ? AND "toUserId" = ?`
+			userCondition = `"toUserUid" = ? OR "toUserId" = ?`
 			args = append(args, ops.UID, ops.ID)
 		case types.TypeTransferOut:
-			userCondition = `"fromUserUid" = ? AND "fromUserId" = ?`
+			userCondition = `"fromUserUid" = ? OR "fromUserId" = ?`
 			args = append(args, ops.UID, ops.ID)
 		default:
-			userCondition = `("fromUserUid" = ? AND "fromUserId" = ?) OR ("toUserUid" = ? AND "toUserId" = ?)`
+			userCondition = `"fromUserUid" = ? OR "fromUserId" = ? OR "toUserUid" = ? OR "toUserId" = ?`
 			args = append(args, ops.UID, ops.ID, ops.UID, ops.ID)
 		}
 	}
@@ -258,6 +258,7 @@ func (c *Cockroach) performTransferQuery(ops *types.GetTransfersReq, limit, offs
 	query = query.Where(userCondition, args...)
 	countQuery = countQuery.Where(userCondition, args...)
 
+	query = query.Order("created_at DESC")
 	err = query.Find(transfers).Error
 	if err != nil {
 		return fmt.Errorf("failed to get transfer: %v", err)
@@ -652,7 +653,7 @@ func (c *Cockroach) GetPaymentWithID(paymentID string) (*types.Payment, error) {
 	return &payment, nil
 }
 
-func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq, invoiced bool) ([]types.Payment, types.LimitResp, error) {
+func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.LimitReq, invoiced *bool) ([]types.Payment, types.LimitResp, error) {
 	var payment []types.Payment
 	var total int64
 	var limitResp types.LimitResp
@@ -663,10 +664,10 @@ func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.Limi
 	}
 
 	queryPayment := types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}
-	if invoiced {
-		queryPayment.InvoicedAt = true
-	}
 	query := c.DB.Model(&types.Payment{}).Where(queryPayment)
+	if invoiced != nil {
+		query = query.Where("invoiced_at = ?", *invoiced)
+	}
 	if !req.StartTime.IsZero() {
 		query = query.Where("created_at >= ?", req.StartTime)
 	}

@@ -71,6 +71,10 @@ build: ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
 
+.PHONY: debug
+debug:
+	go run ./cmd/main.go --debug
+
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
 	mv bin/manager bin/controller-devbox-${TARGETARCH}

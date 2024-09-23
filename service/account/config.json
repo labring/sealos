@@ -1,0 +1,24 @@
+{
+  "localRegionDomain": "192.168.0.55.nip.io",
+  "invoiceToken": "c2VhbG9zQDEyMy4uLg==",
+  "regions": [
+    {
+      "domain": "192.168.0.55.nip.io",
+      "accountSvc": "account-api.192.168.0.55.nip.io",
+      "uid": "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a",
+      "name": {
+        "en": "region-a",
+        "zh": "区域A"
+      }
+    },
+    {
+      "domain": "192.168.0.75.nip.io",
+      "accountSvc": "account-api.192.168.0.75.nip.io",
+      "uid": "b373c0e9-7bf1-4d64-b863-bc604a4801ad",
+      "name": {
+        "en": "region-b",
+        "zh": "区域B"
+      }
+    }
+  ]
+}

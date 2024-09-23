@@ -608,7 +608,7 @@ definitions:
         example: user-123
         type: string
     type: object
-  helper.UserBaseReq:
+  helper.UserTimeRangeReq:
     properties:
       endTime:
         example: "2021-12-01T00:00:00Z"
@@ -674,13 +674,6 @@ paths:
       consumes:
       - application/json
       description: Get user account
-      parameters:
-      - description: auth request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/helper.Auth'
       produces:
       - application/json
       responses:
@@ -702,56 +695,11 @@ paths:
       summary: Get user account
       tags:
       - Account
-  /account/v1alpha1/basic-cost-distribution:
-    post:
-      consumes:
-      - application/json
-      description: Get basic cost distribution
-      parameters:
-      - description: Basic cost distribution request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/helper.GetCostAppListReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: successfully get basic cost distribution
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: failed to parse basic cost distribution request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: authenticate error
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: failed to get basic cost distribution
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get basic cost distribution
-      tags:
-      - BasicCostDistribution
   /account/v1alpha1/check-permission:
     post:
       consumes:
       - application/json
       description: Check permission
-      parameters:
-      - description: Check permission request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -874,6 +822,44 @@ paths:
       summary: Get app type list
       tags:
       - AppTypeList
+  /account/v1alpha1/cost-basic-distribution:
+    post:
+      consumes:
+      - application/json
+      description: Get basic cost distribution
+      parameters:
+      - description: Basic cost distribution request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetCostAppListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get basic cost distribution
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse basic cost distribution request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get basic cost distribution
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get basic cost distribution
+      tags:
+      - BasicCostDistribution
   /account/v1alpha1/cost-overview:
     post:
       consumes:
@@ -1112,7 +1098,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserBaseReq'
+          $ref: '#/definitions/helper.UserTimeRangeReq'
       produces:
       - application/json
       responses:
@@ -1150,7 +1136,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserBaseReq'
+          $ref: '#/definitions/helper.UserTimeRangeReq'
       produces:
       - application/json
       responses:

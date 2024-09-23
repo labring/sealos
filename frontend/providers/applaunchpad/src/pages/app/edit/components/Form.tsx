@@ -5,7 +5,7 @@ import { defaultSliderKey, ProtocolList } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN, SEALOS_USER_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
@@ -267,25 +267,42 @@ const Form = ({
       inventory: countGpuInventory(selected.type)
     };
   }, [userSourcePrice?.gpu, countGpuInventory, getValues, refresh]);
+
   // cpu, memory have different sliderValue
   const countSliderList = useCallback(() => {
     const gpuType = getValues('gpu.type');
     const key = gpuType && formSliderListConfig[gpuType] ? gpuType : defaultSliderKey;
 
+    const cpu = getValues('cpu');
+    const memory = getValues('memory');
+
+    const cpuList = formSliderListConfig[key].cpu;
+    const memoryList = formSliderListConfig[key].memory;
+
+    const sortedCpuList =
+      cpu !== undefined ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b) : cpuList;
+
+    const sortedMemoryList =
+      memory !== undefined
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
+
     return {
       cpu: sliderNumber2MarkList({
-        val: formSliderListConfig[key].cpu,
+        val: sortedCpuList,
         type: 'cpu',
         gpuAmount: getValues('gpu.amount')
       }),
       memory: sliderNumber2MarkList({
-        val: formSliderListConfig[key].memory,
+        val: sortedMemoryList,
         type: 'memory',
         gpuAmount: getValues('gpu.amount')
       })
     };
   }, [formSliderListConfig, getValues]);
-  const SliderList = useMemo(() => countSliderList(), [countSliderList, refresh]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const SliderList = useMemo(() => countSliderList(), [already]);
 
   return (
     <>
@@ -802,7 +819,8 @@ const Form = ({
                               protocol: 'HTTP',
                               openPublicDomain: false,
                               publicDomain: '',
-                              customDomain: ''
+                              customDomain: '',
+                              domain: SEALOS_DOMAIN
                             })
                           }
                         >
@@ -826,7 +844,8 @@ const Form = ({
                             networkName: network.networkName || `network-${nanoid()}`,
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
-                            publicDomain: network.publicDomain || nanoid()
+                            publicDomain: network.publicDomain || nanoid(),
+                            domain: network.domain || SEALOS_DOMAIN
                           });
                         }}
                       />
@@ -867,7 +886,7 @@ const Form = ({
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
                               {network.customDomain
                                 ? network.customDomain
-                                : `${network.publicDomain}.${SEALOS_DOMAIN}`}
+                                : `${network.publicDomain}.${network.domain}`}
                             </Box>
                             <Box
                               fontSize={'11px'}
@@ -876,7 +895,8 @@ const Form = ({
                               onClick={() =>
                                 setCustomAccessModalData({
                                   publicDomain: network.publicDomain,
-                                  customDomain: network.customDomain
+                                  customDomain: network.customDomain,
+                                  domain: network.domain
                                 })
                               }
                             >

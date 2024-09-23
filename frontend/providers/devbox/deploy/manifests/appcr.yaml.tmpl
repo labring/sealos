@@ -1,0 +1,18 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: devbox
+  namespace: app-system
+spec:
+  data:
+    desc: Devbox
+    url: 'https://devbox.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}'
+  icon: 'https://devbox.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg'
+  i18n:
+    zh:
+      name: 云沙箱
+    zh-Hans:
+      name: 云沙箱
+  name: devbox
+  type: iframe
+  displayType: normal

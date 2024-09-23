@@ -2,6 +2,8 @@ import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
+export let SEALOS_USER_DOMAIN = ['cloud.sealos.io'];
+export let DESKTOP_DOMAIN = 'cloud.sealos.io';
 export let DOMAIN_PORT = '';
 export let INGRESS_SECRET = 'wildcard-cert';
 export let SHOW_EVENT_ANALYZE = false;
@@ -13,19 +15,22 @@ export const loadInitData = async () => {
   try {
     const res = await getInitData();
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
+    SEALOS_USER_DOMAIN = res.SEALOS_USER_DOMAIN;
     DOMAIN_PORT = res.DOMAIN_PORT;
     INGRESS_SECRET = res.INGRESS_SECRET;
     SHOW_EVENT_ANALYZE = res.SHOW_EVENT_ANALYZE;
     CURRENCY = res.CURRENCY;
     UPLOAD_LIMIT = res.fileMangerConfig.uploadLimit;
     DOWNLOAD_LIMIT = res.fileMangerConfig.downloadLimit;
+    DESKTOP_DOMAIN = res.DESKTOP_DOMAIN;
 
     return {
       SEALOS_DOMAIN,
       DOMAIN_PORT,
       INGRESS_SECRET,
       CURRENCY,
-      FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG
+      FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG,
+      DESKTOP_DOMAIN: res.DESKTOP_DOMAIN
     };
   } catch (error) {}
 

@@ -84,6 +84,7 @@
   "Stripe Success": "Stripe 支付完成",
   "Stripe Cancel": "Stripe 支付取消",
   "GPU Unit": "卡",
+	"port_unit": "个",
   "Name": "名称",
   "Price": "价格",
   "Unit": "单位",
@@ -224,5 +225,13 @@
   "Gift code must be exactly 24 characters long": "卡密长度必须是24位字符",
   "Gift code can only contain letters and numbers": "不能包含非法字符",
   "Failed to redeem Gift Code": "兑换失败",
-  "Gift Code Redeemed Successfully": "兑换成功！已充值到您的余额。"
+  "Gift Code Redeemed Successfully": "兑换成功！已充值到您的余额。",
+  "price_calculator": "价格计算器",
+  "amount": "数量",
+  "quantity": "数量",
+  "time": "时间",
+  "duration": "时间",
+  "GPU": "GPU",
+  "usage": "用量",
+  "resource": "资源"
 }

@@ -51,7 +51,7 @@ function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     const response = createSealosApp();
     (async () => {
-      const { domain } = await initSystemEnv();
+      const { desktopDomain } = await initSystemEnv();
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
         const oldSession = localStorage.getItem('session');
@@ -65,7 +65,7 @@ function App({ Component, pageProps }: AppProps) {
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
           openConfirm(() => {
-            window.open(`https://${domain}`, '_self');
+            window.open(`https://${desktopDomain}`, '_self');
           })();
         }
       }
@@ -138,7 +138,7 @@ function App({ Component, pageProps }: AppProps) {
     const setupInternalAppCallListener = async () => {
       try {
         const event = async (e: MessageEvent) => {
-          const whitelist = [`https://${SystemEnv.domain}`];
+          const whitelist = [`https://${SystemEnv.desktopDomain}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
@@ -160,7 +160,7 @@ function App({ Component, pageProps }: AppProps) {
       } catch (error) {}
     };
     setupInternalAppCallListener();
-  }, [SystemEnv.domain, router]);
+  }, [SystemEnv.desktopDomain, router]);
 
   return (
     <>
