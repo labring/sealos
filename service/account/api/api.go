@@ -993,6 +993,58 @@ func UserUsage(c *gin.Context) {
 	})
 }
 
+// GetUserRealNameInfo
+// @Summary Get user real name information
+// @Description Retrieve the real name information for a user
+// @Tags GetUserRealNameInfo
+// @Accept json
+// @Produce json
+// @Param request body helper.GetRealNameInfoReq true "Get real name info request"
+// @Success 200 {object} helper.GetRealNameInfoResp "Successfully retrieved user real name info"
+// @Failure 400 {object} helper.ErrorMessage "Failed to parse get real name info request"
+// @Failure 401 {object} helper.ErrorMessage "Authentication error"
+// @Failure 500 {object} helper.ErrorMessage "Failed to get user real name info or info not found/verified"
+// @Router /account/v1alpha1/real-name-info [post]
+func GetUserRealNameInfo(c *gin.Context) {
+	// Parse the get real name info request
+	req, err := helper.ParseGetRealNameInfoReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse get real name info request: %v", err)})
+		return
+	}
+
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+
+	userRealNameInfo, err := dao.DBClient.GetUserRealNameInfo(req)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user real name info: %v", err)})
+		return
+	}
+
+	if userRealNameInfo == nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: "user real name info not found"})
+		return
+	}
+
+	if !userRealNameInfo.IsVerified {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: "user real name info is not verified"})
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK, helper.GetRealNameInfoResp{
+		Data: helper.GetRealNameInfoRespData{
+			UserID:     req.Auth.UserID,
+			IsRealName: userRealNameInfo.IsVerified,
+		},
+		Message: "successfully get user real name info",
+	})
+}
+
 func CheckAuthAndCalibrate(auth *helper.Auth) (err error) {
 	if auth == nil {
 		return helper.ErrNullAuth

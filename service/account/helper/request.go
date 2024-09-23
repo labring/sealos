@@ -218,6 +218,13 @@ type UseGiftCodeReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 }
 
+type GetRealNameInfoReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	AuthBase `json:",inline" bson:",inline"`
+}
+
 type UserUsageReq struct {
 	// @Summary Start and end time for the request
 	// @Description Start and end time for the request
@@ -549,6 +556,25 @@ func ParseUseGiftCodeReq(c *gin.Context) (*UseGiftCodeReq, error) {
 	}
 
 	return useGiftCode, nil
+}
+
+type GetRealNameInfoRespData struct {
+	UserID     string `json:"userID" bson:"userID" example:"user-123"`
+	IsRealName bool   `json:"isRealName" bson:"isRealName" example:"true"`
+}
+
+type GetRealNameInfoResp struct {
+	Data    GetRealNameInfoRespData `json:"data,omitempty" bson:"data,omitempty"`
+	Message string                  `json:"message,omitempty" bson:"message" example:"Successfully retrieved real name information"`
+}
+
+func ParseGetRealNameInfoReq(c *gin.Context) (*GetRealNameInfoReq, error) {
+	getRealNameInfoReq := &GetRealNameInfoReq{}
+	if err := c.ShouldBindJSON(getRealNameInfoReq); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+
+	return getRealNameInfoReq, nil
 }
 
 func ParseUserUsageReq(c *gin.Context) (*UserUsageReq, error) {

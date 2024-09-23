@@ -57,6 +57,7 @@ type Interface interface {
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
 	UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, error)
+	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
 }
 
 type Account struct {
@@ -1433,4 +1434,15 @@ func (m *Account) UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, erro
 	}
 
 	return giftCode, nil
+}
+
+func (m *Account) GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error) {
+	// get user info
+	userRealNameInfo, err := m.ck.GetUserRealNameInfoByUserID(req.UserID)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user real name info: %v", err)
+	}
+
+	return userRealNameInfo, nil
 }
