@@ -39,6 +39,7 @@ spec:
       containers:
       - name: sealos-applaunchpad
         image: LAUNCHPAD_IMAGE
+        imagePullPolicy: Always
         env:
         - name: SEALOS_DOMAIN
           value: FLAG_SEALOS_DOMAIN

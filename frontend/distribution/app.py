@@ -181,9 +181,9 @@ def deploy_app_with_image():
                     for container_index in range(len(single_yaml['spec']['template']['spec']['containers'])):
                         container = single_yaml['spec']['template']['spec']['containers'][container_index]
                         if 'image' in container:
-                            if not container['image'].contains('/'):
+                            if not '/' in container['image']:
                                 container['image'] = 'library/' + container['image']
-                            if not container['image'].contains(':'):
+                            if not ':' in container['image']:
                                 container['image'] = container['image'] + ':latest'
         new_yaml_contents.append(single_yaml)
     new_yaml_content = yaml.dump_all(new_yaml_contents)
