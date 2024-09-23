@@ -5,7 +5,8 @@ import {
   CronJobEditType,
   CronJobListItemType,
   JobEvent,
-  JobList
+  JobList,
+  JobStatus
 } from '@/types/job';
 import { cpuFormatToM, cron2Time, formatPodTime, memoryFormatToMi } from '@/utils/tools';
 import {
@@ -161,7 +162,11 @@ export const adaptJobItemList = (jobs: V1Job[]): JobList => {
       if (!!item.status?.succeeded) successAmount++;
       const startTimeTimestamp = dayjs(item.status?.startTime).unix();
       return {
-        status: !!item.status?.succeeded,
+        status: !!item.status?.active
+          ? 'active'
+          : !!item.status?.succeeded
+          ? 'succeeded'
+          : ('failed' as JobStatus),
         startTime: dayjs(item.status?.startTime).format('YYYY-MM-DD HH:mm'),
         completionTime: dayjs(item.status?.completionTime).format('YYYY-MM-DD HH:mm'),
         uid: item.metadata?.uid,

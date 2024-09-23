@@ -32,7 +32,7 @@ export default function AppBaseInfo({
           setLogs(typeof err === 'string' ? err : '');
         }
       },
-      refetchInterval: !ActivePod?.status ? 1000 : false
+      refetchInterval: ActivePod?.status === 'active' ? 1000 : false
     }
   );
 
@@ -89,11 +89,23 @@ export default function AppBaseInfo({
                   backgroundColor: '#fff',
                   border: '2px solid',
                   zIndex: 2,
-                  borderColor: jobItem.status ? '#33BABB' : '#FF8492'
+                  borderColor:
+                    jobItem.status === 'succeeded'
+                      ? '#33BABB'
+                      : jobItem.status === 'failed'
+                      ? '#FF8492'
+                      : '#FF8492'
                 }}
               >
                 <Flex mb={2} alignItems={'center'} fontWeight={'bold'}>
-                  {jobItem.status ? t('base.Success') : t('Pause Error')}, {t('Executed')}
+                  {jobItem.status === 'succeeded'
+                    ? t('base.Success')
+                    : jobItem.status === 'failed'
+                    ? t('Pause Error')
+                    : jobItem.status === 'active'
+                    ? t('Executing')
+                    : t('Running')}
+                  , {t('Executed')}
                   {jobItem.startTime}
                 </Flex>
                 <Box color={'blackAlpha.700'}>

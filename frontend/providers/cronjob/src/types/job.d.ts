@@ -89,11 +89,13 @@ export interface JobEvent {
   lastTime: string;
 }
 
+export type JobStatus = 'active' | 'succeeded' | 'failed';
+
 export type JobList = {
   total: number;
   successAmount: number;
   history: {
-    status: boolean;
+    status: JobStatus;
     startTime: string;
     completionTime: string;
     uid: string | undefined;
