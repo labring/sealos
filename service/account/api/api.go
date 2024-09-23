@@ -9,9 +9,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
-	auth2 "github.com/labring/sealos/service/pkg/auth"
+	"gorm.io/gorm"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
 
@@ -242,7 +241,7 @@ func GetPayment(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	payment, limitResp, err := dao.DBClient.GetPayment(&types.UserQueryOpts{Owner: req.Auth.Owner}, req)
+	payment, limitResp, err := dao.DBClient.GetPayment(&types.UserQueryOpts{ID: req.Auth.UserID}, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get payment : %v", err)})
 		return
@@ -265,14 +264,14 @@ func GetPayment(c *gin.Context) {
 // @Tags RechargeAmount
 // @Accept json
 // @Produce json
-// @Param request body helper.UserBaseReq true "User recharge amount request"
+// @Param request body helper.UserTimeRangeReq true "User recharge amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user recharge amount"
 // @Failure 400 {object} map[string]interface{} "failed to parse user recharge amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user recharge amount"
 // @Router /account/v1alpha1/costs/recharge [post]
 func GetRechargeAmount(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParseUserTimeRangeReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user recharge amount request: %v", err)})
 		return
@@ -281,7 +280,7 @@ func GetRechargeAmount(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	amount, err := dao.DBClient.GetRechargeAmount(types.UserQueryOpts{Owner: req.Auth.Owner}, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	amount, err := dao.DBClient.GetRechargeAmount(types.UserQueryOpts{ID: req.Auth.UserID}, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get recharge amount : %v", err)})
 		return
@@ -297,14 +296,14 @@ func GetRechargeAmount(c *gin.Context) {
 // @Tags PropertiesUsedAmount
 // @Accept json
 // @Produce json
-// @Param request body helper.UserBaseReq true "User properties used amount request"
+// @Param request body helper.UserTimeRangeReq true "User properties used amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user properties used amount"
 // @Failure 400 {object} map[string]interface{} "failed to parse user properties used amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user properties used amount"
 // @Router /account/v1alpha1/costs/properties [post]
 func GetPropertiesUsedAmount(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
+	req, err := helper.ParseUserTimeRangeReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user properties used amount request: %v", err)})
 		return
@@ -332,6 +331,7 @@ type CostsResultData struct {
 	Costs common.TimeCostsMap `json:"costs" bson:"costs"`
 }
 
+// GetCosts
 // @Summary Get user costs
 // @Description Get user costs within a specified time range
 // @Tags Costs
@@ -370,22 +370,17 @@ func GetCosts(c *gin.Context) {
 // @Tags Account
 // @Accept json
 // @Produce json
-// @Param request body helper.Auth true "auth request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user account"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user account"
 // @Router /account/v1alpha1/account [post]
 func GetAccount(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
-		return
-	}
+	req := &helper.AuthBase{}
 	if err := authenticateRequest(c, req); err != nil {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	account, err := dao.DBClient.GetAccount(types.UserQueryOpts{Owner: req.Auth.Owner})
+	account, err := dao.DBClient.GetAccount(types.UserQueryOpts{ID: req.Auth.UserID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get account : %v", err)})
 		return
@@ -486,7 +481,7 @@ func GetTransfer(c *gin.Context) {
 		return
 	}
 	ops := types.GetTransfersReq{
-		UserQueryOpts: &types.UserQueryOpts{Owner: req.Auth.Owner},
+		UserQueryOpts: &types.UserQueryOpts{ID: req.Auth.UserID},
 		Type:          types.TransferType(req.Type),
 		LimitReq: types.LimitReq{
 			Page:     req.Page,
@@ -546,18 +541,13 @@ func GetAPPCosts(c *gin.Context) {
 // @Tags Permission
 // @Accept json
 // @Produce json
-// @Param request body helper.UserBaseReq true "Check permission request"
 // @Success 200 {object} map[string]interface{} "successfully check permission"
 // @Failure 400 {object} map[string]interface{} "failed to parse check permission request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to check permission"
 // @Router /account/v1alpha1/check-permission [post]
 func CheckPermission(c *gin.Context) {
-	req, err := helper.ParseUserBaseReq(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("failed to parse check permission request: %v", err)})
-		return
-	}
+	req := &helper.AuthBase{}
 	if err := authenticateRequest(c, req); err != nil {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
@@ -674,7 +664,7 @@ func GetAppTypeList(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "failed to parse basic cost distribution request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get basic cost distribution"
-// @Router /account/v1alpha1/basic-cost-distribution [post]
+// @Router /account/v1alpha1/cost-basic-distribution [post]
 func GetBasicCostDistribution(c *gin.Context) {
 	req, err := helper.ParseGetCostAppListReq(c)
 	if err != nil {
@@ -727,12 +717,15 @@ func GetAppCostTimeRange(c *gin.Context) {
 	})
 }
 
-func ParseAuthTokenUser(c *gin.Context) (*helper.Auth, error) {
+func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 	user, err := dao.JwtMgr.ParseUser(c)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse user: %v", err)
 	}
-	auth := &helper.Auth{
+	if user.UserID == "" {
+		return nil, fmt.Errorf("invalid user: %v", user)
+	}
+	auth = &helper.Auth{
 		Owner:  user.UserCrName,
 		UserID: user.UserID,
 	}
@@ -740,13 +733,13 @@ func ParseAuthTokenUser(c *gin.Context) (*helper.Auth, error) {
 	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID {
 		auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: user.UserID})
 		if err != nil {
-			return nil, fmt.Errorf("get user cr name error: %v", err)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				fmt.Printf("failed to get user cr name: %v\n", err)
+				return auth, nil
+			}
 		}
 	}
-	if auth.Owner == "" || auth.UserID == "" {
-		return nil, fmt.Errorf("invalid user: %v", user)
-	}
-	return auth, nil
+	return
 }
 
 func checkInvoiceToken(token string) error {
@@ -837,18 +830,9 @@ func authenticateRequest(c *gin.Context, req helper.AuthReq) error {
 	if req.GetAuth() != nil && req.GetAuth().Token != "" {
 		return checkInvoiceToken(req.GetAuth().Token)
 	}
-
 	auth, err := ParseAuthTokenUser(c)
-	if err == nil {
-		req.SetAuth(auth)
-		return nil
-	}
-
-	if !errors.Is(err, helper.ErrNullAuth) {
-		return err
-	}
-
-	return CheckAuthAndCalibrate(req.GetAuth())
+	req.SetAuth(auth)
+	return err
 }
 
 // SetStatusInvoice
@@ -1043,99 +1027,4 @@ func GetUserRealNameInfo(c *gin.Context) {
 		},
 		Message: "successfully get user real name info",
 	})
-}
-
-func CheckAuthAndCalibrate(auth *helper.Auth) (err error) {
-	if auth == nil {
-		return helper.ErrNullAuth
-	}
-	if !dao.Debug || auth.KubeConfig != "" {
-		if err = checkAuth(auth); err != nil {
-			return fmt.Errorf("check auth error: %v", err)
-		}
-	}
-	auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: auth.UserID})
-	if err != nil {
-		return fmt.Errorf("get user cr name error: %v", err)
-	}
-	return nil
-}
-
-func checkAuth(auth *helper.Auth) error {
-	if err := helper.AuthenticateKC(*auth); err != nil {
-		return fmt.Errorf("authenticate error : %v", err)
-	}
-	host, err := auth2.GetKcHost(auth.KubeConfig)
-	if err != nil {
-		return fmt.Errorf("failed to get kc host: %v", err)
-	}
-	host = strings.TrimPrefix(strings.TrimPrefix(host, "https://"), "http://")
-	if !strings.Contains(host, dao.Cfg.LocalRegionDomain) {
-		if err := CalibrateRegionAuth(auth, host); err != nil {
-			return fmt.Errorf("calibrate region auth error: %v", err)
-		}
-	} else {
-		user, err := auth2.GetKcUser(auth.KubeConfig)
-		if err != nil {
-			return fmt.Errorf("failed to get kc user: %v", err)
-		}
-		userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{Owner: user})
-		if err != nil {
-			return fmt.Errorf("get user id error: %v", err)
-		}
-		auth.UserID = userID
-	}
-	auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: auth.UserID})
-	if err != nil {
-		return fmt.Errorf("get user cr name error: %v", err)
-	}
-	return nil
-}
-
-func CalibrateRegionAuth(auth *helper.Auth, kcHost string) error {
-	for i := range dao.Cfg.Regions {
-		reg := dao.Cfg.Regions[i]
-		if !strings.Contains(kcHost, reg.Domain) {
-			continue
-		}
-		svcURL := fmt.Sprintf("https://%s%s%s", reg.AccountSvc, helper.GROUP, helper.CheckPermission)
-
-		authBody, err := json.Marshal(auth)
-		if err != nil {
-			return fmt.Errorf("failed to marshal auth: %v", err)
-		}
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: os.Getenv("INSECURE_VERIFY") != "true", MinVersion: tls.VersionTLS13},
-		}
-		client := &http.Client{Transport: tr}
-		resp, err := client.Post(svcURL, "application/json", bytes.NewBuffer(authBody))
-		if err != nil {
-			return fmt.Errorf("failed to post request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		responseBody := new(bytes.Buffer)
-		_, err = responseBody.ReadFrom(resp.Body)
-		if err != nil {
-			return fmt.Errorf("failed to read response body: %v", err)
-		}
-		var respMap map[string]interface{}
-		if err = json.Unmarshal(responseBody.Bytes(), &respMap); err != nil {
-			return fmt.Errorf("failed to unmarshal response body: %v", err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("failed to check permission: %v, error: %s", resp, respMap["error"])
-		}
-		_userID, ok := respMap["userID"]
-		if !ok {
-			return fmt.Errorf("failed to get userID from response: %v", respMap)
-		}
-		userID, ok := _userID.(string)
-		if !ok {
-			return fmt.Errorf("failed to convert userID to string: %v", _userID)
-		}
-		auth.UserID = userID
-		return nil
-	}
-	return fmt.Errorf("failed to calibrate region auth")
 }
