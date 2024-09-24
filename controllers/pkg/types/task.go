@@ -24,34 +24,41 @@ import (
 
 // Task represents the Task model in Go with GORM annotations.
 type Task struct {
-	ID            uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primary_key" json:"id"`
-	Title         string     `gorm:"type:varchar(255);not null" json:"title"`
-	Description   string     `gorm:"type:text" json:"description"`
-	Reward        int64      `gorm:"type:int;not null" json:"reward"`
-	Order         int        `gorm:"type:int;not null" json:"order"`
-	IsActive      bool       `gorm:"type:boolean;default:true" json:"is_active"`
-	IsNewUserTask bool       `gorm:"type:boolean;default:false" json:"is_new_user_task"`
-	TaskType      TaskType   `gorm:"type:varchar(20);not null" json:"task_type"`
-	CreatedAt     time.Time  `gorm:"type:timestamptz(3);default:now()" json:"created_at"`
-	UpdatedAt     time.Time  `gorm:"type:timestamptz(3);autoUpdateTime" json:"updated_at"`
-	UserTasks     []UserTask `gorm:"foreignKey:TaskId;references:ID" json:"user_tasks"`
+	ID            uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key" json:"id"`
+	Title         string    `gorm:"column:title;type:text;not null" json:"title"`
+	Description   string    `gorm:"column:description;type:text;not null" json:"description"`
+	Reward        int64     `gorm:"column:reward;type:bigint;not null" json:"reward"`
+	Order         int       `gorm:"column:order;type:integer;not null" json:"order"`
+	IsActive      bool      `gorm:"column:isActive;type:boolean;default:true;not null" json:"isActive"`
+	IsNewUserTask bool      `gorm:"column:isNewUserTask;type:boolean;default:false;not null" json:"isNewUserTask"`
+	TaskType      TaskType  `gorm:"column:taskType;type:TaskType;not null" json:"taskType"`
+	CreatedAt     time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp();not null" json:"createdAt"`
+	UpdatedAt     time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;not null" json:"updatedAt"`
 }
 
 // UserTask represents the UserTask model in Go with GORM annotations.
 type UserTask struct {
-	ID           uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primary_key" json:"id"`
-	UserUID      uuid.UUID  `gorm:"type:uuid;not null" json:"user_uid"`
-	TaskID       uuid.UUID  `gorm:"type:uuid;not null" json:"task_id"`
-	Status       TaskStatus `gorm:"type:varchar(20);not null" json:"status"`
-	RewardStatus string     `gorm:"type:varchar(20);not null" json:"reward_status"`
-	CompletedAt  time.Time  `gorm:"type:timestamptz(3);not null" json:"completed_at"`
-	CreatedAt    time.Time  `gorm:"type:timestamptz(3);default:now()" json:"created_at"`
-	UpdatedAt    time.Time  `gorm:"type:timestamptz(3);autoUpdateTime" json:"updated_at"`
-	User         User       `gorm:"foreignKey:UserUid;references:Uid" json:"user"`
-	Task         Task       `gorm:"foreignKey:TaskId;references:ID" json:"task"`
+	ID           uuid.UUID  `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key" json:"id"`
+	UserUID      uuid.UUID  `gorm:"column:userUid;type:uuid;not null" json:"userUid"`
+	TaskID       uuid.UUID  `gorm:"column:taskId;type:uuid;not null" json:"taskId"`
+	Status       TaskStatus `gorm:"column:status;type:TaskStatus;not null" json:"status"`
+	RewardStatus string     `gorm:"column:rewardStatus;type:text;not null" json:"rewardStatus"`
+	CompletedAt  time.Time  `gorm:"column:completedAt;type:timestamp(3);not null" json:"completedAt"`
+	CreatedAt    time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp();not null" json:"createdAt"`
+	UpdatedAt    time.Time  `gorm:"column:updatedAt;type:timestamp(3) with time zone;not null" json:"updatedAt"`
 
-	// Unique constraint on UserUid and TaskId
-	// Index on TaskId
+	//User         User       `gorm:"foreignKey:UserUid;references:UID" json:"user"`
+	//Task         Task       `gorm:"foreignKey:TaskId;references:ID" json:"task"`
+}
+
+// TableName specifies the table name for GORM
+func (Task) TableName() string {
+	return "Task"
+}
+
+// TableName specifies the table name for GORM
+func (UserTask) TableName() string {
+	return "UserTask"
 }
 
 // TaskType represents the TaskType enum in Go.
@@ -74,5 +81,5 @@ const (
 
 const (
 	RewardStatusCompleted = "COMPLETED"
-	RewardStatusPending   = "Pending"
+	RewardStatusPending   = "PENDING"
 )

@@ -48,6 +48,7 @@ type Cockroach struct {
 	//TODO need init
 	defaultRechargeDiscount types.RechargeDiscount
 	accountConfig           *types.AccountConfig
+	tasks                   map[uuid.UUID]types.Task
 }
 
 const (
@@ -225,23 +226,28 @@ func (c *Cockroach) ProcessPendingTaskRewards() error {
 	if err != nil {
 		return fmt.Errorf("failed to get pending reward user task: %w", err)
 	}
+	tasks, err := c.getTask()
+	if err != nil {
+		return fmt.Errorf("failed to get tasks: %w", err)
+	}
 	for i := range userTasks {
 		err = c.DB.Transaction(func(tx *gorm.DB) error {
-			if userTasks[i].Task.Reward == 0 {
+			task := tasks[userTasks[i].TaskID]
+			if task.Reward == 0 {
 				fmt.Printf("usertask %v reward is 0, skip\n", userTasks[i])
 				return nil
 			}
-			if err = c.updateBalanceRaw(tx, &types.UserQueryOpts{UID: userTasks[i].User.UID, ID: userTasks[i].User.ID}, userTasks[i].Task.Reward, false, true, true); err != nil {
+			if err = c.updateBalanceRaw(tx, &types.UserQueryOpts{UID: userTasks[i].UserUID}, task.Reward, false, true, true); err != nil {
 				return fmt.Errorf("failed to update balance: %w", err)
 			}
-			msg := fmt.Sprintf("task %s reward", userTasks[i].Task.Title)
+			msg := fmt.Sprintf("task %s reward", task.Title)
 			transaction := types.AccountTransaction{
-				Balance:   userTasks[i].Task.Reward,
-				Type:      string(userTasks[i].Task.TaskType) + "_Reward",
-				UserUID:   userTasks[i].User.UID,
+				Balance:   task.Reward,
+				Type:      string(task.TaskType) + "_Reward",
+				UserUID:   userTasks[i].UserUID,
 				ID:        uuid.New(),
 				Message:   &msg,
-				BillingID: userTasks[i].Task.ID,
+				BillingID: userTasks[i].ID,
 			}
 			if err = tx.Save(&transaction).Error; err != nil {
 				return fmt.Errorf("failed to save transaction: %w", err)
@@ -255,10 +261,25 @@ func (c *Cockroach) ProcessPendingTaskRewards() error {
 	return nil
 }
 
+func (c *Cockroach) getTask() (map[uuid.UUID]types.Task, error) {
+	if len(c.tasks) != 0 {
+		return c.tasks, nil
+	}
+	c.tasks = make(map[uuid.UUID]types.Task)
+	var tasks []types.Task
+	if err := c.DB.Model(&types.Task{IsActive: true, IsNewUserTask: true}).Find(&tasks).Error; err != nil {
+		return nil, fmt.Errorf("failed to get tasks: %v", err)
+	}
+	for i := range tasks {
+		c.tasks[tasks[i].ID] = tasks[i]
+	}
+	return c.tasks, nil
+}
+
 func (c *Cockroach) getPendingRewardUserTask() ([]types.UserTask, error) {
 	var userTasks []types.UserTask
 	return userTasks, c.DB.Where(&types.UserTask{Status: types.TaskStatusCompleted}).
-		Where("reward_status = ? OR reward_status = ?", types.RewardStatusPending, "").
+		Where(`"rewardStatus" = ? OR "rewardStatus" = ?`, types.RewardStatusPending, "").
 		Find(&userTasks).Error
 }
 
@@ -266,7 +287,7 @@ func (c *Cockroach) completeRewardUserTask(tx *gorm.DB, userTask *types.UserTask
 	userTask.CompletedAt = time.Now().UTC()
 	userTask.UpdatedAt = time.Now().UTC()
 	userTask.RewardStatus = types.RewardStatusCompleted
-	return tx.Model(userTask).Update("reward_status", types.RewardStatusCompleted).Error
+	return tx.Model(userTask).Update("rewardStatus", types.RewardStatusCompleted).Error
 }
 
 func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {

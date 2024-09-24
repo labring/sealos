@@ -86,6 +86,7 @@ func RegisterPayRouter() {
 
 	// process task
 	if os.Getenv("REWARD_PROCESSING") == "true" {
+		fmt.Println("Start reward processing timer")
 		go startRewardProcessingTimer(ctx)
 	}
 
