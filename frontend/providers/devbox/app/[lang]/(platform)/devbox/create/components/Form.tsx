@@ -287,6 +287,23 @@ const Form = ({
                           ) || t('devbox_name_invalid')
                       }
                     })}
+                    onBlur={(e) => {
+                      setValue('name', e.target.value)
+                      setValue(
+                        'networks',
+                        getRuntimeVersionList(getValues('runtimeType'))[0].defaultPorts.map(
+                          (port) => ({
+                            networkName: `${e.target.value}-${nanoid()}`,
+                            portName: nanoid(),
+                            port: port,
+                            protocol: 'HTTP',
+                            openPublicDomain: true,
+                            publicDomain: nanoid(),
+                            customDomain: ''
+                          })
+                        )
+                      )
+                    }}
                   />
                   <FormErrorMessage ml={'50px'}>
                     <Box fontSize={'12px'} h={'25px'} w={'100px'}>

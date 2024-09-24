@@ -80,7 +80,7 @@ const DevboxCreatePage = () => {
     ...defaultDevboxEditValue,
     runtimeVersion: languageVersionMap[LanguageTypeEnum.go][0].id,
     networks: languageVersionMap[LanguageTypeEnum.go][0].defaultPorts.map((port) => ({
-      networkName: `${devboxName}-${nanoid()}`,
+      networkName: `${defaultDevboxEditValue.name}-${nanoid()}`,
       portName: nanoid(),
       port: port,
       protocol: 'HTTP' as ProtocolType,
