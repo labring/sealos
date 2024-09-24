@@ -1,9 +1,4 @@
-export enum TaskType {
-  LAUNCHPAD = 'LAUNCHPAD',
-  COSTCENTER = 'COSTCENTER',
-  DATABASE = 'DATABASE',
-  DESKTOP = 'DESKTOP'
-}
+import { TaskType } from 'prisma/global/generated/client';
 
 export type UserTask = {
   id: string;

@@ -1,56 +1,87 @@
-import { getUserTasks, updateDesktopGuide, updateTask } from '@/api/platform';
-import { DriverStarIcon, LaunchpadIcon } from '@/components/icons';
+import { getUserTasks, updateTask } from '@/api/platform';
+import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
 import { useConfigStore } from '@/stores/config';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
+import { UserTask } from '@/types/task';
 import { Box, Button, Flex, FlexProps, Icon, Image, Text, useMediaQuery } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
-export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
+export default function useDriver() {
   const { t } = useTranslation();
-  const [showGuide, setShowGuide] = useState(false);
-  const [giftAmount, setGiftAmount] = useState(8);
-  const router = useRouter();
+  const [desktopGuide, setDesktopGuide] = useState(false);
   const { layoutConfig } = useConfigStore();
+  const [tasks, setTasks] = useState<UserTask[]>([]);
   const [isPC] = useMediaQuery('(min-width: 768px)', {
     ssr: true,
     fallback: false // return false on the server, and re-evaluate on the client side
   });
   const conf = useConfigStore().commonConfig;
-  const [taskId, setTaskId] = useState('');
+  const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
+  const showTaskModal = taskComponentState === 'modal';
+  const showFloatingButton = taskComponentState === 'button';
 
-  const handleSkipGuide = () => {
-    setShowGuide(false);
-    updateTask(taskId)
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+  // const { data: tasksData, refetch } = useQuery(['userTasks'], getUserTasks, {
+  //   enabled: isPC && conf?.guideEnabled,
+  //   onSuccess: (data) => {
+  //     const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
+  //     const allTasksCompleted = data.data.every((task) => task.isCompleted);
+  //     if (!desktopTask?.isCompleted && desktopTask?.id) {
+  //       setDesktopGuide(true);
+  //     } else if (allTasksCompleted) {
+  //       setTaskComponentState('none');
+  //     } else {
+  //       setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
+  //     }
+  //   }
+  // });
 
   useEffect(() => {
     const handleUserGuide = async () => {
       const data = await getUserTasks();
-      console.log(data.data, '123123');
+      setTasks(data.data);
       const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
       const allTasksCompleted = data.data.every((task) => task.isCompleted);
 
       if (!desktopTask?.isCompleted && desktopTask?.id) {
-        setTaskId(desktopTask.id);
-        setShowGuide(true);
-      } else if (!allTasksCompleted) {
-        // 显示右下角浮窗逻辑
+        setDesktopGuide(true);
+        setTaskComponentState('none');
+      } else if (allTasksCompleted) {
+        setTaskComponentState('none');
+      } else {
+        setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
       }
     };
 
     if (isPC && conf?.guideEnabled) {
       handleUserGuide();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conf]);
+  }, [conf, isPC, setTaskComponentState, taskComponentState]);
+
+  const completeGuide = async () => {
+    try {
+      if (!tasks.length) return;
+      setDesktopGuide(false);
+      const desktopTask = tasks.find((task) => task.taskType === 'DESKTOP');
+      if (desktopTask) {
+        await updateTask(desktopTask.id);
+        setTaskComponentState('modal');
+      }
+    } catch (error) {}
+  };
+
+  const handleCloseTaskModal = () => {
+    setTaskComponentState('button');
+  };
+
+  const checkAllTasksCompleted = () => {
+    const allCompleted = tasks.every((task) => task.isCompleted);
+    if (allCompleted) {
+      setTaskComponentState('none');
+    }
+    return allCompleted;
+  };
 
   const PopoverBodyInfo = (props: FlexProps) => (
     <Flex
@@ -85,7 +116,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
     showProgress: false,
     allowClose: false,
     allowClickMaskNextStep: true,
-    allowPreviousStep: true,
+    // allowPreviousStep: true,
     isShowButtons: false,
     allowKeyboardControl: false,
     disableActiveInteraction: true,
@@ -99,12 +130,14 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'grayModern.900'} fontSize={'13px'}>
-                {t('common:application_desktop')}
-              </Text>
-              <Text fontSize={'12px'} color={'grayModern.600'}>
-                {t('common:application_desktop_tips')}
-              </Text>
+              <Flex flexDirection={'column'}>
+                <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={600}>
+                  {t('common:application_desktop')}
+                </Text>
+                <Text fontSize={'12px'} color={'grayModern.600'} fontWeight={500}>
+                  {t('common:application_desktop_tips')}
+                </Text>
+              </Flex>
               <PopoverBodyInfo />
             </Flex>
           )
@@ -119,7 +152,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
                 {t('common:guide_applaunchpad')}
               </Text>
               <PopoverBodyInfo />
@@ -136,7 +169,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
                 {t('common:guide_dbprovider')}
               </Text>
               <PopoverBodyInfo />
@@ -153,7 +186,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
                 {t('common:guide_objectstorage')}
               </Text>
               <PopoverBodyInfo />
@@ -170,7 +203,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
                 {t('common:launch_various_third-party_applications_with_one_click')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
@@ -178,101 +211,14 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           )
         }
       }
-      // {
-      //   element: '.system-costcenter',
-      //   popover: {
-      //     side: 'top',
-      //     align: 'start',
-      //     borderRadius: '12px 12px 12px 0px',
-      //     PopoverBody: (
-      //       <Flex gap={'6px'}>
-      //         <DriverStarIcon />
-      //         <Text color={'#24282C'} fontSize={'13px'}>
-      //           {t('common:you_can_view_fees_through_the_fee_center')}
-      //         </Text>
-      //         <PopoverBodyInfo top={'-120px'} />
-      //       </Flex>
-      //     )
-      //   }
-      // },
-      // {
-      //   element: '.system-applaunchpad',
-      //   popover: {
-      //     side: 'left',
-      //     align: 'start',
-      //     borderRadius: '12px 0px 12px 12px',
-      //     onPopoverRender: () => {
-      //       const svg = driverObj.getState('__overlaySvg');
-      //       if (svg) {
-      //         const pathElement = svg.querySelector('path');
-      //         if (pathElement) {
-      //           pathElement.style.pointerEvents = 'none';
-      //         }
-      //       }
-      //     },
-      //     PopoverBody: (
-      //       <Box color={'#24282C'} padding={'10px'}>
-      //         <Flex gap={'6px'}>
-      //           <DriverStarIcon />
-      //           <Text fontSize={'16px'} fontWeight={'600'}>
-      //             {t('common:deploy_an_application')}
-      //           </Text>
-      //         </Flex>
-      //         <Box fontSize={'13px'} fontWeight={500} mt="12px">
-      //           {t('common:spend')}
-      //           <Text color={'#219BF4'} display={'inline'} px="2px">
-      //             30s
-      //           </Text>
-      //           {t('common:completed_the_deployment_of_an_nginx_for_the_first_time')}
-      //           <Text color={'#219BF4'} display={'inline'} px="2px">
-      //             {t('common:gift_amount', { amount: giftAmount })}
-      //           </Text>
-      //         </Box>
-      //         <Flex mt="20px">
-      //           <Button
-      //             color={'#24282C'}
-      //             fontSize={'12px'}
-      //             p="4px 16px"
-      //             border={'1px solid #DEE0E2'}
-      //             bg="#FFF"
-      //             ml="auto"
-      //             borderRadius={'4px'}
-      //             cursor={'pointer'}
-      //             onClick={() => {
-      //               driverObj.destroy();
-      //             }}
-      //           >
-      //             {t('common:next_time')}
-      //           </Button>
-      //           <Button
-      //             ml="12px"
-      //             color={'#FEFEFE'}
-      //             fontSize={'12px'}
-      //             p="4px 16px"
-      //             bg="#000"
-      //             borderRadius={'4px'}
-      //             cursor={'pointer'}
-      //             onClick={() => {
-      //               driverObj.destroy();
-      //               openDesktopApp({ appKey: 'system-applaunchpad', pathname: '/app/edit' });
-      //             }}
-      //           >
-      //             {t('common:start_immediately')}
-      //           </Button>
-      //         </Flex>
-      //       </Box>
-      //     )
-      //   }
-      // }
     ],
     onDestroyed: () => {
-      console.log('onDestroyed');
-      handleSkipGuide();
+      completeGuide();
     }
   });
 
   const startGuide = () => {
-    setShowGuide(false);
+    setDesktopGuide(false);
     driverObj.drive();
   };
 
@@ -334,33 +280,33 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
               <Flex justifyContent={'start'} alignItems={'center'} gap={'6px'}>
                 <LaunchpadIcon />
                 <Text fontSize="14px" fontWeight={500} color="grayModern.900">
-                  {t('common:task1_title')}
+                  {t('common:usertask.task1_title')}
                 </Text>
               </Flex>
               <Text fontSize="12px" fontWeight={400} color="grayModern.500" marginTop="12px">
-                {t('common:task1_desc')}
+                {t('common:usertask.task1_desc')}
               </Text>
             </Flex>
             <Flex {...boxStyles}>
               <Flex alignItems={'center'} gap={'6px'}>
-                <LaunchpadIcon />
+                <DBproviderIcon />
                 <Text fontSize="14px" fontWeight={500} color="grayModern.900">
-                  {t('common:task2_title')}
+                  {t('common:usertask.task2_title')}
                 </Text>
               </Flex>
               <Text fontSize="12px" fontWeight={400} color="grayModern.500" marginTop="12px">
-                {t('common:task2_desc')}
+                {t('common:usertask.task2_desc')}
               </Text>
             </Flex>
             <Flex {...boxStyles}>
               <Flex alignItems={'center'} gap={'6px'}>
-                <LaunchpadIcon />
+                <AppStoreIcon />
                 <Text fontSize="14px" fontWeight={500} color="grayModern.900">
-                  {t('common:task3_title')}
+                  {t('common:usertask.task3_title')}
                 </Text>
               </Flex>
               <Text fontSize="12px" fontWeight={400} color="grayModern.500" marginTop="12px">
-                {t('common:task3_desc')}
+                {t('common:usertask.task3_desc')}
               </Text>
             </Flex>
           </Flex>
@@ -397,5 +343,14 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
     </Box>
   );
 
-  return { UserGuide, showGuide, startGuide };
+  return {
+    UserGuide,
+    desktopGuide,
+    showTaskModal,
+    showFloatingButton,
+    tasks,
+    handleCloseTaskModal,
+    checkAllTasksCompleted,
+    setTaskComponentState
+  };
 }

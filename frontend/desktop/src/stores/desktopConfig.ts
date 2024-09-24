@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
+type TaskComponentState = 'none' | 'modal' | 'button';
+
 type State = {
   isAppBar: boolean;
   isNavbarVisible: boolean;
@@ -10,6 +12,8 @@ type State = {
   toggleNavbarVisibility: (forceState?: boolean) => void;
   temporarilyDisableAnimation: () => void;
   getTransitionValue: () => string;
+  taskComponentState: TaskComponentState;
+  setTaskComponentState: (state: TaskComponentState) => void;
 };
 
 export const useDesktopConfigStore = create<State>()(
@@ -18,6 +22,7 @@ export const useDesktopConfigStore = create<State>()(
       isAppBar: true,
       isNavbarVisible: true,
       isAnimationEnabled: true,
+      taskComponentState: 'none',
       toggleShape() {
         set((state) => {
           state.isAppBar = !state.isAppBar;
@@ -42,6 +47,11 @@ export const useDesktopConfigStore = create<State>()(
         return get().isAnimationEnabled
           ? 'transform 200ms ease-in-out, opacity 200ms ease-in-out'
           : 'none';
+      },
+      setTaskComponentState(s) {
+        set((state) => {
+          state.taskComponentState = s;
+        });
       }
     })),
     {
