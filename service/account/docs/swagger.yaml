@@ -391,6 +391,37 @@ definitions:
           $ref: '#/definitions/common.PropertyQuery'
         type: array
     type: object
+  helper.GetRealNameInfoReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+    type: object
+  helper.GetRealNameInfoResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.GetRealNameInfoRespData'
+      message:
+        example: Successfully retrieved real name information
+        type: string
+    type: object
+  helper.GetRealNameInfoRespData:
+    properties:
+      isRealName:
+        example: true
+        type: boolean
+      userID:
+        example: user-123
+        type: string
+    type: object
   helper.GetTransferRecordReq:
     properties:
       endTime:
@@ -1489,6 +1520,40 @@ paths:
       summary: Get properties
       tags:
       - Properties
+  /account/v1alpha1/real-name-info:
+    post:
+      consumes:
+      - application/json
+      description: Retrieve the real name information for a user
+      parameters:
+      - description: Get real name info request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.GetRealNameInfoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved user real name info
+          schema:
+            $ref: '#/definitions/helper.GetRealNameInfoResp'
+        "400":
+          description: Failed to parse get real name info request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: Authentication error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: Failed to get user real name info or info not found/verified
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Get user real name information
+      tags:
+      - GetUserRealNameInfo
   /account/v1alpha1/regions:
     post:
       consumes:

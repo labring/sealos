@@ -1225,6 +1225,58 @@
                 }
             }
         },
+        "/account/v1alpha1/real-name-info": {
+            "post": {
+                "description": "Retrieve the real name information for a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GetUserRealNameInfo"
+                ],
+                "summary": "Get user real name information",
+                "parameters": [
+                    {
+                        "description": "Get real name info request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetRealNameInfoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved user real name info",
+                        "schema": {
+                            "$ref": "#/definitions/helper.GetRealNameInfoResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to parse get real name info request",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get user real name info or info not found/verified",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/regions": {
             "post": {
                 "description": "Get regions",
@@ -1798,6 +1850,51 @@
                     "items": {
                         "$ref": "#/definitions/common.PropertyQuery"
                     }
+                }
+            }
+        },
+        "helper.GetRealNameInfoReq": {
+            "type": "object",
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "helper.GetRealNameInfoResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/helper.GetRealNameInfoRespData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Successfully retrieved real name information"
+                }
+            }
+        },
+        "helper.GetRealNameInfoRespData": {
+            "type": "object",
+            "properties": {
+                "isRealName": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
