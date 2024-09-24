@@ -1,5 +1,3 @@
-import PodLineChart from '@/components/PodLineChart'
-import { useDevboxStore } from '@/stores/devbox'
 import {
   Box,
   Modal,
@@ -10,12 +8,15 @@ import {
   ModalOverlay,
   useTheme
 } from '@chakra-ui/react'
-import { useTranslation } from 'next-i18next'
+import { useTranslations } from 'next-intl'
+
+import { useDevboxStore } from '@/stores/devbox'
+import PodLineChart from '@/components/PodLineChart'
 
 const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => void }) => {
-  const { t } = useTranslation()
-  const { devboxDetail } = useDevboxStore()
   const theme = useTheme()
+  const t = useTranslations()
+  const { devboxDetail } = useDevboxStore()
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} autoFocus={false} lockFocusAcrossFrames={false}>
