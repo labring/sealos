@@ -37,13 +37,17 @@ export const startDevbox = (data: { devboxName: string }) => POST('/api/startDev
 
 export const pauseDevbox = (data: { devboxName: string }) => POST('/api/pauseDevbox', data)
 
-export const getDevboxVersionList = (devboxName: string) =>
-  GET<KBDevboxReleaseType[]>('/api/getDevboxVersionList', { devboxName }).then(
+export const getDevboxVersionList = (devboxName: string, devboxUid: string) =>
+  GET<KBDevboxReleaseType[]>('/api/getDevboxVersionList', { devboxName, devboxUid }).then(
     (data): DevboxVersionListItemType[] => data.map(adaptDevboxVersionListItem)
   )
 
-export const releaseDevbox = (data: { devboxName: string; tag: string; releaseDes: string }) =>
-  POST('/api/releaseDevbox', data)
+export const releaseDevbox = (data: {
+  devboxName: string
+  tag: string
+  releaseDes: string
+  devboxUid: string
+}) => POST('/api/releaseDevbox', data)
 
 export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>
   POST('/api/editDevboxVersion', data)

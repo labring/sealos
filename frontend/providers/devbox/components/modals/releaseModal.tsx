@@ -67,7 +67,8 @@ const ReleaseModal = ({
         await releaseDevbox({
           devboxName: devbox.name,
           tag,
-          releaseDes
+          releaseDes,
+          devboxUid: devbox.id
         })
         if (enableRestartMachine) {
           await restartDevbox({ devboxName: devbox.name })

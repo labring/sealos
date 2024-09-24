@@ -28,12 +28,16 @@ const Version = () => {
   const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
 
-  const { refetch } = useQuery(['initDevboxVersionList'], () => setDevboxVersionList(devbox.name), {
-    refetchInterval: 3000,
-    onSettled() {
-      setInitialized(true)
+  const { refetch } = useQuery(
+    ['initDevboxVersionList'],
+    () => setDevboxVersionList(devbox.name, devbox.id),
+    {
+      refetchInterval: 3000,
+      onSettled() {
+        setInitialized(true)
+      }
     }
-  })
+  )
 
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {

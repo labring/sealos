@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
       devboxName: string
       tag: string
       releaseDes: string
+      devboxUid: string
     }
     const headerList = req.headers
 

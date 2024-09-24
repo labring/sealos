@@ -21,7 +21,10 @@ type State = {
   devboxList: DevboxListItemType[]
   setDevboxList: () => Promise<DevboxListItemType[]>
   devboxVersionList: DevboxVersionListItemType[]
-  setDevboxVersionList: (devboxName: string) => Promise<DevboxVersionListItemType[]>
+  setDevboxVersionList: (
+    devboxName: string,
+    devboxUid: string
+  ) => Promise<DevboxVersionListItemType[]>
   devboxDetail: DevboxDetailType
   setDevboxDetail: (devboxName: string) => Promise<DevboxDetailType>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
@@ -96,8 +99,8 @@ export const useDevboxStore = create<State>()(
         return updatedRes
       },
       devboxVersionList: [],
-      setDevboxVersionList: async (devboxName: string) => {
-        const res = await getDevboxVersionList(devboxName)
+      setDevboxVersionList: async (devboxName: string, devboxUid: string) => {
+        const res = await getDevboxVersionList(devboxName, devboxUid)
 
         // order by createTime
         res.sort((a, b) => {
