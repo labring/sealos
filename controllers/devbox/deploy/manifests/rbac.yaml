@@ -19,7 +19,7 @@ metadata:
   namespace: devbox-system
 rules:
   - apiGroups: [ "devbox.sealos.io" ]
-    resources: [ "runtimes" ]
+    resources: [ "runtimes", "runtimeclasses"]
     verbs: [ "get", "watch", "list" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
