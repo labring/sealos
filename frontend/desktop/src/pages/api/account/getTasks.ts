@@ -1,11 +1,11 @@
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAccessToken, verifyAppToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await verifyAccessToken(req.headers);
+    const payload = (await verifyAccessToken(req.headers)) || (await verifyAppToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'Token is invaild' });
 
     const userTasks = await globalPrisma.userTask.findMany({

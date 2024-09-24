@@ -65,6 +65,19 @@ export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?
     });
   });
 
+export const verifyAppToken = async (header: IncomingHttpHeaders) => {
+  try {
+    if (!header?.authorization) {
+      throw new Error('缺少凭证');
+    }
+    const token = decodeURIComponent(header.authorization);
+    const payload = await verifyJWT<AccessTokenPayload>(token, internalJwtSecret());
+    return payload;
+  } catch (err) {
+    return null;
+  }
+};
+
 export const generateBillingToken = (props: BillingTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '3600000' });
 export const generateAccessToken = (props: AccessTokenPayload) =>
