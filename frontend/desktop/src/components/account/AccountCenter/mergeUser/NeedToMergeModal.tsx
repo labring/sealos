@@ -1,27 +1,27 @@
-import { useCustomToast } from '@/hooks/useCustomToast';
-import {
-  Text,
-  Button,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalCloseButton,
-  ModalHeader,
-  Spinner,
-  ModalBody,
-  BoxProps,
-  VStack,
-  HStack
-} from '@chakra-ui/react';
-import { WarnTriangeIcon } from '@sealos/ui';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
 import { mergeUserRequest } from '@/api/auth';
+import { useCustomToast } from '@/hooks/useCustomToast';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
-import { useEffect, useState } from 'react';
-import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { ValueOf } from '@/types';
 import { I18nErrorKey } from '@/types/i18next';
+import { USER_MERGE_STATUS } from '@/types/response/merge';
+import {
+  BoxProps,
+  Button,
+  HStack,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Spinner,
+  Text,
+  VStack
+} from '@chakra-ui/react';
+import { WarnTriangeIcon } from '@sealos/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
 
 function NeedToMerge({ ...props }: BoxProps & {}) {
   const { mergeUserStatus, mergeUserData, setMergeUserStatus, setMergeUserData } =
@@ -63,20 +63,22 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent
-        borderRadius={'12px'}
+        borderRadius={'10px'}
         maxW={'400px'}
         bgColor={'#FFF'}
         backdropFilter="blur(150px)"
-        p="24px"
       >
-        <ModalCloseButton right={'24px'} top="24px" p="0" />
+        <ModalCloseButton top={'8px'} right={'20px'} />
         <ModalHeader
+          px={'20px'}
+          py={'12px'}
           bg={'grayModern.25'}
-          borderBottomWidth={'1px'}
-          borderBottomColor={'grayModern.100'}
-          p="0"
+          borderBottom={'1px solid'}
+          fontWeight={500}
+          fontSize={'16px'}
           display={'flex'}
           gap={'10px'}
+          borderColor={'grayModern.100'}
         >
           <WarnTriangeIcon boxSize={'24px'} fill={'yellow.500'} />
           <Text>{t('common:merge_account_title')}</Text>
@@ -84,7 +86,7 @@ function NeedToMerge({ ...props }: BoxProps & {}) {
         {mutation.isLoading ? (
           <Spinner mx="auto" />
         ) : (
-          <ModalBody h="100%" w="100%" p="0" mt="22px" fontSize={'14px'}>
+          <ModalBody h="100%" w="100%" px="36px" pt="24px" pb="32px" fontSize={'14px'}>
             <VStack alignItems={'stretch'} gap={'0'}>
               <Text mb={'12px'}>
                 {mergeUserStatus === MergeUserStatus.CONFLICT
