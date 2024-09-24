@@ -51,9 +51,13 @@ type Config struct {
 	// +kubebuilder:default={/home/sealos/project/entrypoint.sh}
 	ReleaseArgs []string `json:"releaseArgs,omitempty"`
 
+	// TODO: in v1alpha2 api we need fix the port and app port into one field and create a new type for it.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={{name:"devbox-ssh-port",containerPort:22,protocol:TCP}}
 	Ports []corev1.ContainerPort `json:"ports,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={{name:"devbox-app-port",port:8080,protocol:TCP}}
+	AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`

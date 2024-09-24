@@ -40,13 +40,25 @@ metadata:
   namespace: devbox-system
 spec:
   classRef: go
-  title: go1.23.0
-  description: go1.23.0
   config:
-    image: ghcr.io/cbluebird/devbox/go1.23.0:2f4067
-  category:
-    - ubuntu
-    - go
+    image: ghcr.io/labring-actions/devbox/go-1.23.0:409348
+    ports:
+      - containerPort: 22
+        name: devbox-ssh-port
+        protocol: TCP
+    appPorts:
+      - name: devbox-app-port
+        port: 8080
+        protocol: TCP
+    user: sealos
+    workingDir: /home/sealos/project
+    releaseCommand:
+      - /bin/bash
+      - -c
+    releaseArgs:
+      - /home/sealos/project/entrypoint.sh
+  description: go 1.23.0
+  version: "1.23.0"
 ---
 apiVersion: devbox.sealos.io/v1alpha1
 kind: Runtime

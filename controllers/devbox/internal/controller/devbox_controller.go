@@ -336,7 +336,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		//use the default value
 		servicePorts = []corev1.ServicePort{
 			{
-				Name:       "tty",
+				Name:       "devbox-ssh-port",
 				Port:       22,
 				TargetPort: intstr.FromInt32(22),
 				Protocol:   corev1.ProtocolTCP,

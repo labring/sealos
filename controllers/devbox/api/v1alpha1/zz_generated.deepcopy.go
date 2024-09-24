@@ -105,6 +105,13 @@ func (in *Config) DeepCopyInto(out *Config) {
 		*out = make([]v1.ContainerPort, len(*in))
 		copy(*out, *in)
 	}
+	if in.AppPorts != nil {
+		in, out := &in.AppPorts, &out.AppPorts
+		*out = make([]v1.ServicePort, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
 		*out = make([]v1.VolumeMount, len(*in))
