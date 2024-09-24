@@ -4,7 +4,12 @@ import {
   getNamespace,
   getAppEnv
 } from '@/api/platform'
-import { VersionMapType, runtimeNamespaceMapType, ValueType } from '@/types/devbox'
+import {
+  VersionMapType,
+  runtimeNamespaceMapType,
+  ValueType,
+  ValueTypeWithPorts
+} from '@/types/devbox'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
 export let SOURCE_PRICE: resourcePriceResponse = {
@@ -56,7 +61,7 @@ export let osVersionMap: VersionMapType = {
   // [OSTypeEnum.centos]: [{ id: '8', label: 'centos-8' }]
 }
 export const getRuntimeVersionList = (runtimeType: string) => {
-  let versions: ValueType[] = []
+  let versions: ValueTypeWithPorts[] = []
 
   if (languageVersionMap[runtimeType]) {
     versions = languageVersionMap[runtimeType]
@@ -67,7 +72,8 @@ export const getRuntimeVersionList = (runtimeType: string) => {
   }
   return versions.map((i) => ({
     value: i.id,
-    label: i.label
+    label: i.label,
+    defaultPorts: i.defaultPorts
   }))
 }
 

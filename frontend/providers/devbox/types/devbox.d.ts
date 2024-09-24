@@ -156,7 +156,11 @@ export interface ValueType {
 }
 
 export interface VersionMapType {
-  [key: string]: ValueType[]
+  [key: string]: ValueTypeWithPorts[]
+}
+
+export interface ValueTypeWithPorts extends ValueType {
+  defaultPorts: number[]
 }
 
 export interface runtimeNamespaceMapType {
