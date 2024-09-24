@@ -25,16 +25,6 @@ export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid
   });
 };
 
-// Deprecated
-export const updateDesktopGuide = () => {
-  return request.post('/api/account/updateGuide');
-};
-
-// Deprecated
-export const getUserAccount = () => {
-  return request.get<AccountCRD>('/api/account/getAccount');
-};
-
 export const getUserTasks = () => {
   return request.get<UserTask[]>('/api/account/getTasks');
 };
