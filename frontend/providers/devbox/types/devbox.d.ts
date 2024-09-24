@@ -1,11 +1,25 @@
-import { V1Pod, V1ContainerStatus } from '@kubernetes/client-node'
+import {
+  V1Pod,
+  V1ContainerStatus,
+  V1Deployment,
+  V1ConfigMap,
+  V1Service,
+  V1Ingress,
+  V1Secret,
+  V1HorizontalPodAutoscaler,
+  SinglePodMetrics,
+  V1StatefulSet
+} from '@kubernetes/client-node'
 
 import {
   RuntimeTypeEnum,
   DevboxStatusEnum,
   DevboxReleaseStatusEnum,
   FrameworkTypeEnum,
-  YamlKindEnum
+  YamlKindEnum,
+  LanguageTypeEnum,
+  OSTypeEnum,
+  PodStatusEnum
 } from '@/constants/devbox'
 import { MonitorDataResult } from './monitor'
 
@@ -147,6 +161,14 @@ export interface VersionMapType {
 
 export interface runtimeNamespaceMapType {
   [key: string]: string
+}
+
+export interface PodStatusMapType {
+  label: string
+  value: `${PodStatusEnum}`
+  color: string
+  reason?: string
+  message?: string
 }
 
 export interface PodDetailType extends V1Pod {

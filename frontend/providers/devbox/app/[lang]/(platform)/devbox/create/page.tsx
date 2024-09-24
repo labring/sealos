@@ -179,10 +179,12 @@ const DevboxCreatePage = () => {
     },
     {
       onSuccess(res) {
-        if (!res) return
+        if (!res) {
+          return
+        }
         oldDevboxEditData.current = res
         formOldYamls.current = formData2Yamls(res)
-        crOldYamls.current = generateYamlList(res)
+        crOldYamls.current = generateYamlList(res) as DevboxKindsType[]
         formHook.reset(res)
       },
       onError(err) {
@@ -203,8 +205,13 @@ const DevboxCreatePage = () => {
     try {
       // quote check
       const quoteCheckRes = checkQuotaAllow(
-        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & { nodeports: number },
-        { ...oldDevboxEditData.current, nodeports: devboxList.length } as DevboxEditType & {
+        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & {
+          nodeports: number
+        },
+        {
+          ...oldDevboxEditData.current,
+          nodeports: devboxList.length
+        } as DevboxEditType & {
           nodeports: number
         }
       )
@@ -262,7 +269,9 @@ const DevboxCreatePage = () => {
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('submit_form_error')
+      if (!obj || typeof obj !== 'object') {
+        return t('submit_form_error')
+      }
       if (!!obj.message) {
         return obj.message
       }
