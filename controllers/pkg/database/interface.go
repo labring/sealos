@@ -95,10 +95,14 @@ type AccountV2 interface {
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	GetAccountConfig() (types.AccountConfig, error)
+	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
 	GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error)
 	GetWorkspace(namespaces ...string) ([]types.Workspace, error)
+	GetUserRechargeDiscount(ops *types.UserQueryOpts) (types.UserRechargeDiscount, error)
+	//TODO will be removed this method
 	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
 	SetAccountCreateLocalRegion(account *types.Account, region string) error
 	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error

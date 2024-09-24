@@ -276,19 +276,23 @@ const BaseUnit = 1_000_000
 //	return getAmountWithDiscount(amount, *discount), nil
 //}
 
-func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int64 {
-	if discount.SpecialDiscount != nil && discount.SpecialDiscount[amount/BaseUnit] != 0 {
-		return amount + discount.SpecialDiscount[amount/BaseUnit]*BaseUnit
-	}
+func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) int64 {
 	var r float64
-	for i, s := range discount.DiscountSteps {
-		if amount >= s*BaseUnit {
-			r = discount.DiscountRates[i]
+	for step, ratio := range discount.DefaultSteps {
+		if amount >= step*BaseUnit {
+			r = ratio
 		} else {
 			break
 		}
 	}
 	return int64(math.Ceil(float64(amount) * r / 100))
+}
+
+func getFirstRechargeDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) (bool, int64) {
+	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] != 0 {
+		return true, int64(math.Ceil(float64(amount) * discount.FirstRechargeSteps[amount/BaseUnit]))
+	}
+	return false, getAmountWithDiscount(amount, discount)
 }
 
 func (r *AccountReconciler) BillingCVM() error {
