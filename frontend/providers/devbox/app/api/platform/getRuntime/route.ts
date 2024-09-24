@@ -5,15 +5,15 @@ import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { KBRuntimeClassType, KBRuntimeType } from '@/types/k8s'
-import { VersionMapType, runtimeNamespaceMapType, valueType } from '@/types/devbox'
+import { VersionMapType, runtimeNamespaceMapType, ValueType } from '@/types/devbox'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const languageTypeList: valueType[] = []
-    const frameworkTypeList: valueType[] = []
-    const osTypeList: valueType[] = []
+    const languageTypeList: ValueType[] = []
+    const frameworkTypeList: ValueType[] = []
+    const osTypeList: ValueType[] = []
     const languageVersionMap: VersionMapType = {}
     const frameworkVersionMap: VersionMapType = {}
     const osVersionMap: VersionMapType = {}

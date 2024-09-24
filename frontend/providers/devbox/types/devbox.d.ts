@@ -150,13 +150,13 @@ export type DevboxKindsType =
   | V1Secret
   | V1HorizontalPodAutoscaler
 
-export interface valueType {
+export interface ValueType {
   id: string
   label: string
 }
 
 export interface VersionMapType {
-  [key: string]: valueType[]
+  [key: string]: ValueType[]
 }
 
 export interface runtimeNamespaceMapType {
