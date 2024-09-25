@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"gorm.io/gorm/clause"
+
 	"gorm.io/gorm/logger"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -1070,6 +1072,17 @@ func (c *Cockroach) GetGiftCodeWithCode(code string) (*types.GiftCode, error) {
 
 func (c *Cockroach) UseGiftCode(giftCode *types.GiftCode, userID string) error {
 	return c.DB.Transaction(func(tx *gorm.DB) error {
+		var lockedGiftCode types.GiftCode
+		// Lock the gift code record for update
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "NOWAIT"}).
+			Where(&types.GiftCode{ID: giftCode.ID}).First(&lockedGiftCode).Error; err != nil {
+			return fmt.Errorf("failed to lock gift code: %w", err)
+		}
+
+		if lockedGiftCode.Used {
+			return fmt.Errorf("gift code has already been used")
+		}
+
 		ops := &types.UserQueryOpts{ID: userID}
 		// Update the user's balance
 		if err := c.updateBalance(tx, ops, giftCode.CreditAmount, false, true); err != nil {
@@ -1103,4 +1116,21 @@ func (c *Cockroach) UseGiftCode(giftCode *types.GiftCode, userID string) error {
 
 		return nil
 	})
+}
+
+func (c *Cockroach) GetUserRealNameInfoByUserID(userID string) (*types.UserRealNameInfo, error) {
+	// get user info
+	ops := &types.UserQueryOpts{ID: userID}
+	user, err := c.GetUserCr(ops)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	// get user realname info
+	var userRealNameInfo types.UserRealNameInfo
+	if err := c.DB.Where(&types.UserRealNameInfo{UserUID: user.UserUID}).First(&userRealNameInfo).Error; err != nil {
+		return nil, fmt.Errorf("failed to get user real name info: %w", err)
+	}
+	return &userRealNameInfo, nil
 }
