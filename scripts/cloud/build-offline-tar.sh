@@ -16,6 +16,10 @@ images=(
   docker.io/labring/openebs:v3.10.0
   docker.io/labring/victoria-metrics-k8s-stack:v1.96.0
   docker.io/labring/higress:v2.0.0
+  docker.io/apecloud/csi-attacher:v4.4.0
+  docker.io/apecloud/csi-provisioner:v4.0.0
+  docker.io/apecloud/csi-s3-driver:0.31.3
+  docker.io/apecloud/csi-node-driver-registrar:v2.10.0
   docker.io/labring/kubeblocks:v0.8.2
   docker.io/labring/kubeblocks-redis:v0.8.2
   docker.io/labring/kubeblocks-mongodb:v0.8.2
