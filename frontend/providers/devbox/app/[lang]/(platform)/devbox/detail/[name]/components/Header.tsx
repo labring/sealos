@@ -100,7 +100,7 @@ const Header = ({
             editorUri = `vscode://`
         }
 
-        const fullUri = `${editorUri}mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
+        const fullUri = `${editorUri}sealos.devbox-aio?sshDomain=${encodeURIComponent(
           `${userName}@${SEALOS_DOMAIN}`
         )}&sshPort=${encodeURIComponent(
           devbox.sshPort as number
