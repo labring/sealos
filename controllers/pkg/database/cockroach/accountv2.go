@@ -17,11 +17,12 @@ package cockroach
 import (
 	"errors"
 	"fmt"
-	"gorm.io/gorm/clause"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"gorm.io/gorm/clause"
 
 	"gorm.io/gorm/logger"
 
