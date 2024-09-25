@@ -302,7 +302,7 @@ func sortSteps(steps map[int64]float64) (keys []int64) {
 
 func getFirstRechargeDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) (bool, int64) {
 	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] != 0 {
-		return true, int64(math.Ceil(float64(amount) * discount.FirstRechargeSteps[amount/BaseUnit]))
+		return true, int64(math.Ceil(float64(amount) * discount.FirstRechargeSteps[amount/BaseUnit] / 100))
 	}
 	return false, getAmountWithDiscount(amount, discount)
 }

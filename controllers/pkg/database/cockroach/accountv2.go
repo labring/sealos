@@ -153,8 +153,12 @@ func (c *Cockroach) GetUserRechargeDiscount(ops *types.UserQueryOpts) (types.Use
 		if err != nil {
 			return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge payments: %v", err)
 		}
-		for i := range payments {
-			delete(firstRechargeSteps, payments[i].Amount)
+		if len(payments) == 0 {
+			firstRechargeSteps = map[int64]float64{}
+		} else {
+			for i := range payments {
+				delete(firstRechargeSteps, payments[i].Amount/BaseUnit)
+			}
 		}
 	}
 	return types.UserRechargeDiscount{
