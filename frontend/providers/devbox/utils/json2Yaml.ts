@@ -96,12 +96,23 @@ export const json2DevboxRelease = (data: {
   devboxName: string
   tag: string
   releaseDes: string
+  devboxUid: string
 }) => {
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'DevBoxRelease',
     metadata: {
-      name: `${data.devboxName}-${data.tag}`
+      name: `${data.devboxName}-${data.tag}`,
+      ownerReferences: [
+        {
+          apiVersion: 'devbox.sealos.io/v1alpha1',
+          kind: 'Devbox',
+          name: data.devboxName,
+          blockOwnerDeletion: false,
+          controller: false,
+          uid: data.devboxUid
+        }
+      ]
     },
     spec: {
       devboxName: data.devboxName,

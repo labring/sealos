@@ -125,10 +125,16 @@ export type KBRuntimeType = {
   spec: {
     classRef: string
     config: {
+      // appPorts is used to network default expose ports
+      appPorts: {
+        name: string // devbox-app-port
+        port: number
+        protocol: string // TCP normally
+      }[]
       image: string
       ports: {
         containerPort: number
-        name?: string
+        name?: string // devbox-ssh-port
         protocol?: string
       }[]
       user: string

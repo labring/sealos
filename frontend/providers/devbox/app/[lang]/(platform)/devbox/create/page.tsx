@@ -4,6 +4,7 @@ import { useRouter } from '@/i18n'
 import dynamic from 'next/dynamic'
 import debounce from 'lodash/debounce'
 import { useMessage } from '@sealos/ui'
+import { customAlphabet } from 'nanoid'
 import { useForm } from 'react-hook-form'
 import { Box, Flex } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
@@ -11,6 +12,12 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import {
+  DEVBOX_AFFINITY_ENABLE,
+  SQUASH_ENABLE,
+  languageVersionMap,
+  runtimeNamespaceMap
+} from '@/stores/static'
 import Form from './components/Form'
 import Yaml from './components/Yaml'
 import Header from './components/Header'
@@ -22,22 +29,13 @@ import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { createDevbox, updateDevbox } from '@/api/devbox'
-import type { DevboxEditType, DevboxKindsType } from '@/types/devbox'
-import { LanguageTypeEnum, defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
-import {
-  DEVBOX_AFFINITY_ENABLE,
-  SQUASH_ENABLE,
-  languageVersionMap,
-  runtimeNamespaceMap
-} from '@/stores/static'
+import type { DevboxEditType, DevboxKindsType, ProtocolType } from '@/types/devbox'
+import { LanguageTypeEnum, defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
-const defaultEdit = {
-  ...defaultDevboxEditValue,
-  runtimeVersion: languageVersionMap[LanguageTypeEnum.go][0].id
-}
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 const formData2Yamls = (data: DevboxEditType) => [
   {
@@ -77,6 +75,20 @@ const DevboxCreatePage = () => {
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
+
+  const defaultEdit = {
+    ...defaultDevboxEditValue,
+    runtimeVersion: languageVersionMap[LanguageTypeEnum.go][0].id,
+    networks: languageVersionMap[LanguageTypeEnum.go][0].defaultPorts.map((port) => ({
+      networkName: `${defaultDevboxEditValue.name}-${nanoid()}`,
+      portName: nanoid(),
+      port: port,
+      protocol: 'HTTP' as ProtocolType,
+      openPublicDomain: true,
+      publicDomain: nanoid(),
+      customDomain: ''
+    }))
+  }
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
@@ -179,10 +191,12 @@ const DevboxCreatePage = () => {
     },
     {
       onSuccess(res) {
-        if (!res) return
+        if (!res) {
+          return
+        }
         oldDevboxEditData.current = res
         formOldYamls.current = formData2Yamls(res)
-        crOldYamls.current = generateYamlList(res)
+        crOldYamls.current = generateYamlList(res) as DevboxKindsType[]
         formHook.reset(res)
       },
       onError(err) {
@@ -203,8 +217,13 @@ const DevboxCreatePage = () => {
     try {
       // quote check
       const quoteCheckRes = checkQuotaAllow(
-        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & { nodeports: number },
-        { ...oldDevboxEditData.current, nodeports: devboxList.length } as DevboxEditType & {
+        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & {
+          nodeports: number
+        },
+        {
+          ...oldDevboxEditData.current,
+          nodeports: devboxList.length
+        } as DevboxEditType & {
           nodeports: number
         }
       )
@@ -262,7 +281,9 @@ const DevboxCreatePage = () => {
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('submit_form_error')
+      if (!obj || typeof obj !== 'object') {
+        return t('submit_form_error')
+      }
       if (!!obj.message) {
         return obj.message
       }

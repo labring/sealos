@@ -334,8 +334,10 @@ const DevboxList = ({
               mr={6}
               p={2}
               borderLeftRadius={0}
-              borderWidth={0}
-              boxShadow={'none'}
+              borderLeftWidth={0}
+              boxShadow={
+                '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
+              }
               as={IconButton}
               isDisabled={item.status.value !== 'Running'}
               icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}

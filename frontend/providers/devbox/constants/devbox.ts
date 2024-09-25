@@ -76,7 +76,7 @@ export const MemorySlideMarkList = [
 ]
 
 export const defaultDevboxEditValue: DevboxEditType = {
-  name: '',
+  name: 'devbox',
   runtimeType: LanguageTypeEnum.go,
   runtimeVersion: '',
   cpu: CpuSlideMarkList[1].value,

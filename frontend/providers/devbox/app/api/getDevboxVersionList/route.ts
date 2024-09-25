@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName')
+    const devboxUid = searchParams.get('devboxUid')
     const headerList = req.headers
 
     const { k8sCustomObjects, namespace } = await getK8s({
@@ -25,7 +26,11 @@ export async function GET(req: NextRequest) {
     )) as { body: { items: KBDevboxReleaseType[] } }
 
     const matchingDevboxVersions = releaseBody.items.filter((item: any) => {
-      return item.spec && item.spec.devboxName === devboxName
+      return (
+        item.spec &&
+        item.spec.devboxName === devboxName &&
+        item.metadata.ownerReferences[0].uid === devboxUid
+      )
     })
 
     return jsonRes({ data: matchingDevboxVersions })

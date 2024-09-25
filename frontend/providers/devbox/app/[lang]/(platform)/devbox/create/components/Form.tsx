@@ -287,6 +287,23 @@ const Form = ({
                           ) || t('devbox_name_invalid')
                       }
                     })}
+                    onBlur={(e) => {
+                      setValue('name', e.target.value)
+                      setValue(
+                        'networks',
+                        getRuntimeVersionList(getValues('runtimeType'))[0].defaultPorts.map(
+                          (port) => ({
+                            networkName: `${e.target.value}-${nanoid()}`,
+                            portName: nanoid(),
+                            port: port,
+                            protocol: 'HTTP',
+                            openPublicDomain: true,
+                            publicDomain: nanoid(),
+                            customDomain: ''
+                          })
+                        )
+                      )
+                    }}
                   />
                   <FormErrorMessage ml={'50px'}>
                     <Box fontSize={'12px'} h={'25px'} w={'100px'}>
@@ -333,10 +350,32 @@ const Form = ({
                                 })}
                             onClick={() => {
                               if (isEdit) return
+                              const devboxName = getValues('name')
+                              if (!devboxName) {
+                                toast({
+                                  title: t('Please enter the devbox name first'),
+                                  status: 'warning'
+                                })
+                                return
+                              }
                               setValue('runtimeType', item.id)
                               setValue(
                                 'runtimeVersion',
                                 languageVersionMap[getValues('runtimeType')][0].id
+                              )
+                              setValue(
+                                'networks',
+                                languageVersionMap[getValues('runtimeType')][0].defaultPorts.map(
+                                  (port) => ({
+                                    networkName: `${devboxName}-${nanoid()}`,
+                                    portName: nanoid(),
+                                    port: port,
+                                    protocol: 'HTTP',
+                                    openPublicDomain: true,
+                                    publicDomain: nanoid(),
+                                    customDomain: ''
+                                  })
+                                )
                               )
                             }}>
                             <Image
@@ -389,10 +428,32 @@ const Form = ({
                                 })}
                             onClick={() => {
                               if (isEdit) return
+                              const devboxName = getValues('name')
+                              if (!devboxName) {
+                                toast({
+                                  title: t('Please enter the devbox name first'),
+                                  status: 'warning'
+                                })
+                                return
+                              }
                               setValue('runtimeType', item.id)
                               setValue(
                                 'runtimeVersion',
                                 frameworkVersionMap[getValues('runtimeType')][0].id
+                              )
+                              setValue(
+                                'networks',
+                                frameworkVersionMap[getValues('runtimeType')][0].defaultPorts.map(
+                                  (port) => ({
+                                    networkName: `${devboxName}-${nanoid()}`,
+                                    portName: nanoid(),
+                                    port: port,
+                                    protocol: 'HTTP',
+                                    openPublicDomain: true,
+                                    publicDomain: nanoid(),
+                                    customDomain: ''
+                                  })
+                                )
                               )
                             }}>
                             <Image
@@ -445,10 +506,32 @@ const Form = ({
                                 })}
                             onClick={() => {
                               if (isEdit) return
+                              const devboxName = getValues('name')
+                              if (!devboxName) {
+                                toast({
+                                  title: t('Please enter the devbox name first'),
+                                  status: 'warning'
+                                })
+                                return
+                              }
                               setValue('runtimeType', item.id)
                               setValue(
                                 'runtimeVersion',
                                 osVersionMap[getValues('runtimeType')][0].id
+                              )
+                              setValue(
+                                'networks',
+                                osVersionMap[getValues('runtimeType')][0].defaultPorts.map(
+                                  (port) => ({
+                                    networkName: `${devboxName}-${nanoid()}`,
+                                    portName: nanoid(),
+                                    port: port,
+                                    protocol: 'HTTP',
+                                    openPublicDomain: true,
+                                    publicDomain: nanoid(),
+                                    customDomain: ''
+                                  })
+                                )
                               )
                             }}>
                             <Image
@@ -490,7 +573,29 @@ const Form = ({
                     list={getRuntimeVersionList(getValues('runtimeType'))}
                     onchange={(val: any) => {
                       if (isEdit) return
+                      const devboxName = getValues('name')
+                      if (!devboxName) {
+                        toast({
+                          title: t('Please enter the devbox name first'),
+                          status: 'warning'
+                        })
+                        return
+                      }
                       setValue('runtimeVersion', val)
+                      setValue(
+                        'networks',
+                        getRuntimeVersionList(getValues('runtimeType'))[0].defaultPorts.map(
+                          (port) => ({
+                            networkName: `${devboxName}-${nanoid()}`,
+                            portName: nanoid(),
+                            port: port,
+                            protocol: 'HTTP',
+                            openPublicDomain: true,
+                            publicDomain: nanoid(),
+                            customDomain: ''
+                          })
+                        )
+                      )
                     }}
                   />
                 )}
