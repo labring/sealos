@@ -277,6 +277,7 @@ init() {
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-csi-s3" "v0.31.4"
     pull_image "cockroach" "v2.12.0"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "victoria-metrics-k8s-stack" "v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
@@ -770,9 +771,10 @@ EOF
     sealos run ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-postgresql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-mongodb:v${kubeblocks_version#v:-0.8.2} \
-      ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
+      ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2} \
+      ${image_registry}/${image_repository}/kubeblocks-csi-s3:v0.31.4
 
-    addons=("snapshot-controller" "csi-s3" "migration" "milvus" "weaviate")
+    addons=("snapshot-controller" "migration" "milvus" "weaviate")
 
     for addon in "${addons[@]}"; do
       kubectl patch addon $addon --type='merge' -p '{"spec":{"install":{"enabled":true,"resources":{},"tolerations":"[{\"effect\":\"NoSchedule\",\"key\":\"kb-controller\",\"operator\":\"Equal\",\"value\":\"true\"}]"}}}'
