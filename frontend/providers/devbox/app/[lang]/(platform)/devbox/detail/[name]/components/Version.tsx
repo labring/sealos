@@ -76,7 +76,6 @@ const Version = () => {
         runCMD: releaseCommand,
         cmdParam: releaseArgs
       }
-      console.log('transformData', transformData)
 
       const formData = encodeURIComponent(JSON.stringify(transformData))
 
