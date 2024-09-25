@@ -68,6 +68,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
               zIndex={1}
               transition={'0.4s'}
               bg={'white'}
+              borderWidth={1}
               borderRadius={'lg'}
               {...(isLargeScreen
                 ? {}

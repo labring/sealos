@@ -49,7 +49,7 @@ const BasicInfo = () => {
   )
 
   return (
-    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} borderWidth={1} h={'100%'}>
+    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
       {/* basic info */}
       <Flex mb={3} mt={2}>
         <MyIcon name="info" w={'15px'} h={'15px'} mr={'4px'} color={'grayModern.600'} mt={'1px'} />
