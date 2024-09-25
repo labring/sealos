@@ -5,8 +5,7 @@ import { immer } from 'zustand/middleware/immer'
 import type {
   DevboxDetailType,
   DevboxListItemType,
-  DevboxVersionListItemType,
-  PodDetailType
+  DevboxVersionListItemType
 } from '@/types/devbox'
 import {
   getDevboxMonitorData,
@@ -28,7 +27,6 @@ type State = {
   devboxDetail: DevboxDetailType
   setDevboxDetail: (devboxName: string) => Promise<DevboxDetailType>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
-  devboxDetailPods: PodDetailType[]
 }
 
 export const useDevboxStore = create<State>()(
@@ -68,7 +66,7 @@ export const useDevboxStore = create<State>()(
                 })
               ])
             } catch (error) {
-              console.error('获取监控数据失败:', error)
+              console.error('fetch monitor data error:', error)
               averageCpuData = [
                 {
                   xData: new Array(30).fill(0),
@@ -164,34 +162,12 @@ export const useDevboxStore = create<State>()(
 
         return detail
       },
-      devboxDetailPods: [],
       loadDetailMonitorData: async (devboxName) => {
         const pods = await getDevboxPodsByDevboxName(devboxName)
 
         const queryName = pods.length > 0 ? pods[0].podName : devboxName
 
-        set((state) => {
-          state.devboxDetailPods = pods.map((pod) => {
-            const oldPod = state.devboxDetailPods.find((item) => item.podName === pod.podName)
-            return {
-              ...pod,
-              usedCpu: oldPod ? oldPod.usedCpu : pod.usedCpu,
-              usedMemory: oldPod ? oldPod.usedMemory : pod.usedMemory
-            }
-          })
-        })
-
-        const [cpuData, memoryData, averageCpuData, averageMemoryData] = await Promise.all([
-          getDevboxMonitorData({
-            queryKey: 'cpu',
-            queryName: queryName,
-            step: '2m'
-          }),
-          getDevboxMonitorData({
-            queryKey: 'memory',
-            queryName: queryName,
-            step: '2m'
-          }),
+        const [averageCpuData, averageMemoryData] = await Promise.all([
           getDevboxMonitorData({
             queryKey: 'average_cpu',
             queryName: queryName,
@@ -221,15 +197,6 @@ export const useDevboxStore = create<State>()(
                   name: ''
                 }
           }
-          state.devboxDetailPods = pods.map((pod) => {
-            const currentCpu = cpuData.find((item) => item.name === pod.podName)
-            const currentMemory = memoryData.find((item) => item.name === pod.podName)
-            return {
-              ...pod,
-              usedCpu: currentCpu ? currentCpu : pod.usedCpu,
-              usedMemory: currentMemory ? currentMemory : pod.usedMemory
-            }
-          })
         })
         return 'success'
       }
