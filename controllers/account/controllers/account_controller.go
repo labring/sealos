@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -278,7 +279,8 @@ const BaseUnit = 1_000_000
 
 func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) int64 {
 	var r float64
-	for step, ratio := range discount.DefaultSteps {
+	for _, step := range sortSteps(discount.DefaultSteps) {
+		ratio := discount.DefaultSteps[step]
 		if amount >= step*BaseUnit {
 			r = ratio
 		} else {
@@ -286,6 +288,16 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount)
 		}
 	}
 	return int64(math.Ceil(float64(amount) * r / 100))
+}
+
+func sortSteps(steps map[int64]float64) (keys []int64) {
+	for k := range steps {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	return
 }
 
 func getFirstRechargeDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) (bool, int64) {

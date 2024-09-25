@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
@@ -48,6 +50,7 @@ type PaymentReconciler struct {
 	reconcileDuration time.Duration
 	createDuration    time.Duration
 	accountConfig     pkgtypes.AccountConfig
+	userLock          map[uuid.UUID]*sync.Mutex
 	domain            string
 }
 
@@ -77,6 +80,7 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 	r.domain = os.Getenv("DOMAIN")
 	r.reconcileDuration = defaultReconcileDuration
 	r.createDuration = defaultCreateDuration
+	r.userLock = make(map[uuid.UUID]*sync.Mutex)
 	if duration := os.Getenv(EnvPaymentReconcileDuration); duration != "" {
 		reconcileDuration, err := time.ParseDuration(duration)
 		if err == nil {
@@ -204,6 +208,11 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		if err != nil {
 			return fmt.Errorf("get user failed: %w", err)
 		}
+		if r.userLock[user.UID] == nil {
+			r.userLock[user.UID] = &sync.Mutex{}
+		}
+		r.userLock[user.UID].Lock()
+		defer r.userLock[user.UID].Unlock()
 		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
 		if err != nil {
 			return fmt.Errorf("get user discount failed: %w", err)
