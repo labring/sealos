@@ -3,10 +3,10 @@ package common
 import "time"
 
 type PropertyQuery struct {
-	Name      string  `json:"name,omitempty" bson:"name,omitempty" example:"cpu"`
+	Name      string  `json:"name" bson:"name" example:"cpu"`
 	Alias     string  `json:"alias,omitempty" bson:"alias,omitempty" example:"gpu-tesla-v100"`
-	UnitPrice float64 `json:"unit_price,omitempty" bson:"unit_price,omitempty" example:"10000"`
-	Unit      string  `json:"unit,omitempty" bson:"unit,omitempty" example:"1m"`
+	UnitPrice float64 `json:"unit_price" bson:"unit_price" example:"10000"`
+	Unit      string  `json:"unit" bson:"unit" example:"1m"`
 }
 
 type TimeCostsMap [][]interface{}
