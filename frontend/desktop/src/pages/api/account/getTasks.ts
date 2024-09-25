@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       orderBy: {
         task: {
-          createdAt: 'asc'
+          order: 'asc'
         }
       }
     });

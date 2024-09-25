@@ -45,8 +45,8 @@ export default function useDriver() {
       const allTasksCompleted = data.data.every((task) => task.isCompleted);
 
       if (!desktopTask?.isCompleted && desktopTask?.id) {
-        setDesktopGuide(true);
         setTaskComponentState('none');
+        setDesktopGuide(true);
       } else if (allTasksCompleted) {
         setTaskComponentState('none');
       } else {
@@ -280,33 +280,33 @@ export default function useDriver() {
               <Flex justifyContent={'start'} alignItems={'center'} gap={'6px'}>
                 <LaunchpadIcon />
                 <Text fontSize="14px" fontWeight={500} color="grayModern.900">
-                  {t('common:usertask.task1_title')}
+                  {t('common:usertask.task_launchpad_title')}
                 </Text>
               </Flex>
               <Text fontSize="12px" fontWeight={400} color="grayModern.500" marginTop="12px">
-                {t('common:usertask.task1_desc')}
+                {t('common:usertask.task_launchpad_desc')}
               </Text>
             </Flex>
             <Flex {...boxStyles}>
               <Flex alignItems={'center'} gap={'6px'}>
                 <DBproviderIcon />
                 <Text fontSize="14px" fontWeight={500} color="grayModern.900">
-                  {t('common:usertask.task2_title')}
+                  {t('common:usertask.task_database_title')}
                 </Text>
               </Flex>
               <Text fontSize="12px" fontWeight={400} color="grayModern.500" marginTop="12px">
-                {t('common:usertask.task2_desc')}
+                {t('common:usertask.task_database_desc')}
               </Text>
             </Flex>
             <Flex {...boxStyles}>
               <Flex alignItems={'center'} gap={'6px'}>
                 <AppStoreIcon />
                 <Text fontSize="14px" fontWeight={500} color="grayModern.900">
-                  {t('common:usertask.task3_title')}
+                  {t('common:usertask.task_appstore_title')}
                 </Text>
               </Flex>
               <Text fontSize="12px" fontWeight={400} color="grayModern.500" marginTop="12px">
-                {t('common:usertask.task3_desc')}
+                {t('common:usertask.task_appstore_desc')}
               </Text>
             </Flex>
           </Flex>

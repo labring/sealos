@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "TaskType" AS ENUM ('LAUNCHPAD', 'COSTCENTER', 'DATABASE', 'DESKTOP');
+CREATE TYPE "TaskType" AS ENUM ('LAUNCHPAD', 'COSTCENTER', 'DATABASE', 'DESKTOP', 'APPSTORE');
 
 -- CreateEnum
 CREATE TYPE "TaskStatus" AS ENUM ('NOT_COMPLETED', 'COMPLETED');
@@ -26,7 +26,7 @@ CREATE TABLE "UserTask" (
     "userUid" UUID NOT NULL,
     "taskId" UUID NOT NULL,
     "status" "TaskStatus" NOT NULL,
-    "rewardStatus" STRING NOT NULL,
+    "rewardStatus" "TaskStatus" NOT NULL,
     "completedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(3) NOT NULL,

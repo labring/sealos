@@ -344,7 +344,7 @@ model UserTask {
   userUid     String     @db.Uuid
   taskId      String     @db.Uuid
   status      TaskStatus
-  rewardStatus String
+  rewardStatus TaskStatus
   completedAt DateTime
   createdAt   DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
@@ -361,6 +361,7 @@ enum TaskType {
   COSTCENTER
   DATABASE
   DESKTOP
+  APPSTORE
 }
 
 enum TaskStatus {

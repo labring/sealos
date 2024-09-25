@@ -112,7 +112,7 @@ async function createNewUserTasks(tx: TransactionClient, userUid: string) {
         userUid,
         taskId: task.id,
         status: TaskStatus.NOT_COMPLETED,
-        rewardStatus: 'PENDING',
+        rewardStatus: task.taskType === 'DESKTOP' ? TaskStatus.COMPLETED : TaskStatus.NOT_COMPLETED,
         completedAt: new Date(0)
       }
     });
