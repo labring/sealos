@@ -35,7 +35,7 @@ export const json2CronJob = (data: CronJobEditType) => {
   }
 
   if (data.jobType === 'launchpad') {
-    data.imageName = 'nowinkey/curl-kubectl:v1.0.4';
+    data.imageName = 'labring4docker/curl-kubectl:v1.0.0';
     data.runCMD = `["/bin/sh", "-c"]`;
     const resources = {
       requests: {
