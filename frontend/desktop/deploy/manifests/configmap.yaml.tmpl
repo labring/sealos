@@ -39,6 +39,7 @@ data:
         proxyAddress: ""
         callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
         signUpEnabled: true
+        billingUrl: "http://account-service.account-system.svc:2333"
         baiduToken: ""
         invite:
           enabled: false

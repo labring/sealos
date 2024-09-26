@@ -10,5 +10,6 @@ ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
 ENV transferEnabled="true"
 ENV rechargeEnabled="true"
+ENV jwtInternal=""
 
 CMD ["kubectl apply -f manifests"]
