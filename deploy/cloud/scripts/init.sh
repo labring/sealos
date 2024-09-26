@@ -289,8 +289,9 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert" \
   --env transferEnabled="true" \
-  --env rechargeEnabled="false"
-
+  --env rechargeEnabled="false" \
+  --env jwtInternal="$jwtInternal"
+ 
   echo "run template frontend"
   sealos run tars/frontend-template.tar \
   --env cloudDomain=$cloudDomain \
