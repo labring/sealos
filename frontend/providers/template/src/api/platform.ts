@@ -1,7 +1,9 @@
 import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
-import type { UserQuotaItemType, userPriceType } from '@/types/user';
+import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
+import { getUserSession } from '@/utils/user';
+import useSessionStore from '@/store/session';
 
 export const updateRepo = () => GET('/api/updateRepo');
 
@@ -21,3 +23,24 @@ export const getUserQuota = () =>
   }>('/api/platform/getQuota');
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
+
+export const getUserTasks = () =>
+  GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
+    headers: {
+      Authorization: useSessionStore.getState().getSession()?.token
+    }
+  });
+
+export const checkUserTask = () =>
+  GET('/api/guide/checkTask', undefined, {
+    headers: {
+      Authorization: useSessionStore.getState().getSession()?.token
+    }
+  });
+
+export const getPriceBonus = () =>
+  GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
+    headers: {
+      Authorization: useSessionStore.getState().getSession()?.token
+    }
+  });
