@@ -99,7 +99,7 @@ jobs:
           sudo mv /tmp/sealos /usr/bin/sealos
           sudo sealos version
       - name: Build
-        run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && export ARCH=arm64 && bash ./scripts/cloud/build-offline-tar.sh
+        run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && VERSION=${{ github.event.release.tag_name }} && export ARCH=arm64 && bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
         uses: manyuanrong/setup-ossutil@v2.0
         with:
