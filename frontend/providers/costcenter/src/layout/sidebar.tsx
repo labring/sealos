@@ -1,20 +1,20 @@
-import { Flex, Text, Img, Divider, Box } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
+import dashbordIcon from '@/assert/dashboard.svg';
+import dashboard_a_icon from '@/assert/dashboard_black.svg';
 import letter_icon from '@/assert/format_letter_spacing_standard.svg';
 import letter_a_icon from '@/assert/format_letter_spacing_standard_black.svg';
-import receipt_icon from '@/assert/receipt_long.svg';
-import receipt_a_icon from '@/assert/receipt_long_black.svg';
+import invoice_a_icon from '@/assert/invoice-active.svg';
+import invoice_icon from '@/assert/invoice.svg';
 import layers_icon from '@/assert/layers.svg';
 import layers_a_icon from '@/assert/layers_black.svg';
 import linechart_icon from '@/assert/lineChart.svg';
 import linechart_a_icon from '@/assert/lineChart_black.svg';
-import invoice_icon from '@/assert/invoice.svg';
-import invoice_a_icon from '@/assert/invoice-active.svg';
-import dashbordIcon from '@/assert/dashboard.svg';
-import dashboard_a_icon from '@/assert/dashboard_black.svg';
-import type { StaticImageData } from 'next/image';
-import { useTranslation } from 'next-i18next';
+import receipt_icon from '@/assert/receipt_long.svg';
+import receipt_a_icon from '@/assert/receipt_long_black.svg';
 import useEnvStore from '@/stores/env';
+import { Box, Divider, Flex, Img, Text } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import type { StaticImageData } from 'next/image';
+import { useRouter } from 'next/router';
 
 type Menu = {
   id: string;
@@ -88,8 +88,6 @@ export default function SideBar() {
             return (
               <Box key={item.value}>
                 <Flex
-                  // py={'10px'}
-                  // px={['10px', '10px', '10px', '20px']}
                   {...([1, 3, 5].includes(idx)
                     ? {
                         mb: '32px'
@@ -113,13 +111,13 @@ export default function SideBar() {
                   <Text
                     color={router.route === item.url ? 'grayModern.900' : 'grayModern.500'}
                     ml="8px"
-                    // my="9px"
-                    // display={['none', 'none', 'none', 'flex']}
                   >
                     {t(item.value)}
                   </Text>
                 </Flex>
-                {[0, 2, 4].includes(idx) && <Divider my="20px" borderColor={'grayModern.250'} />}
+                {([0, 2].includes(idx) || (idx === 4 && invoiceEnabled)) && (
+                  <Divider my="20px" borderColor={'grayModern.250'} />
+                )}
               </Box>
             );
           })}

@@ -5,9 +5,9 @@ import { default as CurrencySymbol, default as Currencysymbol } from '@/componen
 import OuterLink from '@/components/outerLink';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import useEnvStore from '@/stores/env';
+import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types/payment';
-import { getFavorable } from '@/utils/favorable';
 import { deFormatMoney, formatMoney } from '@/utils/format';
 import {
   Box,
@@ -29,13 +29,16 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
+import { MyTooltip } from '@sealos/ui';
 import { Stripe } from '@stripe/stripe-js';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
 import { isNumber } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { QRCodeSVG } from 'qrcode.react';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import GiftIcon from './icons/GiftIcon';
+import HelpIcon from './icons/HelpIcon';
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -122,10 +125,12 @@ const BonusBox = (props: {
   onClick: () => void;
   selected: boolean;
   bouns: number;
+  isFirst?: boolean;
   amount: number;
 }) => {
   const { t } = useTranslation();
   const currency = useEnvStore((s) => s.currency);
+
   return (
     <Flex
       width="140px"
@@ -151,26 +156,67 @@ const BonusBox = (props: {
         props.onClick();
       }}
     >
-      <Flex
-        position={'absolute'}
-        minW={'max-content'}
-        left="78px"
-        top="4px"
-        px={'13.5px'}
-        py={'2.5px'}
-        color={'purple.600'}
-        background="purple.100"
-        alignItems={'center'}
-        borderRadius="10px 10px 10px 0px"
-        zIndex={'99'}
-        fontStyle="normal"
-        fontWeight="500"
-        fontSize="12px"
-      >
-        <Text mr="4px">{t('Bonus')}</Text>
-        <CurrencySymbol boxSize={'10px'} mr={'2px'} />
-        <Text> {props.bouns}</Text>
-      </Flex>
+      {props.isFirst ? (
+        <Flex
+          position={'absolute'}
+          minW={'max-content'}
+          right={'-6px'}
+          top="-18px"
+          color={'royalBlue.700'}
+          background="royalBlue.100"
+          alignItems={'center'}
+          borderRadius="2px"
+          zIndex={'99'}
+          fontStyle="normal"
+          fontWeight="500"
+          fontSize="12px"
+          _before={{
+            position: 'absolute',
+            inset: 'auto',
+            borderRadius: '2px',
+            width: '50px',
+            height: '50px',
+            content: '""',
+            transform: 'rotate(45deg)',
+            zIndex: '-1',
+            bgColor: 'royalBlue.100'
+          }}
+          w="50px"
+          h="50px"
+          align={'center'}
+          justify={'center'}
+        >
+          <Flex flexDirection={'column'} align={'center'}>
+            <Text>{t('Double')}!</Text>
+            <Flex align={'center'}>
+              +
+              <CurrencySymbol boxSize={'10px'} mr={'2px'} />
+              <Text>{props.bouns}</Text>
+            </Flex>
+          </Flex>
+        </Flex>
+      ) : (
+        <Flex
+          position={'absolute'}
+          minW={'max-content'}
+          left="78px"
+          top="4px"
+          px={'13.5px'}
+          py={'2.5px'}
+          color={'purple.600'}
+          background="purple.100"
+          alignItems={'center'}
+          borderRadius="10px 10px 10px 0px"
+          zIndex={'99'}
+          fontStyle="normal"
+          fontWeight="500"
+          fontSize="12px"
+        >
+          <Text mr="4px">{t('Bonus')}</Text>
+          <CurrencySymbol boxSize={'10px'} mr={'2px'} />
+          <Text> {props.bouns}</Text>
+        </Flex>
+      )}
       <Flex align={'center'}>
         <Currencysymbol boxSize="20px" type={currency} />
         <Text ml="4px" fontStyle="normal" fontWeight="500" fontSize="24px">
@@ -283,33 +329,51 @@ const RechargeModal = forwardRef(
       cancalPay();
       _onClose();
     };
-
+    const { session } = useSessionStore();
     const { toast } = useCustomToast();
     const { data: bonuses, isSuccess } = useQuery(
-      ['bonus'],
+      ['bonus', session.user.id],
       () =>
-        request.get<
+        request.post<
           any,
           ApiResp<{
-            steps: number[];
-            ratios: number[];
-            specialDiscount: [number, number][];
+            discount: {
+              defaultSteps: Record<string, number>;
+              firstRechargeDiscount: Record<string, number>;
+            };
           }>
         >('/api/price/bonus'),
       {}
     );
-    const ratios = bonuses?.data?.ratios || [];
-    const steps = bonuses?.data?.steps || [];
-    const specialBonus = bonuses?.data?.specialDiscount;
+    const [defaultSteps, ratios, steps, specialBonus] = useMemo(() => {
+      const defaultSteps = Object.entries(bonuses?.data?.discount.defaultSteps || {}).toSorted(
+        (a, b) => +a[0] - +b[0]
+      );
+      const ratios = defaultSteps.map(([key, value]) => value);
+      const steps = defaultSteps.map(([key, value]) => +key);
+      const specialBonus = Object.entries(
+        bonuses?.data?.discount.firstRechargeDiscount || {}
+      ).toSorted((a, b) => +a[0] - +b[0]);
+      const temp: number[] = [];
+      specialBonus.forEach(([k, v]) => {
+        const step = +k;
+        if (steps.findIndex((v) => step === v) === -1) {
+          temp.push(+k);
+        }
+      });
+      steps.unshift(...temp);
+      ratios.unshift(...temp.map(() => 0));
+      return [defaultSteps, ratios, steps, specialBonus];
+    }, [bonuses?.data?.discount.defaultSteps, bonuses?.data?.discount.firstRechargeDiscount]);
     const [amount, setAmount] = useState(() => 0);
-    const getBonus = useCallback(
-      (amount: number) => {
-        if (isSuccess && ratios && steps && ratios.length === steps.length)
-          return getFavorable(steps, ratios, specialBonus)(amount);
-        else return 0;
-      },
-      [isSuccess, ratios, steps, specialBonus]
-    );
+    const getBonus = (amount: number) => {
+      let ratio = 0;
+      let specialIdx = specialBonus.findIndex(([k]) => +k === amount);
+      if (specialIdx >= 0) return Math.floor((amount * specialBonus[specialIdx][1]) / 100);
+      const step = [...steps].reverse().findIndex((step) => amount >= step);
+      if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
+      return Math.floor((amount * ratio) / 100);
+    };
     const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
       if (steps && steps.length > 0) {
@@ -346,7 +410,6 @@ const RechargeModal = forwardRef(
                 <ModalHeader
                   px={'20px'}
                   py={'12px'}
-                  pb={'18px'}
                   bg={'grayModern.25'}
                   borderBottom={'1px solid'}
                   fontWeight={500}
@@ -377,14 +440,31 @@ const RechargeModal = forwardRef(
                     </Text>
                   </Flex>
                   <Flex direction={'column'} mb={'20px'}>
-                    <Text color="grayModern.600" fontWeight={'normal'} mb={'16px'}>
-                      {t('Select Amount')}
-                    </Text>
+                    <Flex mb={'36px'} justify={'space-between'}>
+                      <Text color="grayModern.600" fontWeight={'normal'}>
+                        {t('Select Amount')}
+                      </Text>
+                      <Flex align={'center'}>
+                        <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon>
+                        <Text
+                          mr={'4px'}
+                          color={'grayModern.900'}
+                          fontSize={'14px'}
+                          fontWeight={500}
+                        >
+                          {t('first_recharge_title')}!
+                        </Text>
+                        <MyTooltip label={<Text>{t('first_recharge_tips')}</Text>}>
+                          <HelpIcon boxSize={'16px'}></HelpIcon>
+                        </MyTooltip>
+                      </Flex>
+                    </Flex>
                     <Flex wrap={'wrap'} gap={'16px'}>
                       {steps.map((amount, index) => (
                         <BonusBox
                           key={index}
                           amount={amount}
+                          isFirst={specialBonus.findIndex((a) => +a[0] === amount) >= 0}
                           bouns={getBonus(amount)}
                           onClick={() => {
                             setSelectAmount(index);
@@ -419,11 +499,13 @@ const RechargeModal = forwardRef(
                       variant={'unstyled'}
                       onChange={(str, v) => {
                         const maxAmount = 10_000_000;
-                        if (!isNumber(v) || isNaN(v)) {
+                        if (!str || !isNumber(v) || isNaN(v)) {
                           setAmount(0);
+                          return;
                         }
                         if (v > maxAmount) {
                           setAmount(maxAmount);
+                          return;
                         }
                         setAmount(v);
                       }}
@@ -506,12 +588,13 @@ const RechargeModal = forwardRef(
             ) : (
               <>
                 <ModalHeader
-                  m={'24px'}
-                  p={'0'}
-                  position={'absolute'}
-                  display={'flex'}
-                  alignItems={'center'}
-                  height={'33px'}
+                  px={'20px'}
+                  py={'12px'}
+                  bg={'grayModern.25'}
+                  borderBottom={'1px solid'}
+                  fontWeight={500}
+                  fontSize={'16px'}
+                  borderColor={'grayModern.100'}
                 >
                   <Img
                     src={vector.src}
@@ -526,9 +609,9 @@ const RechargeModal = forwardRef(
                       cancalPay();
                     }}
                   ></Img>
-                  <Text>{t('Recharge Amount')}</Text>
+                  {t('Recharge Amount')}
                 </ModalHeader>
-                <ModalCloseButton top={'24px'} right={'24px'} />
+                <ModalCloseButton top={'8px'} right={'18px'} />
                 {payType === 'wechat' ? (
                   <WechatPayment
                     complete={complete}

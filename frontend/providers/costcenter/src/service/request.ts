@@ -14,7 +14,6 @@ request.interceptors.request.use(
     // auto append service prefix
     let _headers: RawAxiosRequestHeaders = config.headers || {};
     const session = useSessionStore.getState().session;
-
     if (config.url && config.url?.startsWith('/api/')) {
       _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
     }
