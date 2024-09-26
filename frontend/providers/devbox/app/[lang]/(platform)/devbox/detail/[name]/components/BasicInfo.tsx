@@ -226,7 +226,9 @@ const BasicInfo = () => {
           </Text>
           <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
             {devboxDetail?.lastTerminatedReason ? (
-              <Text fontSize={'12px'}>{devboxDetail?.lastTerminatedReason}</Text>
+              <Text fontSize={'12px'} color={'red'}>
+                {devboxDetail?.lastTerminatedReason}
+              </Text>
             ) : (
               <Text fontSize={'12px'}>{t('none')}</Text>
             )}
