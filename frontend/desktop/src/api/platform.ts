@@ -29,6 +29,10 @@ export const getUserTasks = () => {
   return request.get<UserTask[]>('/api/account/getTasks');
 };
 
+export const checkUserTask = () => {
+  return request.get('/api/account/checkTask');
+};
+
 export const updateTask = (taskId: string) => {
   return request.post('/api/account/updateTask', { taskId });
 };

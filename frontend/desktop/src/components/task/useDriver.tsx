@@ -22,21 +22,6 @@ export default function useDriver() {
   const showTaskModal = taskComponentState === 'modal';
   const showFloatingButton = taskComponentState === 'button';
 
-  // const { data: tasksData, refetch } = useQuery(['userTasks'], getUserTasks, {
-  //   enabled: isPC && conf?.guideEnabled,
-  //   onSuccess: (data) => {
-  //     const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
-  //     const allTasksCompleted = data.data.every((task) => task.isCompleted);
-  //     if (!desktopTask?.isCompleted && desktopTask?.id) {
-  //       setDesktopGuide(true);
-  //     } else if (allTasksCompleted) {
-  //       setTaskComponentState('none');
-  //     } else {
-  //       setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
-  //     }
-  //   }
-  // });
-
   useEffect(() => {
     const handleUserGuide = async () => {
       const data = await getUserTasks();
