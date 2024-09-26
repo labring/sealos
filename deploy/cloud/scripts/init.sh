@@ -10,9 +10,12 @@ cockroachdbGlobalUri=""
 localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
-tlsKeyPlaceholder="<tls-key-placeholder>"
 acmednsSecretPlaceholder="<acmedns-secret-placeholder>"
+
 saltKey=""
+jwtInternal=""
+jwtRegional=""
+jwtGlobal=""
 
 function prepare {
   # source .env
@@ -35,6 +38,9 @@ function prepare {
 
   # gen regionUID if not set or not found in secret
   gen_regionUID
+
+  # gen jwt tokens
+  gen_jwt_tokens
 
   # create tls secret
   create_tls_secret
@@ -132,12 +138,35 @@ function gen_cockroachdbUri() {
   cockroachdbGlobalUri="$cockroachdbUri/global"
 }
 
+# TODO: use a better way to check saltKey
 function gen_saltKey() {
     password_salt=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "salt:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
     if [[ -z "$password_salt" ]]; then
         saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64)
     else
         saltKey=$password_salt
+    fi
+}
+
+# TODO: use a better way to check jwt tokens
+function gen_jwt_tokens() {
+    jwt_internal=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "internal:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
+    if [[ -z "$jwt_internal" ]]; then
+        jwtInternal=$(tr -dc 'a-z0-9' </dev/urandom | head -c64)
+    else
+        jwtInternal=$jwt_internal
+    fi
+    jwt_regional=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "regional:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
+    if [[ -z "$jwt_regional" ]]; then
+        jwtRegional=$(tr -dc 'a-z0-9' </dev/urandom | head -c64)
+    else
+        jwtRegional=$jwt_regional
+    fi
+    jwt_global=$(kubectl get configmap desktop-frontend-config -n sealos -o jsonpath='{.data.config\.yaml}' | grep "global:" | awk '{print $2}' 2>/dev/null | tr -d '"' || true)
+    if [[ -z "$jwt_global" ]]; then
+        jwtGlobal=$(tr -dc 'a-z0-9' </dev/urandom | head -c64)
+    else
+        jwtGlobal=$jwt_global
     fi
 }
 
@@ -176,7 +205,10 @@ function sealos_run_desktop {
       --env regionUID="$localRegionUID" \
       --env databaseMongodbURI="${mongodbUri}/sealos-auth?authSource=admin" \
       --env databaseLocalCockroachdbURI="$cockroachdbLocalUri" \
-      --env databaseGlobalCockroachdbURI="$cockroachdbGlobalUri"
+      --env databaseGlobalCockroachdbURI="$cockroachdbGlobalUri" \
+      --env jwtInternal="$jwtInternal" \
+      --env jwtRegional="$jwtRegional" \
+      --env jwtGlobal="$jwtGlobal"
 }
 
 function sealos_run_controller {

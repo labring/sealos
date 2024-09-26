@@ -13,5 +13,8 @@ ENV databaseMongodbURI=""
 ENV databaseGlobalCockroachdbURI=""
 ENV databaseLocalCockroachdbURI=""
 ENV passwordSalt="randomSalt"
+ENV jwtInternal=""
+ENV jwtRegional=""
+ENV jwtGlobal=""
 
 CMD ["bash scripts/init.sh"]

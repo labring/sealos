@@ -43,9 +43,9 @@ data:
         invite:
           enabled: false
         jwt:
-          internal: "<your-internal-jwt-secret>"
-          regional: "<your-regional-jwt-secret>"
-          global: "<your-global-jwt-secret>"
+          internal: "{{ .jwtInternal }}"
+          regional: "{{ .jwtRegional }}"
+          global: "{{ .jwtGlobal }}"
         idp:
           password:
             enabled: true
