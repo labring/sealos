@@ -1,4 +1,4 @@
-import { getPriceBonus, getUserTasks } from '@/api/platform';
+import { checkUserTask, getPriceBonus, getUserTasks } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { useGuideStore } from '@/store/guide';
 import { formatMoney } from '@/utils/tools';
@@ -287,6 +287,9 @@ export default function useDetailDriver() {
     onDestroyed: () => {
       console.log('onDestroyed Detail');
       setDetailCompleted(true);
+      checkUserTask().then((err) => {
+        console.log(err);
+      });
     },
     interceptSkipButtonClick: () => {
       driverObj.destroy();

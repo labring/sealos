@@ -33,6 +33,13 @@ export const getUserTasks = () =>
     }
   });
 
+export const checkUserTask = () =>
+  GET('/api/guide/checkTask', undefined, {
+    headers: {
+      Authorization: getUserSession()?.token
+    }
+  });
+
 export const getPriceBonus = () =>
   GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
     headers: {

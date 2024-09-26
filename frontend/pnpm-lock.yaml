@@ -1191,6 +1191,9 @@ importers:
       '@next/font':
         specifier: 13.1.6
         version: 13.1.6
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../../packages/driver
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
