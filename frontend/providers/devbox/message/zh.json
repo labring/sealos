@@ -29,7 +29,7 @@
   "confirm": "确认",
   "confirm_create_devbox": "确认创建项目？",
   "confirm_delete": "确认删除",
-  "confirm_update_devbox": "变更操作将导致项目重启和VSCode重新连接。是否继续？",
+  "confirm_update_devbox": "变更CPU 和内存将导致项目重启和VSCode 的重新连接（变更网络配置并不会）。是否继续？",
   "control": "操作",
   "copy": "复制",
   "copy_failed": "复制失败",

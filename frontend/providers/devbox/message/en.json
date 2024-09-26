@@ -29,7 +29,7 @@
   "confirm": "Confirm",
   "confirm_create_devbox": "Confirm to create the devbox?",
   "confirm_delete": "Confirm",
-  "confirm_update_devbox": "The change action will cause the devbox to restart and VSCode to reconnect. Do you want to continue?",
+  "confirm_update_devbox": "Change the CPU and memory will cause the project to restart and VSCode reconnect (change the network configuration is not). Whether to continue?",
   "control": "Operation",
   "copy": "Copy",
   "copy_failed": "Copy failed",
