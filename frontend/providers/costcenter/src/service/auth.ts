@@ -21,7 +21,6 @@ export const verifyJWT = <T extends Object = AccessTokenPayload>(token: string, 
     if (!token) return resolve(null);
     verify(token, secret, (err, payload) => {
       if (err) {
-        // console.log(err);
         resolve(null);
       } else if (!payload) {
         resolve(null);
