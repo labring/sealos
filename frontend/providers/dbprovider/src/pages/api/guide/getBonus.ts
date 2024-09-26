@@ -32,17 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       };
     } = await response.json();
 
-    console.log(
-      `${url}/account/v1alpha1/recharge-discount`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      },
-      'result'
-    );
-
     const rechargeOptions = Object.entries(result.discount.firstRechargeDiscount).map(
       ([amount, rate]) => ({
         amount: Number(amount),
