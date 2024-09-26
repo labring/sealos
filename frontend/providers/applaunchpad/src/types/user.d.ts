@@ -52,3 +52,18 @@ export type AccountCRD = {
     encryptDeductionBalance: string;
   };
 };
+
+export enum TaskType {
+  LAUNCHPAD = 'LAUNCHPAD'
+}
+
+export type UserTask = {
+  id: string;
+  title: string;
+  description: string;
+  reward: string;
+  order: number;
+  taskType: TaskType;
+  isCompleted: boolean;
+  completedAt: string;
+};

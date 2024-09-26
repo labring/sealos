@@ -59,7 +59,8 @@ const Form = ({
   defaultStorePathList,
   countGpuInventory,
   pxVal,
-  refresh
+  refresh,
+  isAdvancedOpen
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -67,6 +68,7 @@ const Form = ({
   countGpuInventory: (type?: string) => number;
   pxVal: number;
   refresh: boolean;
+  isAdvancedOpen: boolean;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -934,7 +936,7 @@ const Form = ({
             <Accordion
               id={'settings'}
               allowToggle
-              defaultIndex={navList[2].isSetting ? 0 : undefined}
+              index={isAdvancedOpen || navList[2].isSetting ? 0 : undefined}
             >
               <AccordionItem {...boxStyles}>
                 <AccordionButton
@@ -971,7 +973,7 @@ const Form = ({
                   </Flex>
                   {/* command && param */}
                   <FormControl mb={7}>
-                    <Flex alignItems={'center'}>
+                    <Flex alignItems={'center'} className="driver-deploy-command">
                       <Label>{t('Run command')}</Label>
                       <Input
                         w={'350px'}
@@ -1108,7 +1110,7 @@ const Form = ({
 
                   <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
-                  <Box>
+                  <Box className="driver-deploy-storage">
                     <Flex alignItems={'center'} mb={'10px'}>
                       <Label className={styles.formSecondTitle} m={0}>
                         {t('Local Storage')}

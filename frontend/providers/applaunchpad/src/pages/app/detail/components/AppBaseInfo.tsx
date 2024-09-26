@@ -238,21 +238,6 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               <Box flex={'0 0 80px'} w={0}>
                 {t(item.label)}
               </Box>
-              <MyTooltip label={item.value}>
-                <Box
-                  flex={'1 0 0'}
-                  w={'0'}
-                  textAlign={'right'}
-                  color={'grayModern.500'}
-                  textOverflow={'ellipsis'}
-                  overflow={'hidden'}
-                  whiteSpace={'nowrap'}
-                  onClick={() => copyData(item.value)}
-                  cursor={'pointer'}
-                >
-                  {t(item.value)}
-                </Box>
-              </MyTooltip>
             </Flex>
           ))}
           {/* env */}

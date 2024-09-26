@@ -1,77 +1,45 @@
-import { getInitData, getUserAccount, updateDesktopGuide } from '@/api/platform';
-import { GUIDE_LAUNCHPAD_CREATE_KEY } from '@/constants/account';
+import { getUserTasks } from '@/api/platform';
+import { useGuideStore } from '@/store/guide';
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export function DriverStarIcon() {
   return (
-    <Icon
-      width="20px"
-      height="20px"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <Icon xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21" fill="none">
       <path
         fillRule="evenodd"
         clipRule="evenodd"
-        d="M3.74999 1.08801C4.0696 1.08801 4.32869 1.34711 4.32869 1.66672V3.17135H5.83332C6.15293 3.17135 6.41203 3.43044 6.41203 3.75005C6.41203 4.06966 6.15293 4.32875 5.83332 4.32875H4.32869V5.83338C4.32869 6.15299 4.0696 6.41209 3.74999 6.41209C3.43038 6.41209 3.17128 6.15299 3.17128 5.83338V4.32875H1.66666C1.34705 4.32875 1.08795 4.06966 1.08795 3.75005C1.08795 3.43044 1.34705 3.17135 1.66666 3.17135H3.17128V1.66672C3.17128 1.34711 3.43038 1.08801 3.74999 1.08801ZM10.8333 1.92135C11.0728 1.92135 11.2875 2.06882 11.3735 2.29231L12.8186 6.04969C13.0643 6.68839 13.1548 6.91199 13.2853 7.0956C13.4098 7.27064 13.5627 7.42357 13.7378 7.54803C13.9214 7.67859 14.145 7.76912 14.7837 8.01477L18.5411 9.45992C18.7646 9.54588 18.912 9.7606 18.912 10C18.912 10.2395 18.7646 10.4542 18.5411 10.5402L14.7837 11.9853C14.145 12.231 13.9214 12.3215 13.7378 12.4521C13.5627 12.5765 13.4098 12.7295 13.2853 12.9045C13.1548 13.0881 13.0643 13.3117 12.8186 13.9504L11.3735 17.7078C11.2875 17.9313 11.0728 18.0788 10.8333 18.0788C10.5939 18.0788 10.3792 17.9313 10.2932 17.7078L8.84804 13.9504C8.60239 13.3117 8.51186 13.0881 8.3813 12.9045C8.25684 12.7295 8.10391 12.5765 7.92887 12.4521C7.74526 12.3215 7.52166 12.231 6.88297 11.9853L3.12558 10.5402C2.90209 10.4542 2.75462 10.2395 2.75462 10C2.75462 9.7606 2.90209 9.54588 3.12558 9.45992L6.88296 8.01477C7.52166 7.76912 7.74526 7.67859 7.92887 7.54803C8.10391 7.42357 8.25684 7.27064 8.3813 7.0956C8.51186 6.91199 8.60239 6.68839 8.84804 6.04969L10.2932 2.29231C10.3791 2.06882 10.5939 1.92135 10.8333 1.92135ZM10.8333 4.11213L9.9283 6.46518C9.91949 6.48809 9.9108 6.51071 9.90222 6.53303C9.69245 7.07888 9.55023 7.44893 9.32456 7.76631C9.12512 8.04679 8.88006 8.29185 8.59958 8.49129C8.28221 8.71696 7.91216 8.85917 7.36631 9.06895C7.34398 9.07753 7.32137 9.08622 7.29845 9.09503L4.9454 10L7.29845 10.9051C7.32137 10.9139 7.34398 10.9226 7.36631 10.9312C7.91216 11.1409 8.28221 11.2831 8.59958 11.5088C8.88006 11.7083 9.12512 11.9533 9.32456 12.2338C9.55023 12.5512 9.69245 12.9212 9.90222 13.4671C9.9108 13.4894 9.91949 13.512 9.9283 13.5349L10.8333 15.888L11.7383 13.5349C11.7472 13.512 11.7558 13.4894 11.7644 13.4671C11.9742 12.9212 12.1164 12.5512 12.3421 12.2338C12.5415 11.9533 12.7866 11.7083 13.0671 11.5088C13.3844 11.2831 13.7545 11.1409 14.3003 10.9311C14.3227 10.9226 14.3453 10.9139 14.3682 10.9051L16.7212 10L14.3682 9.09503C14.3453 9.08622 14.3227 9.07753 14.3004 9.06896C13.7545 8.85918 13.3844 8.71696 13.0671 8.49129C12.7866 8.29185 12.5415 8.04679 12.3421 7.76631C12.1164 7.44894 11.9742 7.07889 11.7644 6.53304C11.7558 6.51071 11.7472 6.4881 11.7383 6.46518L10.8333 4.11213ZM3.74999 13.588C4.0696 13.588 4.32869 13.8471 4.32869 14.1667V15.6713H5.83332C6.15293 15.6713 6.41203 15.9304 6.41203 16.25C6.41203 16.5697 6.15293 16.8288 5.83332 16.8288H4.32869V18.3334C4.32869 18.653 4.0696 18.9121 3.74999 18.9121C3.43038 18.9121 3.17128 18.653 3.17128 18.3334V16.8288H1.66666C1.34705 16.8288 1.08795 16.5697 1.08795 16.25C1.08795 15.9304 1.34705 15.6713 1.66666 15.6713H3.17128V14.1667C3.17128 13.8471 3.43038 13.588 3.74999 13.588Z"
-        fill="url(#paint0_linear_124_3715)"
+        d="M4.24999 1.58789C4.5696 1.58789 4.82869 1.84699 4.82869 2.16659V3.67122H6.33332C6.65293 3.67122 6.91203 3.93032 6.91203 4.24993C6.91203 4.56954 6.65293 4.82863 6.33332 4.82863H4.82869V6.33326C4.82869 6.65287 4.5696 6.91196 4.24999 6.91196C3.93038 6.91196 3.67128 6.65287 3.67128 6.33326V4.82863H2.16666C1.84705 4.82863 1.58795 4.56954 1.58795 4.24993C1.58795 3.93032 1.84705 3.67122 2.16666 3.67122H3.67128V2.16659C3.67128 1.84699 3.93038 1.58789 4.24999 1.58789ZM11.3333 2.42122C11.5728 2.42122 11.7875 2.56869 11.8735 2.79218L13.3186 6.54957C13.5643 7.18827 13.6548 7.41187 13.7853 7.59548C13.9098 7.77051 14.0627 7.92344 14.2378 8.04791C14.4214 8.17846 14.645 8.269 15.2837 8.51465L19.0411 9.9598C19.2646 10.0458 19.412 10.2605 19.412 10.4999C19.412 10.7394 19.2646 10.9541 19.0411 11.0401L15.2837 12.4852C14.645 12.7309 14.4214 12.8214 14.2378 12.9519C14.0627 13.0764 13.9098 13.2293 13.7853 13.4044C13.6548 13.588 13.5643 13.8116 13.3186 14.4503L11.8735 18.2077C11.7875 18.4312 11.5728 18.5786 11.3333 18.5786C11.0939 18.5786 10.8792 18.4312 10.7932 18.2077L9.34804 14.4503C9.10239 13.8116 9.01186 13.588 8.8813 13.4044C8.75684 13.2293 8.60391 13.0764 8.42887 12.9519C8.24526 12.8214 8.02166 12.7309 7.38297 12.4852L3.62558 11.0401C3.40209 10.9541 3.25462 10.7394 3.25462 10.4999C3.25462 10.2605 3.40209 10.0458 3.62558 9.9598L7.38296 8.51465C8.02166 8.269 8.24526 8.17846 8.42887 8.04791C8.60391 7.92345 8.75684 7.77051 8.8813 7.59548C9.01186 7.41187 9.10239 7.18827 9.34804 6.54957L10.7932 2.79219C10.8791 2.56869 11.0939 2.42122 11.3333 2.42122ZM11.3333 4.61201L10.4283 6.96506C10.4195 6.98797 10.4108 7.01059 10.4022 7.03291C10.1924 7.57876 10.0502 7.94881 9.82456 8.26619C9.62512 8.54667 9.38006 8.79173 9.09958 8.99117C8.78221 9.21684 8.41216 9.35905 7.86631 9.56883C7.84398 9.5774 7.82137 9.5861 7.79845 9.59491L5.4454 10.4999L7.79845 11.4049C7.82137 11.4138 7.84398 11.4225 7.86631 11.431C8.41216 11.6408 8.78221 11.783 9.09958 12.0087C9.38006 12.2081 9.62512 12.4532 9.82456 12.7337C10.0502 13.051 10.1924 13.4211 10.4022 13.9669C10.4108 13.9893 10.4195 14.0119 10.4283 14.0348L11.3333 16.3878L12.2383 14.0348C12.2472 14.0119 12.2558 13.9893 12.2644 13.967C12.4742 13.4211 12.6164 13.051 12.8421 12.7337C13.0415 12.4532 13.2866 12.2081 13.5671 12.0087C13.8844 11.783 14.2545 11.6408 14.8003 11.431C14.8227 11.4225 14.8453 11.4138 14.8682 11.4049L17.2212 10.4999L14.8682 9.59491C14.8453 9.5861 14.8227 9.57741 14.8004 9.56883C14.2545 9.35906 13.8844 9.21684 13.5671 8.99117C13.2866 8.79173 13.0415 8.54667 12.8421 8.26619C12.6164 7.94881 12.4742 7.57876 12.2644 7.03291C12.2558 7.01059 12.2472 6.98797 12.2383 6.96505L11.3333 4.61201ZM4.24999 14.0879C4.5696 14.0879 4.82869 14.347 4.82869 14.6666V16.1712H6.33332C6.65293 16.1712 6.91203 16.4303 6.91203 16.7499C6.91203 17.0695 6.65293 17.3286 6.33332 17.3286H4.82869V18.8333C4.82869 19.1529 4.5696 19.412 4.24999 19.412C3.93038 19.412 3.67128 19.1529 3.67128 18.8333V17.3286H2.16666C1.84705 17.3286 1.58795 17.0695 1.58795 16.7499C1.58795 16.4303 1.84705 16.1712 2.16666 16.1712H3.67128V14.6666C3.67128 14.347 3.93038 14.0879 4.24999 14.0879Z"
+        fill="url(#paint0_linear_864_3172)"
       />
       <defs>
         <linearGradient
-          id="paint0_linear_124_3715"
-          x1="9.99999"
-          y1="1.66672"
-          x2="9.99999"
-          y2="18.3334"
+          id="paint0_linear_864_3172"
+          x1="10.5"
+          y1="2.16659"
+          x2="10.5"
+          y2="18.8333"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#FFC3A4" />
-          <stop offset="0.432292" stopColor="#FE8BA7" />
-          <stop offset="1" stopColor="#8695FF" />
+          <stop stopColor="#69AEFF" />
+          <stop offset="0.432292" stopColor="#6096FF" />
+          <stop offset="1" stopColor="#6C7FFF" />
         </linearGradient>
       </defs>
     </Icon>
   );
 }
 
-export default function useDriver() {
+export default function useDriver({
+  setIsAdvancedOpen
+}: {
+  setIsAdvancedOpen: (val: boolean) => void;
+}) {
   const { t } = useTranslation();
-  const [isGuided, setIsGuided] = useState(true);
-
-  useEffect(() => {
-    const handleUserGuide = async () => {
-      try {
-        const { guideEnabled } = await getInitData();
-        const userAccount = await getUserAccount();
-        if (guideEnabled && userAccount?.metadata?.annotations) {
-          const isGuided = !!userAccount.metadata.annotations?.[GUIDE_LAUNCHPAD_CREATE_KEY];
-          if (!isGuided) {
-            startGuide();
-          }
-          setIsGuided(isGuided);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    handleUserGuide();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const updateGuideStatus = () => {
-    updateDesktopGuide({
-      activityType: 'beginner-guide',
-      phase: 'launchpad',
-      phasePage: 'create',
-      shouldSendGift: false
-    }).catch((err) => {
-      console.log(err);
-    });
-  };
+  const [isGuided, setIsGuided] = useState(false);
+  const { createCompleted, setCreateCompleted } = useGuideStore();
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -112,6 +80,7 @@ export default function useDriver() {
     isShowButtons: false,
     allowKeyboardControl: false,
     overlaySkipButton: t('skip') || 'skip',
+    disableActiveInteraction: true,
     steps: [
       {
         element: '.driver-deploy-image',
@@ -122,7 +91,7 @@ export default function useDriver() {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
                 {t('Can help you deploy any Docker image')}
               </Text>
               <PopoverBodyInfo />
@@ -131,16 +100,16 @@ export default function useDriver() {
         }
       },
       {
-        element: '.driver-deploy-instance',
+        element: '.driver-deploy-command',
         popover: {
-          side: 'top',
-          align: 'start',
-          borderRadius: '12px 12px 12px 0px',
+          side: 'right',
+          align: 'center',
+          borderRadius: '0px 12px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
-                {t('Configurable number of instances or automatic horizontal scaling')}
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+                {t('guide_deploy_command')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
             </Flex>
@@ -148,7 +117,7 @@ export default function useDriver() {
         }
       },
       {
-        element: '.driver-deploy-network-switch',
+        element: '.driver-deploy-storage',
         popover: {
           side: 'top',
           align: 'start',
@@ -157,7 +126,7 @@ export default function useDriver() {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'}>
-                {t('Second-level domain name tips')}
+                {t('guide_deploy_storage')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
             </Flex>
@@ -177,31 +146,41 @@ export default function useDriver() {
                 {t('Click the Deploy Application button')}
               </Text>
             </Flex>
-          ),
-          onPopoverRender: () => {
-            const svg = driverObj.getState('__overlaySvg');
-            if (svg) {
-              const pathElement = svg.querySelector('path');
-              if (pathElement) {
-                pathElement.style.pointerEvents = 'none';
-              }
-            }
-          }
+          )
         }
       }
     ],
     onDestroyed: () => {
-      updateGuideStatus();
+      setCreateCompleted(true);
     }
   });
 
-  const startGuide = () => {
+  const startGuide = useCallback(() => {
     driverObj.drive();
-  };
+  }, [driverObj]);
 
   const closeGuide = () => {
     driverObj.destroy();
   };
 
-  return { driverObj, startGuide, closeGuide, isGuided };
+  useEffect(() => {
+    const handleUserGuide = async () => {
+      try {
+        const data = await getUserTasks();
+        if (data.needGuide && !createCompleted) {
+          setIsAdvancedOpen(true);
+          setIsGuided(true);
+          requestAnimationFrame(() => {
+            startGuide();
+          });
+        }
+      } catch (error) {
+        setIsGuided(false);
+      }
+    };
+    handleUserGuide();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { startGuide, closeGuide, isGuided };
 }
