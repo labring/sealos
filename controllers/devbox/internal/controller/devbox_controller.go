@@ -503,7 +503,8 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 
 	// set up ports and env by using runtime ports and devbox extra ports
 	ports := runtime.Spec.Config.Ports
-	ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
+	// TODO: add extra ports to pod, currently not support
+	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
 	envs := runtime.Spec.Config.Env
 	envs = append(envs, devbox.Spec.ExtraEnvs...)
