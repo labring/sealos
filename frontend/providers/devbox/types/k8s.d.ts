@@ -19,14 +19,32 @@ export type KBDevboxType = {
     publicDomain: string
     customDomain: string
   }[]
-  lastTerminatedState: {
-    containerID: string
-    exitCode: number
-    finishedAt: string
-    reason: string
-    startedAt: string
-  }
   status: {
+    lastState: {
+      terminated?: {
+        containerID: string
+        exitCode: number
+        finishedAt: string
+        reason: string // normally is Error if it not null
+        startedAt: string
+      }
+    }
+    state: {
+      running?: {
+        startedAt: string
+      }
+      waiting?: {
+        message: string
+        reason: string
+      }
+      terminated?: {
+        containerID: string
+        exitCode: number
+        finishedAt: string
+        reason: string
+        startedAt: string
+      }
+    }
     phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
     commitHistory: {
       image: string

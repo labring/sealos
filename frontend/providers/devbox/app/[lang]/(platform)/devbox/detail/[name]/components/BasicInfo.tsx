@@ -225,8 +225,8 @@ const BasicInfo = () => {
             {t('recent_error')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
-            {devboxDetail?.lastTerminatedState?.reason ? (
-              <Text fontSize={'12px'}>{devboxDetail?.lastTerminatedState?.reason}</Text>
+            {devboxDetail?.lastTerminatedReason ? (
+              <Text fontSize={'12px'}>{devboxDetail?.lastTerminatedReason}</Text>
             ) : (
               <Text fontSize={'12px'}>{t('none')}</Text>
             )}
