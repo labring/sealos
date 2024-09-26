@@ -52,7 +52,13 @@ const Header = ({
       <Button h={'40px'} flex={'0 0 114px'} mr={5} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>
-      <Button flex={'0 0 114px'} h={'40px'} variant={'solid'} onClick={applyCb}>
+      <Button
+        className="driver-deploy-button"
+        flex={'0 0 114px'}
+        h={'40px'}
+        variant={'solid'}
+        onClick={applyCb}
+      >
         {t(applyBtnText)}
       </Button>
     </Flex>

@@ -24,6 +24,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import useDriver from '@/hooks/useDriver';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -33,6 +34,7 @@ const defaultEdit = {
 };
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
+  const { startGuide } = useDriver();
   const { t } = useTranslation();
   const router = useRouter();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
