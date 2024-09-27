@@ -42,7 +42,7 @@ type UserTask struct {
 	UserUID      uuid.UUID  `gorm:"column:userUid;type:uuid;not null" json:"userUid"`
 	TaskID       uuid.UUID  `gorm:"column:taskId;type:uuid;not null" json:"taskId"`
 	Status       TaskStatus `gorm:"column:status;type:TaskStatus;not null" json:"status"`
-	RewardStatus string     `gorm:"column:rewardStatus;type:text;not null" json:"rewardStatus"`
+	RewardStatus TaskStatus `gorm:"column:rewardStatus;type:TaskStatus;not null" json:"rewardStatus"`
 	CompletedAt  time.Time  `gorm:"column:completedAt;type:timestamp(3);not null" json:"completedAt"`
 	CreatedAt    time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp();not null" json:"createdAt"`
 	UpdatedAt    time.Time  `gorm:"column:updatedAt;type:timestamp(3) with time zone;not null" json:"updatedAt"`
@@ -64,12 +64,12 @@ func (UserTask) TableName() string {
 // TaskType represents the TaskType enum in Go.
 type TaskType string
 
-const (
-	TaskTypeLaunchpad  TaskType = "LAUNCHPAD"
-	TaskTypeCostcenter TaskType = "COSTCENTER"
-	TaskTypeDatabase   TaskType = "DATABASE"
-	TaskTypeDesktop    TaskType = "DESKTOP"
-)
+//const (
+//	TaskTypeLaunchpad  TaskType = "LAUNCHPAD"
+//	TaskTypeCostcenter TaskType = "COSTCENTER"
+//	TaskTypeDatabase   TaskType = "DATABASE"
+//	TaskTypeDesktop    TaskType = "DESKTOP"
+//)
 
 // TaskStatus represents the TaskStatus enum in Go.
 type TaskStatus string
@@ -77,9 +77,4 @@ type TaskStatus string
 const (
 	TaskStatusNotCompleted TaskStatus = "NOT_COMPLETED"
 	TaskStatusCompleted    TaskStatus = "COMPLETED"
-)
-
-const (
-	RewardStatusCompleted = "COMPLETED"
-	RewardStatusPending   = "PENDING"
 )

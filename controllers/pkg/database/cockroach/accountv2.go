@@ -282,16 +282,13 @@ func (c *Cockroach) getTask() (map[uuid.UUID]types.Task, error) {
 
 func (c *Cockroach) getPendingRewardUserTask() ([]types.UserTask, error) {
 	var userTasks []types.UserTask
-	return userTasks, c.DB.Where(&types.UserTask{Status: types.TaskStatusCompleted}).
-		Where(`"rewardStatus" = ? OR "rewardStatus" = ?`, types.RewardStatusPending, "").
+	return userTasks, c.DB.Where(&types.UserTask{Status: types.TaskStatusCompleted, RewardStatus: types.TaskStatusNotCompleted}).
 		Find(&userTasks).Error
 }
 
 func (c *Cockroach) completeRewardUserTask(tx *gorm.DB, userTask *types.UserTask) error {
-	userTask.CompletedAt = time.Now().UTC()
-	userTask.UpdatedAt = time.Now().UTC()
-	userTask.RewardStatus = types.RewardStatusCompleted
-	return tx.Model(userTask).Update("rewardStatus", types.RewardStatusCompleted).Error
+	userTask.RewardStatus = types.TaskStatusCompleted
+	return tx.Model(userTask).Update("rewardStatus", types.TaskStatusCompleted).Error
 }
 
 func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {

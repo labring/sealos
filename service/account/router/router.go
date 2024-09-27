@@ -97,7 +97,7 @@ func RegisterPayRouter() {
 }
 
 func startRewardProcessingTimer(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
