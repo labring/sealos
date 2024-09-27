@@ -80,8 +80,8 @@ spec:
               value: {{ .templateRepoBranch }}
             - name: SHOW_AUTHOR
               value: "false"
-            - name: NODE_TLS_REJECT_UNAUTHORIZED
-              value: "0"
+            - name: ACCOUNT_URL
+              value: http://account-service.account-system.svc.cluster.local:2333
           image: ghcr.io/labring/sealos-template-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
