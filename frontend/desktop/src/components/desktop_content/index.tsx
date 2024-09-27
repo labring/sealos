@@ -263,7 +263,7 @@ export default function Desktop(props: any) {
                 />
               </>
             )}
-            {taskComponentState === 'modal' && (
+            {taskComponentState === 'modal' && tasks?.length > 0 && (
               <TaskModal
                 isOpen={taskComponentState === 'modal'}
                 onClose={handleCloseTaskModal}

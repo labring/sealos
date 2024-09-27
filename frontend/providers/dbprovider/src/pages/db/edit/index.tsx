@@ -128,7 +128,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         title: t(applySuccess),
         status: 'success'
       });
-      router.push(lastRoute);
+      router.replace(`/db/detail?name=${formData.dbName}&dbType=${formData.dbType}`);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));

@@ -166,7 +166,7 @@ export default function useDetailDriver() {
                 w={'179px'}
                 h={'36px'}
                 color={'#FFF'}
-                fontSize={'12px'}
+                fontSize={'14px'}
                 fontWeight={500}
                 cursor={'pointer'}
                 onClick={() => {
