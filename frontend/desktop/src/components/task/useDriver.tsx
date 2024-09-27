@@ -1,4 +1,4 @@
-import { getUserTasks, updateTask } from '@/api/platform';
+import { checkUserTask, getUserTasks, updateTask } from '@/api/platform';
 import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -23,6 +23,7 @@ export default function useDriver() {
 
   useEffect(() => {
     const fetchUserTasks = async () => {
+      await checkUserTask();
       const data = await getUserTasks();
       setTasks(data.data);
     };
