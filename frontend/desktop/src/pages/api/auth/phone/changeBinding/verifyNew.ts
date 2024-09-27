@@ -1,18 +1,18 @@
-import next, { NextApiRequest, NextApiResponse } from 'next';
-import { enableSms } from '@/services/enable';
 import { filterAccessToken } from '@/services/backend/middleware/access';
+import { ErrorHandler } from '@/services/backend/middleware/error';
+import { bindPhoneGuard, unbindPhoneGuard } from '@/services/backend/middleware/oauth';
 import {
-  verifyCodeUidGuard,
   filterCodeUid,
   filterPhoneVerifyParams,
+  verifyCodeUidGuard,
   verifyPhoneCodeGuard
 } from '@/services/backend/middleware/sms';
 import { changePhoneBindingSvc } from '@/services/backend/svc/bindProvider';
-import { ErrorHandler } from '@/services/backend/middleware/error';
-import { bindPhoneGuard, unbindPhoneGuard } from '@/services/backend/middleware/oauth';
+import { enablePhoneSms } from '@/services/enable';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!enableSms()) {
+  if (!enablePhoneSms()) {
     throw new Error('SMS is not enabled');
   }
   await filterAccessToken(

@@ -1,8 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '@/services/backend/response';
-import { globalPrisma, prisma } from '@/services/backend/db/init';
-import { ProviderType } from 'prisma/global/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
+import { globalPrisma, prisma } from '@/services/backend/db/init';
+import { jsonRes } from '@/services/backend/response';
+import {
+  enableEmailSms,
+  enableGithub,
+  enableGoogle,
+  enablePassword,
+  enablePhoneSms
+} from '@/services/enable';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { ProviderType } from 'prisma/global/generated/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -62,14 +69,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userRestrictedLevel?: number;
     } = {
       ...globalData,
-      oauthProvider: globalData.oauthProvider.map((o) => ({
-        providerType: o.providerType,
-        providerId: (
-          [ProviderType.PHONE, ProviderType.PASSWORD, ProviderType.EMAIL] as ProviderType[]
-        ).includes(o.providerType)
-          ? o.providerId
-          : ''
-      }))
+      oauthProvider: globalData.oauthProvider
+        .filter((o) => {
+          if (o.providerType === ProviderType.GOOGLE) {
+            return enableGoogle();
+          } else if (o.providerType === ProviderType.GITHUB) {
+            return enableGithub();
+          } else if (o.providerType === ProviderType.PHONE) {
+            return enablePhoneSms();
+          } else if (o.providerType === ProviderType.EMAIL) {
+            return enableEmailSms();
+          } else if (o.providerType === ProviderType.PASSWORD) {
+            return enablePassword();
+          }
+          return true;
+        })
+        .map((o) => ({
+          providerType: o.providerType,
+          providerId: (
+            [ProviderType.PHONE, ProviderType.PASSWORD, ProviderType.EMAIL] as ProviderType[]
+          ).includes(o.providerType)
+            ? o.providerId
+            : ''
+        }))
     };
 
     if (realNameInfo && realNameInfo.isVerified) {

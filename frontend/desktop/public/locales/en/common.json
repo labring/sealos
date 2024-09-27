@@ -108,6 +108,10 @@
   "log_in": "Log In",
   "log_out": "Log Out",
   "login_to_your_account": "Login to your account",
+  "login_with_github": "Login with Github",
+  "login_with_google": "Login with Google",
+  "login_with_oauth2": "login with OAuth2.0",
+  "login_with_wechat": "Login with Wechat",
   "manage_team": "Manage Workspace",
   "member_list": "Member List",
   "memory": "Memory",
@@ -191,6 +195,7 @@
   "remaining_time": "Remaining Time: ",
   "remove": "Remove",
   "remove_member_tips": "Determine that you want to remove the member?",
+  "rename": "Rename",
   "scan_with_wechat": "Scan with WeChat",
   "sealos_copilot": "Sealos Copilot",
   "sealos_document": "Sealos Document",
@@ -233,6 +238,5 @@
   "you_can_use_the_kubectl_command_directly_from_the_terminal": "You can use the kubectl command directly from the terminal",
   "you_can_view_fees_through_the_fee_center": "You can view fees through the fee center",
   "you_have_not_purchased_the_license": "You have not purchased the License",
-  "yuan": "Yuan",
-  "rename": "Rename"
+  "yuan": "Yuan"
 }
