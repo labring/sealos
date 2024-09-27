@@ -168,16 +168,16 @@ const (
 )
 
 const (
-	DB            = "DB"
-	APP           = "APP"
-	TERMINAL      = "TERMINAL"
-	JOB           = "JOB"
-	OTHER         = "OTHER"
-	ObjectStorage = "OBJECT-STORAGE"
-	CVM           = "CLOUD-VM"
-	AppStore      = "APP-STORE"
-	DBBackup      = "DB-BACKUP"
-	DevBox        = "DEV-BOX"
+	DB            = "Database"
+	APP           = "APP Launchpad"
+	TERMINAL      = "Terminal"
+	JOB           = "CronJob"
+	OTHER         = "Other"
+	ObjectStorage = "Object Storage"
+	CVM           = "Cloud Server"
+	AppStore      = "App Store"
+	DBBackup      = "Database Backup"
+	DevBox        = "Devbox"
 )
 
 var AppType = map[string]uint8{
