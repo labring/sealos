@@ -127,7 +127,7 @@ export default function useDriver() {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Flex flexDirection={'column'}>
-                <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={600}>
+                <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
                   {t('common:application_desktop')}
                 </Text>
                 <Text fontSize={'12px'} color={'grayModern.600'} fontWeight={500}>
@@ -148,7 +148,7 @@ export default function useDriver() {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('common:guide_applaunchpad')}
               </Text>
               <PopoverBodyInfo />
@@ -165,7 +165,7 @@ export default function useDriver() {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('common:guide_dbprovider')}
               </Text>
               <PopoverBodyInfo />
@@ -182,7 +182,7 @@ export default function useDriver() {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('common:guide_objectstorage')}
               </Text>
               <PopoverBodyInfo />
@@ -199,7 +199,7 @@ export default function useDriver() {
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('common:launch_various_third-party_applications_with_one_click')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
@@ -225,8 +225,7 @@ export default function useDriver() {
     backgroundColor: '#FFFFFF',
     boxShadow: '0px 4px 40px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)',
     flexDirection: 'column',
-    maxW: '188px',
-    cursor: 'pointer'
+    maxW: '188px'
   };
 
   const UserGuide = () => (
