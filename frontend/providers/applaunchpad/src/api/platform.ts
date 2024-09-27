@@ -15,17 +15,6 @@ export const getUserQuota = () =>
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
 
-export const updateTask = (taskId: string) =>
-  POST(
-    '/api/guide/updateTask',
-    { taskId },
-    {
-      headers: {
-        Authorization: getUserSession()?.token
-      }
-    }
-  );
-
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
     headers: {

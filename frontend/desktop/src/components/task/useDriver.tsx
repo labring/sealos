@@ -19,11 +19,11 @@ export default function useDriver() {
   });
   const conf = useConfigStore().commonConfig;
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
-  const showTaskModal = taskComponentState === 'modal';
-  const showFloatingButton = taskComponentState === 'button';
   const { canShowGuide } = useDesktopConfigStore();
 
   useEffect(() => {
+    console.log(conf, isPC, canShowGuide);
+
     const handleUserGuide = async () => {
       const data = await getUserTasks();
       setTasks(data.data);
@@ -45,7 +45,7 @@ export default function useDriver() {
     } else {
       setDesktopGuide(false);
     }
-  }, [conf, isPC, setTaskComponentState, taskComponentState, canShowGuide]);
+  }, [conf?.guideEnabled, isPC, canShowGuide]);
 
   const completeGuide = async () => {
     try {
@@ -334,8 +334,6 @@ export default function useDriver() {
   return {
     UserGuide,
     desktopGuide,
-    showTaskModal,
-    showFloatingButton,
     tasks,
     handleCloseTaskModal,
     checkAllTasksCompleted,

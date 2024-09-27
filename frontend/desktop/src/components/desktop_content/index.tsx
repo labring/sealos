@@ -111,16 +111,8 @@ export default function Desktop(props: any) {
     [apps, openApp, runningInfo, setToHighestLayerById]
   );
 
-  const { setTaskComponentState } = useDesktopConfigStore();
-  const {
-    UserGuide,
-    desktopGuide,
-    showTaskModal,
-    showFloatingButton,
-    tasks,
-    handleCloseTaskModal,
-    checkAllTasksCompleted
-  } = useDriver();
+  const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
+  const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
     const cleanup = createMasterAPP();
@@ -172,6 +164,10 @@ export default function Desktop(props: any) {
     };
     globalNotification();
   }, []);
+
+  useEffect(() => {
+    console.log('taskComponentState:', taskComponentState);
+  }, [taskComponentState]);
 
   return (
     <Box
@@ -267,13 +263,12 @@ export default function Desktop(props: any) {
                 />
               </>
             )}
-            {showTaskModal && (
+            {taskComponentState === 'modal' && (
               <TaskModal
-                isOpen={showTaskModal}
+                isOpen={taskComponentState === 'modal'}
                 onClose={handleCloseTaskModal}
                 tasks={tasks || []}
                 onTaskClick={(task) => {
-                  console.log(task);
                   switch (task.taskType) {
                     case 'LAUNCHPAD':
                       openDesktopApp({
@@ -291,6 +286,15 @@ export default function Desktop(props: any) {
                         messageData: { type: 'InternalAppCall' }
                       });
                       break;
+                    case 'APPSTORE':
+                      openDesktopApp({
+                        appKey: 'system-template',
+                        pathname: '/',
+                        messageData: {
+                          type: 'InternalAppCall'
+                        }
+                      });
+                      break;
                     default:
                       console.log(task.taskType);
                   }
@@ -298,7 +302,7 @@ export default function Desktop(props: any) {
                 }}
               />
             )}
-            {showFloatingButton && (
+            {taskComponentState === 'button' && (
               <FloatingTaskButton
                 onClick={() => {
                   setTaskComponentState('modal');
