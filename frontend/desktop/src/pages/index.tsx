@@ -3,6 +3,7 @@ import DesktopContent from '@/components/desktop_content';
 import useAppStore from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import useSessionStore from '@/stores/session';
 import { SemData } from '@/types/sem';
 import { NSType } from '@/types/team';
@@ -39,6 +40,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { session } = useSessionStore();
   const { layoutConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
+  const { setCanShowGuide } = useDesktopConfigStore();
+
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
   }, [colorMode, toggleColorMode]);
@@ -127,6 +130,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           let appkey = '';
           let appRoute = '';
           if (!state.autolaunch) {
+            setCanShowGuide(true);
             const result = parseOpenappQuery((query?.openapp as string) || '');
             appQuery = result.appQuery;
             appkey = result.appkey;
@@ -141,6 +145,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           }
           const app = state.installedApps.find((item) => item.key === appkey);
           if (!app) return;
+          setCanShowGuide(false);
           state.openApp(app, { raw: appQuery, pathname: appRoute }).then(() => {
             state.cancelAutoLaunch();
           });

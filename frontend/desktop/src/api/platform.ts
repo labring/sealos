@@ -9,7 +9,6 @@ import {
   TNotification
 } from '@/types';
 import { UserTask } from '@/types/task';
-import { AccountCRD } from '@/types/user';
 
 // handle baidu
 export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid?: string }) => {

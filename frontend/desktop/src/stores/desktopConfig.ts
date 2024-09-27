@@ -5,6 +5,8 @@ import { immer } from 'zustand/middleware/immer';
 type TaskComponentState = 'none' | 'modal' | 'button';
 
 type State = {
+  canShowGuide: boolean;
+  setCanShowGuide: (value: boolean) => void;
   isAppBar: boolean;
   isNavbarVisible: boolean;
   isAnimationEnabled: boolean;
@@ -23,6 +25,12 @@ export const useDesktopConfigStore = create<State>()(
       isNavbarVisible: true,
       isAnimationEnabled: true,
       taskComponentState: 'none',
+      canShowGuide: false,
+      setCanShowGuide(value) {
+        set((state) => {
+          state.canShowGuide = value;
+        });
+      },
       toggleShape() {
         set((state) => {
           state.isAppBar = !state.isAppBar;
