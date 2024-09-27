@@ -243,7 +243,8 @@ function sealos_run_controller {
   --env DEFAULT_NAMESPACE="account-system" \
   --env GLOBAL_COCKROACH_URI="$cockroachdbGlobalUri" \
   --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
-  --env LOCAL_REGION="$localRegionUID"
+  --env LOCAL_REGION="$localRegionUID" \
+  --env ACCOUNT_API_JWT_SECRET="$jwtInternal"
 
   sealos run tars/account-service.tar --env cloudDomain="$cloudDomain" --env cloudPort="$cloudPort"
 
