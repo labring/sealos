@@ -71,7 +71,7 @@ export default function useDetailDriver() {
         PopoverBody: (
           <Flex gap={'6px'}>
             <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'}>
+            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
               {t('guide_detail_monitor')}
             </Text>
             <PopoverBodyInfo />
@@ -88,7 +88,7 @@ export default function useDetailDriver() {
         PopoverBody: (
           <Flex gap={'6px'}>
             <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'}>
+            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
               {t('guide_detail_update_button')}
             </Text>
             <PopoverBodyInfo top={'80px'} />
@@ -105,7 +105,7 @@ export default function useDetailDriver() {
         PopoverBody: (
           <Flex gap={'6px'}>
             <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'}>
+            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
               {t('guide_detail_network')}
             </Text>
             <PopoverBodyInfo top={'-120px'} />
@@ -122,7 +122,7 @@ export default function useDetailDriver() {
         PopoverBody: (
           <Flex gap={'6px'}>
             <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'}>
+            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
               {t('guide_detail_operate')}
             </Text>
             <PopoverBodyInfo top={'-120px'} />

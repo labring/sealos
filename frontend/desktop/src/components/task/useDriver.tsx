@@ -1,4 +1,4 @@
-import { checkUserTask, getUserTasks, updateTask } from '@/api/platform';
+import { getUserTasks, updateTask } from '@/api/platform';
 import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -20,6 +20,14 @@ export default function useDriver() {
   const conf = useConfigStore().commonConfig;
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
   const { canShowGuide } = useDesktopConfigStore();
+
+  useEffect(() => {
+    const fetchUserTasks = async () => {
+      const data = await getUserTasks();
+      setTasks(data.data);
+    };
+    fetchUserTasks();
+  }, [taskComponentState]);
 
   useEffect(() => {
     const handleUserGuide = async () => {
@@ -53,8 +61,6 @@ export default function useDriver() {
       const desktopTask = tasks.find((task) => task.taskType === 'DESKTOP');
       if (desktopTask) {
         await updateTask(desktopTask.id);
-        const data = await getUserTasks();
-        setTasks(data.data);
         setTaskComponentState('modal');
       }
     } catch (error) {}
