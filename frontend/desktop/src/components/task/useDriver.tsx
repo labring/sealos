@@ -22,10 +22,7 @@ export default function useDriver() {
   const { canShowGuide } = useDesktopConfigStore();
 
   useEffect(() => {
-    console.log(conf, isPC, canShowGuide);
-
     const handleUserGuide = async () => {
-      await checkUserTask();
       const data = await getUserTasks();
       setTasks(data.data);
       const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
@@ -56,6 +53,8 @@ export default function useDriver() {
       const desktopTask = tasks.find((task) => task.taskType === 'DESKTOP');
       if (desktopTask) {
         await updateTask(desktopTask.id);
+        const data = await getUserTasks();
+        setTasks(data.data);
         setTaskComponentState('modal');
       }
     } catch (error) {}
