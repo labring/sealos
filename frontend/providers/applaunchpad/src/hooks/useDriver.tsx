@@ -1,7 +1,9 @@
 import { getUserTasks } from '@/api/platform';
 import { useGuideStore } from '@/store/guide';
+import { formatMoney } from '@/utils/tools';
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
+import { SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -40,6 +42,7 @@ export default function useDriver({
   const { t } = useTranslation();
   const [isGuided, setIsGuided] = useState(false);
   const { createCompleted, setCreateCompleted } = useGuideStore();
+  const [reward, setReward] = useState(1);
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -91,7 +94,7 @@ export default function useDriver({
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('Can help you deploy any Docker image')}
               </Text>
               <PopoverBodyInfo />
@@ -108,7 +111,7 @@ export default function useDriver({
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={600}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('guide_deploy_command')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
@@ -125,7 +128,7 @@ export default function useDriver({
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('guide_deploy_storage')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
@@ -140,11 +143,12 @@ export default function useDriver({
           align: 'center',
           borderRadius: '12px 12px 0px 12px',
           PopoverBody: (
-            <Flex gap={'6px'}>
+            <Flex gap={'6px'} alignItems={'center'} fontSize={'13px'} fontWeight={500}>
               <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'}>
-                {t('Click the Deploy Application button')}
-              </Text>
+              <Text color={'#24282C'}>{t('guide_deploy_button')}</Text>
+              <Text>{reward}</Text>
+              <SealosCoin />
+              <Text>{t('balance')}</Text>
             </Flex>
           )
         }
@@ -168,6 +172,7 @@ export default function useDriver({
       try {
         const data = await getUserTasks();
         if (data.needGuide && !createCompleted) {
+          setReward(formatMoney(Number(data.task.reward)));
           setIsAdvancedOpen(true);
           setIsGuided(true);
           requestAnimationFrame(() => {

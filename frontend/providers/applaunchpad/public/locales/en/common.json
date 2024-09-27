@@ -270,5 +270,7 @@
   "guide_detail_network": "Provide intranet and extranet access addresses and automatically configure SSL certificates",
   "first_charge": "First Recharge Discount",
   "first_charge_tip": "For some specifications, you can enjoy double the gift amount when you recharge for the first time.",
-  "gift": "gift"
+  "gift": "gift",
+  "balance": "balance",
+  "guide_deploy_button": "Complete creation and get it now"
 }

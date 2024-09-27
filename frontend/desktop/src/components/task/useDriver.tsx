@@ -1,4 +1,4 @@
-import { getUserTasks, updateTask } from '@/api/platform';
+import { checkUserTask, getUserTasks, updateTask } from '@/api/platform';
 import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -25,6 +25,7 @@ export default function useDriver() {
     console.log(conf, isPC, canShowGuide);
 
     const handleUserGuide = async () => {
+      await checkUserTask();
       const data = await getUserTasks();
       setTasks(data.data);
       const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
@@ -45,6 +46,7 @@ export default function useDriver() {
     } else {
       setDesktopGuide(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conf?.guideEnabled, isPC, canShowGuide]);
 
   const completeGuide = async () => {

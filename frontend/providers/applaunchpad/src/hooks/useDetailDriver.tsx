@@ -258,16 +258,7 @@ export default function useDetailDriver() {
                 {t('let me think again')}
               </Text>
             </Flex>
-          ),
-          onPopoverRender: () => {
-            const svg = driverObj.getState('__overlaySvg');
-            if (svg) {
-              const pathElement = svg.querySelector('path');
-              if (pathElement) {
-                pathElement.style.pointerEvents = 'none';
-              }
-            }
-          }
+          )
         }
       }
     ],
@@ -282,7 +273,6 @@ export default function useDetailDriver() {
     allowPreviousStep: false,
     isShowButtons: false,
     allowKeyboardControl: false,
-    overlaySkipButton: t('skip') || 'skip',
     steps: [...baseSteps, ...giftStep],
     onDestroyed: () => {
       console.log('onDestroyed Detail');

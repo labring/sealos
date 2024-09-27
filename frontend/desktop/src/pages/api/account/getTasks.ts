@@ -36,9 +36,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       completedAt: ut.completedAt
     }));
 
+    const allTasksCompleted = tasks.every((task) => task.isCompleted);
+
     jsonRes(res, {
       code: 200,
-      data: tasks
+      data: allTasksCompleted ? [] : tasks,
+      message: allTasksCompleted ? 'All tasks completed' : 'Tasks fetched'
     });
   } catch (error) {
     return jsonRes(res, { code: 500, message: 'error' });
