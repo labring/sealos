@@ -1143,7 +1143,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 				return fmt.Errorf("insufficient balance in sender account, sender is %v, transfer amount %d, the transferable amount is: %d", sender, amount, sender.Balance-sender.DeductionBalance-MinBalance-sender.ActivityBonus)
 			}
 		} else {
-			amount = sender.Balance - sender.DeductionBalance - c.ZeroAccount.Balance
+			amount = sender.Balance - sender.DeductionBalance - c.ZeroAccount.Balance - sender.ActivityBonus
 			if amount <= 0 {
 				return ErrInsufficientBalance
 			}
