@@ -7,7 +7,7 @@ import {
   minReplicasKey,
   publicDomainKey
 } from '@/constants/app';
-import { INGRESS_SECRET } from '@/store/static';
+import { INGRESS_SECRET, SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
@@ -274,7 +274,10 @@ export const json2Ingress = (data: AppEditType) => {
         ? network.customDomain
         : `${network.publicDomain}.${network.domain}`;
 
-      const secretName = network.customDomain ? network.networkName : INGRESS_SECRET;
+      const secretName = network.customDomain
+        ? network.networkName
+        : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
+          INGRESS_SECRET;
 
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',

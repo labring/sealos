@@ -5,7 +5,7 @@ import { defaultSliderKey, ProtocolList } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN, SEALOS_USER_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';

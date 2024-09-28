@@ -2,7 +2,7 @@ import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
-export let SEALOS_USER_DOMAIN = ['cloud.sealos.io'];
+export let SEALOS_USER_DOMAINS = [{ name: 'cloud.sealos.io', secretName: 'wildcard-cert' }];
 export let DESKTOP_DOMAIN = 'cloud.sealos.io';
 export let DOMAIN_PORT = '';
 export let INGRESS_SECRET = 'wildcard-cert';
@@ -15,7 +15,7 @@ export const loadInitData = async () => {
   try {
     const res = await getInitData();
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
-    SEALOS_USER_DOMAIN = res.SEALOS_USER_DOMAIN;
+    SEALOS_USER_DOMAINS = res.SEALOS_USER_DOMAINS;
     DOMAIN_PORT = res.DOMAIN_PORT;
     INGRESS_SECRET = res.INGRESS_SECRET;
     SHOW_EVENT_ANALYZE = res.SHOW_EVENT_ANALYZE;
@@ -47,5 +47,6 @@ export const serverLoadInitData = () => {
     DOMAIN_PORT = global.AppConfig.cloud.port || '';
     INGRESS_SECRET = global.AppConfig.launchpad.ingressTlsSecretName || 'wildcard-cert';
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
+    SEALOS_USER_DOMAINS = global.AppConfig.cloud.userDomains;
   } catch (error) {}
 };

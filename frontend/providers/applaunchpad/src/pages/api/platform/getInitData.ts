@@ -16,7 +16,7 @@ export type Response = {
   CURRENCY: Coin;
   guideEnabled: boolean;
   fileMangerConfig: FileMangerType;
-  SEALOS_USER_DOMAIN: string[];
+  SEALOS_USER_DOMAINS: { name: string; secretName: string }[];
   DESKTOP_DOMAIN: string;
 };
 
@@ -24,7 +24,12 @@ export const defaultAppConfig: AppConfigType = {
   cloud: {
     domain: 'cloud.sealos.io',
     port: '',
-    userDomain: ['cloud.sealos.io'],
+    userDomains: [
+      {
+        name: 'cloud.sealos.io',
+        secretName: 'wildcard-cert'
+      }
+    ],
     desktopDomain: 'cloud.sealos.io'
   },
   common: {
@@ -89,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
         CURRENCY: Coin.shellCoin,
-        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain || [],
+        SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
         DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain
       }
     });
