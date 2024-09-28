@@ -2856,10 +2856,6 @@ spec:
                 type: object
               phase:
                 type: string
-              podPhase:
-                description: PodPhase is a label for the condition of a pod at the
-                  current time.
-                type: string
               state:
                 description: |-
                   ContainerState holds a possible state of container.
@@ -5639,7 +5635,7 @@ metadata:
   name: devbox-controller-manager
   namespace: devbox-system
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       control-plane: controller-manager
