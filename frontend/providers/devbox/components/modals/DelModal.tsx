@@ -81,7 +81,7 @@ const DelModal = ({
             {t.rich('please_enter_devbox_name_confirm', {
               name: devbox.name,
               strong: (chunks) => (
-                <Text fontWeight={'bold'} display={'inline-block'}>
+                <Text fontWeight={'bold'} display={'inline-block'} userSelect={'all'}>
                   {chunks}
                 </Text>
               )
