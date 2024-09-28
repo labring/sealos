@@ -40,7 +40,6 @@ export type AppConfigType = {
     gpuEnabled: boolean;
   };
   launchpad: {
-    ingressTlsSecretName: string;
     eventAnalyze: {
       enabled: boolean;
       fastGPTKey?: string;

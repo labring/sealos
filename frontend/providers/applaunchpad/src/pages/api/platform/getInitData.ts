@@ -10,7 +10,6 @@ import { getGpuNode } from './resourcePrice';
 export type Response = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
-  INGRESS_SECRET: string;
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;
@@ -38,7 +37,6 @@ export const defaultAppConfig: AppConfigType = {
     gpuEnabled: false
   },
   launchpad: {
-    ingressTlsSecretName: 'wildcard-cert',
     eventAnalyze: {
       enabled: false,
       fastGPTKey: ''
@@ -88,7 +86,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         SEALOS_DOMAIN: global.AppConfig.cloud.domain,
         DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
-        INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
         SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
         FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
         guideEnabled: global.AppConfig.common.guideEnabled,
