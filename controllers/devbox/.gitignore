@@ -25,3 +25,6 @@ go.work
 *.swp
 *.swo
 *~
+
+# ignore deploy.yaml
+deploy/manifests/deploy.yaml

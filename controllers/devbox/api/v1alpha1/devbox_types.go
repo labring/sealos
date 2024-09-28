@@ -163,16 +163,16 @@ const (
 	DevboxPhasePending DevboxPhase = "Pending"
 	//DevboxPhaseStopped means Devbox is stop and stopped success
 	DevboxPhaseStopped DevboxPhase = "Stopped"
-	//DevboxPhaseStopping means Devbox is stop and not stopped success
+	//DevboxPhaseStopping means Devbox is stopping
 	DevboxPhaseStopping DevboxPhase = "Stopping"
 	//DevboxPhaseError means Devbox is error
 	DevboxPhaseError DevboxPhase = "Error"
+	//DevboxPhaseUnknown means Devbox is unknown
+	DevboxPhaseUnknown DevboxPhase = "Unknown"
 )
 
 // DevboxStatus defines the observed state of Devbox
 type DevboxStatus struct {
-	// +kubebuilder:validation:Optional
-	DevboxPodPhase corev1.PodPhase `json:"podPhase"`
 	// +kubebuilder:validation:Optional
 	Network NetworkStatus `json:"network"`
 	// +kubebuilder:validation:Optional
