@@ -45,7 +45,7 @@ export type KBDevboxType = {
         startedAt: string
       }
     }
-    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
+    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown'
     commitHistory: {
       image: string
       pod: string
