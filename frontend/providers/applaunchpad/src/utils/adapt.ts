@@ -219,7 +219,7 @@ export enum YamlKindEnum {
 }
 
 export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
-  const { SEALOS_DOMAIN, SEALOS_USER_DOMAIN } = await getInitData();
+  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = await getInitData();
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
@@ -314,7 +314,7 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&
-          !SEALOS_USER_DOMAIN.some((user) => domain.endsWith(user));
+          !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
 
         return {
           networkName: ingress?.metadata?.name || '',

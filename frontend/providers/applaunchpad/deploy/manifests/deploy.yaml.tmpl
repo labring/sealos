@@ -15,17 +15,22 @@ data:
     cloud:
       domain: {{ .cloudDomain }}
       port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+      desktopDomain: {{ .cloudDomain }}
+      userDomains: 
+        - name: {{ .cloudDomain }}
+          secretName: {{ .certSecretName }}
     common:
       guideEnabled: false
       apiEnabled: false
     launchpad:
-      ingressTlsSecretName: {{ .ingressTlsSecretName }}
       eventAnalyze:
         enabled: false
         fastGPTKey: ""
       components:
         monitor:
           url: {{ .monitorUrl }}
+        billing:
+          url: {{ .billingUrl }}
       appResourceFormSliderConfig:
         default:
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]

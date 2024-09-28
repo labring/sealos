@@ -25,10 +25,14 @@ export type FileMangerType = {
 
 export type AppConfigType = {
   cloud: {
-    domain: string;
+    domain: string; // Main promoted domain
     port?: string;
-    userDomain: string[];
-    desktopDomain: string;
+    // List of domains available for users
+    userDomains: {
+      name: string;
+      secretName: string;
+    }[];
+    desktopDomain: string; // Domain for the desktop application
   };
   common: {
     guideEnabled: boolean;
@@ -36,7 +40,6 @@ export type AppConfigType = {
     gpuEnabled: boolean;
   };
   launchpad: {
-    ingressTlsSecretName: string;
     eventAnalyze: {
       enabled: boolean;
       fastGPTKey?: string;
