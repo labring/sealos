@@ -44,12 +44,13 @@ export function transformProperties(data: properties): userPriceType {
 }
 
 const getResourcePrice = async () => {
-  const res = await fetch(
-    `https://account-api.${process.env.SEALOS_CLOUD_DOMAIN}/account/v1alpha1/properties`,
-    {
-      method: 'POST'
-    }
-  );
+  const baseUrl = process.env.ACCOUNT_URL
+    ? process.env.ACCOUNT_URL
+    : `https://account-api.${process.env.SEALOS_CLOUD_DOMAIN}`;
+
+  const res = await fetch(`${baseUrl}/account/v1alpha1/properties`, {
+    method: 'POST'
+  });
   const data = await res.json();
   return transformProperties(data.data as properties);
 };
