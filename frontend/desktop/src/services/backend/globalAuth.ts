@@ -32,6 +32,9 @@ async function signIn({ provider, id }: { provider: ProviderType; id: string }) 
     }
   });
   if (!userProvider) return null;
+
+  await checkDeductionBalanceAndCreateTasks(userProvider.user.uid);
+
   return {
     user: userProvider.user
   };
@@ -93,11 +96,44 @@ export async function signInByPassword({ id, password }: { id: string; password:
     }
   });
   if (!userProvider) return null;
+
+  await checkDeductionBalanceAndCreateTasks(userProvider.user.uid);
+
   return {
     user: userProvider.user
   };
 }
 
+/**
+ * Checks the deduction balance of a user and creates new tasks if the balance is zero.
+ *
+ * @param {string} userUid - The unique identifier of the user.
+ */
+async function checkDeductionBalanceAndCreateTasks(userUid: string) {
+  const account = await globalPrisma.account.findUnique({
+    where: { userUid }
+  });
+
+  // Check if the account exists, the deduction balance is not null, and the balance is zero.
+  if (
+    account &&
+    account.deduction_balance !== null &&
+    account.deduction_balance.toString() === '0'
+  ) {
+    const userTasks = await globalPrisma.userTask.findFirst({
+      where: { userUid }
+    });
+
+    // If no user tasks are found, create new tasks for the user.
+    if (!userTasks) {
+      await globalPrisma.$transaction(async (tx) => {
+        await createNewUserTasks(tx, userUid);
+      });
+    }
+  }
+}
+
+// Assign tasks to newly registered users
 async function createNewUserTasks(tx: TransactionClient, userUid: string) {
   const newUserTasks = await tx.task.findMany({
     where: {

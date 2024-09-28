@@ -122,9 +122,9 @@ export default function Apps() {
                 userSelect="none"
                 cursor={'pointer'}
                 onClick={(e) => handleDoubleClick(e, item)}
+                className={item.key}
               >
                 <Box
-                  className={item.key}
                   w="60px"
                   h="60px"
                   p={'8px'}
