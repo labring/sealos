@@ -165,10 +165,6 @@ export default function Desktop(props: any) {
     globalNotification();
   }, []);
 
-  useEffect(() => {
-    console.log('taskComponentState:', taskComponentState);
-  }, [taskComponentState]);
-
   return (
     <Box
       id="desktop"

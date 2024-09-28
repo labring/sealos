@@ -7,6 +7,7 @@ import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { TaskStatus, TaskType } from 'prisma/global/generated/client';
 import * as k8s from '@kubernetes/client-node';
+import { templateDeployKey } from '@/constants/account';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -31,8 +32,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const [deployments, statefulsets, instances, clusters] = await Promise.all([
-      k8sApp.listNamespacedDeployment(namespace),
-      k8sApp.listNamespacedStatefulSet(namespace),
+      k8sApp.listNamespacedDeployment(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `!${templateDeployKey}`
+      ),
+      k8sApp.listNamespacedStatefulSet(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `!${templateDeployKey}`
+      ),
       k8sCustomObjects.listNamespacedCustomObject(
         'app.sealos.io',
         'v1',
@@ -43,7 +58,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'apps.kubeblocks.io',
         'v1alpha1',
         namespace,
-        'clusters'
+        'clusters',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `!${templateDeployKey}`
       ) as any
     ]);
 

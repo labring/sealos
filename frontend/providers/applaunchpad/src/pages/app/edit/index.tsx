@@ -177,17 +177,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
 
-        // if (!isGuided) {
-        //   updateDesktopGuide({
-        //     activityType: 'beginner-guide',
-        //     phase: 'launchpad',
-        //     phasePage: 'create',
-        //     shouldSendGift: true
-        //   }).catch((err) => {
-        //     console.log(err);
-        //   });
-        // }
-
         toast({
           title: t(applySuccess),
           status: 'success'
