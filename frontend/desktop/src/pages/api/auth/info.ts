@@ -12,36 +12,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'invalid token'
       });
-    const [regionData, globalData, realNameInfo, restrictedUser] = await Promise.all([
-      prisma.userCr.findUnique({
-        where: {
-          uid: regionUser.userCrUid
-        }
-      }),
-      globalPrisma.user.findUnique({
-        where: {
-          uid: regionUser.userUid
-        },
-        include: {
-          oauthProvider: {
-            select: {
-              providerType: true,
-              providerId: true
+    const [regionData, globalData, realNameInfo, enterpriseRealNameInfo, restrictedUser] =
+      await Promise.all([
+        prisma.userCr.findUnique({
+          where: {
+            uid: regionUser.userCrUid
+          }
+        }),
+        globalPrisma.user.findUnique({
+          where: {
+            uid: regionUser.userUid
+          },
+          include: {
+            oauthProvider: {
+              select: {
+                providerType: true,
+                providerId: true
+              }
             }
           }
-        }
-      }),
-      globalPrisma.userRealNameInfo.findUnique({
-        where: {
-          userUid: regionUser.userUid
-        }
-      }),
-      globalPrisma.restrictedUser.findUnique({
-        where: {
-          userUid: regionUser.userUid
-        }
-      })
-    ]);
+        }),
+        globalPrisma.userRealNameInfo.findUnique({
+          where: {
+            userUid: regionUser.userUid
+          }
+        }),
+        globalPrisma.enterpriseRealNameInfo.findUnique({
+          where: {
+            userUid: regionUser.userUid
+          }
+        }),
+        globalPrisma.restrictedUser.findUnique({
+          where: {
+            userUid: regionUser.userUid
+          }
+        })
+      ]);
 
     if (!regionData || !globalData)
       return jsonRes(res, {
@@ -59,6 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: string;
       name: string;
       realName?: string;
+      enterpriseVerificationStatus?: string;
+      enterpriseRealName?: string;
       userRestrictedLevel?: number;
     } = {
       ...globalData,
@@ -74,6 +82,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (realNameInfo && realNameInfo.isVerified) {
       info.realName = realNameInfo.realName || undefined;
+    }
+
+    if (enterpriseRealNameInfo) {
+      info.enterpriseVerificationStatus = enterpriseRealNameInfo.verificationStatus || undefined;
+      info.enterpriseRealName = enterpriseRealNameInfo.enterpriseName || undefined;
     }
 
     if (restrictedUser) {

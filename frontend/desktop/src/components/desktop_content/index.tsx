@@ -1,7 +1,5 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-// import useDriver from '@/hooks/useDriver';
-import { LicenseFrontendKey } from '@/constants/account';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -116,11 +114,13 @@ export default function Desktop(props: any) {
   }, [openDesktopApp]);
 
   useEffect(() => {
-    if (infoData.isSuccess && !infoData?.data?.realName && commonConfig?.realNameAuthEnabled) {
-      realNameAuthNotificationIdRef.current = realNameAuthNotification({
-        duration: null,
-        isClosable: true
-      });
+    if (infoData.isSuccess && commonConfig?.realNameAuthEnabled) {
+      if (!infoData?.data?.realName && infoData?.data?.enterpriseVerificationStatus !== 'Success') {
+        realNameAuthNotificationIdRef.current = realNameAuthNotification({
+          duration: null,
+          isClosable: true
+        });
+      }
     }
 
     return () => {

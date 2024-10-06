@@ -8,6 +8,8 @@ export type CloudConfigType = {
 };
 
 export type CommonConfigType = {
+  enterpriseRealNameAuthEnabled: boolean;
+  enterpriseSupportingMaterials: string;
   realNameAuthEnabled: boolean;
   guideEnabled: boolean;
   apiEnabled: boolean;
@@ -173,12 +175,22 @@ export type DesktopConfigType<T = AuthConfigType> = {
   };
 };
 
+export type RealNameOSSConfigType = {
+  accessKey: string;
+  accessKeySecret: string;
+  endpoint: string;
+  realNameBucket: string;
+  enterpriseRealNameBucket: string;
+};
+
 export type AppConfigType = {
   cloud: CloudConfigType;
   common: CommonConfigType;
   database: DatabaseConfigType;
   desktop: DesktopConfigType;
+  realNameOSS: RealNameOSSConfigType;
 };
+
 export type AppClientConfigType = {
   cloud: CloudConfigType;
   common: CommonClientConfigType;
@@ -186,6 +198,8 @@ export type AppClientConfigType = {
 };
 
 export const DefaultCommonClientConfig: CommonClientConfigType = {
+  enterpriseRealNameAuthEnabled: false,
+  enterpriseSupportingMaterials: '',
   realNameAuthEnabled: false,
   guideEnabled: false,
   rechargeEnabled: false,

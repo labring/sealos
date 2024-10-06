@@ -221,8 +221,18 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <ConfigItem
                       LeftElement={<Text>{t('common:realname_info')}</Text>}
                       RightElement={
+                        infoData.data.enterpriseVerificationStatus === 'Success' ||
                         infoData.data.realName ? (
-                          <Flex flex={1}>{infoData?.data.realName}</Flex>
+                          <Flex flex={1}>
+                            <Text
+                              maxWidth="200px"
+                              whiteSpace="nowrap"
+                              overflow="hidden"
+                              textOverflow="ellipsis"
+                            >
+                              {infoData?.data.enterpriseRealName || infoData?.data.realName}
+                            </Text>
+                          </Flex>
                         ) : (
                           <Badge
                             cursor="pointer"

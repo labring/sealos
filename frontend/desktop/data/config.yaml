@@ -4,6 +4,8 @@ cloud:
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
 common:
+  enterpriseSupportingMaterials: ""
+  enterpriseRealNameAuthEnabled: false
   realNameAuthEnabled: false
   guideEnabled: false
   apiEnabled: false
@@ -67,3 +69,9 @@ desktop:
 #          authURL: "{{ .oauth2AuthURL }}"
 #          tokenURL: "{{ .oauth2TokenURL }}"
 #          userInfoURL: "{{ .oauth2UserInfoURL }}"
+realNameOSS:
+  accessKey: ""
+  accessKeySecret: ""
+  endpoint: ""
+  realNameBucket: ""
+  enterpriseRealNameBucket: ""

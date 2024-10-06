@@ -243,25 +243,41 @@ model UserRealNameInfo {
   @@map("UserRealNameInfo")
 }
 
+model EnterpriseRealNameInfo {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid                  String   @unique @db.Uuid
+  enterpriseName           String?
+  enterpriseQualification  String?
+  legalRepresentativePhone String?
+  isVerified               Boolean  @default(false)
+  verificationStatus       String?
+  createdAt                DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo           Json?
+  supportingMaterials      Json?
+
+  @@map("EnterpriseRealNameInfo")
+}
+
 model RestrictedUser {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userUid          String   @unique @db.Uuid
-  restrictedLevel  Int
-  createdAt        DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
-  additionalInfo   Json?
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid         String   @unique @db.Uuid
+  restrictedLevel Int
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo  Json?
 
   @@map("RestrictedUser")
 }
 
 model RealNameAuthProvider {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  backend   String
-  authType  String
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backend        String
+  authType       String
   maxFailedTimes Int
-  config    Json?
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  config         Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("RealNameAuthProvider")
 }
