@@ -75,3 +75,5 @@ realNameOSS:
   endpoint: ""
   realNameBucket: ""
   enterpriseRealNameBucket: ""
+  ssl: true
+  port: 9000

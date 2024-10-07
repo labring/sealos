@@ -165,7 +165,8 @@ async function uploadFiles(userUid: string, files: Files): Promise<string[]> {
     endPoint: realNameOSS.endpoint,
     accessKey: realNameOSS.accessKey,
     secretKey: realNameOSS.accessKeySecret,
-    useSSL: true
+    port: realNameOSS.port,
+    useSSL: realNameOSS.ssl
   });
 
   const filesToUpload = [

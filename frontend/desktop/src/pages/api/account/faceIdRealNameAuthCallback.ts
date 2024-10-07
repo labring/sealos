@@ -112,8 +112,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const minioClient = new Client({
       endPoint: realNameOSS.endpoint,
-      port: 9000, // Default MinIO port, adjust if necessary
-      useSSL: false, // Set to true if using HTTPS
+      port: realNameOSS.port, // Default MinIO port, adjust if necessary
+      useSSL: realNameOSS.ssl, // Set to true if using HTTPS
       accessKey: realNameOSS.accessKey,
       secretKey: realNameOSS.accessKeySecret
     });
