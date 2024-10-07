@@ -1,27 +1,16 @@
-import { getJobListEventsAndLogs } from '@/api/job';
 import MyTooltip from '@/components/MyTooltip';
 import { CronJobTypeList } from '@/constants/job';
 import { useJobStore } from '@/store/job';
+import { JobList } from '@/types/job';
 import { useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import React, { useMemo } from 'react';
 
-export default function AppBaseInfo({ appName }: { appName: string }) {
+export default function AppBaseInfo({ data }: { data?: JobList }) {
   const { t } = useTranslation();
   const { JobDetail, loadJobDetail } = useJobStore();
   const { copyData } = useCopyData();
-
-  const { data, isLoading } = useQuery(
-    ['getJobListEventsAndLogs', appName],
-    () => getJobListEventsAndLogs(appName),
-    {
-      onError(err) {
-        console.log(err);
-      }
-    }
-  );
 
   const [totalAmount, successAmount, failAmount] = useMemo(() => {
     if (data?.total) {

@@ -1,6 +1,5 @@
 import type { Response as InitDataType } from '@/pages/api/platform/getInitData';
 import { GET, POST } from '@/services/request';
-import { EnvResponse } from '@/types';
 import type { AccountCRD, UserQuotaItemType, userPriceType } from '@/types/user';
 import { AuthCnamePrams } from './params';
 import { UpdateUserGuideParams } from '@/pages/api/guide/updateGuide';

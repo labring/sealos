@@ -1,4 +1,4 @@
-import { updateCronJobStatus } from '@/api/job';
+import { implementJob, updateCronJobStatus } from '@/api/job';
 import MyIcon from '@/components/Icon';
 import StatusTag from '@/components/StatusTag';
 import { CronJobStatusMap } from '@/constants/job';
@@ -19,14 +19,16 @@ const Header = ({
   isPause = false,
   isLargeScreen = true,
   setShowSlider,
-  refetch
+  refetchCronJob,
+  refetchJob
 }: {
   appStatus: CronJobStatusMapType;
   appName?: string;
   isPause?: boolean;
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
-  refetch: () => void;
+  refetchCronJob: () => void;
+  refetchJob: () => void;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -64,8 +66,27 @@ const Header = ({
       console.error(error);
     }
     setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    refetchCronJob();
+  }, [appName, refetchCronJob, toast]);
+
+  const handleRunJob = useCallback(async () => {
+    try {
+      setLoading(true);
+      await implementJob({ jobName: appName });
+      toast({
+        title: t('job_implement_success'),
+        status: 'success'
+      });
+    } catch (error: any) {
+      toast({
+        title: typeof error === 'string' ? error : error.message || t('job_implement_error'),
+        status: 'error'
+      });
+      console.error(error);
+    }
+    setLoading(false);
+    refetchJob();
+  }, [appName, refetchJob, toast]);
 
   const handleStartApp = useCallback(async () => {
     try {
@@ -83,8 +104,8 @@ const Header = ({
       console.error(error);
     }
     setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    refetchCronJob();
+  }, [appName, refetchCronJob, toast]);
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
@@ -113,6 +134,18 @@ const Header = ({
       <Box flex={1} />
 
       {/* btns */}
+      <Button
+        mr={5}
+        h={'40px'}
+        borderColor={'myGray.200'}
+        leftIcon={<MyIcon name="continue" w={'14px'} />}
+        isLoading={loading}
+        variant={'base'}
+        bg={'white'}
+        onClick={handleRunJob}
+      >
+        {t('implement')}
+      </Button>
       {isPause ? (
         <Button
           mr={5}

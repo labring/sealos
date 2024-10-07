@@ -87,7 +87,7 @@
   "Stripe Success": "pay with Stripe successfully",
   "Stripe Cancel": "cancel to pay with Stripe",
   "GPU Unit": "Card",
-	"port_unit": "",
+  "port_unit": "",
   "Gpu valuation": "GPU Price Table",
   "common valuation": "Basic Valuation",
   "Billing Details": "Billing Details",
@@ -233,5 +233,8 @@
   "duration": "duration",
   "GPU": "GPU",
   "usage": "usage",
-  "resource": "resource"
+  "resource": "resource",
+  "Double": "Double",
+  "first_recharge_tips": "Partial specifications can enjoy double the amount of the initial recharge.",
+  "first_recharge_title": "Double on First Recharge"
 }

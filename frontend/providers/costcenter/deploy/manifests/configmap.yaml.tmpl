@@ -15,6 +15,10 @@ data:
     costCenter:
       transferEnabled: true
       currencyType: "shellCoin"
+      auth:
+        jwt:
+          internal: "{{ .jwtInternal }}"
+          billing: "{{ .jwtInternal }}"
       invoice:
         enabled: false
         feiShuBotURL: ""

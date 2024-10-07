@@ -608,10 +608,10 @@ func TestAccount_UseGiftCode(t *testing.T) {
 	}
 
 	giftcode, err := db.UseGiftCode(&helper.UseGiftCodeReq{
-		Code: "DfxAffaeEf",
+		Code: "d-intl-TXERVADC3ASAGQJSx",
 		AuthBase: helper.AuthBase{
 			Auth: &helper.Auth{
-				Owner: "E1xAJ0fy4k",
+				UserID: "E1xAJ0fy4k",
 			},
 		},
 	})
@@ -621,6 +621,28 @@ func TestAccount_UseGiftCode(t *testing.T) {
 		return
 	}
 	t.Logf("giftcode = %+v", giftcode)
+}
+
+func TestAccount_GetUserRealNameInfo(t *testing.T) {
+	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+
+	userRealNameInfo, err := db.GetUserRealNameInfo(&helper.GetRealNameInfoReq{
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				UserID: "E1xAJ0fy4k",
+			},
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("GetUserRealNameInfo() error = %v", err)
+		return
+	}
+	t.Logf("userRealNameInfo = %+v", userRealNameInfo)
 }
 
 func init() {

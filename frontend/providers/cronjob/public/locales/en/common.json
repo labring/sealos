@@ -197,5 +197,9 @@
   "The password cannot be empty": "The password cannot be empty",
   "Deploy": "Deploy",
   "Env Placeholder": "one per line, key and value separated by colon or equals sign, e.g.:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
-  "Environment Variables": "Environment Variables"
+  "Environment Variables": "Environment Variables",
+  "implement": "Implement",
+  "job_implement_success": "Job has been executed",
+  "job_implement_error": "An error occurred while executing the job",
+  "Executing": "Executing"
 }

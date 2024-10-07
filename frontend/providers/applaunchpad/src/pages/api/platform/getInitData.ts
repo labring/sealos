@@ -10,13 +10,12 @@ import { getGpuNode } from './resourcePrice';
 export type Response = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
-  INGRESS_SECRET: string;
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;
   guideEnabled: boolean;
   fileMangerConfig: FileMangerType;
-  SEALOS_USER_DOMAIN: string[];
+  SEALOS_USER_DOMAINS: { name: string; secretName: string }[];
   DESKTOP_DOMAIN: string;
 };
 
@@ -24,7 +23,12 @@ export const defaultAppConfig: AppConfigType = {
   cloud: {
     domain: 'cloud.sealos.io',
     port: '',
-    userDomain: ['cloud.sealos.io'],
+    userDomains: [
+      {
+        name: 'cloud.sealos.io',
+        secretName: 'wildcard-cert'
+      }
+    ],
     desktopDomain: 'cloud.sealos.io'
   },
   common: {
@@ -33,7 +37,6 @@ export const defaultAppConfig: AppConfigType = {
     gpuEnabled: false
   },
   launchpad: {
-    ingressTlsSecretName: 'wildcard-cert',
     eventAnalyze: {
       enabled: false,
       fastGPTKey: ''
@@ -83,13 +86,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         SEALOS_DOMAIN: global.AppConfig.cloud.domain,
         DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
-        INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
         SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
         FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
         guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
         CURRENCY: Coin.shellCoin,
-        SEALOS_USER_DOMAIN: global.AppConfig.cloud.userDomain || [],
+        SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
         DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain
       }
     });

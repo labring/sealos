@@ -4,7 +4,12 @@ import {
   getNamespace,
   getAppEnv
 } from '@/api/platform'
-import { VersionMapType, runtimeNamespaceMapType, valueType } from '@/types/devbox'
+import {
+  VersionMapType,
+  runtimeNamespaceMapType,
+  ValueType,
+  ValueTypeWithPorts
+} from '@/types/devbox'
 import type { Response as resourcePriceResponse } from '@/app/api/platform/resourcePrice/route'
 
 export let SOURCE_PRICE: resourcePriceResponse = {
@@ -28,9 +33,9 @@ export let SQUASH_ENABLE = 'false'
 
 export const runtimeNamespace = 'devbox-system'
 
-export let languageTypeList: valueType[] = []
-export let frameworkTypeList: valueType[] = []
-export let osTypeList: valueType[] = []
+export let languageTypeList: ValueType[] = []
+export let frameworkTypeList: ValueType[] = []
+export let osTypeList: ValueType[] = []
 
 export let runtimeNamespaceMap: runtimeNamespaceMapType = {}
 
@@ -56,7 +61,7 @@ export let osVersionMap: VersionMapType = {
   // [OSTypeEnum.centos]: [{ id: '8', label: 'centos-8' }]
 }
 export const getRuntimeVersionList = (runtimeType: string) => {
-  let versions: valueType[] = []
+  let versions: ValueTypeWithPorts[] = []
 
   if (languageVersionMap[runtimeType]) {
     versions = languageVersionMap[runtimeType]
@@ -67,12 +72,13 @@ export const getRuntimeVersionList = (runtimeType: string) => {
   }
   return versions.map((i) => ({
     value: i.id,
-    label: i.label
+    label: i.label,
+    defaultPorts: i.defaultPorts
   }))
 }
 
 export const getRuntimeVersionItem = (runtimeType: string, runtimeVersion: string) => {
-  let versions: valueType[] = []
+  let versions: ValueType[] = []
 
   if (languageVersionMap[runtimeType]) {
     versions = languageVersionMap[runtimeType]

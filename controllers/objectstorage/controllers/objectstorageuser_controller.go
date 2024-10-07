@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -148,6 +149,7 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	quota := resourceQuota.Spec.Hard.Name(ResourceObjectStorageSize, resource.BinarySI)
+	used := resourceQuota.Status.Used.Name(ResourceObjectStorageSize, resource.BinarySI)
 
 	updated := r.initObjectStorageUser(user, username, quota.Value())
 
@@ -199,6 +201,14 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if user.Status.Size != size {
 		user.Status.Size = size
 		updated = true
+	}
+
+	if used.Value() != size {
+		resourceQuota.Status.Used[ResourceObjectStorageSize] = resource.MustParse(strconv.FormatInt(size, 10))
+		if err := r.Status().Update(ctx, resourceQuota); err != nil {
+			r.Logger.Error(err, "failed to update status", "name", resourceQuota.Name, "namespace", userNamespace)
+			return ctrl.Result{}, err
+		}
 	}
 
 	if user.Status.ObjectsCount != objectsCount {

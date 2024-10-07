@@ -72,6 +72,10 @@ const baseColors = {
     800: '#005B9C',
     900: '#004B82'
   },
+  royalBlue: {
+    100: '#E1EAFF',
+    700: '#2B5FD9'
+  },
   yellow: {
     25: '#FFFDFA',
     50: '#FFFAEB',

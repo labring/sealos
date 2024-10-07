@@ -2776,37 +2776,66 @@ spec:
                   - time
                   type: object
                 type: array
-              lastTerminatedState:
-                description: ContainerStateTerminated is a terminated state of a container.
+              lastState:
+                description: |-
+                  ContainerState holds a possible state of container.
+                  Only one of its members may be specified.
+                  If none of them is specified, the default one is ContainerStateWaiting.
                 properties:
-                  containerID:
-                    description: Container's ID in the format '<type>://<container_id>'
-                    type: string
-                  exitCode:
-                    description: Exit status from the last termination of the container
-                    format: int32
-                    type: integer
-                  finishedAt:
-                    description: Time at which the container last terminated
-                    format: date-time
-                    type: string
-                  message:
-                    description: Message regarding the last termination of the container
-                    type: string
-                  reason:
-                    description: (brief) reason from the last termination of the container
-                    type: string
-                  signal:
-                    description: Signal from the last termination of the container
-                    format: int32
-                    type: integer
-                  startedAt:
-                    description: Time at which previous execution of the container
-                      started
-                    format: date-time
-                    type: string
-                required:
-                - exitCode
+                  running:
+                    description: Details about a running container
+                    properties:
+                      startedAt:
+                        description: Time at which the container was last (re-)started
+                        format: date-time
+                        type: string
+                    type: object
+                  terminated:
+                    description: Details about a terminated container
+                    properties:
+                      containerID:
+                        description: Container's ID in the format '<type>://<container_id>'
+                        type: string
+                      exitCode:
+                        description: Exit status from the last termination of the
+                          container
+                        format: int32
+                        type: integer
+                      finishedAt:
+                        description: Time at which the container last terminated
+                        format: date-time
+                        type: string
+                      message:
+                        description: Message regarding the last termination of the
+                          container
+                        type: string
+                      reason:
+                        description: (brief) reason from the last termination of the
+                          container
+                        type: string
+                      signal:
+                        description: Signal from the last termination of the container
+                        format: int32
+                        type: integer
+                      startedAt:
+                        description: Time at which previous execution of the container
+                          started
+                        format: date-time
+                        type: string
+                    required:
+                    - exitCode
+                    type: object
+                  waiting:
+                    description: Details about a waiting container
+                    properties:
+                      message:
+                        description: Message regarding why the container is not yet
+                          running.
+                        type: string
+                      reason:
+                        description: (brief) reason the container is not yet running.
+                        type: string
+                    type: object
                 type: object
               network:
                 properties:
@@ -2827,10 +2856,67 @@ spec:
                 type: object
               phase:
                 type: string
-              podPhase:
-                description: PodPhase is a label for the condition of a pod at the
-                  current time.
-                type: string
+              state:
+                description: |-
+                  ContainerState holds a possible state of container.
+                  Only one of its members may be specified.
+                  If none of them is specified, the default one is ContainerStateWaiting.
+                properties:
+                  running:
+                    description: Details about a running container
+                    properties:
+                      startedAt:
+                        description: Time at which the container was last (re-)started
+                        format: date-time
+                        type: string
+                    type: object
+                  terminated:
+                    description: Details about a terminated container
+                    properties:
+                      containerID:
+                        description: Container's ID in the format '<type>://<container_id>'
+                        type: string
+                      exitCode:
+                        description: Exit status from the last termination of the
+                          container
+                        format: int32
+                        type: integer
+                      finishedAt:
+                        description: Time at which the container last terminated
+                        format: date-time
+                        type: string
+                      message:
+                        description: Message regarding the last termination of the
+                          container
+                        type: string
+                      reason:
+                        description: (brief) reason from the last termination of the
+                          container
+                        type: string
+                      signal:
+                        description: Signal from the last termination of the container
+                        format: int32
+                        type: integer
+                      startedAt:
+                        description: Time at which previous execution of the container
+                          started
+                        format: date-time
+                        type: string
+                    required:
+                    - exitCode
+                    type: object
+                  waiting:
+                    description: Details about a waiting container
+                    properties:
+                      message:
+                        description: Message regarding why the container is not yet
+                          running.
+                        type: string
+                      reason:
+                        description: (brief) reason the container is not yet running.
+                        type: string
+                    type: object
+                type: object
             type: object
         type: object
     served: true
@@ -3092,6 +3178,84 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  appPorts:
+                    default:
+                    - name: devbox-app-port
+                      port: 8080
+                      protocol: TCP
+                    items:
+                      description: ServicePort contains information on service's port.
+                      properties:
+                        appProtocol:
+                          description: |-
+                            The application protocol for this port.
+                            This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+                            This field follows standard Kubernetes label syntax.
+                            Valid values are either:
+
+
+                            * Un-prefixed protocol names - reserved for IANA standard service names (as per
+                            RFC-6335 and https://www.iana.org/assignments/service-names).
+
+
+                            * Kubernetes-defined prefixed names:
+                              * 'kubernetes.io/h2c' - HTTP/2 over cleartext as described in https://www.rfc-editor.org/rfc/rfc7540
+                              * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+                              * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+
+
+                            * Other protocols should use implementation-defined prefixed names such as
+                            mycompany.com/my-custom-protocol.
+                          type: string
+                        name:
+                          description: |-
+                            The name of this port within the service. This must be a DNS_LABEL.
+                            All ports within a ServiceSpec must have unique names. When considering
+                            the endpoints for a Service, this must match the 'name' field in the
+                            EndpointPort.
+                            Optional if only one ServicePort is defined on this service.
+                          type: string
+                        nodePort:
+                          description: |-
+                            The port on each node on which this service is exposed when type is
+                            NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+                            specified, in-range, and not in use it will be used, otherwise the
+                            operation will fail.  If not specified, a port will be allocated if this
+                            Service requires one.  If this field is specified when creating a
+                            Service which does not need it, creation will fail. This field will be
+                            wiped when updating a Service to no longer need it (e.g. changing type
+                            from NodePort to ClusterIP).
+                            More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                          format: int32
+                          type: integer
+                        port:
+                          description: The port that will be exposed by this service.
+                          format: int32
+                          type: integer
+                        protocol:
+                          default: TCP
+                          description: |-
+                            The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+                            Default is TCP.
+                          type: string
+                        targetPort:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: |-
+                            Number or name of the port to access on the pods targeted by the service.
+                            Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                            If this is a string, it will be looked up as a named port in the
+                            target Pod's container ports. If this is not specified, the value
+                            of the 'port' field is used (an identity map).
+                            This field is ignored for services with clusterIP=None, and should be
+                            omitted or set equal to the 'port' field.
+                            More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service
+                          x-kubernetes-int-or-string: true
+                      required:
+                      - port
+                      type: object
+                    type: array
                   args:
                     description: kubebuilder:validation:Optional
                     items:
@@ -3225,6 +3389,8 @@ spec:
                     - containerPort: 22
                       name: devbox-ssh-port
                       protocol: TCP
+                    description: 'TODO: in v1alpha2 api we need fix the port and app
+                      port into one field and create a new type for it.'
                     items:
                       description: ContainerPort represents a network port in a single
                         container.
@@ -5469,7 +5635,7 @@ metadata:
   name: devbox-controller-manager
   namespace: devbox-system
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -5507,11 +5673,11 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: 1500m
+            memory: 2000Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: 100m
+            memory: 640Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

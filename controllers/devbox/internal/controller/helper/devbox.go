@@ -76,6 +76,32 @@ func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alph
 	return annotations
 }
 
+func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) devboxv1alpha1.DevboxPhase {
+	if len(podList.Items) > 1 {
+		return devboxv1alpha1.DevboxPhaseError
+	}
+	switch devbox.Spec.State {
+	case devboxv1alpha1.DevboxStateRunning:
+		if len(podList.Items) == 0 {
+			return devboxv1alpha1.DevboxPhasePending
+		}
+		switch podList.Items[0].Status.Phase {
+		case corev1.PodFailed, corev1.PodSucceeded:
+			return devboxv1alpha1.DevboxPhaseStopped
+		case corev1.PodPending:
+			return devboxv1alpha1.DevboxPhasePending
+		case corev1.PodRunning:
+			return devboxv1alpha1.DevboxPhaseRunning
+		}
+	case devboxv1alpha1.DevboxStateStopped:
+		if len(podList.Items) == 0 {
+			return devboxv1alpha1.DevboxPhaseStopped
+		}
+		return devboxv1alpha1.DevboxPhaseStopping
+	}
+	return devboxv1alpha1.DevboxPhaseUnknown
+}
+
 func MergeCommitHistory(devbox *devboxv1alpha1.Devbox, latestDevbox *devboxv1alpha1.Devbox) []*devboxv1alpha1.CommitHistory {
 	res := make([]*devboxv1alpha1.CommitHistory, 0)
 	historyMap := make(map[string]*devboxv1alpha1.CommitHistory)
@@ -127,7 +153,6 @@ func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod
 // TODO: move this function to devbox types.go
 func UpdateDevboxStatus(current, latest *devboxv1alpha1.Devbox) {
 	latest.Status.Phase = current.Status.Phase
-	latest.Status.DevboxPodPhase = current.Status.DevboxPodPhase
 	latest.Status.State = current.Status.State
 	latest.Status.LastTerminationState = current.Status.LastTerminationState
 	latest.Status.CommitHistory = MergeCommitHistory(current, latest)

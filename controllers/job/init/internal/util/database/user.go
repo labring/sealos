@@ -113,6 +113,7 @@ func PresetAdminUser() error {
 		Nickname:  adminUserName,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+		Status:    types.UserStatusNormal,
 	}, &types.Workspace{
 		UID:         genWorkspaceUID,
 		ID:          workspacePrefix + adminUserName,

@@ -1,13 +1,13 @@
+import dayjs from 'dayjs'
 import yaml from 'js-yaml'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import duration from 'dayjs/plugin/duration'
 import * as jsonpatch from 'fast-json-patch'
 
 import { YamlKindEnum } from '@/constants/devbox'
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
 import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
-import dayjs from 'dayjs'
-import duration from 'dayjs/plugin/duration'
 
 dayjs.extend(duration)
 
@@ -26,7 +26,9 @@ export const cpuFormatToM = (cpu = '0') => {
   } else {
     value = value * 1000
   }
-  if (value < 0.1) return 0
+  if (value < 0.1) {
+    return 0
+  }
   return Number(value.toFixed(4))
 }
 
@@ -178,7 +180,9 @@ export const patchYamlList = ({
     if (oldFormJson) {
       const patchRes = jsonpatch.compare(oldFormJson, newYamlJson)
 
-      if (patchRes.length === 0) return
+      if (patchRes.length === 0) {
+        return
+      }
 
       /* Generate a new json using the formPatchResult and the crJson */
       const actionsJson = (() => {
@@ -190,10 +194,14 @@ export const patchYamlList = ({
               item?.metadata?.name === oldFormJson?.metadata?.name
           )
 
-          if (!crOldYamlJson) return newYamlJson
+          if (!crOldYamlJson) {
+            return newYamlJson
+          }
           crOldYamlJson = JSON.parse(JSON.stringify(crOldYamlJson))
 
-          if (!crOldYamlJson) return newYamlJson
+          if (!crOldYamlJson) {
+            return newYamlJson
+          }
 
           /* generate new json */
           const _patchRes: jsonpatch.Operation[] = patchRes
@@ -310,9 +318,15 @@ export function calculateUptime(createdTime: Date): string {
   const minutes = diff.minutes()
 
   let uptime = ''
-  if (days > 0) uptime += `${days}d`
-  if (hours > 0) uptime += `${hours}h`
-  if (minutes > 0) uptime += `${minutes}m`
+  if (days > 0) {
+    uptime += `${days}d`
+  }
+  if (hours > 0) {
+    uptime += `${hours}h`
+  }
+  if (minutes > 0) {
+    uptime += `${minutes}m`
+  }
 
   return uptime || '刚刚启动'
 }

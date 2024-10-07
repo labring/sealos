@@ -49,8 +49,8 @@
   "delete_failed": "删除失败",
   "delete_successful": "删除成功",
   "delete_warning": "删除警告",
-  "delete_warning_content": "您确定要删除Devbox 嘛？",
-  "delete_warning_content_2": "删除Devbox会导致Devbox远程环境被删除，您将无法访问远程开发环境。（您已发布的版本仍然会保留）。",
+  "delete_warning_content": "您确定要删除该云沙箱嘛？",
+  "delete_warning_content_2": "删除云沙箱会导致云沙箱远程环境被删除，您将无法访问远程开发环境。（您已发布的版本仍然会保留）。",
   "deploy": "上线",
   "detail": "详情",
   "devbox_creation": "项目创建",
@@ -154,5 +154,6 @@
   "vscode": "VS Code",
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML文件"
+  "yaml_file": "YAML文件",
+  "delete_version_confirm_info": "你确定要删除该版本吗？"
 }

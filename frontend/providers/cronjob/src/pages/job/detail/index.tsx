@@ -1,11 +1,12 @@
 import { useLoading } from '@/hooks/useLoading';
+import { getJobListEventsAndLogs } from '@/api/job';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { useJobStore } from '@/store/job';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import AppBaseInfo from './components/AppBaseInfo';
 import AppMainInfo from './components/AppMainInfo';
 import Header from './components/Header';
@@ -18,14 +19,32 @@ export default function DetailPage({ appName }: { appName: string }) {
   const [showSlider, setShowSlider] = useState(false);
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
 
-  const { refetch } = useQuery(['getCronJobDetail', appName], () => loadJobDetail(appName), {
+  const {
+    data,
+    isLoading,
+    refetch: refetchPods
+  } = useQuery(['getJobListEventsAndLogs', appName], () => getJobListEventsAndLogs(appName), {
     onError(err) {
-      toast({
-        title: String(err),
-        status: 'error'
-      });
-    }
+      console.log(err);
+    },
+    refetchInterval: 3000
   });
+
+  const { refetch: refetchJobDetail } = useQuery(
+    ['getCronJobDetail', appName],
+    () => {
+      console.log('appName', appName);
+      return loadJobDetail(appName);
+    },
+    {
+      onError(err) {
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+      }
+    }
+  );
 
   return (
     <Flex flexDirection={'column'} height={'100vh'} backgroundColor={'#F3F4F5'} px={9} pb={4}>
@@ -34,7 +53,8 @@ export default function DetailPage({ appName }: { appName: string }) {
           appName={appName}
           appStatus={JobDetail?.status}
           isPause={JobDetail?.isPause}
-          refetch={refetch}
+          refetchCronJob={refetchJobDetail}
+          refetchJob={refetchPods}
           setShowSlider={setShowSlider}
           isLargeScreen={isLargeScreen}
         />
@@ -60,7 +80,7 @@ export default function DetailPage({ appName }: { appName: string }) {
                 transform: `translateX(${showSlider ? '0' : '-1000'}px)`
               })}
         >
-          {JobDetail ? <AppBaseInfo appName={appName} /> : <Loading loading={true} fixed={false} />}
+          {JobDetail ? <AppBaseInfo data={data} /> : <Loading loading={true} fixed={false} />}
         </Box>
         <Flex
           border={'1px solid #DEE0E2'}
@@ -69,7 +89,11 @@ export default function DetailPage({ appName }: { appName: string }) {
           flex={'1 1 740px'}
           bg={'white'}
         >
-          {JobDetail ? <AppMainInfo appName={appName} /> : <Loading loading={true} fixed={false} />}
+          {JobDetail ? (
+            <AppMainInfo joblist={data} isLoading={isLoading} />
+          ) : (
+            <Loading loading={true} fixed={false} />
+          )}
         </Flex>
       </Flex>
       {/* mask */}

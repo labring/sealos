@@ -5,15 +5,15 @@ import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { KBRuntimeClassType, KBRuntimeType } from '@/types/k8s'
-import { VersionMapType, runtimeNamespaceMapType, valueType } from '@/types/devbox'
+import { VersionMapType, runtimeNamespaceMapType, ValueType } from '@/types/devbox'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const languageTypeList: valueType[] = []
-    const frameworkTypeList: valueType[] = []
-    const osTypeList: valueType[] = []
+    const languageTypeList: ValueType[] = []
+    const frameworkTypeList: ValueType[] = []
+    const osTypeList: ValueType[] = []
     const languageVersionMap: VersionMapType = {}
     const frameworkVersionMap: VersionMapType = {}
     const osVersionMap: VersionMapType = {}
@@ -78,7 +78,8 @@ export async function GET(req: NextRequest) {
         runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
         languageVersionMap[language].push({
           id: version.metadata.name,
-          label: version.spec.version
+          label: version.spec.version,
+          defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
         })
       })
       if (languageVersionMap[language].length === 0) {
@@ -98,7 +99,8 @@ export async function GET(req: NextRequest) {
         runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
         frameworkVersionMap[framework].push({
           id: version.metadata.name,
-          label: version.spec.version
+          label: version.spec.version,
+          defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
         })
       })
       if (frameworkVersionMap[framework].length === 0) {
@@ -117,7 +119,8 @@ export async function GET(req: NextRequest) {
         runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
         osVersionMap[os].push({
           id: version.metadata.name,
-          label: version.spec.version
+          label: version.spec.version,
+          defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
         })
       })
       if (osVersionMap[os].length === 0) {
@@ -128,6 +131,7 @@ export async function GET(req: NextRequest) {
         }
       }
     })
+    console.log('languageVersionMap', languageVersionMap)
 
     return jsonRes({
       data: {

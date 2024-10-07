@@ -21,7 +21,10 @@ type State = {
   devboxList: DevboxListItemType[]
   setDevboxList: () => Promise<DevboxListItemType[]>
   devboxVersionList: DevboxVersionListItemType[]
-  setDevboxVersionList: (devboxName: string) => Promise<DevboxVersionListItemType[]>
+  setDevboxVersionList: (
+    devboxName: string,
+    devboxUid: string
+  ) => Promise<DevboxVersionListItemType[]>
   devboxDetail: DevboxDetailType
   setDevboxDetail: (devboxName: string) => Promise<DevboxDetailType>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
@@ -50,23 +53,42 @@ export const useDevboxStore = create<State>()(
             const pods = await getDevboxPodsByDevboxName(devbox.name)
             const queryName = pods[0]?.podName || devbox.name
 
-            const [averageCpuData, averageMemoryData] = await Promise.all([
-              getDevboxMonitorData({ queryKey: 'average_cpu', queryName: queryName, step: '2m' }),
-              getDevboxMonitorData({ queryKey: 'average_memory', queryName: queryName, step: '2m' })
-            ])
+            let averageCpuData, averageMemoryData
+            try {
+              ;[averageCpuData, averageMemoryData] = await Promise.all([
+                getDevboxMonitorData({
+                  queryKey: 'average_cpu',
+                  queryName: queryName,
+                  step: '2m'
+                }),
+                getDevboxMonitorData({
+                  queryKey: 'average_memory',
+                  queryName: queryName,
+                  step: '2m'
+                })
+              ])
+            } catch (error) {
+              console.error('获取监控数据失败:', error)
+              averageCpuData = [
+                {
+                  xData: new Array(30).fill(0),
+                  yData: new Array(30).fill('0'),
+                  name: ''
+                }
+              ]
+              averageMemoryData = [
+                {
+                  xData: new Array(30).fill(0),
+                  yData: new Array(30).fill('0'),
+                  name: ''
+                }
+              ]
+            }
 
             return {
               ...devbox,
-              usedCpu: averageCpuData[0] || {
-                xData: new Array(30).fill(0),
-                yData: new Array(30).fill('0'),
-                name: ''
-              },
-              usedMemory: averageMemoryData[0] || {
-                xData: new Array(30).fill(0),
-                yData: new Array(30).fill('0'),
-                name: ''
-              }
+              usedCpu: averageCpuData[0],
+              usedMemory: averageMemoryData[0]
             }
           })
         )
@@ -77,8 +99,8 @@ export const useDevboxStore = create<State>()(
         return updatedRes
       },
       devboxVersionList: [],
-      setDevboxVersionList: async (devboxName: string) => {
-        const res = await getDevboxVersionList(devboxName)
+      setDevboxVersionList: async (devboxName: string, devboxUid: string) => {
+        const res = await getDevboxVersionList(devboxName, devboxUid)
 
         // order by createTime
         res.sort((a, b) => {
@@ -160,20 +182,44 @@ export const useDevboxStore = create<State>()(
         })
 
         const [cpuData, memoryData, averageCpuData, averageMemoryData] = await Promise.all([
-          getDevboxMonitorData({ queryKey: 'cpu', queryName: queryName, step: '2m' }),
-          getDevboxMonitorData({ queryKey: 'memory', queryName: queryName, step: '2m' }),
-          getDevboxMonitorData({ queryKey: 'average_cpu', queryName: queryName, step: '2m' }),
-          getDevboxMonitorData({ queryKey: 'average_memory', queryName: queryName, step: '2m' })
+          getDevboxMonitorData({
+            queryKey: 'cpu',
+            queryName: queryName,
+            step: '2m'
+          }),
+          getDevboxMonitorData({
+            queryKey: 'memory',
+            queryName: queryName,
+            step: '2m'
+          }),
+          getDevboxMonitorData({
+            queryKey: 'average_cpu',
+            queryName: queryName,
+            step: '2m'
+          }),
+          getDevboxMonitorData({
+            queryKey: 'average_memory',
+            queryName: queryName,
+            step: '2m'
+          })
         ])
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && state.devboxDetail?.isPause !== true) {
             state.devboxDetail.usedCpu = averageCpuData[0]
               ? averageCpuData[0]
-              : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' }
+              : {
+                  xData: new Array(30).fill(0),
+                  yData: new Array(30).fill('0'),
+                  name: ''
+                }
             state.devboxDetail.usedMemory = averageMemoryData[0]
               ? averageMemoryData[0]
-              : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' }
+              : {
+                  xData: new Array(30).fill(0),
+                  yData: new Array(30).fill('0'),
+                  name: ''
+                }
           }
           state.devboxDetailPods = pods.map((pod) => {
             const currentCpu = cpuData.find((item) => item.name === pod.podName)

@@ -202,6 +202,17 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
+
+	var podList corev1.PodList
+	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+		return err
+	}
+	// only one pod is allowed, if more than one pod found, return error
+	if len(podList.Items) > 1 {
+		return fmt.Errorf("more than one pod found")
+	}
+	logger.Info("pod list", "length", len(podList.Items))
+
 	// update devbox status after pod is created or updated
 	defer func() {
 		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -214,6 +225,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			// update devbox status with latestDevbox status
 			logger.Info("updating devbox status")
 			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
+			devbox.Status.Phase = helper.GenerateDevboxPhase(devbox, podList)
 			helper.UpdateDevboxStatus(devbox, latestDevbox)
 			return r.Status().Update(ctx, latestDevbox)
 		}); err != nil {
@@ -224,17 +236,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		logger.Info("update devbox status success")
 		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 	}()
-
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
-		return err
-	}
-	// only one pod is allowed, if more than one pod found, return error
-	if len(podList.Items) > 1 {
-		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
-		return fmt.Errorf("more than one pod found")
-	}
-	logger.Info("pod list", "length", len(podList.Items))
 
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
@@ -249,14 +250,11 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 0:
 			logger.Info("create pod")
 			logger.Info("next commit history", "commit", nextCommitHistory)
-			devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
 			return r.createPod(ctx, devbox, expectPod, nextCommitHistory)
 		case 1:
 			pod := &podList.Items[0]
-			devbox.Status.DevboxPodPhase = pod.Status.Phase
 			// check pod container size, if it is 0, it means the pod is not running, return an error
 			if len(pod.Status.ContainerStatuses) == 0 {
-				devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
 				return fmt.Errorf("pod container size is 0")
 			}
 			devbox.Status.State = pod.Status.ContainerStatuses[0].State
@@ -275,32 +273,26 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				case corev1.PodPending, corev1.PodRunning:
 					// pod is running or pending, do nothing here
 					logger.Info("pod is running or pending")
-					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseRunning
 					// update commit history status by pod status
 					helper.UpdateCommitHistory(devbox, pod, false)
 					return nil
 				case corev1.PodFailed, corev1.PodSucceeded:
 					// pod failed or succeeded, we need delete pod and remove finalizer
-					devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 					logger.Info("pod failed or succeeded, recreate pod")
 					return r.deletePod(ctx, devbox, pod)
 				}
 			case false:
 				// pod not match expectations, delete pod anyway
 				logger.Info("pod not match expectations, recreate pod")
-				devbox.Status.Phase = devboxv1alpha1.DevboxPhasePending
 				return r.deletePod(ctx, devbox, pod)
 			}
 		}
 	case devboxv1alpha1.DevboxStateStopped:
 		switch len(podList.Items) {
 		case 0:
-			// update devbox status to stopped, no pod found, do nothing
-			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 			return nil
 		case 1:
 			pod := &podList.Items[0]
-			devbox.Status.DevboxPodPhase = pod.Status.Phase
 			// update state to empty since devbox is stopped
 			devbox.Status.State = corev1.ContainerState{}
 			// update commit predicated status by pod status, this should be done once find a pod
@@ -309,7 +301,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			if !pod.DeletionTimestamp.IsZero() {
 				return r.handlePodDeleted(ctx, devbox, pod)
 			}
-			devbox.Status.Phase = devboxv1alpha1.DevboxPhaseStopped
 			// we need delete pod because devbox state is stopped
 			// we don't care about the pod status, just delete it
 			return r.deletePod(ctx, devbox, pod)
@@ -336,7 +327,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		//use the default value
 		servicePorts = []corev1.ServicePort{
 			{
-				Name:       "tty",
+				Name:       "devbox-ssh-port",
 				Port:       22,
 				TargetPort: intstr.FromInt32(22),
 				Protocol:   corev1.ProtocolTCP,
@@ -422,7 +413,6 @@ func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1
 	nextCommitHistory.PredicatedStatus = devboxv1alpha1.CommitStatusPending
 	if err := r.Create(ctx, expectPod); err != nil {
 		logger.Error(err, "create pod failed")
-		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
 		return err
 	}
 	devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
@@ -439,7 +429,6 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 	}
 	if err := r.Delete(ctx, pod); err != nil {
 		logger.Error(err, "delete pod failed")
-		devbox.Status.Phase = devboxv1alpha1.DevboxPhaseError
 		return err
 	}
 	// update commit history status because pod has been deleted
@@ -503,7 +492,8 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 
 	// set up ports and env by using runtime ports and devbox extra ports
 	ports := runtime.Spec.Config.Ports
-	ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
+	// TODO: add extra ports to pod, currently not support
+	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
 	envs := runtime.Spec.Config.Env
 	envs = append(envs, devbox.Spec.ExtraEnvs...)

@@ -16,6 +16,7 @@ import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
 import { DevboxReleaseStatusEnum } from '@/constants/devbox'
+import { useConfirm } from '@/hooks/useConfirm'
 
 const Version = () => {
   const t = useTranslations()
@@ -28,12 +29,20 @@ const Version = () => {
   const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
 
-  const { refetch } = useQuery(['initDevboxVersionList'], () => setDevboxVersionList(devbox.name), {
-    refetchInterval: 3000,
-    onSettled() {
-      setInitialized(true)
-    }
+  const { openConfirm, ConfirmChild } = useConfirm({
+    content: 'delete_version_confirm_info'
   })
+
+  const { refetch } = useQuery(
+    ['initDevboxVersionList'],
+    () => setDevboxVersionList(devbox.name, devbox.id),
+    {
+      refetchInterval: 3000,
+      onSettled() {
+        setInitialized(true)
+      }
+    }
+  )
 
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
@@ -203,7 +212,7 @@ const Version = () => {
                     bg: 'rgba(17, 24, 36, 0.05)'
                   }
                 },
-                onClick: () => handleDelDevboxVersion(item.name)
+                onClick: () => openConfirm(() => handleDelDevboxVersion(item.name))()
               }
             ]}
           />
@@ -266,6 +275,7 @@ const Version = () => {
           devbox={{ ...devbox, sshPort: devbox.sshPort || 0 }}
         />
       )}
+      <ConfirmChild />
     </Box>
   )
 }

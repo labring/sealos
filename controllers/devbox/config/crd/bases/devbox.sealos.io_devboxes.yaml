@@ -2848,10 +2848,6 @@ spec:
                 type: object
               phase:
                 type: string
-              podPhase:
-                description: PodPhase is a label for the condition of a pod at the
-                  current time.
-                type: string
               state:
                 description: |-
                   ContainerState holds a possible state of container.

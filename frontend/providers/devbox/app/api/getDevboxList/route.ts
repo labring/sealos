@@ -75,35 +75,40 @@ export async function GET(req: NextRequest) {
         }
       })
       if (item.spec.network.extraPorts.length !== 0) {
-        const { body: service } = await k8sCore.readNamespacedService(devboxName, namespace)
-        const portInfos = item.spec.network.extraPorts.map(async (network: any) => {
-          const matchingIngress = ingressList.find(
-            (ingress: any) => ingress.port === network.containerPort
-          )
+        try {
+          const { body: service } = await k8sCore.readNamespacedService(devboxName, namespace)
+          const portInfos = item.spec.network.extraPorts.map(async (network: any) => {
+            const matchingIngress = ingressList.find(
+              (ingress: any) => ingress.port === network.containerPort
+            )
 
-          const servicePort = service.spec?.ports?.find(
-            (port: any) => port.port === network.containerPort
-          )
-          const servicePortName = servicePort?.name
+            const servicePort = service.spec?.ports?.find(
+              (port: any) => port.port === network.containerPort
+            )
+            const servicePortName = servicePort?.name
 
-          if (matchingIngress) {
-            return {
-              networkName: matchingIngress.networkName,
-              port: matchingIngress.port,
-              portName: servicePortName,
-              protocol: matchingIngress.protocol,
-              openPublicDomain: matchingIngress.openPublicDomain,
-              publicDomain: matchingIngress.publicDomain,
-              customDomain: matchingIngress.customDomain
+            if (matchingIngress) {
+              return {
+                networkName: matchingIngress.networkName,
+                port: matchingIngress.port,
+                portName: servicePortName,
+                protocol: matchingIngress.protocol,
+                openPublicDomain: matchingIngress.openPublicDomain,
+                publicDomain: matchingIngress.publicDomain,
+                customDomain: matchingIngress.customDomain
+              }
             }
-          }
 
-          return {
-            ...network,
-            port: network.containerPort
-          }
-        })
-        item.portInfos = await Promise.all(portInfos)
+            return {
+              ...network,
+              port: network.containerPort
+            }
+          })
+          item.portInfos = await Promise.all(portInfos)
+        } catch (error) {
+          // no service just null array
+          item.portInfos = []
+        }
       }
 
       return item
