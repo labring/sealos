@@ -63,7 +63,7 @@ export async function getAuthClientConfig(): Promise<AuthClientConfigType> {
   try {
     if (process.env.NODE_ENV === 'development' || !global.AppConfig) {
       const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
+        process.env.NODE_ENV === 'development' ? 'data/config.local.yaml' : '/app/data/config.yaml';
       global.AppConfig = yaml.load(readFileSync(filename, 'utf-8')) as AppConfigType;
     }
     return genResAuthClientConfig(global.AppConfig.desktop.auth);

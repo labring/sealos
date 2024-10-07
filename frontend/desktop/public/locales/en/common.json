@@ -120,6 +120,7 @@
   "merge": "merge",
   "merge_account_tips1": "The account you are trying to bind has been used by another user. Due to conflicting binding methods, the accounts cannot be merged.",
   "merge_account_tips2": "The account you are trying to bind has been used by another user. You can choose to merge accounts to manage your information and settings in a unified way. After the merge is completed, your private workspace may be converted into a regular workspace. Do you want to merge accounts now?",
+  "merge_account_title": "Account has been bound",
   "message_center": "Message Center",
   "monitor": "Monitor",
   "more_apps": "More Apps",
