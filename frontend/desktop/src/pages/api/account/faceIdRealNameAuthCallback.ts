@@ -6,7 +6,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { globalPrisma } from '@/services/backend/db/init';
 import { GetDetectInfoEnhancedResponse } from 'tencentcloud-sdk-nodejs/tencentcloud/services/faceid/v20180301/faceid_models';
 import { RealNameOSSConfigType } from '@/types';
-import { Client } from 'minio';
+import { Client, ClientOptions } from 'minio';
 
 type TencentCloudFaceAuthConfig = {
   secretId: string;
@@ -110,13 +110,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Initialize or reset userMaterials array
     additionalInfo.userMaterials = [];
 
-    const minioClient = new Client({
+    const minioConfig: ClientOptions = {
       endPoint: realNameOSS.endpoint,
-      port: realNameOSS.port, // Default MinIO port, adjust if necessary
-      useSSL: realNameOSS.ssl, // Set to true if using HTTPS
       accessKey: realNameOSS.accessKey,
-      secretKey: realNameOSS.accessKeySecret
-    });
+      secretKey: realNameOSS.accessKeySecret,
+      useSSL: realNameOSS.ssl
+    };
+    const minioClient = new Client(minioConfig);
 
     if (userRealNameFaceAuthInfo.BestFrame?.BestFrame) {
       const imageBuffer = Buffer.from(userRealNameFaceAuthInfo.BestFrame.BestFrame, 'base64');

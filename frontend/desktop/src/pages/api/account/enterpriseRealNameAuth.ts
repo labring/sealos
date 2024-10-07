@@ -60,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const formData = await parseFormData(req, form);
     const { fields, files } = formData;
+
     const enterpriseName = fields.enterpriseName?.[0];
 
     if ((enterpriseName && enterpriseName.length < 1) || enterpriseName.length > 20) {
@@ -161,13 +162,13 @@ function sanitizeFilename(filename: string): string {
 }
 
 async function uploadFiles(userUid: string, files: Files): Promise<string[]> {
-  const minioClient = new Minio.Client({
+  const minioConfig: Minio.ClientOptions = {
     endPoint: realNameOSS.endpoint,
     accessKey: realNameOSS.accessKey,
     secretKey: realNameOSS.accessKeySecret,
-    port: realNameOSS.port,
     useSSL: realNameOSS.ssl
-  });
+  };
+  const minioClient = new Minio.Client(minioConfig);
 
   const filesToUpload = [
     { file: files.enterpriseQualification?.[0], name: 'enterpriseQualification' },
@@ -194,6 +195,7 @@ async function uploadFile(
     await minioClient.fPutObject(realNameOSS.enterpriseRealNameBucket, filePath, file.filepath, {
       'Content-Type': file.mimetype || 'application/octet-stream'
     });
+
     // Check if the file exists before attempting to delete it
     try {
       await fs.access(file.filepath);

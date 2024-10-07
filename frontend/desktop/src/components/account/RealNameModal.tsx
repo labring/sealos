@@ -183,7 +183,7 @@ function RealNameModal(props: {
             <Text>{t('common:realName_verification')}</Text>
           </ModalHeader>
           <ModalBody w="100%" py="32px" px={'60px'}>
-            <Tabs position="relative" variant="unstyled">
+            <Tabs position="relative" variant="unstyled" isLazy>
               <TabList gap="12px">
                 <Tab
                   display="flex"
@@ -250,7 +250,7 @@ export function RealNameAuthForm(
 ) {
   const { t } = useTranslation();
   return (
-    <Tabs position="relative" variant="unstyled">
+    <Tabs position="relative" variant="unstyled" isLazy>
       <TabList gap="12px">
         <Tab
           display="flex"

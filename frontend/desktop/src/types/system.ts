@@ -179,8 +179,8 @@ export type RealNameOSSConfigType = {
   accessKey: string;
   accessKeySecret: string;
   endpoint: string;
-  ssl: boolean;
-  port: number;
+  ssl?: boolean;
+  port?: number;
   realNameBucket: string;
   enterpriseRealNameBucket: string;
 };
