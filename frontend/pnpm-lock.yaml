@@ -1191,6 +1191,9 @@ importers:
       '@next/font':
         specifier: 13.1.6
         version: 13.1.6
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../../packages/driver
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
@@ -2163,6 +2166,9 @@ importers:
       '@replit/codemirror-vscode-keymap':
         specifier: ^6.0.2
         version: 6.0.2(@codemirror/autocomplete@6.11.1)(@codemirror/commands@6.3.2)(@codemirror/language@6.9.3)(@codemirror/lint@6.4.2)(@codemirror/search@6.5.5)(@codemirror/state@6.3.2)(@codemirror/view@6.22.1)
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../../packages/driver
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui

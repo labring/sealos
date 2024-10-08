@@ -278,3 +278,7 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
   };
   return TemplateEnvs;
 }
+
+export const formatMoney = (mone: number) => {
+  return mone / 1000000;
+};

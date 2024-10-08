@@ -1,4 +1,4 @@
-import { authSession } from '@/services/backend/auth';
+import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -6,15 +6,21 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     if (!global.AppConfig.common.guideEnabled) return jsonRes(res, { data: null });
-    const kubeconfig = await authSession(req.headers);
-    const domain = global.AppConfig.cloud.domain;
+    const token = await authAppToken(req.headers);
+    if (!token) {
+      return jsonRes(res, { code: 401, message: 'token is valid' });
+    }
 
-    const response = await fetch(`https://${domain}/api/v1alpha/account/getAccount`, {
+    const domain = global.AppConfig.cloud.desktopDomain;
+
+    const response = await fetch(`https://${domain}/api/account/checkTask`, {
       method: 'GET',
       headers: {
-        Authorization: encodeURIComponent(kubeconfig)
+        'Content-Type': 'application/json',
+        Authorization: token
       }
     });
+
     const result: {
       code: number;
       data: any;

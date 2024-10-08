@@ -352,3 +352,7 @@ export const adjustDifferencesForIni = (
     };
   });
 };
+
+export const formatMoney = (mone: number) => {
+  return mone / 1000000;
+};

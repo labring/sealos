@@ -15,5 +15,7 @@ ENV minioSecretKey=""
 ENV minioPort=""
 ENV migrateFileImage=""
 ENV minioBucketName=""
+ENV guideEnabled="true"
+ENV billingUrl="http://account-service.account-system.svc:2333"
 
 CMD ["kubectl apply -f manifests"]

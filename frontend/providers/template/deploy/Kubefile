@@ -12,5 +12,7 @@ ENV certSecretName="wildcard-cert"
 ENV templateRepoUrl="https://github.com/labring-actions/templates"
 ENV templateRepoBranch="main"
 ENV templateRepoPath="templates"
+ENV guideEnabled="true"
+ENV billingUrl="http://account-service.account-system.svc:2333"
 
 CMD ["kubectl apply -f manifests"]

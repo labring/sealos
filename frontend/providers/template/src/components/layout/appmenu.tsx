@@ -56,45 +56,44 @@ export default function AppMenu() {
       </InputGroup>
 
       <SideBar />
-
-      <Flex
-        cursor={'default'}
-        p="8px 4px"
-        mb="8px"
-        h="48px"
-        borderRadius={'4px'}
-        background={router.route === '/app' ? 'rgba(150, 153, 180, 0.15)' : ''}
-        _hover={{
-          background: 'rgba(150, 153, 180, 0.10)'
-        }}
-        alignItems={'center'}
-        onClick={() => {
-          router.replace('/app');
-          setAppType(ApplicationType.MyApp);
-        }}
-      >
-        <Icon
-          xmlns="http://www.w3.org/2000/svg"
-          width="32px"
-          height="32px"
-          viewBox="0 0 32 32"
-          fill="none"
+      {insideCloud ? (
+        <Flex
+          cursor={'default'}
+          p="8px 4px"
+          mb="8px"
+          h="48px"
+          borderRadius={'4px'}
+          background={router.route === '/app' ? 'rgba(150, 153, 180, 0.15)' : ''}
+          _hover={{
+            background: 'rgba(150, 153, 180, 0.10)'
+          }}
+          alignItems={'center'}
+          onClick={() => {
+            router.replace('/app');
+            setAppType(ApplicationType.MyApp);
+          }}
         >
-          <path
-            d="M32 16C32 24.8366 24.8366 32 16 32C7.16344 32 0 24.8366 0 16C0 7.16344 7.16344 0 16 0C24.8366 0 32 7.16344 32 16Z"
-            fill="#9699B4"
-            fillOpacity="0.8"
-          />
-          <path
-            d="M16 16C17.934 16 19.5 14.434 19.5 12.5C19.5 10.566 17.934 9 16 9C15.5403 8.99987 15.0851 9.09031 14.6605 9.26615C14.2358 9.442 13.8499 9.6998 13.5248 10.0248C13.1998 10.3499 12.942 10.7358 12.7662 11.1605C12.5903 11.5852 12.4999 12.0403 12.5 12.5C12.5 14.434 14.066 16 16 16ZM16 17C13.664 17 9 18.34 9 21V23H23V21C23 18.34 18.336 17 16 17Z"
-            fill="#F0F0F5"
-          />
-        </Icon>
-        <Text ml="10px" fontSize={'14px'} fontWeight={500}>
-          {t('SideBar.My App')}
-        </Text>
+          <Icon
+            xmlns="http://www.w3.org/2000/svg"
+            width="32px"
+            height="32px"
+            viewBox="0 0 32 32"
+            fill="none"
+          >
+            <path
+              d="M32 16C32 24.8366 24.8366 32 16 32C7.16344 32 0 24.8366 0 16C0 7.16344 7.16344 0 16 0C24.8366 0 32 7.16344 32 16Z"
+              fill="#9699B4"
+              fillOpacity="0.8"
+            />
+            <path
+              d="M16 16C17.934 16 19.5 14.434 19.5 12.5C19.5 10.566 17.934 9 16 9C15.5403 8.99987 15.0851 9.09031 14.6605 9.26615C14.2358 9.442 13.8499 9.6998 13.5248 10.0248C13.1998 10.3499 12.942 10.7358 12.7662 11.1605C12.5903 11.5852 12.4999 12.0403 12.5 12.5C12.5 14.434 14.066 16 16 16ZM16 17C13.664 17 9 18.34 9 21V23H23V21C23 18.34 18.336 17 16 17Z"
+              fill="#F0F0F5"
+            />
+          </Icon>
+          <Text ml="10px" fontSize={'14px'} fontWeight={500}>
+            {t('SideBar.My App')}
+          </Text>
 
-        {!insideCloud && (
           <Center
             ml="auto"
             bg="rgba(150, 153, 180, 0.15)"
@@ -114,8 +113,28 @@ export default function AppMenu() {
           >
             {i18n?.language === 'en' ? 'En' : '中'}
           </Center>
-        )}
-      </Flex>
+        </Flex>
+      ) : (
+        <Center
+          bg="rgba(150, 153, 180, 0.15)"
+          mb={'16px'}
+          color={'#485058'}
+          w="28px"
+          h="28px"
+          borderRadius={'50%'}
+          bottom={'28px'}
+          right={'16px'}
+          fontSize={'12px'}
+          fontWeight={500}
+          cursor={'pointer'}
+          onClick={(e) => {
+            e.stopPropagation();
+            changeI18n();
+          }}
+        >
+          {i18n?.language === 'en' ? 'En' : '中'}
+        </Center>
+      )}
     </Flex>
   );
 }

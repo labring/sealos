@@ -1,7 +1,6 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-// import useDriver from '@/hooks/useDriver';
-import { LicenseFrontendKey } from '@/constants/account';
+import useDriver from '@/components/task/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -26,6 +25,8 @@ import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
 import { UserInfo } from '@/api/auth';
+import TaskModal from '../task/taskModal';
+import FloatingTaskButton from '../task/floatButton';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -51,6 +52,11 @@ export default function Desktop(props: any) {
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -104,6 +110,9 @@ export default function Desktop(props: any) {
     },
     [apps, openApp, runningInfo, setToHighestLayerById]
   );
+
+  const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
+  const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
     const cleanup = createMasterAPP();
@@ -234,22 +243,70 @@ export default function Desktop(props: any) {
           </Box>
         </Box>
 
-        {/* {showGuide ? (
-          <>
-            <UserGuide />
-            <Box
-              position="fixed"
-              top="0"
-              left="0"
-              width="100%"
-              height="100%"
-              backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
-              zIndex="11000" // 保证蒙层在最上层
-            />
-          </>
-        ) : (
-          <></>
-        )} */}
+        {isClient && (
+          <Box>
+            {desktopGuide && (
+              <>
+                <UserGuide />
+                <Box
+                  position="fixed"
+                  top="0"
+                  left="0"
+                  width="100%"
+                  height="100%"
+                  backgroundColor="rgba(0, 0, 0, 0.7)"
+                  zIndex="11000"
+                />
+              </>
+            )}
+            {taskComponentState === 'modal' && tasks?.length > 0 && (
+              <TaskModal
+                isOpen={taskComponentState === 'modal'}
+                onClose={handleCloseTaskModal}
+                tasks={tasks || []}
+                onTaskClick={(task) => {
+                  switch (task.taskType) {
+                    case 'LAUNCHPAD':
+                      openDesktopApp({
+                        appKey: 'system-applaunchpad',
+                        pathname: '/app/edit',
+                        messageData: {
+                          type: 'InternalAppCall'
+                        }
+                      });
+                      break;
+                    case 'DATABASE':
+                      openDesktopApp({
+                        appKey: 'system-dbprovider',
+                        pathname: '/db/edit',
+                        messageData: { type: 'InternalAppCall' }
+                      });
+                      break;
+                    case 'APPSTORE':
+                      openDesktopApp({
+                        appKey: 'system-template',
+                        pathname: '/',
+                        messageData: {
+                          type: 'InternalAppCall'
+                        }
+                      });
+                      break;
+                    default:
+                      console.log(task.taskType);
+                  }
+                  setTaskComponentState('button');
+                }}
+              />
+            )}
+            {taskComponentState === 'button' && (
+              <FloatingTaskButton
+                onClick={() => {
+                  setTaskComponentState('modal');
+                }}
+              />
+            )}
+          </Box>
+        )}
       </Flex>
 
       {isAppBar ? <AppDock /> : <FloatButton />}

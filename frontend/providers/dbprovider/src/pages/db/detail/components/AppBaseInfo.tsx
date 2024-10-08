@@ -325,6 +325,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
               <>
                 <Center
+                  className="driver-detail-terminal-button"
                   gap={'6px'}
                   h="28px"
                   fontSize={'12px'}

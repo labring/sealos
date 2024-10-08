@@ -186,7 +186,7 @@ const Pods = ({
       title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
-        <Flex alignItems={'center'}>
+        <Flex alignItems={'center'} className="driver-detail-operate">
           <MyTooltip label={t('Log')} offset={[0, 10]}>
             <Button variant={'square'} onClick={() => setLogsPodIndex(i)}>
               <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />

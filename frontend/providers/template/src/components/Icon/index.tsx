@@ -36,6 +36,7 @@ const map = {
   sealosGrey: require('./icons/sealos-grey.svg').default,
   empty: require('./icons/empty.svg').default,
   dev: require('./icons/dev.svg').default,
+  gift: require('./icons/gift.svg').default,
   eyeShow: require('./icons/eyeShow.svg').default,
   tool: require('./icons/tool.svg').default,
   sealosCoin: require('./icons/sealosCoin.svg').default,

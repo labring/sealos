@@ -16,6 +16,8 @@ import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import { useSystemConfigStore } from '@/store/config';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
+
+import '@sealos/driver/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 
