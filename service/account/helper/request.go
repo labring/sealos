@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/labring/sealos/service/account/common"
 
 	"github.com/dustin/go-humanize"
@@ -292,6 +294,11 @@ func (a *AuthBase) SetAuth(auth *Auth) {
 	a.Auth = auth
 }
 
+type RechargeDiscountResp struct {
+	DefaultSteps       map[int64]float64 `json:"defaultSteps,omitempty" bson:"defaultSteps,omitempty"`
+	FirstRechargeSteps map[int64]float64 `json:"firstRechargeDiscount,omitempty" bson:"firstRechargeDiscount,omitempty"`
+}
+
 type NamespaceBillingHistoryResp struct {
 	Data    NamespaceBillingHistoryRespData `json:"data,omitempty" bson:"data,omitempty"`
 	Message string                          `json:"message,omitempty" bson:"message" example:"successfully retrieved namespace list"`
@@ -320,10 +327,11 @@ type TimeRange struct {
 }
 
 type Auth struct {
-	Owner      string `json:"owner" bson:"owner" example:"admin"`
-	UserID     string `json:"userID" bson:"userID" example:"admin"`
-	KubeConfig string `json:"kubeConfig" bson:"kubeConfig"`
-	Token      string `json:"token" bson:"token" example:"token"`
+	Owner      string    `json:"owner" bson:"owner" example:"admin"`
+	UserUID    uuid.UUID `json:"userUID" bson:"userUID" example:"user-123"`
+	UserID     string    `json:"userID" bson:"userID" example:"admin"`
+	KubeConfig string    `json:"kubeConfig" bson:"kubeConfig"`
+	Token      string    `json:"token" bson:"token" example:"token"`
 }
 
 func ParseNamespaceBillingHistoryReq(c *gin.Context) (*NamespaceBillingHistoryReq, error) {

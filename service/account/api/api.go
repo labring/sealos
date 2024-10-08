@@ -726,8 +726,9 @@ func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 		return nil, fmt.Errorf("invalid user: %v", user)
 	}
 	auth = &helper.Auth{
-		Owner:  user.UserCrName,
-		UserID: user.UserID,
+		Owner:   user.UserCrName,
+		UserID:  user.UserID,
+		UserUID: user.UserUID,
 	}
 	// if the user is not in the local region, get the user cr name from db
 	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID {
@@ -974,6 +975,34 @@ func UserUsage(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": usage,
+	})
+}
+
+// GetRechargeDiscount
+// @Summary Get recharge discount
+// @Description Get recharge discount
+// @Tags RechargeDiscount
+// @Accept json
+// @Produce json
+// @Param request body helper.GetRechargeDiscountReq true "Get recharge discount request"
+// @Success 200 {object} map[string]interface{} "successfully get recharge discount"
+// @Failure 400 {object} map[string]interface{} "failed to parse get recharge discount request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get recharge discount"
+// @Router /account/v1alpha1/recharge/discount [post]
+func GetRechargeDiscount(c *gin.Context) {
+	req := &helper.AuthBase{}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	discount, err := dao.DBClient.GetRechargeDiscount(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get recharge discount : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"discount": discount,
 	})
 }
 

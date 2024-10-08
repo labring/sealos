@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/golang-jwt/jwt"
@@ -21,13 +23,13 @@ type UserClaims struct {
 }
 
 type JwtUser struct {
-	UserUID      string `json:"userUid,omitempty"`
-	UserCrUID    string `json:"userCrUid,omitempty"`
-	UserCrName   string `json:"userCrName,omitempty"`
-	RegionUID    string `json:"regionUid,omitempty"`
-	UserID       string `json:"userId,omitempty"`
-	WorkspaceID  string `json:"workspaceId,omitempty"`
-	WorkspaceUID string `json:"workspaceUid,omitempty"`
+	UserUID      uuid.UUID `json:"userUid,omitempty"`
+	UserCrUID    string    `json:"userCrUid,omitempty"`
+	UserCrName   string    `json:"userCrName,omitempty"`
+	RegionUID    string    `json:"regionUid,omitempty"`
+	UserID       string    `json:"userId,omitempty"`
+	WorkspaceID  string    `json:"workspaceId,omitempty"`
+	WorkspaceUID string    `json:"workspaceUid,omitempty"`
 }
 
 func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {

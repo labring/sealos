@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
@@ -30,8 +31,9 @@ func RegisterPayRouter() {
 	if err := dao.InitDB(); err != nil {
 		log.Fatalf("Error initializing database: %v", err)
 	}
+	ctx := context.Background()
 	defer func() {
-		if err := dao.DBClient.Disconnect(context.Background()); err != nil {
+		if err := dao.DBClient.Disconnect(ctx); err != nil {
 			log.Fatalf("Error disconnecting database: %v", err)
 		}
 	}()
@@ -63,6 +65,7 @@ func RegisterPayRouter() {
 		POST(helper.GetInvoicePayment, api.GetInvoicePayment).
 		POST(helper.UseGiftCode, api.UseGiftCode).
 		POST(helper.UserUsage, api.UserUsage).
+		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -80,9 +83,31 @@ func RegisterPayRouter() {
 		}
 	}()
 
+	// process task
+	if os.Getenv("REWARD_PROCESSING") == "true" {
+		fmt.Println("Start reward processing timer")
+		go startRewardProcessingTimer(ctx)
+	}
+
 	// Wait for interrupt signal.
 	<-interrupt
 
 	// Terminate procedure.
 	os.Exit(0)
+}
+
+func startRewardProcessingTimer(ctx context.Context) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if err := dao.DBClient.ProcessPendingTaskRewards(); err != nil {
+				log.Printf("Error processing pending task rewards: %v", err)
+			}
+		case <-ctx.Done():
+			log.Println("Reward processing timer stopped")
+			return
+		}
+	}
 }

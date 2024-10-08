@@ -28,6 +28,7 @@ const (
 	GetInvoicePayment             = "/invoice/get-payment"
 	UseGiftCode                   = "/gift-code/use"
 	UserUsage                     = "/user-usage"
+	GetRechargeDiscount           = "/recharge-discount"
 	GetUserRealNameInfo           = "/real-name-info"
 )
 

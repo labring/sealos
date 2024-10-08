@@ -237,11 +237,18 @@ type PaymentRaw struct {
 	Gift            int64     `gorm:"type:bigint"`
 	TradeNO         string    `gorm:"type:text;unique;not null"`
 	// CodeURL is the codeURL of wechatpay
-	CodeURL    string `gorm:"type:text"`
-	InvoicedAt bool   `gorm:"type:boolean;default:false"`
-	Remark     string `gorm:"type:text"`
-	Message    string `gorm:"type:text;not null"`
+	CodeURL      string       `gorm:"type:text"`
+	InvoicedAt   bool         `gorm:"type:boolean;default:false"`
+	Remark       string       `gorm:"type:text"`
+	ActivityType ActivityType `gorm:"type:text;column:activityType"`
+	Message      string       `gorm:"type:text;not null"`
 }
+
+type ActivityType string
+
+const (
+	ActivityTypeFirstRecharge ActivityType = "FIRST_RECHARGE"
+)
 
 func (ErrorPaymentCreate) TableName() string {
 	return "ErrorPaymentCreate"

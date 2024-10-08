@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
@@ -47,6 +49,8 @@ type PaymentReconciler struct {
 	Logger            logr.Logger
 	reconcileDuration time.Duration
 	createDuration    time.Duration
+	accountConfig     pkgtypes.AccountConfig
+	userLock          map[uuid.UUID]*sync.Mutex
 	domain            string
 }
 
@@ -69,13 +73,14 @@ const (
 //+kubebuilder:rbac:groups=account.sealos.io,resources=payments/finalizers,verbs=update
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 	const controllerName = "payment_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
 	r.domain = os.Getenv("DOMAIN")
 	r.reconcileDuration = defaultReconcileDuration
 	r.createDuration = defaultCreateDuration
+	r.userLock = make(map[uuid.UUID]*sync.Mutex)
 	if duration := os.Getenv(EnvPaymentReconcileDuration); duration != "" {
 		reconcileDuration, err := time.ParseDuration(duration)
 		if err == nil {
@@ -88,6 +93,14 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			r.createDuration = createDuration
 		}
 	}
+	r.accountConfig, err = r.Account.AccountV2.GetAccountConfig()
+	if err != nil {
+		return fmt.Errorf("get account config failed: %w", err)
+	}
+	if len(r.accountConfig.DefaultDiscountSteps) == 0 {
+		return fmt.Errorf("default discount steps is empty")
+	}
+	r.Logger.V(1).Info("account config", "config", r.accountConfig)
 	r.Logger.V(1).Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
 	if err := mgr.Add(r); err != nil {
 		return fmt.Errorf("add payment controller failed: %w", err)
@@ -142,22 +155,6 @@ func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) 
 }
 
 func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs []error) {
-	//paymentList := &accountv1.PaymentList{}
-	//listOpts := &client.ListOptions{
-	//	FieldSelector: fields.OneTermEqualSelector("status.tradeNO", ""),
-	//}
-	//// handler old payment
-	//err := r.Client.List(context.Background(), paymentList, listOpts)
-	//if err != nil {
-	//	errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
-	//	return
-	//}
-	//for _, payment := range paymentList.Items {
-	//	if err := r.reconcileNewPayment(&payment); err != nil {
-	//		errs = append(errs, fmt.Errorf("reconcile payment failed: payment: %s, user: %s, err: %w", payment.Name, payment.Spec.UserID, err))
-	//	}
-	//}
-	// watch new payment
 	watcher, err := r.WatchClient.Watch(context.Background(), &accountv1.PaymentList{}, &client.ListOptions{})
 	if err != nil {
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
@@ -211,20 +208,34 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		if err != nil {
 			return fmt.Errorf("get user failed: %w", err)
 		}
+		if r.userLock[user.UID] == nil {
+			r.userLock[user.UID] = &sync.Mutex{}
+		}
+		r.userLock[user.UID].Lock()
+		defer r.userLock[user.UID].Unlock()
+		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		if err != nil {
+			return fmt.Errorf("get user discount failed: %w", err)
+		}
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount * 10000
-		gift := getAmountWithDiscount(payAmount, r.Account.DefaultDiscount)
+		isFirstRecharge, gift := getFirstRechargeDiscount(payAmount, userDiscount)
+		paymentRaw := pkgtypes.PaymentRaw{
+			UserUID:         user.UID,
+			Amount:          payAmount,
+			Gift:            gift,
+			CreatedAt:       payment.CreationTimestamp.Time,
+			RegionUserOwner: getUsername(payment.Namespace),
+			Method:          payment.Spec.PaymentMethod,
+			TradeNO:         payment.Status.TradeNO,
+			CodeURL:         payment.Status.CodeURL,
+		}
+		if isFirstRecharge {
+			paymentRaw.ActivityType = pkgtypes.ActivityTypeFirstRecharge
+		}
+
 		if err = r.Account.AccountV2.Payment(&pkgtypes.Payment{
-			PaymentRaw: pkgtypes.PaymentRaw{
-				UserUID:         user.UID,
-				Amount:          payAmount,
-				Gift:            gift,
-				CreatedAt:       payment.CreationTimestamp.Time,
-				RegionUserOwner: getUsername(payment.Namespace),
-				Method:          payment.Spec.PaymentMethod,
-				TradeNO:         payment.Status.TradeNO,
-				CodeURL:         payment.Status.CodeURL,
-			},
+			PaymentRaw: paymentRaw,
 		}); err != nil {
 			return fmt.Errorf("payment failed: %w", err)
 		}
