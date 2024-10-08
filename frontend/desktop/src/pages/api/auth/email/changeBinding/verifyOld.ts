@@ -1,13 +1,13 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '@/services/backend/response';
-import { enableSms } from '@/services/enable';
 import { filterAccessToken } from '@/services/backend/middleware/access';
-import { filterEmailVerifyParams, verifyEmailCodeGuard } from '@/services/backend/middleware/sms';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { unbindEmailGuard } from '@/services/backend/middleware/oauth';
+import { filterEmailVerifyParams, verifyEmailCodeGuard } from '@/services/backend/middleware/sms';
+import { jsonRes } from '@/services/backend/response';
+import { enablePhoneSms } from '@/services/enable';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!enableSms()) {
+  if (!enablePhoneSms()) {
     throw new Error('SMS is not enabled');
   }
   await filterAccessToken(

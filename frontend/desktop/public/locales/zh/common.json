@@ -104,6 +104,10 @@
   "log_in": "登录",
   "log_out": "登出",
   "login_to_your_account": "登录您的帐户",
+  "login_with_github": "Github 登录",
+  "login_with_google": "Google 登录",
+  "login_with_oauth2": "OAuth2.0 登录",
+  "login_with_wechat": "Wechat 登录",
   "manage_team": "管理工作空间",
   "member_list": "成员列表",
   "memory": "内存",
@@ -187,6 +191,7 @@
   "remaining_time": "剩余激活时间: ",
   "remove": "移除",
   "remove_member_tips": "确认要移除该成员?",
+  "rename": "重命名",
   "scan_with_wechat": "微信扫码支付",
   "sealos_copilot": "Sealos 小助理",
   "search_apps": "搜索应用",
@@ -226,6 +231,5 @@
   "you_can_use_the_kubectl_command_directly_from_the_terminal": "您可通过终端直接使用 kubectl 命令",
   "you_can_view_fees_through_the_fee_center": "您可通过费用中心查看费用",
   "you_have_not_purchased_the_license": "您还没有购买 License",
-  "yuan": "元",
-  "rename": "重命名"
+  "yuan": "元"
 }

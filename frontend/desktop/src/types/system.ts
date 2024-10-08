@@ -71,7 +71,6 @@ export type LayoutConfigType = {
 
 export type AuthConfigType = {
   billingToken?: string;
-  proxyAddress?: string;
   callbackURL: string;
   signUpEnabled?: boolean;
   baiduToken?: string;
@@ -92,18 +91,31 @@ export type AuthConfigType = {
     };
     github?: {
       enabled: boolean;
+      proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
     };
     wechat?: {
       enabled: boolean;
+      proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
     };
     google?: {
       enabled: boolean;
+      proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
+    };
+    oauth2?: {
+      enabled: boolean;
+      callbackURL: string;
+      clientID: string;
+      proxyAddress?: string;
+      clientSecret?: string;
+      authURL: string;
+      tokenURL: string;
+      userInfoURL: string;
     };
     sms?: {
       enabled: boolean;
@@ -122,15 +134,6 @@ export type AuthConfigType = {
         user: string;
         password: string;
       };
-    };
-    oauth2?: {
-      enabled: boolean;
-      callbackURL: string;
-      clientID: string;
-      clientSecret?: string;
-      authURL: string;
-      tokenURL: string;
-      userInfoURL: string;
     };
   };
 };
@@ -239,15 +242,18 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
     },
     github: {
       enabled: false,
-      clientID: ''
+      clientID: '',
+      proxyAddress: ''
     },
     wechat: {
       enabled: false,
-      clientID: ''
+      clientID: '',
+      proxyAddress: ''
     },
     google: {
       enabled: false,
-      clientID: ''
+      clientID: '',
+      proxyAddress: ''
     },
     sms: {
       enabled: false
@@ -258,10 +264,10 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       clientID: '',
       authURL: '',
       tokenURL: '',
-      userInfoURL: ''
+      userInfoURL: '',
+      proxyAddress: ''
     }
   },
-  proxyAddress: '',
   billingToken: ''
 };
 

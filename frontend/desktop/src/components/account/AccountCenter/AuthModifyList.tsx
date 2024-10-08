@@ -1,12 +1,12 @@
 import { useConfigStore } from '@/stores/config';
 import useSessionStore, { OauthAction } from '@/stores/session';
 import { OauthProvider } from '@/types/user';
-import { Text, Image, Center } from '@chakra-ui/react';
+import { Center, Image, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import router from 'next/router';
 import { useMemo } from 'react';
-import { ConfigItem } from './ConfigItem';
 import { BINDING_STATE_MODIFY_BEHAVIOR, BindingModifyButton } from './BindingModifyButton';
+import { ConfigItem } from './ConfigItem';
 
 export function AuthModifyList({
   isOnlyOne,
@@ -34,17 +34,19 @@ export function AuthModifyList({
       <T extends OauthAction>({
         url,
         provider,
-        clientId
+        clientId,
+        proxyAddress
       }: {
         url: string;
         provider: OauthProvider;
         clientId: string;
+        proxyAddress?: string;
       }) =>
       (action: T) => {
         const state = generateState(action);
         setProvider(provider);
-        if (conf.proxyAddress) {
-          const target = new URL(conf.proxyAddress);
+        if (proxyAddress) {
+          const target = new URL(proxyAddress);
           const callback = new URL(conf.callbackURL);
           target.searchParams.append(
             'oauthProxyState',
@@ -69,6 +71,7 @@ export function AuthModifyList({
           return actionCbGen({
             provider: 'GITHUB',
             clientId: githubConf.clientID,
+            proxyAddress: githubConf?.proxyAddress,
             url: `https://github.com/login/oauth/authorize?client_id=${githubConf?.clientID}&redirect_uri=${conf?.callbackURL}&scope=user:email%20read:user`
           })(action);
         }
@@ -83,6 +86,7 @@ export function AuthModifyList({
           return actionCbGen({
             provider: 'WECHAT',
             clientId: wechatConf.clientID,
+            proxyAddress: wechatConf?.proxyAddress,
             url: `https://open.weixin.qq.com/connect/qrconnect?appid=${wechatConf?.clientID}&redirect_uri=${conf?.callbackURL}&response_type=code&scope=snsapi_login&#wechat_redirect`
           })(action);
         }
@@ -99,6 +103,7 @@ export function AuthModifyList({
           return actionCbGen({
             provider: 'GOOGLE',
             clientId: googleConf.clientID,
+            proxyAddress: googleConf?.proxyAddress,
             url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleConf.clientID}&redirect_uri=${conf.callbackURL}&response_type=code&scope=${scope}&include_granted_scopes=true`
           })(action);
         }
