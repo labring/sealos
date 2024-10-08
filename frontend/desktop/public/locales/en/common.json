@@ -69,6 +69,7 @@
   "enterprise_verification": "Enterprise real name",
   "expected_to_use_next_month": "Expected to use next month",
   "expected_used": "Expected used",
+  "face_recognition_failed": "Personal real name failed",
   "face_recognition_success": "Personal real-name success",
   "failed_to_generate_invitation_link": "Failed to generate invitation link",
   "failed_to_get_qr_code": "Failed to obtain real name QR code",

@@ -88,6 +88,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    console.log(faceAuthInfo.Text?.ErrCode);
+
     if (faceAuthInfo.Text?.ErrCode && faceAuthInfo.Text.ErrCode === 0) {
       if (realNameInfo && realNameInfo.realName && realNameInfo.isVerified) {
         faceAuthResult.status = FaceAuthStatus.SUCCESS;
@@ -98,6 +100,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (faceAuthInfo.Text?.ErrCode && faceAuthInfo.Text.ErrCode !== 0) {
       faceAuthResult.status = FaceAuthStatus.FAIL;
     }
+
+    console.log('faceAuthResult', faceAuthResult);
 
     return jsonRes(res, {
       code: 200,

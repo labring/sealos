@@ -66,6 +66,7 @@
   "enterprise_verification": "企业实名",
   "expected_to_use_next_month": "下月预计使用",
   "expected_used": "预计还能使用",
+  "face_recognition_failed": "个人实名失败",
   "face_recognition_success": "个人实名成功",
   "failed_to_generate_invitation_link": "生成邀请链接失败",
   "failed_to_get_qr_code": "获取实名二维码失败",

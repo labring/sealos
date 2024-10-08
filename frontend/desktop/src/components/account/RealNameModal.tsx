@@ -366,6 +366,17 @@ export function FaceIdRealNameAuthORcode(
                 props.onFormSuccess();
               }
             }
+            if (result.data?.status === 'Failed') {
+              message({
+                title: t('common:face_recognition_failed'),
+                status: 'error',
+                duration: 2000,
+                isClosable: true
+              });
+
+              stopPolling();
+              refetch();
+            }
           } catch (error: any) {
             console.error('Error checking face ID auth status:', error);
             message({
@@ -382,7 +393,7 @@ export function FaceIdRealNameAuthORcode(
     startPolling();
 
     return stopPolling;
-  }, [session?.token, data]);
+  }, [session?.token, data, data?.data?.bizToken]);
 
   if (error) {
     return (
