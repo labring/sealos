@@ -32,5 +32,5 @@ type AccountConfig struct {
 }
 
 func (c Configs) TableName() string {
-	return "configs"
+	return "Configs"
 }

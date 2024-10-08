@@ -1184,7 +1184,7 @@ func (c *Cockroach) InitTables() error {
 		//}
 		fmt.Println("add column activityType")
 		tableName := types.Payment{}.TableName()
-		err := c.DB.Exec(`ALTER TABLE ? ADD COLUMN "activityType" TEXT;`, gorm.Expr(tableName)).Error
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "activityType" TEXT;`, gorm.Expr(tableName)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column activityType: %v", err)
 		}
