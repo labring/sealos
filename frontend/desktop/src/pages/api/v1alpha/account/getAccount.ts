@@ -1,5 +1,5 @@
-import { AccountMeta } from '@/pages/api/account/getAccount';
 import { jsonRes } from '@/services/backend/response';
+import { AccountMeta } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { initK8s } from 'sealos-desktop-sdk/service';
 

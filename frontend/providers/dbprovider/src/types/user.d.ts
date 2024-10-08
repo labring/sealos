@@ -33,3 +33,18 @@ export type UserQuotaItemType = {
   used: number;
   limit: number;
 };
+
+export enum TaskType {
+  DATABASE = 'DATABASE'
+}
+
+export type UserTask = {
+  id: string;
+  title: string;
+  description: string;
+  reward: string;
+  order: number;
+  taskType: TaskType;
+  isCompleted: boolean;
+  completedAt: string;
+};

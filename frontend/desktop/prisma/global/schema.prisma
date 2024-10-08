@@ -102,6 +102,7 @@ model User {
   newMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("newUser")
   DeleteUserTransactionInfo   DeleteUserTransactionInfo?
   deleteUserLog               DeleteUserLog?
+  userTasks                   UserTask[]
 }
 
 model Transfer {
@@ -338,4 +339,48 @@ enum UserStatus {
   NORMAL_USER
   LOCK_USER
   DELETE_USER
+}
+
+model Task {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  description   String
+  reward        BigInt
+  order         Int
+  isActive      Boolean    @default(true)
+  isNewUserTask Boolean    @default(false)
+  taskType      TaskType   
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+  userTasks     UserTask[]
+}
+
+model UserTask {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid     String     @db.Uuid
+  taskId      String     @db.Uuid
+  status      TaskStatus
+  rewardStatus TaskStatus
+  completedAt DateTime
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+
+  user        User       @relation(fields: [userUid], references: [uid])
+  task        Task       @relation(fields: [taskId], references: [id])
+
+  @@unique([userUid, taskId])
+  @@index([taskId])
+}
+
+enum TaskType {
+  LAUNCHPAD
+  COSTCENTER
+  DATABASE
+  DESKTOP
+  APPSTORE
+}
+
+enum TaskStatus {
+  NOT_COMPLETED
+  COMPLETED
 }

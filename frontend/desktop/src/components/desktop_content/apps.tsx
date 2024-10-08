@@ -109,6 +109,7 @@ export default function Apps() {
           gap={`${gridSpacing}px`}
           templateColumns={`repeat(auto-fill, minmax(${appWidth}px, 1fr))`}
           templateRows={`repeat(auto-fit, ${appHeight}px)`}
+          className="apps-container"
         >
           {paginatedApps &&
             paginatedApps.map((item: TApp, index) => (
@@ -121,9 +122,9 @@ export default function Apps() {
                 userSelect="none"
                 cursor={'pointer'}
                 onClick={(e) => handleDoubleClick(e, item)}
+                className={item.key}
               >
                 <Box
-                  className={item.key}
                   w="60px"
                   h="60px"
                   p={'8px'}

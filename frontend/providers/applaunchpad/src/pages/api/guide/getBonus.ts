@@ -1,22 +1,43 @@
-import { authSession } from '@/services/backend/auth';
-import { getK8s } from '@/services/backend/kubernetes';
+import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!global.AppConfig.common.guideEnabled) return jsonRes(res, { data: null });
-    const { k8sCore, namespace } = await getK8s({
-      kubeconfig: await authSession(req.headers)
+    const token = await authAppToken(req.headers);
+    if (!token) {
+      return jsonRes(res, { code: 401, message: '令牌无效' });
+    }
+
+    const url = global.AppConfig.launchpad.components.billing.url;
+
+    const response = await fetch(`${url}/account/v1alpha1/recharge-discount`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
 
-    const result = await k8sCore.readNamespacedConfigMap('recharge-gift', 'sealos');
+    const result: {
+      discount: {
+        firstRechargeDiscount: Record<string, string>;
+      };
+    } = await response.json();
+
+    const rechargeOptions = Object.entries(result.discount.firstRechargeDiscount).map(
+      ([amount, rate]) => ({
+        amount: Number(amount),
+        gift: Math.floor((Number(amount) * Number(rate)) / 100)
+      })
+    );
 
     jsonRes(res, {
-      data: result.body
+      code: 200,
+      data: rechargeOptions
     });
   } catch (err: any) {
+    console.log(err);
     jsonRes(res, {
       code: 500,
       error: err

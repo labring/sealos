@@ -13,3 +13,15 @@ export const authSession = async (header: IncomingHttpHeaders) => {
     return Promise.reject(ERROR_ENUM.unAuthorization);
   }
 };
+
+export const authAppToken = async (header: IncomingHttpHeaders) => {
+  if (!header) return Promise.reject('unAuthorization');
+  const { authorization } = header;
+  if (!authorization) return Promise.reject('unAuthorization');
+
+  try {
+    return Promise.resolve(authorization);
+  } catch (err) {
+    return Promise.reject('unAuthorization');
+  }
+};

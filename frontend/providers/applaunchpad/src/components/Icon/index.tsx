@@ -29,6 +29,7 @@ const map = {
   noEvents: require('./icons/noEvents.svg').default,
   warning: require('./icons/warning.svg').default,
   analyze: require('./icons/analyze.svg').default,
+  gift: require('./icons/gift.svg').default,
   terminal: require('./icons/terminal.svg').default,
   log: require('./icons/log.svg').default,
   nvidia: require('./icons/gpu/nvidia.svg').default,

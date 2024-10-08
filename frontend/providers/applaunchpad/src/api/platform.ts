@@ -1,8 +1,8 @@
 import type { Response as InitDataType } from '@/pages/api/platform/getInitData';
 import { GET, POST } from '@/services/request';
-import type { AccountCRD, UserQuotaItemType, userPriceType } from '@/types/user';
+import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
+import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams } from './params';
-import { UpdateUserGuideParams } from '@/pages/api/guide/updateGuide';
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
@@ -15,12 +15,26 @@ export const getUserQuota = () =>
 
 export const postAuthCname = (data: AuthCnamePrams) => POST('/api/platform/authCname', data);
 
-export const updateDesktopGuide = (payload: UpdateUserGuideParams) =>
-  POST('/api/guide/updateGuide', payload);
+export const getUserTasks = () =>
+  GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
+    headers: {
+      Authorization: getUserSession()?.token
+    }
+  });
 
-export const getUserAccount = () => GET<AccountCRD>('/api/guide/getAccount');
+export const checkUserTask = () =>
+  GET('/api/guide/checkTask', undefined, {
+    headers: {
+      Authorization: getUserSession()?.token
+    }
+  });
 
-export const getPriceBonus = () => GET('/api/guide/getBonus');
+export const getPriceBonus = () =>
+  GET<{ amount: number; gift: number }[]>('/api/guide/getBonus', undefined, {
+    headers: {
+      Authorization: getUserSession()?.token
+    }
+  });
 
 export const checkPermission = (payload: { appName: string }) =>
   GET('/api/platform/checkPermission', payload);

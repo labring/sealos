@@ -1,11 +1,11 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { enableSms } from '@/services/enable';
+import { ErrorHandler } from '@/services/backend/middleware/error';
 import { filterCf, filterPhoneParams, sendPhoneCodeGuard } from '@/services/backend/middleware/sms';
 import { sendPhoneCodeSvc } from '@/services/backend/svc/sms';
-import { ErrorHandler } from '@/services/backend/middleware/error';
+import { enablePhoneSms } from '@/services/enable';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!enableSms()) {
+  if (!enablePhoneSms()) {
     throw new Error('SMS is not enabled');
   }
   await filterCf(req, res, async () => {

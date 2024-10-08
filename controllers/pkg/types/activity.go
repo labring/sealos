@@ -23,6 +23,12 @@ import (
 	"gorm.io/gorm"
 )
 
+type UserRechargeDiscount struct {
+	DefaultSteps       map[int64]float64 `json:"defaultSteps,omitempty" bson:"defaultSteps,omitempty"`
+	FirstRechargeSteps map[int64]float64 `json:"firstRechargeDiscount,omitempty" bson:"firstRechargeDiscount,omitempty"`
+}
+
+// TODO the following structures will be deleted
 type Activity struct {
 	gorm.Model
 	ActivityType string `gorm:"uniqueIndex"`
