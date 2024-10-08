@@ -2,7 +2,7 @@ import { TaskType } from 'prisma/global/generated/client';
 
 export type UserTask = {
   id: string;
-  title: string;
+  title: Record<string, string>;
   description: string;
   reward: string;
   order: number;

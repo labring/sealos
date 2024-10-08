@@ -25,7 +25,7 @@ interface TaskModalProps {
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskClick }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const boxStyles = {
     border: '1px solid rgba(60, 101, 172, 0.08)',
@@ -80,7 +80,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
                         fontWeight={500}
                         color="grayModern.900"
                       >
-                        {t(`common:usertask.${task.title}` as I18nCommonKey)}
+                        {task?.title?.[i18n.language]}
                       </Text>
                     </Flex>
 

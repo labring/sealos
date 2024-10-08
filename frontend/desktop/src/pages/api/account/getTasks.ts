@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const tasks = userTasks.map((ut) => ({
       id: ut.task.id,
-      title: ut.task.title,
+      title: JSON.parse(ut.task.title),
       description: ut.task.description,
       reward: ut.task.reward.toString(),
       order: ut.task.order,
