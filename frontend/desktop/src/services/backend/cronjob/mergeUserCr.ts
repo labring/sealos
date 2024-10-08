@@ -1,13 +1,13 @@
-import { globalPrisma, prisma } from '../db/init';
-import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
-import { JoinStatus } from 'prisma/region/generated/client';
-import { getBillingUrl, getCvmUrl, getRegionUid, getWorkorderUrl } from '@/services/enable';
 import { CronJobStatus } from '@/services/backend/cronjob/index';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { mergeUserModifyBinding, mergeUserWorkspaceRole } from '@/services/backend/team';
-import axios from 'axios';
-import { generateCronJobToken } from '../auth';
+import { getBillingUrl, getCvmUrl, getRegionUid, getWorkorderUrl } from '@/services/enable';
 import { MergeUserEvent } from '@/types/db/event';
+import axios from 'axios';
+import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
+import { JoinStatus } from 'prisma/region/generated/client';
+import { generateBillingToken, generateCronJobToken } from '../auth';
+import { globalPrisma, prisma } from '../db/init';
 
 /**
  * |											|	user is exist | user is not exist 			|
@@ -190,13 +190,24 @@ export class MergeUserCrJob implements CronJobStatus {
     const kubeConfig = await getUserKubeconfigNotPatch(finalUserCr.crName);
     if (!kubeConfig) throw Error('the kubeconfig for ' + finalUserCr.crName + ' is not found');
     const [transferResult, workorderResult, cvmResult] = await Promise.all([
-      axios.post(billingUrl, {
-        kubeConfig,
-        owner: finalUserCr.crName,
-        userid: mergeUser.id,
-        toUser: user.id,
-        transferAll: true
-      }),
+      axios.post(
+        billingUrl,
+        {
+          userid: mergeUser.id,
+          toUser: user.id,
+          transferAll: true
+        },
+        {
+          headers: {
+            Authorization:
+              'Bearer ' +
+              generateBillingToken({
+                userUid: mergeUser.uid,
+                userId: mergeUser.id
+              })
+          }
+        }
+      ),
       axios.post(workorderUrl, {
         token: generateCronJobToken({
           userUid: user.id,
