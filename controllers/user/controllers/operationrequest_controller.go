@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	"github.com/go-logr/logr"
 
 	util "github.com/labring/operator-sdk/controller"
@@ -70,12 +74,29 @@ func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts util.Ra
 	r.retentionTime = retTime
 	r.Logger.V(1).Info("init reconcile operationrequest controller")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.Operationrequest{}).
+		For(&userv1.Operationrequest{}, builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace()))).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: util.GetConcurrent(opts),
 			RateLimiter:             util.GetRateLimiter(opts),
 		}).
 		Complete(r)
+}
+
+func namespaceOnlyPredicate(namespace string) predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return e.Object.GetNamespace() == namespace
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return e.Object.GetNamespace() == namespace
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectNew.GetNamespace() == namespace
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return e.Object.GetNamespace() == namespace
+		},
+	}
 }
 
 // +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests,verbs=get;list;watch;create;update;patch;delete
@@ -136,16 +157,9 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	)
 
 	user := &userv1.User{}
-	if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Namespace)}, user); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Spec.Namespace)}, user); err != nil {
 		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get user", "Failed to get user %s", request.Spec.User)
 		return ctrl.Result{}, err
-	}
-	if request.Spec.Role == userv1.OwnerRoleType {
-		if user.Name == user.Annotations[userv1.UserAnnotationOwnerKey] {
-			// 不允许转移个人空间
-			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to grant role", "Failed to grant role %s to user %s, cannot transfer personal workspace", request.Spec.Role, request.Spec.User)
-			return ctrl.Result{}, r.updateRequestStatus(ctx, request, userv1.RequestFailed)
-		}
 	}
 	bindUser := &userv1.User{}
 	if err := r.Get(ctx, client.ObjectKey{Name: request.Spec.User}, bindUser); err != nil {
@@ -206,7 +220,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 		return ctrl.Result{}, err
 	}
 
-	r.Recorder.Eventf(request, v1.EventTypeNormal, "Completed", "Completed operation request %s/%s", request.Namespace, request.Name)
+	r.Recorder.Eventf(request, v1.EventTypeNormal, "Completed", "Completed operation request %s/%s", request.Spec.Namespace, request.Name)
 	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
 }
 
@@ -234,9 +248,9 @@ func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) boo
 func (r *OperationReqReconciler) deleteRequest(ctx context.Context, request *userv1.Operationrequest) error {
 	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
 	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
-		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Spec.Namespace, request.Name)
 		r.Logger.Error(err, "Failed to delete OperationRequest", getLog(request)...)
-		return fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Namespace, request.Name, err)
+		return fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Spec.Namespace, request.Name, err)
 	}
 	r.Logger.V(1).Info("delete OperationRequest success", getLog(request)...)
 	return nil
@@ -245,7 +259,7 @@ func (r *OperationReqReconciler) deleteRequest(ctx context.Context, request *use
 func (r *OperationReqReconciler) updateRequestStatus(ctx context.Context, request *userv1.Operationrequest, phase userv1.RequestPhase) error {
 	request.Status.Phase = phase
 	if err := r.Status().Update(ctx, request); err != nil {
-		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Spec.Namespace, request.Name)
 		r.Logger.V(1).Info("update OperationRequest status failed", getLog(request)...)
 		return err
 	}
@@ -257,7 +271,7 @@ func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleB
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.GetGroupRoleBindingName(request.Spec.User),
-			Namespace: request.Namespace,
+			Namespace: request.Spec.Namespace,
 			Annotations: map[string]string{
 				userAnnotationOwnerKey: request.Spec.User,
 			},
@@ -283,7 +297,7 @@ func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleB
 func getLog(request *userv1.Operationrequest, kv ...interface{}) []interface{} {
 	return append([]interface{}{
 		"request.name", request.Name,
-		"request.namespace", request.Namespace,
+		"request.Spec.Namespace", request.Spec.Namespace,
 		"request.user", request.Spec.User,
 		"request.role", request.Spec.Role,
 		"request.action", request.Spec.Action,
