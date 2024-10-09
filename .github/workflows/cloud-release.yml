@@ -14,7 +14,7 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
-  TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
+  TAG: ${{  github.event.inputs.tag || github.event.release.tag_name }}
 
 jobs:
   save-sealos:
