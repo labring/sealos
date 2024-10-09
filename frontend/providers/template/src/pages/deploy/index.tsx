@@ -192,7 +192,7 @@ export default function EditApp({
 
     const queryString = params.toString();
 
-    const baseUrl = `https://${platformEnvs?.SEALOS_CLOUD_DOMAIN}/`;
+    const baseUrl = `https://${platformEnvs?.DESKTOP_DOMAIN}/`;
     const encodedTemplateQuery = encodeURIComponent(
       `?templateName=${templateName}&sealos_inside=true`
     );
@@ -270,7 +270,7 @@ export default function EditApp({
   );
 
   const copyTemplateLink = () => {
-    const str = `https://${platformEnvs?.SEALOS_CLOUD_DOMAIN}/?openapp=system-template%3FtemplateName%3D${appName}`;
+    const str = `https://${platformEnvs?.DESKTOP_DOMAIN}/?openapp=system-template%3FtemplateName%3D${appName}`;
     copyData(str);
   };
 
@@ -371,7 +371,7 @@ export default function EditApp({
           backgroundColor={'rgba(255, 255, 255, 0.90)'}
         >
           <Header
-            cloudDomain={platformEnvs?.SEALOS_CLOUD_DOMAIN || ''}
+            cloudDomain={platformEnvs?.DESKTOP_DOMAIN || ''}
             templateDetail={data?.templateYaml!}
             appName={appName || ''}
             title={title}

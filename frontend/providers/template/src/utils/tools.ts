@@ -274,7 +274,8 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
     TEMPLATE_REPO_BRANCH: process.env.TEMPLATE_REPO_BRANCH || 'main',
     SEALOS_NAMESPACE: namespace || '',
     SEALOS_SERVICE_ACCOUNT: namespace?.replace('ns-', '') || '',
-    SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false'
+    SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false',
+    DESKTOP_DOMAIN: process.env.DESKTOP_DOMAIN || 'cloud.sealos.io'
   };
   return TemplateEnvs;
 }
