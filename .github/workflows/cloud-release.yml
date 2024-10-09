@@ -74,7 +74,11 @@ jobs:
           sudo mv /tmp/sealos /usr/bin/sealos
           sudo sealos version
       - name: Build
-        run: export CLOUD_VERSION=${{ env.TAG }} && export ARCH=amd64 && bash ./scripts/cloud/build-offline-tar.sh
+        run: |
+          export CLOUD_VERSION=${{ env.TAG }}
+          export VERSION=${{ env.TAG }}
+          export ARCH=amd64
+          bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
         uses: manyuanrong/setup-ossutil@v2.0
         with:
@@ -106,7 +110,11 @@ jobs:
           sudo mv /tmp/sealos /usr/bin/sealos
           sudo sealos version
       - name: Build
-        run: export CLOUD_VERSION=${{ env.TAG }} && VERSION=${{ env.TAG }} && export ARCH=arm64 && bash ./scripts/cloud/build-offline-tar.sh
+        run: |
+          export CLOUD_VERSION=${{ env.TAG }}
+          export VERSION=${{ env.TAG }}
+          export ARCH=arm64
+          bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
         uses: manyuanrong/setup-ossutil@v2.0
         with:
