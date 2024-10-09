@@ -87,7 +87,7 @@ This script is specifically designed for deploying Sealos clusters on "Kubernete
 not compatible with Kubernetes clusters set up in other ways.
 
 For instructions on deploying Kubernetes clusters using Sealos, refer
-to: [Installing Kubernetes Clusters](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md). This method
+to: [Installing Kubernetes Clusters](/developer-guide/lifecycle-management/quick-start/deploy-kubernetes.md). This method
 is compatible with most Kubernetes versions available on [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags),
 except for version 1.28 and higher.
 :::

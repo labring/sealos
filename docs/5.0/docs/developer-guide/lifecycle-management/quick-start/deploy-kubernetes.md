@@ -10,7 +10,7 @@ Sealos supports installing Kubernetes clusters on `amd64` and `arm64` architectu
 
 ## Prerequisites
 
-You'll first need to [download the Sealos CLI tool](/self-hosting/lifecycle-management/quick-start/install-cli.md).
+You'll first need to [download the Sealos CLI tool](/developer-guide/lifecycle-management/quick-start/install-cli.md).
 Sealos is a simple Golang binary that can be installed on most Linux operating systems.
 
 Here are some basic installation requirements:
