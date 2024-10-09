@@ -91,7 +91,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(faceAuthInfo.Text?.ErrCode);
 
     if (faceAuthInfo.Text?.ErrCode && faceAuthInfo.Text.ErrCode === 0) {
+      console.log(1);
       if (realNameInfo && realNameInfo.realName && realNameInfo.isVerified) {
+        console.log(2);
         faceAuthResult.status = FaceAuthStatus.SUCCESS;
         faceAuthResult.realName = realNameInfo.realName;
       }
