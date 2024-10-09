@@ -88,22 +88,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    console.log(faceAuthInfo.Text?.ErrCode);
-
-    if (faceAuthInfo.Text?.ErrCode && faceAuthInfo.Text.ErrCode === 0) {
-      console.log(1);
+    if (faceAuthInfo.Text?.ErrCode !== null && faceAuthInfo.Text?.ErrCode === 0) {
       if (realNameInfo && realNameInfo.realName && realNameInfo.isVerified) {
-        console.log(2);
         faceAuthResult.status = FaceAuthStatus.SUCCESS;
         faceAuthResult.realName = realNameInfo.realName;
       }
     }
 
-    if (faceAuthInfo.Text?.ErrCode && faceAuthInfo.Text.ErrCode !== 0) {
+    if (faceAuthInfo.Text?.ErrCode !== null && faceAuthInfo.Text?.ErrCode !== 0) {
       faceAuthResult.status = FaceAuthStatus.FAIL;
     }
-
-    console.log('faceAuthResult', faceAuthResult);
 
     return jsonRes(res, {
       code: 200,
