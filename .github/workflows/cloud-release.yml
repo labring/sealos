@@ -7,14 +7,14 @@ on:
     inputs:
       tag:
         description: 'Tag for manual release'
-        required: true
-        default: 'latest'
+        required: false
+        default: ''
 
 env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
-  TAG: ${{  github.event.inputs.tag || github.event.release.tag_name }}
+  TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
 
 jobs:
   save-sealos:
