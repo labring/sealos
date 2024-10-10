@@ -63,7 +63,7 @@ spec:
             - name: SHOW_DOCUMENT
               value: "true"
             - name: GUIDE_ENABLED
-              value: {{ .guideEnabled }}
+              value: "{{ .guideEnabled }}"
             - name: BILLING_URL
               value: {{ .billingUrl }}
           securityContext:
