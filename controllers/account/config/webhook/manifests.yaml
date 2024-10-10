@@ -1,4 +1,4 @@
-# Copyright © 2023 sealos.
+# Copyright © 2024 sealos.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,27 +16,40 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
-  - v1
+    - v1
   clientConfig:
     service:
-      name: webhook-service
-      namespace: system
+      name: account-webhook-service
+      namespace: account-system
       path: /validate-v1-sealos-cloud
+  timeoutSeconds: 10
   failurePolicy: Ignore
   name: debt.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
   rules:
-  - apiGroups:
-    - '*'
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    - DELETE
-    resources:
-    - '*'
+    - apiGroups:
+        - '*'
+      apiVersions:
+        - v1
+      operations:
+        - CREATE
+        - UPDATE
+        - DELETE
+      resources:
+        - '*'
+    - apiGroups:
+        - account.sealos.io
+      apiVersions:
+        - v1
+      operations:
+        - UPDATE
+      resources:
+        - payments/status
+      scope: '*'
   sideEffects: None

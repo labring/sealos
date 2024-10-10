@@ -61,14 +61,10 @@ import (
 )
 
 const (
-	ACCOUNTNAMESPACEENV          = "ACCOUNT_NAMESPACE"
-	DEFAULTACCOUNTNAMESPACE      = "sealos-system"
-	AccountAnnotationNewAccount  = "account.sealos.io/new-account"
-	AccountAnnotationIgnoreQuota = "account.sealos.io/ignore-quota"
-	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
-	RECHARGEGIFT                 = "recharge-gift"
-	SEALOS                       = "sealos"
-	DefaultInitialBalance        = 5_000_000
+	ACCOUNTNAMESPACEENV     = "ACCOUNT_NAMESPACE"
+	DEFAULTACCOUNTNAMESPACE = "sealos-system"
+	RECHARGEGIFT            = "recharge-gift"
+	SEALOS                  = "sealos"
 )
 
 // AccountReconciler reconciles an Account object
@@ -233,49 +229,7 @@ func parseConfigList(s string, list interface{}, configName string) error {
 	return nil
 }
 
-//func GetUserOwner(user *userv1.User) string {
-//	own := user.Annotations[userv1.UserAnnotationOwnerKey]
-//	if own == "" {
-//		return user.Name
-//	}
-//	return own
-//}
-
 const BaseUnit = 1_000_000
-
-//func (r *AccountReconciler) getAmountWithRates(amount int64, account *pkgtypes.Account) (amt int64, err error) {
-//	//userActivities, err := pkgtypes.ParseUserActivities(account.Annotations)
-//	//if err != nil {
-//	//	return nil, 0, fmt.Errorf("parse user activities failed: %w", err)
-//	//}
-//	//
-//	//rechargeDiscount := pkgtypes.RechargeDiscount{
-//	//	DiscountSteps: r.RechargeStep,
-//	//	DiscountRates: r.RechargeRatio,
-//	//}
-//	//if len(userActivities) > 0 {
-//	//	if activityType, phase, _ := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
-//	//		if len(phase.RechargeDiscount.DiscountSteps) > 0 {
-//	//			rechargeDiscount.DiscountSteps = phase.RechargeDiscount.DiscountSteps
-//	//			rechargeDiscount.DiscountRates = phase.RechargeDiscount.DiscountRates
-//	//		}
-//	//		rechargeDiscount.SpecialDiscount = phase.RechargeDiscount.SpecialDiscount
-//	//		rechargeDiscount = phase.RechargeDiscount
-//	//		currentPhase := userActivities[activityType].Phases[userActivities[activityType].CurrentPhase]
-//	//		anno = pkgtypes.SetUserPhaseRechargeTimes(account.Annotations, activityType, currentPhase.Name, currentPhase.RechargeNums+1)
-//	//	}
-//	//}
-//	//return anno, getAmountWithDiscount(amount, rechargeDiscount), nil
-//
-//	discount, err := r.AccountV2.GetUserAccountRechargeDiscount(&pkgtypes.UserQueryOpts{UID: account.UserUID})
-//	if err != nil {
-//		return 0, fmt.Errorf("get user %s account recharge discount failed: %w", account.UserUID, err)
-//	}
-//	if discount == nil || discount.DiscountSteps == nil || discount.DiscountRates == nil {
-//		return getAmountWithDiscount(amount, r.DefaultDiscount), nil
-//	}
-//	return getAmountWithDiscount(amount, *discount), nil
-//}
 
 func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) int64 {
 	var r float64

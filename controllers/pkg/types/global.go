@@ -187,46 +187,6 @@ func (RegionUserCr) TableName() string {
 	return "UserCr"
 }
 
-type TransferAccountV1 struct {
-	//RealUser   RealUser
-	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
-	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
-	Exist           bool      `gorm:"type:boolean;default:false"`
-	Account
-}
-
-func (TransferAccountV1) TableName() string {
-	return "TransferAccountV1"
-}
-
-type NullUserRecord struct {
-	CrName   string `gorm:"column:crName;type:text;not null;unique"`
-	RegionID string `gorm:"type:text;not null"`
-}
-
-func (NullUserRecord) TableName() string {
-	return "NullUserRecord"
-}
-
-type ErrorAccountCreate struct {
-	Account
-	UserCr          string    `gorm:"column:userCr;type:text;not null;unique"`
-	ErrorTime       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
-	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
-	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
-	Message         string    `gorm:"type:text;not null"`
-}
-
-func (ErrorAccountCreate) TableName() string {
-	return "ErrorAccountCreate"
-}
-
-type ErrorPaymentCreate struct {
-	PaymentRaw
-	CreateTime time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
-	Message    string    `gorm:"type:text;not null"`
-}
-
 type PaymentRaw struct {
 	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
 	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
@@ -249,10 +209,6 @@ type ActivityType string
 const (
 	ActivityTypeFirstRecharge ActivityType = "FIRST_RECHARGE"
 )
-
-func (ErrorPaymentCreate) TableName() string {
-	return "ErrorPaymentCreate"
-}
 
 type Payment struct {
 	ID string `gorm:"type:text;primary_key"`
