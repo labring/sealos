@@ -54,6 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -68,16 +69,26 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call" ]]; then
             MODULES=$(find frontend -maxdepth 2 \( -name desktop -o -path '*/providers/*' \) -type d | sed 's|frontend/||' | jq -R -s -c 'split("\n")[:-1]')
-          elif echo '${{ steps.changed-files.outputs.all_changed_files }}' | grep -q '^frontend/package/'; then
+          elif echo '${{ steps.changed-files.outputs.all_modified_files }}' | grep -q '^frontend/package/'; then
             MODULES=$(find frontend -maxdepth 2 \( -name desktop -o -path '*/providers/*' \) -type d | sed 's|frontend/||' | jq -R -s -c 'split("\n")[:-1]')
           else
-            MODULES=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | grep -E '^frontend/(desktop|providers/[^/]+)/' | sed 's|frontend/||' | cut -d'/' -f1-2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            echo 'changed files'
+            echo '${{ steps.changed-files.outputs.all_modified_files }}'
+            MODULES=$(echo '${{ steps.changed-files.outputs.all_modified_files }}' | tr ' ' '\n' | grep -E '^frontend/(desktop|providers/[^/]+)/' | sed 's|frontend/||' | awk -F'/' '{if($1=="desktop") print $1; else if($1=="providers") print $1"/"$2}' | sort -u | jq -R -s -c 'split("\n")[:-1]')
           fi
+          echo "matrix=${MODULES}"
           echo "matrix=${MODULES}" >> $GITHUB_OUTPUT
+
+          if [[ "${MODULES}" == "[]" ]]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
 
   image-build:
     needs:
       - determine-changes
+    if: needs.determine-changes.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
