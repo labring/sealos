@@ -83,7 +83,7 @@ spec:
             - name: ACCOUNT_URL
               value: http://account-service.account-system.svc.cluster.local:2333
             - name: GUIDE_ENABLED
-              value: {{ .guideEnabled }}
+              value: "{{ .guideEnabled }}"
             - name: BILLING_URL
               value: {{ .billingUrl }}
             - name: DESKTOP_DOMAIN
