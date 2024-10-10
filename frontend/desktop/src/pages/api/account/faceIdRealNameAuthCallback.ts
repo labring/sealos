@@ -155,7 +155,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
 
-      return jsonRes(res, { code: 200, message: 'Real name authentication successful' });
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Real Name Authentication</title>
+          <style>
+            body, html {
+              height: 100%;
+              margin: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+            }
+            h1 {
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Real Name Authentication Successful</h1>
+        </body>
+        </html>
+      `);
     } else {
       await globalPrisma.userRealNameInfo.update({
         where: { userUid },
@@ -166,12 +191,77 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
 
-      return jsonRes(res, { code: 400, message: 'Real name authentication failed' });
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Real Name Authentication</title>
+          <style>
+            body, html {
+              height: 100%;
+              margin: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+            }
+            h1 {
+              text-align: center;
+              color: #ff0000; /* Red color for error message */
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Real Name Authentication Failed</h1>
+        </body>
+        </html>
+      `);
     }
   } catch (error) {
     console.error('faceidRealNameAuth: Internal error');
     console.error(error);
-    return jsonRes(res, { code: 500, data: 'The server has encountered an error' });
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(500).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Server Error</title>
+        <style>
+          body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+          }
+          .error-container {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+          }
+          h1 {
+            color: #ff0000;
+            margin-bottom: 10px;
+          }
+          p {
+            color: #666;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="error-container">
+          <h1>Server Error</h1>
+          <p>The server has encountered an error. Please try again later.</p>
+        </div>
+      </body>
+      </html>
+    `);
   }
 }
 
