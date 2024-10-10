@@ -50,26 +50,38 @@ env:
   DEFAULT_OWNER: 'labring'
 
 jobs:
+  determine-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call" ]]; then
+            MODULES=$(find frontend -maxdepth 2 \( -name desktop -o -path '*/providers/*' \) -type d | sed 's|frontend/||' | jq -R -s -c 'split("\n")[:-1]')
+          elif echo '${{ steps.changed-files.outputs.all_changed_files }}' | grep -q '^frontend/package/'; then
+            MODULES=$(find frontend -maxdepth 2 \( -name desktop -o -path '*/providers/*' \) -type d | sed 's|frontend/||' | jq -R -s -c 'split("\n")[:-1]')
+          else
+            MODULES=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | grep -E '^frontend/(desktop|providers/[^/]+)/' | sed 's|frontend/||' | cut -d'/' -f1-2 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          fi
+          echo "matrix=${MODULES}" >> $GITHUB_OUTPUT
+
   image-build:
+    needs:
+      - determine-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module:
-          [
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/adminer,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
+        module: ${{ fromJson(needs.determine-changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -150,25 +162,11 @@ jobs:
     needs:
       - image-build
       - save-sealos
+      - determine-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module:
-          [
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/adminer,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
+        module: ${{ fromJson(needs.determine-changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
