@@ -1,5 +1,7 @@
 // for service
 export const enableRealNameAuth = () => global.AppConfig.common.realNameAuthEnabled || false;
+export const enableEnterpriseRealNameAuth = () =>
+  global.AppConfig.common.enterpriseRealNameAuthEnabled || false;
 export const enablePassword = () => global.AppConfig.desktop.auth.idp.password?.enabled || false;
 export const enableGithub = () => global.AppConfig.desktop.auth.idp.github?.enabled || false;
 export const enablePhoneSms = () => global.AppConfig.desktop.auth.idp.sms?.ali?.enabled || false;
