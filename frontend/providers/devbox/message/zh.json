@@ -22,7 +22,7 @@
   "This runtime field is required": "运行时版本是必填项",
   "basic_configuration": "基础配置",
   "basic_info": "基础信息",
-  "boot": "开机",
+  "start": "开机",
   "cancel": "取消",
   "code_server": "CodeServer",
   "config_form": "配置表单",

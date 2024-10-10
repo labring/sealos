@@ -144,7 +144,7 @@ const ReleaseModal = ({
               mr={'11px'}
               width={'80px'}
               isLoading={loading}>
-              {t('release')}
+              {t('publish')}
             </Button>
           </ModalFooter>
         </ModalContent>

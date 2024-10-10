@@ -324,7 +324,7 @@ const Header = ({
             borderWidth={1}
             leftIcon={<MyIcon name={'start'} w={'16px'} />}
             onClick={() => handleStartDevbox(devboxDetail)}>
-            {t('boot')}
+            {t('start')}
           </Button>
         )}
         <Button

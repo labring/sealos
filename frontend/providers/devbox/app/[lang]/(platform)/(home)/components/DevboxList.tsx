@@ -446,7 +446,7 @@ const DevboxList = ({
                       child: (
                         <>
                           <MyIcon name={'start'} w={'16px'} />
-                          <Box ml={2}>{t('boot')}</Box>
+                          <Box ml={2}>{t('start')}</Box>
                         </>
                       ),
                       onClick: () => handleStartDevbox(item)
