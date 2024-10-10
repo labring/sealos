@@ -19,10 +19,10 @@ module.exports = {
 	endOfLine: 'lf',
 	overrides: [
 		{
-			files: 'config.yaml.local',
+			files: 'config.local.yaml',
 			options: {
 				parser: 'yaml'
 			}
 		}
 	]
-};
+}

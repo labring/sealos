@@ -95,6 +95,9 @@ export default function usePassword({
                         userId: payload.userId,
                         userUid: payload.userUid,
                         realName: infoData.data?.info.realName || undefined,
+                        enterpriseVerificationStatus:
+                          infoData.data?.info.enterpriseVerificationStatus || undefined,
+                        enterpriseRealName: infoData.data?.info.enterpriseRealName || undefined,
                         userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined
                       },
                       kubeconfig: regionResult.data.kubeconfig

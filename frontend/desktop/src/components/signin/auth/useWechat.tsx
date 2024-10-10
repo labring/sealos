@@ -53,7 +53,10 @@ export default function useWechat() {
             userUid: payload.userUid,
             userId: payload.userId,
             realName: infoData.data?.info.realName || undefined,
-            userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined
+            userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined,
+            enterpriseVerificationStatus:
+              infoData.data?.info.enterpriseVerificationStatus || undefined,
+            enterpriseRealName: infoData.data?.info.enterpriseRealName || undefined
           },
           // @ts-ignore
           kubeconfig: result.data.kubeconfig

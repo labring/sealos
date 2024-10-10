@@ -18,17 +18,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigType {
   return {
+    enterpriseRealNameAuthEnabled: !!common.enterpriseRealNameAuthEnabled,
     realNameAuthEnabled: !!common.realNameAuthEnabled,
     guideEnabled: !!common.guideEnabled,
     rechargeEnabled: !!common.rechargeEnabled,
-    cfSiteKey: common.cfSiteKey || ''
+    cfSiteKey: common.cfSiteKey || '',
+    enterpriseSupportingMaterials: common.enterpriseSupportingMaterials || ''
   };
 }
 export async function getCommonClientConfig(): Promise<CommonClientConfigType> {
   try {
     if (!global.AppConfig) {
       const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
+        process.env.NODE_ENV === 'development' ? 'data/config.local.yaml' : '/app/data/config.yaml';
       global.AppConfig = yaml.load(readFileSync(filename, 'utf-8')) as AppConfigType;
     }
     return genResCommonClientConfig(global.AppConfig.common);

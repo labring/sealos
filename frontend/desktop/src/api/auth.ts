@@ -58,6 +58,8 @@ export const _UserInfo = (request: AxiosInstance) => () =>
     ApiResp<{
       info: {
         realName?: string;
+        enterpriseVerificationStatus?: string;
+        enterpriseRealName?: string;
         userRestrictedLevel?: number;
         uid: string;
         createdAt: Date;
@@ -158,9 +160,29 @@ export const _checkRemainResource = (request: AxiosInstance) => () =>
 
 export const _forceDeleteUser = (request: AxiosInstance) => (data: { code: string }) =>
   request.post<never, ApiResp<DELETE_USER_STATUS>>('/api/auth/delete/force', data);
-export const _realNameAuthRequest =
-  (request: AxiosInstance) => (data: { name: string; phone?: string; idCard: string }) =>
-    request.post<any, ApiResp<{ name: string }>>('/api/account/realNameAuth', data);
+
+export const _faceAuthGenerateQRcodeUriRequest = (request: AxiosInstance) => () =>
+  request.get<any, ApiResp<{ url: string; bizToken: string }>>(
+    '/api/account/generateRealNameQRcodeUri'
+  );
+
+export const _getFaceAuthStatusRequest = (request: AxiosInstance) => (data: { bizToken: string }) =>
+  request.post<any, ApiResp<{ status: string; realName: string }>>(
+    '/api/account/getFaceAuthStatus',
+    data
+  );
+
+export const _enterpriseRealNameAuthRequest = (request: AxiosInstance) => (data: FormData) => {
+  return request.post<any, ApiResp<{ status: string }>>(
+    '/api/account/enterpriseRealNameAuth',
+    data,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }
+  );
+};
 
 export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
@@ -189,6 +211,8 @@ export const deleteUserRequest = _deleteUser(request);
 export const checkRemainResource = _checkRemainResource(request);
 export const forceDeleteUser = _forceDeleteUser(request);
 
-export const realNameAuthRequest = _realNameAuthRequest(request);
+export const enterpriseRealNameAuthRequest = _enterpriseRealNameAuthRequest(request);
+export const faceAuthGenerateQRcodeUriRequest = _faceAuthGenerateQRcodeUriRequest(request);
+export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
 
 export const getAmount = _getAmount(request);

@@ -9,6 +9,11 @@ on:
         description: 'Tag for manual release'
         required: false
         default: ''
+      build_offline_tar_only:
+        description: 'Build offline tar only'
+        required: false
+        default: false
+        type: boolean
 
 env:
   # Common versions
@@ -20,6 +25,7 @@ jobs:
     uses: ./.github/workflows/import-save-sealos.yml
 
   release-controllers:
+    if: ${{ github.event.inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/controllers.yml
     with:
       push_image: true
@@ -27,6 +33,7 @@ jobs:
     secrets: inherit
 
   release-frontends:
+    if: ${{ github.event.inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/frontend.yml
     with:
       push_image: true
@@ -34,6 +41,7 @@ jobs:
     secrets: inherit
 
   release-service:
+    if: ${{ github.event.inputs.build_offline_tar_only == false }}
     needs:
       - save-sealos
     uses: ./.github/workflows/services.yml
@@ -43,6 +51,7 @@ jobs:
     secrets: inherit
 
   release-cloud:
+    if: ${{ github.event.inputs.build_offline_tar_only == false }}
     needs:
       - save-sealos
       - release-controllers
