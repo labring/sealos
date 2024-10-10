@@ -84,7 +84,7 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 该脚本只支持在 “使用 Sealos 安装的 Kubernetes 集群” 上部署 Sealos 集群，暂不支持其他方式部署的 Kubernetes。
 
 关于如何使用 Sealos 部署 Kubernetes
-集群，可以参考：[安装 Kubernetes 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)
+集群，可以参考：[安装 Kubernetes 集群](/developer-guide/lifecycle-management/quick-start/deploy-kubernetes.md)
 ，支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的几乎所有 Kubernetes 版本（**暂不支持 1.28 及以上版本
 **）。
 

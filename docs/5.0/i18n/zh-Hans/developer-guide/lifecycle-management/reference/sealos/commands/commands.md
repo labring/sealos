@@ -55,4 +55,4 @@ description: 了解Sealos命令，包括Kubernetes集群管理、节点管理、
 
 Sealos 的 `--debug` 参数是一个全局参数，用于开启调试模式，以便在出现问题时能更详细地了解系统的运行情况。
 
-有关安装说明，请参见[下载 Sealos 命令行工具](/self-hosting/lifecycle-management/quick-start/install-cli.md)； 如需安装 Kubernetes 集群，请参见[安装 Kubernetes 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)。
+有关安装说明，请参见[下载 Sealos 命令行工具](/developer-guide/lifecycle-management/quick-start/install-cli.md)； 如需安装 Kubernetes 集群，请参见[安装 Kubernetes 集群](/developer-guide/lifecycle-management/quick-start/deploy-kubernetes.md)。

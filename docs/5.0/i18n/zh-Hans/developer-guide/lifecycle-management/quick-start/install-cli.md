@@ -97,5 +97,5 @@ $ make build BINS=sealos
 
 ## 下一步
 
-[安装 K8s 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)。
+[安装 K8s 集群](/developer-guide/lifecycle-management/quick-start/deploy-kubernetes.md)。
 

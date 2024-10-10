@@ -31,4 +31,4 @@ multi-architecture Docker or OCI images. Users can create custom manifest lists 
 convenient to deploy and run Docker images on different hardware architectures.
 
 Users who want to build multi-architecture images through the manifest command can refer to the
-document [Building Cluster Images that Support Multiple Architectures](/self-hosting/lifecycle-management/operations/build-image/build-multi-arch-image.md).
+document [Building Cluster Images that Support Multiple Architectures](/developer-guide/lifecycle-management/operations/build-image/build-multi-arch-image.md).

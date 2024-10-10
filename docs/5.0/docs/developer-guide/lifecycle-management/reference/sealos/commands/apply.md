@@ -82,7 +82,7 @@ sealos apply -f Clusterfile --values values.yaml
 
 This command will apply the `Clusterfile` based on the values in the `values.yaml` file.
 
-**For more examples, please refer to the [Run Cluster](/self-hosting/lifecycle-management/operations/run-cluster/.md)
+**For more examples, please refer to the [Run Cluster](/developer-guide/lifecycle-management/operations/run-cluster/.md)
 section.**
 
 That's it for the usage guide of the `sealos apply` command. We hope this helps you. If you have any questions or
