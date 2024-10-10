@@ -399,7 +399,7 @@ export function FaceIdRealNameAuthORcode(
     startPolling();
 
     return stopPolling;
-  }, [session?.token, data, data?.data?.bizToken]);
+  }, [session?.token, data, data?.data?.bizToken, refetchCount]);
 
   if (error) {
     return (
