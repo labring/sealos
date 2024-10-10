@@ -315,6 +315,7 @@ export function FaceIdRealNameAuthORcode(
   const [isPolling, setIsPolling] = useState(false);
   const { session } = useSessionStore((s) => s);
   const { setSessionProp } = useSessionStore();
+  const [refetchCount, setRefetchCount] = useState(0);
 
   const { data, isLoading, error, refetch } = useQuery(
     ['faceIdAuth'],
@@ -324,6 +325,11 @@ export function FaceIdRealNameAuthORcode(
       refetchOnWindowFocus: false
     }
   );
+
+  const handleRefetch = useCallback(() => {
+    setRefetchCount((prev) => prev + 1);
+    refetch();
+  }, [refetch]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -375,7 +381,7 @@ export function FaceIdRealNameAuthORcode(
               });
 
               stopPolling();
-              refetch();
+              handleRefetch();
             }
           } catch (error: any) {
             console.error('Error checking face ID auth status:', error);
@@ -400,7 +406,7 @@ export function FaceIdRealNameAuthORcode(
       <Box>
         <Text color="red.500">{t('common:failed_to_get_qr_code')}</Text>
         <Flex mt="28px">
-          <Button onClick={() => refetch()}>{t('common:retry_get_qr_code')}</Button>
+          <Button onClick={() => handleRefetch()}>{t('common:retry_get_qr_code')}</Button>
         </Flex>
       </Box>
     );
