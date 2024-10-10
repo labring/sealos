@@ -23,7 +23,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
 
   const { refetch } = useQuery(['initDevboxDetail'], () => setDevboxDetail(devboxName), {
     refetchOnMount: true,
-    refetchInterval: 1 * 60 * 1000,
+    refetchInterval: 3000,
     onSettled() {
       setInitialized(true)
     },
