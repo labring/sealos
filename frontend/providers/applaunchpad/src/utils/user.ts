@@ -25,3 +25,12 @@ export const getUserNamespace = () => {
     return 'nx-';
   }
 };
+
+export const setUserIsLogin = (isLogin: boolean) => {
+  localStorage.setItem('user-login', isLogin.toString());
+};
+
+export const getUserIsLogin = (): boolean => {
+  const loginState = localStorage.getItem('user-login');
+  return loginState === 'true';
+};

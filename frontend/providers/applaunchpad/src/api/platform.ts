@@ -27,3 +27,6 @@ export const getUserAccount = () => GET<AccountCRD>('/api/guide/getAccount');
 export const getPriceBonus = () => GET('/api/guide/getBonus');
 
 export const createNamespace = (data: { ns: string }) => POST('/api/createNamespace', data);
+
+export const login = (data: { username: string; password: string }) =>
+  POST('/api/platform/login', data);

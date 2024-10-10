@@ -121,8 +121,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   } catch (error) {
     jsonRes(res, {
-      code: 500,
-      error: error
+      code: 200,
+      message: 'fetch monitor err'
     });
   }
 }

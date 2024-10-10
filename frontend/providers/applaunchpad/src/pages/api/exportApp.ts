@@ -42,6 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       error?: string;
     };
 
+    console.log('export app result:', result);
+
     jsonRes<{
       downloadPath: string;
       error?: string;
