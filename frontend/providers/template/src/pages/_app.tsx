@@ -130,7 +130,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             type: string;
           }>
         ) => {
-          const whitelist = [`https://${envs.SEALOS_CLOUD_DOMAIN}`];
+          const whitelist = [`https://${envs.DESKTOP_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
