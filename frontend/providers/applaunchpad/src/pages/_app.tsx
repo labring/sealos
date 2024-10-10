@@ -4,8 +4,11 @@ import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
 import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
+import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { ChakraProvider } from '@chakra-ui/react';
+import { getUserIsLogin } from '@/utils/user';
+import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
+import '@sealos/driver/src/driver.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
@@ -13,13 +16,10 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
+import 'nprogress/nprogress.css';
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import { getPlatformEnv } from '@/api/platform';
-import '@/styles/reset.scss';
-import 'nprogress/nprogress.css';
-import '@sealos/driver/src/driver.css';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -50,6 +50,9 @@ const App = ({ Component, pageProps }: AppProps) => {
   });
 
   useEffect(() => {
+    if (!getUserIsLogin()) {
+      router.push('/login');
+    }
     const response = createSealosApp();
     (async () => {
       const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
