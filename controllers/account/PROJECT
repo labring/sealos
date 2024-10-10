@@ -5,13 +5,10 @@ projectName: account
 repo: github.com/labring/sealos/controllers/account
 resources:
 - api:
-    crdVersion: v1
-    namespaced: true
   controller: true
   domain: sealos.io
   group: account
   kind: Account
-  path: github.com/labring/sealos/controllers/account/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -39,23 +36,6 @@ resources:
   group: account
   kind: Billing
   version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: sealos.io
-  group: account
-  kind: BillingRecordQuery
-  path: github.com/labring/sealos/controllers/account/api/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: sealos.io
-  group: account
-  kind: PriceQuery
-  path: github.com/labring/sealos/controllers/account/api/v1
-  version: v1
 - controller: true
   group: core
   kind: Pod
@@ -65,32 +45,5 @@ resources:
   group: core
   kind: Namespace
   path: k8s.io/api/core/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: sealos.io
-  group: account
-  kind: Transfer
-  path: github.com/labring/sealos/controllers/account/api/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: sealos.io
-  group: account
-  kind: NamespaceBillingHistory
-  path: github.com/labring/sealos/controllers/account/api/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: sealos.io
-  group: account
-  kind: BillingInfoQuery
-  path: github.com/labring/sealos/controllers/account/api/v1
   version: v1
 version: "3"
