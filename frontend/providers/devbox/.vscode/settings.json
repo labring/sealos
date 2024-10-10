@@ -43,6 +43,7 @@
     "kubeblocks",
     "kubeconfig",
     "kubernet",
+    "labring",
     "letsencrypt",
     "localematcher",
     "milvus",

@@ -84,13 +84,7 @@ export interface DevboxDetailType extends DevboxEditType {
     sshPrivateKey: string
   }
   sshPort?: number
-  lastTerminatedState?: {
-    containerID: string
-    exitCode: number
-    finishedAt: string
-    reason: string
-    startedAt: string
-  }
+  lastTerminatedReason?: string
 }
 
 export interface NetworkType {
@@ -116,13 +110,7 @@ export interface DevboxListItemType {
   usedMemory: MonitorDataResult
   networks: NetworkType[]
   sshPort: number
-  lastTerminatedState?: {
-    containerID: string
-    exitCode: number
-    finishedAt: string
-    reason: string
-    startedAt: string
-  }
+  lastTerminatedReason?: string
 }
 
 export interface DevboxVersionListItemType {

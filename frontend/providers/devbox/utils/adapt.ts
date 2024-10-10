@@ -36,7 +36,14 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       yData: new Array(30).fill('0')
     },
     networks: devbox.portInfos || [],
-    lastTerminatedState: devbox.lastTerminatedState || {}
+    lastTerminatedReason:
+      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+        ? devbox.status.state.waiting
+          ? devbox.status.state.waiting.reason
+          : devbox.status.state.terminated
+          ? devbox.status.state.terminated.reason
+          : ''
+        : ''
   }
 }
 
