@@ -68,7 +68,10 @@ func NewContextFrom(cluster *v2.Cluster) Context {
 	remoter := ssh.NewRemoteFromSSH(cluster.GetName(), execer)
 
 	rootfsImage := cluster.GetRootfsImage()
-	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfsImage.Env, *rootfsImage)
+	var rootfsEnvs map[string]string
+	if rootfsImage != nil {
+		rootfsEnvs = v2.MergeEnvWithBuiltinKeys(rootfsImage.Env, *rootfsImage)
+	}
 
 	// bootstrap process depends on the envs in the rootfs image
 	shellWrapper := func(host, shell string) string {
