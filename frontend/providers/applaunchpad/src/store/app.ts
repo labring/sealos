@@ -142,16 +142,16 @@ export const useAppStore = create<State>()(
 
         set((state) => {
           if (state?.appDetail?.appName === appName && state.appDetail?.isPause !== true) {
-            state.appDetail.usedCpu = averageCpuData[0]
+            state.appDetail.usedCpu = averageCpuData?.[0]
               ? averageCpuData[0]
               : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' };
-            state.appDetail.usedMemory = averageMemoryData[0]
+            state.appDetail.usedMemory = averageMemoryData?.[0]
               ? averageMemoryData[0]
               : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' };
           }
           state.appDetailPods = pods.map((pod) => {
-            const currentCpu = cpuData.find((item) => item.name === pod.podName);
-            const currentMemory = memoryData.find((item) => item.name === pod.podName);
+            const currentCpu = cpuData?.find((item) => item.name === pod.podName);
+            const currentMemory = memoryData?.find((item) => item.name === pod.podName);
             return {
               ...pod,
               usedCpu: currentCpu ? currentCpu : pod.usedCpu,
