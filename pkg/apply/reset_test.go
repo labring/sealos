@@ -51,7 +51,7 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 					SSH: &SSH{},
 				},
 			},
-			wantErr: false,
+			wantErr: true, // clusterfile must exist
 		},
 	}
 	for _, tt := range tests {

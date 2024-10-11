@@ -41,7 +41,7 @@ type ClusterName struct {
 	ClusterName string
 }
 
-func (c *ClusterName) RegisterFlags(fs *pflag.FlagSet, verb, action string) {
+func (c *ClusterName) RegisterFlags(fs *pflag.FlagSet, _, action string) {
 	fs.StringVar(&c.ClusterName, "cluster", "default", fmt.Sprintf("name of cluster to applied %s action", action))
 }
 
