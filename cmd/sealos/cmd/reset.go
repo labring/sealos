@@ -31,8 +31,8 @@ reset you current cluster:
 
 func newResetCmd() *cobra.Command {
 	resetArgs := &apply.ResetArgs{
-		Cluster: &apply.Cluster{},
-		SSH:     &apply.SSH{},
+		ClusterName: &apply.ClusterName{},
+		SSH:         &apply.SSH{},
 	}
 
 	var resetCmd = &cobra.Command{

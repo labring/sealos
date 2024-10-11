@@ -175,16 +175,16 @@ func TestParseResetArgsFlagsCorrect(t *testing.T) {
 	}{
 		{
 			[]string{
-				"--masters", "10.74.22.22:22", "--nodes", "10.74.22.44:22", "--cluster", "default",
+				"--cluster", "default",
 				"-u", "root", "-p", "s3cret", "--port", "2222",
 			},
 			&ResetArgs{
-				Cluster: &Cluster{},
-				SSH:     &SSH{},
+				ClusterName: &ClusterName{},
+				SSH:         &SSH{},
 			},
 			&ResetArgs{
-				Cluster: &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
-				SSH:     &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+				ClusterName: &ClusterName{ClusterName: "default"},
+				SSH:         &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
 			},
 		},
 	}
