@@ -252,7 +252,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
             ] as AppEditContainerType['networks'][0]['protocol']) || item.protocol === 'TCP'
               ? 'HTTP'
               : (item.protocol as AppEditContainerType['networks'][number]['protocol']),
-          openPublicDomain: !!ingress,
+          openPublicDomain: !!item.nodePort,
           ...(domain.endsWith(SEALOS_DOMAIN)
             ? {
                 publicDomain: domain.split('.')[0],
