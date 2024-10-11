@@ -57,5 +57,5 @@ The `--debug` flag in Sealos is a global flag used to enable debug mode for more
 operation when issues occur.
 
 For installation instructions, please refer to
-the [Sealos Installation Guide](/self-hosting/lifecycle-management/quick-start/installation); for a quick start guide,
-please refer to the [Quick Start Guide](/self-hosting/lifecycle-management/quick-start/.md).
+the [Sealos Installation Guide](/developer-guide/lifecycle-management/quick-start/installation); for a quick start guide,
+please refer to the [Quick Start Guide](/developer-guide/lifecycle-management/quick-start/.md).

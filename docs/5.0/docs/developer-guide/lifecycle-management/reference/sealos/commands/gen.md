@@ -50,7 +50,7 @@ command to create or update the cluster based on this configuration file.
 
 Example explanations:
 
-- [Custom Configuration Installation](/self-hosting/lifecycle-management/operations/run-cluster/gen-apply-cluster.md)
+- [Custom Configuration Installation](/developer-guide/lifecycle-management/operations/run-cluster/gen-apply-cluster.md)
 
 That's the usage guide for the `sealos gen` command, and we hope it has been helpful. If you encounter any problems
 during usage, feel free to ask us.

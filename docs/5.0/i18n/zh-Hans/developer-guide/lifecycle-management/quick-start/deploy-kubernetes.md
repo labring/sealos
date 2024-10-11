@@ -10,7 +10,7 @@ Sealos 支持安装 `amd64` 和 `arm64` 架构的 K8s 集群。
 
 ## 先决条件 
 
-首先需要[下载 Sealos 命令行工具](/self-hosting/lifecycle-management/quick-start/install-cli.md)，sealos 是一个简单的 Golang 二进制文件，可以安装在大多数 Linux 操作系统中。
+首先需要[下载 Sealos 命令行工具](/developer-guide/lifecycle-management/quick-start/install-cli.md)，sealos 是一个简单的 Golang 二进制文件，可以安装在大多数 Linux 操作系统中。
 
 以下是一些基本的安装要求： 
 

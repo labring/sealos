@@ -76,12 +76,12 @@ process, greatly improving the convenience and efficiency of building images.
 
 Here are some detailed examples:
 
-- [Build with Image Manifests](/self-hosting/lifecycle-management/operations/build-image/build-image-image_list.md)
-- [Build with Deploy Manifests](/self-hosting/lifecycle-management/operations/build-image/build-image-manifests.md)
-- [Build with Helm Charts](/self-hosting/lifecycle-management/operations/build-image/build-image-helm_charts.md)
-- [Build with Binary](/self-hosting/lifecycle-management/operations/build-image/build-image-binary.md)
-- [Build with go-template](/self-hosting/lifecycle-management/operations/build-image/build-image-go_template.md)
-- [Build with exec and scp](/self-hosting/lifecycle-management/operations/build-image/build-image-scp_exec.md)
+- [Build with Image Manifests](/developer-guide/lifecycle-management/operations/build-image/build-image-image_list.md)
+- [Build with Deploy Manifests](/developer-guide/lifecycle-management/operations/build-image/build-image-manifests.md)
+- [Build with Helm Charts](/developer-guide/lifecycle-management/operations/build-image/build-image-helm_charts.md)
+- [Build with Binary](/developer-guide/lifecycle-management/operations/build-image/build-image-binary.md)
+- [Build with go-template](/developer-guide/lifecycle-management/operations/build-image/build-image-go_template.md)
+- [Build with exec and scp](/developer-guide/lifecycle-management/operations/build-image/build-image-scp_exec.md)
 
 With the `build` command in Sealos, you can build OCI images based on various instruction files to provide the required
 images for Sealos. This process includes handling various instructions in Dockerfiles or other instruction files, such
