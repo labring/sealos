@@ -177,13 +177,6 @@ func main() {
 		AccountV2:   v2Account,
 		CVMDBClient: cvmDBClient,
 	}
-	billingInfoQueryReconciler := &controllers.BillingInfoQueryReconciler{
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		DBClient:   dbClient,
-		Properties: resources.DefaultPropertyTypeLS,
-		AccountV2:  v2Account,
-	}
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
 		setupLog.Error(err, "parse recharge config failed")
@@ -191,11 +184,6 @@ func main() {
 		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
 		accountReconciler.Activities = activities
 		accountReconciler.DefaultDiscount = types.RechargeDiscount{
-			DiscountRates: discountRatios,
-			DiscountSteps: discountSteps,
-		}
-		billingInfoQueryReconciler.Activities = activities
-		billingInfoQueryReconciler.DefaultDiscount = types.RechargeDiscount{
 			DiscountRates: discountRatios,
 			DiscountSteps: discountSteps,
 		}
@@ -230,13 +218,6 @@ func main() {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)
 	}
-
-	if err = (&controllers.BillingRecordQueryReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "BillingRecordQuery")
-	}
 	if err = (&controllers.BillingReconciler{
 		DBClient:   dbClient,
 		Properties: resources.DefaultPropertyTypeLS,
@@ -258,16 +239,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Namespace")
-	}
-	if err = (&controllers.NamespaceBillingHistoryReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupManagerError(err, "NamespaceBillingHistory")
-	}
-	billingInfoQueryReconciler.AccountSystemNamespace = accountReconciler.AccountSystemNamespace
-	if err = (billingInfoQueryReconciler).SetupWithManager(mgr); err != nil {
-		setupManagerError(err, "BillingInfoQuery")
 	}
 
 	if err = (&controllers.PaymentReconciler{

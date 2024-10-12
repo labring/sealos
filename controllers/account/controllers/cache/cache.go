@@ -27,10 +27,6 @@ import (
 )
 
 func SetupCache(mgr ctrl.Manager) error {
-	account := &accountv1.Account{}
-	accountNameFunc := func(obj client.Object) []string {
-		return []string{obj.(*accountv1.Account).Name}
-	}
 	ns := &corev1.Namespace{}
 	nsNameFunc := func(obj client.Object) []string {
 		return []string{obj.(*corev1.Namespace).Name}
@@ -45,8 +41,7 @@ func SetupCache(mgr ctrl.Manager) error {
 		extractValue client.IndexerFunc
 	}{
 		{ns, accountv1.Name, nsNameFunc},
-		{ns, accountv1.Owner, nsOwnerFunc},
-		{account, accountv1.Name, accountNameFunc}} {
+		{ns, accountv1.Owner, nsOwnerFunc}} {
 		if err := mgr.GetFieldIndexer().IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
 			return err
 		}

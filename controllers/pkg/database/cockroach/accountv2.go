@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"gorm.io/gorm/clause"
@@ -40,15 +39,12 @@ import (
 )
 
 type Cockroach struct {
-	DB          *gorm.DB
-	Localdb     *gorm.DB
-	LocalRegion *types.Region
-	ZeroAccount *types.Account
-	activities  types.Activities
-	//TODO need init
-	defaultRechargeDiscount types.RechargeDiscount
-	accountConfig           *types.AccountConfig
-	tasks                   map[uuid.UUID]types.Task
+	DB            *gorm.DB
+	Localdb       *gorm.DB
+	LocalRegion   *types.Region
+	ZeroAccount   *types.Account
+	accountConfig *types.AccountConfig
+	tasks         map[uuid.UUID]types.Task
 }
 
 const (
@@ -593,153 +589,6 @@ func (c *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 	return account, nil
 }
 
-func (c *Cockroach) CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error {
-	accountErrSave := &types.ErrorAccountCreate{
-		Account:         *account,
-		UserCr:          owner,
-		ErrorTime:       time.Now().UTC(),
-		Message:         errorMsg,
-		RegionUserOwner: owner,
-		RegionUID:       c.LocalRegion.UID,
-	}
-	if err := c.DB.FirstOrCreate(accountErrSave, types.ErrorAccountCreate{UserCr: owner}).Error; err != nil {
-		return fmt.Errorf("failed to create error account create error msg: %w", err)
-	}
-	return nil
-}
-
-func (c *Cockroach) CreateErrorPaymentCreate(payment types.Payment, errorMsg string) error {
-	if err := c.DB.Create(&types.ErrorPaymentCreate{
-		PaymentRaw: payment.PaymentRaw, Message: errorMsg, CreateTime: time.Now().UTC()}).Error; err != nil {
-		return fmt.Errorf("failed to create error payment create error msg: %w", err)
-	}
-	return nil
-}
-
-// TransferAccountV1 account indicates the CRD value of the original account
-func (c *Cockroach) TransferAccountV1(owner string, account *types.Account) (*types.Account, error) {
-	//transfer := &types.TransferAccountV1{}
-	//// if existed, it indicates that the system has been migrated
-	//err := g.DB.Where(&types.TransferAccountV1{RegionUID: g.LocalRegion.UID, RegionUserOwner: owner}).First(transfer).Error
-	//if err == nil {
-	//	return nil, nil
-	//}
-	//if !errors.Is(err, gorm.ErrRecordNotFound) {
-	//	return nil, fmt.Errorf("failed to get transfer account: %w", err)
-	//}
-
-	if _, err := os.Stat(filepath.Join(transferAccountV1, c.LocalRegion.UID.String(), owner)); err == nil {
-		return nil, nil
-	} else if !os.IsNotExist(err) {
-		return nil, fmt.Errorf("failed to get transfer account: %v", err)
-	}
-
-	// if not existed, it indicates that the system has not been migrated
-
-	query := &types.UserQueryOpts{Owner: owner, IgnoreEmpty: true}
-	accountV2, err := c.GetAccount(query)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if err = c.saveNullUserRecord(types.NullUserRecord{
-				CrName:   owner,
-				RegionID: c.LocalRegion.UID.String(),
-			}); err != nil {
-				return nil, fmt.Errorf("failed to save null user record: %v", err)
-			}
-			//nullUser := &types.NullUserRecord{
-			//	CrName:   owner,
-			//	RegionID: g.LocalRegion.UID.String(),
-			//}
-			//if err := g.DB.FirstOrCreate(nullUser, types.NullUserRecord{CrName: owner, RegionID: g.LocalRegion.UID.String()}).Error; err != nil {
-			//	return nil, fmt.Errorf("failed to create null user record: %v", err)
-			//}
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to get account: %v", err)
-	}
-	transfer := types.TransferAccountV1{
-		RegionUID:       c.LocalRegion.UID,
-		RegionUserOwner: owner,
-	}
-	if accountV2 == nil {
-		accountV2 = &types.Account{
-			UserUID:                 query.UID,
-			ActivityBonus:           account.ActivityBonus,
-			EncryptDeductionBalance: account.EncryptDeductionBalance,
-			EncryptBalance:          account.EncryptBalance,
-			Balance:                 account.Balance,
-			DeductionBalance:        account.DeductionBalance,
-			CreateRegionID:          c.LocalRegion.UID.String(),
-			//TODO need init
-			CreatedAt: account.CreatedAt,
-		}
-		if err := c.DB.FirstOrCreate(accountV2).Error; err != nil {
-			return nil, fmt.Errorf("failed to create account: %w", err)
-		}
-	} else {
-		if accountV2.CreatedAt.After(account.CreatedAt) {
-			accountV2.CreatedAt = account.CreatedAt
-		}
-		if err := c.updateWithAccount(true, true, accountV2, account.DeductionBalance); err != nil {
-			return nil, fmt.Errorf("failed to update account DeductionBalance: %v", err)
-		}
-		if err := c.updateWithAccount(false, true, accountV2, account.Balance); err != nil {
-			return nil, fmt.Errorf("failed to update account Balance: %v", err)
-		}
-		if err := c.DB.Save(accountV2).Error; err != nil {
-			return nil, fmt.Errorf("failed to save account: %v", err)
-		}
-		transfer.Exist = true
-	}
-
-	transfer.Account = *accountV2
-	//if err := g.DB.Save(&transfer).Error; err != nil {
-	//	return fmt.Errorf("failed to save transfer account: %v", err)
-	//}
-	if err := c.saveTransferAccountV1(transfer); err != nil {
-		return nil, fmt.Errorf("failed to save transfer account: %v", err)
-	}
-	return accountV2, err
-}
-
-var (
-	transferV1toV2    = "transferv1tov2"
-	transferAccountV1 = filepath.Join(transferV1toV2, "transfer_account_v1")
-	transferV1Exist   = filepath.Join(transferV1toV2, "transfer_account_v1_exist")
-	nullUserRecord    = filepath.Join(transferV1toV2, "null_user_record")
-)
-
-func (c *Cockroach) saveTransferAccountV1(transfer types.TransferAccountV1) error {
-	name := transfer.RegionUserOwner
-	savePath := filepath.Join(transferAccountV1, transfer.RegionUID.String(), name)
-	file, err := os.Create(savePath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
-	}
-	defer file.Close()
-	if !transfer.Exist {
-		return nil
-	}
-	saveExistPath := filepath.Join(transferV1Exist, transfer.RegionUID.String(), name)
-	existFile, err := os.Create(saveExistPath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
-	}
-	return existFile.Close()
-}
-
-func (c *Cockroach) saveNullUserRecord(nullUser types.NullUserRecord) error {
-	savePath := filepath.Join(nullUserRecord, nullUser.RegionID, nullUser.CrName)
-	file, err := os.Create(savePath)
-	if err != nil {
-		if errors.Is(err, os.ErrExist) {
-			return nil
-		}
-		return fmt.Errorf("failed to create file: %v", err)
-	}
-	return file.Close()
-}
-
 func (c *Cockroach) Payment(payment *types.Payment) error {
 	return c.payment(payment, true)
 }
@@ -1040,57 +889,6 @@ func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	return account, nil
 }
 
-// //TODO: remove this method
-func (c *Cockroach) GetUserAccountRechargeDiscount(ops *types.UserQueryOpts) (*types.RechargeDiscount, error) {
-	userID := ops.UID
-	if userID == uuid.Nil {
-		user, err := c.GetUserCr(ops)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user %v: %v", ops, err)
-		}
-		userID = user.UserUID
-	}
-	var userActivities []types.UserActivity
-	if !c.DB.Migrator().HasTable("UserActivities") {
-		return &c.defaultRechargeDiscount, nil
-	}
-	if err := c.DB.Table("UserActivities").Where(types.UserActivity{
-		UserID: userID,
-	}).Find(userActivities).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return &c.defaultRechargeDiscount, nil
-		}
-		return nil, fmt.Errorf("failed to get user activities: %w", err)
-	}
-	if len(userActivities) == 0 {
-		return &c.defaultRechargeDiscount, nil
-	}
-	for _, activity := range userActivities {
-		currentPhase := activity.CurrentPhase
-		var userPhase types.UserPhase
-		err := c.DB.Table("UserPhase").Where(types.UserPhase{
-			UserActivityID: activity.UserID,
-			Name:           currentPhase,
-		}).First(&userPhase).Error
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user %v phase: %v", ops, err)
-		}
-		for _, phase := range c.activities[activity.Name].Phases {
-			if phase.ID == userPhase.ID {
-				limitTime, err := time.ParseDuration(phase.RechargeDiscount.LimitDuration)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get limitTime %s: %v", phase.RechargeDiscount.LimitDuration, err)
-				}
-				if userPhase.RechargeNums >= phase.RechargeDiscount.LimitTimes || userPhase.EndTime.Add(limitTime).After(time.Now()) {
-					return &c.defaultRechargeDiscount, nil
-				}
-				return &phase.RechargeDiscount.RechargeDiscount, nil
-			}
-		}
-	}
-	return &c.defaultRechargeDiscount, nil
-}
-
 const (
 	BaseUnit           = 1_000_000
 	MinBalance         = 10 * BaseUnit
@@ -1098,8 +896,7 @@ const (
 )
 
 var (
-	BaseBalance        = int64(DefaultBaseBalance)
-	EncryptBaseBalance string
+	BaseBalance = int64(DefaultBaseBalance)
 )
 
 func (c *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64) error {
@@ -1172,7 +969,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	err := CreateTableIfNotExist(c.DB, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{})
+	err := CreateTableIfNotExist(c.DB, types.Account{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}

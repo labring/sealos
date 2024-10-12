@@ -54,7 +54,7 @@ const (
 
 var logger = logf.Log.WithName("debt-resource")
 
-//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
