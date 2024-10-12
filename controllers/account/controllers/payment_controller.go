@@ -98,7 +98,7 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 		return fmt.Errorf("get account config failed: %w", err)
 	}
 	if len(r.accountConfig.DefaultDiscountSteps) == 0 {
-		return fmt.Errorf("default discount steps is empty")
+		r.Logger.Info("default discount steps is empty, use default value")
 	}
 	r.Logger.V(1).Info("account config", "config", r.accountConfig)
 	r.Logger.V(1).Info("reconcile duration", "reconcileDuration", r.reconcileDuration, "createDuration", r.createDuration)
