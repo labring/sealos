@@ -198,7 +198,7 @@ function RealNameModal(props: {
                 >
                   {t('common:personal_verification')}
                 </Tab>
-                <Tab
+                {/* <Tab
                   display="flex"
                   padding="8px 4px"
                   justifyContent="center"
@@ -210,7 +210,7 @@ function RealNameModal(props: {
                   _focus={{ boxShadow: 'none' }}
                 >
                   {t('common:enterprise_verification')}
-                </Tab>
+                </Tab> */}
               </TabList>
               <TabIndicator height="2px" bg="grayModern.900" borderRadius="1px" />
               <TabPanels mt="28px">
@@ -224,7 +224,7 @@ function RealNameModal(props: {
                     }}
                   />
                 </TabPanel>
-                <TabPanel p="0">
+                {/* <TabPanel p="0">
                   <EnterpriseVerification
                     onFormSuccess={() => {
                       onClose();
@@ -233,7 +233,7 @@ function RealNameModal(props: {
                       }
                     }}
                   />
-                </TabPanel>
+                </TabPanel> */}
               </TabPanels>
             </Tabs>
           </ModalBody>
