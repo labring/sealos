@@ -49,7 +49,7 @@ const BasicInfo = () => {
   )
 
   return (
-    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} borderWidth={1} h={'100%'}>
+    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
       {/* basic info */}
       <Flex mb={3} mt={2}>
         <MyIcon name="info" w={'15px'} h={'15px'} mr={'4px'} color={'grayModern.600'} mt={'1px'} />
@@ -111,7 +111,7 @@ const BasicInfo = () => {
         </Flex>
         <Flex>
           <Text mr={2} width={'40%'} fontSize={'12px'}>
-            Limit CPU
+            CPU Limit
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text fontSize={'12px'}>{devboxDetail?.cpu / 1000} Core</Text>
@@ -119,7 +119,7 @@ const BasicInfo = () => {
         </Flex>
         <Flex>
           <Text mr={2} width={'40%'} fontSize={'12px'}>
-            Limit Memory
+            Memory Limit
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text fontSize={'12px'}>{devboxDetail?.memory / 1024} G</Text>
@@ -225,8 +225,10 @@ const BasicInfo = () => {
             {t('recent_error')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
-            {devboxDetail?.lastTerminatedState?.reason ? (
-              <Text fontSize={'12px'}>{devboxDetail?.lastTerminatedState?.reason}</Text>
+            {devboxDetail?.lastTerminatedReason ? (
+              <Text fontSize={'12px'} color={'red'}>
+                {devboxDetail?.lastTerminatedReason}
+              </Text>
             ) : (
               <Text fontSize={'12px'}>{t('none')}</Text>
             )}

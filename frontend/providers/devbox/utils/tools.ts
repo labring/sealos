@@ -328,5 +328,5 @@ export function calculateUptime(createdTime: Date): string {
     uptime += `${minutes}m`
   }
 
-  return uptime || '刚刚启动'
+  return uptime || 'Recently Started'
 }

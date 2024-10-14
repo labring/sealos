@@ -289,20 +289,13 @@ const Form = ({
                     })}
                     onBlur={(e) => {
                       setValue('name', e.target.value)
-                      setValue(
-                        'networks',
-                        getRuntimeVersionList(getValues('runtimeType'))[0].defaultPorts.map(
-                          (port) => ({
-                            networkName: `${e.target.value}-${nanoid()}`,
-                            portName: nanoid(),
-                            port: port,
-                            protocol: 'HTTP',
-                            openPublicDomain: true,
-                            publicDomain: nanoid(),
-                            customDomain: ''
-                          })
-                        )
-                      )
+                      const networks = getValues('networks')
+                      networks.forEach((network, i) => {
+                        updateNetworks(i, {
+                          ...network,
+                          networkName: `${e.target.value}-${nanoid()}`
+                        })
+                      })
                     }}
                   />
                   <FormErrorMessage ml={'50px'}>
@@ -716,8 +709,10 @@ const Form = ({
                       <Switch
                         className="driver-deploy-network-switch"
                         size={'lg'}
+                        id={`openPublicDomain-${i}`}
                         isChecked={!!network.openPublicDomain}
                         onChange={(e) => {
+                          console.log('e', e)
                           const devboxName = getValues('name')
                           if (!devboxName) {
                             toast({
@@ -726,6 +721,7 @@ const Form = ({
                             })
                             return
                           }
+
                           updateNetworks(i, {
                             ...getValues('networks')[i],
                             networkName: network.networkName || `${devboxName}-${nanoid()}`,
