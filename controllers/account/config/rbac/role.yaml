@@ -337,6 +337,7 @@ rules:
   resources:
   - users
   verbs:
+  - create
   - get
   - list
   - watch
