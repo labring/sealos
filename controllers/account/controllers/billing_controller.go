@@ -77,7 +77,8 @@ type BillingReconciler struct {
 func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("Reconcile Billing: ", "req.NamespacedName", req.NamespacedName)
 	ns := &corev1.Namespace{}
-	if err := r.Get(ctx, req.NamespacedName, ns); err != nil {
+	err := r.Get(ctx, req.NamespacedName, ns)
+	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -85,20 +86,30 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.Logger.V(1).Info("namespace is deleting", "namespace", ns)
 		return ctrl.Result{}, nil
 	}
-
-	owner := ns.Labels[v1.UserLabelOwnerKey]
-	nsList, err := getOwnNsList(r.Client, owner)
-	if err != nil {
-		r.Logger.Error(err, "get own namespace list failed")
-		return ctrl.Result{Requeue: true}, err
+	var (
+		owner  string
+		nsList []string
+	)
+	if !strings.HasPrefix(ns.Name, "ns-") {
+		owner = SystemOwner
+		nsList = []string{ns.Name}
+	} else {
+		owner = ns.Labels[v1.UserLabelOwnerKey]
+		nsList, err = getOwnNsList(r.Client, owner)
+		if err != nil {
+			r.Logger.Error(err, "get own namespace list failed")
+			return ctrl.Result{Requeue: true}, err
+		}
 	}
-	r.Logger.V(1).Info("own namespace list", "own", owner, "nsList", nsList)
+	return r.reconcile(nsList, owner)
+}
+
+const SystemOwner = "sealos-system"
+
+func (r *BillingReconciler) reconcile(nsList []string, owner string) (ctrl.Result, error) {
 	now := time.Now()
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	queryTime := currentHourTime.Add(-1 * time.Hour)
-
-	// TODO r.处理Unsettle状态的账单
-
 	if exist, lastUpdateTime, _ := r.DBClient.GetBillingLastUpdateTime(owner, v12.Consumption); exist {
 		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
 			return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
@@ -120,7 +131,7 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		orderList = append(orderList, ids...)
 		consumAmount += amount
 	}
-	if consumAmount > 0 {
+	if consumAmount > 0 && owner != SystemOwner {
 		if err := r.rechargeBalance(owner, consumAmount); err != nil {
 			for i := range orderList {
 				if err := r.DBClient.UpdateBillingStatus(orderList[i], resources.Unsettled); err != nil {
@@ -168,9 +179,8 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
-			CreateFunc: func(createEvent event.CreateEvent) bool {
-				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
-				return ok && getUsername(createEvent.Object.GetName()) == own
+			CreateFunc: func(_ event.CreateEvent) bool {
+				return true
 			},
 			UpdateFunc: func(_ event.UpdateEvent) bool {
 				return false
@@ -181,7 +191,7 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 			GenericFunc: func(_ event.GenericEvent) bool {
 				return false
 			},
-		})).
+		}), builder.OnlyMetadata).
 		WithOptions(rateOpts).
 		Complete(r)
 }

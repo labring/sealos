@@ -39,12 +39,6 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
-	"k8s.io/apimachinery/pkg/selection"
-
-	"k8s.io/apimachinery/pkg/labels"
-
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 
 	"github.com/minio/minio-go/v7"
@@ -195,13 +189,11 @@ func (r *MonitorReconciler) startPeriodicReconcile() {
 
 func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
 	namespaceList := &corev1.NamespaceList{}
-	req, err := labels.NewRequirement(userv1.UserLabelOwnerKey, selection.Exists, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create label requirement: %v", err)
-	}
-	return namespaceList, r.List(context.Background(), namespaceList, &client.ListOptions{
-		LabelSelector: labels.NewSelector().Add(*req),
-	})
+	//req, err := labels.NewRequirement(userv1.UserLabelOwnerKey, selection.Exists, nil)
+	//if err != nil {
+	//	return nil, fmt.Errorf("failed to create label requirement: %v", err)
+	//}
+	return namespaceList, r.List(context.Background(), namespaceList)
 }
 
 func waitNextMinute() {
