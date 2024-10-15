@@ -1372,6 +1372,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)
+      '@types/jsonwebtoken':
+        specifier: ^9.0.3
+        version: 9.0.5
       axios:
         specifier: ^1.7.3
         version: 1.7.3
@@ -1405,6 +1408,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.2
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
