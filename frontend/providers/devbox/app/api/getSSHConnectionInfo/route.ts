@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 
 import { KBRuntimeType } from '@/types/k8s'
 import { runtimeNamespace } from '@/stores/static'
-import { authSession } from '@/services/backend/auth'
+import { authSession, generateAccessToken } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 
@@ -24,6 +24,12 @@ export async function GET(req: NextRequest) {
     const base64PublicKey = response.body.data?.['SEALOS_DEVBOX_PUBLIC_KEY'] as string
     const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string
 
+    const jwtSecret = Buffer.from(
+      response.body.data?.['SEALOS_DEVBOX_JWT_SECRET'] as string,
+      'base64'
+    ).toString('utf-8')
+    const token = generateAccessToken({ namespace, devboxName }, jwtSecret)
+
     const { body: runtime } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -34,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     const userName = runtime.spec.config.user
 
-    return jsonRes({ data: { base64PublicKey, base64PrivateKey, userName } })
+    return jsonRes({ data: { base64PublicKey, base64PrivateKey, userName, token } })
   } catch (err: any) {
     return jsonRes({
       code: 500,

@@ -9,7 +9,9 @@ import {
 import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { DevboxListItemType, DevboxVersionListItemType, PodDetailType } from '@/types/devbox'
-import { V1Pod } from '@kubernetes/client-node'
+import { V1Ingress, V1Pod } from '@kubernetes/client-node'
+import { DBListItemType, KbPgClusterType } from '@/types/cluster'
+import { IngressListItemType } from '@/types/ingress'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -115,5 +117,53 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     },
     cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
+  }
+}
+
+export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+  return {
+    id: db.metadata?.uid || ``,
+    name: db.metadata?.name || 'db name',
+    dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
+    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.cpu),
+    memory: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.memory),
+    storage:
+      db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
+      '-'
+  }
+}
+
+export const adaptIngressListItem = (ingress: V1Ingress): IngressListItemType => {
+  return {
+    metadata: {
+      name: ingress.metadata?.name || '',
+      namespace: ingress.metadata?.namespace || '',
+      creationTimestamp: ingress.metadata?.creationTimestamp,
+      labels: ingress.metadata?.labels
+    },
+    spec: {
+      rules:
+        ingress.spec?.rules?.map((rule) => ({
+          host: rule.host || '',
+          http: {
+            paths:
+              rule.http?.paths?.map((path) => ({
+                path: path.path || '',
+                pathType: path.pathType || '',
+                backend: {
+                  service: {
+                    name: path.backend?.service?.name || '',
+                    port: path.backend?.service?.port?.number || 0
+                  }
+                }
+              })) || []
+          }
+        })) || [],
+      tls: ingress.spec?.tls?.map((tls) => ({
+        hosts: tls.hosts || [],
+        secretName: tls.secretName || ''
+      }))
+    }
   }
 }
