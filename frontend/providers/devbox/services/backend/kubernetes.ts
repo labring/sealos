@@ -253,8 +253,14 @@ export async function getUserBalance(kc: k8s.KubeConfig) {
   return 5
 }
 
-export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
-  const kc = K8sApi(kubeconfig)
+export async function getK8s({
+  kubeconfig,
+  useDefaultConfig = false
+}: {
+  kubeconfig?: string
+  useDefaultConfig?: boolean
+}) {
+  const kc = useDefaultConfig ? K8sApiDefault() : K8sApi(kubeconfig)
   const kube_user = kc.getCurrentUser()
   const client = k8s.KubernetesObjectApi.makeApiClient(kc)
 
