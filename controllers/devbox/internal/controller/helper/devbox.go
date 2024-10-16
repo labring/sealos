@@ -370,18 +370,19 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, equatorialStorage string) corev1.ResourceRequirements {
+func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestEphemeralStorage, limitEphemeralStorage string) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: calculateResourceRequest(
 			corev1.ResourceList{
-				corev1.ResourceCPU:    devbox.Spec.Resource["cpu"],
-				corev1.ResourceMemory: devbox.Spec.Resource["memory"],
+				corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
+				corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
+				corev1.ResourceEphemeralStorage: resource.MustParse(requestEphemeralStorage),
 			},
 		),
 		Limits: corev1.ResourceList{
-			"cpu":               devbox.Spec.Resource["cpu"],
-			"memory":            devbox.Spec.Resource["memory"],
-			"ephemeral-storage": resource.MustParse(equatorialStorage),
+			corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
+			corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
+			corev1.ResourceEphemeralStorage: resource.MustParse(limitEphemeralStorage),
 		},
 	}
 }
@@ -403,6 +404,11 @@ func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
 		memoryRequest := memoryValue / rate
 		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
 	}
+
+	if ephemeralStorage, ok := limit[corev1.ResourceEphemeralStorage]; ok {
+		request[corev1.ResourceEphemeralStorage] = ephemeralStorage
+	}
+
 	return request
 }
 

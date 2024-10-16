@@ -69,7 +69,8 @@ func main() {
 	var registryUser string
 	var registryPassword string
 	var authAddr string
-	var ephemeralStorage string
+	var requestEphemeralStorage string
+	var limitEphemeralStorage string
 	var debugMode bool
 	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
 	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
@@ -86,7 +87,8 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.BoolVar(&debugMode, "debug", false, "If set, debug mode will be enabled")
-	flag.StringVar(&ephemeralStorage, "ephemeral-storage", "2000Mi", "The maximum value of equatorial storage in devbox.")
+	flag.StringVar(&requestEphemeralStorage, "request ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
+	flag.StringVar(&limitEphemeralStorage, "limit ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -177,12 +179,13 @@ func main() {
 	}
 
 	if err = (&controller.DevboxReconciler{
-		Client:              mgr.GetClient(),
-		Scheme:              mgr.GetScheme(),
-		CommitImageRegistry: registryAddr,
-		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
-		EquatorialStorage:   ephemeralStorage,
-		DebugMode:           debugMode,
+		Client:                  mgr.GetClient(),
+		Scheme:                  mgr.GetScheme(),
+		CommitImageRegistry:     registryAddr,
+		Recorder:                mgr.GetEventRecorderFor("devbox-controller"),
+		RequestEphemeralStorage: requestEphemeralStorage,
+		LimitEphemeralStorage:   limitEphemeralStorage,
+		DebugMode:               debugMode,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
