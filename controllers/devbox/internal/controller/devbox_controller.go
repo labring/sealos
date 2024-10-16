@@ -44,8 +44,9 @@ import (
 
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
-	CommitImageRegistry string
-	EquatorialStorage   string
+	CommitImageRegistry     string
+	RequestEphemeralStorage string
+	LimitEphemeralStorage   string
 
 	DebugMode bool
 
@@ -526,7 +527,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			WorkingDir: helper.GenerateWorkingDir(devbox, runtime),
 			Command:    helper.GenerateCommand(devbox, runtime),
 			Args:       helper.GenerateDevboxArgs(devbox, runtime),
-			Resources:  helper.GenerateResourceRequirements(devbox, r.EquatorialStorage),
+			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestEphemeralStorage, r.LimitEphemeralStorage),
 		},
 	}
 
