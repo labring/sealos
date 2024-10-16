@@ -135,35 +135,13 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 }
 
 export const adaptIngressListItem = (ingress: V1Ingress): IngressListItemType => {
+  const firstRule = ingress.spec?.rules?.[0]
+  const firstPath = firstRule?.http?.paths?.[0]
+
   return {
-    metadata: {
-      name: ingress.metadata?.name || '',
-      namespace: ingress.metadata?.namespace || '',
-      creationTimestamp: ingress.metadata?.creationTimestamp,
-      labels: ingress.metadata?.labels
-    },
-    spec: {
-      rules:
-        ingress.spec?.rules?.map((rule) => ({
-          host: rule.host || '',
-          http: {
-            paths:
-              rule.http?.paths?.map((path) => ({
-                path: path.path || '',
-                pathType: path.pathType || '',
-                backend: {
-                  service: {
-                    name: path.backend?.service?.name || '',
-                    port: path.backend?.service?.port?.number || 0
-                  }
-                }
-              })) || []
-          }
-        })) || [],
-      tls: ingress.spec?.tls?.map((tls) => ({
-        hosts: tls.hosts || [],
-        secretName: tls.secretName || ''
-      }))
-    }
+    name: ingress.metadata?.name || '',
+    namespace: ingress.metadata?.namespace || '',
+    host: firstRule?.host || '',
+    port: firstPath?.backend?.service?.port?.number || 0
   }
 }
