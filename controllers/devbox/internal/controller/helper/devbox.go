@@ -218,6 +218,16 @@ func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 		return false
 	}
 
+	// Check Ephemeral Storage changes
+	if container.Resources.Requests.StorageEphemeral().Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) != 0 {
+		slog.Info("Ephemeral-Storage requests are not equal")
+		return false
+	}
+	if container.Resources.Limits.StorageEphemeral().Cmp(*expectContainer.Resources.Limits.StorageEphemeral()) != 0 {
+		slog.Info("Ephemeral-Storage limits are not equal")
+		return false
+	}
+
 	// Check environment variables
 	if len(container.Env) != len(expectContainer.Env) {
 		return false
