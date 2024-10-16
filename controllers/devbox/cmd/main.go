@@ -87,8 +87,8 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.BoolVar(&debugMode, "debug", false, "If set, debug mode will be enabled")
-	flag.StringVar(&requestEphemeralStorage, "request ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
-	flag.StringVar(&limitEphemeralStorage, "limit ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
+	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
+	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
 	opts := zap.Options{
 		Development: true,
 	}
