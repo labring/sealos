@@ -59,7 +59,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   );
 
   const { data: secret } = useQuery(
-    ['getDBSecret', db.dbName],
+    ['getDBSecret', db.dbName, db.dbType],
     () => (db.dbName ? getDBSecret({ dbName: db.dbName, dbType: db.dbType }) : null),
     {
       enabled: supportConnectDB
@@ -67,7 +67,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   );
 
   const { data: service, refetch } = useQuery(
-    ['getDBService', db.dbName],
+    ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
       enabled: supportConnectDB,
