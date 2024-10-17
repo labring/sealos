@@ -198,8 +198,24 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete rolebinding", "Failed to delete rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, setUpOwnerReferenceFc); err != nil {
-			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
+		//err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ct context.Context) (bool, error) {
+		//	rb := &rbacv1.RoleBinding{}
+		//	err := r.Get(ct, types.NamespacedName{Name: rolebinding.Name, Namespace: rolebinding.Namespace}, rb)
+		//	if apierrors.IsNotFound(err) {
+		//		return true, nil
+		//	}
+		//	return false, nil
+		//})
+		//if err != nil {
+		//	r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete rolebinding", "Failed to delete rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
+		//	return ctrl.Result{}, err
+		//}
+		if err := r.Create(ctx, rolebinding); err != nil {
+			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
+			return ctrl.Result{}, err
+		}
+		if err = setUpOwnerReferenceFc(); err != nil {
+			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to set owner reference", "Failed to set owner reference for rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
 		if request.Spec.Role == userv1.OwnerRoleType {
