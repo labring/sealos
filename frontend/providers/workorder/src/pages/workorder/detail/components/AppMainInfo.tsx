@@ -537,7 +537,7 @@ const AppMainInfo = ({
 
         <Textarea
           ref={TextareaDom}
-          placeholder="在此输入消息，可粘贴图片直接上传"
+          placeholder={t('input_placeholder')}
           variant={'unstyled'}
           value={text}
           p={'0'}

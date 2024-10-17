@@ -63,5 +63,6 @@
   "userId": "userId",
   "other": "other",
   "fastgpt": "FastGPT",
-  "account_center": "Account Center"
+  "account_center": "Account Center",
+  "input_placeholder": "Enter your message here, you can paste the picture and upload it directly"
 }
