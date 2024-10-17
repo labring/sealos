@@ -23,7 +23,7 @@ import {
 import { fetchEventSource } from '@fortaine/fetch-event-source';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const statusAnimation = keyframes`
   0% {
@@ -331,6 +331,25 @@ const AppMainInfo = ({
     }
   }, [app?.dialogs, isManuallyHandled]);
 
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    const files: File[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const blob = items[i].getAsFile();
+        if (blob) {
+          files.push(blob);
+        }
+      }
+    }
+
+    if (files.length > 0) {
+      e.preventDefault();
+      await uploadFiles(files);
+    }
+  }, []);
+
   return (
     <>
       <Text fontSize={'18px'} fontWeight={500} color={'#24282C'} mt="24px" ml="36px">
@@ -449,6 +468,7 @@ const AppMainInfo = ({
         }
         border={'1px solid #EAEBF0'}
         flexDirection={'column'}
+        onPaste={handlePaste}
       >
         {uploadedFiles && (
           <Flex alignItems={'center'} gap={'4px'} wrap={'wrap'} mb={'4px'}>
@@ -517,7 +537,7 @@ const AppMainInfo = ({
 
         <Textarea
           ref={TextareaDom}
-          placeholder="在这里输入你的消息..."
+          placeholder="在此输入消息，可粘贴图片直接上传"
           variant={'unstyled'}
           value={text}
           p={'0'}
