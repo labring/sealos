@@ -26,7 +26,7 @@ function Home() {
     const queryPage = Number(router.query.page);
     return !isNaN(queryPage) && queryPage > 0 ? queryPage : 1;
   });
-  const [pageSize, setPageSize] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [orderStatus, setOrderStatus] = useState<WorkOrderStatus>(
     (router.query?.status as WorkOrderStatus) || WorkOrderStatus.All
   );
