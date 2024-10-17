@@ -1,9 +1,6 @@
 FROM scratch
 COPY tars tars
-COPY etc etc
 COPY scripts scripts
-COPY manifests manifests
-COPY registry registry
 
 ENV cloudDomain=${cloudDomain:-"127.0.0.1.nip.io"}
 ENV cloudPort=""
