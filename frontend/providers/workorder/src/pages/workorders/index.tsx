@@ -21,9 +21,12 @@ function Home() {
   const { Loading } = useLoading();
   const { t } = useTranslation();
   const [initialized, setInitialized] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const router = useRouter();
+  const [page, setPage] = useState(() => {
+    const queryPage = Number(router.query.page);
+    return !isNaN(queryPage) && queryPage > 0 ? queryPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(10);
   const [orderStatus, setOrderStatus] = useState<WorkOrderStatus>(
     (router.query?.status as WorkOrderStatus) || WorkOrderStatus.All
   );
@@ -169,9 +172,17 @@ function Home() {
       {!!data?.totalCount && (
         <Pagination
           totalItems={data?.totalCount || 0}
-          itemsPerPage={10}
+          itemsPerPage={pageSize}
           currentPage={page}
-          setCurrentPage={setPage}
+          setCurrentPage={(page) => {
+            router.push({
+              query: {
+                ...router.query,
+                page: page.toString()
+              }
+            });
+            setPage(page);
+          }}
         />
       )}
     </Flex>

@@ -7,6 +7,7 @@ import { jsonRes } from '@/services/backend/response';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { instanceName } = req.query as { instanceName: string };
+
     if (!instanceName) {
       throw new Error('Job name is empty');
     }
@@ -15,10 +16,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    // 删除 Job
-    const result = await k8sBatch.deleteNamespacedJob(instanceName, namespace);
+    const deleteOptions = {
+      propagationPolicy: 'Foreground'
+    };
 
-    jsonRes(res, { data: result });
+    const result = await k8sBatch.deleteNamespacedJob(
+      instanceName,
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      deleteOptions.propagationPolicy,
+      deleteOptions
+    );
+
+    jsonRes(res, { data: 'success' });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

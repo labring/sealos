@@ -53,9 +53,10 @@ const Header = ({
         alignItems={'center'}
         cursor={'pointer'}
         onClick={() => {
-          router.replace({
+          router.push({
             pathname: '/workorders',
             query: {
+              page: router.query?.page,
               status: router.query?.status
             }
           });
