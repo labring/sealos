@@ -22,7 +22,9 @@ import (
 
 // OperationrequestSpec defines the desired state of Operationrequest
 type OperationrequestSpec struct {
-	User string `json:"user,omitempty"`
+	// Namespace is the workspace that needs to be operated.
+	Namespace string `json:"namespace,omitempty"`
+	User      string `json:"user,omitempty"`
 	// +kubebuilder:validation:Enum=Owner;Manager;Developer
 	Role RoleType `json:"role,omitempty"`
 	// +kubebuilder:validation:Enum=Grant;Update;Deprive
@@ -56,9 +58,11 @@ const (
 )
 
 //+kubebuilder:printcolumn:name="Action",type="string",JSONPath=".spec.action"
+//+kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".spec.namespace"
 //+kubebuilder:printcolumn:name="User",type="string",JSONPath=".spec.user"
 //+kubebuilder:printcolumn:name="Role",type="string",JSONPath=".spec.role"
 //+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
