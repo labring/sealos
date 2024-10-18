@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -52,6 +53,7 @@ type OperationReqReconciler struct {
 	Logger   logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	userLock map[string]*sync.Mutex
 
 	// expirationTime is the time duration of the request is expired
 	expirationTime time.Duration
@@ -72,6 +74,7 @@ func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts util.Ra
 	r.Scheme = mgr.GetScheme()
 	r.expirationTime = expTime
 	r.retentionTime = retTime
+	r.userLock = make(map[string]*sync.Mutex)
 	r.Logger.V(1).Info("init reconcile operationrequest controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Operationrequest{}, builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace()))).
@@ -112,6 +115,13 @@ func (r *OperationReqReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.Operationrequest) (ctrl.Result, error) {
+	userLock, ok := r.userLock[request.Spec.User]
+	if !ok {
+		userLock = &sync.Mutex{}
+		r.userLock[request.Spec.User] = userLock
+	}
+	userLock.Lock()
+	defer userLock.Unlock()
 	r.Logger.V(1).Info("start reconcile controller operationRequest", getLog(request)...)
 	// count the time cost of handling the request
 	startTime := time.Now()
@@ -198,18 +208,6 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete rolebinding", "Failed to delete rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
-		//err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ct context.Context) (bool, error) {
-		//	rb := &rbacv1.RoleBinding{}
-		//	err := r.Get(ct, types.NamespacedName{Name: rolebinding.Name, Namespace: rolebinding.Namespace}, rb)
-		//	if apierrors.IsNotFound(err) {
-		//		return true, nil
-		//	}
-		//	return false, nil
-		//})
-		//if err != nil {
-		//	r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete rolebinding", "Failed to delete rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
-		//	return ctrl.Result{}, err
-		//}
 		if err := r.Create(ctx, rolebinding); err != nil {
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err

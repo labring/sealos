@@ -62,6 +62,7 @@ const (
 //+kubebuilder:printcolumn:name="User",type="string",JSONPath=".spec.user"
 //+kubebuilder:printcolumn:name="Role",type="string",JSONPath=".spec.role"
 //+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
