@@ -39,13 +39,17 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 const formData2Yamls = (data: DevboxEditType) => [
   {
-    filename: 'service.yaml',
-    value: json2Service(data)
-  },
-  {
     filename: 'devbox.yaml',
     value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE)
   },
+  ...(data.networks.length > 0
+    ? [
+        {
+          filename: 'service.yaml',
+          value: json2Service(data)
+        }
+      ]
+    : []),
   ...(data.networks.find((item) => item.openPublicDomain)
     ? [
         {
@@ -128,14 +132,22 @@ const DevboxCreatePage = () => {
         filename: 'devbox.yaml',
         value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE)
       },
-      {
-        filename: 'service.yaml',
-        value: json2Service(data)
-      },
-      {
-        filename: 'ingress.yaml',
-        value: json2Ingress(data)
-      }
+      ...(data.networks.length > 0
+        ? [
+            {
+              filename: 'service.yaml',
+              value: json2Service(data)
+            }
+          ]
+        : []),
+      ...(data.networks.find((item) => item.openPublicDomain)
+        ? [
+            {
+              filename: 'ingress.yaml',
+              value: json2Ingress(data)
+            }
+          ]
+        : [])
     ]
   }
 
@@ -175,14 +187,22 @@ const DevboxCreatePage = () => {
               SQUASH_ENABLE
             )
           },
-          {
-            filename: 'service.yaml',
-            value: json2Service(defaultEdit)
-          },
-          {
-            filename: 'ingress.yaml',
-            value: json2Ingress(defaultEdit)
-          }
+          ...(defaultEdit.networks.length > 0
+            ? [
+                {
+                  filename: 'service.yaml',
+                  value: json2Service(defaultEdit)
+                }
+              ]
+            : []),
+          ...(defaultEdit.networks.find((item) => item.openPublicDomain)
+            ? [
+                {
+                  filename: 'ingress.yaml',
+                  value: json2Ingress(defaultEdit)
+                }
+              ]
+            : [])
         ])
         return null
       }

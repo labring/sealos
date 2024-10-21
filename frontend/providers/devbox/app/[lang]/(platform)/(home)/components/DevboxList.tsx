@@ -202,7 +202,7 @@ const DevboxList = ({
             editorUri = `vscode://`
         }
 
-        const fullUri = `${editorUri}mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
+        const fullUri = `${editorUri}labring.devbox-aio?sshDomain=${encodeURIComponent(
           `${userName}@${SEALOS_DOMAIN}`
         )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
           base64PrivateKey
@@ -229,7 +229,7 @@ const DevboxList = ({
       key: 'name',
       render: (item: DevboxListItemType) => {
         return (
-          <Flex alignItems={'center'} gap={'6px'} ml={4}>
+          <Flex alignItems={'center'} gap={'6px'} ml={4} mr={1}>
             <Image
               width={'20px'}
               height={'20px'}
@@ -261,7 +261,7 @@ const DevboxList = ({
       key: 'cpu',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
             <PodLineChart type="blue" data={item.usedCpu} />
             <Text
               color={'#0077A9'}
@@ -283,7 +283,7 @@ const DevboxList = ({
       key: 'storage',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
             <PodLineChart type="purple" data={item.usedMemory} />
             <Text
               color={'#6F5DD7'}
@@ -446,7 +446,7 @@ const DevboxList = ({
                       child: (
                         <>
                           <MyIcon name={'start'} w={'16px'} />
-                          <Box ml={2}>{t('boot')}</Box>
+                          <Box ml={2}>{t('start')}</Box>
                         </>
                       ),
                       onClick: () => handleStartDevbox(item)

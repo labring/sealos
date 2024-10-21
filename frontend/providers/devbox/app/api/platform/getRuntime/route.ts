@@ -131,7 +131,6 @@ export async function GET(req: NextRequest) {
         }
       }
     })
-    console.log('languageVersionMap', languageVersionMap)
 
     return jsonRes({
       data: {
