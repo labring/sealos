@@ -133,6 +133,7 @@
   "merge_account_tips2": "The account you are trying to bind has been used by another user. You can choose to merge accounts to manage your information and settings in a unified way. After the merge is completed, your private workspace may be converted into a regular workspace. Do you want to merge accounts now?",
   "merge_account_title": "Account has been bound",
   "message_center": "Message Center",
+	"modify_member": "Modify Member",
   "monitor": "Monitor",
   "more_apps": "More Apps",
   "name": "Name",

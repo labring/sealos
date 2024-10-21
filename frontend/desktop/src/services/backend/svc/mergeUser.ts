@@ -10,6 +10,7 @@ export const mergeUserSvc =
   (userUid: string, mergeUserUid: string) => async (res: NextApiResponse) => {
     const user = await globalPrisma.user.findUnique({
       where: {
+        status: UserStatus.NORMAL_USER,
         uid: userUid
       },
       include: {

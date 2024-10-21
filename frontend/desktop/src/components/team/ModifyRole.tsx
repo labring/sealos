@@ -1,28 +1,28 @@
+import { modifyRoleRequest } from '@/api/namespace';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { ApiResp } from '@/types';
+import { ROLE_LIST, UserRole } from '@/types/team';
 import {
   Button,
+  ButtonProps,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalHeader,
   ModalOverlay,
-  useDisclosure,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Text,
   Spinner,
-  ButtonProps
+  Text,
+  useDisclosure
 } from '@chakra-ui/react';
-import { useState } from 'react';
-import { ROLE_LIST, UserRole } from '@/types/team';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { modifyRoleRequest } from '@/api/namespace';
-import { useCustomToast } from '@/hooks/useCustomToast';
-import { ApiResp } from '@/types';
-import { useTranslation } from 'next-i18next';
 import { ExpanMoreIcon } from '@sealos/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
 export default function ModifyRole({
   ns_uid,
   k8s_username,
@@ -39,7 +39,7 @@ export default function ModifyRole({
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const [role, setRole] = useState(currentRole);
-  const { t } = useTranslation();
+  const { t } = useTranslation(['common']);
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const mutation = useMutation({
@@ -83,7 +83,7 @@ export default function ModifyRole({
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0">
-            modify member
+            {t('modify_member')}
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />

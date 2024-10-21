@@ -129,6 +129,7 @@
   "merge_account_tips2": "您尝试绑定的账号已被其他用户使用。您可以选择合并账户,以统一管理您的信息和设置。 在合并完成后，个人空间有可能转化为普通的工作空间，是否现在合并账户?",
   "merge_account_title": "账户已被绑定",
   "message_center": "消息中心",
+  "modify_member": "修改权限",
   "monitor": "监控",
   "more_apps": "更多应用",
   "name": "姓名",
