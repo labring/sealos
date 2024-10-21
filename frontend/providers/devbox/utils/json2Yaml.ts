@@ -2,7 +2,7 @@ import yaml from 'js-yaml'
 
 import {
   INGRESS_SECRET,
-  SEALOS_DOMAIN,
+  INGRESS_DOMAIN,
   runtimeNamespaceMap as defaultRuntimeNamespaceMap
 } from '@/stores/static'
 import { str2Num } from './tools'
@@ -125,7 +125,7 @@ export const json2DevboxRelease = (data: {
 
 export const json2Ingress = (
   data: DevboxEditType,
-  sealosDomain: string = SEALOS_DOMAIN,
+  ingressDomain: string = INGRESS_DOMAIN,
   ingressSecret: string = INGRESS_SECRET
 ) => {
   // different protocol annotations
@@ -156,7 +156,7 @@ export const json2Ingress = (
     .map((network, i) => {
       const host = network.customDomain
         ? network.customDomain
-        : `${network.publicDomain}.${sealosDomain}`
+        : `${network.publicDomain}.${ingressDomain}`
 
       const secretName = network.customDomain ? network.networkName : ingressSecret
 

@@ -25,14 +25,14 @@ import { MySelect, MySlider, Tabs, useMessage } from '@sealos/ui'
 
 import {
   INSTALL_ACCOUNT,
-  SEALOS_DOMAIN,
   frameworkTypeList,
   frameworkVersionMap,
   languageTypeList,
   languageVersionMap,
   osTypeList,
   osVersionMap,
-  getRuntimeVersionList
+  getRuntimeVersionList,
+  INGRESS_DOMAIN
 } from '@/stores/static'
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
@@ -767,7 +767,7 @@ const Form = ({
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
                               {network.customDomain
                                 ? network.customDomain
-                                : `${network.publicDomain}.${SEALOS_DOMAIN}`}
+                                : `${network.publicDomain}.${INGRESS_DOMAIN}`}
                             </Box>
                             <Box
                               fontSize={'11px'}

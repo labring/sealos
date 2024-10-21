@@ -6,6 +6,7 @@ export type SystemEnvResponse = {
   registryAddr: string
   devboxAffinityEnable: string
   squashEnable: string
+  ingressDomain: string
 }
 
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export async function GET() {
     data: {
       domain: process.env.SEALOS_DOMAIN || 'dev.sealos.plus',
       ingressSecret: process.env.INGRESS_SECRET || 'wildcard-cert',
+      ingressDomain: process.env.INGRESS_DOMAIN || 'sealosusw.site',
       registryAddr: process.env.REGISTRY_ADDR || 'hub.dev.sealos.plus',
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || 'true',
       squashEnable: process.env.SQUASH_ENABLE || 'true'

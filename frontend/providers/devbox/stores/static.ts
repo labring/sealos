@@ -30,6 +30,7 @@ export let INGRESS_SECRET = 'wildcard-cert'
 export let REGISTRY_ADDR = 'hub.dev.sealos.plus'
 export let DEVBOX_AFFINITY_ENABLE = 'true'
 export let SQUASH_ENABLE = 'false'
+export let INGRESS_DOMAIN = 'sealosusw.site'
 
 export const runtimeNamespace = 'devbox-system'
 
@@ -145,12 +146,20 @@ export const getRuntime = async () => {
 export const getEnv = async () => {
   try {
     const res = await getAppEnv()
-    const { domain, ingressSecret, registryAddr, devboxAffinityEnable, squashEnable } = res
+    const {
+      domain,
+      ingressSecret,
+      registryAddr,
+      devboxAffinityEnable,
+      squashEnable,
+      ingressDomain
+    } = res
     SEALOS_DOMAIN = domain
     INGRESS_SECRET = ingressSecret
     REGISTRY_ADDR = registryAddr
     DEVBOX_AFFINITY_ENABLE = devboxAffinityEnable
     SQUASH_ENABLE = squashEnable
+    INGRESS_DOMAIN = ingressDomain
   } catch (err) {
     retryGetEnv--
     if (retryGetEnv >= 0) {

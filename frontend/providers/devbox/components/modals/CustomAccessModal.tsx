@@ -20,7 +20,7 @@ import { InfoOutlineIcon } from '@chakra-ui/icons'
 
 import { postAuthCname } from '@/api/platform'
 import { useRequest } from '@/hooks/useRequest'
-import { SEALOS_DOMAIN } from '@/stores/static'
+import { INGRESS_DOMAIN } from '@/stores/static'
 
 export type CustomAccessModalParams = {
   publicDomain: string
@@ -42,7 +42,7 @@ const CustomAccessModal = ({
     mb: 2
   }
 
-  const completePublicDomain = useMemo(() => `${publicDomain}.${SEALOS_DOMAIN}`, [publicDomain])
+  const completePublicDomain = useMemo(() => `${publicDomain}.${INGRESS_DOMAIN}`, [publicDomain])
 
   const { mutate: authCNAME, isLoading } = useRequest({
     mutationFn: async () => {

@@ -14,7 +14,7 @@ import { DevboxVersionListItemType } from '@/types/devbox'
 import ReleaseModal from '@/components/modals/releaseModal'
 import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
-import { NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
+import { NAMESPACE, REGISTRY_ADDR, INGRESS_DOMAIN } from '@/stores/static'
 import { DevboxReleaseStatusEnum } from '@/constants/devbox'
 import { useConfirm } from '@/hooks/useConfirm'
 
@@ -53,7 +53,7 @@ const Version = () => {
           port: network.port,
           protocol: network.protocol,
           openPublicDomain: network.openPublicDomain,
-          domain: SEALOS_DOMAIN
+          domain: INGRESS_DOMAIN
         }
       })
 
@@ -70,7 +70,7 @@ const Version = () => {
                   port: 80,
                   protocol: 'http',
                   openPublicDomain: false,
-                  domain: SEALOS_DOMAIN
+                  domain: INGRESS_DOMAIN
                 }
               ],
         runCMD: releaseCommand,
