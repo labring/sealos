@@ -1,22 +1,17 @@
-import type { NextPage } from 'next';
-import { useRouter } from 'next/router';
-import useSessionStore from '@/stores/session';
-import { Button, Flex, HStack, Image, Spinner, Text, VStack } from '@chakra-ui/react';
-import { isString } from 'lodash';
-import { dehydrate, QueryClient, useMutation, useQuery } from '@tanstack/react-query';
-import {
-  getInviteCodeInfoRequest,
-  nsListRequest,
-  reciveAction,
-  verifyInviteCodeRequest
-} from '@/api/namespace';
+import { getInviteCodeInfoRequest, reciveAction, verifyInviteCodeRequest } from '@/api/namespace';
 import useCallbackStore from '@/stores/callback';
-import { useEffect } from 'react';
-import { useTranslation } from 'next-i18next';
+import { useConfigStore } from '@/stores/config';
+import useSessionStore from '@/stores/session';
 import { ROLE_LIST } from '@/types/team';
 import { compareFirstLanguages } from '@/utils/tools';
+import { Button, Flex, Image, Text, VStack } from '@chakra-ui/react';
+import { dehydrate, QueryClient, useMutation, useQuery } from '@tanstack/react-query';
+import { isString } from 'lodash';
+import type { NextPage } from 'next';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useConfigStore } from '@/stores/config';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 const Callback: NextPage = () => {
   const router = useRouter();
@@ -70,17 +65,16 @@ const Callback: NextPage = () => {
       return () => clearTimeout(tag);
     }
   }, [statusCode, isValid, router]);
-  const acceptHandle = async () => {
+  const acceptHandle = async () =>
     verifyMutation
       .mutateAsync({
         code: inviteCode as string,
         action: reciveAction.Accepte
       })
-      .then(() => {
+      .finally(() => {
         reset();
         return;
       });
-  };
   const cancelHandle = () => {
     if (!isValid) return;
     reset();
@@ -113,7 +107,6 @@ const Callback: NextPage = () => {
           color={'white'}
           gap={'8px'}
         >
-          {' '}
           <Image boxSize={'34px'} borderRadius="full" src={logo} alt="logo" />
           <Text fontWeight={700} fontSize={'24px'}>
             Sealos

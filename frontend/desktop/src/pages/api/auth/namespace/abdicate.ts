@@ -1,12 +1,12 @@
+import { verifyAccessToken } from '@/services/backend/auth';
+import { prisma } from '@/services/backend/db/init';
 import { jsonRes } from '@/services/backend/response';
 import { modifyWorkspaceRole } from '@/services/backend/team';
 import { UserRole } from '@/types/team';
-import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/services/backend/db/init';
 import { retrySerially } from '@/utils/tools';
-import { validate as uuidValidate } from 'uuid';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
-import { verifyAccessToken } from '@/services/backend/auth';
+import { validate as uuidValidate } from 'uuid';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // modify K8S
     await modifyWorkspaceRole({
       action: 'Change',
-      pre_k8s_username: payload.userCrUid,
+      pre_k8s_username: payload.userCrName,
       k8s_username: target.userCr.crName,
       role: UserRole.Owner,
       workspaceId: target.workspace.id
