@@ -44,11 +44,10 @@ const valuationMap: Record<string, number> = {
 
 export async function GET(req: NextRequest) {
   try {
-    const { SEALOS_DOMAIN } = process.env
     const getResourcePrice = async () => {
       try {
         const res = await fetch(
-          `https://account-api.${SEALOS_DOMAIN}/account/v1alpha1/properties`,
+          `http://account-service.account-system.svc:2333/account/v1alpha1/properties`,
           {
             method: 'POST'
           }
