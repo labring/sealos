@@ -9,7 +9,7 @@ import { useCopyData } from '@/utils/tools'
 import { NetworkType } from '@/types/devbox'
 import { useDevboxStore } from '@/stores/devbox'
 import PodLineChart from '@/components/PodLineChart'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
+import { NAMESPACE, INGRESS_DOMAIN } from '@/stores/static'
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
 
@@ -58,7 +58,7 @@ const MainBody = () => {
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
-          const address = item.customDomain || `${item.publicDomain}.${SEALOS_DOMAIN}`
+          const address = item.customDomain || `${item.publicDomain}.${INGRESS_DOMAIN}`
           return (
             <Tooltip
               label={t('open_link')}
