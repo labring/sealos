@@ -1,10 +1,6 @@
 import yaml from 'js-yaml'
 
-import {
-  INGRESS_SECRET,
-  INGRESS_DOMAIN,
-  runtimeNamespaceMap as defaultRuntimeNamespaceMap
-} from '@/stores/static'
+import { INGRESS_SECRET, runtimeNamespaceMap as defaultRuntimeNamespaceMap } from '@/stores/static'
 import { str2Num } from './tools'
 import { getUserNamespace } from './user'
 import { DevboxEditType, runtimeNamespaceMapType } from '@/types/devbox'
@@ -123,11 +119,7 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json)
 }
 
-export const json2Ingress = (
-  data: DevboxEditType,
-  ingressDomain: string = INGRESS_DOMAIN,
-  ingressSecret: string = INGRESS_SECRET
-) => {
+export const json2Ingress = (data: DevboxEditType, ingressSecret: string = INGRESS_SECRET) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -154,9 +146,7 @@ export const json2Ingress = (
   const result = data.networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
-      const host = network.customDomain
-        ? network.customDomain
-        : `${network.publicDomain}.${ingressDomain}`
+      const host = network.customDomain ? network.customDomain : network.publicDomain
 
       const secretName = network.customDomain ? network.networkName : ingressSecret
 

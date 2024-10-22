@@ -58,7 +58,7 @@ const MainBody = () => {
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
-          const address = item.customDomain || `${item.publicDomain}.${INGRESS_DOMAIN}`
+          const address = item.customDomain || item.publicDomain
           return (
             <Tooltip
               label={t('open_link')}

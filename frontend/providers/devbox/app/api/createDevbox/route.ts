@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       SQUASH_ENABLE
     )
     const service = json2Service(devboxForm)
-    const ingress = json2Ingress(devboxForm, INGRESS_DOMAIN as string, INGRESS_SECRET as string)
+    const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string)
 
     await applyYamlList([devbox, service, ingress], 'create')
 

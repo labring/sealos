@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   DEVBOX_AFFINITY_ENABLE,
+  INGRESS_DOMAIN,
   SQUASH_ENABLE,
   languageVersionMap,
   runtimeNamespaceMap
@@ -89,7 +90,7 @@ const DevboxCreatePage = () => {
       port: port,
       protocol: 'HTTP' as ProtocolType,
       openPublicDomain: true,
-      publicDomain: nanoid(),
+      publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
       customDomain: ''
     }))
   }

@@ -20,7 +20,6 @@ import { InfoOutlineIcon } from '@chakra-ui/icons'
 
 import { postAuthCname } from '@/api/platform'
 import { useRequest } from '@/hooks/useRequest'
-import { INGRESS_DOMAIN } from '@/stores/static'
 
 export type CustomAccessModalParams = {
   publicDomain: string
@@ -42,8 +41,6 @@ const CustomAccessModal = ({
     mb: 2
   }
 
-  const completePublicDomain = useMemo(() => `${publicDomain}.${INGRESS_DOMAIN}`, [publicDomain])
-
   const { mutate: authCNAME, isLoading } = useRequest({
     mutationFn: async () => {
       const val = ref.current?.value || ''
@@ -51,7 +48,7 @@ const CustomAccessModal = ({
         return onSuccess('')
       }
       await postAuthCname({
-        publicDomain: completePublicDomain,
+        publicDomain: publicDomain,
         customDomain: val
       })
       return val
@@ -77,7 +74,7 @@ const CustomAccessModal = ({
               borderRadius={'md'}
               border={theme.borders.base}
               userSelect={'all'}>
-              {completePublicDomain}
+              {publicDomain}
             </Flex>
             <Box {...titleStyles} mt={7}>
               {t('Custom Domain')}
@@ -95,7 +92,7 @@ const CustomAccessModal = ({
               size={'sm'}
               whiteSpace={'pre-wrap'}
               icon={<InfoOutlineIcon />}
-              text={t('CNAME Tips', { domain: completePublicDomain })}
+              text={t('CNAME Tips', { domain: publicDomain })}
             />
           </ModalBody>
           <ModalFooter>

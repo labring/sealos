@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
           port: item.spec.rules[0].http.paths[0].backend.service.port.number,
           protocol: item.metadata.annotations['nginx.ingress.kubernetes.io/backend-protocol'],
           openPublicDomain: !!item.metadata.labels[publicDomainKey],
-          publicDomain: item.metadata.labels[publicDomainKey],
+          publicDomain: item.spec.tls[0].hosts[0],
           customDomain: customDomain || ''
         }
       })

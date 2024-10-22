@@ -365,7 +365,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: nanoid(),
+                                    publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
                                     customDomain: ''
                                   })
                                 )
@@ -443,7 +443,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: nanoid(),
+                                    publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
                                     customDomain: ''
                                   })
                                 )
@@ -521,7 +521,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: nanoid(),
+                                    publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
                                     customDomain: ''
                                   })
                                 )
@@ -584,7 +584,7 @@ const Form = ({
                             port: port,
                             protocol: 'HTTP',
                             openPublicDomain: true,
-                            publicDomain: nanoid(),
+                            publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
                             customDomain: ''
                           })
                         )
@@ -727,7 +727,7 @@ const Form = ({
                             networkName: network.networkName || `${devboxName}-${nanoid()}`,
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
-                            publicDomain: network.publicDomain || nanoid()
+                            publicDomain: network.publicDomain || `${nanoid()}.${INGRESS_DOMAIN}`
                           })
                         }}
                       />
@@ -765,9 +765,7 @@ const Form = ({
                             borderTopRightRadius={'md'}
                             borderBottomRightRadius={'md'}>
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
-                              {network.customDomain
-                                ? network.customDomain
-                                : `${network.publicDomain}.${INGRESS_DOMAIN}`}
+                              {network.customDomain ? network.customDomain : network.publicDomain}
                             </Box>
                             <Box
                               fontSize={'11px'}
