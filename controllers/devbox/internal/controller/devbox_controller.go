@@ -170,6 +170,15 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devboxSecret)
 	if err == nil {
 		// Secret already exists, no need to create
+
+		// TODO: delete this code after we have a way to sync secret to devbox
+		// check if SEALOS_DEVBOX_JWT_SECRET is exist, if not exist, create it
+		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"]; !ok {
+			devboxSecret.Data["SEALOS_DEVBOX_JWT_SECRET"] = []byte(rand.String(32))
+			if err := r.Update(ctx, devboxSecret); err != nil {
+				return fmt.Errorf("failed to update secret: %w", err)
+			}
+		}
 		return nil
 	}
 	if client.IgnoreNotFound(err) != nil {
@@ -186,6 +195,7 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 		ObjectMeta: objectMeta,
 		Data: map[string][]byte{
 			"SEALOS_DEVBOX_PASSWORD":    []byte(rand.String(12)),
+			"SEALOS_DEVBOX_JWT_SECRET":  []byte(rand.String(32)),
 			"SEALOS_DEVBOX_PUBLIC_KEY":  publicKey,
 			"SEALOS_DEVBOX_PRIVATE_KEY": privateKey,
 		},
