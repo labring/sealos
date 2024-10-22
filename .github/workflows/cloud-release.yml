@@ -68,6 +68,9 @@ jobs:
     needs:
       - release-cloud
     runs-on: self-hosted
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -83,8 +86,8 @@ jobs:
           sudo sealos version
       - name: Build
         run: |
-          export CLOUD_VERSION=${{ github.event.inputs.tag || github.event.release.tag_name }}
-          export VERSION=${{ github.event.inputs.tag || github.event.release.tag_name }}
+          export CLOUD_VERSION="$RELEASE_TAG"
+          export VERSION="$RELEASE_TAG"
           export ARCH=amd64
           bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
@@ -97,13 +100,16 @@ jobs:
         run: cat ./sealos-cloud.tar.gz.md5
       - name: Upload
         run: |
-          ossutil cp ./sealos-cloud.tar.gz oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.inputs.tag || github.event.release.tag_name }}-amd64.tar.gz
-          ossutil cp ./sealos-cloud.tar.gz.md5 oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.inputs.tag || github.event.release.tag_name }}-amd64.tar.gz.md5
+          ossutil cp ./sealos-cloud.tar.gz "oss://$OSS_BUCKET/cloud/sealos-cloud-$RELEASE_TAG-amd64.tar.gz"
+          ossutil cp ./sealos-cloud.tar.gz.md5 "oss://$OSS_BUCKET/cloud/sealos-cloud-$RELEASE_TAG-amd64.tar.gz.md5"
 
   release-arm-offline-tar:
     needs:
       - release-cloud
     runs-on: self-hosted
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -119,8 +125,8 @@ jobs:
           sudo sealos version
       - name: Build
         run: |
-          export CLOUD_VERSION=${{ github.event.inputs.tag || github.event.release.tag_name }}
-          export VERSION=${{ github.event.inputs.tag || github.event.release.tag_name }}
+          export CLOUD_VERSION="$RELEASE_TAG"
+          export VERSION="$RELEASE_TAG"
           export ARCH=arm64
           bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
@@ -133,5 +139,5 @@ jobs:
         run: cat ./sealos-cloud.tar.gz.md5
       - name: Upload
         run: |
-          ossutil cp ./sealos-cloud.tar.gz oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.inputs.tag || github.event.release.tag_name }}-arm64.tar.gz
-          ossutil cp ./sealos-cloud.tar.gz.md5 oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.inputs.tag || github.event.release.tag_name }}-arm64.tar.gz.md5
+          ossutil cp ./sealos-cloud.tar.gz "oss://$OSS_BUCKET/cloud/sealos-cloud-$RELEASE_TAG-arm64.tar.gz"
+          ossutil cp ./sealos-cloud.tar.gz.md5 "oss://$OSS_BUCKET/cloud/sealos-cloud-$RELEASE_TAG-arm64.tar.gz.md5"
