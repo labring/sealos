@@ -4,6 +4,8 @@ import os
 import json
 import yaml
 import time
+import shutil
+import zipfile
 
 app = Flask(__name__)
 
@@ -43,7 +45,7 @@ def export_app():
     namespace = request.args.get('namespace')
     if not namespace:
         return jsonify({'error': 'Namespace is required'}), 400
-    
+
     print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'), flush=True)
 
     workdir = os.path.join(SAVE_PATH, namespace, appname)
@@ -115,28 +117,76 @@ def download_app():
 
     print('downloadApp, appname:', appname, 'namespace:', namespace, flush=True)
 
-    # 打包应用程序
+    # 打包应用程序为zip文件
     workdir = os.path.join(SAVE_PATH, namespace, appname)
-    tar_path = os.path.join(SAVE_PATH, namespace, appname + '.tar')
-    err = run_command('tar -cf ' + tar_path + ' -C ' + workdir + ' .')
-    if err:
-        return jsonify({'error': 'Failed to pack application, ' + err}), 500
+    zip_path = os.path.join(SAVE_PATH, namespace, appname + '.zip')
+    shutil.make_archive(base_name=os.path.splitext(zip_path)[0], format='zip', root_dir=workdir)
 
     # 以流的形式返回文件
     def generate():
-        with open(tar_path, 'rb') as file:
+        with open(zip_path, 'rb') as file:
             while True:
                 data = file.read(1024)
                 if not data:
                     break
                 yield data
-        # os.system('rm -rf ' + workdir)
-        # os.system('rm -rf ' + tar_path)
 
-    response = Response(generate(), content_type='application/octet-stream')
-    response.headers['Content-Disposition'] = 'attachment; filename=' + appname + '.tar'
+    response = Response(generate(), content_type='application/zip')
+    response.headers['Content-Disposition'] = 'attachment; filename=' + appname + '.zip'
     return response
 
+# API端点：上传应用程序
+@app.route('/api/uploadApp', methods=['POST'])
+def upload_app():
+    # 检查文件上传
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected for uploading'}), 400
+
+    appname = request.args.get('appname')
+    if not appname:
+        return jsonify({'error': 'Appname is required'}), 400
+    namespace = request.args.get('namespace')
+    if not namespace:
+        return jsonify({'error': 'Namespace is required'}), 400
+
+    print('uploadApp, appname:', appname, 'namespace:', namespace, flush=True)
+
+    # 检查并创建保存路径
+    workdir = os.path.join(SAVE_PATH, namespace, appname)
+    if not os.path.exists(workdir):
+        os.makedirs(workdir)
+
+    # 保存上传的zip文件
+    zip_path = os.path.join(workdir, file.filename)
+    file.save(zip_path)
+    print('Saved file to:', zip_path, flush=True)
+
+    # 解压上传的zip文件
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(workdir)
+        print('Extracted zip file successfully.', flush=True)
+    except zipfile.BadZipFile as e:
+        return jsonify({'error': 'Failed to extract zip file, ' + str(e)}), 500
+
+    # 删除上传的zip文件以释放空间
+    os.remove(zip_path)
+
+    # 读取元数据文件（如存在）
+    metadata_path = os.path.join(workdir, 'metadata.json')
+    if os.path.exists(metadata_path):
+        with open(metadata_path, 'r') as file:
+            metadata = json.load(file)
+        print('Loaded metadata:', metadata, flush=True)
+    else:
+        metadata = {}
+
+    # 返回成功响应
+    return jsonify({'message': 'Application uploaded and extracted successfully', 'metadata': metadata}), 200
 
 # API端点：部署应用程序
 @app.route('/api/deployAppWithImage', methods=['POST'])
