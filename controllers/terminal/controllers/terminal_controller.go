@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/jaevor/go-nanoid"
@@ -63,6 +64,10 @@ const (
 	MemoryRequest = "16Mi"
 	CPULimit      = "0.3"
 	MemoryLimit   = "256Mi"
+)
+
+const (
+	SecretHeaderPrefix = "X-SEALOS-"
 )
 
 // TerminalReconciler reconciles a Terminal object
@@ -118,6 +123,13 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	if terminal.Status.ServiceName == "" {
 		terminal.Status.ServiceName = terminal.Name + "-svc" + rand.String(5)
+		if err := r.Status().Update(ctx, terminal); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if terminal.Status.SecretHeader == "" {
+		terminal.Status.SecretHeader = r.generateSecretHeader()
 		if err := r.Status().Update(ctx, terminal); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -262,6 +274,8 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 		{Name: "USER_TOKEN", Value: terminal.Spec.Token},
 		{Name: "NAMESPACE", Value: terminal.Namespace},
 		{Name: "USER_NAME", Value: terminal.Spec.User},
+		// Add secret header
+		{Name: "AUTH_HEADER", Value: terminal.Status.SecretHeader},
 	}
 
 	containers = []corev1.Container{
@@ -375,6 +389,10 @@ func (r *TerminalReconciler) getPort() string {
 		return ""
 	}
 	return ":" + r.CtrConfig.Global.CloudPort
+}
+
+func (r *TerminalReconciler) generateSecretHeader() string {
+	return SecretHeaderPrefix + strings.ToUpper(rand.String(5))
 }
 
 // SetupWithManager sets up the controller with the Manager.
