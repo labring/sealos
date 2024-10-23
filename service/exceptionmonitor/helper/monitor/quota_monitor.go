@@ -53,7 +53,6 @@ func checkQuota() error {
 				log.Printf("Error sending exception notification:%v", err)
 			}
 		}
-
 	}
 	return nil
 }
