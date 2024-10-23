@@ -94,10 +94,12 @@ func GetENV() error {
 	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
 	BackupMonitor, _ = strconv.ParseBool(getEnvWithCheck("BackupMonitor", &missingEnvVars))
+	QuotaMonitor, _ = strconv.ParseBool(getEnvWithCheck("QuotaMonitor", &missingEnvVars))
 	DatabaseDiskMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseDiskMonitorThreshold", &missingEnvVars), 64)
 	DatabaseExceptionMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseExceptionMonitorThreshold", &missingEnvVars), 64)
 	DatabaseCPUMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseCPUMonitorThreshold", &missingEnvVars), 64)
 	DatabaseMemMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseMemMonitorThreshold", &missingEnvVars), 64)
+	QuotaThreshold, _ = strconv.ParseFloat(getEnvWithCheck("QuotaThreshold", &missingEnvVars), 64)
 
 	if clusterNS != "" {
 		ClusterNS = strings.Split(clusterNS, ",")
