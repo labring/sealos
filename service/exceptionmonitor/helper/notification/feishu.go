@@ -336,6 +336,7 @@ func createQuotaElements(nsQuota NameSpaceQuota) []map[string]string {
 		{"label": "命名空间", "value": nsQuota.NameSpace},
 	}
 	addNonEmptyFieldsToElements(nsQuota, elements)
+	fmt.Println(elements)
 	return elements
 }
 
