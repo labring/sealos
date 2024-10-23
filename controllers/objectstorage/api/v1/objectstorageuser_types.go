@@ -22,6 +22,8 @@ import (
 
 // ObjectStorageUserSpec defines the desired state of ObjectStorageUser
 type ObjectStorageUserSpec struct {
+	// +kubebuilder:default=0
+	SecretKeyVersion int64 `json:"secretKeyVersion,omitempty"`
 }
 
 // ObjectStorageUserStatus defines the observed state of ObjectStorageUser
@@ -34,6 +36,8 @@ type ObjectStorageUserStatus struct {
 	SecretKey    string `json:"secretKey,omitempty"`
 	Internal     string `json:"internal,omitempty"`
 	External     string `json:"external,omitempty"`
+	// +kubebuilder:default=0
+	SecretKeyVersion int64 `json:"secretKeyVersion,omitempty"`
 }
 
 //+kubebuilder:object:root=true
