@@ -72,12 +72,19 @@ type Component struct {
 	Version string `json:"version"`
 }
 
+type RuntimeState string
+
+const (
+	RuntimeStateActive     RuntimeState = "active"
+	RuntimeStateDeprecated RuntimeState = "deprecated"
+)
+
 // RuntimeSpec defines the desired state of Runtime
 type RuntimeSpec struct {
 	// +kubebuilder:validation:Required
-	Version string `json:"version"`
-	// +kubebuilder:validation:Required
 	ClassRef string `json:"classRef"`
+	// +kubebuilder:validation:Required
+	Version string `json:"version"`
 
 	// +kubebuilder:validation:Optional
 	Components []Component `json:"components,omitempty"`
@@ -88,6 +95,13 @@ type RuntimeSpec struct {
 
 	// +kubebuilder:validation:Required
 	Config Config `json:"config"`
+
+	// +kubebuilder:validation:Optional
+	RuntimeVersion string `json:"runtimeVersion,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=active;deprecated
+	// +kubebuilder:default=active
+	State RuntimeState `json:"state,omitempty"`
 }
 
 // RuntimeStatus defines the observed state of Runtime
@@ -98,6 +112,10 @@ type RuntimeStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Class",type=string,JSONPath=`.spec.classRef`
+// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.version`
+// +kubebuilder:printcolumn:name="RuntimeVersion",type=string,JSONPath=`.spec.runtimeVersion`
+// +kubebuilder:printcolumn:name="State",type=string,JSONPath=`.spec.state`
 
 // Runtime is the Schema for the runtimes API
 type Runtime struct {
