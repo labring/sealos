@@ -106,7 +106,6 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpac
 			}
 		}
 	}
-	fmt.Println(nsQuota)
 	return send
 }
 

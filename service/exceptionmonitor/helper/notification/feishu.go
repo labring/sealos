@@ -335,6 +335,7 @@ func createQuotaElements(nsQuota NameSpaceQuota) []map[string]string {
 		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": nsQuota.NameSpace},
 	}
+	fmt.Println(nsQuota)
 	addNonEmptyFieldsToElements(nsQuota, elements)
 	return elements
 }
