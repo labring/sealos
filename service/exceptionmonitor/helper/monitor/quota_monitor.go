@@ -15,6 +15,7 @@ import (
 )
 
 func QuotaMonitor() {
+	fmt.Println(111)
 	for api.QuotaMonitor {
 		if err := checkQuota(); err != nil {
 			log.Printf("Failed to check qouta: %v", err)
@@ -24,6 +25,7 @@ func QuotaMonitor() {
 }
 
 func checkQuota() error {
+	fmt.Println(222)
 	namespaceList, _ := api.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 
 	fmt.Println(len(namespaceList.Items))
