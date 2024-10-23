@@ -46,16 +46,20 @@ func checkQuota() error {
 			NotificationType: "exception",
 		}
 		nsQuota.NameSpace = ns.Name
-		processQuota(quotaList, nsQuota)
-		message := notification.GetQuotaMessage(nsQuota)
-		if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLOther"]); err != nil {
-			log.Printf("Error sending exception notification:%v", err)
+		send := processQuota(quotaList, nsQuota)
+		if send {
+			message := notification.GetQuotaMessage(nsQuota)
+			if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLOther"]); err != nil {
+				log.Printf("Error sending exception notification:%v", err)
+			}
 		}
+
 	}
 	return nil
 }
 
-func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpaceQuota) {
+func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpaceQuota) bool {
+	send := false
 	for resourceName, hardQuantity := range quotaList.Items[0].Status.Hard {
 		usedQuantity, exists := quotaList.Items[0].Status.Used[resourceName]
 		if !exists {
@@ -76,8 +80,8 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpac
 
 		// usage
 		utilization := (usedValue / hardValue) * 100
-
 		if utilization > api.QuotaThreshold {
+			send = true
 			switch resourceName {
 			case "limits.cpu":
 				nsQuota.CPULimit = hardQuantity.String()
@@ -103,6 +107,7 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpac
 			}
 		}
 	}
+	return send
 }
 
 func quantityToFloat64(q resource.Quantity, resourceName string) (float64, error) {
