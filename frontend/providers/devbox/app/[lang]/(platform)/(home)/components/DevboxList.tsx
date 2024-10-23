@@ -27,12 +27,13 @@ import {
   startDevbox
 } from '@/api/devbox'
 import { useRouter } from '@/i18n'
-import MyIcon from '@/components/Icon'
-import { IDEType, useGlobalStore } from '@/stores/global'
+import { useEnvStore } from '@/stores/env'
 import { DevboxListItemType } from '@/types/devbox'
+import { IDEType, useGlobalStore } from '@/stores/global'
+
+import MyIcon from '@/components/Icon'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import ReleaseModal from '@/components/modals/releaseModal'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -48,7 +49,10 @@ const DevboxList = ({
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
+
+  const { env } = useEnvStore()
   const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
+
   const [onOpenRelease, setOnOpenRelease] = useState(false)
   const [delDevbox, setDelDevbox] = useState<DevboxListItemType | null>(null)
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
@@ -203,11 +207,11 @@ const DevboxList = ({
         }
 
         const fullUri = `${editorUri}labring.devbox-aio?sshDomain=${encodeURIComponent(
-          `${userName}@${SEALOS_DOMAIN}`
+          `${userName}@${env.sealosDomain}`
         )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
           base64PrivateKey
         )}&sshHostLabel=${encodeURIComponent(
-          `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
+          `${env.sealosDomain}/${env.namespace}/${devbox.name}`
         )}&workingDir=${encodeURIComponent(workingDir)}`
 
         window.location.href = fullUri
@@ -215,7 +219,7 @@ const DevboxList = ({
         console.error(error, '==')
       }
     },
-    []
+    [env.namespace, env.sealosDomain]
   )
 
   const columns: {

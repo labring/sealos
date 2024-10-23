@@ -7,26 +7,31 @@ import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/r
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
-import { useLoading } from '@/hooks/useLoading'
-import { useDevboxStore } from '@/stores/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { DevboxVersionListItemType } from '@/types/devbox'
 import ReleaseModal from '@/components/modals/releaseModal'
-import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
-import { NAMESPACE, REGISTRY_ADDR, INGRESS_DOMAIN } from '@/stores/static'
+
+import { DevboxVersionListItemType } from '@/types/devbox'
 import { DevboxReleaseStatusEnum } from '@/constants/devbox'
+import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
+
 import { useConfirm } from '@/hooks/useConfirm'
+import { useLoading } from '@/hooks/useLoading'
+
+import { useEnvStore } from '@/stores/env'
+import { useDevboxStore } from '@/stores/devbox'
 
 const Version = () => {
   const t = useTranslations()
-  const { devboxDetail: devbox } = useDevboxStore()
   const { message: toast } = useMessage()
   const { Loading, setIsLoading } = useLoading()
+  const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
+
+  const { env } = useEnvStore()
+  const { devboxDetail: devbox, devboxVersionList, setDevboxVersionList } = useDevboxStore()
+
   const [initialized, setInitialized] = useState(false)
   const [onOpenRelease, setOnOpenRelease] = useState(false)
-  const { devboxVersionList, setDevboxVersionList } = useDevboxStore()
-  const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
 
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -53,7 +58,7 @@ const Version = () => {
           port: network.port,
           protocol: network.protocol,
           openPublicDomain: network.openPublicDomain,
-          domain: INGRESS_DOMAIN
+          domain: env.ingressDomain
         }
       })
 
@@ -61,7 +66,7 @@ const Version = () => {
         appName: `${name}-release`,
         cpu: cpu,
         memory: memory,
-        imageName: `${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}:${version.tag}`,
+        imageName: `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`,
         networks:
           newNetworks.length > 0
             ? newNetworks
@@ -70,7 +75,7 @@ const Version = () => {
                   port: 80,
                   protocol: 'http',
                   openPublicDomain: false,
-                  domain: INGRESS_DOMAIN
+                  domain: env.ingressDomain
                 }
               ],
         runCMD: releaseCommand,
@@ -89,7 +94,7 @@ const Version = () => {
         }
       })
     },
-    [devbox]
+    [devbox, env.ingressDomain, env.namespace, env.registryAddr]
   )
 
   const handleDelDevboxVersion = useCallback(

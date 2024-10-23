@@ -5,11 +5,13 @@ import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/reac
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
+import PodLineChart from '@/components/PodLineChart'
+
 import { useCopyData } from '@/utils/tools'
 import { NetworkType } from '@/types/devbox'
+
+import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
-import PodLineChart from '@/components/PodLineChart'
-import { NAMESPACE, INGRESS_DOMAIN } from '@/stores/static'
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
 
@@ -17,6 +19,7 @@ const MainBody = () => {
   const t = useTranslations()
   const { copyData } = useCopyData()
   const { devboxDetail } = useDevboxStore()
+  const { env } = useEnvStore()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const networkColumn: {
@@ -47,8 +50,10 @@ const MainBody = () => {
               ml={4}
               color={'grayModern.600'}
               onClick={() =>
-                copyData(`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`)
-              }>{`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`}</Text>
+                copyData(
+                  `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`
+                )
+              }>{`http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`}</Text>
           </Tooltip>
         )
       }

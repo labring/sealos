@@ -9,30 +9,39 @@ import Version from './components/Version'
 import MainBody from './components/MainBody'
 import BasicInfo from './components/BasicInfo'
 import { useLoading } from '@/hooks/useLoading'
+
+import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name
   const { Loading } = useLoading()
-  const [initialized, setInitialized] = useState(false)
-  const { devboxDetail, setDevboxDetail, loadDetailMonitorData } = useDevboxStore()
+
+  const { env } = useEnvStore()
   const { screenWidth } = useGlobalStore()
+  const { devboxDetail, setDevboxDetail, loadDetailMonitorData } = useDevboxStore()
+
   const [showSlider, setShowSlider] = useState(false)
+  const [initialized, setInitialized] = useState(false)
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth])
 
-  const { refetch } = useQuery(['initDevboxDetail'], () => setDevboxDetail(devboxName), {
-    refetchOnMount: true,
-    refetchInterval: 3000,
-    onSettled() {
-      setInitialized(true)
-    },
-    onSuccess: (data) => {
-      if (data) {
-        loadDetailMonitorData(data.name)
+  const { refetch } = useQuery(
+    ['initDevboxDetail'],
+    () => setDevboxDetail(devboxName, env.sealosDomain),
+    {
+      refetchOnMount: true,
+      refetchInterval: 3000,
+      onSettled() {
+        setInitialized(true)
+      },
+      onSuccess: (data) => {
+        if (data) {
+          loadDetailMonitorData(data.name)
+        }
       }
     }
-  })
+  )
 
   useQuery(
     ['loadDetailMonitorData', devboxName, devboxDetail?.isPause],

@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
+import { SealosCoin } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
 
-import { SOURCE_PRICE } from '@/stores/static'
-import { SealosCoin } from '@sealos/ui'
+import { usePriceStore } from '@/stores/price'
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -22,6 +22,9 @@ const PriceBox = ({
 }) => {
   const theme = useTheme()
   const t = useTranslations()
+
+  const { sourcePrice } = usePriceStore()
+
   const priceList: {
     label: string
     color: string
@@ -33,9 +36,9 @@ const PriceBox = ({
     let tp = 0
 
     components.forEach(({ cpu, memory, nodeports }) => {
-      cp = (SOURCE_PRICE.cpu * cpu * 24) / 1000
-      mp = (SOURCE_PRICE.memory * memory * 24) / 1024
-      pp = SOURCE_PRICE.nodeports * nodeports * 24
+      cp = (sourcePrice.cpu * cpu * 24) / 1000
+      mp = (sourcePrice.memory * memory * 24) / 1024
+      pp = sourcePrice.nodeports * nodeports * 24
       tp = cp + mp + pp
     })
 
@@ -53,7 +56,7 @@ const PriceBox = ({
       },
       { label: 'total_price', color: '#485058', value: tp.toFixed(2) }
     ]
-  }, [components])
+  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports])
 
   return (
     <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>

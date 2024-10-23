@@ -4,18 +4,25 @@ import React, { useCallback, useState } from 'react'
 import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
-import { useDevboxStore } from '@/stores/devbox'
+
 import { DevboxDetailType } from '@/types/devbox'
-import { getRuntimeVersionItem, NAMESPACE, REGISTRY_ADDR, SEALOS_DOMAIN } from '@/stores/static'
+
+import { useEnvStore } from '@/stores/env'
+import { useDevboxStore } from '@/stores/devbox'
+import { useRuntimeStore } from '@/stores/runtime'
 
 const BasicInfo = () => {
-  const { devboxDetail } = useDevboxStore()
-  const [loading, setLoading] = useState(false)
   const t = useTranslations()
   const { message: toast } = useMessage()
 
+  const { env } = useEnvStore()
+  const { devboxDetail } = useDevboxStore()
+  const { getRuntimeDetailLabel } = useRuntimeStore()
+
+  const [loading, setLoading] = useState(false)
+
   const handleCopySSHCommand = useCallback(() => {
-    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${SEALOS_DOMAIN} -p ${devboxDetail.sshPort}`
+    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail.sshPort}`
     navigator.clipboard.writeText(sshCommand).then(() => {
       toast({
         title: t('copy_success'),
@@ -24,7 +31,7 @@ const BasicInfo = () => {
         isClosable: true
       })
     })
-  }, [devboxDetail, toast, t])
+  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail.sshPort, env.sealosDomain, toast, t])
 
   const handleDownloadConfig = useCallback(
     async (config: DevboxDetailType['sshConfig']) => {
@@ -80,7 +87,7 @@ const BasicInfo = () => {
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text
               fontSize={'12px'}
-              w={'full'}>{`${REGISTRY_ADDR}/${NAMESPACE}/${devboxDetail?.name}`}</Text>
+              w={'full'}>{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -97,7 +104,7 @@ const BasicInfo = () => {
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text fontSize={'12px'}>
-              {getRuntimeVersionItem(devboxDetail?.runtimeType, devboxDetail?.runtimeVersion)}
+              {getRuntimeDetailLabel(devboxDetail?.runtimeType, devboxDetail?.runtimeVersion)}
             </Text>
           </Flex>
         </Flex>
@@ -164,7 +171,7 @@ const BasicInfo = () => {
                 _hover={{ color: 'blue.500' }}
                 onClick={handleCopySSHCommand}
                 w={'full'}>
-                {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${SEALOS_DOMAIN} -p ${devboxDetail.sshPort}`}
+                {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail.sshPort}`}
               </Text>
             </Tooltip>
           </Flex>

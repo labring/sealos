@@ -23,25 +23,18 @@ import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
 import { MySelect, MySlider, Tabs, useMessage } from '@sealos/ui'
 
-import {
-  INSTALL_ACCOUNT,
-  frameworkTypeList,
-  frameworkVersionMap,
-  languageTypeList,
-  languageVersionMap,
-  osTypeList,
-  osVersionMap,
-  getRuntimeVersionList,
-  INGRESS_DOMAIN
-} from '@/stores/static'
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
+
+import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import { useRuntimeStore } from '@/stores/runtime'
+
 import { ProtocolList } from '@/constants/devbox'
 import type { DevboxEditType } from '@/types/devbox'
-import { getValueDefault, obj2Query } from '@/utils/tools'
+import { obj2Query } from '@/utils/tools'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
@@ -81,6 +74,18 @@ const Form = ({
     control,
     name: 'networks'
   })
+
+  const {
+    languageVersionMap,
+    frameworkVersionMap,
+    osVersionMap,
+    languageTypeList,
+    frameworkTypeList,
+    osTypeList,
+    getRuntimeVersionList,
+    getRuntimeVersionDefault
+  } = useRuntimeStore()
+  const { env } = useEnvStore()
 
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
   const navList: { id: string; label: string; icon: string }[] = [
@@ -237,19 +242,17 @@ const Form = ({
           <Box mt={3} overflow={'hidden'}>
             <QuotaBox />
           </Box>
-          {INSTALL_ACCOUNT && (
-            <Box mt={3} overflow={'hidden'}>
-              <PriceBox
-                components={[
-                  {
-                    cpu: getValues('cpu'),
-                    memory: getValues('memory'),
-                    nodeports: devboxList.length
-                  }
-                ]}
-              />
-            </Box>
-          )}
+          <Box mt={3} overflow={'hidden'}>
+            <PriceBox
+              components={[
+                {
+                  cpu: getValues('cpu'),
+                  memory: getValues('memory'),
+                  nodeports: devboxList.length
+                }
+              ]}
+            />
+          </Box>
         </Box>
         {/* right content */}
         <Box
@@ -365,7 +368,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
+                                    publicDomain: `${nanoid()}.${env.ingressDomain}`,
                                     customDomain: ''
                                   })
                                 )
@@ -443,7 +446,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
+                                    publicDomain: `${nanoid()}.${env.ingressDomain}`,
                                     customDomain: ''
                                   })
                                 )
@@ -521,7 +524,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
+                                    publicDomain: `${nanoid()}.${env.ingressDomain}`,
                                     customDomain: ''
                                   })
                                 )
@@ -560,7 +563,8 @@ const Form = ({
                     width={'200px'}
                     placeholder={`${t('runtime')} ${t('version')}`}
                     defaultValue={
-                      getValues('runtimeVersion') || getValueDefault(getValues('runtimeType'))
+                      getValues('runtimeVersion') ||
+                      getRuntimeVersionDefault(getValues('runtimeType'))
                     }
                     value={getValues('runtimeVersion')}
                     list={getRuntimeVersionList(getValues('runtimeType'))}
@@ -584,7 +588,7 @@ const Form = ({
                             port: port,
                             protocol: 'HTTP',
                             openPublicDomain: true,
-                            publicDomain: `${nanoid()}.${INGRESS_DOMAIN}`,
+                            publicDomain: `${nanoid()}.${env.ingressDomain}`,
                             customDomain: ''
                           })
                         )
@@ -727,7 +731,7 @@ const Form = ({
                             networkName: network.networkName || `${devboxName}-${nanoid()}`,
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
-                            publicDomain: network.publicDomain || `${nanoid()}.${INGRESS_DOMAIN}`
+                            publicDomain: network.publicDomain || `${nanoid()}.${env.ingressDomain}`
                           })
                         }}
                       />

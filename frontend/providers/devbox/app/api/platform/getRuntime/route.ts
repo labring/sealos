@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 
-import { runtimeNamespace } from '@/stores/static'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -19,6 +18,8 @@ export async function GET(req: NextRequest) {
     const osVersionMap: VersionMapType = {}
     const runtimeNamespaceMap: runtimeNamespaceMapType = {}
 
+    const { ROOT_RUNTIME_NAMESPACE } = process.env
+
     const headerList = req.headers
 
     const { k8sCustomObjects } = await getK8s({
@@ -28,13 +29,13 @@ export async function GET(req: NextRequest) {
     const { body: runtimeClasses } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      runtimeNamespace,
+      ROOT_RUNTIME_NAMESPACE || 'devbox-system',
       'runtimeclasses'
     )) as { body: { items: KBRuntimeClassType[] } }
     const { body: runtimes } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      runtimeNamespace,
+      ROOT_RUNTIME_NAMESPACE || 'devbox-system',
       'runtimes'
     )) as { body: { items: KBRuntimeType[] } }
 

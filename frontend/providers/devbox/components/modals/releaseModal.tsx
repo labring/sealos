@@ -16,9 +16,9 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
+import { useEnvStore } from '@/stores/env'
 import { useConfirm } from '@/hooks/useConfirm'
 import { DevboxListItemType } from '@/types/devbox'
-import { NAMESPACE, REGISTRY_ADDR } from '@/stores/static'
 import { pauseDevbox, releaseDevbox, restartDevbox } from '@/api/devbox'
 
 const ReleaseModal = ({
@@ -31,11 +31,14 @@ const ReleaseModal = ({
   onSuccess: () => void
 }) => {
   const t = useTranslations()
-  const [tag, setTag] = useState('')
   const { message: toast } = useMessage()
+
+  const { env } = useEnvStore()
+
+  const [tag, setTag] = useState('')
   const [loading, setLoading] = useState(false)
-  const [releaseDes, setReleaseDes] = useState('')
   const [tagError, setTagError] = useState(false)
+  const [releaseDes, setReleaseDes] = useState('')
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'release_confirm_info',
@@ -88,7 +91,7 @@ const ReleaseModal = ({
       }
       setLoading(false)
     },
-    [devbox.status.value, devbox.name, toast, t, tag, releaseDes, onSuccess, onClose]
+    [devbox.status.value, devbox.name, devbox.id, tag, releaseDes, toast, t, onSuccess, onClose]
   )
 
   return (
@@ -107,7 +110,10 @@ const ReleaseModal = ({
               <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
                 {t('image_name')}
               </Box>
-              <Input defaultValue={`${REGISTRY_ADDR}/${NAMESPACE}/${devbox.name}`} isReadOnly />
+              <Input
+                defaultValue={`${env.registryAddr}/${env.namespace}/${devbox.name}`}
+                isReadOnly
+              />
             </Flex>
             <Flex alignItems={'start'} gap={'5px'}>
               <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>

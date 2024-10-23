@@ -5,12 +5,6 @@ import { jsonRes } from '@/services/backend/response'
 
 export const dynamic = 'force-dynamic'
 
-export type Response = {
-  cpu: number
-  memory: number
-  nodeports: number
-}
-
 type ResourcePriceType = {
   data: {
     properties: {

@@ -12,14 +12,6 @@ import {
   MenuItem
 } from '@chakra-ui/react'
 
-import { useRouter } from '@/i18n'
-import MyIcon from '@/components/Icon'
-import { useDevboxStore } from '@/stores/devbox'
-import { IDEType, useGlobalStore } from '@/stores/global'
-import { DevboxDetailType } from '@/types/devbox'
-import DelModal from '@/components/modals/DelModal'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import {
   getSSHConnectionInfo,
   getSSHRuntimeInfo,
@@ -27,6 +19,16 @@ import {
   restartDevbox,
   startDevbox
 } from '@/api/devbox'
+import { useRouter } from '@/i18n'
+import { useEnvStore } from '@/stores/env'
+import { useDevboxStore } from '@/stores/devbox'
+import { IDEType, useGlobalStore } from '@/stores/global'
+
+import { DevboxDetailType } from '@/types/devbox'
+
+import MyIcon from '@/components/Icon'
+import DelModal from '@/components/modals/DelModal'
+import DevboxStatusTag from '@/components/DevboxStatusTag'
 
 const Header = ({
   refetchDevboxDetail,
@@ -40,6 +42,8 @@ const Header = ({
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
+
+  const { env } = useEnvStore()
   const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
   const { devboxDetail } = useDevboxStore()
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
@@ -101,13 +105,13 @@ const Header = ({
         }
 
         const fullUri = `${editorUri}labring.devbox-aio?sshDomain=${encodeURIComponent(
-          `${userName}@${SEALOS_DOMAIN}`
+          `${userName}@${env.sealosDomain}`
         )}&sshPort=${encodeURIComponent(
           devbox.sshPort as number
         )}&base64PrivateKey=${encodeURIComponent(
           base64PrivateKey
         )}&sshHostLabel=${encodeURIComponent(
-          `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
+          `${env.sealosDomain}/${env.namespace}/${devbox.name}`
         )}&workingDir=${encodeURIComponent(workingDir)}`
 
         window.location.href = fullUri
@@ -115,7 +119,7 @@ const Header = ({
         console.error(error, '==')
       }
     },
-    []
+    [env.namespace, env.sealosDomain]
   )
 
   const handlePauseDevbox = useCallback(

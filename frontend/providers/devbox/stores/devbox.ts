@@ -14,7 +14,6 @@ import {
   getMyDevboxList,
   getSSHConnectionInfo
 } from '@/api/devbox'
-import { SEALOS_DOMAIN } from './static'
 
 type State = {
   devboxList: DevboxListItemType[]
@@ -25,7 +24,7 @@ type State = {
     devboxUid: string
   ) => Promise<DevboxVersionListItemType[]>
   devboxDetail: DevboxDetailType
-  setDevboxDetail: (devboxName: string) => Promise<DevboxDetailType>
+  setDevboxDetail: (devboxName: string, sealosDomain: string) => Promise<DevboxDetailType>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
 }
 
@@ -116,7 +115,7 @@ export const useDevboxStore = create<State>()(
         return res
       },
       devboxDetail: {} as DevboxDetailType,
-      setDevboxDetail: async (devboxName: string) => {
+      setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
         const res = await getMyDevboxList()
 
         const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
@@ -142,7 +141,7 @@ export const useDevboxStore = create<State>()(
         const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
         const sshConfig = {
           sshUser: userName,
-          sshDomain: SEALOS_DOMAIN,
+          sshDomain: sealosDomain,
           sshPort: detail.sshPort,
           sshPrivateKey
         }

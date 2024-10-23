@@ -1,6 +1,5 @@
 import yaml from 'js-yaml'
 
-import { INGRESS_SECRET, runtimeNamespaceMap as defaultRuntimeNamespaceMap } from '@/stores/static'
 import { str2Num } from './tools'
 import { getUserNamespace } from './user'
 import { DevboxEditType, runtimeNamespaceMapType } from '@/types/devbox'
@@ -8,7 +7,7 @@ import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (
   data: DevboxEditType,
-  runtimeNamespaceMap: runtimeNamespaceMapType = defaultRuntimeNamespaceMap,
+  runtimeNamespaceMap: runtimeNamespaceMapType,
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
@@ -119,7 +118,7 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json)
 }
 
-export const json2Ingress = (data: DevboxEditType, ingressSecret: string = INGRESS_SECRET) => {
+export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
   // different protocol annotations
   const map = {
     HTTP: {

@@ -49,6 +49,8 @@ spec:
               value: http://launchpad-monitor.sealos.svc.cluster.local:8428
             - name: SQUASH_ENABLE
               value: 'true'
+            - name: ROOT_RUNTIME_NAMESPACE
+              value: devbox-system
             - name: INGRESS_DOMAIN
               value: sealosusw.site
           securityContext:
