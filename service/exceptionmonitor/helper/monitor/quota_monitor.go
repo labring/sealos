@@ -39,15 +39,17 @@ func checkQuota() error {
 		if len(quotaList.Items) > 1 {
 			continue
 		}
-		nsQuota := notification.NameSpaceQuota{}
+		nsQuota := notification.NameSpaceQuota{
+			NameSpace: ns.Name,
+		}
 		notificationInfo := notification.Info{
 			ExceptionType:    "Quota",
 			PerformanceType:  "Quota",
 			NotificationType: "exception",
 		}
-		nsQuota.NameSpace = ns.Name
 		send := processQuota(quotaList, nsQuota)
 		if send {
+			fmt.Println(nsQuota)
 			message := notification.GetQuotaMessage(nsQuota)
 			if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLOther"]); err != nil {
 				log.Printf("Error sending exception notification:%v", err)
