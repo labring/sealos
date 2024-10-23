@@ -64,10 +64,12 @@ var (
 	DiskMonitor                       bool
 	CPUMemMonitor                     bool
 	BackupMonitor                     bool
+	QuotaMonitor                      bool
 	DatabaseDiskMonitorThreshold      float64
 	DatabaseExceptionMonitorThreshold float64
 	DatabaseCPUMonitorThreshold       float64
 	DatabaseMemMonitorThreshold       float64
+	QuotaThreshold                    float64
 	APPID                             string
 	APPSECRET                         string
 	DatabaseStatusMessageIDMap        = make(map[string]string)
@@ -75,6 +77,7 @@ var (
 	DatabaseCPUMessageIDMap           = make(map[string]string)
 	DatabaseMemMessageIDMap           = make(map[string]string)
 	DatabaseBackupMessageIDMap        = make(map[string]string)
+	QuotaMessageIDMap                 = make(map[string]string)
 )
 
 func GetENV() error {

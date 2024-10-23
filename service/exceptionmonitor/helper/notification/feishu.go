@@ -35,6 +35,24 @@ type Info struct {
 	ExceptionType       string
 }
 
+type NameSpaceQuota struct {
+	NameSpace             string
+	CPULimit              string
+	MemLimit              string
+	GPULimit              string
+	EphemeralStorageLimit string
+	ObjectStorageLimit    string
+	NodePortLimit         string
+	StorageLimit          string
+	CPUUsage              string
+	MemUsage              string
+	GPUUsage              string
+	EphemeralStorageUsage string
+	ObjectStorageUsage    string
+	NodePortUsage         string
+	StorageUsage          string
+}
+
 func InitFeishuClient() {
 	feiShuClient = lark.NewClient(api.APPID, api.APPSECRET)
 }
@@ -201,6 +219,8 @@ func getMessageIDMap(performanceType string) map[string]string {
 		return api.DatabaseCPUMessageIDMap
 	case "Backup":
 		return api.DatabaseBackupMessageIDMap
+	case "Quota":
+		return api.QuotaMessageIDMap
 	default:
 		return api.DatabaseStatusMessageIDMap
 	}
@@ -248,7 +268,7 @@ func createFeishuNotification(notification Info, message, feishuWebHook string, 
 
 	respStr := larkcore.Prettify(resp)
 	messageID := extractAndPrintMessageID(respStr)
-	if notification.DatabaseClusterName == "Backup" {
+	if notification.PerformanceType == "Backup" && notification.PerformanceType == "Quota" {
 		return nil
 	}
 	if messageID == "" {
@@ -297,7 +317,75 @@ func createCard(headerTemplate, headerTitle string, elements []map[string]string
 	return card
 }
 
-func createElements(namespace, backupName, status, startTime, reason string, includeReason bool) []map[string]string {
+func GetQuotaMessage(nsQuota NameSpaceQuota) string {
+	var card map[string]interface{}
+	elements := createQuotaElements(nsQuota)
+	card = createCard("red", "Quota阀值通知", elements)
+
+	databaseMessage, err := marshalCard(card)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return databaseMessage
+}
+
+func createQuotaElements(nsQuota NameSpaceQuota) []map[string]string {
+	elements := []map[string]string{
+		{"label": "集群环境", "value": api.ClusterName},
+		{"label": "命名空间", "value": nsQuota.NameSpace},
+	}
+	addNonEmptyFieldsToElements(nsQuota, elements)
+	return elements
+}
+
+func addNonEmptyFieldsToElements(nsQuota NameSpaceQuota, elements []map[string]string) {
+	fields := map[string]string{
+		"CPULimit":              "CPU总量",
+		"CPUUsage":              "CPU使用率",
+		"MemLimit":              "内存总量",
+		"MemUsage":              "内存使用率",
+		"GPULimit":              "GPU总量",
+		"GPUUsage":              "GPU使用率",
+		"EphemeralStorageLimit": "临时存储总量",
+		"EphemeralStorageUsage": "临时存储使用率",
+		"ObjectStorageLimit":    "对象存储总量",
+		"ObjectStorageUsage":    "对象存储使用率",
+		"NodePortLimit":         "节点端口总量",
+		"NodePortUsage":         "节点端口使用率",
+		"StorageLimit":          "存储总量",
+		"StorageUsage":          "存储使用率",
+	}
+
+	quotaValues := map[string]string{
+		"CPULimit":              nsQuota.CPULimit,
+		"CPUUsage":              nsQuota.CPUUsage,
+		"MemLimit":              nsQuota.MemLimit,
+		"MemUsage":              nsQuota.MemUsage,
+		"GPULimit":              nsQuota.GPULimit,
+		"GPUUsage":              nsQuota.GPUUsage,
+		"EphemeralStorageLimit": nsQuota.EphemeralStorageLimit,
+		"EphemeralStorageUsage": nsQuota.EphemeralStorageUsage,
+		"ObjectStorageLimit":    nsQuota.ObjectStorageLimit,
+		"ObjectStorageUsage":    nsQuota.ObjectStorageUsage,
+		"NodePortLimit":         nsQuota.NodePortLimit,
+		"NodePortUsage":         nsQuota.NodePortUsage,
+		"StorageLimit":          nsQuota.StorageLimit,
+		"StorageUsage":          nsQuota.StorageUsage,
+	}
+
+	for field, label := range fields {
+		value := quotaValues[field]
+		if value != "" {
+			elements = append(elements, map[string]string{
+				"label": label,
+				"value": value,
+			})
+		}
+	}
+}
+
+func createBackupElements(namespace, backupName, status, startTime, reason string, includeReason bool) []map[string]string {
 	elements := []map[string]string{
 		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": namespace},
@@ -322,10 +410,10 @@ func marshalCard(card map[string]interface{}) (string, error) {
 func GetBackupMessage(notificationType, namespace, backupName, status, startTime, reason string) string {
 	var card map[string]interface{}
 	if notificationType == ExceptionType {
-		elements := createElements(namespace, backupName, status, startTime, reason, true)
+		elements := createBackupElements(namespace, backupName, status, startTime, reason, true)
 		card = createCard("red", "备份异常通知", elements)
 	} else {
-		elements := createElements(namespace, backupName, status, startTime, "", false)
+		elements := createBackupElements(namespace, backupName, status, startTime, "", false)
 		card = createCard("blue", "备份恢复通知", elements)
 	}
 
