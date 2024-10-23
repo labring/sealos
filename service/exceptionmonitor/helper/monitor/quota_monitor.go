@@ -49,6 +49,10 @@ func checkQuota() error {
 		}
 		send := processQuota(quotaList, nsQuota)
 		if send {
+			fmt.Println(222)
+			fmt.Println(nsQuota)
+		}
+		if send {
 			message := notification.GetQuotaMessage(nsQuota)
 			if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLOther"]); err != nil {
 				log.Printf("Error sending exception notification:%v", err)
@@ -106,6 +110,10 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpac
 				nsQuota.StorageUsage = fmt.Sprintf("%.2f%%", utilization)
 			}
 		}
+	}
+	if send {
+		fmt.Println(111)
+		fmt.Println(nsQuota)
 	}
 	return send
 }
