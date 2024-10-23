@@ -26,6 +26,7 @@ func QuotaMonitor() {
 func checkQuota() error {
 	namespaceList, _ := api.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 
+	fmt.Println(len(namespaceList.Items))
 	for _, ns := range namespaceList.Items {
 		if !strings.Contains(ns.Name, "ns-") {
 			continue
