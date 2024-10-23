@@ -341,6 +341,7 @@ func createQuotaElements(nsQuota NameSpaceQuota) []map[string]string {
 }
 
 func addNonEmptyFieldsToElements(nsQuota NameSpaceQuota, elements []map[string]string) {
+	fmt.Println(nsQuota)
 	fields := map[string]string{
 		"CPULimit":              "CPU总量",
 		"CPUUsage":              "CPU使用率",
