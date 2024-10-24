@@ -13,7 +13,7 @@ export type ExportAppPayload = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const exportAppUrl = process.env.EXPORT_APP_URL || '';
+    const SERVER_BASE_URL = process.env.SERVER_BASE_URL || '';
 
     await getK8s({
       kubeconfig: await authSession(req.headers)
@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const data = req.body as ExportAppPayload;
 
     const temp = await fetch(
-      `${exportAppUrl}?namespace=${data.namespace}&&appname=${data.appname}`,
+      `${SERVER_BASE_URL}/api/exportApp?namespace=${data.namespace}&appname=${data.appname}`,
       {
         method: 'POST',
         headers: {

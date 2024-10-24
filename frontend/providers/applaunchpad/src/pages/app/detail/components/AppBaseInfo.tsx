@@ -59,6 +59,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         name: 'Basic Information',
         iconName: 'formInfo',
         items: [
+          { label: 'node_info ', value: app.nodeName },
           { label: 'Creation Time', value: app.createTime },
           ...images,
           { label: 'Limit CPU', value: `${cpu / 1000} Core` },

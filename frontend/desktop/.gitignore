@@ -44,3 +44,5 @@ yalc.lock
 config.yaml
 .env
 #/prisma/region/generated/
+
+config.local.yaml
