@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/jaevor/go-nanoid"
@@ -32,9 +33,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/labring/sealos/controllers/pkg/utils/label"
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
@@ -63,6 +66,10 @@ const (
 	MemoryRequest = "16Mi"
 	CPULimit      = "0.3"
 	MemoryLimit   = "256Mi"
+)
+
+const (
+	SecretHeaderPrefix = "X-SEALOS-"
 )
 
 // TerminalReconciler reconciles a Terminal object
@@ -118,6 +125,13 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	if terminal.Status.ServiceName == "" {
 		terminal.Status.ServiceName = terminal.Name + "-svc" + rand.String(5)
+		if err := r.Status().Update(ctx, terminal); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if terminal.Status.SecretHeader == "" {
+		terminal.Status.SecretHeader = r.generateSecretHeader()
 		if err := r.Status().Update(ctx, terminal); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -262,6 +276,8 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 		{Name: "USER_TOKEN", Value: terminal.Spec.Token},
 		{Name: "NAMESPACE", Value: terminal.Namespace},
 		{Name: "USER_NAME", Value: terminal.Spec.User},
+		// Add secret header
+		{Name: "AUTH_HEADER", Value: terminal.Status.SecretHeader},
 	}
 
 	containers = []corev1.Container{
@@ -377,12 +393,18 @@ func (r *TerminalReconciler) getPort() string {
 	return ":" + r.CtrConfig.Global.CloudPort
 }
 
+func (r *TerminalReconciler) generateSecretHeader() string {
+	return SecretHeaderPrefix + strings.ToUpper(rand.String(5))
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
 	r.Config = mgr.GetConfig()
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&terminalv1.Terminal{}).
-		Owns(&appsv1.Deployment{}).Owns(&corev1.Service{}).Owns(&networkingv1.Ingress{}).
+		For(&terminalv1.Terminal{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&appsv1.Deployment{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
+		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&networkingv1.Ingress{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }

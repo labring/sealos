@@ -37,6 +37,15 @@ if ($flag = '02'){ return 403; }`
 func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
 	cors := fmt.Sprintf("https://%s,https://*.%s", r.CtrConfig.Global.CloudDomain+r.getPort(), r.CtrConfig.Global.CloudDomain+r.getPort())
 
+	secretHeader := terminal.Status.SecretHeader
+	configurationSnippet := safeConfigurationSnippet + `
+proxy_set_header Authorization "";
+proxy_set_header ` + secretHeader + ` "1";`
+
+	higressReqHeaderUpdate := `
+Authorization ""
+` + secretHeader + ` "1"`
+
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,
 		Namespace: terminal.Namespace,
@@ -50,7 +59,8 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 			"nginx.ingress.kubernetes.io/cors-allow-origin":      cors,
 			"nginx.ingress.kubernetes.io/cors-allow-methods":     "PUT, GET, POST, PATCH, OPTIONS",
 			"nginx.ingress.kubernetes.io/cors-allow-credentials": "false",
-			"nginx.ingress.kubernetes.io/configuration-snippet":  safeConfigurationSnippet,
+			"nginx.ingress.kubernetes.io/configuration-snippet":  configurationSnippet,
+			"higress.io/request-header-control-update":           higressReqHeaderUpdate,
 		},
 	}
 
