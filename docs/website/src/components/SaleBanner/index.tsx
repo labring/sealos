@@ -13,11 +13,8 @@ export default function SaleBanner() {
     setIsBannerVisible(false);
   };
 
-  const goDetailFeishu = () => {
-    window.open(
-      `https://fael3z0zfze.feishu.cn/wiki/SzKowEuQji5coRkm5o8cm8oJn3L?from=from_copylink`,
-      '_blank'
-    );
+  const goDetail = () => {
+    window.open(`https://mp.weixin.qq.com/s/jzOfviMgXD85r2zMQWskvA`, '_blank');
   };
 
   useEffect(() => {
@@ -36,8 +33,8 @@ export default function SaleBanner() {
   return (
     <>
       <div className="sealos-banner-box">
-        <Translate>🎉Sealos 6.18 福利大放送！充值优惠限时开启，多充多送还有精美周边！</Translate>
-        <div className="sealos-banner-btn" onClick={goDetailFeishu}>
+        <Translate>🎉 1024 程序员节福利 Sealos 免费送你云资源</Translate>
+        <div className="sealos-banner-btn" onClick={goDetail}>
           活动详情
           <DrawIcon />
         </div>
@@ -50,13 +47,13 @@ export default function SaleBanner() {
             <span className="txt">Sealos</span>
           </div>
           <div className="sealos-banner-body">
-            <div className="banner-title">🎉Sealos 6.18 福利大放送！</div>
-            <div className="banner-subtitle">充值优惠限时开启</div>
-            <div className="banner-subtitle">多充多送还有精美周边！</div>
+            <div className="banner-title">🎉 Sealos 免费送你云资源</div>
+            <div className="banner-subtitle">1024 充值优惠限时开启</div>
+            <div className="banner-subtitle">体验Devbox，即送20余额</div>
             <div
               className="btn"
               onClick={() => {
-                window.open(`${cloudUrl}/?openapp=system-costcenter?openRecharge=true`, '_blank');
+                window.open(`${cloudUrl}/?openapp=system-devbox?openRecharge=true`, '_blank');
                 closeBanner();
               }}
             >
