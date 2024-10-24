@@ -133,7 +133,7 @@ export type TNotification = {
   desktopPopup: boolean;
   i18n: {
     [key in string]: {
-      from: string;
+      from: string; // Debt-System Active-System
       message: string;
       title: string;
     };
