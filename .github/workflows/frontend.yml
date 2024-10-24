@@ -50,26 +50,49 @@ env:
   DEFAULT_OWNER: 'labring'
 
 jobs:
+  determine-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call" ]]; then
+            MODULES=$(find frontend -maxdepth 2 \( -name desktop -o -path '*/providers/*' \) -type d | sed 's|frontend/||' | jq -R -s -c 'split("\n")[:-1]')
+          elif echo '${{ steps.changed-files.outputs.all_modified_files }}' | grep -q '^frontend/package/'; then
+            MODULES=$(find frontend -maxdepth 2 \( -name desktop -o -path '*/providers/*' \) -type d | sed 's|frontend/||' | jq -R -s -c 'split("\n")[:-1]')
+          else
+            echo 'changed files'
+            echo '${{ steps.changed-files.outputs.all_modified_files }}'
+            MODULES=$(echo '${{ steps.changed-files.outputs.all_modified_files }}' | tr ' ' '\n' | grep -E '^frontend/(desktop|providers/[^/]+)/' | sed 's|frontend/||' | awk -F'/' '{if($1=="desktop") print $1; else if($1=="providers") print $1"/"$2}' | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          fi
+          echo "matrix=${MODULES}"
+          echo "matrix=${MODULES}" >> $GITHUB_OUTPUT
+
+          if [[ "${MODULES}" == "[]" ]]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
   image-build:
+    needs:
+      - determine-changes
+    if: needs.determine-changes.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module:
-          [
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/adminer,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
+        module: ${{ fromJson(needs.determine-changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -150,25 +173,11 @@ jobs:
     needs:
       - image-build
       - save-sealos
+      - determine-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module:
-          [
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/adminer,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
+        module: ${{ fromJson(needs.determine-changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
