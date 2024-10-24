@@ -117,6 +117,8 @@ func GetENV() error {
 		"FeishuWebhookURLImportant",
 		//Backup
 		"FeishuWebhookURLBackup",
+		//Quota
+		"FeishuWebhookURLQuota",
 	}, FeishuWebhookURLMap, &missingEnvVars)
 
 	// Get ClusterRegionMap

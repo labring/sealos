@@ -19,7 +19,7 @@ func QuotaMonitor() {
 		if err := checkQuota(); err != nil {
 			log.Printf("Failed to check qouta: %v", err)
 		}
-		time.Sleep(1 * time.Hour)
+		time.Sleep(3 * time.Hour)
 	}
 }
 
@@ -36,7 +36,7 @@ func checkQuota() error {
 			log.Printf("Failed to check quota: %v", err)
 		}
 		//user debt
-		if len(quotaList.Items) > 1 {
+		if len(quotaList.Items) != 1 || quotaList.Items[0].Name != "quota-"+ns.Name {
 			continue
 		}
 		nsQuota := notification.NameSpaceQuota{
@@ -50,7 +50,7 @@ func checkQuota() error {
 		send := processQuota(quotaList, &nsQuota)
 		if send {
 			message := notification.GetQuotaMessage(&nsQuota)
-			if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLOther"]); err != nil {
+			if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLQuota"]); err != nil {
 				log.Printf("Error sending exception notification:%v", err)
 			}
 		}
