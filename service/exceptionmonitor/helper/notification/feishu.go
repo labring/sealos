@@ -317,7 +317,7 @@ func createCard(headerTemplate, headerTitle string, elements []map[string]string
 	return card
 }
 
-func GetQuotaMessage(nsQuota NameSpaceQuota) string {
+func GetQuotaMessage(nsQuota *NameSpaceQuota) string {
 	var card map[string]interface{}
 	elements := createQuotaElements(nsQuota)
 	card = createCard("red", "Quota阀值通知", elements)
@@ -330,7 +330,7 @@ func GetQuotaMessage(nsQuota NameSpaceQuota) string {
 	return databaseMessage
 }
 
-func createQuotaElements(nsQuota NameSpaceQuota) []map[string]string {
+func createQuotaElements(nsQuota *NameSpaceQuota) []map[string]string {
 	elements := []map[string]string{
 		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": nsQuota.NameSpace},
@@ -339,7 +339,7 @@ func createQuotaElements(nsQuota NameSpaceQuota) []map[string]string {
 	return elements
 }
 
-func addNonEmptyFieldsToElements(nsQuota NameSpaceQuota, elements []map[string]string) {
+func addNonEmptyFieldsToElements(nsQuota *NameSpaceQuota, elements []map[string]string) {
 	fields := map[string]string{
 		"CPULimit":              "CPU总量",
 		"CPUUsage":              "CPU使用率",
