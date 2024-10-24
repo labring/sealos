@@ -322,6 +322,8 @@ func GetQuotaMessage(nsQuota *NameSpaceQuota) string {
 	elements := createQuotaElements(nsQuota)
 	card = createCard("red", "Quota阀值通知", elements)
 
+	fmt.Println(111)
+	fmt.Println(nsQuota)
 	databaseMessage, err := marshalCard(card)
 	if err != nil {
 		fmt.Println(err)
@@ -335,6 +337,8 @@ func createQuotaElements(nsQuota *NameSpaceQuota) []map[string]string {
 		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": nsQuota.NameSpace},
 	}
+	fmt.Println(222)
+	fmt.Println(nsQuota)
 	addNonEmptyFieldsToElements(nsQuota, elements)
 	return elements
 }
