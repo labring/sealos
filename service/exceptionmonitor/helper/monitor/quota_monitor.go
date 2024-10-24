@@ -47,7 +47,7 @@ func checkQuota() error {
 			PerformanceType:  "Quota",
 			NotificationType: "exception",
 		}
-		send := processQuota(quotaList, nsQuota)
+		send := processQuota(quotaList, &nsQuota)
 		if send {
 			fmt.Println(222)
 			fmt.Println(nsQuota)
@@ -62,7 +62,7 @@ func checkQuota() error {
 	return nil
 }
 
-func processQuota(quotaList *v1.ResourceQuotaList, nsQuota notification.NameSpaceQuota) bool {
+func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *notification.NameSpaceQuota) bool {
 	send := false
 	for resourceName, hardQuantity := range quotaList.Items[0].Status.Hard {
 		usedQuantity, exists := quotaList.Items[0].Status.Used[resourceName]
