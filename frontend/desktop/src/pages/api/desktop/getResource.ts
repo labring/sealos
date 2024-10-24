@@ -27,14 +27,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     for (const pod of result.body.items) {
       if (pod.status?.phase === 'Succeeded') continue;
-      totalPodCount++;
-
-      if (pod.status?.phase === 'Running') {
-        runningPodCount++;
-      }
       if (!pod?.spec) continue;
 
-      for (const container of pod.spec.containers) {
+      totalPodCount++;
+
+      if (pod.status?.phase !== 'Running') continue;
+
+      runningPodCount++;
+
+      for (const container of pod?.spec.containers) {
         if (!container?.resources) continue;
         const limits = container?.resources.limits as {
           cpu: string;

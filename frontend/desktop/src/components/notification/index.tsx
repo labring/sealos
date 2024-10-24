@@ -3,7 +3,7 @@ import request from '@/services/request';
 import useAppStore from '@/stores/app';
 import { formatTime } from '@/utils/tools';
 import { Box, Button, Flex, Text, UseDisclosureReturn } from '@chakra-ui/react';
-import { ClearOutlineIcon, CloseIcon, WarnIcon, useMessage } from '@sealos/ui';
+import { ClearOutlineIcon, CloseIcon, NotificationIcon, WarnIcon, useMessage } from '@sealos/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { produce } from 'immer';
@@ -142,6 +142,17 @@ export default function Notification(props: NotificationProps) {
       refetch();
     }
   }, [i18n.language, refetch]);
+
+  const getNotificationIcon = (from: string | undefined) => {
+    switch (from) {
+      case 'Debt-System':
+        return <WarnIcon />;
+      case 'Active-System':
+        return '🎉';
+      default:
+        return <NotificationIcon color={'brightBlue.300'} />;
+    }
+  };
 
   return disclosure.isOpen ? (
     <>
@@ -316,7 +327,7 @@ export default function Notification(props: NotificationProps) {
           color={'white'}
         >
           <Flex alignItems={'center'}>
-            <WarnIcon />
+            {getNotificationIcon(MessageConfig.popupMessage?.i18n['en']?.from)}
             <Text fontSize={'16px'} fontWeight={600} ml="10px">
               {MessageConfig.popupMessage?.i18n[i18n.language]?.title}
             </Text>
