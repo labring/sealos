@@ -32,6 +32,12 @@ const (
 	GetUserRealNameInfo           = "/real-name-info"
 )
 
+const (
+	AdminGroup                   = "/admin/v1alpha1"
+	AdminGetAccountWithWorkspace = "/account-with-workspace"
+	AdminChargeBilling           = "/charge-billing"
+)
+
 // env
 const (
 	ConfigPath         = "/config/config.json"

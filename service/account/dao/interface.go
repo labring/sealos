@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	"gorm.io/gorm"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -34,6 +36,7 @@ type Interface interface {
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
+	ChargeBilling(req *helper.AdminChargeBillingReq) error
 	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
 	GetBasicCostDistribution(req helper.GetCostAppListReq) (map[string]int64, error)
@@ -257,6 +260,15 @@ func (m *MongoDB) GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap
 		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
 	}
 	return costsMap, nil
+}
+
+func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
+	billings := make([]interface{}, len(billing))
+	for i, b := range billing {
+		billings[i] = b
+	}
+	_, err := m.getBillingCollection().InsertMany(context.Background(), billings)
+	return err
 }
 
 func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts, rErr error) {
@@ -1478,4 +1490,39 @@ func (m *Account) GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.Us
 	}
 
 	return userRealNameInfo, nil
+}
+
+func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
+	userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: req.UserUID})
+	if err != nil {
+		return fmt.Errorf("failed to get user cr: %v", err)
+	}
+
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("generate order id failed: %v", err)
+	}
+	billing := &resources.Billing{
+		OrderID:   id,
+		Type:      accountv1.Consumption,
+		Namespace: req.Namespace,
+		AppType:   resources.AppType[req.AppType],
+		AppName:   req.AppName,
+		Amount:    req.Amount,
+		Owner:     userCr.CrName,
+		Time:      time.Now().UTC(),
+		Status:    resources.Settled,
+	}
+	err = m.ck.AddDeductionBalanceWithFunc(&types.UserQueryOpts{UID: req.UserUID}, billing.Amount, func() error {
+		if saveErr := m.MongoDB.SaveBillings(billing); saveErr != nil {
+			return fmt.Errorf("save billing failed: %v", saveErr)
+		}
+		return nil
+	}, func() error {
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("add balance failed: %v", err)
+	}
+	return nil
 }
