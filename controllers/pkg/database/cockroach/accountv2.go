@@ -311,6 +311,46 @@ func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, er
 	return &userCr, nil
 }
 
+func (c *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, error) {
+	if workspace == "" {
+		return nil, fmt.Errorf("empty workspace")
+	}
+	var userUIDString string
+	err := c.Localdb.Table("Workspace").
+		Select(`"UserCr"."userUid"`).
+		Joins(`JOIN "UserWorkspace" ON "Workspace".uid = "UserWorkspace"."workspaceUid"`).
+		Joins(`JOIN "UserCr" ON "UserWorkspace"."userCrUid" = "UserCr".uid`).
+		Where(`"Workspace".id = ?`, workspace).
+		Where(`"UserWorkspace".role = ?`, "OWNER").
+		Limit(1).
+		Scan(&userUIDString).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("not found user uid with workspace %s", workspace)
+		}
+		return nil, fmt.Errorf("failed to get user uid with workspace %s: %v", workspace, err)
+	}
+
+	userUID, err := uuid.Parse(userUIDString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse user uid %s: %v", userUIDString, err)
+	}
+	if userUID == uuid.Nil {
+		return nil, fmt.Errorf("empty user uid")
+	}
+
+	var account types.Account
+	err = c.DB.Where(&types.Account{UserUID: userUID}).First(&account).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("not found account with user uid %s", userUID)
+		}
+		return nil, fmt.Errorf("failed to get account with user uid %s: %v", userUID, err)
+	}
+	return &account, nil
+}
+
 func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
 	if ops.UID != uuid.Nil {
 		return ops.UID, nil

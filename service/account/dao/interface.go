@@ -30,6 +30,7 @@ import (
 
 type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error)
+	GetAccountWithWorkspace(workspace string) (*types.Account, error)
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
@@ -85,6 +86,10 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
 	return account, nil
+}
+
+func (g *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, error) {
+	return g.ck.GetAccountWithWorkspace(workspace)
 }
 
 func (g *Cockroach) GetWorkspaceName(namespaces []string) ([][]string, error) {

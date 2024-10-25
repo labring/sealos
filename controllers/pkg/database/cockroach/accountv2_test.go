@@ -47,3 +47,20 @@ func TestCockroach_GetUserOauthProvider(t *testing.T) {
 	}
 	t.Logf("provider: %+v", provider)
 }
+
+func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
+	ck, err := NewCockRoach(os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Errorf("NewCockRoach() error = %v", err)
+		return
+	}
+	defer ck.Close()
+
+	account, err := ck.GetAccountWithWorkspace("ns-1c6gn6e0")
+
+	if err != nil {
+		t.Errorf("GetAccountWithWorkspace() error = %v", err)
+		return
+	}
+	t.Logf("account: %+v", account)
+}

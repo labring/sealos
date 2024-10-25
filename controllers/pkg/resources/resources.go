@@ -165,6 +165,7 @@ const (
 	appStore
 	dbBackup
 	devBox
+	llmToken
 )
 
 const (
@@ -178,14 +179,15 @@ const (
 	AppStore      = "APP-STORE"
 	DBBackup      = "DB-BACKUP"
 	DevBox        = "DEV-BOX"
+	LLMToken      = "LLM-TOKEN"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore, DBBackup: dbBackup, DevBox: devBox,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore, DBBackup: dbBackup, DevBox: devBox, LLMToken: llmToken,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore, dbBackup: DBBackup, devBox: DevBox,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore, dbBackup: DBBackup, devBox: DevBox, llmToken: LLMToken,
 }
 
 // resource consumption
