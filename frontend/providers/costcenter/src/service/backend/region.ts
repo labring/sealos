@@ -1,5 +1,5 @@
 import { Region } from '@/types/region';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { AccessTokenPayload, generateBillingToken, verifyInternalToken } from '../auth';
 import { jsonRes } from './response';
@@ -53,7 +53,10 @@ export async function makeRegionListAPIClientByHeader(req: NextApiRequest, res: 
   });
   return clientList;
 }
-export function makeAPIClient(region: Region | undefined | null, payload?: AccessTokenPayload) {
+export function makeAPIClient(
+  region: Region | undefined | null,
+  payload?: AccessTokenPayload
+): AxiosInstance {
   const baseURL = region?.accountSvc
     ? `http://${region?.accountSvc}`
     : global.AppConfig.costCenter.components.accountService.url;
