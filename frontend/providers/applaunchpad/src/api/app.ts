@@ -12,6 +12,7 @@ import type { AppPatchPropsType } from '@/types/app';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { ExportAppPayload } from '@/pages/api/exportApp';
 import { NodeInfo } from '@/pages/api/getNodes';
+import { UploadAppPayload } from '@/pages/api/uploadApp';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
 
@@ -96,3 +97,16 @@ export const exportApp = (data: ExportAppPayload) =>
     downloadPath: string;
     error?: string;
   }>(`/api/exportApp`, data);
+
+export const uploadApp = (data: UploadAppPayload) => {
+  const formData = new FormData();
+  formData.append('appname', data.appname);
+  formData.append('namespace', data.namespace);
+  formData.append('file', data.file);
+
+  return POST('/api/uploadApp', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};

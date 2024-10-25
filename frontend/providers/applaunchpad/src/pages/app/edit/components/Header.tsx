@@ -1,4 +1,5 @@
-import { exportApp, getNodes } from '@/api/app';
+import { exportApp, getNodes, uploadApp } from '@/api/app';
+import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
 import { useGlobalStore } from '@/store/global';
 import { AppEditType } from '@/types/app';
@@ -8,6 +9,7 @@ import {
   Box,
   Button,
   Flex,
+  Icon,
   Link,
   Modal,
   ModalBody,
@@ -51,6 +53,8 @@ const Header = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [downloadPath, setDownloadPath] = useState('');
   const isEdit = !!router.query.name;
+  const [files, setFiles] = useState<File[]>([]);
+  const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
@@ -160,6 +164,67 @@ const Header = ({
           {t('Export')}应用
         </Button>
       )}
+
+      {!isEdit && (
+        <Button
+          flexShrink={'0'}
+          leftIcon={
+            <Icon w="20px" h="20px" fill={'currentcolor'}>
+              <path d="M11 19.7908V13.7908H5V11.7908H11V5.79077H13V11.7908H19V13.7908H13V19.7908H11Z" />
+            </Icon>
+          }
+          h={'40px'}
+          mr={'14px'}
+          minW={'140px'}
+          variant={'outline'}
+          onClick={() => {
+            setFiles([]);
+            onUploadOpen();
+          }}
+        >
+          {t('upload_file')}
+        </Button>
+      )}
+
+      <Modal isOpen={isUploadOpen} onClose={onUploadClose} closeOnOverlayClick={false}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader> {t('upload_file')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onUploadClose}>
+              取消
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await uploadApp({
+                    appname: appName,
+                    namespace: namespace,
+                    file: files[0]
+                  });
+                  toast({
+                    status: 'success',
+                    title: '上传并提取成功'
+                  });
+                  onUploadClose();
+                } catch (error) {
+                  toast({
+                    status: 'error',
+                    title: 'error'
+                  });
+                }
+              }}
+            >
+              确定
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')}编排

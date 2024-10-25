@@ -229,5 +229,8 @@
   "Reboot Success": "重启成功",
   "New Namaspace": "新建命名空间",
   "Node Port": "NodePort",
-  "Containers": "容器配置"
+  "Containers": "容器配置",
+  "node_info": "节点信息",
+  "upload_file": "上传文件并部署",
+  "upload_file_tip": "点击上传文件"
 }

@@ -229,5 +229,8 @@
   "Under Stock": "Under Stock",
   "New Namaspace": "New Namaspace",
   "Node Port": "NodePort",
-  "Containers": "Containers"
+  "Containers": "Containers",
+  "node_info": "Node Info",
+  "upload_file": "Upload And Deploy",
+  "upload_file_tip": "Click Upload File"
 }
