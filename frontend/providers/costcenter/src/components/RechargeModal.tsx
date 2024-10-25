@@ -662,27 +662,40 @@ const RechargeModal = forwardRef(
                   {steps &&
                     ratios &&
                     steps.length === ratios.length &&
-                    steps.map((step, idx) => (
-                      <>
-                        <Text key={idx} px={'24px'} color={'grayModern.900'}>
-                          {step + '<='}
-                          {t('Recharge Amount')}
-                          {idx < steps.length - 1 ? `< ${steps[idx + 1]}` : ''}
-                        </Text>
-                        <Text px={'24px'} color={'grayModern.900'}>
-                          {t('Bonus')}
-                          {ratios[idx].toFixed(2)}%
-                        </Text>
-                      </>
-                    ))}
+                    steps
+                      .map(
+                        (step, idx, steps) =>
+                          [
+                            step,
+                            idx < steps.length - 1 ? steps[idx + 1] : undefined,
+                            ratios[idx]
+                          ] as const
+                      )
+                      .filter(([_, _2, ratio], idx) => {
+                        return ratio > 0;
+                      })
+                      .map(([pre, next, ratio], idx) => (
+                        <>
+                          <Text key={idx} pl={'24px'} color={'grayModern.900'}>
+                            {pre}
+                            {' <= '}
+                            {t('Recharge Amount')}
+                            {next ? `< ${next}` : ''}
+                          </Text>
+                          <Text px={'24px'} color={'grayModern.900'}>
+                            {t('Bonus')}
+                            {ratio.toFixed(2)}%
+                          </Text>
+                        </>
+                      ))}
                   {specialBonus &&
                     specialBonus.map(([k, v], i) => (
                       <>
-                        <Text key={i} px={'24px'} color={'grayModern.900'}>
-                          {k + '='} {t('Recharge Amount')}{' '}
+                        <Text key={i} pl={'24px'} color={'grayModern.900'}>
+                          {k} = {t('Recharge Amount')}{' '}
                         </Text>
-                        <Text px={'24px'} color={'grayModern.900'}>
-                          {t('Bonus')} {v}
+                        <Text pl={'24px'} color={'grayModern.900'}>
+                          {t('Bonus')} {v} %
                         </Text>
                       </>
                     ))}
