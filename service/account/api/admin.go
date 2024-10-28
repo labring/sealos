@@ -18,7 +18,7 @@ import (
 // @Success 200 {object} map[string]interface{} "successfully retrieved user account"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user account"
-// @Router /admin/v1alpha1/account [post]
+// @Router /admin/v1alpha1/account [get]
 func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 	err := authenticateAdminRequest(c)
 	if err != nil {
