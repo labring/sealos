@@ -64,10 +64,12 @@ var (
 	DiskMonitor                       bool
 	CPUMemMonitor                     bool
 	BackupMonitor                     bool
+	QuotaMonitor                      bool
 	DatabaseDiskMonitorThreshold      float64
 	DatabaseExceptionMonitorThreshold float64
 	DatabaseCPUMonitorThreshold       float64
 	DatabaseMemMonitorThreshold       float64
+	QuotaThreshold                    float64
 	APPID                             string
 	APPSECRET                         string
 	DatabaseStatusMessageIDMap        = make(map[string]string)
@@ -75,6 +77,7 @@ var (
 	DatabaseCPUMessageIDMap           = make(map[string]string)
 	DatabaseMemMessageIDMap           = make(map[string]string)
 	DatabaseBackupMessageIDMap        = make(map[string]string)
+	QuotaMessageIDMap                 = make(map[string]string)
 )
 
 func GetENV() error {
@@ -91,10 +94,12 @@ func GetENV() error {
 	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
 	BackupMonitor, _ = strconv.ParseBool(getEnvWithCheck("BackupMonitor", &missingEnvVars))
+	QuotaMonitor, _ = strconv.ParseBool(getEnvWithCheck("QuotaMonitor", &missingEnvVars))
 	DatabaseDiskMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseDiskMonitorThreshold", &missingEnvVars), 64)
 	DatabaseExceptionMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseExceptionMonitorThreshold", &missingEnvVars), 64)
 	DatabaseCPUMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseCPUMonitorThreshold", &missingEnvVars), 64)
 	DatabaseMemMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseMemMonitorThreshold", &missingEnvVars), 64)
+	QuotaThreshold, _ = strconv.ParseFloat(getEnvWithCheck("QuotaThreshold", &missingEnvVars), 64)
 
 	if clusterNS != "" {
 		ClusterNS = strings.Split(clusterNS, ",")
@@ -112,6 +117,8 @@ func GetENV() error {
 		"FeishuWebhookURLImportant",
 		//Backup
 		"FeishuWebhookURLBackup",
+		//Quota
+		"FeishuWebhookURLQuota",
 	}, FeishuWebhookURLMap, &missingEnvVars)
 
 	// Get ClusterRegionMap
