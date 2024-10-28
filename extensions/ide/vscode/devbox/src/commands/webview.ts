@@ -31,7 +31,7 @@ export class Webview extends Disposable {
     const isProduction =
       context.extensionMode === vscode.ExtensionMode.Production
     if (isProduction) {
-      /* semgrep-ignore-start */
+      // noscan
       const filePath = vscode.Uri.file(
         path.join(context.extensionPath, 'dist', 'static/js/main.js')
       )
@@ -39,7 +39,6 @@ export class Webview extends Disposable {
     } else {
       srcUrl = 'http://localhost:3001/static/js/main.js'
     }
-    /* semgrep-ignore-end */
     panel.webview.html = this.getWebviewContent(srcUrl)
 
     const updateWebview = () => {
