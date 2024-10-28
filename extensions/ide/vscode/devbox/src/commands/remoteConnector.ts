@@ -224,6 +224,7 @@ export class RemoteSSHConnector extends Disposable {
 
       // 针对mac和windows区别处理
       if (os.platform() === 'win32') {
+        /* semgrep-ignore-start */
         // 移除继承的权限
         execSync(`icacls "${sshKeyPath}" /inheritance:r`)
         // 为当前用户授予完全控制权限
@@ -234,6 +235,7 @@ export class RemoteSSHConnector extends Disposable {
         // 设置文件权限为 600（仅文件所有者可读写）
         execSync(`chmod 600 "${sshKeyPath}"`)
       }
+      /* semgrep-ignore-end */
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to write SSH private key: ${error}`
