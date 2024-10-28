@@ -38,17 +38,17 @@ spec:
         - name: devbox-frontend
           env:
             - name: SEALOS_DOMAIN
-              value: { { .cloudDomain } }
+              value: {{ .cloudDomain }}
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
-              value: hub.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+              value: {{ .registryAddr }}
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
             - name: MONITOR_URL
               value: http://launchpad-monitor.sealos.svc.cluster.local:8428
             - name: SQUASH_ENABLE
-              value: 'true'
+              value: 'false'
             - name: ACCOUNT_URL
               value: http://account-service.account-system.svc.cluster.local:2333
           securityContext:
@@ -63,7 +63,7 @@ spec:
               cpu: 2000m
               memory: 2048Mi
             requests:
-              cpu: 10m
+              cpu: 100m
               memory: 128Mi
           # do not modify this image, it is used for CI/CD
           image: ghcr.io/labring/sealos-devbox-frontend:latest

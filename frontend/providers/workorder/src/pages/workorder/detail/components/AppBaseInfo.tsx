@@ -126,8 +126,8 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
           </Icon>
           <Text>{t('Description')}</Text>
         </Flex>
-        <Flex mt="12px" p={'16px'} borderRadius={'4px'} bg="#F8FAFB">
-          <Text color={'#24282C'}>{app?.description} </Text>
+        <Flex mt="12px" p={'16px'} borderRadius={'4px'} bg="#F8FAFB" overflow={'hidden'}>
+          <Text color={'#24282C'}>{app?.description}</Text>
         </Flex>
       </Box>
 

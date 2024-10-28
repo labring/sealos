@@ -3129,7 +3129,20 @@ spec:
     singular: runtime
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.classRef
+      name: Class
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .spec.runtimeVersion
+      name: RuntimeVersion
+      type: string
+    - jsonPath: .spec.state
+      name: State
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Runtime is the Schema for the runtimes API
@@ -5102,6 +5115,14 @@ spec:
                 - image
                 type: object
               description:
+                type: string
+              runtimeVersion:
+                type: string
+              state:
+                default: active
+                enum:
+                - active
+                - deprecated
                 type: string
               version:
                 type: string

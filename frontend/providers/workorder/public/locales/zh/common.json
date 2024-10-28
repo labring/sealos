@@ -63,5 +63,6 @@
   "userId": "用户ID",
   "other": "其他",
   "fastgpt": "FastGPT",
-  "account_center": "账号中心"
+  "account_center": "账号中心",
+  "input_placeholder": "在此输入消息，可粘贴图片直接上传"
 }

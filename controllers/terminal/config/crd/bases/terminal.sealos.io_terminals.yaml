@@ -38,10 +38,6 @@ spec:
     - jsonPath: .status.domain
       name: Domain
       type: string
-    - jsonPath: .spec.apiServer
-      name: APIServer
-      priority: 1
-      type: string
     - jsonPath: .metadata.annotations.lastUpdateTime
       name: LastUpdateTime
       priority: 1
@@ -107,11 +103,14 @@ spec:
                 type: integer
               domain:
                 type: string
+              secretHeader:
+                type: string
               serviceName:
                 type: string
             required:
             - availableReplicas
             - domain
+            - secretHeader
             - serviceName
             type: object
         type: object
