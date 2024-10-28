@@ -1012,20 +1012,13 @@ func GetRechargeDiscount(c *gin.Context) {
 // @Tags GetUserRealNameInfo
 // @Accept json
 // @Produce json
-// @Param request body helper.GetRealNameInfoReq true "Get real name info request"
 // @Success 200 {object} helper.GetRealNameInfoResp "Successfully retrieved user real name info"
 // @Failure 400 {object} helper.ErrorMessage "Failed to parse get real name info request"
 // @Failure 401 {object} helper.ErrorMessage "Authentication error"
 // @Failure 500 {object} helper.ErrorMessage "Failed to get user real name info or info not found/verified"
 // @Router /account/v1alpha1/real-name-info [post]
 func GetUserRealNameInfo(c *gin.Context) {
-	// Parse the get real name info request
-	req, err := helper.ParseGetRealNameInfoReq(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse get real name info request: %v", err)})
-		return
-	}
-
+	req := &helper.GetRealNameInfoReq{}
 	if err := authenticateRequest(c, req); err != nil {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
