@@ -1,8 +1,10 @@
 import { generatePaymentCrd, PaymentForm } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
 import { ApplyYaml, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
+import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { deFormatMoney } from '@/utils/format';
+import { checkSealosUserIsRealName } from '@/utils/tools';
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -36,6 +38,17 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const kubeUser = kc.getCurrentUser();
     if (kubeUser === null) {
       return jsonRes(resp, { code: 401, message: 'user not found' });
+    }
+
+    const client = await makeAPIClientByHeader(req, resp);
+    if (!client) return;
+
+    const isRealName = await checkSealosUserIsRealName(client);
+    if (!isRealName) {
+      return jsonRes(resp, {
+        code: 403,
+        message: 'recharge is not allowed for non-real-name user'
+      });
     }
 
     // do payment

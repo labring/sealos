@@ -57,6 +57,7 @@ export type AppConfigType = {
     domain: string;
   };
   costCenter: {
+    realNameRechargeLimit: boolean;
     transferEnabled: boolean;
     giftCodeEnabled: boolean;
     currencyType: string;
@@ -75,6 +76,7 @@ export type AppConfigType = {
 
 export var DefaultAppConfig: AppConfigType = {
   costCenter: {
+    realNameRechargeLimit: false,
     giftCodeEnabled: true,
     transferEnabled: true,
     currencyType: 'shellCoin',
