@@ -1,8 +1,9 @@
-import { getAppEnv } from '@/api/platform'
-import { Env } from '@/types/static'
 import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { devtools, persist } from 'zustand/middleware'
+
+import { Env } from '@/types/static'
+import { getAppEnv } from '@/api/platform'
 
 const defaultEnv: Env = {
   sealosDomain: 'dev.sealos.plus',
@@ -22,15 +23,20 @@ type State = {
 
 export const useEnvStore = create<State>()(
   devtools(
-    immer((set, get) => ({
-      env: defaultEnv,
-      async setEnv() {
-        const res = await getAppEnv()
-        set((state) => {
-          state.env = res
-        })
-        return res
+    persist(
+      immer((set) => ({
+        env: defaultEnv,
+        async setEnv() {
+          const res = await getAppEnv()
+          set((state) => {
+            state.env = res
+          })
+          return res
+        }
+      })),
+      {
+        name: 'env-storage'
       }
-    }))
+    )
   )
 )

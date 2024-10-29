@@ -1,18 +1,17 @@
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { devtools, persist } from 'zustand/middleware'
+
 import { getRuntime } from '@/api/platform'
 import { RuntimeTypeMap, RuntimeVersionMap } from '@/types/static'
-import { create } from 'zustand'
-import { devtools, persist } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
 
 type State = {
   languageTypeList: RuntimeTypeMap[]
   frameworkTypeList: RuntimeTypeMap[]
   osTypeList: RuntimeTypeMap[]
-
   runtimeNamespaceMap: {
     [key: string]: string
   }
-
   languageVersionMap: RuntimeVersionMap
   frameworkVersionMap: RuntimeVersionMap
   osVersionMap: RuntimeVersionMap
@@ -41,13 +40,7 @@ export const useRuntimeStore = create<State>()(
         async setRuntime() {
           const res = await getRuntime()
           set((state) => {
-            state.languageTypeList = res.languageTypeList
-            state.frameworkTypeList = res.frameworkTypeList
-            state.osTypeList = res.osTypeList
-            state.runtimeNamespaceMap = res.runtimeNamespaceMap
-            state.languageVersionMap = res.languageVersionMap
-            state.frameworkVersionMap = res.frameworkVersionMap
-            state.osVersionMap = res.osVersionMap
+            Object.assign(state, res)
           })
         },
         getRuntimeVersionList(runtimeType: string) {
@@ -83,16 +76,7 @@ export const useRuntimeStore = create<State>()(
         }
       })),
       {
-        name: 'runtime-storage',
-        partialize: (state) => ({
-          languageTypeList: state.languageTypeList,
-          frameworkTypeList: state.frameworkTypeList,
-          osTypeList: state.osTypeList,
-          runtimeNamespaceMap: state.runtimeNamespaceMap,
-          languageVersionMap: state.languageVersionMap,
-          frameworkVersionMap: state.frameworkVersionMap,
-          osVersionMap: state.osVersionMap
-        })
+        name: 'runtime-storage'
       }
     )
   )
