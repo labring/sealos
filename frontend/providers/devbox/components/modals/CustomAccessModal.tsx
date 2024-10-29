@@ -14,8 +14,8 @@ import {
   ModalHeader
 } from '@chakra-ui/react'
 import { Tip } from '@sealos/ui'
+import React, { useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import React, { useMemo, useRef } from 'react'
 import { InfoOutlineIcon } from '@chakra-ui/icons'
 
 import { postAuthCname } from '@/api/platform'

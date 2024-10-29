@@ -89,11 +89,23 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
                   })}>
               <BasicInfo />
             </Box>
-            <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
+            <Flex
+              flexDirection={'column'}
+              minH={'100%'}
+              flex={'1 0 0'}
+              w={0}
+              overflow={'overlay'}
+              sx={{
+                '&::-webkit-scrollbar': {
+                  display: 'none'
+                },
+                '-ms-overflow-style': 'none', // IE and Edge
+                scrollbarWidth: 'none' // Firefox
+              }}>
               <Box mb={4} bg={'white'} borderRadius={'lg'} flexShrink={0} minH={'257px'}>
                 <MainBody />
               </Box>
-              <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
+              <Box bg={'white'} borderRadius={'lg'} flex={'1'}>
                 <Version />
               </Box>
             </Flex>
