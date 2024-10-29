@@ -160,6 +160,8 @@ export type KBRuntimeType = {
       releaseCommand: string[]
       releaseArgs: string[]
     }
+    state: 'active' | 'deprecated' | 'archived' | 'beta'
+    runtimeVersion: string
     category: string[]
     description: string
     version: string
