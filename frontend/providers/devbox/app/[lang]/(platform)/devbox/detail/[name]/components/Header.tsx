@@ -1,6 +1,6 @@
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import { Dispatch, useCallback, useState } from 'react'
+import { Dispatch, useCallback, useMemo, useState } from 'react'
 import {
   Flex,
   Button,
@@ -44,9 +44,12 @@ const Header = ({
   const { message: toast } = useMessage()
 
   const { env } = useEnvStore()
-  const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
+  const { screenWidth } = useGlobalStore()
   const { devboxDetail } = useDevboxStore()
+  const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
+
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
+  const isButtonOnlyIcon = useMemo(() => screenWidth > 1000, [screenWidth])
 
   const getCurrentIDELabelAndIcon = useCallback(
     (
@@ -121,7 +124,6 @@ const Header = ({
     },
     [env.namespace, env.sealosDomain]
   )
-
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxDetailType) => {
       try {
@@ -187,6 +189,7 @@ const Header = ({
   )
   return (
     <Flex justify="space-between" align="center" pl={4} pt={2} flexWrap={'wrap'} gap={5}>
+      {/* left back button and title */}
       <Flex alignItems={'center'} gap={2}>
         <MyIcon
           name="arrowLeft"
@@ -199,10 +202,11 @@ const Header = ({
         <Box fontSize="2xl" fontWeight="bold">
           {devboxDetail.name}
         </Box>
+        {/* detail button */}
         <Flex alignItems={'center'}>
           <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
           {!isLargeScreen && (
-            <Box mx={4}>
+            <Box ml={4}>
               <Button
                 width={'96px'}
                 height={'40px'}
@@ -220,6 +224,7 @@ const Header = ({
           )}
         </Flex>
       </Flex>
+      {/* right main button group */}
       <Flex gap={5}>
         <Box>
           <Button
@@ -235,9 +240,17 @@ const Header = ({
             borderRightWidth={0}
             borderRightRadius={0}
             onClick={() => handleGotoIDE(devboxDetail, currentIDE)}
-            leftIcon={<MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />}
+            leftIcon={
+              isButtonOnlyIcon ? (
+                <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
+              ) : undefined
+            }
             isDisabled={devboxDetail.status.value !== 'Running'}>
-            {getCurrentIDELabelAndIcon(currentIDE).label}
+            {!isButtonOnlyIcon ? (
+              <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
+            ) : (
+              getCurrentIDELabelAndIcon(currentIDE).label
+            )}
           </Button>
           <Menu placement="bottom-end">
             <MenuButton
@@ -311,9 +324,9 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={<MyIcon name={'shutdown'} w={'16px'} />}
+            leftIcon={isButtonOnlyIcon ? <MyIcon name={'shutdown'} w={'16px'} /> : undefined}
             onClick={() => handlePauseDevbox(devboxDetail)}>
-            {t('pause')}
+            {!isButtonOnlyIcon ? <MyIcon name={'shutdown'} w={'16px'} /> : t('pause')}
           </Button>
         )}
         {devboxDetail.status.value === 'Stopped' && (
@@ -326,13 +339,12 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={<MyIcon name={'start'} w={'16px'} />}
+            leftIcon={isButtonOnlyIcon ? <MyIcon name={'start'} w={'16px'} /> : undefined}
             onClick={() => handleStartDevbox(devboxDetail)}>
-            {t('start')}
+            {!isButtonOnlyIcon ? <MyIcon name={'start'} w={'16px'} /> : t('start')}
           </Button>
         )}
         <Button
-          w={'96px'}
           h={'40px'}
           fontSize={'14px'}
           bg={'white'}
@@ -341,12 +353,11 @@ const Header = ({
             color: 'brightBlue.600'
           }}
           borderWidth={1}
-          leftIcon={<MyIcon name={'change'} w={'16px'} />}
+          leftIcon={isButtonOnlyIcon ? <MyIcon name={'change'} w={'16px'} /> : undefined}
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
-          {t('update')}
+          {!isButtonOnlyIcon ? <MyIcon name={'change'} w={'16px'} /> : t('update')}
         </Button>
         <Button
-          w={'96px'}
           h={'40px'}
           fontSize={'14px'}
           bg={'white'}
@@ -355,12 +366,11 @@ const Header = ({
             color: 'brightBlue.600'
           }}
           borderWidth={1}
-          leftIcon={<MyIcon name={'restart'} w={'16px'} />}
+          leftIcon={isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
           onClick={() => handleRestartDevbox(devboxDetail)}>
-          {t('restart')}
+          {!isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : t('restart')}
         </Button>
         <Button
-          w={'96px'}
           h={'40px'}
           fontSize={'14px'}
           bg={'white'}
@@ -369,9 +379,9 @@ const Header = ({
             color: 'red.600'
           }}
           borderWidth={1}
-          leftIcon={<MyIcon name={'delete'} w={'16px'} />}
+          leftIcon={isButtonOnlyIcon ? <MyIcon name={'delete'} w={'16px'} /> : undefined}
           onClick={() => setDelDevbox(devboxDetail)}>
-          {t('delete')}
+          {!isButtonOnlyIcon ? <MyIcon name={'delete'} w={'16px'} /> : t('delete')}
         </Button>
       </Flex>
       {delDevbox && (
