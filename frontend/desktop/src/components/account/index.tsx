@@ -144,7 +144,7 @@ export default function Account() {
 
           <CustomTooltip placement={'bottom'} label={t('common:notification')}>
             <Center cursor={'pointer'} {...baseItemStyle} onClick={() => showDisclosure.onOpen()}>
-              <NotificationIcon />
+              <NotificationIcon color={'white'} />
             </Center>
           </CustomTooltip>
           <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />

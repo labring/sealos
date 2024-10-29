@@ -18,6 +18,7 @@ func main() {
 	go monitor.DatabaseExceptionMonitor()
 	go monitor.DatabasePerformanceMonitor()
 	go monitor.DatabaseBackupMonitor()
+	go monitor.QuotaMonitor()
 	select {}
 }
 

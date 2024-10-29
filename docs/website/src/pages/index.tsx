@@ -97,7 +97,7 @@ const Home = () => {
       </Helmet>
       <Layout>
         <div className="home">
-          <SaleBanner />
+          {/* <SaleBanner /> */}
           <HomeHeader isPc={isPc} />
           <Capability isPc={isPc} />
           <Introduce isPc={isPc} />

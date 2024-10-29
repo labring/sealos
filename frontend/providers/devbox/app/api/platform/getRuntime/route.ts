@@ -31,12 +31,14 @@ export async function GET(req: NextRequest) {
       runtimeNamespace,
       'runtimeclasses'
     )) as { body: { items: KBRuntimeClassType[] } }
-    const { body: runtimes } = (await k8sCustomObjects.listNamespacedCustomObject(
+    const { body: _runtimes } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       runtimeNamespace,
       'runtimes'
     )) as { body: { items: KBRuntimeType[] } }
+
+    let runtimes = _runtimes?.items?.filter((item) => item.spec.state === 'active')
 
     // runtimeClasses
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')
@@ -72,7 +74,7 @@ export async function GET(req: NextRequest) {
     // runtimeVersions and runtimeNamespaceMap
     languageList.forEach((item: any) => {
       const language = item.metadata.name
-      const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === language)
+      const versions = runtimes.filter((runtime: any) => runtime.spec.classRef === language)
       languageVersionMap[language] = []
       versions.forEach((version: any) => {
         runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
@@ -93,7 +95,7 @@ export async function GET(req: NextRequest) {
 
     frameworkList.forEach((item: any) => {
       const framework = item.metadata.name
-      const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === framework)
+      const versions = runtimes.filter((runtime: any) => runtime.spec.classRef === framework)
       frameworkVersionMap[framework] = []
       versions.forEach((version: any) => {
         runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
@@ -113,7 +115,7 @@ export async function GET(req: NextRequest) {
     })
     osList.forEach((item: any) => {
       const os = item.metadata.name
-      const versions = runtimes?.items.filter((runtime: any) => runtime.spec.classRef === os)
+      const versions = runtimes.filter((runtime: any) => runtime.spec.classRef === os)
       osVersionMap[os] = []
       versions.forEach((version: any) => {
         runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace

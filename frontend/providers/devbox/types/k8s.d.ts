@@ -150,6 +150,8 @@ export type KBRuntimeType = {
       kind: string // language
       version: string // v1.22.5
     }[]
+    state: string
+    runtimeVersion: string
   }
 }
 
