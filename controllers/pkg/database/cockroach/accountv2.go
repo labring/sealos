@@ -532,39 +532,24 @@ func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amou
 		}
 		ops.UID = user.UserUID
 	}
-	var account = &types.Account{}
-	if err := tx.Where(&types.Account{UserUID: ops.UID}).First(account).Error; err != nil {
-		// if not found, create a new account and retry
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("failed to get account: %w", err)
-		}
-		if account, err = c.NewAccount(ops); err != nil {
-			return fmt.Errorf("failed to create account: %v", err)
-		}
-	}
-	if err := c.updateWithAccount(isDeduction, add, account, amount); err != nil {
-		return err
-	}
-	if isActive {
-		account.ActivityBonus = account.ActivityBonus + amount
-	}
-	if err := tx.Save(account).Error; err != nil {
-		return fmt.Errorf("failed to update account balance: %w", err)
-	}
-	return nil
+	return c.updateWithAccount(ops.UID, isDeduction, add, isActive, amount, tx)
 }
 
-func (c *Cockroach) updateWithAccount(isDeduction bool, add bool, account *types.Account, amount int64) error {
-	balancePtr := &account.Balance
-	if isDeduction {
-		balancePtr = &account.DeductionBalance
-	}
+func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isActive bool, amount int64, db *gorm.DB) error {
+	exprs := map[string]interface{}{}
+	control := "-"
 	if add {
-		*balancePtr += amount
-	} else {
-		*balancePtr -= amount
+		control = "+"
 	}
-	return nil
+	if isDeduction {
+		exprs["deduction_balance"] = gorm.Expr("deduction_balance "+control+" ?", amount)
+	} else {
+		exprs["balance"] = gorm.Expr("balance "+control+" ?", amount)
+	}
+	if isActive {
+		exprs[`"activityBonus"`] = gorm.Expr(`"activityBonus" + ?`, amount)
+	}
+	return db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs).Error
 }
 
 func (c *Cockroach) AddBalance(ops *types.UserQueryOpts, amount int64) error {
@@ -1036,14 +1021,22 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 		IgnoreRecordNotFoundError: true,
 		Colorful:                  true,
 	})
-	db, err := gorm.Open(postgres.Open(globalURI), &gorm.Config{
-		Logger: dbLogger,
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  globalURI,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{
+		Logger:      dbLogger,
+		PrepareStmt: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open global url %s : %v", globalURI, err)
 	}
-	localdb, err := gorm.Open(postgres.Open(localURI), &gorm.Config{
-		Logger: dbLogger,
+	localdb, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  localURI,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{
+		Logger:      dbLogger,
+		PrepareStmt: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open local url %s : %v", localURI, err)
