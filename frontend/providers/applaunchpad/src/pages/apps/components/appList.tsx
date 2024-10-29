@@ -1,4 +1,4 @@
-import { pauseAppByName, restartAppByName, startAppByName } from '@/api/app';
+import { pauseAppByName, restartAppByName, startAppByName, uploadApp } from '@/api/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
@@ -16,6 +16,7 @@ import {
   Button,
   Center,
   Flex,
+  Icon,
   Input,
   MenuButton,
   Modal,
@@ -36,6 +37,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
 import { createNamespace } from '@/api/platform';
 import { setUserIsLogin } from '@/utils/user';
+import FileSelect from '@/components/FileSelect';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
@@ -64,6 +66,9 @@ const AppList = ({
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: 'pause_message'
   });
+
+  const [files, setFiles] = useState<File[]>([]);
+  const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
 
   const handleRestartApp = useCallback(
     async (appName: string) => {
@@ -380,6 +385,24 @@ const AppList = ({
         <Button mr={'12px'} h={'40px'} w={'156px'} flex={'0 0 auto'} onClick={onOpen}>
           {t('New Namaspace')}
         </Button>
+
+        <Button
+          leftIcon={
+            <Icon w="20px" h="20px" fill={'currentcolor'}>
+              <path d="M11 19.7908V13.7908H5V11.7908H11V5.79077H13V11.7908H19V13.7908H13V19.7908H11Z" />
+            </Icon>
+          }
+          h={'40px'}
+          mr={'14px'}
+          minW={'140px'}
+          onClick={() => {
+            setFiles([]);
+            onUploadOpen();
+          }}
+        >
+          {t('upload_file')}
+        </Button>
+
         <Button
           h={'40px'}
           w={'156px'}
@@ -461,6 +484,46 @@ const AppList = ({
               }}
             >
               {t('Confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isUploadOpen} onClose={onUploadClose} closeOnOverlayClick={false}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader> {t('upload_file')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onUploadClose}>
+              取消
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await uploadApp({
+                    appname: 'name',
+                    namespace: 'namespace',
+                    file: files[0]
+                  });
+                  toast({
+                    status: 'success',
+                    title: '上传并部署成功'
+                  });
+                  onUploadClose();
+                } catch (error) {
+                  toast({
+                    status: 'error',
+                    title: 'error'
+                  });
+                }
+              }}
+            >
+              确定
             </Button>
           </ModalFooter>
         </ModalContent>
