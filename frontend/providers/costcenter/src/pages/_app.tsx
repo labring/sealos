@@ -61,6 +61,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     (async () => {
       try {
         const { data } = await request<any, ApiResp<initDataRes>>('/api/platform/getAppConfig');
+        state.setEnv('realNameRechargeLimit', !!data?.REALNAME_RECHARGE_LIMIT);
         state.setEnv('invoiceEnabled', !!data?.INVOICE_ENABLED);
         state.setEnv('transferEnabled', !!data?.TRANSFER_ENABLED);
         state.setEnv('rechargeEnabled', !!data?.RECHARGE_ENABLED);
