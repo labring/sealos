@@ -63,7 +63,6 @@ const DevboxList = ({
     setCurrentDevboxListItem(devbox)
     setOnOpenRelease(true)
   }
-
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxListItemType) => {
       try {
@@ -125,7 +124,7 @@ const DevboxList = ({
     },
     [setLoading, t, toast]
   )
-
+  // TODO: abstract ide button to a component
   const getCurrentIDELabelAndIcon = useCallback(
     (
       currentIDE: IDEType
@@ -158,7 +157,6 @@ const DevboxList = ({
     },
     []
   )
-
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemType) => {
       const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
@@ -181,7 +179,6 @@ const DevboxList = ({
     },
     [refetchDevboxList, t, toast]
   )
-
   const handleGotoIDE = useCallback(
     async (devbox: DevboxListItemType, currentIDE: string = 'vscode') => {
       try {
@@ -534,7 +531,7 @@ const DevboxList = ({
           {t('create_devbox')}
         </Button>
       </Flex>
-      <MyTable columns={columns} data={devboxList} />
+      <MyTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}

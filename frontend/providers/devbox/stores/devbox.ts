@@ -18,6 +18,7 @@ import {
 type State = {
   devboxList: DevboxListItemType[]
   setDevboxList: () => Promise<DevboxListItemType[]>
+  loadAvgMonitorData: (devboxName: string) => Promise<void>
   devboxVersionList: DevboxVersionListItemType[]
   setDevboxVersionList: (
     devboxName: string,
@@ -30,73 +31,46 @@ type State = {
 
 export const useDevboxStore = create<State>()(
   devtools(
-    immer((set, get) => ({
-      devboxList: [] as DevboxListItemType[],
+    immer((set) => ({
+      devboxList: [],
       setDevboxList: async () => {
         const res = await getMyDevboxList()
-
-        // order by createTime
-        res.sort((a, b) => {
-          return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+        set((state) => {
+          state.devboxList = res
         })
+        return res
+      },
+      loadAvgMonitorData: async (devboxName) => {
+        const pods = await getDevboxPodsByDevboxName(devboxName)
+        const queryName = pods.length > 0 ? pods[0].podName : devboxName
 
-        // load monitor data for each devbox
-        const updatedRes = await Promise.all(
-          res.map(async (devbox) => {
-            if (devbox.status.value !== 'Running') {
-              return devbox
-            }
-
-            const pods = await getDevboxPodsByDevboxName(devbox.name)
-            const queryName = pods[0]?.podName || devbox.name
-
-            let averageCpuData, averageMemoryData
-            try {
-              ;[averageCpuData, averageMemoryData] = await Promise.all([
-                getDevboxMonitorData({
-                  queryKey: 'average_cpu',
-                  queryName: queryName,
-                  step: '2m'
-                }),
-                getDevboxMonitorData({
-                  queryKey: 'average_memory',
-                  queryName: queryName,
-                  step: '2m'
-                })
-              ])
-            } catch (error) {
-              console.error('fetch monitor data error:', error)
-              averageCpuData = [
-                {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                }
-              ]
-              averageMemoryData = [
-                {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                }
-              ]
-            }
-
-            return {
-              ...devbox,
-              usedCpu: averageCpuData[0],
-              usedMemory: averageMemoryData[0]
-            }
+        const [averageCpuData, averageMemoryData] = await Promise.all([
+          getDevboxMonitorData({
+            queryKey: 'average_cpu',
+            queryName: queryName,
+            step: '2m'
+          }),
+          getDevboxMonitorData({
+            queryKey: 'average_memory',
+            queryName: queryName,
+            step: '2m'
           })
-        )
+        ])
 
         set((state) => {
-          state.devboxList = updatedRes
+          state.devboxList = state.devboxList.map((item) => ({
+            ...item,
+            usedCpu:
+              item.name === devboxName && averageCpuData[0] ? averageCpuData[0] : item.usedCpu,
+            usedMemory:
+              item.name === devboxName && averageMemoryData[0]
+                ? averageMemoryData[0]
+                : item.usedMemory
+          }))
         })
-        return updatedRes
       },
       devboxVersionList: [],
-      setDevboxVersionList: async (devboxName: string, devboxUid: string) => {
+      setDevboxVersionList: async (devboxName, devboxUid) => {
         const res = await getDevboxVersionList(devboxName, devboxUid)
 
         // order by createTime

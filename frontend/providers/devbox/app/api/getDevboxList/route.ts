@@ -5,6 +5,7 @@ import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { KBDevboxType, KBRuntimeType } from '@/types/k8s'
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import { DevboxListItemType } from '@/types/devbox'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,7 +114,13 @@ export async function GET(req: NextRequest) {
 
       return item
     })
-    const resp = await Promise.all(res)
+
+    const resp = (await Promise.all(res)) as DevboxListItemType[]
+
+    resp.sort((a, b) => {
+      return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+    })
+
     return jsonRes({ data: resp })
   } catch (err: any) {
     return jsonRes({
