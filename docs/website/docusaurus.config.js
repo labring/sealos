@@ -292,22 +292,21 @@ const config = {
                       j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
                       })(window,document,'script','dataLayer','GTM-5953N4CP');
-    
-                      // 添加 noscript iframe
-                      const noscript = document.createElement('noscript');
-                      const iframe = document.createElement('iframe');
-                      iframe.src = 'https://www.googletagmanager.com/ns.html?id=GTM-5953N4CP';
-                      iframe.height = '0';
-                      iframe.width = '0';
-                      iframe.style.display = 'none';
-                      iframe.style.visibility = 'hidden';
-                      noscript.appendChild(iframe);
-                      document.body.appendChild(noscript);
                     }
                   })();
                 `,
               },
             ],
+            preBodyTags: [
+              {
+                tagName: 'script',
+                innerHTML: `
+                  if (window.location.hostname !== 'sealos.run') {
+                    document.write('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5953N4CP" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>');
+                  }
+                `,
+              },
+            ]
           }
         },
       }
