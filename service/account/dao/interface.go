@@ -25,6 +25,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/google/uuid"
 	"github.com/labring/sealos/service/account/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -64,6 +65,7 @@ type Interface interface {
 	GetRechargeDiscount(req helper.AuthReq) (helper.RechargeDiscountResp, error)
 	ProcessPendingTaskRewards() error
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
+	ReconcileUnsettledLLMBilling() error
 }
 
 type Account struct {
@@ -1511,18 +1513,111 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 		Amount:    req.Amount,
 		Owner:     userCr.CrName,
 		Time:      time.Now().UTC(),
-		Status:    resources.Settled,
+		Status:    resources.Unsettled,
+		UserUID:   req.UserUID,
 	}
-	err = m.ck.AddDeductionBalanceWithFunc(&types.UserQueryOpts{UID: req.UserUID}, billing.Amount, func() error {
-		if saveErr := m.MongoDB.SaveBillings(billing); saveErr != nil {
-			return fmt.Errorf("save billing failed: %v", saveErr)
-		}
-		return nil
-	}, func() error {
-		return nil
-	})
+	err = m.MongoDB.SaveBillings(billing)
 	if err != nil {
 		return fmt.Errorf("add balance failed: %v", err)
 	}
 	return nil
+}
+
+func (m *Account) ReconcileUnsettledLLMBilling() error {
+	endTime := time.Now().UTC()
+	startTime := endTime.Add(-time.Hour)
+
+	unsettledAmounts, err := m.MongoDB.reconcileUnsettledLLMBilling(startTime, endTime)
+	if err != nil {
+		return fmt.Errorf("failed to get unsettled billing: %v", err)
+	}
+	for userUID, amount := range unsettledAmounts {
+		err = m.ck.DB.Transaction(func(tx *gorm.DB) error {
+			// 1. deduct balance
+			if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: userUID}, amount, tx); err != nil {
+				return fmt.Errorf("failed to deduct balance: %v", err)
+			}
+			// 2. update billing status
+			filter := bson.M{
+				"user_uid": userUID,
+				"status":   resources.Unsettled,
+				"app_type": resources.AppType[resources.LLMToken],
+				"time": bson.M{
+					"$gte": startTime,
+					"$lte": endTime,
+				},
+			}
+			update := bson.M{
+				"$set": bson.M{
+					"status": resources.Settled,
+				},
+			}
+
+			_, err = m.MongoDB.getBillingCollection().UpdateMany(context.Background(), filter, update)
+			if err != nil {
+				return fmt.Errorf("failed to update billing status: %v", err)
+			}
+
+			return nil
+		})
+
+		// If the transaction fails, roll back the billing state
+		if err != nil {
+			err = fmt.Errorf("failed to reconcile billing for user %s: %v", userUID, err)
+			filter := bson.M{
+				"user_uid": userUID,
+				"app_type": resources.AppType["LLM-TOKEN"],
+				"time": bson.M{
+					"$gte": time.Now().Add(-time.Hour),
+				},
+			}
+			update := bson.M{
+				"$set": bson.M{
+					"status": resources.Unsettled,
+				},
+			}
+			if _, rollBackErr := m.MongoDB.getBillingCollection().UpdateMany(context.Background(), filter, update); rollBackErr != nil {
+				return fmt.Errorf("%v; And failed to rollback billing status: %v", err, rollBackErr)
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *MongoDB) reconcileUnsettledLLMBilling(startTime, endTime time.Time) (map[uuid.UUID]int64, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{
+			"time": bson.M{
+				"$gte": startTime,
+				"$lte": endTime,
+			},
+			"status":   resources.Unsettled,
+			"app_type": resources.AppType[resources.LLMToken],
+		}}},
+		{{Key: "$group", Value: bson.M{
+			"_id":          "$user_uid",
+			"total_amount": bson.M{"$sum": "$amount"},
+		}}},
+	}
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate billing: %v", err)
+	}
+	defer cursor.Close(context.Background())
+	result := make(map[uuid.UUID]int64)
+	for cursor.Next(context.Background()) {
+		var doc struct {
+			ID     uuid.UUID `bson:"_id"`
+			Amount int64     `bson:"total_amount"`
+		}
+		if err := cursor.Decode(&doc); err != nil {
+			return nil, fmt.Errorf("failed to decode document: %v", err)
+		}
+		result[doc.ID] = doc.Amount
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return result, nil
 }

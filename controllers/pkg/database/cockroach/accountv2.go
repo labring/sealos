@@ -549,7 +549,18 @@ func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isAct
 	if isActive {
 		exprs[`"activityBonus"`] = gorm.Expr(`"activityBonus" + ?`, amount)
 	}
-	return db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs).Error
+	result := db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs)
+	return HandleUpdateResult(result, types.Account{}.TableName())
+}
+
+func HandleUpdateResult(result *gorm.DB, entityName string) error {
+	if result.Error != nil {
+		return fmt.Errorf("failed to update %s: %w", entityName, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no %s updated", entityName)
+	}
+	return nil
 }
 
 func (c *Cockroach) AddBalance(ops *types.UserQueryOpts, amount int64) error {
@@ -580,6 +591,10 @@ func (c *Cockroach) AddDeductionBalance(ops *types.UserQueryOpts, amount int64) 
 	return c.DB.Transaction(func(tx *gorm.DB) error {
 		return c.updateBalance(tx, ops, amount, true, true)
 	})
+}
+
+func (c *Cockroach) AddDeductionBalanceWithDB(ops *types.UserQueryOpts, amount int64, tx *gorm.DB) error {
+	return c.updateBalance(tx, ops, amount, true, true)
 }
 
 func (c *Cockroach) AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error {
@@ -1025,8 +1040,9 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 		DSN:                  globalURI,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{
-		Logger:      dbLogger,
-		PrepareStmt: true,
+		Logger:         dbLogger,
+		PrepareStmt:    true,
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open global url %s : %v", globalURI, err)
@@ -1035,8 +1051,9 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 		DSN:                  localURI,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{
-		Logger:      dbLogger,
-		PrepareStmt: true,
+		Logger:         dbLogger,
+		PrepareStmt:    true,
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open local url %s : %v", localURI, err)

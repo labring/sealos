@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/common"
 
 	"github.com/labring/sealos/controllers/pkg/gpu"
@@ -102,12 +103,13 @@ type Billing struct {
 	Amount int64  `json:"amount" bson:"amount,omitempty"`
 	Owner  string `json:"owner" bson:"owner,omitempty"`
 	// 0: 未结算 1: 已结算
-	Status BillingStatus `json:"status" bson:"status,omitempty"`
+	Status BillingStatus `json:"status" bson:"status"`
 	// if type = Consumption, then payment is not nil
 	Payment *Payment `json:"payment" bson:"payment,omitempty"`
 	// if type = Transfer, then transfer is not nil
 	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
 	Detail   string    `json:"detail" bson:"detail,omitempty"`
+	UserUID  uuid.UUID `json:"user_uid" bson:"user_uid,omitempty"`
 }
 
 type Payment struct {
