@@ -29,6 +29,85 @@ def run_command(command):
         print("Error executing command: " + e.stderr.decode().strip())
         return e.stderr.decode().strip()
 
+def upload_deploy_helper(file_path, namespace, appname, images):
+    for image in images:
+        image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
+    with open(os.path.join(file_path, 'app.yaml'), 'r') as file:
+        yaml_content = file.read()
+
+    new_yaml_contents = []
+    for single_yaml in yaml.safe_load_all(yaml_content):
+        if 'kind' in single_yaml and single_yaml['kind'] == 'Deployment':
+            if 'spec' in single_yaml and 'template' in single_yaml['spec'] and 'spec' in single_yaml['spec']['template']:
+                if 'containers' in single_yaml['spec']['template']['spec']:
+                    for container_index in range(len(single_yaml['spec']['template']['spec']['containers'])):
+                        container = single_yaml['spec']['template']['spec']['containers'][container_index]
+                        if 'image' in container:
+                            if not '/' in container['image']:
+                                container['image'] = 'library/' + container['image']
+                            if not ':' in container['image']:
+                                container['image'] = container['image'] + ':latest'
+        new_yaml_contents.append(single_yaml)
+    new_yaml_content = yaml.dump_all(new_yaml_contents)
+
+
+    print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
+
+    # 加载和推送镜像
+    for image in images:
+        name = image['name'].strip()
+        path = image['path']
+
+        # 登录镜像仓库
+        err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
+        if err:
+            return jsonify({'error': 'Failed to login, ' + err}), 500
+
+        # 加载镜像
+        err = run_command('docker load -i ' + path)
+        if err:
+            return jsonify({'error': 'Failed to load image, ' + err}), 500
+        # 替换域名并推送镜像
+        parts = name.split('/')
+        if len(parts) == 3:
+            new_name = 'sealos.hub:5000/' + '/'.join(parts[1:])
+        elif len(parts) == 1:
+            new_name = 'sealos.hub:5000/library/' + name
+        elif len(parts) == 2:
+            new_name = 'sealos.hub:5000/' + name
+        else:
+            return jsonify({'error': 'Invalid image name: ' + name}), 400
+        err = run_command('docker tag ' + name + ' ' + new_name)
+        if err:
+            return jsonify({'error': 'Failed to tag image, ' + err}), 500
+        err = run_command('docker push ' + new_name)
+        if err:
+            return jsonify({'error': 'Failed to push image, ' + err}), 500
+
+    # 替换yaml中的CLUSTER_DOMAIN
+    new_yaml_content = new_yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
+    with open('temp.yaml', 'w') as file:
+        file.write(new_yaml_content)
+
+    # 调用kubectl创建命名空间
+    create_namespace_command = 'kubectl create namespace ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf'
+    err = run_command(create_namespace_command)
+
+    if err:
+        if 'already exists' not in err:
+            return jsonify({'error': 'Failed to create namespace, ' + err}), 500
+
+    # 调用kubectl部署应用
+    apply_command = 'kubectl apply -n ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf -f temp.yaml'
+    err = run_command(apply_command)
+
+    if err:
+        return jsonify({'error': 'Failed to apply application, ' + err}), 500
+
+    # 返回成功响应
+    detail_url = 'http://' + CLUSTER_DOMAIN + ':32293/app/detail'
+    return jsonify({'message': 'Application deployed successfully', 'url': detail_url}), 200
+
 # API端点：导出应用程序
 @app.route('/api/exportApp', methods=['POST'])
 def export_app():
@@ -146,17 +225,8 @@ def upload_app():
     if file.filename == '':
         return jsonify({'error': 'No file selected for uploading'}), 400
 
-    appname = request.args.get('appname')
-    if not appname:
-        return jsonify({'error': 'Appname is required'}), 400
-    namespace = request.args.get('namespace')
-    if not namespace:
-        return jsonify({'error': 'Namespace is required'}), 400
-
-    print('uploadApp, appname:', appname, 'namespace:', namespace, flush=True)
-
     # 检查并创建保存路径
-    workdir = os.path.join(SAVE_PATH, namespace, appname)
+    workdir = os.path.join(SAVE_PATH, 'temp')
     if not os.path.exists(workdir):
         os.makedirs(workdir)
 
@@ -181,9 +251,27 @@ def upload_app():
     if os.path.exists(metadata_path):
         with open(metadata_path, 'r') as file:
             metadata = json.load(file)
+        namespace = metadata['namespace']
+        appname = metadata['name']
+        images = metadata['images']
         print('Loaded metadata:', metadata, flush=True)
     else:
         metadata = {}
+
+    new_workdir = os.path.join(SAVE_PATH, namespace, appname)
+    if not os.path.exists(new_workdir):
+        os.makedirs(new_workdir)
+
+    # 移动 workdir 下的所有内容到 new_workdir
+    for item in os.listdir(workdir):
+        src_path = os.path.join(workdir, item)
+        dest_path = os.path.join(new_workdir, item)
+        shutil.move(src_path, dest_path)
+
+    # 删除工作目录
+    os.rmdir(workdir)
+
+    deploy_response = upload_deploy_helper(new_workdir, namespace, appname, images)
 
     # 返回成功响应
     return jsonify({'message': 'Application uploaded and extracted successfully', 'metadata': metadata}), 200
