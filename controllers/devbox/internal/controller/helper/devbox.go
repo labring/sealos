@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strings"
 
 	"crypto/ed25519"
 	"crypto/rand"
@@ -395,6 +396,10 @@ func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestEphemera
 			corev1.ResourceEphemeralStorage: resource.MustParse(limitEphemeralStorage),
 		},
 	}
+}
+
+func IsExceededQuotaError(err error) bool {
+	return strings.Contains(err.Error(), "exceeded quota")
 }
 
 func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
