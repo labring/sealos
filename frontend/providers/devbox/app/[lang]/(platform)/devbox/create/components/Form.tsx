@@ -285,27 +285,24 @@ const Form = ({
                       },
                       validate: {
                         pattern: (value) =>
-                          /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/.test(
+                          /^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?)*$/.test(
                             value
                           ) || t('devbox_name_invalid')
                       }
                     })}
                     onBlur={(e) => {
-                      setValue('name', e.target.value)
+                      const lowercaseValue = e.target.value.toLowerCase()
+
+                      setValue('name', lowercaseValue)
                       const networks = getValues('networks')
                       networks.forEach((network, i) => {
                         updateNetworks(i, {
                           ...network,
-                          networkName: `${e.target.value}-${nanoid()}`
+                          networkName: `${lowercaseValue}-${nanoid()}`
                         })
                       })
                     }}
                   />
-                  <FormErrorMessage ml={'50px'}>
-                    <Box fontSize={'12px'} h={'25px'} w={'100px'}>
-                      {errors.name && errors.name.message}
-                    </Box>
-                  </FormErrorMessage>
                 </Flex>
               </FormControl>
               {/* Runtime Type */}

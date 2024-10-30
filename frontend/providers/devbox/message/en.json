@@ -56,7 +56,7 @@
   "devbox_empty": "You have not created a new devbox yet.",
   "devbox_list": "Devbox List",
   "devbox_name": "Name",
-  "devbox_name_invalid": "Name is invalid",
+  "devbox_name_invalid": "The Devbox name can only contain letters, numbers, and hyphens (-), and must start with a letter.",
   "devbox_name_max_length": "Exceeds the maximum name length",
   "devbox_name_required": "Devbox name cannot be empty",
   "download_config": "Download config",

@@ -57,7 +57,7 @@
   "devbox_empty": "您还没有新建项目",
   "devbox_list": "项目列表",
   "devbox_name": "项目名称",
-  "devbox_name_invalid": "名称非法",
+  "devbox_name_invalid": "Devbox名称只能包含字母、数字和连字符（-），且必须以字母开头。",
   "devbox_name_max_length": "超出最大名字长度",
   "devbox_name_required": "项目名称不能为空",
   "download_config": "下载配置",
