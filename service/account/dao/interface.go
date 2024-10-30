@@ -1495,11 +1495,10 @@ func (m *Account) GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.Us
 }
 
 func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
-	userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: req.UserUID})
-	if err != nil {
-		return fmt.Errorf("failed to get user cr: %v", err)
-	}
-
+	//userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: req.UserUID})
+	//if err != nil {
+	//	return fmt.Errorf("failed to get user cr: %v", err)
+	//}
 	id, err := gonanoid.New(12)
 	if err != nil {
 		return fmt.Errorf("generate order id failed: %v", err)
@@ -1511,10 +1510,10 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 		AppType:   resources.AppType[req.AppType],
 		AppName:   req.AppName,
 		Amount:    req.Amount,
-		Owner:     userCr.CrName,
-		Time:      time.Now().UTC(),
-		Status:    resources.Unsettled,
-		UserUID:   req.UserUID,
+		//Owner:     userCr.CrName,
+		Time:    time.Now().UTC(),
+		Status:  resources.Unsettled,
+		UserUID: req.UserUID,
 	}
 	err = m.MongoDB.SaveBillings(billing)
 	if err != nil {
