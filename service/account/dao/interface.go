@@ -65,7 +65,7 @@ type Interface interface {
 	GetRechargeDiscount(req helper.AuthReq) (helper.RechargeDiscountResp, error)
 	ProcessPendingTaskRewards() error
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
-	ReconcileUnsettledLLMBilling() error
+	ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error
 }
 
 type Account struct {
@@ -1523,10 +1523,7 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 	return nil
 }
 
-func (m *Account) ReconcileUnsettledLLMBilling() error {
-	endTime := time.Now().UTC()
-	startTime := endTime.Add(-time.Hour)
-
+func (m *Account) ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error {
 	unsettledAmounts, err := m.MongoDB.reconcileUnsettledLLMBilling(startTime, endTime)
 	if err != nil {
 		return fmt.Errorf("failed to get unsettled billing: %v", err)

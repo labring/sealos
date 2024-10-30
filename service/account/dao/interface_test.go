@@ -687,7 +687,7 @@ func TestAccount_ReconcileUnsettledLLMBilling(t *testing.T) {
 				MongoDB:   tt.fields.MongoDB,
 				Cockroach: tt.fields.Cockroach,
 			}
-			if err := m.ReconcileUnsettledLLMBilling(); (err != nil) != tt.wantErr {
+			if err := m.ReconcileUnsettledLLMBilling(time.Now().Add(-1*time.Hour), time.Now()); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileUnsettledLLMBilling() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

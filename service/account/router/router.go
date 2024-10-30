@@ -6,8 +6,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
@@ -91,6 +94,8 @@ func RegisterPayRouter() {
 		fmt.Println("Start reward processing timer")
 		go startRewardProcessingTimer(ctx)
 	}
+	// process llm task
+	go startReconcileLLMBilling(ctx)
 
 	// Wait for interrupt signal.
 	<-interrupt
@@ -113,4 +118,42 @@ func startRewardProcessingTimer(ctx context.Context) {
 			return
 		}
 	}
+}
+
+var lastReconcileTime atomic.Value
+
+func startReconcileLLMBilling(ctx context.Context) {
+	// initialize to one hour ago
+	lastReconcileTime.Store(time.Now().UTC().Add(-time.Hour))
+
+	// create a timer and execute it once every minute
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	logrus.Info("Starting LLM billing reconciliation service")
+
+	// This command is executed for the first time to process the data within the last hour
+	doReconcile(time.Now().UTC().Add(-time.Hour), time.Now().UTC())
+
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Info("Stopping LLM billing reconciliation service")
+			return
+		case t := <-ticker.C:
+			currentTime := t.UTC()
+			lastTime := lastReconcileTime.Load().(time.Time)
+			doReconcile(lastTime, currentTime)
+		}
+	}
+}
+
+func doReconcile(startTime, endTime time.Time) {
+	logrus.Infof("Starting reconciliation from %v to %v", startTime, endTime)
+	if err := dao.DBClient.ReconcileUnsettledLLMBilling(startTime, endTime); err != nil {
+		logrus.Errorf("Failed to reconcile LLM billing: %v", err)
+		return
+	}
+	lastReconcileTime.Store(endTime)
+	logrus.Infof("Successfully reconciled LLM billing until %v", endTime)
 }
