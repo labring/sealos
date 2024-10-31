@@ -157,5 +157,6 @@
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
   "yaml_file": "YAML文件",
-  "delete_version_confirm_info": "你确定要删除该版本吗？"
+  "delete_version_confirm_info": "你确定要删除该版本吗？",
+  "opening_ide": "正在打开 IDE..."
 }

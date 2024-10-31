@@ -29,6 +29,7 @@ import { DevboxDetailType } from '@/types/devbox'
 import MyIcon from '@/components/Icon'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
+import IDEButton from '@/components/IDEButton'
 
 const Header = ({
   refetchDevboxDetail,
@@ -227,92 +228,28 @@ const Header = ({
       {/* right main button group */}
       <Flex gap={5}>
         <Box>
-          <Button
-            height={'40px'}
-            size={'sm'}
-            fontSize={'14px'}
-            bg={'white'}
-            color={'grayModern.600'}
-            _hover={{
-              color: 'brightBlue.600'
+          <IDEButton
+            devboxName={devboxDetail.name}
+            runtimeVersion={devboxDetail.runtimeVersion}
+            sshPort={devboxDetail.sshPort as number}
+            status={devboxDetail.status}
+            isBigButton={isBigButton}
+            leftButtonProps={{
+              height: '40px',
+              borderWidth: '1 0 1 1',
+              bg: 'white',
+              color: 'grayModern.600'
             }}
-            borderWidth={1}
-            borderRightWidth={0}
-            borderRightRadius={0}
-            onClick={() => handleGotoIDE(devboxDetail, currentIDE)}
-            leftIcon={
-              isBigButton ? (
-                <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
-              ) : undefined
-            }
-            isDisabled={devboxDetail.status.value !== 'Running'}>
-            {isBigButton ? (
-              getCurrentIDELabelAndIcon(currentIDE).label
-            ) : (
-              <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
-            )}
-          </Button>
-          <Menu placement="bottom-end">
-            <MenuButton
-              height={'40px'}
-              bg={'white'}
-              color={'grayModern.600'}
-              p={2}
-              borderWidth={1}
-              borderLeftRadius={0}
-              borderLeftWidth={0}
-              boxShadow={
+            rightButtonProps={{
+              height: '40px',
+              borderWidth: '1 1 1 0',
+              bg: 'white',
+              color: 'grayModern.600',
+              mr: 0,
+              boxShadow:
                 '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
-              }
-              as={IconButton}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              isDisabled={devboxDetail.status.value !== 'Running'}
-              icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
-              _before={{
-                content: '""',
-                position: 'absolute',
-                left: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '1px',
-                height: '20px',
-                backgroundColor: 'grayModern.250'
-              }}
-            />
-            <MenuList
-              color={'grayModern.600'}
-              fontWeight={500}
-              fontSize={'12px'}
-              defaultValue={currentIDE}
-              px={1}>
-              {[
-                { value: 'vscode' as IDEType, label: 'VSCode' },
-                { value: 'cursor' as IDEType, label: 'Cursor' },
-                { value: 'vscodeInsider' as IDEType, label: 'VSCode Insider' }
-              ].map((item) => (
-                <MenuItem
-                  key={item.value}
-                  value={item.value}
-                  onClick={() => setCurrentIDE(item.value)}
-                  icon={<MyIcon name={item.value} w={'16px'} />}
-                  _hover={{
-                    bg: '#1118240D',
-                    borderRadius: 4
-                  }}
-                  _focus={{
-                    bg: '#1118240D',
-                    borderRadius: 4
-                  }}>
-                  <Flex justifyContent="space-between" alignItems="center" width="100%">
-                    {item.label}
-                    {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
-                  </Flex>
-                </MenuItem>
-              ))}
-            </MenuList>
-          </Menu>
+            }}
+          />
         </Box>
         {devboxDetail.status.value === 'Running' && (
           <Button
