@@ -745,6 +745,7 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 
 		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{
 			{Key: "appName", Value: 1},
+			{Key: "appType", Value: -1},
 			{Key: "namespace", Value: 1},
 			{Key: "amount", Value: 1},
 		}}})
