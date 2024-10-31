@@ -40,10 +40,6 @@ async function fetchModels(): Promise<string[]> {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    console.log(global.AppConfig)
-
-    console.log(request.headers)
-
     await parseJwtToken(request.headers)
 
     const models = await fetchModels()

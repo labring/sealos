@@ -23,7 +23,10 @@
     "modal": "Model",
     "prompt_tokens": "enter",
     "completion_tokens": "output",
-    "price": "price"
+    "price": "price",
+    "select_modal": "Please select a model",
+    "select_token_name": "Please select a name",
+    "model": "Model"
   },
   "Page": "Page",
   "Total": "total"

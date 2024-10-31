@@ -1,34 +1,17 @@
+import { LogItem } from '@/types/log'
 import { parseJwtToken } from '@/utils/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
-interface LogInfo {
-  token_name: string
-  endpoint: string
-  content: string
-  group: string
-  model: string
-  price: number
-  id: number
-  completion_price: number
-  token_id: number
-  used_amount: number
-  prompt_tokens: number
-  completion_tokens: number
-  channel: number
-  code: number
-  created_at: number
-}
-
-interface SearchResponse {
+export interface SearchResponse {
   data: {
-    logs: LogInfo[]
+    logs: LogItem[]
     total: number
   }
   message: string
   success: boolean
 }
 
-interface QueryParams {
+export interface QueryParams {
   token_name?: string
   model_name?: string
   code?: string
@@ -53,7 +36,7 @@ function validateParams(params: QueryParams): string | null {
   return null
 }
 
-async function fetchLogs(params: QueryParams): Promise<{ logs: LogInfo[]; total: number }> {
+async function fetchLogs(params: QueryParams): Promise<{ logs: LogItem[]; total: number }> {
   try {
     const url = new URL(`/api/logs/search`, global.AppConfig?.backend.aiproxy)
 
@@ -77,6 +60,8 @@ async function fetchLogs(params: QueryParams): Promise<{ logs: LogInfo[]; total:
     }
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
+
+    // console.log(url)
 
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -105,14 +90,16 @@ async function fetchLogs(params: QueryParams): Promise<{ logs: LogInfo[]; total:
   }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     await parseJwtToken(request.headers)
     const searchParams = request.nextUrl.searchParams
 
     const queryParams: QueryParams = {
-      page: parseInt(searchParams.get('p') || '1', 10),
-      perPage: parseInt(searchParams.get('per_page') || '10', 10),
+      page: parseInt(searchParams.get('page') || '1', 10),
+      perPage: parseInt(searchParams.get('perPage') || '10', 10),
       token_name: searchParams.get('token_name') || undefined,
       model_name: searchParams.get('model_name') || undefined,
       code: searchParams.get('code') || undefined,

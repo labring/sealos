@@ -24,7 +24,9 @@
     "model": "模型",
     "prompt_tokens": "输入",
     "completion_tokens": "输出",
-    "price": "价格"
+    "price": "价格",
+    "select_modal": "请选择模型",
+    "select_token_name": "请选择名称"
   },
   "Page": "页",
   "Total": "总数"
