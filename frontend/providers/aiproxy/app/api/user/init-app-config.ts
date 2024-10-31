@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
 
-import type { AppConfigType } from '@/types/appConfig';
+import type { AppConfigType } from '@/types/appConfig'
 
 function getAppConfig(appConfig: AppConfigType): AppConfigType {
-  if (process.env.appTokenJwtKey) {
-    appConfig.auth.appTokenJwtKey = process.env.appTokenJwtKey;
+  if (process.env.APP_TOKEN_JWT_KEY) {
+    appConfig.auth.appTokenJwtKey = process.env.APP_TOKEN_JWT_KEY
   }
-  if (process.env.aiProxyBackendKey) {
-    appConfig.auth.aiProxyBackendKey = process.env.aiProxyBackendKey;
+  if (process.env.AI_PROXY_BACKEND_KEY) {
+    appConfig.auth.aiProxyBackendKey = process.env.AI_PROXY_BACKEND_KEY
   }
-  if (process.env.aiproxy) {
-    appConfig.backend.aiproxy = process.env.aiproxy;
+  if (process.env.AI_PROXY_BACKEND) {
+    appConfig.backend.aiproxy = process.env.AI_PROXY_BACKEND
   }
-  return appConfig;
+  return appConfig
 }
 
 export function initAppConfig(): AppConfigType {
@@ -25,22 +25,22 @@ export function initAppConfig(): AppConfigType {
     backend: {
       aiproxy: 'http://localhost:8080'
     }
-  };
+  }
   if (!global.AppConfig) {
     try {
-      global.AppConfig = getAppConfig(DefaultAppConfig);
+      global.AppConfig = getAppConfig(DefaultAppConfig)
     } catch (error) {
-      console.error('Config initialization error:', error);
-      global.AppConfig = DefaultAppConfig;
+      console.error('Config initialization error:', error)
+      global.AppConfig = DefaultAppConfig
     }
   }
 
-  return global.AppConfig;
+  return global.AppConfig
 }
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const config = initAppConfig();
+    const config = initAppConfig()
 
     return NextResponse.json({
       code: 200,
@@ -48,10 +48,10 @@ export async function GET(): Promise<NextResponse> {
       data: {
         aiproxyBackend: config.backend.aiproxy
       }
-    });
+    })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('Config API error:', errorMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('Config API error:', errorMessage)
 
     return NextResponse.json(
       {
@@ -60,6 +60,6 @@ export async function GET(): Promise<NextResponse> {
         error: errorMessage
       },
       { status: 500 }
-    );
+    )
   }
 }
