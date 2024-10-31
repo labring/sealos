@@ -128,11 +128,16 @@ func startReconcileLLMBilling(ctx context.Context) {
 	// initialize to one hour ago
 	lastReconcileTime.Store(time.Now().UTC().Add(-time.Hour))
 
+	tickerTime, err := time.ParseDuration(env.GetEnvWithDefault("LLM_BILLING_RECONCILE_INTERVAL", "1m"))
+	if err != nil {
+		logrus.Errorf("Failed to parse LLM_BILLING_RECONCILE_INTERVAL: %v", err)
+		tickerTime = time.Minute
+	}
 	// create a timer and execute it once every minute
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(tickerTime)
 	defer ticker.Stop()
 
-	logrus.Info("Starting LLM billing reconciliation service")
+	logrus.Info("Starting LLM billing reconciliation service, interval: ", tickerTime.String())
 
 	// This command is executed for the first time to process the data within the last hour
 	doLLMTokenReconcile(time.Now().UTC().Add(-time.Hour), time.Now().UTC())
