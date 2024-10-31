@@ -66,6 +66,7 @@ type Interface interface {
 	ProcessPendingTaskRewards() error
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
 	ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error
+	ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error
 }
 
 type Account struct {
@@ -1505,7 +1506,7 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 	}
 	billing := &resources.Billing{
 		OrderID:   id,
-		Type:      accountv1.Consumption,
+		Type:      accountv1.SubConsumption,
 		Namespace: req.Namespace,
 		AppType:   resources.AppType[req.AppType],
 		AppName:   req.AppName,
@@ -1518,6 +1519,20 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 	err = m.MongoDB.SaveBillings(billing)
 	if err != nil {
 		return fmt.Errorf("add balance failed: %v", err)
+	}
+	return nil
+}
+
+func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
+	filter := bson.M{"order_id": orderID}
+	update := bson.M{
+		"$set": bson.M{
+			"status": status,
+		},
+	}
+	_, err := m.getBillingCollection().UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return fmt.Errorf("update error: %v", err)
 	}
 	return nil
 }
@@ -1536,6 +1551,7 @@ func (m *Account) ReconcileUnsettledLLMBilling(startTime, endTime time.Time) err
 			// 2. update billing status
 			filter := bson.M{
 				"user_uid": userUID,
+				"type":     accountv1.SubConsumption,
 				"status":   resources.Unsettled,
 				"app_type": resources.AppType[resources.LLMToken],
 				"time": bson.M{
@@ -1558,25 +1574,127 @@ func (m *Account) ReconcileUnsettledLLMBilling(startTime, endTime time.Time) err
 		})
 
 		// If the transaction fails, roll back the billing state
+		//if err != nil {
+		//	err = fmt.Errorf("failed to reconcile billing for user %s: %v", userUID, err)
+		//	filter := bson.M{
+		//		"user_uid": userUID,
+		//		"app_type": resources.AppType["LLM-TOKEN"],
+		//		"time": bson.M{
+		//			"$gte": time.Now().Add(-time.Hour),
+		//		},
+		//	}
+		//	update := bson.M{
+		//		"$set": bson.M{
+		//			"status": resources.Unsettled,
+		//		},
+		//	}
+		//	if _, rollBackErr := m.MongoDB.getBillingCollection().UpdateMany(context.Background(), filter, update); rollBackErr != nil {
+		//		return fmt.Errorf("%v; And failed to rollback billing status: %v", err, rollBackErr)
+		//	}
+		//	return err
+		//}
 		if err != nil {
-			err = fmt.Errorf("failed to reconcile billing for user %s: %v", userUID, err)
-			filter := bson.M{
-				"user_uid": userUID,
-				"app_type": resources.AppType["LLM-TOKEN"],
-				"time": bson.M{
-					"$gte": time.Now().Add(-time.Hour),
-				},
-			}
-			update := bson.M{
-				"$set": bson.M{
-					"status": resources.Unsettled,
-				},
-			}
-			if _, rollBackErr := m.MongoDB.getBillingCollection().UpdateMany(context.Background(), filter, update); rollBackErr != nil {
-				return fmt.Errorf("%v; And failed to rollback billing status: %v", err, rollBackErr)
-			}
-			return err
+			return fmt.Errorf("failed to reconcile billing for user %s: %v", userUID, err)
 		}
+	}
+	return nil
+}
+
+func (m *Account) ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{
+			"time": bson.M{
+				"$gte": hourStart,
+				"$lt":  hourEnd,
+			},
+			"app_type": resources.AppType[resources.LLMToken],
+			"status":   resources.Settled,
+		}}},
+		{{Key: "$group", Value: bson.M{
+			"_id": bson.M{
+				"user_uid":  "$user_uid",
+				"app_name":  "$app_name",
+				"owner":     "$owner",
+				"namespace": "$namespace",
+			},
+			"total_amount": bson.M{"$sum": "$amount"},
+		}}},
+	}
+
+	cursor, err := m.MongoDB.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return fmt.Errorf("failed to aggregate hourly billing: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var errs []error
+	for cursor.Next(context.Background()) {
+		var result struct {
+			ID struct {
+				UserUID   uuid.UUID `bson:"user_uid"`
+				AppName   string    `bson:"app_name"`
+				Owner     string    `bson:"owner"`
+				Namespace string    `bson:"namespace"`
+			} `bson:"_id"`
+			TotalAmount int64 `bson:"total_amount"`
+		}
+
+		if err := cursor.Decode(&result); err != nil {
+			errs = append(errs, fmt.Errorf("failed to decode document: %v", err))
+			continue
+		}
+		if result.ID.Owner == "" {
+			userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: result.ID.UserUID})
+			if err != nil {
+				errs = append(errs, fmt.Errorf("failed to get user cr: %v", err))
+				continue
+			}
+			result.ID.Owner = userCr.CrName
+		}
+
+		filter := bson.M{
+			"user_uid": result.ID.UserUID,
+			"app_type": resources.AppType[resources.LLMToken],
+			"app_name": result.ID.AppName,
+			"time":     hourStart,
+			"type":     accountv1.Consumption,
+		}
+
+		billing := bson.M{
+			"order_id":  gonanoid.Must(12),
+			"type":      accountv1.Consumption,
+			"namespace": result.ID.Namespace,
+			"app_type":  resources.AppType[resources.LLMToken],
+			"app_name":  result.ID.AppName,
+			"amount":    result.TotalAmount,
+			"owner":     result.ID.Owner,
+			"time":      hourStart,
+			"status":    resources.Settled,
+			"user_uid":  result.ID.UserUID,
+		}
+
+		update := bson.M{
+			"$setOnInsert": billing,
+		}
+
+		opts := options.Update().SetUpsert(true)
+		_, err = m.MongoDB.getBillingCollection().UpdateOne(
+			context.Background(),
+			filter,
+			update,
+			opts,
+		)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to upsert billing for user %s, app %s: %v",
+				result.ID.UserUID, result.ID.AppName, err))
+			continue
+		}
+	}
+	if err = cursor.Err(); err != nil {
+		errs = append(errs, fmt.Errorf("cursor error: %v", err))
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("encountered %d errors during archiving: %v", len(errs), errs)
 	}
 	return nil
 }
