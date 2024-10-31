@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 
 import { KBRuntimeType } from '@/types/k8s'
-import { runtimeNamespace } from '@/stores/static'
 import { authSession, generateAccessToken } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
