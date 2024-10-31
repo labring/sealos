@@ -357,19 +357,21 @@ const Header = ({
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
           {!isButtonOnlyIcon ? <MyIcon name={'change'} w={'16px'} /> : t('update')}
         </Button>
-        <Button
-          h={'40px'}
-          fontSize={'14px'}
-          bg={'white'}
-          color={'grayModern.600'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
-          borderWidth={1}
-          leftIcon={isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
-          onClick={() => handleRestartDevbox(devboxDetail)}>
-          {!isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : t('restart')}
-        </Button>
+        {devboxDetail.status.value !== 'Stopped' && (
+          <Button
+            h={'40px'}
+            fontSize={'14px'}
+            bg={'white'}
+            color={'grayModern.600'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            borderWidth={1}
+            leftIcon={isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
+            onClick={() => handleRestartDevbox(devboxDetail)}>
+            {!isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : t('restart')}
+          </Button>
+        )}
         <Button
           h={'40px'}
           fontSize={'14px'}
