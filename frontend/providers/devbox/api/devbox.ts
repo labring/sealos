@@ -50,7 +50,10 @@ export const pauseDevbox = (data: { devboxName: string }) => POST('/api/pauseDev
 
 export const getDevboxVersionList = (devboxName: string, devboxUid: string) =>
   GET<KBDevboxReleaseType[]>('/api/getDevboxVersionList', { devboxName, devboxUid }).then(
-    (data): DevboxVersionListItemType[] => data.map(adaptDevboxVersionListItem)
+    (data): DevboxVersionListItemType[] =>
+      data.map(adaptDevboxVersionListItem).sort((a, b) => {
+        return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      })
   )
 
 export const releaseDevbox = (data: {

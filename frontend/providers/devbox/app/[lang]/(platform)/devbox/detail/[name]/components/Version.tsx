@@ -225,7 +225,15 @@ const Version = () => {
     }
   ]
   return (
-    <Box borderWidth={1} borderRadius="lg" pl={6} pt={4} pr={6} bg={'white'} h={'full'}>
+    <Box
+      borderWidth={1}
+      borderRadius="lg"
+      pl={6}
+      pt={4}
+      pr={6}
+      bg={'white'}
+      h={'full'}
+      position={'relative'}>
       <Flex alignItems="center" justifyContent={'space-between'} mb={5}>
         <Flex alignItems={'center'}>
           <MyIcon name="list" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
@@ -246,7 +254,7 @@ const Version = () => {
           {t('release_version')}
         </Button>
       </Flex>
-      <Loading loading={!initialized} />
+      <Loading loading={!initialized} fixed={false} />
       {devboxVersionList.length === 0 && initialized ? (
         <Flex
           justifyContent={'center'}

@@ -76,16 +76,6 @@ export const useDevboxStore = create<State>()(
       setDevboxVersionList: async (devboxName, devboxUid) => {
         const res = await getDevboxVersionList(devboxName, devboxUid)
 
-        // order by createTime
-        res.sort((a, b) => {
-          return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
-        })
-
-        // createTime：2024/09/11 17:37-> 2024-09-11
-        res.forEach((item) => {
-          item.createTime = item.createTime.replace(/\//g, '-')
-        })
-
         set((state) => {
           state.devboxVersionList = res
         })
