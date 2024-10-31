@@ -42,7 +42,11 @@ const Version = () => {
     ['initDevboxVersionList'],
     () => setDevboxVersionList(devbox.name, devbox.id),
     {
-      refetchInterval: 3000,
+      refetchInterval:
+        devboxVersionList.length > 0 &&
+        devboxVersionList[0].status.value !== DevboxReleaseStatusEnum.Success
+          ? 3000
+          : false,
       onSettled() {
         setInitialized(true)
       }
