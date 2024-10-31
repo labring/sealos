@@ -594,7 +594,7 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 		req.StartTime = time.Now().UTC().Add(-time.Hour * 24 * 30)
 		req.EndTime = time.Now().UTC()
 	}
-	match := bson.M{
+	subConsumptionMatch := bson.M{
 		"owner":          owner,
 		"namespace":      namespace,
 		"app_costs.name": appName,
@@ -604,7 +604,7 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 			"$lte": req.EndTime,
 		},
 	}
-	appStoreMatch := bson.M{
+	consumptionMatch := bson.M{
 		"owner":     owner,
 		"namespace": namespace,
 		"app_name":  appName,
@@ -616,10 +616,10 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 	}
 	var pipeline mongo.Pipeline
 
-	if appType == resources.AppType[resources.AppStore] {
-		// If appType is 8, match app_name and app_type directly
+	if appType == resources.AppType[resources.AppStore] || appType == resources.AppType[resources.LLMToken] {
+		// If appType is app-store || llm-token, match app_name and app_type directly
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: appStoreMatch}},
+			{{Key: "$match", Value: consumptionMatch}},
 			{{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: nil},
 				{Key: "totalAmount", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
@@ -628,7 +628,7 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 	} else {
 		// Otherwise, match inside app_costs
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: match}},
+			{{Key: "$match", Value: subConsumptionMatch}},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$match", Value: bson.D{
 				{Key: "app_costs.name", Value: appName},
@@ -662,9 +662,6 @@ func (m *MongoDB) getTotalAppCost(req helper.GetCostAppListReq, app helper.CostA
 }
 
 func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.CostAppListResp, rErr error) {
-	var (
-		result []helper.CostApp
-	)
 	if req.PageSize <= 0 {
 		req.PageSize = 10
 	}
@@ -674,8 +671,8 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 	pageSize := req.PageSize
 	if strings.ToUpper(req.AppType) != resources.AppStore {
 		match := bson.M{
-			"owner": req.Owner,
-			// Exclude app store
+			"owner":    req.Owner,
+			"type":     accountv1.Consumption,
 			"app_type": bson.M{"$ne": resources.AppType[resources.AppStore]},
 		}
 		if req.Namespace != "" {
@@ -683,9 +680,6 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 		}
 		if req.AppType != "" {
 			match["app_type"] = resources.AppType[strings.ToUpper(req.AppType)]
-		}
-		if req.AppName != "" {
-			match["app_costs.name"] = req.AppName
 		}
 		if req.StartTime.IsZero() {
 			req.StartTime = time.Now().UTC().Add(-time.Hour * 24 * 30)
@@ -695,52 +689,70 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 			"$gte": req.StartTime,
 			"$lte": req.EndTime,
 		}
-		sort := bson.E{Key: "$sort", Value: bson.D{
-			{Key: "time", Value: -1},
-		}}
+
 		pipeline := mongo.Pipeline{
 			{{Key: "$match", Value: match}},
-			{{Key: "$unwind", Value: "$app_costs"}},
-			{{Key: "$match", Value: bson.D{
-				{Key: "app_costs.name", Value: req.AppName},
-			}}},
-			{sort},
-		}
-		if req.AppName == "" {
-			pipeline = mongo.Pipeline{
-				{{Key: "$match", Value: match}},
-				{{Key: "$unwind", Value: "$app_costs"}},
-				{sort},
-			}
-		}
-
-		pipeline = append(pipeline, mongo.Pipeline{
-			{{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: bson.D{
-					{Key: "app_type", Value: "$app_type"},
-					{Key: "app_name", Value: "$app_costs.name"},
-					{Key: "namespace", Value: "$namespace"},
-					{Key: "owner", Value: "$owner"},
+			{{Key: "$facet", Value: bson.D{
+				{Key: "withAppCosts", Value: bson.A{
+					bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs", Value: bson.M{"$exists": true}}}}},
+					bson.D{{Key: "$unwind", Value: "$app_costs"}},
+					bson.D{{Key: "$group", Value: bson.D{
+						{Key: "_id", Value: bson.D{
+							{Key: "app_type", Value: "$app_type"},
+							{Key: "app_name", Value: "$app_costs.name"},
+							{Key: "namespace", Value: "$namespace"},
+							{Key: "owner", Value: "$owner"},
+						}},
+					}}},
 				}},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}}, // 添加一个计数字段
+				{Key: "withoutAppCosts", Value: bson.A{
+					bson.D{{Key: "$match", Value: bson.D{
+						{Key: "app_costs", Value: bson.M{"$exists": false}},
+						{Key: "app_name", Value: bson.M{"$exists": true}},
+					}}},
+					bson.D{{Key: "$group", Value: bson.D{
+						{Key: "_id", Value: bson.D{
+							{Key: "app_type", Value: "$app_type"},
+							{Key: "app_name", Value: "$app_name"},
+							{Key: "namespace", Value: "$namespace"},
+							{Key: "owner", Value: "$owner"},
+						}},
+					}}},
+				}},
 			}}},
 			{{Key: "$project", Value: bson.D{
-				{Key: "_id", Value: 0},
-				{Key: "namespace", Value: "$_id.namespace"},
-				{Key: "appType", Value: "$_id.app_type"},
-				{Key: "owner", Value: "$_id.owner"},
-				{Key: "appName", Value: "$_id.app_name"},
+				{Key: "combined", Value: bson.D{{Key: "$concatArrays", Value: bson.A{"$withAppCosts", "$withoutAppCosts"}}}},
 			}}},
-		}...)
+			{{Key: "$unwind", Value: "$combined"}},
+			{{Key: "$replaceRoot", Value: bson.D{{Key: "newRoot", Value: "$combined._id"}}}},
+		}
 
-		limitPipeline := append(pipeline, bson.D{{Key: "$skip", Value: (req.Page - 1) * req.PageSize}}, bson.D{{Key: "$limit", Value: req.PageSize}})
+		if req.AppName != "" {
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{
+				{Key: "app_name", Value: req.AppName},
+			}}})
+		}
+
+		pipeline = append(pipeline, bson.D{
+			{Key: "$project", Value: bson.D{
+				{Key: "_id", Value: 0},
+				{Key: "namespace", Value: "$namespace"},
+				{Key: "appType", Value: "$app_type"},
+				{Key: "owner", Value: "$owner"},
+				{Key: "appName", Value: "$app_name"},
+			}},
+		})
+
+		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{
+			{Key: "appName", Value: 1},
+			{Key: "namespace", Value: 1},
+			{Key: "amount", Value: 1},
+		}}})
 
 		countPipeline := append(pipeline, bson.D{{Key: "$count", Value: "total"}})
-
 		countCursor, err := m.getBillingCollection().Aggregate(context.Background(), countPipeline)
 		if err != nil {
-			rErr = fmt.Errorf("failed to execute count aggregate query: %w", err)
-			return
+			return resp, fmt.Errorf("failed to execute count aggregate query: %w", err)
 		}
 		defer countCursor.Close(context.Background())
 
@@ -749,43 +761,45 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 				Total int64 `bson:"total"`
 			}
 			if err := countCursor.Decode(&countResult); err != nil {
-				rErr = fmt.Errorf("failed to decode count result: %w", err)
-				return
+				return resp, fmt.Errorf("failed to decode count result: %w", err)
 			}
 			resp.Total = countResult.Total
 		}
+		pipeline = append(pipeline,
+			bson.D{{Key: "$skip", Value: (req.Page - 1) * pageSize}},
+			bson.D{{Key: "$limit", Value: pageSize}},
+		)
 
-		cursor, err := m.getBillingCollection().Aggregate(context.Background(), limitPipeline)
+		cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
 		if err != nil {
-			rErr = fmt.Errorf("failed to execute aggregate query: %w", err)
-			return
+			return resp, fmt.Errorf("failed to execute aggregate query: %w", err)
 		}
 		defer cursor.Close(context.Background())
 
+		var result []helper.CostApp
 		if err := cursor.All(context.Background(), &result); err != nil {
-			rErr = fmt.Errorf("failed to decode all billing record: %w", err)
-			return
+			return resp, fmt.Errorf("failed to decode all billing record: %w", err)
 		}
+		resp.Apps = result
 	}
 	appStoreTotal, err := m.getAppStoreTotal(req)
 	if err != nil {
-		rErr = fmt.Errorf("failed to get app store total: %w", err)
-		return
+		return resp, fmt.Errorf("failed to get app store total: %w", err)
 	}
 
 	if req.AppType == "" || strings.ToUpper(req.AppType) == resources.AppStore {
-		currentAppPageIsFull := len(result) == req.PageSize
+		currentAppPageIsFull := len(resp.Apps) == req.PageSize
 		maxAppPageSize := (resp.Total + int64(req.PageSize) - 1) / int64(req.PageSize)
 		completedNum := calculateComplement(int(resp.Total), req.PageSize)
 		appPageSize := (resp.Total + int64(req.PageSize) - 1) / int64(req.PageSize)
+
 		if req.Page == int(maxAppPageSize) {
 			if !currentAppPageIsFull {
 				appStoreResp, err := m.getAppStoreList(req, 0, completedNum)
 				if err != nil {
-					rErr = fmt.Errorf("failed to get app store list: %w", err)
-					return
+					return resp, fmt.Errorf("failed to get app store list: %w", err)
 				}
-				result = append(result, appStoreResp.Apps...)
+				resp.Apps = append(resp.Apps, appStoreResp.Apps...)
 			}
 		} else if req.Page > int(maxAppPageSize) {
 			skipPageSize := (req.Page - int(appPageSize) - 1) * req.PageSize
@@ -794,16 +808,14 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 			}
 			appStoreResp, err := m.getAppStoreList(req, completedNum+skipPageSize, req.PageSize)
 			if err != nil {
-				rErr = fmt.Errorf("failed to get app store list: %w", err)
-				return
+				return resp, fmt.Errorf("failed to get app store list: %w", err)
 			}
-			result = append(result, appStoreResp.Apps...)
+			resp.Apps = append(resp.Apps, appStoreResp.Apps...)
 		}
 		resp.Total += appStoreTotal
 	}
 
 	resp.TotalPage = (resp.Total + int64(pageSize) - 1) / int64(pageSize)
-	resp.Apps = result
 	return resp, nil
 }
 
