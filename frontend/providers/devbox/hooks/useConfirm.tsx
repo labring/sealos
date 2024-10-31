@@ -11,7 +11,30 @@ import {
   Box
 } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
+
+const ConfirmCheckbox = ({
+  checkboxLabel,
+  onCheckedChange
+}: {
+  checkboxLabel: string
+  onCheckedChange: (checked: boolean) => void
+}) => {
+  const [isChecked, setIsChecked] = useState(true)
+  const t = useTranslations()
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked
+    setIsChecked(newValue)
+    onCheckedChange(newValue)
+  }
+
+  return (
+    <Checkbox isChecked={isChecked} spacing={4} onChange={handleChange}>
+      {t(checkboxLabel)}
+    </Checkbox>
+  )
+}
 
 export const useConfirm = ({
   title = 'prompt',
@@ -60,12 +83,12 @@ export const useConfirm = ({
                 <Box>{t(content)}</Box>
                 <Box mt={'12px'}>
                   {showCheckbox && (
-                    <Checkbox
-                      isChecked={isCheckedRef.current}
-                      spacing={4}
-                      onChange={(e) => (isCheckedRef.current = e.target.checked)}>
-                      {t(checkboxLabel)}
-                    </Checkbox>
+                    <ConfirmCheckbox
+                      checkboxLabel={checkboxLabel}
+                      onCheckedChange={(checked) => {
+                        isCheckedRef.current = checked
+                      }}
+                    />
                   )}
                 </Box>
               </AlertDialogBody>
