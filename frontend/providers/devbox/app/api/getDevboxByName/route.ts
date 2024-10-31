@@ -53,8 +53,12 @@ export async function GET(req: NextRequest) {
       portInfos: []
     } as KBDevboxType & { portInfos: any[] }
 
-    // get ingresses and certificates
-    const [ingressesResponse, certificatesResponse] = await Promise.all([
+    if (devboxBody.spec.network.extraPorts.length === 0) {
+      return jsonRes({ data: resp })
+    }
+
+    // get ingresses and certificates and service
+    const [ingressesResponse, certificatesResponse, serviceResponse] = await Promise.all([
       k8sCustomObjects.listNamespacedCustomObject(
         'networking.k8s.io',
         'v1',
@@ -76,57 +80,50 @@ export async function GET(req: NextRequest) {
         undefined,
         undefined,
         `${devboxKey}=${devboxName}`
-      )
+      ),
+      k8sCore.readNamespacedService(devboxName, namespace).catch(() => null)
     ])
     const ingresses: any = ingressesResponse.body
     const certificates: any = certificatesResponse.body
+    const service = serviceResponse?.body
+
     const customDomain = certificates.items[0]?.spec.dnsNames[0]
-    const ingressList = ingresses.items.map((item: any) => {
+    const ingressList = ingresses.items.map((item: any) => ({
+      networkName: item.metadata.name,
+      port: item.spec.rules[0].http.paths[0].backend.service.port.number,
+      protocol: item.metadata.annotations['nginx.ingress.kubernetes.io/backend-protocol'],
+      openPublicDomain: !!item.metadata.labels[publicDomainKey],
+      publicDomain: item.spec.tls[0].hosts[0],
+      customDomain: customDomain || ''
+    }))
+
+    resp.portInfos = devboxBody.spec.network.extraPorts.map((network: any) => {
+      const matchingIngress = ingressList.find(
+        (ingress: any) => ingress.port === network.containerPort
+      )
+
+      const servicePort = service?.spec?.ports?.find(
+        (port: any) => port.port === network.containerPort
+      )
+      const servicePortName = servicePort?.name
+
+      if (matchingIngress) {
+        return {
+          networkName: matchingIngress.networkName,
+          port: matchingIngress.port,
+          portName: servicePortName,
+          protocol: matchingIngress.protocol,
+          openPublicDomain: matchingIngress.openPublicDomain,
+          publicDomain: matchingIngress.publicDomain,
+          customDomain: matchingIngress.customDomain
+        }
+      }
+
       return {
-        networkName: item.metadata.name,
-        port: item.spec.rules[0].http.paths[0].backend.service.port.number,
-        protocol: item.metadata.annotations['nginx.ingress.kubernetes.io/backend-protocol'],
-        openPublicDomain: !!item.metadata.labels[publicDomainKey],
-        publicDomain: item.spec.tls[0].hosts[0],
-        customDomain: customDomain || ''
+        ...network,
+        port: network.containerPort
       }
     })
-    if (devboxBody.spec.network.extraPorts.length !== 0) {
-      try {
-        const { body: service } = await k8sCore.readNamespacedService(devboxName, namespace)
-        const portInfos = devboxBody.spec.network.extraPorts.map(async (network: any) => {
-          const matchingIngress = ingressList.find(
-            (ingress: any) => ingress.port === network.containerPort
-          )
-
-          const servicePort = service.spec?.ports?.find(
-            (port: any) => port.port === network.containerPort
-          )
-          const servicePortName = servicePort?.name
-
-          if (matchingIngress) {
-            return {
-              networkName: matchingIngress.networkName,
-              port: matchingIngress.port,
-              portName: servicePortName,
-              protocol: matchingIngress.protocol,
-              openPublicDomain: matchingIngress.openPublicDomain,
-              publicDomain: matchingIngress.publicDomain,
-              customDomain: matchingIngress.customDomain
-            }
-          }
-
-          return {
-            ...network,
-            port: network.containerPort
-          }
-        })
-        resp.portInfos = await Promise.all(portInfos)
-      } catch (error) {
-        // no service just null array
-        resp.portInfos = []
-      }
-    }
 
     return jsonRes({ data: resp })
   } catch (err: any) {
