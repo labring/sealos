@@ -1,53 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
 
-import { parseJwtToken } from '@/utils/auth';
+import { parseJwtToken } from '@/utils/auth'
 
 interface SearchResponse {
-  data: string[];
-  message: string;
-  success: boolean;
+  data: string[]
+  message: string
+  success: boolean
 }
 
 async function fetchModels(): Promise<string[]> {
   try {
-    const url = new URL(`/api/models/enabled`, global.AppConfig?.backend.aiproxy);
+    const url = new URL(`/api/models/enabled`, global.AppConfig?.backend.aiproxy)
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       }
-    });
+    })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const result: SearchResponse = await response.json();
+    const result: SearchResponse = await response.json()
 
     if (!result.success) {
-      throw new Error(result.message || 'get models API request failed');
+      throw new Error(result.message || 'get models API request failed')
     }
 
-    return result.data;
+    return result.data
   } catch (error) {
-    console.error('Error fetching models:', error);
-    return Promise.reject(error);
+    console.error('Error fetching models:', error)
+    return Promise.reject(error)
   }
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await parseJwtToken(request.headers);
+    // await parseJwtToken(request.headers)
 
-    const models = await fetchModels();
+    const models = await fetchModels()
 
     return NextResponse.json({
       code: 200,
       data: models
-    });
+    })
   } catch (error) {
-    console.error('get models error:', error);
+    console.error('get models error:', error)
 
     return NextResponse.json(
       {
@@ -56,6 +56,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         error: error instanceof Error ? error.message : 'Internal server error'
       },
       { status: 500 }
-    );
+    )
   }
 }

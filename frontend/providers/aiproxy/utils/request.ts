@@ -1,65 +1,95 @@
-// http.ts
-import axios, { AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
-
-import { ApiResp } from '@/types/api';
+import { ApiResp } from '@/types/api'
+import axios, {
+  InternalAxiosRequestConfig,
+  AxiosHeaders,
+  AxiosResponse,
+  AxiosRequestConfig
+} from 'axios'
 
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 40000
-});
+  timeout: 60000
+})
 
 // request interceptor
 request.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // auto append service prefix
-    const _headers: RawAxiosRequestHeaders = config.headers || {};
-    const session = useSessionStore.getState().session;
-    if (config.url && config.url?.startsWith('/api/')) {
-      _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
+    if (config.url && !config.url?.startsWith('/api/')) {
+      config.url = '' + config.url
     }
+    let _headers: AxiosHeaders = config.headers
+
+    //获取token，并将其添加至请求头中
+    _headers['Authorization'] = config.headers.Authorization
 
     if (!config.headers || config.headers['Content-Type'] === '') {
-      _headers['Content-Type'] = 'application/json';
+      _headers['Content-Type'] = 'application/json'
     }
 
-    config.headers = _headers;
-    config.data = { ...config.data, internalToken: session.token };
-    // nprogress.start();
-    return config;
+    config.headers = _headers
+    return config
   },
-  (error) => {
-    error.data = {};
-    error.data.message = 'error';
-    // nprogress.done();
-    return Promise.resolve(error);
+  (error: any) => {
+    error.data = {}
+    error.data.msg = '服务器异常，请联系管理员！'
+    return Promise.resolve(error)
   }
-);
+)
 
 // response interceptor
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    const data = response.data as ApiResp;
-
-    if (!data.code || data.code < 200 || data.code > 300) {
-      return Promise.reject(response.data);
+    const { status, data } = response
+    if (status < 200 || status >= 300) {
+      return Promise.reject(status + ', ' + typeof data === 'string' ? data : String(data))
     }
-    // nprogress.done();
-    return response.data;
+
+    const apiResp = data as ApiResp
+    if (apiResp.code < 200 || apiResp.code >= 400) {
+      return Promise.reject(apiResp.code + ':' + apiResp.message)
+    }
+
+    response.data = apiResp.data
+    return response.data
   },
-  (error) => {
-    if (!error) {
-      return Promise.reject({ message: '未知错误' });
-    }
+  (error: any) => {
     if (axios.isCancel(error)) {
-      console.log('repeated request: ' + error.message);
+      return Promise.reject('cancel request' + String(error))
     } else {
-      error.data = {};
-      error.data.message = 'error';
+      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！'
     }
-    // nprogress.done();
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-export default request;
+export function GET<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.get(url, {
+    params: data,
+    ...config
+  })
+}
+
+export function POST<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.post(url, data, config)
+}
+
+export function DELETE<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.delete(url, {
+    params: data,
+    ...config
+  })
+}

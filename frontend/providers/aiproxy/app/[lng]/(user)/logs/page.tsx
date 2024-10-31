@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { Box, Flex, Grid, Input, Select } from '@chakra-ui/react'
 import { MySelect } from '@sealos/ui'
 
@@ -13,6 +12,8 @@ import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack
 import { LogItem } from '@/types/log'
 import { BaseTable } from '@/components/table/baseTable'
 import SwitchPage from '@/components/SwitchPage'
+import { useQuery } from '@tanstack/react-query'
+import { getModels } from '@/api/platform'
 
 const mockModals = ['gpt-3.5-turbo', 'gpt-4o-mini', 'gpt-4']
 
@@ -286,16 +287,15 @@ export default function Home(): React.JSX.Element {
   })
   const [endTime, setEndTime] = useState(new Date())
 
-  const { getValues, setValue } = useForm<LogForm>({
-    defaultValues: {
-      name: '',
-      modelName: '',
-      createdAt: new Date(),
-      endedAt: new Date(),
-      page: 1,
-      pageSize: 10
-    }
-  })
+  const [name, setName] = useState('')
+  const [modelName, setModelName] = useState('')
+  const [createdAt, setCreatedAt] = useState(new Date())
+  const [endedAt, setEndedAt] = useState(new Date())
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  const { data: models } = useQuery(['getModels'], () => getModels())
+  console.log(models)
 
   const columns = useMemo<ColumnDef<LogItem>[]>(() => {
     return [
@@ -354,12 +354,12 @@ export default function Home(): React.JSX.Element {
             <MySelect
               w={'300px'}
               height="32px"
-              value={getValues('name')}
+              value={name}
               list={mockNames.map((item) => ({
                 value: item.name,
                 label: item.name
               }))}
-              onchange={(val: string) => setValue('name', val)}
+              onchange={(val: string) => setName(val)}
             />
           </Flex>
 
@@ -370,12 +370,12 @@ export default function Home(): React.JSX.Element {
             <MySelect
               w={'300px'}
               height="32px"
-              value={getValues('modelName')}
+              value={modelName}
               list={mockModals.map((item) => ({
                 value: item,
                 label: item
               }))}
-              onchange={(val: string) => setValue('modelName', val)}
+              onchange={(val: string) => setModelName(val)}
             />
           </Flex>
 
@@ -386,12 +386,12 @@ export default function Home(): React.JSX.Element {
             <MySelect
               w={'300px'}
               height="32px"
-              value={getValues('modelName')}
+              value={modelName}
               list={mockStatus.map((item) => ({
                 value: item,
                 label: item
               }))}
-              onchange={(val: string) => setValue('modelName', val)}
+              onchange={(val: string) => setModelName(val)}
             />
           </Flex>
           <Flex alignItems={'center'} flex={1}>
@@ -410,11 +410,11 @@ export default function Home(): React.JSX.Element {
           <BaseTable table={table} />
           <SwitchPage
             justifyContent={'end'}
-            currentPage={getValues('page')}
+            currentPage={page}
             totalPage={10}
             totalItem={100}
-            pageSize={10}
-            setCurrentPage={(idx: number) => setValue('page', idx)}
+            pageSize={pageSize}
+            setCurrentPage={(idx: number) => setPage(idx)}
           />
         </Box>
       </Box>

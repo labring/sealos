@@ -11,6 +11,7 @@ import 'react-day-picker/dist/style.css'
 
 import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
+import QueryProvider from '@/providers/chakra/QueryProvider'
 
 export async function generateStaticParams(): Promise<{ lng: string }[]> {
   return languages.map((lng) => ({ lng }))
@@ -47,7 +48,9 @@ export default async function RootLayout({
     <html lang={lng} dir={dir(lng)}>
       <body>
         <I18nProvider lng={lng}>
-          <ChakraProviders>{children}</ChakraProviders>
+          <ChakraProviders>
+            <QueryProvider>{children}</QueryProvider>
+          </ChakraProviders>
         </I18nProvider>
       </body>
     </html>
