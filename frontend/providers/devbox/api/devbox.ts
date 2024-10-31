@@ -7,16 +7,25 @@ import {
   DevboxVersionListItemType,
   runtimeNamespaceMapType
 } from '@/types/devbox'
+import {
+  adaptDevboxDetail,
+  adaptDevboxListItem,
+  adaptDevboxVersionListItem,
+  adaptPod
+} from '@/utils/adapt'
 import { GET, POST, DELETE } from '@/services/request'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
-import { adaptDevboxListItem, adaptDevboxVersionListItem, adaptPod } from '@/utils/adapt'
 
 export const getMyDevboxList = () =>
   GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
     data.map(adaptDevboxListItem).sort((a, b) => {
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
     })
+  )
+export const getDevboxByName = (devboxName: string) =>
+  GET<KBDevboxType & { portInfos: any[] }>('/api/getDevboxByName', { devboxName }).then((data) =>
+    adaptDevboxDetail(data)
   )
 
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>

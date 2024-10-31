@@ -8,12 +8,14 @@ import type {
   DevboxVersionListItemType
 } from '@/types/devbox'
 import {
+  getDevboxByName,
   getDevboxMonitorData,
   getDevboxPodsByDevboxName,
   getDevboxVersionList,
   getMyDevboxList,
   getSSHConnectionInfo
 } from '@/api/devbox'
+import { devboxStatusMap, PodStatusEnum } from '@/constants/devbox'
 
 type State = {
   devboxList: DevboxListItemType[]
@@ -26,6 +28,7 @@ type State = {
   ) => Promise<DevboxVersionListItemType[]>
   devboxDetail: DevboxDetailType
   setDevboxDetail: (devboxName: string, sealosDomain: string) => Promise<DevboxDetailType>
+  intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
 }
 
@@ -90,18 +93,12 @@ export const useDevboxStore = create<State>()(
       },
       devboxDetail: {} as DevboxDetailType,
       setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
-        const res = await getMyDevboxList()
-
-        const detail = res.find((item) => item.name === devboxName) as DevboxDetailType
-
-        // isPause
-        detail.isPause = detail.status.value === 'Stopped'
+        const detail = await getDevboxByName(devboxName)
 
         if (detail.status.value !== 'Running') {
           set((state) => {
             state.devboxDetail = detail
           })
-
           return detail
         }
 
@@ -123,9 +120,6 @@ export const useDevboxStore = create<State>()(
         // add sshConfig
         detail.sshConfig = sshConfig as DevboxDetailType['sshConfig']
 
-        // convert startTime to YYYY-MM-DD HH:mm
-        detail.createTime = detail.createTime.replace(/\//g, '-')
-
         // add upTime by Pod
         detail.upTime = pods[0].upTime
 
@@ -134,6 +128,29 @@ export const useDevboxStore = create<State>()(
         })
 
         return detail
+      },
+      intervalLoadPods: async (devboxName, updateDetail) => {
+        if (!devboxName) return Promise.reject('devbox name is empty')
+        const pods = await getDevboxPodsByDevboxName(devboxName)
+
+        // one pod running, app is running
+        // TODO: change Running to podStatusMap.running
+        // TODO: check status enum and backend status enum
+        const devboxStatus =
+          pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
+            ? devboxStatusMap.Running
+            : devboxStatusMap.Pending
+
+        set((state) => {
+          if (state?.devboxDetail?.name === devboxName && updateDetail) {
+            state.devboxDetail.status = devboxStatus
+          }
+          state.devboxList = state.devboxList.map((item) => ({
+            ...item,
+            status: item.name === devboxName ? devboxStatus : item.status
+          }))
+        })
+        return 'success'
       },
       loadDetailMonitorData: async (devboxName) => {
         const pods = await getDevboxPodsByDevboxName(devboxName)

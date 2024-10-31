@@ -20,7 +20,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
 
   const { env } = useEnvStore()
   const { screenWidth } = useGlobalStore()
-  const { devboxDetail, setDevboxDetail, loadDetailMonitorData } = useDevboxStore()
+  const { devboxDetail, setDevboxDetail, loadDetailMonitorData, intervalLoadPods } =
+    useDevboxStore()
 
   const [showSlider, setShowSlider] = useState(false)
   const [initialized, setInitialized] = useState(false)
@@ -30,8 +31,6 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     ['initDevboxDetail'],
     () => setDevboxDetail(devboxName, env.sealosDomain),
     {
-      refetchOnMount: true,
-      refetchInterval: 3000,
       onSettled() {
         setInitialized(true)
       },
@@ -40,6 +39,18 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
           loadDetailMonitorData(data.name)
         }
       }
+    }
+  )
+
+  useQuery(
+    ['devbox-detail-pod'],
+    () => {
+      if (devboxDetail?.isPause) return null
+      return intervalLoadPods(devboxName, true)
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 3000
     }
   )
 
@@ -99,7 +110,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
                 '&::-webkit-scrollbar': {
                   display: 'none'
                 },
-                '-ms-overflow-style': 'none', // IE and Edge
+                msOverflowStyle: 'none', // IE and Edge
                 scrollbarWidth: 'none' // Firefox
               }}>
               <Box mb={4} bg={'white'} borderRadius={'lg'} flexShrink={0} minH={'257px'}>

@@ -8,7 +8,12 @@ import {
 } from '@/constants/devbox'
 import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
-import { DevboxListItemType, DevboxVersionListItemType, PodDetailType } from '@/types/devbox'
+import {
+  DevboxDetailType,
+  DevboxListItemType,
+  DevboxVersionListItemType,
+  PodDetailType
+} from '@/types/devbox'
 import { V1Pod } from '@kubernetes/client-node'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
@@ -46,6 +51,44 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
   }
 }
 
+export const adaptDevboxDetail = (
+  devbox: KBDevboxType & { portInfos: any[] }
+): DevboxDetailType => {
+  return {
+    id: devbox.metadata?.uid || ``,
+    name: devbox.metadata.name || 'devbox',
+    runtimeType: devbox.spec.runtimeType || '',
+    runtimeVersion: devbox.spec.runtimeRef.name || '',
+    status:
+      devbox.status.phase && devboxStatusMap[devbox.status.phase]
+        ? devboxStatusMap[devbox.status.phase]
+        : devboxStatusMap.Error,
+    sshPort: devbox.status.network.nodePort,
+    isPause: devbox.status.phase === 'Stopped',
+    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    cpu: cpuFormatToM(devbox.spec.resource.cpu),
+    memory: memoryFormatToMi(devbox.spec.resource.memory),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    networks: devbox.portInfos || [],
+    lastTerminatedReason:
+      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+        ? devbox.status.state.waiting
+          ? devbox.status.state.waiting.reason
+          : devbox.status.state.terminated
+          ? devbox.status.state.terminated.reason
+          : ''
+        : ''
+  }
+}
 export const adaptDevboxVersionListItem = (
   devboxRelease: KBDevboxReleaseType
 ): DevboxVersionListItemType => {

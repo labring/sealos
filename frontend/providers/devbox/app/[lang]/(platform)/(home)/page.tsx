@@ -15,7 +15,7 @@ import { DevboxListItemType } from '@/types/devbox'
 const EmptyPage = () => {
   const router = useRouter()
   const { Loading } = useLoading()
-  const { devboxList, setDevboxList, loadAvgMonitorData } = useDevboxStore()
+  const { devboxList, setDevboxList, loadAvgMonitorData, intervalLoadPods } = useDevboxStore()
 
   const [_, setFresh] = useState(false)
   const list = useRef<DevboxListItemType[]>(devboxList)
@@ -35,6 +35,34 @@ const EmptyPage = () => {
       refreshList(res)
     }
   })
+
+  useQuery(
+    ['intervalLoadPods', devboxList.length],
+    () => {
+      const doms = document.querySelectorAll(`.devboxListItem`)
+      const viewportDomIds = Array.from(doms)
+        .filter((item) => isElementInViewport(item))
+        .map((item) => item.getAttribute('data-id'))
+
+      const viewportDevboxList =
+        viewportDomIds.length < 3
+          ? devboxList
+          : devboxList.filter((devbox) => viewportDomIds.includes(devbox.id))
+
+      return viewportDevboxList
+        .filter((devbox) => devbox.status.value !== 'Stopped')
+        .map((devbox) => {
+          return () => intervalLoadPods(devbox.name, false)
+        })
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 3000,
+      onSettled() {
+        refreshList()
+      }
+    }
+  )
 
   useQuery(
     ['refresh'],
