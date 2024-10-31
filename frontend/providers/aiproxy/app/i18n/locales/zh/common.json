@@ -29,5 +29,8 @@
     "select_token_name": "请选择名称"
   },
   "Page": "页",
-  "Total": "总数"
+  "Total": "总数",
+  "modelList": {
+    "title": "可支持的模型"
+  }
 }

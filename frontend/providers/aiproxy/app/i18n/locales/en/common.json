@@ -29,5 +29,8 @@
     "model": "Model"
   },
   "Page": "Page",
-  "Total": "total"
+  "Total": "total",
+  "modelList": {
+    "title": "Supported models"
+  }
 }

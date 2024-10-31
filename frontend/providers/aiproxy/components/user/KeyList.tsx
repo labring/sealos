@@ -20,7 +20,8 @@ import {
   Text,
   Th,
   Thead,
-  Tr
+  Tr,
+  Tooltip
 } from '@chakra-ui/react'
 import {
   Column,
@@ -34,13 +35,14 @@ import { TFunction } from 'i18next'
 
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
+import { ChainIcon } from '@/ui/icons/home/Icons'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   return (
     <>
-      <Flex direction="column" alignItems="flex-start" gap="8px" alignSelf="stretch">
+      <Flex direction="column" alignItems="flex-start" gap="8px" alignSelf="stretch" w="full">
         <Text
           color="var(--Black, #000)"
           fontFamily="PingFang SC"
@@ -52,25 +54,49 @@ export function KeyList(): JSX.Element {
           {t('keyList.title')}
         </Text>
       </Flex>
-      <Flex>
-        <Icon
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none">
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M15.065 4.06161C16.3317 5.82297 16.1731 8.29256 14.5891 9.87655L13.6605 10.8051C13.3574 11.1082 12.866 11.1082 12.563 10.8051L7.28603 5.52819C6.98295 5.22511 6.98295 4.73372 7.28603 4.43064L8.2146 3.50206C9.78978 1.92688 12.2407 1.76126 14.0001 3.00518L15.0432 1.96204C15.3361 1.66915 15.811 1.66915 16.1039 1.96204C16.3968 2.25493 16.3968 2.72981 16.1039 3.0227L15.065 4.06161ZM1.89154 15.1228C1.59865 15.4157 1.59865 15.8906 1.89155 16.1835C2.18444 16.4764 2.65931 16.4764 2.9522 16.1835L3.98563 15.1501C5.74633 16.4091 8.20964 16.2481 9.79066 14.6671L10.7192 13.7385C11.0223 13.4354 11.0223 12.944 10.7192 12.641L10.0647 11.9865L10.6237 11.4275C10.9166 11.1346 10.9166 10.6597 10.6237 10.3668C10.3308 10.074 9.85594 10.074 9.56304 10.3668L9.00409 10.9258L7.17634 9.09806L7.73131 8.54309C8.02421 8.2502 8.02421 7.77532 7.73131 7.48243C7.43842 7.18954 6.96355 7.18954 6.67065 7.48243L6.11568 8.0374L5.4423 7.36402C5.13922 7.06094 4.64783 7.06094 4.34475 7.36402L3.41617 8.2926C1.83803 9.87075 1.67475 12.328 2.92634 14.088L1.89154 15.1228ZM4.89352 8.93657L4.47683 9.35326C3.30235 10.5277 3.30235 12.4319 4.47683 13.6064C5.65131 14.7809 7.55552 14.7809 8.73 13.6064L9.14669 13.1897L4.89352 8.93657ZM13.5284 8.81589L13.1117 9.23258L8.85857 4.97941L9.27526 4.56272C10.4497 3.38824 12.3539 3.38824 13.5284 4.56272C14.7029 5.7372 14.7029 7.64141 13.5284 8.81589Z"
-            fill="#111824"
-          />
-        </Icon>
-        API Endpoint:
-        <Text color={'brightBlue.600'}>https://www.aiproxy.com</Text>
-        <Button>新建</Button>
-      </Flex>
-      <Flex direction="column" alignItems="flex-start" gap="12px">
+
+      <Flex direction="column" alignItems="flex-start" gap="12px" w="full">
+        <Flex alignItems="center" alignSelf="stretch" justifyContent="space-between">
+          <Flex alignItems="center" gap="8px">
+            <ChainIcon boxSize={18} color="grayModern.900" />
+            <Text
+              color="grayModern.900"
+              fontFamily="PingFang SC"
+              fontSize="14px"
+              fontWeight={500}
+              lineHeight="20px"
+              letterSpacing="0.1px">
+              API Endpoint:
+            </Text>
+            <Text
+              color="var(--light-sealos-secondary-text, var(--Bright-Blue-600, #0884DD))"
+              fontFamily="PingFang SC"
+              fontSize="14px"
+              fontWeight={500}
+              lineHeight="20px"
+              letterSpacing="0.1px"
+              textDecoration="none"
+              _hover={{ textDecoration: 'underline' }}
+              cursor="pointer">
+              <Tooltip label="复制" placement="bottom">
+                https://www.aiproxy.com
+              </Tooltip>
+            </Text>
+          </Flex>
+          <Button
+            display="flex"
+            padding="8px 14px"
+            justifyContent="center"
+            alignItems="center"
+            gap="6px"
+            borderRadius="6px"
+            bg="grayModern.900"
+            color="white"
+            boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+            _hover={{ bg: 'grayModern.800' }}>
+            新建
+          </Button>
+        </Flex>
         <KeyItem t={t} />
       </Flex>
     </>
@@ -100,7 +126,17 @@ export enum TableHeaderId {
 }
 
 const CustomHeader = ({ column, t }: { column: Column<KeyItem>; t: TFunction }) => {
-  return <Text>{t(column.id as TableHeaderId)}</Text>
+  return (
+    <Text
+      color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
+      fontFamily="PingFang SC"
+      fontSize="12px"
+      fontWeight={500}
+      lineHeight="16px"
+      letterSpacing="0.5px">
+      {t(column.id as TableHeaderId)}
+    </Text>
+  )
 }
 
 const TableDemo = ({ t }: { t: TFunction }) => {
@@ -129,39 +165,140 @@ const TableDemo = ({ t }: { t: TFunction }) => {
     columnHelper.accessor((row) => row.name, {
       id: TableHeaderId.NAME,
       header: (props) => <CustomHeader column={props.column} t={t} />,
-      cell: (info) => info.getValue()
+      cell: (info) => (
+        <Text
+          color="grayModern.900"
+          fontFamily="PingFang SC"
+          fontSize="14px"
+          fontWeight={500}
+          lineHeight="20px"
+          letterSpacing="0.1px">
+          {info.getValue()}
+        </Text>
+      )
     }),
     columnHelper.accessor((row) => row.key, {
       id: TableHeaderId.KEY,
       header: (props) => <CustomHeader column={props.column} t={t} />,
-      cell: (info) => info.getValue()
+      cell: (info) => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {info.getValue()}
+        </Text>
+      )
     }),
     columnHelper.accessor((row) => row.createdAt, {
       id: TableHeaderId.CREATED_AT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
-      cell: (info) => info.getValue()
+      cell: (info) => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {info.getValue()}
+        </Text>
+      )
     }),
     columnHelper.accessor((row) => row.lastUsedAt, {
       id: TableHeaderId.LAST_USED_AT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
-      cell: (info) => info.getValue()
+      cell: (info) => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {info.getValue()}
+        </Text>
+      )
     }),
     columnHelper.accessor((row) => row.status, {
       id: TableHeaderId.STATUS,
       header: (props) => <CustomHeader column={props.column} t={t} />,
-      cell: (info) => info.getValue()
+      cell: (info) => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {info.getValue()}
+        </Text>
+      )
     }),
 
     columnHelper.display({
       id: TableHeaderId.ACTIONS,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => (
-        <Text>Actions</Text>
-        // <ActionMenu
-        //   status={info.row.original.status}
-        //   onStatusChange={() => handleStatusChange(info.row.original.id)}
-        //   onDelete={() => handleDelete(info.row.original.id)}
-        // />
+        <Popover placement="bottom-end">
+          <PopoverTrigger>
+            <Box cursor="pointer" p={1}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none">
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M6.66675 3.33333C6.66675 2.59695 7.2637 2 8.00008 2C8.73646 2 9.33341 2.59695 9.33341 3.33333C9.33341 4.06971 8.73646 4.66667 8.00008 4.66667C7.2637 4.66667 6.66675 4.06971 6.66675 3.33333ZM6.66675 8C6.66675 7.26362 7.2637 6.66667 8.00008 6.66667C8.73646 6.66667 9.33341 7.26362 9.33341 8C9.33341 8.73638 8.73646 9.33333 8.00008 9.33333C7.2637 9.33333 6.66675 8.73638 6.66675 8ZM6.66675 12.6667C6.66675 11.9303 7.2637 11.3333 8.00008 11.3333C8.73646 11.3333 9.33341 11.9303 9.33341 12.6667C9.33341 13.403 8.73646 14 8.00008 14C7.2637 14 6.66675 13.403 6.66675 12.6667Z"
+                  fill="#485264"
+                />
+              </svg>
+            </Box>
+          </PopoverTrigger>
+          <PopoverContent w="120px">
+            <PopoverBody p={0}>
+              <Flex direction="column" py={1}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  justifyContent="flex-start"
+                  leftIcon={
+                    <Icon viewBox="0 0 24 24" boxSize={4}>
+                      <path
+                        fill="currentColor"
+                        d="M18.536 4.46c-5.95-5.95-15.623-5.95-21.573 0-5.95 5.95-5.95 15.623 0 21.573 5.95 5.95 15.623 5.95 21.573 0 5.95-5.95 5.95-15.623 0-21.573zm-4.95 16.623l-7.623-7.623 7.623-7.623 1.414 1.414-6.209 6.209 6.209 6.209-1.414 1.414z"
+                      />
+                    </Icon>
+                  }
+                  color="red.500"
+                  onClick={() => console.log('禁用', info.row.original.id)}>
+                  禁用
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  justifyContent="flex-start"
+                  leftIcon={
+                    <Icon viewBox="0 0 24 24" boxSize={4}>
+                      <path
+                        fill="currentColor"
+                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"
+                      />
+                    </Icon>
+                  }
+                  color="red.500"
+                  onClick={() => console.log('删除', info.row.original.id)}>
+                  删除
+                </Button>
+              </Flex>
+            </PopoverBody>
+          </PopoverContent>
+        </Popover>
       )
     })
   ]
@@ -173,25 +310,32 @@ const TableDemo = ({ t }: { t: TFunction }) => {
   })
 
   return (
-    <Box>
-      <TableContainer width="100%" height="100%">
-        <Table variant="simple" width="full" size="md">
+    <Box w="full" h="full" overflowX="auto">
+      <TableContainer w="100%" h="100%" overflow="hidden">
+        <Table variant="simple" w="100%" size="md">
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr
                 key={headerGroup.id}
                 height="42px"
-                borderRadius="6px"
+                alignSelf="stretch"
                 bg="grayModern.100"
-                display="flex"
-                alignItems="center">
+                sx={{
+                  // 移除表头的下边线
+                  th: {
+                    borderBottom: 'none' // 移除所有表头单元格的下边线
+                  },
+                  'th:first-of-type': {
+                    borderTopLeftRadius: '6px',
+                    borderBottomLeftRadius: '6px'
+                  },
+                  'th:last-of-type': {
+                    borderTopRightRadius: '6px',
+                    borderBottomRightRadius: '6px'
+                  }
+                }}>
                 {headerGroup.headers.map((header) => (
-                  <Th
-                    key={header.id}
-                    whiteSpace="nowrap"
-                    flex={header.id === TableHeaderId.ACTIONS ? '0 0 100px' : '1 1 0'}
-                    textAlign="left"
-                    px={4}>
+                  <Th key={header.id}>
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </Th>
                 ))}
@@ -202,19 +346,12 @@ const TableDemo = ({ t }: { t: TFunction }) => {
             {table.getRowModel().rows.map((row) => (
               <Tr
                 key={row.id}
-                display="flex"
-                alignItems="center"
                 height="48px"
+                alignSelf="stretch"
                 borderBottom="1px solid"
                 borderColor="grayModern.150">
                 {row.getVisibleCells().map((cell) => (
-                  <Td
-                    key={cell.id}
-                    flex={cell.column.id === TableHeaderId.ACTIONS ? '0 0 100px' : '1 1 0'}
-                    textAlign="left"
-                    px={4}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Td>
+                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
                 ))}
               </Tr>
             ))}
@@ -222,52 +359,6 @@ const TableDemo = ({ t }: { t: TFunction }) => {
         </Table>
       </TableContainer>
     </Box>
-  )
-}
-
-function SwitchPage({ table, t }: { table: Table<KeyItem>; t: TFunction }) {
-  return (
-    <HStack spacing={4} mt={4} justify="flex-end">
-      <Button
-        size="sm"
-        onClick={() => table.setPageIndex(0)}
-        disabled={!table.getCanPreviousPage()}>
-        {'<<'}
-      </Button>
-      <Button size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-        <ChevronLeftIcon />
-      </Button>
-      <Button size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-        <ChevronRightIcon />
-      </Button>
-      <Button
-        size="sm"
-        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-        disabled={!table.getCanNextPage()}>
-        {'>>'}
-      </Button>
-
-      <HStack>
-        <Text>{t('pagination.page')}</Text>
-        <Text fontWeight="bold">
-          {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-        </Text>
-      </HStack>
-
-      <Select
-        size="sm"
-        w="auto"
-        value={table.getState().pagination.pageSize}
-        onChange={(e) => {
-          table.setPageSize(Number(e.target.value))
-        }}>
-        {[10, 20, 30, 40, 50].map((pageSize) => (
-          <option key={pageSize} value={pageSize}>
-            {t('pagination.show')} {pageSize}
-          </option>
-        ))}
-      </Select>
-    </HStack>
   )
 }
 

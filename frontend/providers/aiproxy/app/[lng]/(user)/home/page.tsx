@@ -1,10 +1,11 @@
 import { Flex } from '@chakra-ui/react'
 
 import KeyList from '@/components/user/KeyList'
+import ModelList from '@/components/user/ModelList'
 
 export default function Home(): JSX.Element {
   return (
-    <Flex pt="4px" pb="12px" pr="12px" gap="8px" h="100%">
+    <Flex pt="4px" pb="12px" pr="12px" gap="8px" h="100%" w="100%">
       <Flex
         flex={4.95}
         flexShrink={0}
@@ -25,10 +26,10 @@ export default function Home(): JSX.Element {
         display="inline-flex"
         p="19px 59px 0px 23px"
         flexDirection="column"
-        justifyContent="flex-end"
+        justifyContent="flex-start"
         alignItems="flex-start"
         gap="22px">
-        ddddxx
+        <ModelList />
       </Flex>
     </Flex>
   )
