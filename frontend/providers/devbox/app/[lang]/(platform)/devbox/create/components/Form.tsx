@@ -83,7 +83,8 @@ const Form = ({
     frameworkTypeList,
     osTypeList,
     getRuntimeVersionList,
-    getRuntimeVersionDefault
+    getRuntimeVersionDefault,
+    getRuntimeDetailLabel
   } = useRuntimeStore()
   const { env } = useEnvStore()
 
@@ -551,7 +552,15 @@ const Form = ({
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
                 {isEdit ? (
-                  <Box opacity={0.5}>{getValues('runtimeVersion')}</Box>
+                  <Input
+                    opacity={0.5}
+                    width={'200px'}
+                    defaultValue={getRuntimeDetailLabel(
+                      getValues('runtimeType'),
+                      getValues('runtimeVersion')
+                    )}
+                    disabled
+                  />
                 ) : (
                   <MySelect
                     {...register('runtimeVersion', {
@@ -713,7 +722,6 @@ const Form = ({
                         id={`openPublicDomain-${i}`}
                         isChecked={!!network.openPublicDomain}
                         onChange={(e) => {
-                          console.log('e', e)
                           const devboxName = getValues('name')
                           if (!devboxName) {
                             toast({

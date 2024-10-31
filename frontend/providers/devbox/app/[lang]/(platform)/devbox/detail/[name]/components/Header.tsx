@@ -329,7 +329,6 @@ const Header = ({
           onClose={() => setDelDevbox(null)}
           onSuccess={() => {
             setDelDevbox(null)
-            refetchDevboxDetail()
             router.push('/')
           }}
         />
