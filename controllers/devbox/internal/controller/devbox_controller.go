@@ -261,7 +261,19 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		case 0:
 			logger.Info("create pod")
 			logger.Info("next commit history", "commit", nextCommitHistory)
-			return r.createPod(ctx, devbox, expectPod, nextCommitHistory)
+			err := r.createPod(ctx, devbox, expectPod, nextCommitHistory)
+			if err != nil && helper.IsExceededQuotaError(err) {
+				logger.Info("devbox is exceeded quota, change devbox state to Stopped")
+				r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Devbox is exceeded quota", "Devbox is exceeded quota")
+				devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
+				_ = r.Update(ctx, devbox)
+				return nil
+			}
+			if err != nil {
+				logger.Error(err, "create pod failed")
+				return err
+			}
+			return nil
 		case 1:
 			pod := &podList.Items[0]
 			// check pod container size, if it is 0, it means the pod is not running, return an error
@@ -419,11 +431,9 @@ func (r *DevboxReconciler) getRuntime(ctx context.Context, devbox *devboxv1alpha
 
 // create a new pod, add predicated status to nextCommitHistory
 func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, expectPod *corev1.Pod, nextCommitHistory *devboxv1alpha1.CommitHistory) error {
-	logger := log.FromContext(ctx)
 	nextCommitHistory.Status = devboxv1alpha1.CommitStatusPending
 	nextCommitHistory.PredicatedStatus = devboxv1alpha1.CommitStatusPending
 	if err := r.Create(ctx, expectPod); err != nil {
-		logger.Error(err, "create pod failed")
 		return err
 	}
 	devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)

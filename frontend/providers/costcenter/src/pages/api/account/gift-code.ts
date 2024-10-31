@@ -1,5 +1,6 @@
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
+import { checkSealosUserIsRealName } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -27,6 +28,14 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     };
     const client = await makeAPIClientByHeader(req, resp);
     if (!client) return;
+
+    const isRealName = await checkSealosUserIsRealName(client);
+    if (!isRealName) {
+      return jsonRes(resp, {
+        code: 403,
+        message: 'recharge is not allowed for non-real-name user'
+      });
+    }
 
     const response = await client.post('/account/v1alpha1/gift-code/use', body);
     const responseData = await response.data;

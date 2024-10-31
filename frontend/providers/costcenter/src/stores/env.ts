@@ -1,6 +1,7 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { create } from 'zustand';
 type EnvState = {
+  realNameRechargeLimit: boolean;
   rechargeEnabled: boolean;
   transferEnabled: boolean;
   invoiceEnabled: boolean;
@@ -18,6 +19,7 @@ type EnvState = {
 };
 
 const useEnvStore = create<EnvState>((set, get) => ({
+  realNameRechargeLimit: false,
   rechargeEnabled: false,
   transferEnabled: false,
   invoiceEnabled: false,
