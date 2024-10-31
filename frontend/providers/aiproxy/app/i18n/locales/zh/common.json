@@ -1,0 +1,18 @@
+{
+  "title": "ai代理",
+  "description": "ai 代理",
+  "Sidebar": {
+    "Home": "AI Proxy",
+    "Logs": "调用日志"
+  },
+  "keyList": {
+    "title": "AI Proxy"
+  },
+  "key": {
+    "key": "API Key",
+    "name": "名称",
+    "createdAt": "创建时间",
+    "lastUsedAt": "最后使用时间",
+    "status": "状态"
+  }
+}

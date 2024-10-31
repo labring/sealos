@@ -1,0 +1,18 @@
+{
+  "title": "aiproxy",
+  "description": "ai agent",
+  "Sidebar": {
+    "Home": "AI Proxy",
+    "Logs": "call log"
+  },
+  "keyList": {
+    "title": "AI Proxy"
+  },
+  "key": {
+    "key": "API Key",
+    "name": "name",
+    "createdAt": "creation time",
+    "lastUsedAt": "last use time",
+    "status": "state"
+  }
+}
