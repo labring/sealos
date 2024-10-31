@@ -1,10 +1,10 @@
-import { Flex } from '@chakra-ui/react';
+import { Flex } from '@chakra-ui/react'
 
-import KeyList from '@/components/user/KeyList';
+import KeyList from '@/components/user/KeyList'
 
 export default function Home(): JSX.Element {
   return (
-    <Flex pt="4px" pb="12px" pr="12px" gap="8px">
+    <Flex pt="4px" pb="12px" pr="12px" gap="8px" h="100%">
       <Flex
         flex={4.95}
         flexShrink={0}
@@ -14,8 +14,7 @@ export default function Home(): JSX.Element {
         alignItems="flex-start"
         gap="13px"
         bg="white"
-        borderRadius="12px"
-      >
+        borderRadius="12px">
         <KeyList />
       </Flex>
 
@@ -28,10 +27,9 @@ export default function Home(): JSX.Element {
         flexDirection="column"
         justifyContent="flex-end"
         alignItems="flex-start"
-        gap="22px"
-      >
+        gap="22px">
         ddddxx
       </Flex>
     </Flex>
-  );
+  )
 }

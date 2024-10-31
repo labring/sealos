@@ -26,6 +26,7 @@
     "react-hook-form": "^7.46.2",
     "sealos-desktop-sdk": "workspace:^",
     "immer": "^10.1.1",
+    "@tanstack/react-query": "^4.35.3",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

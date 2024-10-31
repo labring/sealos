@@ -16,6 +16,15 @@
     "status": "state"
   },
   "logs": {
-    "call_log": "call log"
-  }
+    "call_log": "call log",
+    "name": "name",
+    "status": "state",
+    "time": "time",
+    "modal": "Model",
+    "prompt_tokens": "enter",
+    "completion_tokens": "output",
+    "price": "price"
+  },
+  "Page": "Page",
+  "Total": "total"
 }

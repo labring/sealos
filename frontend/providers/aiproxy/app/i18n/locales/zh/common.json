@@ -20,6 +20,12 @@
     "name": "名称",
     "modal": "模型",
     "status": "状态",
-    "time": "时间"
-  }
+    "time": "时间",
+    "model": "模型",
+    "prompt_tokens": "输入",
+    "completion_tokens": "输出",
+    "price": "价格"
+  },
+  "Page": "页",
+  "Total": "总数"
 }
