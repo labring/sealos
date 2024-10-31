@@ -76,10 +76,13 @@ async function fetchLogs(params: QueryParams): Promise<{ logs: LogInfo[]; total:
       url.searchParams.append('end_timestamp', params.end_timestamp)
     }
 
+    const token = global.AppConfig?.auth.aiProxyBackendKey
+
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Authorization: `${token}`
       }
     })
 

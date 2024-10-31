@@ -1,9 +1,9 @@
-import acceptLanguage from 'accept-language';
-import { NextRequest, NextResponse } from 'next/server';
+import acceptLanguage from 'accept-language'
+import { NextRequest, NextResponse } from 'next/server'
 
-import { fallbackLng, languages } from '@/app/i18n/settings';
+import { fallbackLng, languages } from '@/app/i18n/settings'
 
-acceptLanguage.languages(languages);
+acceptLanguage.languages(languages)
 
 export const config = {
   matcher: [
@@ -31,38 +31,44 @@ export const config = {
     '/((?!icon/).*)',
     '/((?!chrome/).*)'
   ]
-};
+}
 
 export function middleware(req: NextRequest): NextResponse {
+  // 如果是 API 请求，直接放行，不添加语言前缀
+  if (req.nextUrl.pathname.includes('/api/')) {
+    return NextResponse.next()
+  }
+
   // static file  /public/xxx.svg
   if (
     req.nextUrl.pathname.endsWith('.svg') ||
     req.nextUrl.pathname.endsWith('.png') ||
     req.nextUrl.pathname.endsWith('.ico')
   ) {
-    return NextResponse.next();
+    return NextResponse.next()
   }
 
   if (req.nextUrl.pathname.indexOf('icon') > -1 || req.nextUrl.pathname.indexOf('chrome') > -1)
-    return NextResponse.next();
+    return NextResponse.next()
 
-  let lng: string | undefined | null;
-  lng = acceptLanguage.get(req.headers.get('Accept-Language'));
-  if (!lng) lng = fallbackLng;
+  let lng: string | undefined | null
+  lng = acceptLanguage.get(req.headers.get('Accept-Language'))
+  if (!lng) lng = fallbackLng
 
   if (req.nextUrl.pathname === '/' || req.nextUrl.pathname === '/zh') {
-    const newUrl = new URL(`/${lng}/home`, req.url);
-    return NextResponse.redirect(newUrl);
+    const newUrl = new URL(`/${lng}/home`, req.url)
+    return NextResponse.redirect(newUrl)
   }
 
   // Redirect if lng in path is not supported
   if (
     !languages.some((loc) => req.nextUrl.pathname.startsWith(`/${loc}`)) &&
-    !req.nextUrl.pathname.startsWith('/_next')
+    !req.nextUrl.pathname.startsWith('/_next') &&
+    !req.nextUrl.pathname.startsWith('/api/') // 添加这个条件，确保 API 路由不会被重定向
   ) {
-    const newUrl = new URL(`/${lng}${req.nextUrl.pathname}${req.nextUrl.search}`, req.url);
-    return NextResponse.redirect(newUrl);
+    const newUrl = new URL(`/${lng}${req.nextUrl.pathname}${req.nextUrl.search}`, req.url)
+    return NextResponse.redirect(newUrl)
   }
 
-  return NextResponse.next();
+  return NextResponse.next()
 }

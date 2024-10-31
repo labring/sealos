@@ -5,6 +5,7 @@ import axios, {
   AxiosResponse,
   AxiosRequestConfig
 } from 'axios'
+import { getUserSession } from './user'
 
 const request = axios.create({
   baseURL: '/',
@@ -22,7 +23,7 @@ request.interceptors.request.use(
     let _headers: AxiosHeaders = config.headers
 
     //获取token，并将其添加至请求头中
-    _headers['Authorization'] = config.headers.Authorization
+    _headers['Authorization'] = getUserSession()
 
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json'

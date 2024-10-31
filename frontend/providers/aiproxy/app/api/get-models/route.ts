@@ -11,11 +11,13 @@ interface SearchResponse {
 async function fetchModels(): Promise<string[]> {
   try {
     const url = new URL(`/api/models/enabled`, global.AppConfig?.backend.aiproxy)
+    const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Authorization: `${token}`
       }
     })
 
@@ -38,7 +40,11 @@ async function fetchModels(): Promise<string[]> {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // await parseJwtToken(request.headers)
+    console.log(global.AppConfig)
+
+    console.log(request.headers)
+
+    await parseJwtToken(request.headers)
 
     const models = await fetchModels()
 
