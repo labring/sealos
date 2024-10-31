@@ -9,16 +9,6 @@ export type KBDevboxType = {
     creationTimestamp: string
   }
   spec: KBDevboxSpec
-  portInfos: {
-    // Added by logic in api/getDevboxList/route.ts
-    networkName: string
-    portName: string
-    port: number
-    protocol: ProtocolType
-    openPublicDomain: boolean
-    publicDomain: string
-    customDomain: string
-  }[]
   status: {
     lastState: {
       terminated?: {
@@ -61,11 +51,10 @@ export type KBDevboxType = {
   }
 }
 
-// note: there first three runtime type is I added by logic in api/getDevboxList/route.ts
+// note: runtimeType is I added by logic in api/getDevboxList/route.ts
 export interface KBDevboxSpec {
   runtimeType?: string
-  runtimeVersion?: string
-  runtimeNamespace?: string
+
   squash?: boolean
   network: {
     type: 'NodePort' | 'Tailnet'

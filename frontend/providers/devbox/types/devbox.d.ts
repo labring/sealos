@@ -108,7 +108,6 @@ export interface DevboxListItemType {
   memory: number
   usedCpu: MonitorDataResult
   usedMemory: MonitorDataResult
-  networks: NetworkType[]
   sshPort: number
   lastTerminatedReason?: string
 }

@@ -16,7 +16,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
     runtimeType: devbox.spec.runtimeType || '',
-    runtimeVersion: devbox.spec.runtimeVersion || '',
+    runtimeVersion: devbox.spec.runtimeRef.name || '',
     status:
       devbox.status.phase && devboxStatusMap[devbox.status.phase]
         ? devboxStatusMap[devbox.status.phase]
@@ -35,7 +35,6 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: devbox.portInfos || [],
     lastTerminatedReason:
       devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting

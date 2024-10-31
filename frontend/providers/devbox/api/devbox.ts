@@ -14,7 +14,9 @@ import { adaptDevboxListItem, adaptDevboxVersionListItem, adaptPod } from '@/uti
 
 export const getMyDevboxList = () =>
   GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
-    data.map(adaptDevboxListItem)
+    data.map(adaptDevboxListItem).sort((a, b) => {
+      return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+    })
   )
 
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
