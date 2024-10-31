@@ -87,7 +87,7 @@ This script is specifically designed for deploying Sealos clusters on "Kubernete
 not compatible with Kubernetes clusters set up in other ways.
 
 For instructions on deploying Kubernetes clusters using Sealos, refer
-to: [Installing Kubernetes Clusters](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md). This method
+to: [Installing Kubernetes Clusters](/developer-guide/lifecycle-management/quick-start/deploy-kubernetes.md). This method
 is compatible with most Kubernetes versions available on [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags),
 except for version 1.28 and higher.
 :::
@@ -109,7 +109,7 @@ resolve to `192.168.1.10`, eliminating the need to modify local hosts or set up 
 To use nip.io for Sealos, run the below on the first master node and enter prompts:
 
 ```bash
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh
 ```
 
 When prompted for the Sealos Cloud domain name, use a format like `[ip].nip.io`, where [ip] is your Master node's IP.
@@ -135,10 +135,10 @@ Place the certificate files in a directory on the first master, like `/root/cert
 
 You'll also need to configure DNS records at your domain provider:
 
-```  
-cloud.example.io A <Master Node Public IP>  
+```
+cloud.example.io A <Master Node Public IP>
 *.cloud.example.io A <Master Node Public IP>
-```  
+```
 
 This maps your domain and subdomains to the first master's public IP.
 
@@ -147,11 +147,11 @@ This maps your domain and subdomains to the first master's public IP.
 Then run below on the first master, entering prompts:
 
 ```bash
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \  
---cloud-domain=<your_domain> \   
---cert-path=<your_crt> \  
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+--cloud-domain=<your_domain> \
+--cert-path=<your_crt> \
 --key-path=<your_key>
-```  
+```
 
 + `<your_domain>` is your public domain
 + `<your_crt>` is the certificate file path (`.crt` or `.pem`) e.g. `/root/certs/example.crt`
@@ -162,17 +162,17 @@ $ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/script
 If you have a public domain but only internal IPs, or only want internal Sealos access, you just need to configure DNS
 records resolving to the first master's internal IP:
 
-```  
-cloud.example.io A <Master Node Internal IP>  
-*.cloud.example.io A <Master Node Internal IP>   
-```  
+```
+cloud.example.io A <Master Node Internal IP>
+*.cloud.example.io A <Master Node Internal IP>
+```
 
 Then run the below on the first master, entering prompts:
 
-```bash  
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \ 
---cloud-domain=<your_domain>  
-```   
+```bash
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+--cloud-domain=<your_domain>
+```
 
 Where `<your_domain>` is your public domain.
 
@@ -191,46 +191,46 @@ Assuming the first master internal IP is `192.168.1.10`, and your custom domain 
 
 You can use CoreDNS, Reference configuration:
 
-```  
+```
 (global_cache) {
   cache {
     # [5, 60]
     success 65536 3600 300
     # [1, 10]
-    denial 8192 600 60 
+    denial 8192 600 60
     prefetch 1 60m 10%
-  }  
-}  
+  }
+}
 
 .:53 {
   errors
-  health    
-  ready  
+  health
+  ready
 
   import global_cache
-  
+
   template IN A cloud.example.io {
     answer "{{ .Name }} 60 IN A 192.168.1.10"
-    fallthrough  
+    fallthrough
   }
-   
+
   forward . 223.5.5.5
-   
+
   log
   loop
-   
+
   reload 6s
 }
-```  
+```
 
 This resolves `cloud.example.io` and subdomains to the first master internal IP.
 
 Then run below on the first master, entering prompts:
 
-```bash 
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \   
---cloud-domain=<your_domain>  
-```  
+```bash
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+--cloud-domain=<your_domain>
+```
 
 Where `<your_domain>` is your custom domain.
 

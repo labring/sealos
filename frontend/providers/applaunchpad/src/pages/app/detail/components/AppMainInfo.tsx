@@ -59,6 +59,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           color={'grayModern.600'}
           fontWeight={'bold'}
           position={'relative'}
+          className="driver-detail-monitor"
         >
           <Button
             variant={'square'}
@@ -96,7 +97,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             {t('Network Configuration')}({networks.length})
           </Box>
         </Flex>
-        <Flex mt={'12px'}>
+        <Flex mt={'12px'} className="driver-detail-network">
           <table className={'table-cross'}>
             <thead>
               <tr>
@@ -125,7 +126,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                         </MyTooltip>
                       </Flex>
                     </th>
-                    <th className="driver-detail-network-public">
+                    <th>
                       <Flex alignItems={'center'} justifyContent={'space-between'}>
                         <MyTooltip
                           label={network.public ? t('Open Link') : ''}

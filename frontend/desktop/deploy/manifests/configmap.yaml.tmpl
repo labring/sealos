@@ -39,13 +39,14 @@ data:
         proxyAddress: ""
         callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
         signUpEnabled: true
+        billingUrl: "http://account-service.account-system.svc:2333"
         baiduToken: ""
         invite:
           enabled: false
         jwt:
-          internal: "<your-internal-jwt-secret>"
-          regional: "<your-regional-jwt-secret>"
-          global: "<your-global-jwt-secret>"
+          internal: "{{ .jwtInternal }}"
+          regional: "{{ .jwtRegional }}"
+          global: "{{ .jwtGlobal }}"
         idp:
           password:
             enabled: true

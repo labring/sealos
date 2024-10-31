@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -60,14 +61,10 @@ import (
 )
 
 const (
-	ACCOUNTNAMESPACEENV          = "ACCOUNT_NAMESPACE"
-	DEFAULTACCOUNTNAMESPACE      = "sealos-system"
-	AccountAnnotationNewAccount  = "account.sealos.io/new-account"
-	AccountAnnotationIgnoreQuota = "account.sealos.io/ignore-quota"
-	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
-	RECHARGEGIFT                 = "recharge-gift"
-	SEALOS                       = "sealos"
-	DefaultInitialBalance        = 5_000_000
+	ACCOUNTNAMESPACEENV     = "ACCOUNT_NAMESPACE"
+	DEFAULTACCOUNTNAMESPACE = "sealos-system"
+	RECHARGEGIFT            = "recharge-gift"
+	SEALOS                  = "sealos"
 )
 
 // AccountReconciler reconciles an Account object
@@ -89,7 +86,7 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=limitranges,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
+//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=create;get;list;watch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -232,63 +229,36 @@ func parseConfigList(s string, list interface{}, configName string) error {
 	return nil
 }
 
-//func GetUserOwner(user *userv1.User) string {
-//	own := user.Annotations[userv1.UserAnnotationOwnerKey]
-//	if own == "" {
-//		return user.Name
-//	}
-//	return own
-//}
-
 const BaseUnit = 1_000_000
 
-//func (r *AccountReconciler) getAmountWithRates(amount int64, account *pkgtypes.Account) (amt int64, err error) {
-//	//userActivities, err := pkgtypes.ParseUserActivities(account.Annotations)
-//	//if err != nil {
-//	//	return nil, 0, fmt.Errorf("parse user activities failed: %w", err)
-//	//}
-//	//
-//	//rechargeDiscount := pkgtypes.RechargeDiscount{
-//	//	DiscountSteps: r.RechargeStep,
-//	//	DiscountRates: r.RechargeRatio,
-//	//}
-//	//if len(userActivities) > 0 {
-//	//	if activityType, phase, _ := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
-//	//		if len(phase.RechargeDiscount.DiscountSteps) > 0 {
-//	//			rechargeDiscount.DiscountSteps = phase.RechargeDiscount.DiscountSteps
-//	//			rechargeDiscount.DiscountRates = phase.RechargeDiscount.DiscountRates
-//	//		}
-//	//		rechargeDiscount.SpecialDiscount = phase.RechargeDiscount.SpecialDiscount
-//	//		rechargeDiscount = phase.RechargeDiscount
-//	//		currentPhase := userActivities[activityType].Phases[userActivities[activityType].CurrentPhase]
-//	//		anno = pkgtypes.SetUserPhaseRechargeTimes(account.Annotations, activityType, currentPhase.Name, currentPhase.RechargeNums+1)
-//	//	}
-//	//}
-//	//return anno, getAmountWithDiscount(amount, rechargeDiscount), nil
-//
-//	discount, err := r.AccountV2.GetUserAccountRechargeDiscount(&pkgtypes.UserQueryOpts{UID: account.UserUID})
-//	if err != nil {
-//		return 0, fmt.Errorf("get user %s account recharge discount failed: %w", account.UserUID, err)
-//	}
-//	if discount == nil || discount.DiscountSteps == nil || discount.DiscountRates == nil {
-//		return getAmountWithDiscount(amount, r.DefaultDiscount), nil
-//	}
-//	return getAmountWithDiscount(amount, *discount), nil
-//}
-
-func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int64 {
-	if discount.SpecialDiscount != nil && discount.SpecialDiscount[amount/BaseUnit] != 0 {
-		return amount + discount.SpecialDiscount[amount/BaseUnit]*BaseUnit
-	}
+func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) int64 {
 	var r float64
-	for i, s := range discount.DiscountSteps {
-		if amount >= s*BaseUnit {
-			r = discount.DiscountRates[i]
+	for _, step := range sortSteps(discount.DefaultSteps) {
+		ratio := discount.DefaultSteps[step]
+		if amount >= step*BaseUnit {
+			r = ratio
 		} else {
 			break
 		}
 	}
 	return int64(math.Ceil(float64(amount) * r / 100))
+}
+
+func sortSteps(steps map[int64]float64) (keys []int64) {
+	for k := range steps {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	return
+}
+
+func getFirstRechargeDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) (bool, int64) {
+	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] != 0 {
+		return true, int64(math.Ceil(float64(amount) * discount.FirstRechargeSteps[amount/BaseUnit] / 100))
+	}
+	return false, getAmountWithDiscount(amount, discount)
 }
 
 func (r *AccountReconciler) BillingCVM() error {

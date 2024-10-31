@@ -84,7 +84,7 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 该脚本只支持在 “使用 Sealos 安装的 Kubernetes 集群” 上部署 Sealos 集群，暂不支持其他方式部署的 Kubernetes。
 
 关于如何使用 Sealos 部署 Kubernetes
-集群，可以参考：[安装 Kubernetes 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)
+集群，可以参考：[安装 Kubernetes 集群](/developer-guide/lifecycle-management/quick-start/deploy-kubernetes.md)
 ，支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的几乎所有 Kubernetes 版本（**暂不支持 1.28 及以上版本
 **）。
 
@@ -102,9 +102,9 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 
 使用 nip.io 作为 Sealos 的域名非常简单，只需在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
-```bash 
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0 \
+```bash
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+  --cloud-version=v5.0.1 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com
 ```
@@ -147,8 +147,8 @@ cloud.example.io   A   192.168.1.10
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+  --cloud-version=v5.0.1 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain> \
@@ -174,8 +174,8 @@ cloud.example.io   A   192.168.1.10
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+  --cloud-version=v5.0.1 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -233,8 +233,8 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+  --cloud-version=v5.0.1 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -355,7 +355,7 @@ Linux 不同发行版更新根证书存储的命令不一样，用来保存私�
   # update-ca-certificates 会添加 /etc/ca-certificates.conf 配置文件中指定的证书
   #   另外所有 /usr/local/share/ca-certificates/*.crt 会被列为隐式信任
   $ sudo update-ca-certificates
-  
+
   # - 删除
   $ sudo rm /usr/local/share/ca-certificates/root_ca.crt
   $ sudo update-ca-certificates --fresh

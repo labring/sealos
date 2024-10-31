@@ -96,6 +96,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
           border={'1px solid #DEE0E2'}
           borderRadius={'md'}
           flexDirection={'column'}
+          overflow={'hidden'}
         >
           {workOrderDetail && workOrderDetail.dialogs?.length ? (
             <AppMainInfo

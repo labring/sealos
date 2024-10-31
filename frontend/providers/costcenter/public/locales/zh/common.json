@@ -84,7 +84,7 @@
   "Stripe Success": "Stripe 支付完成",
   "Stripe Cancel": "Stripe 支付取消",
   "GPU Unit": "卡",
-	"port_unit": "个",
+  "port_unit": "个",
   "Name": "名称",
   "Price": "价格",
   "Unit": "单位",
@@ -233,5 +233,8 @@
   "duration": "时间",
   "GPU": "GPU",
   "usage": "用量",
-  "resource": "资源"
+  "resource": "资源",
+  "Double": "双倍",
+  "first_recharge_tips": "部分规格首次充值可享双倍赠送金额",
+  "first_recharge_title": "首充双倍"
 }

@@ -1,39 +1,39 @@
+import { UserInfo } from '@/api/auth';
+import PasswordModify from '@/components/account/AccountCenter/PasswordModify';
+import { useConfigStore } from '@/stores/config';
+import useSessionStore from '@/stores/session';
+import { ValueOf } from '@/types';
 import {
+  Badge,
+  Center,
   Flex,
-  Text,
+  HStack,
+  IconButton,
+  IconButtonProps,
+  Image,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalOverlay,
-  useDisclosure,
-  IconButton,
-  IconButtonProps,
   ModalHeader,
+  ModalOverlay,
   Spinner,
-  Image,
-  HStack,
-  VStack,
-  Center,
-  Badge
+  Text,
+  useDisclosure,
+  VStack
 } from '@chakra-ui/react';
-import { useMemo, useState } from 'react';
+import { CloseIcon, LeftArrowIcon, SettingIcon } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import useSessionStore from '@/stores/session';
 import { useTranslation } from 'next-i18next';
-import { SettingIcon, LeftArrowIcon, CloseIcon } from '@sealos/ui';
-import { UserInfo } from '@/api/auth';
-import PasswordModify from '@/components/account/AccountCenter/PasswordModify';
-import { PhoneBind, EmailBind } from './SmsModify/SmsBind';
-import { PhoneUnBind, EmailUnBind } from './SmsModify/SmsUnbind';
-import { PhoneChange, EmailChange } from './SmsModify/SmsChange';
-import { BindingModifyButton, BINDING_STATE_MODIFY_BEHAVIOR } from './BindingModifyButton';
-import { ConfigItem } from './ConfigItem';
-import { AuthModifyList } from './AuthModifyList';
-import DeleteAccount from './DeleteAccountModal';
-import { ValueOf } from '@/types';
+import { useMemo, useState } from 'react';
 import { RealNameAuthForm } from '../RealNameModal';
-import { useConfigStore } from '@/stores/config';
+import { AuthModifyList } from './AuthModifyList';
+import { BINDING_STATE_MODIFY_BEHAVIOR, BindingModifyButton } from './BindingModifyButton';
+import { ConfigItem } from './ConfigItem';
+import DeleteAccount from './DeleteAccountModal';
+import { EmailBind, PhoneBind } from './SmsModify/SmsBind';
+import { EmailChange, PhoneChange } from './SmsModify/SmsChange';
+import { EmailUnBind, PhoneUnBind } from './SmsModify/SmsUnbind';
 enum _PageState {
   INDEX = 0
   // WECHAT_BIND,
@@ -68,6 +68,7 @@ const PageState = Object.assign(
 export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
   const { commonConfig } = useConfigStore();
   const { session } = useSessionStore((s) => s);
+  const conf = useConfigStore();
   const { t } = useTranslation();
   const logo = '/images/default-user.svg';
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -221,8 +222,18 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <ConfigItem
                       LeftElement={<Text>{t('common:realname_info')}</Text>}
                       RightElement={
+                        infoData.data.enterpriseVerificationStatus === 'Success' ||
                         infoData.data.realName ? (
-                          <Flex flex={1}>{infoData?.data.realName}</Flex>
+                          <Flex flex={1}>
+                            <Text
+                              maxWidth="200px"
+                              whiteSpace="nowrap"
+                              overflow="hidden"
+                              textOverflow="ellipsis"
+                            >
+                              {infoData?.data.enterpriseRealName || infoData?.data.realName}
+                            </Text>
+                          </Flex>
                         ) : (
                           <Badge
                             cursor="pointer"
@@ -236,7 +247,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                       }
                     />
                   )}
-                  {providerState.PASSWORD.isBinding && (
+                  {conf.authConfig?.idp.password.enabled && providerState.PASSWORD.isBinding && (
                     <ConfigItem
                       LeftElement={<Text>{t('common:password')}</Text>}
                       RightElement={
@@ -252,40 +263,42 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                       }
                     />
                   )}
-                  <ConfigItem
-                    LeftElement={<Text>{t('common:phone')}</Text>}
-                    RightElement={
-                      <>
-                        <Text>
-                          {providerState.PHONE.isBinding
-                            ? providerState.PHONE.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
-                            : t('common:unbound')}
-                        </Text>
-                        <Flex gap={'5px'}>
-                          <BindingModifyButton
-                            modifyBehavior={
-                              providerState.PHONE.isBinding
-                                ? BINDING_STATE_MODIFY_BEHAVIOR.CHANGE_BINDING
-                                : BINDING_STATE_MODIFY_BEHAVIOR.BINDING
-                            }
-                            onClick={() => {
-                              providerState.PHONE.isBinding
-                                ? setPageState(PageState.PHONE_CHANGE_BIND)
-                                : setPageState(PageState.PHONE_BIND);
-                            }}
-                          />
-                          {providerState.PHONE.isBinding && providerState.total > 1 && (
+                  {conf.authConfig?.idp.sms.enabled && (
+                    <ConfigItem
+                      LeftElement={<Text>{t('common:phone')}</Text>}
+                      RightElement={
+                        <>
+                          <Text>
+                            {providerState.PHONE.isBinding
+                              ? providerState.PHONE.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
+                              : t('common:unbound')}
+                          </Text>
+                          <Flex gap={'5px'}>
                             <BindingModifyButton
-                              modifyBehavior={BINDING_STATE_MODIFY_BEHAVIOR.UNBINDING}
+                              modifyBehavior={
+                                providerState.PHONE.isBinding
+                                  ? BINDING_STATE_MODIFY_BEHAVIOR.CHANGE_BINDING
+                                  : BINDING_STATE_MODIFY_BEHAVIOR.BINDING
+                              }
                               onClick={() => {
-                                setPageState(PageState.PHONE_UNBIND);
+                                providerState.PHONE.isBinding
+                                  ? setPageState(PageState.PHONE_CHANGE_BIND)
+                                  : setPageState(PageState.PHONE_BIND);
                               }}
                             />
-                          )}
-                        </Flex>
-                      </>
-                    }
-                  />
+                            {providerState.PHONE.isBinding && providerState.total > 1 && (
+                              <BindingModifyButton
+                                modifyBehavior={BINDING_STATE_MODIFY_BEHAVIOR.UNBINDING}
+                                onClick={() => {
+                                  setPageState(PageState.PHONE_UNBIND);
+                                }}
+                              />
+                            )}
+                          </Flex>
+                        </>
+                      }
+                    />
+                  )}
                   <ConfigItem
                     LeftElement={<Text>{t('common:email')}</Text>}
                     RightElement={

@@ -8,6 +8,8 @@ export type CloudConfigType = {
 };
 
 export type CommonConfigType = {
+  enterpriseRealNameAuthEnabled: boolean;
+  enterpriseSupportingMaterials: string;
   realNameAuthEnabled: boolean;
   guideEnabled: boolean;
   apiEnabled: boolean;
@@ -71,7 +73,6 @@ export type LayoutConfigType = {
 
 export type AuthConfigType = {
   billingToken?: string;
-  proxyAddress?: string;
   callbackURL: string;
   signUpEnabled?: boolean;
   baiduToken?: string;
@@ -92,18 +93,31 @@ export type AuthConfigType = {
     };
     github?: {
       enabled: boolean;
+      proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
     };
     wechat?: {
       enabled: boolean;
+      proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
     };
     google?: {
       enabled: boolean;
+      proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
+    };
+    oauth2?: {
+      enabled: boolean;
+      callbackURL: string;
+      clientID: string;
+      proxyAddress?: string;
+      clientSecret?: string;
+      authURL: string;
+      tokenURL: string;
+      userInfoURL: string;
     };
     sms?: {
       enabled: boolean;
@@ -122,15 +136,6 @@ export type AuthConfigType = {
         user: string;
         password: string;
       };
-    };
-    oauth2?: {
-      enabled: boolean;
-      callbackURL: string;
-      clientID: string;
-      clientSecret?: string;
-      authURL: string;
-      tokenURL: string;
-      userInfoURL: string;
     };
   };
 };
@@ -173,12 +178,24 @@ export type DesktopConfigType<T = AuthConfigType> = {
   };
 };
 
+export type RealNameOSSConfigType = {
+  accessKey: string;
+  accessKeySecret: string;
+  endpoint: string;
+  ssl?: boolean;
+  port?: number;
+  realNameBucket: string;
+  enterpriseRealNameBucket: string;
+};
+
 export type AppConfigType = {
   cloud: CloudConfigType;
   common: CommonConfigType;
   database: DatabaseConfigType;
   desktop: DesktopConfigType;
+  realNameOSS: RealNameOSSConfigType;
 };
+
 export type AppClientConfigType = {
   cloud: CloudConfigType;
   common: CommonClientConfigType;
@@ -186,6 +203,8 @@ export type AppClientConfigType = {
 };
 
 export const DefaultCommonClientConfig: CommonClientConfigType = {
+  enterpriseRealNameAuthEnabled: false,
+  enterpriseSupportingMaterials: '',
   realNameAuthEnabled: false,
   guideEnabled: false,
   rechargeEnabled: false,
@@ -239,15 +258,18 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
     },
     github: {
       enabled: false,
-      clientID: ''
+      clientID: '',
+      proxyAddress: ''
     },
     wechat: {
       enabled: false,
-      clientID: ''
+      clientID: '',
+      proxyAddress: ''
     },
     google: {
       enabled: false,
-      clientID: ''
+      clientID: '',
+      proxyAddress: ''
     },
     sms: {
       enabled: false
@@ -258,10 +280,10 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       clientID: '',
       authURL: '',
       tokenURL: '',
-      userInfoURL: ''
+      userInfoURL: '',
+      proxyAddress: ''
     }
   },
-  proxyAddress: '',
   billingToken: ''
 };
 

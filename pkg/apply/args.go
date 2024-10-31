@@ -37,6 +37,14 @@ func (c *Cluster) RegisterFlags(fs *pflag.FlagSet, verb, action string) {
 	fs.StringVar(&c.ClusterName, "cluster", "default", fmt.Sprintf("name of cluster to applied %s action", action))
 }
 
+type ClusterName struct {
+	ClusterName string
+}
+
+func (c *ClusterName) RegisterFlags(fs *pflag.FlagSet, _, action string) {
+	fs.StringVar(&c.ClusterName, "cluster", "default", fmt.Sprintf("name of cluster to applied %s action", action))
+}
+
 type SSH struct {
 	User       string
 	Password   string
@@ -85,12 +93,12 @@ func (arg *Args) RegisterFlags(fs *pflag.FlagSet) {
 }
 
 type ResetArgs struct {
-	*Cluster
+	*ClusterName
 	*SSH
 }
 
 func (arg *ResetArgs) RegisterFlags(fs *pflag.FlagSet) {
-	arg.Cluster.RegisterFlags(fs, "be reset", "reset")
+	arg.ClusterName.RegisterFlags(fs, "be reset", "reset")
 	arg.SSH.RegisterFlags(fs)
 }
 

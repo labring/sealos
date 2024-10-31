@@ -1,4 +1,6 @@
 import { NextApiRequest } from 'next';
+import { AxiosInstance } from 'axios';
+import crypto from 'crypto';
 
 export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
   new Promise((res, rej) => {
@@ -16,7 +18,6 @@ export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
     };
     attempt();
   });
-import crypto from 'crypto';
 export function genSign(secret: string, timestamp: number | string) {
   const stringToSign = `${timestamp}\n${secret}`;
   const hmac = crypto.createHmac('sha256', stringToSign);
@@ -54,3 +55,33 @@ export function getClientIPFromRequest(req: NextApiRequest) {
 
   return undefined;
 }
+
+type RealNameInfoResponse = {
+  data: {
+    userID: string;
+    isRealName: boolean;
+  };
+  error?: string;
+  message: string;
+};
+
+export const checkSealosUserIsRealName = async (client: AxiosInstance): Promise<boolean> => {
+  try {
+    if (!global.AppConfig.costCenter.realNameRechargeLimit) {
+      return true;
+    }
+
+    const response = await client.post('/account/v1alpha1/real-name-info');
+    const realNameInfoData: RealNameInfoResponse = await response.data;
+
+    if (realNameInfoData.error) {
+      console.error(realNameInfoData.error);
+      return false;
+    }
+
+    return realNameInfoData.data.isRealName;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};

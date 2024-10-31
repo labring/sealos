@@ -1,4 +1,4 @@
-import { Checkbox, Flex, Link, Text, TextProps } from '@chakra-ui/react';
+import { Checkbox, Flex, Link, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
@@ -12,7 +12,6 @@ const useProtocol = ({
   const { t, i18n } = useTranslation();
   const [isAgree, setIsAgree] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
-
   const Protocol = () => (
     <Flex
       className="protocol"

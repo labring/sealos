@@ -1,26 +1,25 @@
+import { deleteTeamRequest } from '@/api/namespace';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import useSessionStore from '@/stores/session';
+import { ApiResp } from '@/types';
 import {
   Button,
-  Image,
+  ButtonProps,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalHeader,
   ModalOverlay,
-  useDisclosure,
-  Text,
   Spinner,
-  ButtonProps
+  Text,
+  useDisclosure
 } from '@chakra-ui/react';
-import CustomInput from './Input';
-import { useState } from 'react';
-import { useCustomToast } from '@/hooks/useCustomToast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteTeamRequest } from '@/api/namespace';
-import useSessionStore from '@/stores/session';
-import { ApiResp } from '@/types';
-import { useTranslation } from 'next-i18next';
 import { DeleteIcon } from '@sealos/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
+import CustomInput from './Input';
 export default function DissolveTeam({
   nsid,
   ns_uid,
@@ -95,7 +94,7 @@ export default function DissolveTeam({
         >
           <ModalCloseButton right={'24px'} top="16px" p="0" />
           <ModalHeader bg={'white'} border={'none'} p="0">
-            Warning
+            {t('common:warning')}
           </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
@@ -108,7 +107,7 @@ export default function DissolveTeam({
                   e.preventDefault();
                   setTeamName(e.target.value);
                 }}
-                placeholder={t('common:name_of_team') || ''}
+                placeholder={t('common:team') || '' + ' ID'}
                 value={teamName}
               />
               <Button

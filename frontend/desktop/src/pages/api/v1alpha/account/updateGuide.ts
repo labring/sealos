@@ -1,9 +1,9 @@
 import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import { UpdateCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
+import { AccountMeta } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { initK8s } from 'sealos-desktop-sdk/service';
-import { AccountMeta } from '@/pages/api/account/getAccount';
 
 export type UpdateUserGuideParams = {
   activityType: 'beginner-guide';

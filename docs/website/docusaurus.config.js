@@ -251,11 +251,7 @@ const config = {
     {
       src: "/global.js",
       async: true
-    },
-    ...(isDomesticSite ? [{
-      src: 'https://hm.baidu.com/hm.js?d8e8ecf669c47dc2512d3f1417e761f9',
-      async: true,
-    }] : [])
+    }
   ],
   headTags: [
     {
@@ -279,6 +275,101 @@ const config = {
         },
       }
     },
+    function gtmPlugin (context, options) {
+      return {
+        name: 'docusaurus-gtm-plugin',
+        injectHtmlTags () {
+          return {
+            headTags: [
+              {
+                tagName: 'script',
+                innerHTML: `
+                  (function() {
+                    const hostname = window.location.hostname;
+                    if (hostname !== 'sealos.run') {
+                      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                      })(window,document,'script','dataLayer','GTM-5953N4CP');
+                    }
+                  })();
+                `,
+              },
+            ],
+            preBodyTags: [
+              {
+                tagName: 'script',
+                innerHTML: `
+                  if (window.location.hostname !== 'sealos.run') {
+                    document.write('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5953N4CP" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>');
+                  }
+                `,
+              },
+            ]
+          }
+        },
+      }
+    },
+    function umamiPlugin (context, options) {
+      return {
+        name: 'docusaurus-umami-plugin',
+        injectHtmlTags () {
+          return {
+            headTags: [
+              {
+                tagName: 'script',
+                innerHTML: `
+                  (function() {
+                    const hostname = window.location.hostname;
+                    if (hostname === 'sealos.run') {
+                      const script1 = document.createElement('script');
+                      script1.src = 'https://umami.cloud.sealos.io/oishii';
+                      script1.setAttribute('data-website-id', 'e5a8009f-7cb6-4841-9522-d23b96216b7a');
+                      script1.async = true;
+                      document.head.appendChild(script1);
+                    } else {
+                      const script2 = document.createElement('script');
+                      script2.src = 'https://umami.cloud.sealos.io/oishii';
+                      script2.setAttribute('data-website-id', 'a1c29ace-b288-431a-a2eb-8617d1d5b5ed');
+                      script2.async = true;
+                      document.head.appendChild(script2);
+                    }
+                  })();
+                `,
+              },
+            ],
+          }
+        },
+      }
+    },
+    function baiduPlugin (context, options) {
+      return {
+        name: 'docusaurus-baidu-plugin',
+        injectHtmlTags () {
+          return {
+            headTags: [
+              {
+                tagName: 'script',
+                innerHTML: `
+                  (function() {
+                    const hostname = window.location.hostname;
+                    if (hostname === 'sealos.run') {
+                      var _hmt = _hmt || [];
+                      var hm = document.createElement("script");
+                      hm.src = "https://hm.baidu.com/hm.js?d8e8ecf669c47dc2512d3f1417e761f9";
+                      hm.async = true;
+                      var s = document.getElementsByTagName("script")[0]; 
+                      s.parentNode.insertBefore(hm, s);
+                    }
+                  })();
+                `,
+              },
+            ],
+          }
+        },
+      }
+    }
   ]
 }
 

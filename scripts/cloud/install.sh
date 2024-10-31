@@ -8,7 +8,7 @@ RESET='\033[0m'
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.1-beta2"
+SEALOS_VERSION="v5.0.1"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -31,7 +31,7 @@ cilium_version=${cilium_version:-"1.15.8"}
 cert_manager_version=${cert_manager_version:-"1.14.6"}
 helm_version=${helm_version:-"3.14.1"}
 openebs_version=${openebs_version:-"3.10.0"}
-higress_version=${higress_version:-"2.0.0"}
+higress_version=${higress_version:-"2.0.1"}
 kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
@@ -86,7 +86,7 @@ Options:
   --cert-manager-version            # Cert Manager version (default: 1.14.6)
   --helm-version                    # Helm version (default: 3.14.1)
   --openebs-version                 # OpenEBS version (default: 3.10.0)
-  --higress-version                 # Higress version (default: 2.0.0)
+  --higress-version                 # Higress version (default: 2.0.1)
   --kubeblocks-version              # Kubeblocks version (default: 0.8.2)
   --metrics-server-version          # Metrics Server version (default: 0.6.4)
   --cloud-version                   # Sealos Cloud version (default: latest)
@@ -155,7 +155,7 @@ Options:
   --cert-manager-version          # Cert Manager版本 (默认: 1.14.6)
   --helm-version                  # Helm版本 (默认: 3.14.1)
   --openebs-version               # OpenEBS版本 (默认: 3.10.0)
-  --higress-version               # Higress版本 (默认: 2.0.0)
+  --higress-version               # Higress版本 (默认: 2.0.1)
   --kubeblocks-version            # Kubeblocks版本 (默认: 0.8.2)
   --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
   --cloud-version                 # Sealos Cloud版本 (默认: latest)
@@ -271,12 +271,13 @@ init() {
     pull_image "cert-manager" "v${cert_manager_version#v:-1.14.6}"
     pull_image "helm" "v${helm_version#v:-3.14.1}"
     pull_image "openebs" "v${openebs_version#v:-3.10.0}"
-    pull_image "higress" "v${higress_version#v:-2.0.0}"
+    pull_image "higress" "v${higress_version#v:-2.0.1}"
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-redis" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-csi-s3" "v0.31.4"
     pull_image "cockroach" "v2.12.0"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "victoria-metrics-k8s-stack" "v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
@@ -436,11 +437,15 @@ spec:
         enabled: true
       nodeSelector:
         node-role.kubernetes.io/control-plane: ''
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       resources:
         requests:
           cpu: 256m
           memory: 256Mi
-  match: ${image_registry}/${image_repository}/higress:v${higress_version#v:-2.0.0}
+  match: ${image_registry}/${image_repository}/higress:v${higress_version#v:-2.0.1}
   path: charts/higress/charts/higress-core/values.yaml
   strategy: merge
 "
@@ -453,7 +458,7 @@ metadata:
 spec:
   data: |
     replicaCount: 0
-  match: ${image_registry}/${image_repository}/higress:v${higress_version#v:-2.0.0}
+  match: ${image_registry}/${image_repository}/higress:v${higress_version#v:-2.0.1}
   path: charts/higress/charts/higress-console/values.yaml
   strategy: merge
 "
@@ -760,7 +765,7 @@ EOF
     sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
 
     get_prompt "partner_installation"
-    sealos run ${image_registry}/${image_repository}/higress:v${higress_version#v:-2.0.0} --config-file $CLOUD_DIR/higress-config.yaml --config-file $CLOUD_DIR/higress-console-config.yaml
+    sealos run ${image_registry}/${image_repository}/higress:v${higress_version#v:-2.0.1} --config-file $CLOUD_DIR/higress-config.yaml --config-file $CLOUD_DIR/higress-console-config.yaml
     kubectl apply -f $CLOUD_DIR/higress-https.yaml
     kubectl apply -f $CLOUD_DIR/higress-plugins.yaml
     get_prompt "optimizing_h2_buffer"
@@ -770,9 +775,10 @@ EOF
     sealos run ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-postgresql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-mongodb:v${kubeblocks_version#v:-0.8.2} \
-      ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
+      ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2} \
+      ${image_registry}/${image_repository}/kubeblocks-csi-s3:v0.31.4
 
-    addons=("snapshot-controller" "csi-s3" "migration" "milvus" "weaviate")
+    addons=("snapshot-controller" "migration" "milvus" "weaviate")
 
     for addon in "${addons[@]}"; do
       kubectl patch addon $addon --type='merge' -p '{"spec":{"install":{"enabled":true,"resources":{},"tolerations":"[{\"effect\":\"NoSchedule\",\"key\":\"kb-controller\",\"operator\":\"Equal\",\"value\":\"true\"}]"}}}'

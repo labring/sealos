@@ -62,6 +62,10 @@ spec:
               value: "false"
             - name: SHOW_DOCUMENT
               value: "true"
+            - name: GUIDE_ENABLED
+              value: "{{ .guideEnabled }}"
+            - name: BILLING_URL
+              value: {{ .billingUrl }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

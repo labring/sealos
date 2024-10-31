@@ -16,6 +16,8 @@ import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import { useSystemConfigStore } from '@/store/config';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
+
+import '@sealos/driver/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 
@@ -128,7 +130,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             type: string;
           }>
         ) => {
-          const whitelist = [`https://${envs.SEALOS_CLOUD_DOMAIN}`];
+          const whitelist = [`https://${envs.DESKTOP_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }

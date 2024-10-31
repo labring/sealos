@@ -14,7 +14,9 @@ import {
   DevboxVersionListItemType,
   PodDetailType
 } from '@/types/devbox'
-import { V1Pod } from '@kubernetes/client-node'
+import { V1Ingress, V1Pod } from '@kubernetes/client-node'
+import { DBListItemType, KbPgClusterType } from '@/types/cluster'
+import { IngressListItemType } from '@/types/ingress'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -164,5 +166,31 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     },
     cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
+  }
+}
+
+export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+  return {
+    id: db.metadata?.uid || ``,
+    name: db.metadata?.name || 'db name',
+    dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
+    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.cpu),
+    memory: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.memory),
+    storage:
+      db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
+      '-'
+  }
+}
+
+export const adaptIngressListItem = (ingress: V1Ingress): IngressListItemType => {
+  const firstRule = ingress.spec?.rules?.[0]
+  const firstPath = firstRule?.http?.paths?.[0]
+
+  return {
+    name: ingress.metadata?.name || '',
+    namespace: ingress.metadata?.namespace || '',
+    host: firstRule?.host || '',
+    port: firstPath?.backend?.service?.port?.number || 0
   }
 }

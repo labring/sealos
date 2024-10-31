@@ -1,8 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '@/services/backend/response';
-import { globalPrisma, prisma } from '@/services/backend/db/init';
-import { ProviderType } from 'prisma/global/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
+import { globalPrisma, prisma } from '@/services/backend/db/init';
+import { jsonRes } from '@/services/backend/response';
+import {
+  enableEmailSms,
+  enableGithub,
+  enableGoogle,
+  enablePassword,
+  enablePhoneSms
+} from '@/services/enable';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { ProviderType } from 'prisma/global/generated/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -12,36 +19,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'invalid token'
       });
-    const [regionData, globalData, realNameInfo, restrictedUser] = await Promise.all([
-      prisma.userCr.findUnique({
-        where: {
-          uid: regionUser.userCrUid
-        }
-      }),
-      globalPrisma.user.findUnique({
-        where: {
-          uid: regionUser.userUid
-        },
-        include: {
-          oauthProvider: {
-            select: {
-              providerType: true,
-              providerId: true
+    const [regionData, globalData, realNameInfo, enterpriseRealNameInfo, restrictedUser] =
+      await Promise.all([
+        prisma.userCr.findUnique({
+          where: {
+            uid: regionUser.userCrUid
+          }
+        }),
+        globalPrisma.user.findUnique({
+          where: {
+            uid: regionUser.userUid
+          },
+          include: {
+            oauthProvider: {
+              select: {
+                providerType: true,
+                providerId: true
+              }
             }
           }
-        }
-      }),
-      globalPrisma.userRealNameInfo.findUnique({
-        where: {
-          userUid: regionUser.userUid
-        }
-      }),
-      globalPrisma.restrictedUser.findUnique({
-        where: {
-          userUid: regionUser.userUid
-        }
-      })
-    ]);
+        }),
+        globalPrisma.userRealNameInfo.findUnique({
+          where: {
+            userUid: regionUser.userUid
+          }
+        }),
+        globalPrisma.enterpriseRealNameInfo.findUnique({
+          where: {
+            userUid: regionUser.userUid
+          }
+        }),
+        globalPrisma.restrictedUser.findUnique({
+          where: {
+            userUid: regionUser.userUid
+          }
+        })
+      ]);
 
     if (!regionData || !globalData)
       return jsonRes(res, {
@@ -59,21 +72,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: string;
       name: string;
       realName?: string;
+      enterpriseVerificationStatus?: string;
+      enterpriseRealName?: string;
       userRestrictedLevel?: number;
     } = {
       ...globalData,
-      oauthProvider: globalData.oauthProvider.map((o) => ({
-        providerType: o.providerType,
-        providerId: (
-          [ProviderType.PHONE, ProviderType.PASSWORD, ProviderType.EMAIL] as ProviderType[]
-        ).includes(o.providerType)
-          ? o.providerId
-          : ''
-      }))
+      oauthProvider: globalData.oauthProvider
+        .filter((o) => {
+          if (o.providerType === ProviderType.GOOGLE) {
+            return enableGoogle();
+          } else if (o.providerType === ProviderType.GITHUB) {
+            return enableGithub();
+          } else if (o.providerType === ProviderType.PHONE) {
+            return enablePhoneSms();
+          } else if (o.providerType === ProviderType.EMAIL) {
+            return enableEmailSms();
+          } else if (o.providerType === ProviderType.PASSWORD) {
+            return enablePassword();
+          }
+          return true;
+        })
+        .map((o) => ({
+          providerType: o.providerType,
+          providerId: (
+            [ProviderType.PHONE, ProviderType.PASSWORD, ProviderType.EMAIL] as ProviderType[]
+          ).includes(o.providerType)
+            ? o.providerId
+            : ''
+        }))
     };
 
     if (realNameInfo && realNameInfo.isVerified) {
       info.realName = realNameInfo.realName || undefined;
+    }
+
+    if (enterpriseRealNameInfo) {
+      info.enterpriseVerificationStatus = enterpriseRealNameInfo.verificationStatus || undefined;
+      info.enterpriseRealName = enterpriseRealNameInfo.enterpriseName || undefined;
     }
 
     if (restrictedUser) {

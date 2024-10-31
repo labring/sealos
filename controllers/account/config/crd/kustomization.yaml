@@ -16,14 +16,8 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/account.sealos.io_accounts.yaml
 - bases/account.sealos.io_payments.yaml
 - bases/account.sealos.io_debts.yaml
-- bases/account.sealos.io_billingrecordqueries.yaml
-- bases/account.sealos.io_pricequeries.yaml
-- bases/account.sealos.io_transfers.yaml
-- bases/account.sealos.io_namespacebillinghistories.yaml
-- bases/account.sealos.io_billinginfoqueries.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

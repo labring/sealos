@@ -84,7 +84,7 @@ export default function usePassword({
                     const infoData = await UserInfo();
                     const payload = jwtDecode<AccessTokenPayload>(regionResult.data.token);
                     setSession({
-                      token: regionResult.data.token,
+                      token: regionResult.data.appToken, // fix cannot get appToken after login
                       user: {
                         k8s_username: payload.userCrName,
                         name: infoData.data?.info.nickname || '',
@@ -95,6 +95,9 @@ export default function usePassword({
                         userId: payload.userId,
                         userUid: payload.userUid,
                         realName: infoData.data?.info.realName || undefined,
+                        enterpriseVerificationStatus:
+                          infoData.data?.info.enterpriseVerificationStatus || undefined,
+                        enterpriseRealName: infoData.data?.info.enterpriseRealName || undefined,
                         userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined
                       },
                       kubeconfig: regionResult.data.kubeconfig

@@ -13,6 +13,7 @@ export const userCRD = {
   Version: 'v1',
   Resource: 'users'
 };
+
 export type UserCR = {
   apiVersion: 'user.sealos.io/v1';
   kind: 'User';
@@ -62,6 +63,7 @@ export type StatusCR = {
   };
   code: 404;
 };
+
 export type TAppCR = {
   apiVersion: 'app.sealos.io/v1';
   kind: 'App';
@@ -131,9 +133,16 @@ export type TNotification = {
   desktopPopup: boolean;
   i18n: {
     [key in string]: {
-      from: string;
+      from: string; // Debt-System Active-System
       message: string;
       title: string;
     };
   };
+};
+
+export const AccountMeta: CRDMeta = {
+  group: 'account.sealos.io',
+  version: 'v1',
+  namespace: 'sealos-system',
+  plural: 'accounts'
 };

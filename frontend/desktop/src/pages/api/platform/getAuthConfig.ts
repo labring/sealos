@@ -29,19 +29,22 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         enabled: !!conf.idp.password?.enabled
       },
       sms: {
-        enabled: !!conf.idp.sms?.enabled
+        enabled: !!conf.idp.sms?.ali?.enabled
       },
       github: {
         enabled: !!conf.idp.github?.enabled,
+        proxyAddress: conf.idp.github?.proxyAddress || '',
         clientID: conf.idp.github?.clientID || ''
       },
       wechat: {
         enabled: !!conf.idp.wechat?.enabled,
-        clientID: conf.idp.wechat?.clientID || ''
+        clientID: conf.idp.wechat?.clientID || '',
+        proxyAddress: conf.idp.wechat?.proxyAddress || ''
       },
       google: {
         enabled: !!conf.idp.google?.enabled,
-        clientID: conf.idp.google?.clientID || ''
+        clientID: conf.idp.google?.clientID || '',
+        proxyAddress: conf.idp.google?.proxyAddress || ''
       },
       oauth2: {
         enabled: !!conf.idp.oauth2?.enabled,
@@ -49,10 +52,10 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         clientID: conf.idp.oauth2?.clientID || '',
         authURL: conf.idp.oauth2?.authURL || '',
         tokenURL: conf.idp.oauth2?.tokenURL || '',
-        userInfoURL: conf.idp.oauth2?.userInfoURL || ''
+        userInfoURL: conf.idp.oauth2?.userInfoURL || '',
+        proxyAddress: conf.idp.oauth2?.proxyAddress || ''
       }
     },
-    proxyAddress: conf.proxyAddress || '',
     hasBaiduToken: !!conf.baiduToken,
     billingToken: ''
   };
@@ -63,7 +66,7 @@ export async function getAuthClientConfig(): Promise<AuthClientConfigType> {
   try {
     if (process.env.NODE_ENV === 'development' || !global.AppConfig) {
       const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
+        process.env.NODE_ENV === 'development' ? 'data/config.local.yaml' : '/app/data/config.yaml';
       global.AppConfig = yaml.load(readFileSync(filename, 'utf-8')) as AppConfigType;
     }
     return genResAuthClientConfig(global.AppConfig.desktop.auth);

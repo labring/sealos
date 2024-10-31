@@ -8,7 +8,7 @@ import {
   CommonClientConfigType,
   TNotification
 } from '@/types';
-import { AccountCRD } from '@/types/user';
+import { UserTask } from '@/types/task';
 
 // handle baidu
 export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid?: string }) => {
@@ -24,12 +24,16 @@ export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid
   });
 };
 
-export const updateDesktopGuide = () => {
-  return request.post('/api/account/updateGuide');
+export const getUserTasks = () => {
+  return request.get<UserTask[]>('/api/account/getTasks');
 };
 
-export const getUserAccount = () => {
-  return request.get<AccountCRD>('/api/account/getAccount');
+export const checkUserTask = () => {
+  return request.get('/api/account/checkTask');
+};
+
+export const updateTask = (taskId: string) => {
+  return request.post('/api/account/updateTask', { taskId });
 };
 
 export const getAppConfig = () => {

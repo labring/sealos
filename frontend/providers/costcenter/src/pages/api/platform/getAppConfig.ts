@@ -5,6 +5,7 @@ import { jsonRes } from '@/service/backend/response';
 import { AppConfigType, DefaultAppConfig } from '@/types/config';
 
 export type Response = {
+  REALNAME_RECHARGE_LIMIT: boolean;
   RECHARGE_ENABLED: boolean;
   TRANSFER_ENABLED: boolean;
   STRIPE_ENABLED: boolean;
@@ -45,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     initAppConfig();
     jsonRes<Response>(res, {
       data: {
+        REALNAME_RECHARGE_LIMIT: global.AppConfig.costCenter.realNameRechargeLimit,
         RECHARGE_ENABLED: global.AppConfig.costCenter.recharge.enabled,
         TRANSFER_ENABLED: global.AppConfig.costCenter.transferEnabled,
         STRIPE_ENABLED: global.AppConfig.costCenter.recharge.payMethods.stripe.enabled,

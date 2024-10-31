@@ -2856,10 +2856,6 @@ spec:
                 type: object
               phase:
                 type: string
-              podPhase:
-                description: PodPhase is a label for the condition of a pod at the
-                  current time.
-                type: string
               state:
                 description: |-
                   ContainerState holds a possible state of container.
@@ -3133,7 +3129,20 @@ spec:
     singular: runtime
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.classRef
+      name: Class
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .spec.runtimeVersion
+      name: RuntimeVersion
+      type: string
+    - jsonPath: .spec.state
+      name: State
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Runtime is the Schema for the runtimes API
@@ -5107,6 +5116,14 @@ spec:
                 type: object
               description:
                 type: string
+              runtimeVersion:
+                type: string
+              state:
+                default: active
+                enum:
+                - active
+                - deprecated
+                type: string
               version:
                 type: string
             required:
@@ -5639,7 +5656,7 @@ metadata:
   name: devbox-controller-manager
   namespace: devbox-system
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       control-plane: controller-manager

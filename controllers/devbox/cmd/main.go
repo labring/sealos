@@ -24,11 +24,16 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -64,7 +69,8 @@ func main() {
 	var registryUser string
 	var registryPassword string
 	var authAddr string
-	var ephemeralStorage string
+	var requestEphemeralStorage string
+	var limitEphemeralStorage string
 	var debugMode bool
 	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
 	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
@@ -81,7 +87,8 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.BoolVar(&debugMode, "debug", false, "If set, debug mode will be enabled")
-	flag.StringVar(&ephemeralStorage, "ephemeral-storage", "2000Mi", "The maximum value of equatorial storage in devbox.")
+	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
+	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -133,6 +140,11 @@ func main() {
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 	}
 
+	cacheObjLabelSelector := labels.SelectorFromSet(map[string]string{
+		"app.kubernetes.io/managed-by": "sealos",
+		"app.kubernetes.io/part-of":    "devbox",
+	})
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
@@ -151,6 +163,15 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
+
+		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+			opts.ByObject = map[client.Object]cache.ByObject{
+				&corev1.Service{}: {Label: cacheObjLabelSelector},
+				&corev1.Pod{}:     {Label: cacheObjLabelSelector},
+				&corev1.Secret{}:  {Label: cacheObjLabelSelector},
+			}
+			return cache.New(config, opts)
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -158,12 +179,13 @@ func main() {
 	}
 
 	if err = (&controller.DevboxReconciler{
-		Client:              mgr.GetClient(),
-		Scheme:              mgr.GetScheme(),
-		CommitImageRegistry: registryAddr,
-		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
-		EquatorialStorage:   ephemeralStorage,
-		DebugMode:           debugMode,
+		Client:                  mgr.GetClient(),
+		Scheme:                  mgr.GetScheme(),
+		CommitImageRegistry:     registryAddr,
+		Recorder:                mgr.GetEventRecorderFor("devbox-controller"),
+		RequestEphemeralStorage: requestEphemeralStorage,
+		LimitEphemeralStorage:   limitEphemeralStorage,
+		DebugMode:               debugMode,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)

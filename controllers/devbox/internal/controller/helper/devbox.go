@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strings"
 
 	"crypto/ed25519"
 	"crypto/rand"
@@ -76,6 +77,32 @@ func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alph
 	return annotations
 }
 
+func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) devboxv1alpha1.DevboxPhase {
+	if len(podList.Items) > 1 {
+		return devboxv1alpha1.DevboxPhaseError
+	}
+	switch devbox.Spec.State {
+	case devboxv1alpha1.DevboxStateRunning:
+		if len(podList.Items) == 0 {
+			return devboxv1alpha1.DevboxPhasePending
+		}
+		switch podList.Items[0].Status.Phase {
+		case corev1.PodFailed, corev1.PodSucceeded:
+			return devboxv1alpha1.DevboxPhaseStopped
+		case corev1.PodPending:
+			return devboxv1alpha1.DevboxPhasePending
+		case corev1.PodRunning:
+			return devboxv1alpha1.DevboxPhaseRunning
+		}
+	case devboxv1alpha1.DevboxStateStopped:
+		if len(podList.Items) == 0 {
+			return devboxv1alpha1.DevboxPhaseStopped
+		}
+		return devboxv1alpha1.DevboxPhaseStopping
+	}
+	return devboxv1alpha1.DevboxPhaseUnknown
+}
+
 func MergeCommitHistory(devbox *devboxv1alpha1.Devbox, latestDevbox *devboxv1alpha1.Devbox) []*devboxv1alpha1.CommitHistory {
 	res := make([]*devboxv1alpha1.CommitHistory, 0)
 	historyMap := make(map[string]*devboxv1alpha1.CommitHistory)
@@ -127,7 +154,6 @@ func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod
 // TODO: move this function to devbox types.go
 func UpdateDevboxStatus(current, latest *devboxv1alpha1.Devbox) {
 	latest.Status.Phase = current.Status.Phase
-	latest.Status.DevboxPodPhase = current.Status.DevboxPodPhase
 	latest.Status.State = current.Status.State
 	latest.Status.LastTerminationState = current.Status.LastTerminationState
 	latest.Status.CommitHistory = MergeCommitHistory(current, latest)
@@ -190,6 +216,16 @@ func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	}
 	if container.Resources.Limits.Memory().Cmp(*expectContainer.Resources.Limits.Memory()) != 0 {
 		slog.Info("Memory limits are not equal")
+		return false
+	}
+
+	// Check Ephemeral Storage changes
+	if container.Resources.Requests.StorageEphemeral().Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) != 0 {
+		slog.Info("Ephemeral-Storage requests are not equal")
+		return false
+	}
+	if container.Resources.Limits.StorageEphemeral().Cmp(*expectContainer.Resources.Limits.StorageEphemeral()) != 0 {
+		slog.Info("Ephemeral-Storage limits are not equal")
 		return false
 	}
 
@@ -345,20 +381,25 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, equatorialStorage string) corev1.ResourceRequirements {
+func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestEphemeralStorage, limitEphemeralStorage string) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: calculateResourceRequest(
 			corev1.ResourceList{
-				corev1.ResourceCPU:    devbox.Spec.Resource["cpu"],
-				corev1.ResourceMemory: devbox.Spec.Resource["memory"],
+				corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
+				corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
+				corev1.ResourceEphemeralStorage: resource.MustParse(requestEphemeralStorage),
 			},
 		),
 		Limits: corev1.ResourceList{
-			"cpu":               devbox.Spec.Resource["cpu"],
-			"memory":            devbox.Spec.Resource["memory"],
-			"ephemeral-storage": resource.MustParse(equatorialStorage),
+			corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
+			corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
+			corev1.ResourceEphemeralStorage: resource.MustParse(limitEphemeralStorage),
 		},
 	}
+}
+
+func IsExceededQuotaError(err error) bool {
+	return strings.Contains(err.Error(), "exceeded quota")
 }
 
 func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
@@ -378,6 +419,11 @@ func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
 		memoryRequest := memoryValue / rate
 		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
 	}
+
+	if ephemeralStorage, ok := limit[corev1.ResourceEphemeralStorage]; ok {
+		request[corev1.ResourceEphemeralStorage] = ephemeralStorage
+	}
+
 	return request
 }
 

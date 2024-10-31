@@ -1,4 +1,4 @@
-# Copyright © 2023 sealos.
+# Copyright © 2024 sealos.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: manager-role
 rules:
 - apiGroups:
@@ -31,12 +30,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps/status
-  verbs:
-  - get
 - apiGroups:
   - ""
   resources:
@@ -78,58 +71,6 @@ rules:
 - apiGroups:
   - account.sealos.io
   resources:
-  - billinginfoqueries
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - billinginfoqueries/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - billinginfoqueries/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - billingrecordqueries
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - billingrecordqueries/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - billingrecordqueries/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
   - debts
   verbs:
   - create
@@ -156,32 +97,6 @@ rules:
 - apiGroups:
   - account.sealos.io
   resources:
-  - namespacebillinghistories
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - namespacebillinghistories/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - namespacebillinghistories/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
   - payments
   verbs:
   - create
@@ -201,32 +116,6 @@ rules:
   - account.sealos.io
   resources:
   - payments/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - pricequeries
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - pricequeries/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - pricequeries/status
   verbs:
   - get
   - patch
@@ -448,6 +337,7 @@ rules:
   resources:
   - users
   verbs:
+  - create
   - get
   - list
   - watch

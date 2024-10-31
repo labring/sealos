@@ -726,8 +726,9 @@ func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 		return nil, fmt.Errorf("invalid user: %v", user)
 	}
 	auth = &helper.Auth{
-		Owner:  user.UserCrName,
-		UserID: user.UserID,
+		Owner:   user.UserCrName,
+		UserID:  user.UserID,
+		UserUID: user.UserUID,
 	}
 	// if the user is not in the local region, get the user cr name from db
 	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID {
@@ -977,26 +978,47 @@ func UserUsage(c *gin.Context) {
 	})
 }
 
+// GetRechargeDiscount
+// @Summary Get recharge discount
+// @Description Get recharge discount
+// @Tags RechargeDiscount
+// @Accept json
+// @Produce json
+// @Param request body helper.GetRechargeDiscountReq true "Get recharge discount request"
+// @Success 200 {object} map[string]interface{} "successfully get recharge discount"
+// @Failure 400 {object} map[string]interface{} "failed to parse get recharge discount request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get recharge discount"
+// @Router /account/v1alpha1/recharge/discount [post]
+func GetRechargeDiscount(c *gin.Context) {
+	req := &helper.AuthBase{}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	discount, err := dao.DBClient.GetRechargeDiscount(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get recharge discount : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"discount": discount,
+	})
+}
+
 // GetUserRealNameInfo
 // @Summary Get user real name information
 // @Description Retrieve the real name information for a user
 // @Tags GetUserRealNameInfo
 // @Accept json
 // @Produce json
-// @Param request body helper.GetRealNameInfoReq true "Get real name info request"
 // @Success 200 {object} helper.GetRealNameInfoResp "Successfully retrieved user real name info"
 // @Failure 400 {object} helper.ErrorMessage "Failed to parse get real name info request"
 // @Failure 401 {object} helper.ErrorMessage "Authentication error"
 // @Failure 500 {object} helper.ErrorMessage "Failed to get user real name info or info not found/verified"
 // @Router /account/v1alpha1/real-name-info [post]
 func GetUserRealNameInfo(c *gin.Context) {
-	// Parse the get real name info request
-	req, err := helper.ParseGetRealNameInfoReq(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse get real name info request: %v", err)})
-		return
-	}
-
+	req := &helper.GetRealNameInfoReq{}
 	if err := authenticateRequest(c, req); err != nil {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return

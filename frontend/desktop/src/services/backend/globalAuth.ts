@@ -5,8 +5,19 @@ import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
-import { ProviderType, User, UserStatus } from 'prisma/global/generated/client';
+import {
+  PrismaClient,
+  ProviderType,
+  TaskStatus,
+  User,
+  UserStatus
+} from 'prisma/global/generated/client';
 import { enableSignUp } from '../enable';
+
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -21,6 +32,9 @@ async function signIn({ provider, id }: { provider: ProviderType; id: string }) 
     }
   });
   if (!userProvider) return null;
+
+  await checkDeductionBalanceAndCreateTasks(userProvider.user.uid);
+
   return {
     user: userProvider.user
   };
@@ -82,9 +96,63 @@ export async function signInByPassword({ id, password }: { id: string; password:
     }
   });
   if (!userProvider) return null;
+
+  await checkDeductionBalanceAndCreateTasks(userProvider.user.uid);
+
   return {
     user: userProvider.user
   };
+}
+
+/**
+ * Checks the deduction balance of a user and creates new tasks if the balance is zero.
+ *
+ * @param {string} userUid - The unique identifier of the user.
+ */
+async function checkDeductionBalanceAndCreateTasks(userUid: string) {
+  const account = await globalPrisma.account.findUnique({
+    where: { userUid }
+  });
+
+  // Check if the account exists, the deduction balance is not null, and the balance is zero.
+  if (
+    account &&
+    account.deduction_balance !== null &&
+    account.deduction_balance.toString() === '0'
+  ) {
+    const userTasks = await globalPrisma.userTask.findFirst({
+      where: { userUid }
+    });
+
+    // If no user tasks are found, create new tasks for the user.
+    if (!userTasks) {
+      await globalPrisma.$transaction(async (tx) => {
+        await createNewUserTasks(tx, userUid);
+      });
+    }
+  }
+}
+
+// Assign tasks to newly registered users
+async function createNewUserTasks(tx: TransactionClient, userUid: string) {
+  const newUserTasks = await tx.task.findMany({
+    where: {
+      isNewUserTask: true,
+      isActive: true
+    }
+  });
+
+  for (const task of newUserTasks) {
+    await tx.userTask.create({
+      data: {
+        userUid,
+        taskId: task.id,
+        status: TaskStatus.NOT_COMPLETED,
+        rewardStatus: task.taskType === 'DESKTOP' ? TaskStatus.COMPLETED : TaskStatus.NOT_COMPLETED,
+        completedAt: new Date(0)
+      }
+    });
+  }
 }
 
 async function signUp({
@@ -127,6 +195,8 @@ async function signUp({
           }
         });
       }
+
+      await createNewUserTasks(tx, user.uid);
 
       return { user };
     });
@@ -180,6 +250,8 @@ export async function signUpByPassword({
           }
         });
       }
+
+      await createNewUserTasks(tx, user.uid);
 
       return { user };
     });
@@ -244,6 +316,7 @@ export const getGlobalToken = async ({
       }
     }
   });
+
   if (provider === ProviderType.PASSWORD) {
     if (!password) {
       return null;

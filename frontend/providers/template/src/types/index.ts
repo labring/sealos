@@ -27,4 +27,5 @@ export type EnvResponse = {
   SEALOS_NAMESPACE: string;
   SEALOS_SERVICE_ACCOUNT: string;
   SHOW_AUTHOR: string;
+  DESKTOP_DOMAIN: string;
 };

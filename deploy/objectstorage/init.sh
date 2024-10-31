@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-export readonly ARCH=${1:-amd64}
+readonly ARCH=${1:-amd64}
 mkdir -p tars
 
 RetryPullImageInterval=3

@@ -1,4 +1,5 @@
 import useSessionStore from '@/store/session';
+import { SessionV1 } from 'sealos-desktop-sdk/*';
 
 // edge
 export const getUserKubeConfig = () => {
@@ -13,4 +14,16 @@ export const getUserKubeConfig = () => {
     console.error(err);
   }
   return kubeConfig;
+};
+
+export const getUserSession = () => {
+  try {
+    const store = localStorage.getItem('session');
+    if (store) {
+      return JSON.parse(store) as SessionV1;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
 };

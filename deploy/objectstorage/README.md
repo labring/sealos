@@ -2,7 +2,13 @@
 
 ## version
 
-date: 2024.9.10
+### date: 2024.10.16
+
+log: fix minioKubeblocksPassword env error
+
+### date: 2024.9.10
+
+log: update controller and frontend image
 
 ## components
 

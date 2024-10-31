@@ -25,7 +25,7 @@ export async function getCloudConfig(): Promise<CloudConfigType> {
     if (!global.AppConfig) {
       const filename =
         process.env.NODE_ENV === 'development'
-          ? process.env.CONFIG_PATH || 'data/config.yaml.local'
+          ? process.env.CONFIG_PATH || 'data/config.local.yaml'
           : '/app/data/config.yaml';
       global.AppConfig = yaml.load(readFileSync(filename, 'utf-8')) as AppConfigType;
     }

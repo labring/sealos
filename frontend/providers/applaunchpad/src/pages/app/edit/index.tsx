@@ -1,5 +1,5 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { checkPermission, updateDesktopGuide } from '@/api/platform';
+import { checkPermission } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -106,6 +106,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [already, setAlready] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
   const [defaultGpuSource, setDefaultGpuSource] = useState<AppEditType['gpu']>({
     type: '',
@@ -127,7 +128,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
-  const { isGuided, closeGuide } = useDriver();
+  const { isGuided, closeGuide } = useDriver({ setIsAdvancedOpen });
 
   const realTimeForm = useRef(defaultEditVal);
 
@@ -175,16 +176,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
-        if (!isGuided) {
-          updateDesktopGuide({
-            activityType: 'beginner-guide',
-            phase: 'launchpad',
-            phasePage: 'create',
-            shouldSendGift: true
-          }).catch((err) => {
-            console.log(err);
-          });
-        }
+
         toast({
           title: t(applySuccess),
           status: 'success'
@@ -416,6 +408,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               countGpuInventory={countGpuInventory}
               pxVal={pxVal}
               refresh={forceUpdate}
+              isAdvancedOpen={isAdvancedOpen}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />

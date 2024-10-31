@@ -184,6 +184,7 @@
     "The applied memory exceeds the quota": "Requested storage exceeds your quota. Please contact admin.",
     "The applied storage exceeds the quota": "The applied storage exceeds the quota"
   },
+  "balance": "balance",
   "capacity": "capacity",
   "common": {
     "Surplus": "Surplus",
@@ -208,12 +209,16 @@
   "file": "file",
   "file value": "File Content",
   "filename": "Filename",
+  "first_charge": "First recharge discount",
+  "gift": "gift",
+  "go_to_recharge": "Go to recharge",
   "gpu": "GPU",
   "grpcs": "gRPCS",
   "https": "HTTPS",
   "jump_message": "This app can't be used independently. Click 'OK' to use it in Sealos Desktop.",
   "jump_prompt": "Redirect Notice",
   "launchpad": "App Launchpad",
+  "let_me_think_again": "Talk to you later",
   "local storage": "Local Storage",
   "memory": "Memory",
   "mount path": "mount path",
@@ -227,10 +232,12 @@
   "private": "private",
   "protocol": "protocol",
   "public": "public",
+  "receive": "receive",
   "storage": "Storage",
   "success": "success",
   "target_value": "Target Value",
   "total_price_tip": "The estimated cost does not include traffic fees, and is subject to actual usage.",
   "users installed the app": "{{count}} users have installed this app",
-  "websocket": "WebSocket"
+  "websocket": "WebSocket",
+  "you_have_successfully_deployed_app": "You have successfully deployed an application!"
 }

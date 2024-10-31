@@ -1,3 +1,4 @@
+import { userSystemNamespace } from '@/constants/account';
 import { UUID, createHash } from 'crypto';
 import * as yaml from 'js-yaml';
 export type RoleAction = 'Grant' | 'Deprive' | 'Change' | 'Create' | 'Modify';
@@ -22,9 +23,10 @@ type CRD = {
   kind: 'Operationrequest';
   metadata: {
     name: string;
-    namespace: string;
+    namespace: typeof userSystemNamespace;
   };
   spec: {
+    namespace: string;
     user: string;
     action: 'Deprive' | 'Grant' | 'Update';
     role: RoleType;
@@ -38,9 +40,10 @@ export const generateRequestCrd = ({
     kind: 'Operationrequest',
     metadata: {
       name: props.name,
-      namespace: props.namespace
+      namespace: userSystemNamespace
     },
     spec: {
+      namespace: props.namespace,
       user: props.user,
       action: props.action,
       role: props.role
@@ -58,6 +61,7 @@ type DeleteCRD = {
   kind: 'DeleteRequest';
   metadata: {
     name: string;
+    namespace: typeof userSystemNamespace;
   };
   spec: {
     user: string;
@@ -71,7 +75,8 @@ export const deleteRequestCrd = (props: DeleteCRD['spec']) => {
     apiVersion: 'user.sealos.io/v1',
     kind: 'DeleteRequest',
     metadata: {
-      name
+      name,
+      namespace: userSystemNamespace
     },
     spec: {
       user: props.user

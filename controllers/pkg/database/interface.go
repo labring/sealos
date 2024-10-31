@@ -28,7 +28,6 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/common"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 )
 
@@ -45,16 +44,12 @@ type CVM interface {
 }
 
 type Account interface {
-	//InitDB() error
 	GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error)
-	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
-	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
 	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error
 	GetAllLatestObjTraffic(startTime, endTime time.Time) ([]types.ObjectStorageTraffic, error)
 	HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error)
 	GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error)
-	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
@@ -62,7 +57,6 @@ type Account interface {
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
-	//GetNodePortAmount(owner string, endTime time.Time) (int64, error)
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	GetDistinctMonitorCombinations(startTime, endTime time.Time) ([]resources.Monitor, error)
@@ -95,11 +89,13 @@ type AccountV2 interface {
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	GetAccountConfig() (types.AccountConfig, error)
+	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region
 	GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error)
 	GetWorkspace(namespaces ...string) ([]types.Workspace, error)
-	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
+	GetUserRechargeDiscount(ops *types.UserQueryOpts) (types.UserRechargeDiscount, error)
 	SetAccountCreateLocalRegion(account *types.Account, region string) error
 	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	AddBalance(user *types.UserQueryOpts, balance int64) error
@@ -109,12 +105,9 @@ type AccountV2 interface {
 	Payment(payment *types.Payment) error
 	SavePayment(payment *types.Payment) error
 	GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error)
-	CreateErrorPaymentCreate(payment types.Payment, errorMsg string) error
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
-	CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
 	TransferAccountAll(from, to *types.UserQueryOpts) error
-	TransferAccountV1(owner string, account *types.Account) (*types.Account, error)
 	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error
 	AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error
 }
@@ -126,27 +119,12 @@ type Creator interface {
 	CreateTTLTrafficTimeSeries() error
 }
 
-type MeteringOwnerTimeResult struct {
-	//Owner  string           `bson:"owner"`
-	Time   time.Time        `bson:"time"`
-	Amount int64            `bson:"amount"`
-	Costs  map[string]int64 `bson:"costs"`
-}
-
-//func NewDBInterface(ctx context.Context, mongoURI string) (Interface, error) {
-//	return mongo.NewMongoInterface(ctx, mongoURI)
-//}
-
 const (
 	MongoURI           = "MONGO_URI"
 	CVMMongoURI        = "CVM_MONGO_URI"
 	GlobalCockroachURI = "GLOBAL_COCKROACH_URI"
 	LocalCockroachURI  = "LOCAL_COCKROACH_URI"
 	TrafficMongoURI    = "TRAFFIC_MONGO_URI"
-	//MongoUsername      = "MONGO_USERNAME"
-	//MongoPassword      = "MONGO_PASSWORD"
-	//RetentionDay       = "RETENTION_DAY"
-	//PermanentRetention = "PERMANENT_RETENTION"
 )
 
 var _ = AccountV2(&cockroach.Cockroach{})

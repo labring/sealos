@@ -17,6 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
+    appForm.networks = appForm.networks.map((network) => ({
+      ...network,
+      domain: global.AppConfig.cloud.domain
+    }));
+
     const parseYamls = formData2Yamls(appForm);
 
     const yamls = parseYamls.map((item) => item.value);

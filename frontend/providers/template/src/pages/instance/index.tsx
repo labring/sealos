@@ -9,8 +9,11 @@ import DBList from './components/dbList';
 import Header from './components/header';
 import OtherList from './components/otherList';
 import ObjStorageList from './components/objStorageList';
+import useDetailDriver from '@/hooks/useDetailDriver';
 
 export default function MyApp() {
+  useDetailDriver();
+
   const { setInstanceName, instanceName, resource } = useResourceStore();
   const router = useRouter();
 
