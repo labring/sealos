@@ -60,7 +60,7 @@ export async function DELETE(req: NextRequest) {
               name
             )
           } catch (err) {
-            console.warn(`Failed to delete ${plural}/${name}, ignoring:`, err)
+            console.warn('Failed to delete an item, ignoring:', plural, name, err)
           }
         }
 
