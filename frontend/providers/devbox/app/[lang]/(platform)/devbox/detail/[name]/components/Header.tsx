@@ -49,7 +49,7 @@ const Header = ({
   const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
 
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
-  const isButtonOnlyIcon = useMemo(() => screenWidth > 1000, [screenWidth])
+  const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
 
   const getCurrentIDELabelAndIcon = useCallback(
     (
@@ -241,15 +241,15 @@ const Header = ({
             borderRightRadius={0}
             onClick={() => handleGotoIDE(devboxDetail, currentIDE)}
             leftIcon={
-              isButtonOnlyIcon ? (
+              isBigButton ? (
                 <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
               ) : undefined
             }
             isDisabled={devboxDetail.status.value !== 'Running'}>
-            {!isButtonOnlyIcon ? (
-              <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
-            ) : (
+            {isBigButton ? (
               getCurrentIDELabelAndIcon(currentIDE).label
+            ) : (
+              <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
             )}
           </Button>
           <Menu placement="bottom-end">
@@ -324,9 +324,9 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={isButtonOnlyIcon ? <MyIcon name={'shutdown'} w={'16px'} /> : undefined}
+            leftIcon={isBigButton ? <MyIcon name={'shutdown'} w={'16px'} /> : undefined}
             onClick={() => handlePauseDevbox(devboxDetail)}>
-            {!isButtonOnlyIcon ? <MyIcon name={'shutdown'} w={'16px'} /> : t('pause')}
+            {isBigButton ? t('pause') : <MyIcon name={'shutdown'} w={'16px'} />}
           </Button>
         )}
         {devboxDetail.status.value === 'Stopped' && (
@@ -339,9 +339,9 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={isButtonOnlyIcon ? <MyIcon name={'start'} w={'16px'} /> : undefined}
+            leftIcon={isBigButton ? <MyIcon name={'start'} w={'16px'} /> : undefined}
             onClick={() => handleStartDevbox(devboxDetail)}>
-            {!isButtonOnlyIcon ? <MyIcon name={'start'} w={'16px'} /> : t('start')}
+            {isBigButton ? t('start') : <MyIcon name={'start'} w={'16px'} />}
           </Button>
         )}
         <Button
@@ -353,9 +353,9 @@ const Header = ({
             color: 'brightBlue.600'
           }}
           borderWidth={1}
-          leftIcon={isButtonOnlyIcon ? <MyIcon name={'change'} w={'16px'} /> : undefined}
+          leftIcon={isBigButton ? <MyIcon name={'change'} w={'16px'} /> : undefined}
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
-          {!isButtonOnlyIcon ? <MyIcon name={'change'} w={'16px'} /> : t('update')}
+          {!isBigButton ? <MyIcon name={'change'} w={'16px'} /> : t('update')}
         </Button>
         {devboxDetail.status.value !== 'Stopped' && (
           <Button
@@ -367,9 +367,9 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
+            leftIcon={isBigButton ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
             onClick={() => handleRestartDevbox(devboxDetail)}>
-            {!isButtonOnlyIcon ? <MyIcon name={'restart'} w={'16px'} /> : t('restart')}
+            {isBigButton ? t('restart') : <MyIcon name={'restart'} w={'16px'} />}
           </Button>
         )}
         <Button
@@ -381,9 +381,9 @@ const Header = ({
             color: 'red.600'
           }}
           borderWidth={1}
-          leftIcon={isButtonOnlyIcon ? <MyIcon name={'delete'} w={'16px'} /> : undefined}
+          leftIcon={isBigButton ? <MyIcon name={'delete'} w={'16px'} /> : undefined}
           onClick={() => setDelDevbox(devboxDetail)}>
-          {!isButtonOnlyIcon ? <MyIcon name={'delete'} w={'16px'} /> : t('delete')}
+          {isBigButton ? t('delete') : <MyIcon name={'delete'} w={'16px'} />}
         </Button>
       </Flex>
       {delDevbox && (
