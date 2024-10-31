@@ -483,7 +483,7 @@ importers:
   providers/aiproxy:
     dependencies:
       '@sealos/ui':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^4.35.3
@@ -534,12 +534,15 @@ importers:
         specifier: ^7.46.2
         version: 7.48.2(react@18.2.0)
       sealos-desktop-sdk:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/client-sdk
       zustand:
         specifier: ^4.5.4
         version: 4.5.4(@types/react@18.2.37)(immer@10.1.1)(react@18.2.0)
     devDependencies:
+      '@types/jsonwebtoken':
+        specifier: ^9.0.3
+        version: 9.0.5
       '@types/node':
         specifier: ^20
         version: 20.10.0
