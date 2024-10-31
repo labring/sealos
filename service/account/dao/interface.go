@@ -328,23 +328,11 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 		pipeline := mongo.Pipeline{
 			{{Key: "$match", Value: match}},
 			{{Key: "$facet", Value: bson.D{
-				{Key: "totalRecords", Value: bson.A{
+				{Key: "withAppCosts", Value: bson.A{
+					bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs", Value: bson.M{"$exists": true}}}}},
 					bson.D{{Key: "$unwind", Value: "$app_costs"}},
 					bson.D{{Key: "$match", Value: matchConditions}},
-					bson.D{{Key: "$count", Value: "count"}},
-				}},
-				{Key: "costs", Value: bson.A{
-					bson.D{{Key: "$unwind", Value: "$app_costs"}},
-					bson.D{{Key: "$match", Value: matchConditions}},
-					bson.D{{Key: "$sort", Value: bson.D{
-						{Key: "time", Value: -1},
-						{Key: "app_costs.name", Value: 1},
-						{Key: "_id", Value: 1},
-					}}},
-					bson.D{{Key: "$skip", Value: (req.Page - 1) * pageSize}},
-					bson.D{{Key: "$limit", Value: pageSize}},
 					bson.D{{Key: "$project", Value: bson.D{
-						{Key: "_id", Value: 0},
 						{Key: "time", Value: 1},
 						{Key: "order_id", Value: 1},
 						{Key: "namespace", Value: 1},
@@ -354,6 +342,42 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 						{Key: "app_name", Value: "$app_costs.name"},
 						{Key: "app_type", Value: "$app_type"},
 					}}},
+				}},
+				{Key: "withoutAppCosts", Value: bson.A{
+					bson.D{{Key: "$match", Value: bson.D{
+						{Key: "app_costs", Value: bson.M{"$exists": false}},
+						{Key: "app_name", Value: bson.M{"$exists": true}},
+					}}},
+					bson.D{{Key: "$match", Value: matchConditions}},
+					bson.D{{Key: "$project", Value: bson.D{
+						{Key: "time", Value: 1},
+						{Key: "order_id", Value: 1},
+						{Key: "namespace", Value: 1},
+						{Key: "used", Value: nil},
+						{Key: "used_amount", Value: nil},
+						{Key: "amount", Value: 1},
+						{Key: "app_name", Value: 1},
+						{Key: "app_type", Value: 1},
+					}}},
+				}},
+			}}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "combined", Value: bson.D{{Key: "$concatArrays", Value: bson.A{"$withAppCosts", "$withoutAppCosts"}}}},
+			}}},
+			{{Key: "$unwind", Value: "$combined"}},
+			{{Key: "$replaceRoot", Value: bson.D{{Key: "newRoot", Value: "$combined"}}}},
+			{{Key: "$sort", Value: bson.D{
+				{Key: "time", Value: -1},
+				{Key: "app_name", Value: 1},
+				{Key: "_id", Value: 1},
+			}}},
+			{{Key: "$facet", Value: bson.D{
+				{Key: "totalRecords", Value: bson.A{
+					bson.D{{Key: "$count", Value: "count"}},
+				}},
+				{Key: "costs", Value: bson.A{
+					bson.D{{Key: "$skip", Value: (req.Page - 1) * pageSize}},
+					bson.D{{Key: "$limit", Value: pageSize}},
 				}},
 			}}},
 			{{Key: "$project", Value: bson.D{
