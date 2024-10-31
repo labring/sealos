@@ -51,9 +51,7 @@ const EmptyPage = () => {
 
       return viewportDevboxList
         .filter((devbox) => devbox.status.value !== 'Stopped')
-        .map((devbox) => {
-          return () => intervalLoadPods(devbox.name, false)
-        })
+        .map((devbox) => intervalLoadPods(devbox.name, false))
     },
     {
       refetchOnMount: true,

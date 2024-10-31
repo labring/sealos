@@ -59,8 +59,8 @@ const DevboxList = ({
         })
         console.error(error)
       }
-      setLoading(false)
       refetchDevboxList()
+      setLoading(false)
     },
     [refetchDevboxList, setLoading, t, toast]
   )
@@ -80,9 +80,10 @@ const DevboxList = ({
         })
         console.error(error, '==')
       }
+      refetchDevboxList()
       setLoading(false)
     },
-    [setLoading, t, toast]
+    [refetchDevboxList, setLoading, t, toast]
   )
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemType) => {
@@ -100,9 +101,10 @@ const DevboxList = ({
         })
         console.error(error, '==')
       }
+      refetchDevboxList()
       setLoading(false)
     },
-    [setLoading, t, toast]
+    [refetchDevboxList, setLoading, t, toast]
   )
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemType) => {
@@ -122,9 +124,8 @@ const DevboxList = ({
         })
         console.error(error)
       }
-      refetchDevboxList()
     },
-    [refetchDevboxList, t, toast]
+    [t, toast]
   )
 
   const columns: {

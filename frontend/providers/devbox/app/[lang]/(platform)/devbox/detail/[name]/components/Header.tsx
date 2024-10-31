@@ -1,35 +1,19 @@
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import { Flex, Button, Box } from '@chakra-ui/react'
 import { Dispatch, useCallback, useMemo, useState } from 'react'
-import {
-  Flex,
-  Button,
-  Box,
-  Menu,
-  MenuButton,
-  IconButton,
-  MenuList,
-  MenuItem
-} from '@chakra-ui/react'
 
-import {
-  getSSHConnectionInfo,
-  getSSHRuntimeInfo,
-  pauseDevbox,
-  restartDevbox,
-  startDevbox
-} from '@/api/devbox'
 import { useRouter } from '@/i18n'
-import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { IDEType, useGlobalStore } from '@/stores/global'
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 
 import { DevboxDetailType } from '@/types/devbox'
 
 import MyIcon from '@/components/Icon'
+import IDEButton from '@/components/IDEButton'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import IDEButton from '@/components/IDEButton'
 
 const Header = ({
   refetchDevboxDetail,
@@ -44,87 +28,13 @@ const Header = ({
   const t = useTranslations()
   const { message: toast } = useMessage()
 
-  const { env } = useEnvStore()
   const { screenWidth } = useGlobalStore()
   const { devboxDetail } = useDevboxStore()
-  const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
+  const { setLoading } = useGlobalStore()
 
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
   const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
 
-  const getCurrentIDELabelAndIcon = useCallback(
-    (
-      currentIDE: IDEType
-    ): {
-      label: string
-      icon: IDEType
-    } => {
-      switch (currentIDE) {
-        case 'vscode':
-          return {
-            label: 'VSCode',
-            icon: 'vscode'
-          }
-        case 'cursor':
-          return {
-            label: 'Cursor',
-            icon: 'cursor'
-          }
-        case 'vscodeInsider':
-          return {
-            label: 'VSCode Insider',
-            icon: 'vscodeInsider'
-          }
-        default:
-          return {
-            label: 'VSCode',
-            icon: 'vscode'
-          }
-      }
-    },
-    []
-  )
-  const handleGotoIDE = useCallback(
-    async (devbox: DevboxDetailType, currentIDE: string = 'vscode') => {
-      try {
-        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
-          devboxName: devbox.name,
-          runtimeName: devbox.runtimeVersion
-        })
-        const { workingDir } = await getSSHRuntimeInfo(devbox.runtimeVersion)
-
-        let editorUri = ''
-        switch (currentIDE) {
-          case 'cursor':
-            editorUri = `cursor://`
-            break
-          case 'vscodeInsider':
-            editorUri = `vscode-insiders://`
-            break
-          case 'vscode':
-            editorUri = `vscode://`
-            break
-          default:
-            editorUri = `vscode://`
-        }
-
-        const fullUri = `${editorUri}labring.devbox-aio?sshDomain=${encodeURIComponent(
-          `${userName}@${env.sealosDomain}`
-        )}&sshPort=${encodeURIComponent(
-          devbox.sshPort as number
-        )}&base64PrivateKey=${encodeURIComponent(
-          base64PrivateKey
-        )}&sshHostLabel=${encodeURIComponent(
-          `${env.sealosDomain}/${env.namespace}/${devbox.name}`
-        )}&workingDir=${encodeURIComponent(workingDir)}`
-
-        window.location.href = fullUri
-      } catch (error: any) {
-        console.error(error, '==')
-      }
-    },
-    [env.namespace, env.sealosDomain]
-  )
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxDetailType) => {
       try {

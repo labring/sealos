@@ -123,11 +123,12 @@ export const useDevboxStore = create<State>()(
         if (!devboxName) return Promise.reject('devbox name is empty')
         const pods = await getDevboxPodsByDevboxName(devboxName)
 
-        // one pod running, app is running
         // TODO: change Running to podStatusMap.running
         // TODO: check status enum and backend status enum
         const devboxStatus =
-          pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
+          pods.length === 0
+            ? devboxStatusMap.Stopped
+            : pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
             ? devboxStatusMap.Running
             : devboxStatusMap.Pending
 
