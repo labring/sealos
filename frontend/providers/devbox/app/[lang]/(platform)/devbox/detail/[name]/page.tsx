@@ -33,11 +33,6 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     {
       onSettled() {
         setInitialized(true)
-      },
-      onSuccess: (data) => {
-        if (data) {
-          loadDetailMonitorData(data.name)
-        }
       }
     }
   )
