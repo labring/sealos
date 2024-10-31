@@ -39,8 +39,7 @@ export const createDevbox = (payload: {
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
   POST(`/api/updateDevbox`, payload)
 
-export const delDevbox = (devboxName: string, networks: string[]) =>
-  DELETE('/api/delDevbox', { devboxName, networks: JSON.stringify(networks) })
+export const delDevbox = (devboxName: string) => DELETE('/api/delDevbox', { devboxName })
 
 export const restartDevbox = (data: { devboxName: string }) => POST('/api/restartDevbox', data)
 

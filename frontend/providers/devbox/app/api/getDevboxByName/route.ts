@@ -109,13 +109,8 @@ export async function GET(req: NextRequest) {
 
       if (matchingIngress) {
         return {
-          networkName: matchingIngress.networkName,
-          port: matchingIngress.port,
-          portName: servicePortName,
-          protocol: matchingIngress.protocol,
-          openPublicDomain: matchingIngress.openPublicDomain,
-          publicDomain: matchingIngress.publicDomain,
-          customDomain: matchingIngress.customDomain
+          ...matchingIngress,
+          portName: servicePortName
         }
       }
 

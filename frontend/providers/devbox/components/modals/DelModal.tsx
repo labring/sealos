@@ -37,8 +37,7 @@ const DelModal = ({
   const handleDelDevbox = useCallback(async () => {
     try {
       setLoading(true)
-      const networks = devbox.networks.map((item) => item.networkName)
-      await delDevbox(devbox.name, networks)
+      await delDevbox(devbox.name)
       toast({
         title: t('delete_successful'),
         status: 'success'
@@ -53,7 +52,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.networks, devbox.name, toast, t, onSuccess, onClose])
+  }, [devbox.name, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>
