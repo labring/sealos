@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-
 import { parseJwtToken } from '@/utils/auth'
+import { NextRequest, NextResponse } from 'next/server'
 
 interface LogInfo {
   token_name: string
