@@ -14,5 +14,12 @@
     "createdAt": "创建时间",
     "lastUsedAt": "最后使用时间",
     "status": "状态"
+  },
+  "logs": {
+    "call_log": "调用日志",
+    "name": "名称",
+    "modal": "模型",
+    "status": "状态",
+    "time": "时间"
   }
 }

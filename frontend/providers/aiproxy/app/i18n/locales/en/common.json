@@ -14,5 +14,8 @@
     "createdAt": "creation time",
     "lastUsedAt": "last use time",
     "status": "state"
+  },
+  "logs": {
+    "call_log": "call log"
   }
 }
