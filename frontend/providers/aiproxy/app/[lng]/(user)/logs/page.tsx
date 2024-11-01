@@ -29,19 +29,26 @@ export default function Home(): React.JSX.Element {
   const [name, setName] = useState('')
   const [modelName, setModelName] = useState('')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [logData, setLogData] = useState<LogItem[]>([])
   const [total, setTotal] = useState(0)
 
   const { data: models = [] } = useQuery(['getModels'], () => getModels())
   const { data: modelNameData } = useQuery(['getKeys'], () => getKeys())
 
-  useQuery(
-    ['getLogs', page, pageSize, name, modelName],
-    () => getLogs({ page, perPage: pageSize, token_name: name, model_name: modelName }),
+  const { isLoading } = useQuery(
+    ['getLogs', page, pageSize, name, modelName, startTime, endTime],
+    () =>
+      getLogs({
+        page,
+        perPage: pageSize,
+        token_name: name,
+        model_name: modelName,
+        start_timestamp: startTime.getTime().toString(),
+        end_timestamp: endTime.getTime().toString()
+      }),
     {
       onSuccess: (data) => {
-        console.log(data, 'data')
         if (!data.logs) {
           setLogData([])
           setTotal(0)
@@ -53,7 +60,7 @@ export default function Home(): React.JSX.Element {
     }
   )
 
-  console.log(models, logData, modelNameData?.tokens)
+  console.log(logData, models, modelNameData)
 
   const columns = useMemo<ColumnDef<LogItem>[]>(() => {
     return [
@@ -174,12 +181,18 @@ export default function Home(): React.JSX.Element {
                 height="32px"
                 value={modelName}
                 list={
-                  models.map((item) => ({
+                  ['all', ...models].map((item) => ({
                     value: item,
                     label: item
                   })) || []
                 }
-                onchange={(val: string) => setModelName(val)}
+                onchange={(val: string) => {
+                  if (val === 'all') {
+                    setModelName('')
+                  } else {
+                    setModelName(val)
+                  }
+                }}
               />
             </Flex>
           </Flex>
@@ -219,7 +232,7 @@ export default function Home(): React.JSX.Element {
         </Flex>
 
         <Box mt={'24px'}>
-          <BaseTable table={table} />
+          <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             justifyContent={'end'}
             currentPage={page}

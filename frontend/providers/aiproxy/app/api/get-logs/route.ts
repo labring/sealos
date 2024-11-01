@@ -36,9 +36,12 @@ function validateParams(params: QueryParams): string | null {
   return null
 }
 
-async function fetchLogs(params: QueryParams): Promise<{ logs: LogItem[]; total: number }> {
+async function fetchLogs(
+  params: QueryParams,
+  group: string
+): Promise<{ logs: LogItem[]; total: number }> {
   try {
-    const url = new URL(`/api/logs/search`, global.AppConfig?.backend.aiproxy)
+    const url = new URL(`/api/log/${group}/search`, global.AppConfig?.backend.aiproxy)
 
     url.searchParams.append('p', params.page.toString())
     url.searchParams.append('per_page', params.perPage.toString())
@@ -90,11 +93,9 @@ async function fetchLogs(params: QueryParams): Promise<{ logs: LogItem[]; total:
   }
 }
 
-export const dynamic = 'force-dynamic'
-
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await parseJwtToken(request.headers)
+    const group = await parseJwtToken(request.headers)
     const searchParams = request.nextUrl.searchParams
 
     const queryParams: QueryParams = {
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    const { logs, total } = await fetchLogs(queryParams)
+    const { logs, total } = await fetchLogs(queryParams, group)
 
     return NextResponse.json({
       code: 200,

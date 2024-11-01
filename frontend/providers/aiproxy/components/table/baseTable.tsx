@@ -1,4 +1,5 @@
 import {
+  Spinner,
   Table,
   TableContainer,
   TableContainerProps,
@@ -11,8 +12,9 @@ import {
 import { Table as ReactTable, flexRender } from '@tanstack/react-table'
 
 export function BaseTable<T extends unknown>({
-  table
-}: { table: ReactTable<T> } & TableContainerProps) {
+  table,
+  isLoading
+}: { table: ReactTable<T>; isLoading: boolean } & TableContainerProps) {
   return (
     <TableContainer overflowX={'auto'}>
       <Table variant="unstyled" fontSize={'12px'} width={'full'}>
@@ -42,23 +44,31 @@ export function BaseTable<T extends unknown>({
           })}
         </Thead>
         <Tbody>
-          {table.getRowModel().rows.map((item) => {
-            return (
-              <Tr
-                key={item.id}
-                fontSize={'12px'}
-                borderBottom={'1px solid'}
-                borderColor={'#F0F1F6'}>
-                {item.getAllCells().map((cell, i) => {
-                  return (
-                    <Td py="10px" key={cell.id} px={'24px'}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </Td>
-                  )
-                })}
-              </Tr>
-            )
-          })}
+          {isLoading ? (
+            <Tr>
+              <Td h={'300px'} colSpan={table.getAllColumns().length} textAlign="center" py={4}>
+                <Spinner size="xl" />
+              </Td>
+            </Tr>
+          ) : (
+            table.getRowModel().rows.map((item) => {
+              return (
+                <Tr
+                  key={item.id}
+                  fontSize={'12px'}
+                  borderBottom={'1px solid'}
+                  borderColor={'#F0F1F6'}>
+                  {item.getAllCells().map((cell, i) => {
+                    return (
+                      <Td py="10px" key={cell.id} px={'24px'}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Td>
+                    )
+                  })}
+                </Tr>
+              )
+            })
+          )}
         </Tbody>
       </Table>
     </TableContainer>
