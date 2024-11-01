@@ -26,7 +26,9 @@
     "price": "price",
     "select_modal": "Please select a model",
     "select_token_name": "Please select a name",
-    "model": "Model"
+    "model": "Model",
+    "total_price": "lump sum",
+    "total_price_tip": "Enter the number of tokens x enter the fee Enter the number of tokens x enter the fee"
   },
   "Page": "Page",
   "Total": "total",

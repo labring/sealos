@@ -170,13 +170,14 @@ export default function SelectDateRange({
 
   return (
     <Flex
-      w={'300px'}
+      w={'100%'}
+      maxW={'500px'}
       h={'32px'}
       bg="#F7F8FA"
-      mr={'32px'}
       gap={'12px'}
       align={'center'}
       px={'12px'}
+      boxSizing={'border-box'}
       justify={'space-between'}
       border={'1px solid #DEE0E2'}
       borderRadius="6px">

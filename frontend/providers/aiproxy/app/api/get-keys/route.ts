@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { parseJwtToken } from '@/utils/auth'
 
-interface TokenInfo {
+export interface TokenInfo {
   key: string
   name: string
   group: string
@@ -18,7 +18,7 @@ interface TokenInfo {
   expired_at: number
 }
 
-interface SearchResponse {
+export interface KeysSearchResponse {
   data: {
     tokens: TokenInfo[]
     total: number
@@ -67,7 +67,7 @@ async function fetchTokens(
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const result: SearchResponse = await response.json()
+    const result: KeysSearchResponse = await response.json()
 
     if (!result.success) {
       throw new Error(result.message || 'API request failed')

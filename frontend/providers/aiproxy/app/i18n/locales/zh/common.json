@@ -26,7 +26,9 @@
     "completion_tokens": "输出",
     "price": "价格",
     "select_modal": "请选择模型",
-    "select_token_name": "请选择名称"
+    "select_token_name": "请选择名称",
+    "total_price": "总金额",
+    "total_price_tip": "输入 token 数 x 输入费用 +  输入 token 数 x 输入费用"
   },
   "Page": "页",
   "Total": "总数",
