@@ -26,8 +26,8 @@ function initAppConfig(): AppConfigType {
       aiProxyBackendKey: ''
     },
     backend: {
-      aiproxy: 'http://localhost:8080',
-      aiproxyInternal: 'http://localhost:8080'
+      aiproxy: '',
+      aiproxyInternal: ''
     }
   }
   if (!global.AppConfig) {
