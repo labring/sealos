@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 
 import type { Env } from '@/types/static'
+import { defaultEnv } from '@/stores/env'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { authSession } from '@/services/backend/auth'
@@ -17,14 +18,14 @@ export async function GET(req: NextRequest) {
 
     return jsonRes<Env>({
       data: {
-        sealosDomain: process.env.SEALOS_DOMAIN || 'dev.sealos.plus',
-        ingressSecret: process.env.INGRESS_SECRET || 'wildcard-cert',
-        registryAddr: process.env.REGISTRY_ADDR || 'hub.dev.sealos.plus',
-        devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || 'true',
-        squashEnable: process.env.SQUASH_ENABLE || 'false',
-        namespace: namespace || 'default',
-        rootRuntimeNamespace: process.env.ROOT_RUNTIME_NAMESPACE || 'devbox-system',
-        ingressDomain: process.env.INGRESS_DOMAIN || 'sealosusw.site'
+        sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
+        ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
+        registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
+        devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || defaultEnv.devboxAffinityEnable,
+        squashEnable: process.env.SQUASH_ENABLE || defaultEnv.squashEnable,
+        namespace: namespace || defaultEnv.namespace,
+        rootRuntimeNamespace: process.env.ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
+        ingressDomain: process.env.INGRESS_DOMAIN || defaultEnv.ingressDomain
       }
     })
   } catch (err: any) {

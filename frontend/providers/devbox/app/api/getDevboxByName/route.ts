@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 
+import { defaultEnv } from '@/stores/env'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
     const { body: runtimeBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      ROOT_RUNTIME_NAMESPACE || 'devbox-system',
+      ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
       'runtimes',
       devboxBody.spec.runtimeRef.name
     )) as { body: KBRuntimeType }

@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
 
+import { defaultEnv } from '@/stores/env'
 import { KBRuntimeType } from '@/types/k8s'
-import { authSession, generateAccessToken } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
+import { authSession, generateAccessToken } from '@/services/backend/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     const { body: runtime } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      ROOT_RUNTIME_NAMESPACE || 'devbox-system',
+      ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
       'runtimes',
       runtimeName
     )) as { body: KBRuntimeType }

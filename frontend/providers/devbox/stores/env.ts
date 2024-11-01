@@ -5,7 +5,7 @@ import { devtools, persist } from 'zustand/middleware'
 import { Env } from '@/types/static'
 import { getAppEnv } from '@/api/platform'
 
-const defaultEnv: Env = {
+export const defaultEnv: Env = {
   sealosDomain: 'dev.sealos.plus',
   ingressSecret: 'wildcard-cert',
   registryAddr: 'hub.dev.sealos.plus',
