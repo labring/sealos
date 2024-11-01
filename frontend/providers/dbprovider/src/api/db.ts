@@ -5,7 +5,8 @@ import type {
   DBEditType,
   DBType,
   OpsRequestItemType,
-  PodDetailType
+  PodDetailType,
+  SupportReconfigureDBType
 } from '@/types/db';
 import { json2Restart } from '@/utils/json2Yaml';
 import { json2StartOrStop } from '../utils/json2Yaml';
@@ -13,6 +14,8 @@ import type { SecretResponse } from '@/pages/api/getSecretByName';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { KbPgClusterType } from '@/types/cluster';
 import { MonitorChartDataResult } from '@/types/monitor';
+import { TFile } from '@/utils/kubeFileSystem';
+import { LoggingConfiguration } from '@/constants/log';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -110,4 +113,48 @@ export const getOpsRequest = ({
     name,
     label,
     dbType
+  });
+
+export const getLogFiles = ({
+  podName,
+  dbType,
+  logType
+}: {
+  podName: string;
+  dbType: SupportReconfigureDBType;
+  logType: keyof LoggingConfiguration;
+}) =>
+  POST<TFile[]>(`/api/logs/getFiles`, {
+    podName,
+    dbType,
+    logType
+  });
+
+export const getLogContent = ({
+  logPath,
+  page,
+  pageSize,
+  dbType,
+  logType,
+  podName
+}: {
+  logPath: string;
+  page: number;
+  pageSize: number;
+  dbType: SupportReconfigureDBType;
+  logType: keyof LoggingConfiguration;
+  podName: string;
+}) =>
+  POST<
+    {
+      timestamp: string;
+      content: string;
+    }[]
+  >(`/api/logs/get`, {
+    logPath,
+    page,
+    pageSize,
+    dbType,
+    logType,
+    podName
   });

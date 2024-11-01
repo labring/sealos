@@ -173,6 +173,13 @@
   "duration_of_transaction": "事务持续时间",
   "enable_external_network_access": "开启外网访问",
   "enter_save": "回车保存 && All 代表导出整个库",
+  "error_log": {
+    "analysis": "日志分析",
+    "collection_time": "采集时间",
+    "content": "信息",
+    "error_log": "错误日志",
+    "slow_query": "慢日志"
+  },
   "event_analyze": "智能分析",
   "event_analyze_error": "智能分析出错了~",
   "external_address": "外网地址",

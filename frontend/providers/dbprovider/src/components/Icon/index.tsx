@@ -46,6 +46,7 @@ const map = {
   upload: require('./icons/upload.svg').default,
   target: require('./icons/target.svg').default,
   gift: require('./icons/gift.svg').default,
+  time: require('./icons/time.svg').default,
   help: require('./icons/help.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default

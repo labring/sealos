@@ -20,6 +20,7 @@ import Pods from './components/Pods';
 import { I18nCommonKey } from '@/types/i18next';
 import ReconfigureTable from './components/Reconfigure/index';
 import useDetailDriver from '@/hooks/useDetailDriver';
+import ErrorLog from './components/ErrorLog';
 
 enum TabEnum {
   pod = 'pod',
@@ -27,7 +28,8 @@ enum TabEnum {
   monitor = 'monitor',
   InternetMigration = 'InternetMigration',
   DumpImport = 'DumpImport',
-  Reconfigure = 'reconfigure'
+  Reconfigure = 'reconfigure',
+  ErrorLog = 'errorLog'
 }
 
 const AppDetail = ({
@@ -61,7 +63,8 @@ const AppDetail = ({
       ...(PublicNetMigration ? [{ label: 'online_import', value: TabEnum.InternetMigration }] : []),
       ...(PublicNetMigration && !!SystemEnv.minio_url
         ? [{ label: 'import_through_file', value: TabEnum.DumpImport }]
-        : [])
+        : []),
+      ...(BackupSupported ? [{ label: 'error_log.analysis', value: TabEnum.ErrorLog }] : [])
     ];
 
     return {
@@ -196,6 +199,7 @@ const AppDetail = ({
             {listType === TabEnum.Reconfigure && (
               <ReconfigureTable ref={ReconfigureTableRef} db={dbDetail} />
             )}
+            {listType === TabEnum.ErrorLog && <ErrorLog ref={ReconfigureTableRef} db={dbDetail} />}
           </Box>
         </Flex>
       </Flex>

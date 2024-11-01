@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       };
     } = await response.json();
 
-    const rechargeOptions = Object.entries(result.discount.firstRechargeDiscount).map(
+    const rechargeOptions = Object.entries(result?.discount?.firstRechargeDiscount ?? {}).map(
       ([amount, rate]) => ({
         amount: Number(amount),
         gift: Math.floor((Number(amount) * Number(rate)) / 100)
