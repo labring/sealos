@@ -13,7 +13,13 @@
     "name": "名称",
     "createdAt": "创建时间",
     "lastUsedAt": "最后使用时间",
-    "status": "状态"
+    "status": "状态",
+    "namePlaceholder": "请输入名称",
+    "nameRequired": "请输入 key 名字",
+    "nameMaxLength": "key 长度不合法",
+    "nameOnlyLettersAndNumbers": "key 名字包含特殊字符",
+    "createSuccess": "创建成功",
+    "createFailed": "创建失败"
   },
   "logs": {
     "call_log": "调用日志",
@@ -34,5 +40,11 @@
   "Total": "总数",
   "modelList": {
     "title": "可支持的模型"
-  }
+  },
+  "copy": "复制",
+  "createKey": "新建",
+  "Key": {
+    "create": "新建 AI Proxy"
+  },
+  "confirm": "确认"
 }

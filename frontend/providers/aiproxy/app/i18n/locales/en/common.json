@@ -13,7 +13,13 @@
     "name": "name",
     "createdAt": "creation time",
     "lastUsedAt": "last use time",
-    "status": "state"
+    "status": "state",
+    "namePlaceholder": "Please enter name",
+    "nameRequired": "Please enter key name",
+    "nameMaxLength": "Key length is illegal",
+    "nameOnlyLettersAndNumbers": "key name contains special characters",
+    "createSuccess": "Created successfully",
+    "createFailed": "Creation failed"
   },
   "logs": {
     "call_log": "call log",
@@ -34,5 +40,11 @@
   "Total": "total",
   "modelList": {
     "title": "Supported models"
-  }
+  },
+  "copy": "copy",
+  "createKey": "New",
+  "Key": {
+    "create": "Create a new AI Proxy"
+  },
+  "confirm": "confirm"
 }

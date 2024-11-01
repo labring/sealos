@@ -1,6 +1,5 @@
 'use client'
-import { useState } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, PlusSquareIcon } from '@chakra-ui/icons'
+import React, { useState } from 'react'
 import {
   Box,
   Button,
@@ -21,7 +20,17 @@ import {
   Th,
   Thead,
   Tr,
-  Tooltip
+  Tooltip,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  Input,
+  FormErrorMessage,
+  useDisclosure
 } from '@chakra-ui/react'
 import {
   Column,
@@ -31,15 +40,20 @@ import {
   getPaginationRowModel,
   useReactTable
 } from '@tanstack/react-table'
+import { ApiResp } from '@/types/api'
 import { TFunction } from 'i18next'
 
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { ChainIcon } from '@/ui/icons/home/Icons'
+import { useMutation } from '@tanstack/react-query'
+import { useMessage } from '@sealos/ui'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+  const { isOpen, onOpen, onClose } = useDisclosure()
   return (
     <>
       <Flex direction="column" alignItems="flex-start" gap="8px" alignSelf="stretch" w="full">
@@ -56,6 +70,7 @@ export function KeyList(): JSX.Element {
       </Flex>
 
       <Flex direction="column" alignItems="flex-start" gap="12px" w="full">
+        {/* header */}
         <Flex alignItems="center" alignSelf="stretch" justifyContent="space-between">
           <Flex alignItems="center" gap="8px">
             <ChainIcon boxSize={18} color="grayModern.900" />
@@ -78,7 +93,7 @@ export function KeyList(): JSX.Element {
               textDecoration="none"
               _hover={{ textDecoration: 'underline' }}
               cursor="pointer">
-              <Tooltip label="复制" placement="bottom">
+              <Tooltip label={t('copy')} placement="bottom">
                 https://www.aiproxy.com
               </Tooltip>
             </Text>
@@ -93,11 +108,15 @@ export function KeyList(): JSX.Element {
             bg="grayModern.900"
             color="white"
             boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-            _hover={{ bg: 'grayModern.800' }}>
-            新建
+            _hover={{ bg: 'grayModern.800' }}
+            onClick={onOpen}>
+            {t('createKey')}
           </Button>
         </Flex>
+        {/* table */}
         <KeyItem t={t} />
+        {/* modal */}
+        <CreateKeyModal isOpen={isOpen} onClose={onClose} t={t} />
       </Flex>
     </>
   )
@@ -359,6 +378,203 @@ const TableDemo = ({ t }: { t: TFunction }) => {
         </Table>
       </TableContainer>
     </Box>
+  )
+}
+
+function CreateKeyModal({
+  isOpen,
+  onClose,
+  t
+}: {
+  isOpen: boolean
+  onClose: () => void
+  t: TFunction
+}) {
+  const initialRef = React.useRef(null)
+  const [name, setName] = useState('')
+  const [error, setError] = useState('')
+  const queryClient = useQueryClient()
+  const { message } = useMessage({
+    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningIconFill: 'white',
+
+    successBoxBg: 'var(--Green-50, #EDFBF3)',
+    successIconBg: 'var(--Green-600, #039855)',
+    successIconFill: 'white'
+  })
+
+  const createKeyMutation = useMutation(
+    (name: string) =>
+      request.post<any, ApiResp<any>>('api/create-key', {
+        name
+      }),
+    {
+      onSuccess(data) {
+        createKeyMutation.reset()
+        setName('')
+        queryClient.invalidateQueries(['getAccount']) // Invalidate the cache
+        message({
+          status: 'success',
+          title: t('key.createSuccess'),
+          isClosable: true,
+          duration: 2000,
+          position: 'top'
+        })
+        onClose()
+      },
+      onError(err: any) {
+        message({
+          status: 'warning',
+          title: t('key.createFailed'),
+          description: err?.message || t('key.createFailed'),
+          isClosable: true,
+          position: 'top'
+        })
+      }
+    }
+  )
+
+  const validateName = (value: string) => {
+    if (!value) {
+      setError(t('key.nameRequired'))
+    } else if (value.length >= 32) {
+      setError(t('key.nameMaxLength'))
+    } else if (!/^[A-Za-z0-9-]+$/.test(value)) {
+      setError(t('key.nameOnlyLettersAndNumbers'))
+    } else {
+      setError('')
+    }
+  }
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    validateName(newName)
+    setName(newName)
+  }
+
+  const handleConfirm = () => {
+    if (error === '' && name !== '') {
+      createKeyMutation.mutate(name)
+      return
+    }
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} isCentered initialFocusRef={initialRef}>
+      <ModalOverlay />
+      <Flex
+        as={ModalContent}
+        width="400px"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="flex-start"
+        borderRadius="var(--semilg, 10px)"
+        background="var(--White, #FFF)"
+        boxShadow="0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)">
+        {/* header */}
+        <Flex
+          as={ModalHeader}
+          height="48px"
+          padding="10px 20px"
+          justifyContent="center"
+          alignItems="center"
+          borderBottom="1px solid grayModern.100"
+          background="grayModern.25"
+          w="full">
+          <Flex w="360px" justifyContent="space-between" alignItems="center">
+            <Flex w="98px" alignItems="center" gap="10px" flexShrink={0}>
+              {t('Key.create')}
+            </Flex>
+            <Flex
+              as={ModalCloseButton}
+              position="static"
+              width="28px"
+              height="28px"
+              padding="4px"
+              borderRadius="4px"
+              justifyContent="center"
+              alignItems="center"
+              gap="10px"
+              flexShrink={0}
+            />
+          </Flex>
+        </Flex>
+        {/* body */}
+        <Flex
+          as={ModalBody}
+          height="166px"
+          padding="24px 36.5px 24px 35.5px"
+          justifyContent="center"
+          alignItems="center"
+          w="full">
+          <Flex w="328px" direction="column" alignItems="flex-end" gap="24px">
+            <Flex
+              direction="column"
+              alignItems="flex-start"
+              gap="10px"
+              alignSelf="stretch"
+              w="full">
+              <Text
+                color="grayModern.900"
+                w="full"
+                fontFamily="PingFang SC"
+                fontSize="14px"
+                fontStyle="normal"
+                fontWeight={500}
+                lineHeight="20px"
+                letterSpacing="0.1px">
+                {t('key.name')}
+              </Text>
+              <FormControl isInvalid={!!error}>
+                <Input
+                  ref={initialRef}
+                  type="text"
+                  value={name}
+                  onChange={handleNameChange}
+                  placeholder={t('key.namePlaceholder')}
+                  w="full"
+                  height="32px"
+                  padding="8px 12px"
+                  borderRadius="6px"
+                  border="1px solid grayModern.200"
+                  background="grayModern.50"
+                  _placeholder={{
+                    color: 'grayModern.400'
+                  }}
+                  isDisabled={createKeyMutation.isLoading}
+                />
+                {error && <FormErrorMessage>{error}</FormErrorMessage>}
+              </FormControl>
+            </Flex>
+            {/* button */}
+            <Flex
+              w="full"
+              justifyContent="flex-end"
+              alignItems="center"
+              alignSelf="stretch"
+              gap="12px">
+              <Button
+                display="flex"
+                width="64px"
+                padding="var(--md, 8px) 14px"
+                justifyContent="center"
+                alignItems="center"
+                gap="6px"
+                borderRadius="6px"
+                background="grayModern.900"
+                boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+                _hover={{ background: 'var(--Gray-Modern-800, #1F2937)' }}
+                onClick={handleConfirm}
+                isDisabled={!!error}
+                isLoading={createKeyMutation.isLoading}>
+                {t('confirm')}
+              </Button>
+            </Flex>
+          </Flex>
+        </Flex>
+      </Flex>
+    </Modal>
   )
 }
 
