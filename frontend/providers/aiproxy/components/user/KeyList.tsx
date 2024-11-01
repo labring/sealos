@@ -42,6 +42,7 @@ import {
 } from '@tanstack/react-table'
 import { ApiResp } from '@/types/api'
 import { TFunction } from 'i18next'
+import { createKey } from '@/api/platform'
 
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
@@ -404,36 +405,30 @@ function CreateKeyModal({
     successIconFill: 'white'
   })
 
-  const createKeyMutation = useMutation(
-    (name: string) =>
-      request.post<any, ApiResp<any>>('api/create-key', {
-        name
-      }),
-    {
-      onSuccess(data) {
-        createKeyMutation.reset()
-        setName('')
-        queryClient.invalidateQueries(['getAccount']) // Invalidate the cache
-        message({
-          status: 'success',
-          title: t('key.createSuccess'),
-          isClosable: true,
-          duration: 2000,
-          position: 'top'
-        })
-        onClose()
-      },
-      onError(err: any) {
-        message({
-          status: 'warning',
-          title: t('key.createFailed'),
-          description: err?.message || t('key.createFailed'),
-          isClosable: true,
-          position: 'top'
-        })
-      }
+  const createKeyMutation = useMutation((name: string) => createKey(name), {
+    onSuccess(data) {
+      createKeyMutation.reset()
+      setName('')
+      queryClient.invalidateQueries(['getAccount']) // Invalidate the cache
+      message({
+        status: 'success',
+        title: t('key.createSuccess'),
+        isClosable: true,
+        duration: 2000,
+        position: 'top'
+      })
+      onClose()
+    },
+    onError(err: any) {
+      message({
+        status: 'warning',
+        title: t('key.createFailed'),
+        description: err?.message || t('key.createFailed'),
+        isClosable: true,
+        position: 'top'
+      })
     }
-  )
+  })
 
   const validateName = (value: string) => {
     if (!value) {
