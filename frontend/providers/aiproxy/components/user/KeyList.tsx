@@ -4,16 +4,13 @@ import {
   Box,
   Button,
   Flex,
-  HStack,
   Icon,
   Popover,
   PopoverBody,
   PopoverContent,
   PopoverTrigger,
-  Select,
   Table,
   TableContainer,
-  Tag,
   Tbody,
   Td,
   Text,
@@ -37,12 +34,11 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { ApiResp } from '@/types/api'
+import { useQuery } from '@tanstack/react-query'
 import { TFunction } from 'i18next'
-import { createKey } from '@/api/platform'
+import { createKey, getKeys } from '@/api/platform'
 
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
@@ -50,6 +46,8 @@ import { ChainIcon } from '@/ui/icons/home/Icons'
 import { useMutation } from '@tanstack/react-query'
 import { useMessage } from '@sealos/ui'
 import { useQueryClient } from '@tanstack/react-query'
+import { TokenInfo } from '@/types/getKeys'
+import SwitchPage from '@/components/SwitchPage'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
@@ -115,25 +113,12 @@ export function KeyList(): JSX.Element {
           </Button>
         </Flex>
         {/* table */}
-        <KeyItem t={t} />
+        <ModelKeyTable t={t} />
         {/* modal */}
         <CreateKeyModal isOpen={isOpen} onClose={onClose} t={t} />
       </Flex>
     </>
   )
-}
-
-function KeyItem({ t }: { t: TFunction }): JSX.Element {
-  return <TableDemo t={t} />
-}
-
-type KeyItem = {
-  id: number
-  name: string
-  key: string
-  createdAt: string
-  lastUsedAt: string
-  status: 'active' | 'inactive'
 }
 
 export enum TableHeaderId {
@@ -145,7 +130,7 @@ export enum TableHeaderId {
   ACTIONS = 'key.actions'
 }
 
-const CustomHeader = ({ column, t }: { column: Column<KeyItem>; t: TFunction }) => {
+const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }) => {
   return (
     <Text
       color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
@@ -159,27 +144,26 @@ const CustomHeader = ({ column, t }: { column: Column<KeyItem>; t: TFunction }) 
   )
 }
 
-const TableDemo = ({ t }: { t: TFunction }) => {
-  const [data] = useState<KeyItem[]>([
-    {
-      id: 1,
-      name: '1234567890',
-      key: '1234567890',
-      createdAt: '2021-01-01',
-      lastUsedAt: '2021-01-01',
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: '1234567890',
-      key: '1234567890',
-      createdAt: '2021-01-01',
-      lastUsedAt: '2021-01-01',
-      status: 'inactive'
-    }
-  ])
+const ModelKeyTable = ({ t }: { t: TFunction }) => {
+  const [keys, setKeys] = useState<TokenInfo[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
-  const columnHelper = createColumnHelper<KeyItem>()
+  useQuery(['getKeys', page, pageSize], () => getKeys({ page, perPage: pageSize }), {
+    onSuccess: (data) => {
+      console.log(data, 'data')
+      if (!data.tokens) {
+        setKeys([])
+        setTotal(0)
+        return
+      }
+      setKeys(data.tokens)
+      setTotal(data.total)
+    }
+  })
+
+  const columnHelper = createColumnHelper<TokenInfo>()
 
   const columns = [
     columnHelper.accessor((row) => row.name, {
@@ -212,7 +196,7 @@ const TableDemo = ({ t }: { t: TFunction }) => {
         </Text>
       )
     }),
-    columnHelper.accessor((row) => row.createdAt, {
+    columnHelper.accessor((row) => row.created_at, {
       id: TableHeaderId.CREATED_AT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => (
@@ -223,11 +207,11 @@ const TableDemo = ({ t }: { t: TFunction }) => {
           fontWeight={500}
           lineHeight="16px"
           letterSpacing="0.5px">
-          {info.getValue()}
+          {new Date(info.getValue()).toLocaleString()}
         </Text>
       )
     }),
-    columnHelper.accessor((row) => row.lastUsedAt, {
+    columnHelper.accessor((row) => row.accessed_at, {
       id: TableHeaderId.LAST_USED_AT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => (
@@ -238,7 +222,7 @@ const TableDemo = ({ t }: { t: TFunction }) => {
           fontWeight={500}
           lineHeight="16px"
           letterSpacing="0.5px">
-          {info.getValue()}
+          {info.getValue() ? new Date(info.getValue()).toLocaleString() : '-'}
         </Text>
       )
     }),
@@ -324,13 +308,13 @@ const TableDemo = ({ t }: { t: TFunction }) => {
   ]
 
   const table = useReactTable({
-    data,
+    data: keys,
     columns,
     getCoreRowModel: getCoreRowModel()
   })
 
   return (
-    <Box w="full" h="full" overflowX="auto">
+    <Box w="full" h="full" gap="24px">
       <TableContainer w="100%" h="100%" overflow="hidden">
         <Table variant="simple" w="100%" size="md">
           <Thead>
@@ -378,6 +362,14 @@ const TableDemo = ({ t }: { t: TFunction }) => {
           </Tbody>
         </Table>
       </TableContainer>
+      <SwitchPage
+        justifyContent={'end'}
+        currentPage={page}
+        totalPage={Math.ceil(total / pageSize)}
+        totalItem={total}
+        pageSize={pageSize}
+        setCurrentPage={(idx: number) => setPage(idx)}
+      />
     </Box>
   )
 }

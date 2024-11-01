@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { TokenInfo } from '@/types/getKeys'
 
 import { parseJwtToken } from '@/utils/auth'
-
-export interface TokenInfo {
-  key: string
-  name: string
-  group: string
-  subnet: string
-  models: string[] | null
-  status: number
-  id: number
-  quota: number
-  used_amount: number
-  request_count: number
-  created_at: number
-  accessed_at: number
-  expired_at: number
-}
 
 export interface KeysSearchResponse {
   data: {
@@ -27,11 +12,12 @@ export interface KeysSearchResponse {
   success: boolean
 }
 
-function validateParams(group: string, page: number, perPage: number): string | null {
-  if (!group) {
-    return 'Group parameter is required'
-  }
+export interface QueryParams {
+  page: number
+  perPage: number
+}
 
+function validateParams(page: number, perPage: number): string | null {
   if (page < 1) {
     return 'Page number must be greater than 0'
   }
@@ -94,7 +80,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const page = parseInt(searchParams.get('p') || '1', 10)
     const perPage = parseInt(searchParams.get('per_page') || '10', 10)
 
-    const validationError = validateParams(group, page, perPage)
+    const validationError = validateParams(page, perPage)
     if (validationError) {
       return NextResponse.json(
         {

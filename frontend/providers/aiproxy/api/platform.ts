@@ -1,5 +1,6 @@
 import { KeysSearchResponse } from '@/app/api/get-keys/route'
 import { QueryParams, SearchResponse } from '@/app/api/get-logs/route'
+import { QueryParams as KeysQueryParams } from '@/app/api/get-keys/route'
 import { GET, POST } from '@/utils/request'
 
 export const initAppConfig = () => GET('/api/init-app-config')
