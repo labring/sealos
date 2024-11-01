@@ -40,9 +40,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     const initConfig = async () => {
       const { aiproxyBackend } = await initAppConfig()
       setAiproxyBackend(aiproxyBackend)
-      // 删除已存在的 aiproxyBackend，然后重新存储
-      localStorage.removeItem('aiproxyBackend')
-      localStorage.setItem('aiproxyBackend', aiproxyBackend)
     }
 
     initConfig()
