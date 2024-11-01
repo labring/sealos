@@ -18,7 +18,7 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   return appConfig
 }
 
-export function initAppConfig(): AppConfigType {
+function initAppConfig(): AppConfigType {
   // default config
   const DefaultAppConfig: AppConfigType = {
     auth: {
