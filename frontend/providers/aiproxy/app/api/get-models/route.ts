@@ -23,7 +23,8 @@ async function fetchModels(): Promise<string[]> {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `${token}`
-      }
+      },
+      cache: 'no-store'
     })
 
     if (!response.ok) {

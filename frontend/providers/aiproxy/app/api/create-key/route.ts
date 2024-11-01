@@ -49,6 +49,7 @@ async function createToken(name: string, group: string): Promise<TokenInfo> {
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
+      cache: 'no-store',
       body: JSON.stringify({
         name
       })

@@ -20,7 +20,8 @@ async function deleteToken(group: string, id: string): Promise<void> {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `${token}`
-      }
+      },
+      cache: 'no-store'
     })
 
     if (!response.ok) {

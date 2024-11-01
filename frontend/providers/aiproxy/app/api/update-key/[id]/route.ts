@@ -28,7 +28,8 @@ async function updateToken(group: string, id: string, status: number): Promise<v
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status }),
+      cache: 'no-store'
     })
 
     if (!response.ok) {
