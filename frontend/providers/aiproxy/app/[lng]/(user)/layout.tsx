@@ -7,14 +7,10 @@ import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 import { useEffect } from 'react'
 import { initAppConfig } from '@/api/platform'
+import { useI18n } from '@/providers/i18n/i18nContext'
 
-export default function UserLayout({
-  children,
-  params
-}: {
-  children: React.ReactNode
-  params: { lng: string }
-}) {
+export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const { lng } = useI18n()
   // init session
   useEffect(() => {
     const response = createSealosApp()
@@ -39,7 +35,14 @@ export default function UserLayout({
   }, [])
 
   useEffect(() => {
-    initAppConfig()
+    const initConfig = async () => {
+      const { aiproxyBackend } = await initAppConfig()
+      // 删除已存在的 aiproxyBackend，然后重新存储
+      localStorage.removeItem('aiproxyBackend')
+      localStorage.setItem('aiproxyBackend', aiproxyBackend)
+    }
+
+    initConfig()
 
     // const changeI18n = async (data: any) => {
     //   const lastLang = getcl()
@@ -71,7 +74,7 @@ export default function UserLayout({
   return (
     <Flex minH="100vh">
       <Box w="88px">
-        <SideBar lng={params.lng} />
+        <SideBar lng={lng} />
       </Box>
       {/* Main Content */}
       <Box flex={1}>{children}</Box>

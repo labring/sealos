@@ -36,6 +36,8 @@ async function fetchTokens(
 ): Promise<{ tokens: TokenInfo[]; total: number }> {
   try {
     const url = new URL(`/api/token/${group}/search`, global.AppConfig?.backend.aiproxy)
+    console.log(perPage)
+    console.log(page)
     url.searchParams.append('p', page.toString())
     url.searchParams.append('per_page', perPage.toString())
 
@@ -77,8 +79,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const group = await parseJwtToken(request.headers)
 
     const searchParams = request.nextUrl.searchParams
-    const page = parseInt(searchParams.get('p') || '1', 10)
-    const perPage = parseInt(searchParams.get('per_page') || '10', 10)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const perPage = parseInt(searchParams.get('perPage') || '10', 10)
 
     const validationError = validateParams(page, perPage)
     if (validationError) {

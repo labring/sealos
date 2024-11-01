@@ -19,7 +19,12 @@
     "nameMaxLength": "Key length is illegal",
     "nameOnlyLettersAndNumbers": "key name contains special characters",
     "createSuccess": "Created successfully",
-    "createFailed": "Creation failed"
+    "createFailed": "Creation failed",
+    "actions": "operate",
+    "deleteSuccess": "Delete key successfully",
+    "deleteFailed": "Failed to delete key",
+    "updateSuccess": "Update status successful",
+    "updateFailed": "Update status failed"
   },
   "logs": {
     "call_log": "call log",
@@ -46,5 +51,18 @@
   "Key": {
     "create": "Create a new AI Proxy"
   },
-  "confirm": "confirm"
+  "confirm": "confirm",
+  "keystatus": {
+    "enabled": "enable",
+    "disabled": "Disable",
+    "expired": "Expired",
+    "exhausted": "exhausted",
+    "unknown": "unknown"
+  },
+  "delete": "delete",
+  "disable": "Disable",
+  "enable": "enable",
+  "copySuccess": "Copied successfully",
+  "copyFailed": "Copy failed",
+  "noData": "You don’t have an AI Proxy yet"
 }
