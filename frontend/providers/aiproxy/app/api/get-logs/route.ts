@@ -2,6 +2,7 @@ import { LogItem } from '@/types/log'
 import { parseJwtToken } from '@/utils/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
 export interface SearchResponse {
   data: {
     logs: LogItem[]

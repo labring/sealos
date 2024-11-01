@@ -3,6 +3,7 @@ import { TokenInfo } from '@/types/getKeys'
 
 import { parseJwtToken } from '@/utils/auth'
 
+export const dynamic = 'force-dynamic'
 export interface KeysSearchResponse {
   data: {
     tokens: TokenInfo[]

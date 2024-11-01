@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 
 import type { AppConfigType } from '@/types/appConfig'
 
+export const dynamic = 'force-dynamic'
+
 function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.APP_TOKEN_JWT_KEY) {
     appConfig.auth.appTokenJwtKey = process.env.APP_TOKEN_JWT_KEY

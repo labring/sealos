@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseJwtToken } from '@/utils/auth'
 
+export const dynamic = 'force-dynamic'
+
 interface CreateTokenRequest {
   name: string
 }
