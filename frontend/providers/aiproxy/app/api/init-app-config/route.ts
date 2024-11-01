@@ -12,6 +12,9 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.AI_PROXY_BACKEND) {
     appConfig.backend.aiproxy = process.env.AI_PROXY_BACKEND
   }
+  if (process.env.AI_PROXY_BACKEND_INTERNAL) {
+    appConfig.backend.aiproxyInternal = process.env.AI_PROXY_BACKEND_INTERNAL
+  }
   return appConfig
 }
 
@@ -23,7 +26,8 @@ export function initAppConfig(): AppConfigType {
       aiProxyBackendKey: ''
     },
     backend: {
-      aiproxy: 'http://localhost:8080'
+      aiproxy: 'http://localhost:8080',
+      aiproxyInternal: 'http://localhost:8080'
     }
   }
   if (!global.AppConfig) {

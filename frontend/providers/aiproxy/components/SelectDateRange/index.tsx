@@ -193,7 +193,6 @@ export default function SelectDateRange({
               onChange={handleFromChange}
               onBlur={() => {
                 selectedRange?.from && setStartTime(startOfDay(selectedRange.from))
-                console.log(selectedRange?.from)
               }}
             />
           </Button>
@@ -227,7 +226,6 @@ export default function SelectDateRange({
               onChange={handleToChange}
               onBlur={() => {
                 selectedRange?.to && setEndTime(endOfDay(selectedRange.to))
-                console.log(selectedRange?.to)
               }}
             />
           </Button>

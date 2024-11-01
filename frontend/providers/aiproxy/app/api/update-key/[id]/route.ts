@@ -12,7 +12,13 @@ interface UpdateTokenBody {
 
 async function updateToken(group: string, id: string, status: number): Promise<void> {
   try {
-    const url = new URL(`/api/token/${group}/${id}/status`, global.AppConfig?.backend.aiproxy)
+    if (status !== 1 && status !== 2) {
+      throw new Error('Invalid status')
+    }
+    const url = new URL(
+      `/api/token/${group}/${id}/status`,
+      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+    )
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {

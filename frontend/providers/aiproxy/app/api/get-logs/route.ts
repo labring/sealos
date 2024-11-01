@@ -41,7 +41,10 @@ async function fetchLogs(
   group: string
 ): Promise<{ logs: LogItem[]; total: number }> {
   try {
-    const url = new URL(`/api/log/${group}/search`, global.AppConfig?.backend.aiproxy)
+    const url = new URL(
+      `/api/log/${group}/search`,
+      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+    )
 
     url.searchParams.append('p', params.page.toString())
     url.searchParams.append('per_page', params.perPage.toString())
@@ -63,8 +66,6 @@ async function fetchLogs(
     }
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
-
-    // console.log(url)
 
     const response = await fetch(url.toString(), {
       method: 'GET',

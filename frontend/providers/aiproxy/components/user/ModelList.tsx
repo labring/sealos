@@ -44,7 +44,6 @@ const ModelList: React.FC = () => {
   const { t } = useTranslationClientSide(lng, 'common')
 
   const { isLoading, data } = useQuery(['getModels'], () => getModels())
-  console.log(data)
 
   return (
     <>

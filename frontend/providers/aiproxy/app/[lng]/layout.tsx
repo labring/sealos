@@ -26,6 +26,9 @@ export async function generateMetadata({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { t } = await useTranslationServerSide(lng, 'common')
   return {
+    icons: {
+      icon: '/favicon.svg'
+    },
     title: t('title'),
     description: t('description')
   }

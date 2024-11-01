@@ -8,9 +8,11 @@ interface DeleteTokenResponse {
 
 async function deleteToken(group: string, id: string): Promise<void> {
   try {
-    const url = new URL(`/api/token/${group}/${id}`, global.AppConfig?.backend.aiproxy)
+    const url = new URL(
+      `/api/token/${group}/${id}`,
+      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+    )
     const token = global.AppConfig?.auth.aiProxyBackendKey
-    console.log(url.toString())
 
     const response = await fetch(url.toString(), {
       method: 'DELETE',

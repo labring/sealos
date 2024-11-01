@@ -46,6 +46,7 @@ import { useMessage } from '@sealos/ui'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { TokenInfo } from '@/types/getKeys'
 import SwitchPage from '@/components/SwitchPage'
+import { useBackendStore } from '@/store/backend'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
@@ -59,6 +60,8 @@ export function KeyList(): JSX.Element {
     successIconBg: 'var(--Green-600, #039855)',
     successIconFill: 'white'
   })
+  const aiproxyBackend = useBackendStore((state) => state.aiproxyBackend)
+
   return (
     <>
       <Flex direction="column" alignItems="flex-start" gap="8px" alignSelf="stretch" w="full">
@@ -99,7 +102,7 @@ export function KeyList(): JSX.Element {
               _hover={{ textDecoration: 'underline' }}
               cursor="pointer"
               onClick={() => {
-                const endpoint = localStorage.getItem('aiproxyBackend') || 'https://www.aiproxy.com'
+                const endpoint = aiproxyBackend
                 navigator.clipboard.writeText(endpoint).then(
                   () => {
                     message({
@@ -122,7 +125,7 @@ export function KeyList(): JSX.Element {
                 )
               }}>
               <Tooltip label={t('copy')} placement="bottom">
-                {localStorage.getItem('aiproxyBackend') || 'https://www.aiproxy.com'}
+                {aiproxyBackend}
               </Tooltip>
             </Text>
           </Flex>
@@ -699,7 +702,7 @@ function CreateKeyModal({
       message({
         status: 'warning',
         title: t('key.createFailed'),
-        description: err?.message || t('key.createFailed'),
+        description: err?.response?.data?.message || t('key.createFailed'),
         isClosable: true,
         position: 'top'
       })

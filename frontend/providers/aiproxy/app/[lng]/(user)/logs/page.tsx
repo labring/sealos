@@ -34,7 +34,7 @@ export default function Home(): React.JSX.Element {
   const [total, setTotal] = useState(0)
 
   const { data: models = [] } = useQuery(['getModels'], () => getModels())
-  const { data: modelNameData } = useQuery(['getKeys'], () => getKeys())
+  const { data: tokenData } = useQuery(['getKeys'], () => getKeys({ page: 1, perPage: 100 }))
 
   const { isLoading } = useQuery(
     ['getLogs', page, pageSize, name, modelName, startTime, endTime],
@@ -59,8 +59,6 @@ export default function Home(): React.JSX.Element {
       }
     }
   )
-
-  console.log(logData, models, modelNameData)
 
   const columns = useMemo<ColumnDef<LogItem>[]>(() => {
     return [
@@ -157,13 +155,23 @@ export default function Home(): React.JSX.Element {
                 placeholder={t('logs.select_token_name')}
                 height="32px"
                 value={name}
-                list={
-                  modelNameData?.tokens?.map((item) => ({
+                list={[
+                  {
+                    value: 'all',
+                    label: 'all'
+                  },
+                  ...(tokenData?.tokens?.map((item) => ({
                     value: item.name,
                     label: item.name
-                  })) || []
-                }
-                onchange={(val: string) => setName(val)}
+                  })) || [])
+                ]}
+                onchange={(val: string) => {
+                  if (val === 'all') {
+                    setName('')
+                  } else {
+                    setName(val)
+                  }
+                }}
               />
             </Flex>
 
@@ -198,7 +206,7 @@ export default function Home(): React.JSX.Element {
           </Flex>
 
           <Flex justifyContent={'space-between'} gap={'20px'}>
-            <Flex alignItems={'center'} flex={1}>
+            {/* <Flex alignItems={'center'} flex={1}>
               <Box flexShrink={0} w={'100px'}>
                 {t('logs.status')}
               </Box>
@@ -216,7 +224,7 @@ export default function Home(): React.JSX.Element {
                 }))}
                 onchange={(val: string) => setModelName(val)}
               />
-            </Flex>
+            </Flex> */}
             <Flex alignItems={'center'} flex={1}>
               <Box flexShrink={0} w={'100px'}>
                 {t('logs.time')}

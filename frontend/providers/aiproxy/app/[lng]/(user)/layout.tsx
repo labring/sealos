@@ -8,9 +8,11 @@ import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 import { useEffect } from 'react'
 import { initAppConfig } from '@/api/platform'
 import { useI18n } from '@/providers/i18n/i18nContext'
+import { useBackendStore } from '@/store/backend'
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const { lng } = useI18n()
+  const { setAiproxyBackend } = useBackendStore()
   // init session
   useEffect(() => {
     const response = createSealosApp()
@@ -37,6 +39,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const initConfig = async () => {
       const { aiproxyBackend } = await initAppConfig()
+      setAiproxyBackend(aiproxyBackend)
       // 删除已存在的 aiproxyBackend，然后重新存储
       localStorage.removeItem('aiproxyBackend')
       localStorage.setItem('aiproxyBackend', aiproxyBackend)

@@ -10,7 +10,10 @@ interface SearchResponse {
 
 async function fetchModels(): Promise<string[]> {
   try {
-    const url = new URL(`/api/models/enabled`, global.AppConfig?.backend.aiproxy)
+    const url = new URL(
+      `/api/models/enabled`,
+      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+    )
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {

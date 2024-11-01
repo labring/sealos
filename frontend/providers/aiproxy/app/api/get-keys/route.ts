@@ -35,9 +35,10 @@ async function fetchTokens(
   group: string
 ): Promise<{ tokens: TokenInfo[]; total: number }> {
   try {
-    const url = new URL(`/api/token/${group}/search`, global.AppConfig?.backend.aiproxy)
-    console.log(perPage)
-    console.log(page)
+    const url = new URL(
+      `/api/token/${group}/search`,
+      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+    )
     url.searchParams.append('p', page.toString())
     url.searchParams.append('per_page', perPage.toString())
 
