@@ -8,10 +8,15 @@ import { LogTypeEnum } from '@/constants/log';
 import { TFile } from '@/utils/kubeFileSystem';
 import { formatTime } from '@/utils/tools';
 import { ChevronDownIcon } from '@chakra-ui/icons';
-import { Box, Button, Flex, MenuButton } from '@chakra-ui/react';
+import { Box, Button, Flex, MenuButton, Input } from '@chakra-ui/react';
 import { SealosMenu } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import {
+  ColumnDef,
+  getCoreRowModel,
+  getFilteredRowModel,
+  useReactTable
+} from '@tanstack/react-table';
 import { useTranslation } from 'next-i18next';
 import { useMemo, useState } from 'react';
 
@@ -40,6 +45,8 @@ export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType:
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+
+  const [globalFilter, setGlobalFilter] = useState('');
 
   useQuery(['intervalLoadPods', db?.dbName], () => db?.dbName && intervalLoadPods(db?.dbName), {
     onSuccess: () => {
@@ -151,7 +158,13 @@ export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType:
   const table = useReactTable({
     data,
     columns,
-    getCoreRowModel: getCoreRowModel()
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter
+    },
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: 'includesString'
   });
 
   console.log('runtime_log', logFiles, dbPods, logData);
@@ -214,9 +227,19 @@ export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType:
             }))}
           />
         )}
+        <Input
+          ml={'12px'}
+          w={'240px'}
+          h={'32px'}
+          placeholder={t('error_log.search_content')}
+          value={globalFilter ?? ''}
+          onChange={(e) => table.setGlobalFilter(e.target.value)}
+          bg={'white'}
+        />
       </Box>
       <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} />
       <SwitchPage
+        mt={'auto'}
         justifyContent={'end'}
         currentPage={page}
         totalPage={Math.ceil((logData?.metadata?.total || 0) / pageSize)}

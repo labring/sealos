@@ -181,6 +181,7 @@
     "content": "信息",
     "error_log": "错误日志",
     "runtime_log": "运行日志",
+    "search_content": "搜索日志内容",
     "slow_query": "慢日志"
   },
   "event_analyze": "智能分析",

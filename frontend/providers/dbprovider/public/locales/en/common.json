@@ -181,6 +181,7 @@
     "content": "information",
     "error_log": "error log",
     "runtime_log": "Run log",
+    "search_content": "Search log content",
     "slow_query": "slow log"
   },
   "event_analyze": "Intelligent Analytics",
