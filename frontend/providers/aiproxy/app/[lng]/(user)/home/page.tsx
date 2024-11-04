@@ -26,13 +26,14 @@ export default function Home(): JSX.Element {
         bg="white"
         borderRadius="12px"
         display="inline-flex"
-        p="19px 59px 0px 23px"
+        p="19px 59px 23px 23px"
         flexDirection="column"
         justifyContent="flex-start"
         alignItems="flex-start"
         gap="22px"
         h="full"
-        w="full">
+        w="full"
+        overflow="auto">
         <ModelList />
       </Flex>
     </Flex>
