@@ -32,6 +32,7 @@ const createModelRender = (modelName: string) => {
   ModelComponent.displayName = `Model_${modelName}`
   return ModelComponent
 }
+// qwen chatglm deepseek moonshot SparkDesk Doubao glm moonshot abab5 ERNIE embedding abab6 cogview
 
 const modes: Record<ModelKey, { render: () => JSX.Element }> = {
   'gpt-4o-mini': { render: createModelRender('gpt-4o-mini') },
@@ -44,6 +45,7 @@ const ModelList: React.FC = () => {
   const { t } = useTranslationClientSide(lng, 'common')
 
   const { isLoading, data } = useQuery(['getModels'], () => getModels())
+  console.log(data)
 
   return (
     <>

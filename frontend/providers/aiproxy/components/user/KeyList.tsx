@@ -124,7 +124,16 @@ export function KeyList(): JSX.Element {
                   }
                 )
               }}>
-              <Tooltip label={t('copy')} placement="bottom">
+              <Tooltip
+                label={t('copy')}
+                placement="bottom"
+                bg="white"
+                color="grayModern.900"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={400}
+                lineHeight="16px"
+                letterSpacing="0.048px">
                 {aiproxyBackend}
               </Tooltip>
             </Text>
@@ -295,8 +304,43 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
           fontSize="12px"
           fontWeight={500}
           lineHeight="16px"
-          letterSpacing="0.5px">
-          {info.getValue()}
+          letterSpacing="0.5px"
+          cursor="pointer"
+          onClick={() => {
+            const key = 'sk-' + info.getValue()
+            navigator.clipboard.writeText(key).then(
+              () => {
+                message({
+                  status: 'success',
+                  title: t('copySuccess'),
+                  isClosable: true,
+                  duration: 2000,
+                  position: 'top'
+                })
+              },
+              (err) => {
+                message({
+                  status: 'warning',
+                  title: t('copyFailed'),
+                  description: err?.message || t('copyFailed'),
+                  isClosable: true,
+                  position: 'top'
+                })
+              }
+            )
+          }}>
+          <Tooltip
+            label={t('copy')}
+            placement="bottom"
+            bg="white"
+            color="grayModern.900"
+            fontFamily="PingFang SC"
+            fontSize="12px"
+            fontWeight={400}
+            lineHeight="16px"
+            letterSpacing="0.048px">
+            {'sk-' + info.getValue()}
+          </Tooltip>
         </Text>
       )
     }),
@@ -318,17 +362,23 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
     columnHelper.accessor((row) => row.accessed_at, {
       id: TableHeaderId.LAST_USED_AT,
       header: (props) => <CustomHeader column={props.column} t={t} />,
-      cell: (info) => (
-        <Text
-          color="grayModern.600"
-          fontFamily="PingFang SC"
-          fontSize="12px"
-          fontWeight={500}
-          lineHeight="16px"
-          letterSpacing="0.5px">
-          {info.getValue() ? new Date(info.getValue()).toLocaleString() : '-'}
-        </Text>
-      )
+      cell: (info) => {
+        const timestamp = info.getValue()
+        const displayValue =
+          timestamp && timestamp > 0 ? new Date(timestamp).toLocaleString() : t('key.unused')
+
+        return (
+          <Text
+            color="grayModern.600"
+            fontFamily="PingFang SC"
+            fontSize="12px"
+            fontWeight={500}
+            lineHeight="16px"
+            letterSpacing="0.5px">
+            {displayValue}
+          </Text>
+        )
+      }
     }),
     columnHelper.accessor((row) => row.status, {
       id: TableHeaderId.STATUS,
@@ -612,6 +662,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       th: {
                         borderBottom: 'none' // 移除所有表头单元格的下边线
                       },
+                      // 第一个和最后一个表头单元格的圆角
                       'th:first-of-type': {
                         borderTopLeftRadius: '6px',
                         borderBottomLeftRadius: '6px'

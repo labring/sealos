@@ -72,7 +72,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, [])
 
   return (
-    <Flex minH="100vh">
+    <Flex height="100vh" width="100vw">
       <Box w="88px">
         <SideBar lng={lng} />
       </Box>

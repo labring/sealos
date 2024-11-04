@@ -24,7 +24,8 @@
     "deleteSuccess": "删除成功",
     "deleteFailed": "删除失败",
     "updateSuccess": "状态更新成功",
-    "updateFailed": "状态更新失败"
+    "updateFailed": "状态更新失败",
+    "unused": "未使用"
   },
   "logs": {
     "call_log": "调用日志",
@@ -39,7 +40,9 @@
     "select_modal": "请选择模型",
     "select_token_name": "请选择名称",
     "total_price": "总金额",
-    "total_price_tip": "输入 token 数 x 输入费用 +  输入 token 数 x 输入费用"
+    "total_price_tip": "输入 token 数 x 输入费用 +  输入 token 数 x 输入费用",
+    "success": "成功",
+    "failed": "失败"
   },
   "Page": "页",
   "Total": "总数",

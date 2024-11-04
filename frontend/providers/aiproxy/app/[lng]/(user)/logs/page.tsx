@@ -81,7 +81,25 @@ export default function Home(): React.JSX.Element {
 
       {
         header: t('logs.status'),
-        accessorFn: (row) => (row.code === 200 ? 'success' : 'failed'),
+        accessorFn: (row) => (row.code === 200 ? t('logs.success') : t('logs.failed')),
+        cell: ({ getValue }) => {
+          const value = getValue() as string
+          return (
+            <Text
+              color={
+                value === t('logs.success')
+                  ? 'var(--Green-600, #039855)'
+                  : 'var(--Red-600, #D92D20)'
+              }
+              fontFamily="PingFang SC"
+              fontSize="12px"
+              fontWeight={500}
+              lineHeight="16px"
+              letterSpacing="0.5px">
+              {value}
+            </Text>
+          )
+        },
         id: 'status'
       },
       {
@@ -91,7 +109,7 @@ export default function Home(): React.JSX.Element {
       },
       {
         accessorKey: 'completion_price',
-        id: 'price',
+        id: 'used_amount',
         header: () => {
           return (
             <Box position={'relative'}>

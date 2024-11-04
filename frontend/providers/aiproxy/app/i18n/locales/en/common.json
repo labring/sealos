@@ -24,7 +24,8 @@
     "deleteSuccess": "Delete key successfully",
     "deleteFailed": "Failed to delete key",
     "updateSuccess": "Update status successful",
-    "updateFailed": "Update status failed"
+    "updateFailed": "Update status failed",
+    "unused": "not use"
   },
   "logs": {
     "call_log": "call log",
@@ -39,7 +40,9 @@
     "select_token_name": "Please select a name",
     "model": "Model",
     "total_price": "lump sum",
-    "total_price_tip": "Enter the number of tokens x enter the fee Enter the number of tokens x enter the fee"
+    "total_price_tip": "Enter the number of tokens x enter the fee Enter the number of tokens x enter the fee",
+    "success": "success",
+    "failed": "failed"
   },
   "Page": "Page",
   "Total": "total",
