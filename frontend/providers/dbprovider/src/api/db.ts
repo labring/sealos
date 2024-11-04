@@ -9,12 +9,12 @@ import type {
   PodDetailType,
   SupportReconfigureDBType
 } from '@/types/db';
-import { LoggingConfiguration, LogTypeEnum } from '@/constants/log';
+import { LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
 import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/adapt';
 import { json2Restart } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
-import { LogResult } from '@/utils/LogParser';
+import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { json2StartOrStop } from '../utils/json2Yaml';
 
