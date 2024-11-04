@@ -6,7 +6,8 @@ import {
   enableGithub,
   enableGoogle,
   enablePassword,
-  enablePhoneSms
+  enablePhoneSms,
+  enableWechat
 } from '@/services/enable';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ProviderType } from 'prisma/global/generated/client';
@@ -89,6 +90,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return enableEmailSms();
           } else if (o.providerType === ProviderType.PASSWORD) {
             return enablePassword();
+          } else if (o.providerType === ProviderType.WECHAT) {
+            return enableWechat();
           }
           return true;
         })
