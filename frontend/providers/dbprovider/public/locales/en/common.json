@@ -23,6 +23,7 @@
   "Migrating": "Migrating",
   "Monday": "Monday",
   "Option": "Optional",
+  "Page": "Page",
   "Password": "Password",
   "Pause": "Pause",
   "Paused": "Paused",
@@ -45,6 +46,7 @@
   "Success": "succeeded",
   "Sunday": "Sun",
   "Thursday": "Thu",
+  "Total": "total",
   "Tuesday": "Tue",
   "Type": "Type",
   "Unknown": "Unknown",
@@ -178,6 +180,7 @@
     "collection_time": "Collection time",
     "content": "information",
     "error_log": "error log",
+    "runtime_log": "Run log",
     "slow_query": "slow log"
   },
   "event_analyze": "Intelligent Analytics",

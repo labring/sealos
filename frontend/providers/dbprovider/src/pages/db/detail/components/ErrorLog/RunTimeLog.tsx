@@ -1,8 +1,10 @@
 import { getLogContent, getLogFiles } from '@/api/db';
+import { BaseTable } from '@/components/BaseTable/baseTable';
+import { SwitchPage } from '@/components/BaseTable/SwitchPage';
 import MyIcon from '@/components/Icon';
-import { BaseTable } from '@/components/MyTable/baseTable';
 import { useDBStore } from '@/store/db';
 import { DBDetailType, SupportReconfigureDBType } from '@/types/db';
+import { LogTypeEnum } from '@/constants/log';
 import { TFile } from '@/utils/kubeFileSystem';
 import { formatTime } from '@/utils/tools';
 import { ChevronDownIcon } from '@chakra-ui/icons';
@@ -18,12 +20,26 @@ type LogContent = {
   content: string;
 };
 
-export default function History({ db }: { db?: DBDetailType }) {
+const getEmptyLogResult = (page = 0, pageSize = 0) => ({
+  logs: [] as LogContent[],
+  metadata: {
+    total: 0,
+    page,
+    pageSize,
+    processingTime: '',
+    hasMore: false
+  }
+});
+
+export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType: LogTypeEnum }) {
   const { t } = useTranslation();
   const { intervalLoadPods, dbPods } = useDBStore();
   const [podName, setPodName] = useState('');
   const [logFile, setLogFile] = useState<TFile>();
   const [data, setData] = useState<LogContent[]>([]);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   useQuery(['intervalLoadPods', db?.dbName], () => db?.dbName && intervalLoadPods(db?.dbName), {
     onSuccess: () => {
@@ -38,37 +54,47 @@ export default function History({ db }: { db?: DBDetailType }) {
       return await getLogFiles({
         podName,
         dbType: db.dbType as SupportReconfigureDBType,
-        logType: 'error'
+        logType
       });
     },
     {
+      enabled: !!podName && db?.dbType !== 'mongodb',
       onSuccess: (data) => {
         !logFile && setLogFile(data[0]);
       }
     }
   );
 
-  const { data: logContent = [], isLoading } = useQuery(
-    ['getLogContent', logFile?.path, podName, db?.dbType],
+  const { data: logData, isLoading } = useQuery(
+    ['getLogContent', logFile?.path, podName, db?.dbType, page, pageSize],
     async () => {
-      if (!logFile?.path) return [];
-      return await getLogContent({
-        logPath: logFile.path,
-        page: 1,
-        pageSize: 500,
+      if (!podName || !db?.dbType) return getEmptyLogResult();
+
+      const params = {
+        page,
+        pageSize,
         podName,
-        dbType: db?.dbType as SupportReconfigureDBType,
-        logType: 'error'
-      });
+        dbType: db.dbType as SupportReconfigureDBType,
+        logType,
+        logPath: 'default'
+      } as const;
+
+      if (db.dbType === 'mongodb') {
+        return await getLogContent(params);
+      }
+
+      if (!logFile?.path) {
+        return getEmptyLogResult();
+      }
+
+      return await getLogContent({ ...params, logPath: logFile.path });
     },
     {
       onSuccess(data) {
-        setData(data);
+        setData(data.logs);
       }
     }
   );
-
-  console.log(logFiles, dbPods, logContent);
 
   const columns = useMemo<Array<ColumnDef<LogContent>>>(
     () => [
@@ -128,6 +154,8 @@ export default function History({ db }: { db?: DBDetailType }) {
     getCoreRowModel: getCoreRowModel()
   });
 
+  console.log('runtime_log', logFiles, dbPods, logData);
+
   return (
     <Flex mt={'8px'} flex={'1 0 0'} h={'0'} flexDirection={'column'}>
       <Box my="12px" ml={'26px'} position={'relative'} zIndex={2}>
@@ -157,35 +185,45 @@ export default function History({ db }: { db?: DBDetailType }) {
             onClick: () => setPodName(item.podName)
           }))}
         />
-        <SealosMenu
-          width={240}
-          Button={
-            <MenuButton
-              ml={'12px'}
-              as={Button}
-              variant={'outline'}
-              leftIcon={<MyIcon name="pods" width={'16px'} height={'16px'} />}
-              minW={'240px'}
-              h={'32px'}
-              textAlign={'start'}
-              bg={'grayModern.100'}
-              borderRadius={'md'}
-              border={'1px solid #E8EBF0'}
-            >
-              <Flex alignItems={'center'}>
-                <Box flex={1}>{logFile?.name}</Box>
-                <ChevronDownIcon ml={2} />
-              </Flex>
-            </MenuButton>
-          }
-          menuList={logFiles.map((item) => ({
-            isActive: item.name === logFile?.name,
-            child: <Box>{item.name}</Box>,
-            onClick: () => setLogFile(item)
-          }))}
-        />
+        {db?.dbType !== 'mongodb' && (
+          <SealosMenu
+            width={240}
+            Button={
+              <MenuButton
+                ml={'12px'}
+                as={Button}
+                variant={'outline'}
+                leftIcon={<MyIcon name="pods" width={'16px'} height={'16px'} />}
+                minW={'240px'}
+                h={'32px'}
+                textAlign={'start'}
+                bg={'grayModern.100'}
+                borderRadius={'md'}
+                border={'1px solid #E8EBF0'}
+              >
+                <Flex alignItems={'center'}>
+                  <Box flex={1}>{logFile?.name}</Box>
+                  <ChevronDownIcon ml={2} />
+                </Flex>
+              </MenuButton>
+            }
+            menuList={logFiles.map((item) => ({
+              isActive: item.name === logFile?.name,
+              child: <Box>{item.name}</Box>,
+              onClick: () => setLogFile(item)
+            }))}
+          />
+        )}
       </Box>
       <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} />
+      <SwitchPage
+        justifyContent={'end'}
+        currentPage={page}
+        totalPage={Math.ceil((logData?.metadata?.total || 0) / pageSize)}
+        totalItem={logData?.metadata?.total || 0}
+        pageSize={pageSize}
+        setCurrentPage={(idx: number) => setPage(idx)}
+      />
     </Flex>
   );
 }

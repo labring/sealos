@@ -20,7 +20,8 @@ import Pods from './components/Pods';
 import { I18nCommonKey } from '@/types/i18next';
 import ReconfigureTable from './components/Reconfigure/index';
 import useDetailDriver from '@/hooks/useDetailDriver';
-import ErrorLog from './components/ErrorLog';
+import ErrorLog from '@/pages/db/detail/components/ErrorLog';
+import MyIcon from '@/components/Icon';
 
 enum TabEnum {
   pod = 'pod',
@@ -56,15 +57,61 @@ const AppDetail = ({
       SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [
-      { label: 'monitor_list', value: TabEnum.monitor },
-      { label: 'replicas_list', value: TabEnum.pod },
-      ...(PublicNetMigration ? [{ label: 'dbconfig.parameter', value: TabEnum.Reconfigure }] : []),
-      ...(BackupSupported ? [{ label: 'backup_list', value: TabEnum.backup }] : []),
-      ...(PublicNetMigration ? [{ label: 'online_import', value: TabEnum.InternetMigration }] : []),
-      ...(PublicNetMigration && !!SystemEnv.minio_url
-        ? [{ label: 'import_through_file', value: TabEnum.DumpImport }]
+      {
+        label: 'monitor_list',
+        value: TabEnum.monitor,
+        icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
+      },
+      {
+        label: 'replicas_list',
+        value: TabEnum.pod,
+        icon: <MyIcon name="instance" w={'16px'} h={'16px'} />
+      },
+      ...(PublicNetMigration
+        ? [
+            {
+              label: 'dbconfig.parameter',
+              value: TabEnum.Reconfigure,
+              icon: <MyIcon name="config" w={'16px'} h={'16px'} />
+            }
+          ]
         : []),
-      ...(BackupSupported ? [{ label: 'error_log.analysis', value: TabEnum.ErrorLog }] : [])
+      ...(BackupSupported
+        ? [
+            {
+              label: 'backup_list',
+              value: TabEnum.backup,
+              icon: <MyIcon name="backup" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
+      ...(PublicNetMigration
+        ? [
+            {
+              label: 'online_import',
+              value: TabEnum.InternetMigration,
+              icon: <MyIcon name="import" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
+      ...(PublicNetMigration && !!SystemEnv.minio_url
+        ? [
+            {
+              label: 'import_through_file',
+              value: TabEnum.DumpImport,
+              icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
+      ...(BackupSupported
+        ? [
+            {
+              label: 'error_log.analysis',
+              value: TabEnum.ErrorLog,
+              icon: <MyIcon name="log" w={'16px'} h={'16px'} />
+            }
+          ]
+        : [])
     ];
 
     return {
@@ -133,7 +180,9 @@ const AppDetail = ({
         >
           <Flex m={'26px'} mb={'8px'} alignItems={'flex-start'}>
             {listNav.map((item) => (
-              <Box
+              <Flex
+                alignItems={'center'}
+                gap={'4px'}
                 key={item.value}
                 mr={5}
                 pb={2}
@@ -154,8 +203,9 @@ const AppDetail = ({
                         )
                     })}
               >
+                {item.icon}
                 {t(item.label as I18nCommonKey)}
-              </Box>
+              </Flex>
             ))}
             <Box flex={1}></Box>
             {listType === TabEnum.pod && <Box color={'grayModern.600'}>{dbPods.length} Items</Box>}

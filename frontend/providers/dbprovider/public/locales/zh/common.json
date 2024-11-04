@@ -23,6 +23,7 @@
   "Migrating": "正在迁移",
   "Monday": "周一",
   "Option": "选填",
+  "Page": "页",
   "Password": "密码",
   "Pause": "暂停",
   "Paused": "已暂停",
@@ -45,6 +46,7 @@
   "Success": "成功",
   "Sunday": "周日",
   "Thursday": "周四",
+  "Total": "总数",
   "Tuesday": "周二",
   "Type": "类型",
   "Unknown": "未知",
@@ -178,6 +180,7 @@
     "collection_time": "采集时间",
     "content": "信息",
     "error_log": "错误日志",
+    "runtime_log": "运行日志",
     "slow_query": "慢日志"
   },
   "event_analyze": "智能分析",

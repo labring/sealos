@@ -48,6 +48,12 @@ const map = {
   gift: require('./icons/gift.svg').default,
   time: require('./icons/time.svg').default,
   help: require('./icons/help.svg').default,
+  backup: require('./icons/backup.svg').default,
+  instance: require('./icons/instance.svg').default,
+  import: require('./icons/import.svg').default,
+  file: require('./icons/file.svg').default,
+  config: require('./icons/config.svg').default,
+  monitor: require('./icons/monitor.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };

@@ -1,9 +1,10 @@
-import { LoggingConfiguration, ServiceLogConfigs } from '@/constants/log';
+import { ServiceLogConfigs } from '@/constants/log';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { SupportReconfigureDBType } from '@/types/db';
+import { LogTypeEnum } from '@/constants/log';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -16,10 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { podName, dbType, logType } = req.body as {
       podName: string;
       dbType: SupportReconfigureDBType;
-      logType: keyof LoggingConfiguration;
+      logType: LogTypeEnum;
     };
-
-    console.log(podName, dbType, logType);
 
     if (!podName || !dbType) {
       throw new Error('Missing required parameters: podName, containerName or logPath');
@@ -28,6 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const kubefs = new KubeFileSystem(k8sExec);
 
     const logConfig = ServiceLogConfigs[dbType][logType];
+
+    console.log('/api/logs/getFiles', { podName, dbType, logType, logConfig });
+
     if (!logConfig) {
       throw new Error('Invalid log type');
     }

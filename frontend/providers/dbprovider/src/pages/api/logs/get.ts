@@ -1,16 +1,17 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { ApiResp } from '@/services/kubernet';
+import { DBTypeEnum } from '@/constants/db';
+import { ServiceLogConfigs } from '@/constants/log';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { KubeFileSystem } from '@/utils/kubeFileSystem';
-import { EnhancedLogParser } from '@/utils/LogParser';
+import { ApiResp } from '@/services/kubernet';
 import { SupportReconfigureDBType } from '@/types/db';
-import { LoggingConfiguration, ServiceLogConfigs } from '@/constants/log';
+import { LogTypeEnum } from '@/constants/log';
+import { DatabaseLogService } from '@/utils/logParsers/LogParser';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handsler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { namespace, k8sExec } = await getK8s({
+    const { namespace, k8sExec, k8sCore } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -24,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     } = req.body as {
       podName: string;
       dbType: SupportReconfigureDBType;
-      logType: keyof LoggingConfiguration;
+      logType: LogTypeEnum;
       logPath: string;
       page?: number;
       pageSize?: number;
@@ -34,46 +35,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('Missing required parameters: podName, dbType, logType or logPath');
     }
 
-    const kubefs = new KubeFileSystem(k8sExec);
-
-    const startLine = (page - 1) * pageSize + 1;
-    const endLine = page * pageSize;
-
     const logConfig = ServiceLogConfigs[dbType][logType];
+
+    console.log('/api/logs/get', {
+      podName,
+      dbType,
+      logType,
+      logPath,
+      page,
+      pageSize,
+      logConfig
+    });
+
     if (!logConfig) {
       throw new Error('Invalid log type');
     }
 
-    let data = '';
+    const logService = new DatabaseLogService(k8sExec, k8sCore, namespace);
 
-    for (const containerName of logConfig.containerNames) {
-      try {
-        data = await kubefs.execCommand(namespace, podName, containerName, [
-          'sed',
-          '-n',
-          `${startLine},${endLine}p`,
-          logPath
-        ]);
-        if (data) break;
-      } catch (error) {
-        continue;
-      }
-    }
+    const result = await logService.readLogs({
+      podName,
+      containerNames: logConfig.containerNames,
+      logPath,
+      page,
+      pageSize,
+      dbType: dbType as DBTypeEnum,
+      logType
+    });
 
-    console.log(data, 'data');
+    console.log(result.metadata, 'result');
 
-    const logParser = new EnhancedLogParser();
-    const start = performance.now();
-    const str = logParser.parseLogString(data);
-    const end = performance.now();
-
-    console.log(
-      `日志解析耗时: ${(end - start).toFixed(
-        2
-      )}ms, 日志路径: ${logPath}, 页码: ${page}, 每页大小: ${pageSize}`
-    );
-
-    jsonRes(res, { data: str });
+    jsonRes(res, { data: result });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

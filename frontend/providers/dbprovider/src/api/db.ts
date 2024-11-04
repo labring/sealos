@@ -1,5 +1,6 @@
-import { GET, POST, DELETE } from '@/services/request';
-import { adaptDBListItem, adaptDBDetail, adaptPod, adaptEvents } from '@/utils/adapt';
+import type { SecretResponse } from '@/pages/api/getSecretByName';
+import { DELETE, GET, POST } from '@/services/request';
+import { KbPgClusterType } from '@/types/cluster';
 import type {
   BackupItemType,
   DBEditType,
@@ -8,14 +9,14 @@ import type {
   PodDetailType,
   SupportReconfigureDBType
 } from '@/types/db';
-import { json2Restart } from '@/utils/json2Yaml';
-import { json2StartOrStop } from '../utils/json2Yaml';
-import type { SecretResponse } from '@/pages/api/getSecretByName';
-import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
-import { KbPgClusterType } from '@/types/cluster';
+import { LoggingConfiguration, LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
+import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/adapt';
+import { json2Restart } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
-import { LoggingConfiguration } from '@/constants/log';
+import { LogResult } from '@/utils/LogParser';
+import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
+import { json2StartOrStop } from '../utils/json2Yaml';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -122,7 +123,7 @@ export const getLogFiles = ({
 }: {
   podName: string;
   dbType: SupportReconfigureDBType;
-  logType: keyof LoggingConfiguration;
+  logType: LogTypeEnum;
 }) =>
   POST<TFile[]>(`/api/logs/getFiles`, {
     podName,
@@ -142,15 +143,10 @@ export const getLogContent = ({
   page: number;
   pageSize: number;
   dbType: SupportReconfigureDBType;
-  logType: keyof LoggingConfiguration;
+  logType: LogTypeEnum;
   podName: string;
 }) =>
-  POST<
-    {
-      timestamp: string;
-      content: string;
-    }[]
-  >(`/api/logs/get`, {
+  POST<LogResult>(`/api/logs/get`, {
     logPath,
     page,
     pageSize,
