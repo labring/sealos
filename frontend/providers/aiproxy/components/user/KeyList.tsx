@@ -196,6 +196,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [openPopoverId, setOpenPopoverId] = useState<number | null>(null)
 
   const { message } = useMessage({
     warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
@@ -428,7 +429,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       id: TableHeaderId.ACTIONS,
       header: (props) => <CustomHeader column={props.column} t={t} />,
       cell: (info) => (
-        <Popover placement="bottom-end">
+        <Popover
+          placement="bottom-end"
+          isOpen={openPopoverId === info.row.original.id}
+          onClose={() => setOpenPopoverId(null)}>
           <PopoverTrigger>
             <Box
               cursor="pointer"
@@ -436,7 +440,8 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               p="var(--xs, 10px)"
               alignItems="center"
               gap="var(--sm, 6px)"
-              borderRadius="var(--sm, 6px)">
+              borderRadius="var(--sm, 6px)"
+              onClick={() => setOpenPopoverId(info.row.original.id)}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -498,9 +503,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                         />
                       </svg>
                     }
-                    onClick={() =>
+                    onClick={() => {
                       handleStatusUpdate(info.row.original.id, info.row.original.status)
-                    }>
+                      setOpenPopoverId(null)
+                    }}>
                     {t('enable')}
                   </Button>
                 ) : (
@@ -535,9 +541,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                         />
                       </svg>
                     }
-                    onClick={() =>
+                    onClick={() => {
+                      setOpenPopoverId(null)
                       handleStatusUpdate(info.row.original.id, info.row.original.status)
-                    }>
+                    }}>
                     {t('disable')}
                   </Button>
                 )}
@@ -572,7 +579,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                       />
                     </svg>
                   }
-                  onClick={() => handleDelete(info.row.original.id)}>
+                  onClick={() => {
+                    handleDelete(info.row.original.id)
+                    setOpenPopoverId(null)
+                  }}>
                   {t('delete')}
                 </Button>
               </Flex>
@@ -652,28 +662,19 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             <Table variant="simple" w="100%" size="md">
               <Thead>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <Tr
-                    key={headerGroup.id}
-                    height="42px"
-                    alignSelf="stretch"
-                    bg="grayModern.100"
-                    sx={{
-                      // 移除表头的下边线
-                      th: {
-                        borderBottom: 'none' // 移除所有表头单元格的下边线
-                      },
-                      // 第一个和最后一个表头单元格的圆角
-                      'th:first-of-type': {
-                        borderTopLeftRadius: '6px',
-                        borderBottomLeftRadius: '6px'
-                      },
-                      'th:last-of-type': {
-                        borderTopRightRadius: '6px',
-                        borderBottomRightRadius: '6px'
-                      }
-                    }}>
-                    {headerGroup.headers.map((header) => (
-                      <Th key={header.id}>
+                  <Tr key={headerGroup.id} height="42px" alignSelf="stretch" bg="grayModern.100">
+                    {headerGroup.headers.map((header, i) => (
+                      <Th
+                        key={header.id}
+                        border={'none'}
+                        // the first th
+                        borderTopLeftRadius={i === 0 ? '6px' : '0'}
+                        borderBottomLeftRadius={i === 0 ? '6px' : '0'}
+                        // the last th
+                        borderTopRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
+                        borderBottomRightRadius={
+                          i === headerGroup.headers.length - 1 ? '6px' : '0'
+                        }>
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </Th>
                     ))}

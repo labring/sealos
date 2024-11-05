@@ -1,6 +1,6 @@
 {
-  "title": "aiproxy",
-  "description": "ai agent",
+  "title": "Ai proxy",
+  "description": "Ai agent",
   "Sidebar": {
     "Home": "AI Proxy",
     "Logs": "call log"

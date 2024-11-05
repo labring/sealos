@@ -108,7 +108,7 @@ export default function Home(): React.JSX.Element {
         id: 'created_at'
       },
       {
-        accessorKey: 'completion_price',
+        accessorKey: 'used_amount',
         id: 'used_amount',
         header: () => {
           return (

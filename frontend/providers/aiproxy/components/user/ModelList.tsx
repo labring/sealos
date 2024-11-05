@@ -12,119 +12,98 @@ import ChatglmIcon from '@/ui/svg/icons/modelist/chatglm.svg'
 import DeepseekIcon from '@/ui/svg/icons/modelist/deepseek.svg'
 import MoonshotIcon from '@/ui/svg/icons/modelist/moonshot.svg'
 import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
-// import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
-
-// 图标导入
-
-// 图标映射
-const IconList: Record<string, StaticImageData> = {
-  OpenAI: OpenAIIcon,
-  qwen: QwenIcon,
-  chatglm: ChatglmIcon,
-  deepseek: DeepseekIcon,
-  moonshot: MoonshotIcon,
-  sparkdesk: SparkdeskIcon,
-  doubao: OpenAIIcon,
-  glm: OpenAIIcon,
-  abab: OpenAIIcon,
-  ernie: OpenAIIcon,
-  cogview: OpenAIIcon
-}
-
-// 获取模型主标识符
-const getModelIcon = (modelName: string): StaticImageData => {
-  const mainIdentifier = modelName.toLowerCase().split(/[-._]/)[0]
-  if (mainIdentifier === 'gpt') return IconList.OpenAI
-  return IconList[mainIdentifier] || IconList.OpenAI
-}
-
-// 创建模型渲染器
-const createModelRender = (modelName: string) => {
-  const ModelComponent = () => {
-    const iconSrc = getModelIcon(modelName)
-
-    return (
-      <Flex align="center" gap="12px">
-        <Image src={iconSrc} alt={modelName} width={20} height={20} />
-        <Text
-          color="grayModern.900"
-          fontFamily="PingFang SC"
-          fontSize="12px"
-          fontWeight={500}
-          lineHeight="16px"
-          letterSpacing="0.5px">
-          {modelName}
-        </Text>
-      </Flex>
-    )
+import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
+import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
+import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
+import GlmIcon from '@/ui/svg/icons/modelist/glm.svg'
+// 图标映射和标识符关系
+const modelGroups = {
+  ernie: {
+    icon: ErnieIcon,
+    identifiers: ['ernie']
+  },
+  qwen: {
+    icon: QwenIcon,
+    identifiers: ['qwen']
+  },
+  chatglm: {
+    icon: ChatglmIcon,
+    identifiers: ['chatglm', 'glm']
+  },
+  deepseek: {
+    icon: DeepseekIcon,
+    identifiers: ['deepseek']
+  },
+  moonshot: {
+    icon: MoonshotIcon,
+    identifiers: ['moonshot']
+  },
+  sparkdesk: {
+    icon: SparkdeskIcon,
+    identifiers: ['sparkdesk']
+  },
+  abab: {
+    icon: AbabIcon,
+    identifiers: ['abab']
+  },
+  doubao: {
+    icon: DoubaoIcon,
+    identifiers: ['doubao']
   }
-  ModelComponent.displayName = `Model_${modelName}`
-  return ModelComponent
 }
 
-// 生成动态的模型类型
-const modelList = [
-  'qwen-long',
-  'chatglm_lite',
-  'deepseek-chat',
-  'moonshot-v1-128k',
-  'SparkDesk-v4.0',
-  'qwen-plus',
-  'Doubao-embedding',
-  'SparkDesk',
-  'Doubao-pro-32k',
-  'SparkDesk-v3.1-128K',
-  'Doubao-lite-128k',
-  'glm-4',
-  'moonshot-v1-8k',
-  'abab5.5-chat',
-  'abab5.5s-chat',
-  'Doubao-lite-32k',
-  'chatglm_std',
-  'moonshot-v1-32k',
-  'ERNIE-4.0-8K',
-  'glm-3-turbo',
-  'embedding-2',
-  'deepseek-coder',
-  'abab6.5-chat',
-  'SparkDesk-v3.5',
-  'chatglm_turbo',
-  'abab6.5s-chat',
-  'abab6-chat',
-  'SparkDesk-v2.1',
-  'qwen-max',
-  'Doubao-pro-128k',
-  'Doubao-pro-4k',
-  'Doubao-lite-4k',
-  'qwen-turbo',
-  'chatglm_pro',
-  'glm-4v',
-  'cogview-3',
-  'ERNIE-3.5-8K',
-  'SparkDesk-v3.1',
-  'SparkDesk-v1.1',
-  // 添加原有的 GPT 模型
-  'gpt-4o-mini',
-  'gpt-4',
-  'gpt-3.5-turbo'
-] as const
+// 获取模型图标
+const getModelIcon = (modelName: string): StaticImageData => {
+  const identifier = modelName.toLowerCase().split(/[-._\d]/)[0]
+  const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
+  return group?.icon || OpenAIIcon
+}
 
-type ModelKey = (typeof modelList)[number]
+// 按图标分组模型
+const sortModelsByIcon = (models: string[]): string[] => {
+  const groupedModels = new Map<StaticImageData, string[]>()
 
-// 创建模型渲染映射
-const modes: Record<string, { render: () => JSX.Element }> = modelList.reduce(
-  (acc, modelName) => ({
-    ...acc,
-    [modelName]: { render: createModelRender(modelName) }
-  }),
-  {}
-)
+  // 按图标分组
+  models.forEach((model) => {
+    const icon = getModelIcon(model)
+    if (!groupedModels.has(icon)) {
+      groupedModels.set(icon, [])
+    }
+    groupedModels.get(icon)?.push(model)
+  })
+
+  // 将分组后的模型展平为数组
+  return Array.from(groupedModels.values()).flat()
+}
+
+// 模型组件
+const ModelComponent = ({ modelName }: { modelName: string }) => {
+  const iconSrc = getModelIcon(modelName)
+
+  return (
+    <Flex align="center" gap="12px">
+      <Image src={iconSrc} alt={modelName} width={20} height={20} />
+      <Text
+        color="grayModern.900"
+        fontFamily="PingFang SC"
+        fontSize="12px"
+        fontWeight={500}
+        lineHeight="16px"
+        letterSpacing="0.5px">
+        {modelName}
+      </Text>
+    </Flex>
+  )
+}
 
 // 模型列表组件
 const ModelList: React.FC = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   const { isLoading, data } = useQuery(['getModels'], () => getModels())
+
+  // 对模型进行排序
+  const sortedModels = data ? sortModelsByIcon(data) : []
 
   return (
     <>
@@ -167,10 +146,7 @@ const ModelList: React.FC = () => {
             <Spinner size="md" color="grayModern.800" />
           </Center>
         ) : (
-          data?.map((model) => {
-            const ModelComponent = modes[model]?.render
-            return ModelComponent ? <ModelComponent key={model} /> : null
-          })
+          sortedModels.map((model) => <ModelComponent key={model} modelName={model} />)
         )}
       </Flex>
     </>
