@@ -72,6 +72,33 @@ func AdminChargeBilling(c *gin.Context) {
 	})
 }
 
+// ActiveBilling
+// @Summary Active billing
+// @Description Active billing
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "successfully activated billing"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to activate billing"
+// @Router /admin/v1alpha1/active [post]
+func AdminActiveBilling(c *gin.Context) {
+	err := authenticateAdminRequest(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	billingReq, err := dao.ParseAdminActiveBillingReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request : %v", err)})
+		return
+	}
+	dao.ActiveBillingTask.AddTask(billingReq)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "successfully activated billing",
+	})
+}
+
 const AdminUserName = "sealos-admin"
 
 func authenticateAdminRequest(c *gin.Context) error {
