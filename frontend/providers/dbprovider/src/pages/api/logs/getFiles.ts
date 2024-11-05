@@ -35,6 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     let files, directories;
+    let lastError: any;
     for (const container of logConfig.containerNames) {
       try {
         const result = await kubefs.ls({
@@ -48,17 +49,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         directories = result.directories;
         break; // 成功后退出循环
       } catch (error) {
-        console.error(`Failed to get files from container: ${container}`, error);
+        lastError = error;
+        continue;
       }
     }
 
     if (!files) {
-      throw new Error('No valid log files found');
+      throw new Error(lastError?.message || 'No valid log files found in any container');
     }
 
     const validFiles = logConfig.filter(files);
 
-    if (validFiles.length === 0) {
+    if (!validFiles || validFiles.length === 0) {
       throw new Error('No valid log files found');
     }
 

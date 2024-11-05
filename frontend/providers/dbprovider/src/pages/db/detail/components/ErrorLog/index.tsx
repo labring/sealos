@@ -74,34 +74,43 @@ const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>
 
   return (
     <Flex flexDirection={'column'} h={'full'} w={'full'} position={'relative'}>
-      <Flex mx={'26px'} h={'36px'}>
-        {filteredSubNavList.map((item) => (
-          <Box
-            key={item.label}
-            mr={5}
-            py={'8px'}
-            borderBottom={'2px solid'}
-            cursor={'pointer'}
-            fontSize={'md'}
-            {...(item.value === subMenu
-              ? {
-                  color: 'grayModern.900',
-                  borderBottomColor: 'grayModern.900'
-                }
-              : {
-                  color: 'grayModern.600',
-                  borderBottomColor: 'transparent',
-                  onClick: () => {
-                    updateSubMenu(item.value);
+      {filteredSubNavList.length > 1 && (
+        <Flex mx={'26px'} h={'36px'}>
+          {filteredSubNavList.map((item) => (
+            <Box
+              key={item.label}
+              mr={5}
+              py={'8px'}
+              borderBottom={'2px solid'}
+              cursor={'pointer'}
+              fontSize={'md'}
+              {...(item.value === subMenu
+                ? {
+                    color: 'grayModern.900',
+                    borderBottomColor: 'grayModern.900'
                   }
-                })}
-          >
-            {t(item.label as I18nCommonKey)}
-          </Box>
-        ))}
-      </Flex>
+                : {
+                    color: 'grayModern.600',
+                    borderBottomColor: 'transparent',
+                    onClick: () => {
+                      updateSubMenu(item.value);
+                    }
+                  })}
+            >
+              {t(item.label as I18nCommonKey)}
+            </Box>
+          ))}
+        </Flex>
+      )}
 
-      {db && <RunTimeLog key={`${subMenu}-${db.dbType}`} db={db} logType={subMenu} />}
+      {db && (
+        <RunTimeLog
+          key={`${subMenu}-${db.dbType}`}
+          db={db}
+          logType={subMenu}
+          filteredSubNavList={filteredSubNavList}
+        />
+      )}
     </Flex>
   );
 };

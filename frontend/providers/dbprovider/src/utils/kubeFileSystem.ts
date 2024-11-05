@@ -29,45 +29,32 @@ export class KubeFileSystem {
     this.k8sExec = k8sExec;
   }
 
-  execCommand(
+  async execCommand(
     namespace: string,
     podName: string,
     containerName: string,
     command: string[],
     stdin: Readable | null = null,
     stdout: Writable | null = null
-  ) {
-    return new Promise<string>(async (resolve, reject) => {
-      const stderr = new PassThrough();
+  ): Promise<string> {
+    const stderr = new PassThrough();
+    let chunks = Buffer.alloc(0);
 
-      let chunks = Buffer.alloc(0);
-      if (!stdout) {
-        stdout = new PassThrough();
-        stdout.on('data', (chunk) => {
-          chunks = Buffer.concat([chunks, chunk]);
-        });
-      }
-
-      const free = () => {
-        stderr.removeAllListeners();
-        stdout?.removeAllListeners();
-        stdin?.removeAllListeners();
-      };
-
-      stdout.on('end', () => {
-        free();
-        resolve(chunks.toString());
+    if (!stdout) {
+      stdout = new PassThrough();
+      stdout.on('data', (chunk) => {
+        chunks = Buffer.concat([chunks, chunk]);
       });
-      stdout.on('error', (error) => {
-        free();
-        reject(error);
-      });
-      stderr.on('data', (error) => {
-        free();
-        reject(error.toString());
-      });
+    }
 
-      const WebSocket = await this.k8sExec.exec(
+    const free = () => {
+      stderr.removeAllListeners();
+      stdout?.removeAllListeners();
+      stdin?.removeAllListeners();
+    };
+
+    try {
+      const ws = await this.k8sExec.exec(
         namespace,
         podName,
         containerName,
@@ -78,16 +65,46 @@ export class KubeFileSystem {
         false
       );
 
-      WebSocket.on('close', () => {
-        resolve('success upload, close web socket');
-      });
-
-      if (stdin) {
-        stdin.on('end', () => {
+      return await new Promise<string>((resolve, reject) => {
+        // Add WebSocket error handling
+        ws?.on('error', (error: any) => {
           free();
+          const errorMessage = error?.message || error?.toString() || 'Unknown error';
+          reject(new Error(`WebSocket error: ${errorMessage}`));
         });
+
+        stderr?.on('data', (error) => {
+          free();
+          reject(new Error(`Command execution error: ${error.toString()}`));
+        });
+
+        stdout?.on('end', () => {
+          free();
+          resolve(chunks.toString());
+        });
+
+        stdout?.on('error', (error) => {
+          free();
+          reject(new Error(`Output stream error: ${error.message}`));
+        });
+
+        if (stdin) {
+          stdin.on('end', () => {
+            free();
+          });
+        }
+      }).catch((error) => {
+        // Ensure all Promise-related errors are caught
+        free();
+        throw error;
+      });
+    } catch (error: any) {
+      free();
+      if (error?.type === 'error' && error?.target instanceof WebSocket) {
+        throw new Error(`WebSocket error: ${error.message || 'Unknown error'}`);
       }
-    });
+      throw new Error(`Command execution failed: ${error.message || 'Unknown error'}`);
+    }
   }
 
   async getPodTimezone(namespace: string, podName: string, containerName: string): Promise<string> {

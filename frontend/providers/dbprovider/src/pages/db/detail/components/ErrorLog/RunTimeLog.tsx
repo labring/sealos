@@ -8,7 +8,15 @@ import { LogTypeEnum } from '@/constants/log';
 import { TFile } from '@/utils/kubeFileSystem';
 import { formatTime } from '@/utils/tools';
 import { ChevronDownIcon } from '@chakra-ui/icons';
-import { Box, Button, Flex, MenuButton, Input } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  MenuButton,
+  Input,
+  InputGroup,
+  InputLeftElement
+} from '@chakra-ui/react';
 import { SealosMenu } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -19,6 +27,7 @@ import {
 } from '@tanstack/react-table';
 import { useTranslation } from 'next-i18next';
 import { useMemo, useState } from 'react';
+import { I18nCommonKey } from '@/types/i18next';
 
 type LogContent = {
   timestamp: string;
@@ -36,7 +45,18 @@ const getEmptyLogResult = (page = 0, pageSize = 0) => ({
   }
 });
 
-export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType: LogTypeEnum }) {
+export default function RunTimeLog({
+  db,
+  logType,
+  filteredSubNavList
+}: {
+  db: DBDetailType;
+  logType: LogTypeEnum;
+  filteredSubNavList?: {
+    label: string;
+    value: LogTypeEnum;
+  }[];
+}) {
   const { t } = useTranslation();
   const { intervalLoadPods, dbPods } = useDBStore();
   const [podName, setPodName] = useState('');
@@ -167,11 +187,21 @@ export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType:
     globalFilterFn: 'includesString'
   });
 
-  console.log('runtime_log', logFiles, dbPods, logData);
-
   return (
-    <Flex mt={'8px'} flex={'1 0 0'} h={'0'} flexDirection={'column'}>
-      <Box my="12px" ml={'26px'} position={'relative'} zIndex={2}>
+    <Flex flex={'1 0 0'} h={'0'} flexDirection={'column'}>
+      <Flex mt={'8px'} mb="12px" ml={'26px'} position={'relative'} alignItems={'center'} zIndex={2}>
+        {filteredSubNavList?.length === 1 && (
+          <Box
+            key={filteredSubNavList[0].label}
+            mr={5}
+            py={'8px'}
+            cursor={'pointer'}
+            fontSize={'md'}
+          >
+            {t(filteredSubNavList[0].label as I18nCommonKey)}
+          </Box>
+        )}
+
         <SealosMenu
           width={240}
           Button={
@@ -198,6 +228,7 @@ export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType:
             onClick: () => setPodName(item.podName)
           }))}
         />
+
         {db?.dbType !== 'mongodb' && (
           <SealosMenu
             width={240}
@@ -227,16 +258,19 @@ export default function RunTimeLog({ db, logType }: { db: DBDetailType; logType:
             }))}
           />
         )}
-        <Input
-          ml={'12px'}
-          w={'240px'}
-          h={'32px'}
-          placeholder={t('error_log.search_content')}
-          value={globalFilter ?? ''}
-          onChange={(e) => table.setGlobalFilter(e.target.value)}
-          bg={'white'}
-        />
-      </Box>
+
+        <InputGroup w={'240px'} h={'32px'} ml={'auto'} mr={'24px'}>
+          <InputLeftElement>
+            <MyIcon name="search" />
+          </InputLeftElement>
+          <Input
+            placeholder={t('error_log.search_content')}
+            value={globalFilter ?? ''}
+            onChange={(e) => table.setGlobalFilter(e.target.value)}
+            bg={'white'}
+          />
+        </InputGroup>
+      </Flex>
       <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} />
       <SwitchPage
         mt={'auto'}
