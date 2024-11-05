@@ -218,8 +218,10 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		updated = true
 	}
 
-	if used.Value() != size {
-		resourceQuota.Status.Used[ResourceObjectStorageSize] = resource.MustParse(ConvertBytesToString(size))
+	stringSize := ConvertBytesToString(size)
+
+	if used.String() != stringSize {
+		resourceQuota.Status.Used[ResourceObjectStorageSize] = resource.MustParse(stringSize)
 		if err := r.Status().Update(ctx, resourceQuota); err != nil {
 			r.Logger.Error(err, "failed to update status", "name", resourceQuota.Name, "namespace", userNamespace)
 			return ctrl.Result{}, err
@@ -450,7 +452,7 @@ func ConvertBytesToString(bytes int64) string {
 		value = float64(bytes) / (1 << 10)
 		unit = "Ki"
 	default:
-		return fmt.Sprintf("%d B", bytes)
+		return fmt.Sprintf("%d", bytes)
 	}
 
 	return fmt.Sprintf("%.0f%s", value, unit)
