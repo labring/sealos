@@ -67,6 +67,8 @@ type Interface interface {
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
 	ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error
 	ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error
+	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
+	ActiveMonitor(req resources.ActiveMonitor) error
 }
 
 type Account struct {
@@ -75,11 +77,12 @@ type Account struct {
 }
 
 type MongoDB struct {
-	Client         *mongo.Client
-	AccountDBName  string
-	BillingConn    string
-	PropertiesConn string
-	Properties     *resources.PropertyTypeLS
+	Client            *mongo.Client
+	AccountDBName     string
+	BillingConn       string
+	ActiveBillingConn string
+	PropertiesConn    string
+	Properties        *resources.PropertyTypeLS
 }
 
 type Cockroach struct {
@@ -263,6 +266,32 @@ func (m *MongoDB) GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap
 		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
 	}
 	return costsMap, nil
+}
+
+func (m *Account) InitDB() error {
+	if err := m.ck.InitTables(); err != nil {
+		return fmt.Errorf("failed to init tables: %v", err)
+	}
+	return m.MongoDB.initTables()
+}
+
+func (m *MongoDB) initTables() error {
+	if exist, err := m.collectionExist(m.AccountDBName, m.ActiveBillingConn); exist || err != nil {
+		return err
+	}
+	cmd := bson.D{
+		primitive.E{Key: "create", Value: m.ActiveBillingConn},
+		primitive.E{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
+		// default ttl set 30 days
+		primitive.E{Key: "expireAfterSeconds", Value: 30 * 24 * 60 * 60},
+	}
+	return m.Client.Database(m.AccountDBName).RunCommand(context.Background(), cmd).Err()
+}
+
+func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
+	// Check if the collection already exists
+	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
+	return len(collections) > 0, err
 }
 
 func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
@@ -1277,19 +1306,20 @@ func NewAccountInterface(mongoURI, globalCockRoachURI, localCockRoachURI string)
 		return nil, fmt.Errorf("failed to ping mongodb: %v", err)
 	}
 	mongodb := &MongoDB{
-		Client:         client,
-		AccountDBName:  "sealos-resources",
-		BillingConn:    "billing",
-		PropertiesConn: "properties",
+		Client:            client,
+		AccountDBName:     "sealos-resources",
+		BillingConn:       "billing",
+		ActiveBillingConn: "active-billing",
+		PropertiesConn:    "properties",
 	}
 	ck, err := cockroach.NewCockRoach(globalCockRoachURI, localCockRoachURI)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect cockroach: %v", err)
 	}
-	if err = ck.InitTables(); err != nil {
+	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{ck: ck}}
+	if err = account.InitDB(); err != nil {
 		return nil, fmt.Errorf("failed to init tables: %v", err)
 	}
-	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{ck: ck}}
 	return account, nil
 }
 
@@ -1304,10 +1334,11 @@ func newAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (
 			return nil, fmt.Errorf("failed to ping mongodb: %v", err)
 		}
 		account.MongoDB = &MongoDB{
-			Client:         client,
-			AccountDBName:  "sealos-resources",
-			BillingConn:    "billing",
-			PropertiesConn: "properties",
+			Client:            client,
+			AccountDBName:     "sealos-resources",
+			BillingConn:       "billing",
+			ActiveBillingConn: "active-billing",
+			PropertiesConn:    "properties",
 		}
 	} else {
 		fmt.Printf("mongoURI is empty, skip connecting to mongodb\n")
@@ -1393,6 +1424,10 @@ func (m *MongoDB) getBillingCollection() *mongo.Collection {
 func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
 	// 2020-12-01 00:00:00 - 2020-12-01 23:59:59
 	return m.Client.Database(m.AccountDBName).Collection(m.getMonitorCollectionName(collTime))
+}
+
+func (m *MongoDB) getActiveBillingCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDBName).Collection(m.ActiveBillingConn)
 }
 
 func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
@@ -1560,6 +1595,20 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 	return nil
 }
 
+func (m *Account) ActiveMonitor(req resources.ActiveMonitor) error {
+	return m.ck.DB.Transaction(func(tx *gorm.DB) error {
+		if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: req.UserUID}, req.Amount, tx); err != nil {
+			return fmt.Errorf("failed to deduct balance: %v", err)
+		}
+		req.Status = resources.Consumed
+		_, err := m.getActiveBillingCollection().InsertOne(context.Background(), req)
+		if err != nil {
+			return fmt.Errorf("failed to insert (%v) monitor: %v", req, err)
+		}
+		return nil
+	})
+}
+
 func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
 	filter := bson.M{"order_id": orderID}
 	update := bson.M{
@@ -1725,6 +1774,138 @@ func (m *Account) ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error {
 			errs = append(errs, fmt.Errorf("failed to upsert billing for user %s, app %s: %v",
 				result.ID.UserUID, result.ID.AppName, err))
 			continue
+		}
+	}
+	if err = cursor.Err(); err != nil {
+		errs = append(errs, fmt.Errorf("cursor error: %v", err))
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("encountered %d errors during archiving: %v", len(errs), errs)
+	}
+	return nil
+}
+
+/*
+type ActiveMonitor struct {
+	Time      time.Time         `json:"time" bson:"time"`
+	Namespace string            `json:"namespace" bson:"namespace"`
+	AppType   string            `json:"app_type" bson:"app_type"`
+	Name      string            `json:"name" bson:"name"`
+	Used      UsedMap           `json:"used,omitempty" bson:"used,omitempty"`
+	Amount    int64             `json:"amount" bson:"amount,omitempty"`
+	Owner     string            `json:"owner" bson:"owner,omitempty"`
+	UserUID   uuid.UUID         `json:"user_uid" bson:"user_uid"`
+	Status    ConsumptionStatus `json:"status" bson:"status"`
+	//Rule      string            `json:"rule" bson:"rule,omitempty"`
+}
+*/
+
+func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{
+			"time": bson.M{
+				"$gte": hourStart,
+				"$lt":  hourEnd,
+			},
+			"status": resources.ErrorConsumed,
+		}}},
+		{{Key: "$group", Value: bson.M{
+			"_id": bson.M{
+				"user_uid": "$user_uid",
+				"app_type": "$app_type",
+				"app_name": "$app_name",
+				//"owner":     "$owner",
+				"namespace": "$namespace",
+			},
+			"total_amount": bson.M{"$sum": "$amount"},
+		}}},
+	}
+
+	cursor, err := m.MongoDB.getActiveBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return fmt.Errorf("failed to aggregate hourly billing: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var errs []error
+	for cursor.Next(context.Background()) {
+		var result struct {
+			ID struct {
+				UserUID   uuid.UUID `bson:"user_uid"`
+				AppName   string    `bson:"app_name"`
+				AppType   string    `bson:"app_type"`
+				Owner     string    `bson:"owner,omitempty"`
+				Namespace string    `bson:"namespace"`
+			} `bson:"_id"`
+			TotalAmount int64 `bson:"total_amount"`
+		}
+
+		if err := cursor.Decode(&result); err != nil {
+			errs = append(errs, fmt.Errorf("failed to decode document: %v", err))
+			continue
+		}
+		if result.ID.Owner == "" {
+			userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: result.ID.UserUID})
+			if err != nil {
+				errs = append(errs, fmt.Errorf("failed to get user cr: %v", err))
+				continue
+			}
+			result.ID.Owner = userCr.CrName
+		}
+
+		filter := bson.M{
+			"user_uid":  result.ID.UserUID,
+			"app_type":  result.ID.AppType,
+			"app_name":  result.ID.AppName,
+			"namespace": result.ID.Namespace,
+			"owner":     result.ID.Owner,
+			"time":      hourStart,
+			"type":      accountv1.Consumption,
+		}
+
+		billing := bson.M{
+			"order_id":  gonanoid.Must(12),
+			"type":      accountv1.Consumption,
+			"namespace": result.ID.Namespace,
+			"app_type":  resources.AppType[result.ID.AppType],
+			"app_name":  result.ID.AppName,
+			"amount":    result.TotalAmount,
+			"owner":     result.ID.Owner,
+			"time":      hourStart,
+			"status":    resources.Settled,
+			"user_uid":  result.ID.UserUID,
+		}
+
+		update := bson.M{
+			"$setOnInsert": billing,
+		}
+
+		opts := options.Update().SetUpsert(true)
+		_, err = m.MongoDB.getBillingCollection().UpdateOne(
+			context.Background(),
+			filter,
+			update,
+			opts,
+		)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to upsert billing for user %s, app %s: %v",
+				result.ID.UserUID, result.ID.AppName, err))
+			continue
+		}
+		// update active billing status
+		if _, err = m.MongoDB.getActiveBillingCollection().UpdateMany(context.Background(), bson.M{
+			"time": bson.M{
+				"$gte": hourStart,
+				"$lt":  hourEnd,
+			},
+			"user_uid":  result.ID.UserUID,
+			"app_type":  result.ID.AppType,
+			"app_name":  result.ID.AppName,
+			"namespace": result.ID.Namespace,
+			"owner":     result.ID.Owner,
+			"status":    resources.ErrorConsumed,
+		}, bson.M{"$set": bson.M{"status": resources.Consumed}}); err != nil {
+			errs = append(errs, fmt.Errorf("failed to update active billing status: %v", err))
 		}
 	}
 	if err = cursor.Err(); err != nil {
