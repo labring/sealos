@@ -51,6 +51,10 @@ spec:
               value: 'false'
             - name: ACCOUNT_URL
               value: http://account-service.account-system.svc.cluster.local:2333
+            - name: ROOT_RUNTIME_NAMESPACE
+              value: devbox-system
+            - name: INGRESS_DOMAIN
+              value: sealosusw.site
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

@@ -9,25 +9,33 @@ export type KBDevboxType = {
     creationTimestamp: string
   }
   spec: KBDevboxSpec
-  portInfos: {
-    // Added by logic in api/getDevboxList/route.ts
-    networkName: string
-    portName: string
-    port: number
-    protocol: ProtocolType
-    openPublicDomain: boolean
-    publicDomain: string
-    customDomain: string
-  }[]
-  lastTerminatedState: {
-    containerID: string
-    exitCode: number
-    finishedAt: string
-    reason: string
-    startedAt: string
-  }
   status: {
-    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete'
+    lastState: {
+      terminated?: {
+        containerID: string
+        exitCode: number
+        finishedAt: string
+        reason: string // normally is Error if it not null
+        startedAt: string
+      }
+    }
+    state: {
+      running?: {
+        startedAt: string
+      }
+      waiting?: {
+        message: string
+        reason: string
+      }
+      terminated?: {
+        containerID: string
+        exitCode: number
+        finishedAt: string
+        reason: string
+        startedAt: string
+      }
+    }
+    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown'
     commitHistory: {
       image: string
       pod: string
@@ -43,11 +51,10 @@ export type KBDevboxType = {
   }
 }
 
-// note: there first three runtime type is I added by logic in api/getDevboxList/route.ts
+// note: runtimeType is I added by logic in api/getDevboxList/route.ts
 export interface KBDevboxSpec {
   runtimeType?: string
-  runtimeVersion?: string
-  runtimeNamespace?: string
+
   squash?: boolean
   network: {
     type: 'NodePort' | 'Tailnet'
@@ -142,6 +149,8 @@ export type KBRuntimeType = {
       releaseCommand: string[]
       releaseArgs: string[]
     }
+    state: 'active' | 'deprecated' | 'archived' | 'beta'
+    runtimeVersion: string
     category: string[]
     description: string
     version: string
