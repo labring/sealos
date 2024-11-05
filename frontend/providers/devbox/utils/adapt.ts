@@ -80,7 +80,6 @@ export const adaptDevboxDetail = (
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: devbox.portInfos || [],
     lastTerminatedReason:
       devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting

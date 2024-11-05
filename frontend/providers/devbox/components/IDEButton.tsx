@@ -55,7 +55,7 @@ const IDEButton = ({
       })
 
       try {
-        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
+        const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
           devboxName,
           runtimeName: runtimeVersion
         })
@@ -81,8 +81,8 @@ const IDEButton = ({
         )}&sshPort=${encodeURIComponent(sshPort)}&base64PrivateKey=${encodeURIComponent(
           base64PrivateKey
         )}&sshHostLabel=${encodeURIComponent(
-          `${env.sealosDomain}/${env.namespace}/${devboxName}`
-        )}&workingDir=${encodeURIComponent(workingDir)}`
+          `${env.sealosDomain}-${env.namespace}-${devboxName}`
+        )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`
 
         window.location.href = fullUri
       } catch (error: any) {
