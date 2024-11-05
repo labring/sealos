@@ -164,7 +164,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 1. 获取登录凭证: 由于 login 页面不是在 desktop 项目里，所以需要从线上 sealos 获取登录凭证到本地开发: <https://cloud.sealos.io/> 。复制 storage 里的 session 到 localhost 环境实现 mock 登录。
 
-2. Chakra ui <https://chakra-ui.com/getting-started>
+2. Chakra ui <https://v2.chakra-ui.com/getting-started>
 
 3. TanStack Query 用法：<https://cangsdarm.github.io/react-query-web-i18n/react>
 
