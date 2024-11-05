@@ -1,23 +1,37 @@
-import { jsonRes } from '@/services/backend/response'
+import { NextRequest } from 'next/server'
 
-export type SystemEnvResponse = {
-  domain: string
-  ingressSecret: string
-  registryAddr: string
-  devboxAffinityEnable: string
-  squashEnable: string
-}
+import type { Env } from '@/types/static'
+import { defaultEnv } from '@/stores/env'
+import { jsonRes } from '@/services/backend/response'
+import { getK8s } from '@/services/backend/kubernetes'
+import { authSession } from '@/services/backend/auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  return jsonRes<SystemEnvResponse>({
-    data: {
-      domain: process.env.SEALOS_DOMAIN || 'dev.sealos.plus',
-      ingressSecret: process.env.INGRESS_SECRET || 'wildcard-cert',
-      registryAddr: process.env.REGISTRY_ADDR || 'hub.dev.sealos.plus',
-      devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || 'true',
-      squashEnable: process.env.SQUASH_ENABLE || 'true'
-    }
-  })
+export async function GET(req: NextRequest) {
+  try {
+    const headerList = req.headers
+
+    const { namespace } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    })
+
+    return jsonRes<Env>({
+      data: {
+        sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
+        ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
+        registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
+        devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || defaultEnv.devboxAffinityEnable,
+        squashEnable: process.env.SQUASH_ENABLE || defaultEnv.squashEnable,
+        namespace: namespace || defaultEnv.namespace,
+        rootRuntimeNamespace: process.env.ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
+        ingressDomain: process.env.INGRESS_DOMAIN || defaultEnv.ingressDomain
+      }
+    })
+  } catch (err: any) {
+    return jsonRes({
+      code: 500,
+      error: err
+    })
+  }
 }

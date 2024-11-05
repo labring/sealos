@@ -20,7 +20,6 @@ replace (
 
 require (
 	github.com/containers/storage v1.50.2
-	github.com/dinoallo/sealos-networkmanager-protoapi v0.0.0-20230928031328-cf9649d6af49
 	github.com/dustin/go-humanize v1.0.1
 	github.com/go-logr/logr v1.4.1
 	github.com/golang-jwt/jwt/v4 v4.5.0

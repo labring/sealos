@@ -7,7 +7,6 @@ import * as jsonpatch from 'fast-json-patch'
 
 import { YamlKindEnum } from '@/constants/devbox'
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
-import { frameworkVersionMap, languageVersionMap, osVersionMap } from '@/stores/static'
 
 dayjs.extend(duration)
 
@@ -123,15 +122,6 @@ export const getErrText = (err: any, def = '') => {
   const msg: string = typeof err === 'string' ? err : err?.message || def || ''
   msg && console.log('error =>', msg)
   return msg
-}
-
-export const getValueDefault = (valueIndex: string) => {
-  return (
-    languageVersionMap[valueIndex]?.[0]?.id ||
-    frameworkVersionMap[valueIndex]?.[0]?.id ||
-    osVersionMap[valueIndex]?.[0]?.id ||
-    undefined
-  )
 }
 
 /**
@@ -328,5 +318,14 @@ export function calculateUptime(createdTime: Date): string {
     uptime += `${minutes}m`
   }
 
-  return uptime || '刚刚启动'
+  return uptime || 'Recently Started'
+}
+
+export const isElementInViewport = (element: Element) => {
+  const rect = element.getBoundingClientRect()
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight
+  const windowWidth = window.innerWidth || document.documentElement.clientWidth
+  const vertInView = rect.top <= windowHeight && rect.top + rect.height >= 0
+  const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0
+  return vertInView && horInView
 }

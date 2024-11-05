@@ -28,7 +28,6 @@ require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dinoallo/sealos-networkmanager-protoapi v0.0.0-20230928031328-cf9649d6af49 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect

@@ -23,25 +23,18 @@ import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
 import { MySelect, MySlider, Tabs, useMessage } from '@sealos/ui'
 
-import {
-  INSTALL_ACCOUNT,
-  SEALOS_DOMAIN,
-  frameworkTypeList,
-  frameworkVersionMap,
-  languageTypeList,
-  languageVersionMap,
-  osTypeList,
-  osVersionMap,
-  getRuntimeVersionList
-} from '@/stores/static'
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
 import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
+
+import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import { useRuntimeStore } from '@/stores/runtime'
+
 import { ProtocolList } from '@/constants/devbox'
 import type { DevboxEditType } from '@/types/devbox'
-import { getValueDefault, obj2Query } from '@/utils/tools'
+import { obj2Query } from '@/utils/tools'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
@@ -81,6 +74,19 @@ const Form = ({
     control,
     name: 'networks'
   })
+
+  const {
+    languageVersionMap,
+    frameworkVersionMap,
+    osVersionMap,
+    languageTypeList,
+    frameworkTypeList,
+    osTypeList,
+    getRuntimeVersionList,
+    getRuntimeVersionDefault,
+    getRuntimeDetailLabel
+  } = useRuntimeStore()
+  const { env } = useEnvStore()
 
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
   const navList: { id: string; label: string; icon: string }[] = [
@@ -237,19 +243,17 @@ const Form = ({
           <Box mt={3} overflow={'hidden'}>
             <QuotaBox />
           </Box>
-          {INSTALL_ACCOUNT && (
-            <Box mt={3} overflow={'hidden'}>
-              <PriceBox
-                components={[
-                  {
-                    cpu: getValues('cpu'),
-                    memory: getValues('memory'),
-                    nodeports: devboxList.length
-                  }
-                ]}
-              />
-            </Box>
-          )}
+          <Box mt={3} overflow={'hidden'}>
+            <PriceBox
+              components={[
+                {
+                  cpu: getValues('cpu'),
+                  memory: getValues('memory'),
+                  nodeports: devboxList.length
+                }
+              ]}
+            />
+          </Box>
         </Box>
         {/* right content */}
         <Box
@@ -282,34 +286,24 @@ const Form = ({
                       },
                       validate: {
                         pattern: (value) =>
-                          /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/.test(
+                          /^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?)*$/.test(
                             value
                           ) || t('devbox_name_invalid')
                       }
                     })}
                     onBlur={(e) => {
-                      setValue('name', e.target.value)
-                      setValue(
-                        'networks',
-                        getRuntimeVersionList(getValues('runtimeType'))[0].defaultPorts.map(
-                          (port) => ({
-                            networkName: `${e.target.value}-${nanoid()}`,
-                            portName: nanoid(),
-                            port: port,
-                            protocol: 'HTTP',
-                            openPublicDomain: true,
-                            publicDomain: nanoid(),
-                            customDomain: ''
-                          })
-                        )
-                      )
+                      const lowercaseValue = e.target.value.toLowerCase()
+
+                      setValue('name', lowercaseValue)
+                      const networks = getValues('networks')
+                      networks.forEach((network, i) => {
+                        updateNetworks(i, {
+                          ...network,
+                          networkName: `${lowercaseValue}-${nanoid()}`
+                        })
+                      })
                     }}
                   />
-                  <FormErrorMessage ml={'50px'}>
-                    <Box fontSize={'12px'} h={'25px'} w={'100px'}>
-                      {errors.name && errors.name.message}
-                    </Box>
-                  </FormErrorMessage>
                 </Flex>
               </FormControl>
               {/* Runtime Type */}
@@ -372,7 +366,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: nanoid(),
+                                    publicDomain: `${nanoid()}.${env.ingressDomain}`,
                                     customDomain: ''
                                   })
                                 )
@@ -450,7 +444,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: nanoid(),
+                                    publicDomain: `${nanoid()}.${env.ingressDomain}`,
                                     customDomain: ''
                                   })
                                 )
@@ -528,7 +522,7 @@ const Form = ({
                                     port: port,
                                     protocol: 'HTTP',
                                     openPublicDomain: true,
-                                    publicDomain: nanoid(),
+                                    publicDomain: `${nanoid()}.${env.ingressDomain}`,
                                     customDomain: ''
                                   })
                                 )
@@ -558,7 +552,15 @@ const Form = ({
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
                 {isEdit ? (
-                  <Box opacity={0.5}>{getValues('runtimeVersion')}</Box>
+                  <Input
+                    opacity={0.5}
+                    width={'200px'}
+                    defaultValue={getRuntimeDetailLabel(
+                      getValues('runtimeType'),
+                      getValues('runtimeVersion')
+                    )}
+                    disabled
+                  />
                 ) : (
                   <MySelect
                     {...register('runtimeVersion', {
@@ -567,7 +569,8 @@ const Form = ({
                     width={'200px'}
                     placeholder={`${t('runtime')} ${t('version')}`}
                     defaultValue={
-                      getValues('runtimeVersion') || getValueDefault(getValues('runtimeType'))
+                      getValues('runtimeVersion') ||
+                      getRuntimeVersionDefault(getValues('runtimeType'))
                     }
                     value={getValues('runtimeVersion')}
                     list={getRuntimeVersionList(getValues('runtimeType'))}
@@ -591,7 +594,7 @@ const Form = ({
                             port: port,
                             protocol: 'HTTP',
                             openPublicDomain: true,
-                            publicDomain: nanoid(),
+                            publicDomain: `${nanoid()}.${env.ingressDomain}`,
                             customDomain: ''
                           })
                         )
@@ -716,6 +719,7 @@ const Form = ({
                       <Switch
                         className="driver-deploy-network-switch"
                         size={'lg'}
+                        id={`openPublicDomain-${i}`}
                         isChecked={!!network.openPublicDomain}
                         onChange={(e) => {
                           const devboxName = getValues('name')
@@ -726,12 +730,13 @@ const Form = ({
                             })
                             return
                           }
+
                           updateNetworks(i, {
                             ...getValues('networks')[i],
                             networkName: network.networkName || `${devboxName}-${nanoid()}`,
                             protocol: network.protocol || 'HTTP',
                             openPublicDomain: e.target.checked,
-                            publicDomain: network.publicDomain || nanoid()
+                            publicDomain: network.publicDomain || `${nanoid()}.${env.ingressDomain}`
                           })
                         }}
                       />
@@ -769,9 +774,7 @@ const Form = ({
                             borderTopRightRadius={'md'}
                             borderBottomRightRadius={'md'}>
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
-                              {network.customDomain
-                                ? network.customDomain
-                                : `${network.publicDomain}.${SEALOS_DOMAIN}`}
+                              {network.customDomain ? network.customDomain : network.publicDomain}
                             </Box>
                             <Box
                               fontSize={'11px'}

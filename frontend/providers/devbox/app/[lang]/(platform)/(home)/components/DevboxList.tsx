@@ -1,38 +1,19 @@
-import {
-  Box,
-  Button,
-  Center,
-  Flex,
-  Image,
-  MenuButton,
-  useTheme,
-  Text,
-  Tooltip,
-  Menu,
-  MenuList,
-  MenuItem,
-  IconButton
-} from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 import { sealosApp } from 'sealos-desktop-sdk/app'
 import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
+import { Box, Button, Center, Flex, Image, MenuButton, useTheme, Text } from '@chakra-ui/react'
 
-import {
-  getSSHConnectionInfo,
-  getSSHRuntimeInfo,
-  pauseDevbox,
-  restartDevbox,
-  startDevbox
-} from '@/api/devbox'
 import { useRouter } from '@/i18n'
-import MyIcon from '@/components/Icon'
-import { IDEType, useGlobalStore } from '@/stores/global'
+import { useGlobalStore } from '@/stores/global'
 import { DevboxListItemType } from '@/types/devbox'
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+
+import MyIcon from '@/components/Icon'
+import IDEButton from '@/components/IDEButton'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 import ReleaseModal from '@/components/modals/releaseModal'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
@@ -48,7 +29,10 @@ const DevboxList = ({
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
-  const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
+
+  // TODO: Unified Loading Behavior
+  const { setLoading } = useGlobalStore()
+
   const [onOpenRelease, setOnOpenRelease] = useState(false)
   const [delDevbox, setDelDevbox] = useState<DevboxListItemType | null>(null)
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
@@ -59,7 +43,6 @@ const DevboxList = ({
     setCurrentDevboxListItem(devbox)
     setOnOpenRelease(true)
   }
-
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxListItemType) => {
       try {
@@ -76,8 +59,8 @@ const DevboxList = ({
         })
         console.error(error)
       }
-      setLoading(false)
       refetchDevboxList()
+      setLoading(false)
     },
     [refetchDevboxList, setLoading, t, toast]
   )
@@ -97,9 +80,10 @@ const DevboxList = ({
         })
         console.error(error, '==')
       }
+      refetchDevboxList()
       setLoading(false)
     },
-    [setLoading, t, toast]
+    [refetchDevboxList, setLoading, t, toast]
   )
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemType) => {
@@ -117,44 +101,11 @@ const DevboxList = ({
         })
         console.error(error, '==')
       }
+      refetchDevboxList()
       setLoading(false)
     },
-    [setLoading, t, toast]
+    [refetchDevboxList, setLoading, t, toast]
   )
-
-  const getCurrentIDELabelAndIcon = useCallback(
-    (
-      currentIDE: IDEType
-    ): {
-      label: string
-      icon: IDEType
-    } => {
-      switch (currentIDE) {
-        case 'vscode':
-          return {
-            label: 'VSCode',
-            icon: 'vscode'
-          }
-        case 'cursor':
-          return {
-            label: 'Cursor',
-            icon: 'cursor'
-          }
-        case 'vscodeInsider':
-          return {
-            label: 'VSCode Insider',
-            icon: 'vscodeInsider'
-          }
-        default:
-          return {
-            label: 'VSCode',
-            icon: 'vscode'
-          }
-      }
-    },
-    []
-  )
-
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemType) => {
       const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
@@ -173,49 +124,8 @@ const DevboxList = ({
         })
         console.error(error)
       }
-      refetchDevboxList()
     },
-    [refetchDevboxList, t, toast]
-  )
-
-  const handleGotoIDE = useCallback(
-    async (devbox: DevboxListItemType, currentIDE: string = 'vscode') => {
-      try {
-        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
-          devboxName: devbox.name,
-          runtimeName: devbox.runtimeVersion
-        })
-        const { workingDir } = await getSSHRuntimeInfo(devbox.runtimeVersion)
-
-        let editorUri = ''
-        switch (currentIDE) {
-          case 'cursor':
-            editorUri = `cursor://`
-            break
-          case 'vscodeInsider':
-            editorUri = `vscode-insiders://`
-            break
-          case 'vscode':
-            editorUri = `vscode://`
-            break
-          default:
-            editorUri = `vscode://`
-        }
-
-        const fullUri = `${editorUri}mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
-          `${userName}@${SEALOS_DOMAIN}`
-        )}&sshPort=${encodeURIComponent(devbox.sshPort)}&base64PrivateKey=${encodeURIComponent(
-          base64PrivateKey
-        )}&sshHostLabel=${encodeURIComponent(
-          `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
-        )}&workingDir=${encodeURIComponent(workingDir)}`
-
-        window.location.href = fullUri
-      } catch (error: any) {
-        console.error(error, '==')
-      }
-    },
-    []
+    [t, toast]
   )
 
   const columns: {
@@ -229,7 +139,7 @@ const DevboxList = ({
       key: 'name',
       render: (item: DevboxListItemType) => {
         return (
-          <Flex alignItems={'center'} gap={'6px'} ml={4}>
+          <Flex alignItems={'center'} gap={'6px'} ml={4} mr={1}>
             <Image
               width={'20px'}
               height={'20px'}
@@ -261,7 +171,7 @@ const DevboxList = ({
       key: 'cpu',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
             <PodLineChart type="blue" data={item.usedCpu} />
             <Text
               color={'#0077A9'}
@@ -283,7 +193,7 @@ const DevboxList = ({
       key: 'storage',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
             <PodLineChart type="purple" data={item.usedMemory} />
             <Text
               color={'#6F5DD7'}
@@ -305,85 +215,12 @@ const DevboxList = ({
       key: 'control',
       render: (item: DevboxListItemType) => (
         <Flex>
-          <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
-            <Button
-              height={'32px'}
-              size={'sm'}
-              fontSize={'base'}
-              bg={'grayModern.150'}
-              color={'grayModern.900'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              borderRightWidth={0}
-              borderRightRadius={0}
-              onClick={() => handleGotoIDE(item, currentIDE)}
-              leftIcon={<MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />}
-              isDisabled={item.status.value !== 'Running'}>
-              {getCurrentIDELabelAndIcon(currentIDE).label}
-            </Button>
-          </Tooltip>
-          <Menu placement="bottom-end" isLazy>
-            <MenuButton
-              height={'32px'}
-              bg={'grayModern.150'}
-              color={'grayModern.600'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              mr={6}
-              p={2}
-              borderLeftRadius={0}
-              borderLeftWidth={0}
-              boxShadow={
-                '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
-              }
-              as={IconButton}
-              isDisabled={item.status.value !== 'Running'}
-              icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
-              _before={{
-                content: '""',
-                position: 'absolute',
-                left: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '1px',
-                height: '20px',
-                backgroundColor: 'grayModern.250'
-              }}
-            />
-            <MenuList
-              color={'grayModern.600'}
-              fontWeight={500}
-              fontSize={'12px'}
-              defaultValue={currentIDE}
-              px={1}>
-              {[
-                { value: 'vscode' as IDEType, label: 'VSCode' },
-                { value: 'cursor' as IDEType, label: 'Cursor' },
-                { value: 'vscodeInsider' as IDEType, label: 'VSCode Insider' }
-              ].map((item) => (
-                <MenuItem
-                  key={item.value}
-                  value={item.value}
-                  onClick={() => setCurrentIDE(item.value)}
-                  icon={<MyIcon name={item.value} w={'16px'} />}
-                  _hover={{
-                    bg: '#1118240D',
-                    borderRadius: 4
-                  }}
-                  _focus={{
-                    bg: '#1118240D',
-                    borderRadius: 4
-                  }}>
-                  <Flex justifyContent="space-between" alignItems="center" width="100%">
-                    {item.label}
-                    {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
-                  </Flex>
-                </MenuItem>
-              ))}
-            </MenuList>
-          </Menu>
+          <IDEButton
+            devboxName={item.name}
+            runtimeVersion={item.runtimeVersion}
+            sshPort={item.sshPort}
+            status={item.status}
+          />
           <Button
             mr={5}
             height={'32px'}
@@ -446,7 +283,7 @@ const DevboxList = ({
                       child: (
                         <>
                           <MyIcon name={'start'} w={'16px'} />
-                          <Box ml={2}>{t('boot')}</Box>
+                          <Box ml={2}>{t('start')}</Box>
                         </>
                       ),
                       onClick: () => handleStartDevbox(item)
@@ -530,7 +367,7 @@ const DevboxList = ({
           {t('create_devbox')}
         </Button>
       </Flex>
-      <MyTable columns={columns} data={devboxList} />
+      <MyTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}

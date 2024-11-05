@@ -5,12 +5,6 @@ import { jsonRes } from '@/services/backend/response'
 
 export const dynamic = 'force-dynamic'
 
-export type Response = {
-  cpu: number
-  memory: number
-  nodeports: number
-}
-
 type ResourcePriceType = {
   data: {
     properties: {
@@ -45,17 +39,12 @@ const valuationMap: Record<string, number> = {
 export async function GET(req: NextRequest) {
   try {
     const { ACCOUNT_URL, SEALOS_DOMAIN } = process.env
-    const baseUrl = ACCOUNT_URL
-      ? ACCOUNT_URL
-      : `https://account-api.${SEALOS_DOMAIN}`;
+    const baseUrl = ACCOUNT_URL ? ACCOUNT_URL : `https://account-api.${SEALOS_DOMAIN}`
     const getResourcePrice = async () => {
       try {
-        const res = await fetch(
-          `${baseUrl}/account/v1alpha1/properties`,
-          {
-            method: 'POST'
-          }
-        )
+        const res = await fetch(`${baseUrl}/account/v1alpha1/properties`, {
+          method: 'POST'
+        })
 
         const data: ResourcePriceType = await res.json()
 

@@ -2,20 +2,18 @@
 
 import throttle from 'lodash/throttle'
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from '@/i18n'
 import { EVENT_NAME } from 'sealos-desktop-sdk'
+import { usePathname, useRouter } from '@/i18n'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
-import {
-  getEnv,
-  getGlobalNamespace,
-  getRuntime,
-  getUserPrice,
-  SEALOS_DOMAIN
-} from '@/stores/static'
-import { useGlobalStore } from '@/stores/global'
 import { useLoading } from '@/hooks/useLoading'
 import { useConfirm } from '@/hooks/useConfirm'
+
+import { useEnvStore } from '@/stores/env'
+import { useGlobalStore } from '@/stores/global'
+import { usePriceStore } from '@/stores/price'
+import { useRuntimeStore } from '@/stores/runtime'
+
 import { getLangStore, setLangStore } from '@/utils/cookie'
 import QueryProvider from '@/components/providers/MyQueryProvider'
 import ChakraProvider from '@/components/providers/MyChakraProvider'
@@ -25,6 +23,9 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const router = useRouter()
   const pathname = usePathname()
   const { Loading } = useLoading()
+  const { setEnv, env } = useEnvStore()
+  const { setRuntime } = useRuntimeStore()
+  const { setSourcePrice } = usePriceStore()
   const [refresh, setRefresh] = useState(false)
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore()
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -49,7 +50,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session')
           openConfirm(() => {
-            window.open(`https://${SEALOS_DOMAIN}`, '_self')
+            window.open(`https://${env.sealosDomain}`, '_self')
           })()
         }
       }
@@ -59,10 +60,9 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [])
 
   useEffect(() => {
-    getUserPrice()
-    getRuntime()
-    getEnv()
-    getGlobalNamespace()
+    setSourcePrice()
+    setRuntime()
+    setEnv()
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore()
       const newLang = data.currentLanguage

@@ -1,32 +1,19 @@
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import { Dispatch, useCallback, useState } from 'react'
-import {
-  Flex,
-  Button,
-  Box,
-  Menu,
-  MenuButton,
-  IconButton,
-  MenuList,
-  MenuItem
-} from '@chakra-ui/react'
+import { Flex, Button, Box } from '@chakra-ui/react'
+import { Dispatch, useCallback, useMemo, useState } from 'react'
 
 import { useRouter } from '@/i18n'
-import MyIcon from '@/components/Icon'
 import { useDevboxStore } from '@/stores/devbox'
 import { IDEType, useGlobalStore } from '@/stores/global'
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+
 import { DevboxDetailType } from '@/types/devbox'
+
+import MyIcon from '@/components/Icon'
+import IDEButton from '@/components/IDEButton'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
-import {
-  getSSHConnectionInfo,
-  getSSHRuntimeInfo,
-  pauseDevbox,
-  restartDevbox,
-  startDevbox
-} from '@/api/devbox'
 
 const Header = ({
   refetchDevboxDetail,
@@ -40,83 +27,13 @@ const Header = ({
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
-  const { setLoading, setCurrentIDE, currentIDE } = useGlobalStore()
+
+  const { screenWidth } = useGlobalStore()
   const { devboxDetail } = useDevboxStore()
+  const { setLoading } = useGlobalStore()
+
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
-
-  const getCurrentIDELabelAndIcon = useCallback(
-    (
-      currentIDE: IDEType
-    ): {
-      label: string
-      icon: IDEType
-    } => {
-      switch (currentIDE) {
-        case 'vscode':
-          return {
-            label: 'VSCode',
-            icon: 'vscode'
-          }
-        case 'cursor':
-          return {
-            label: 'Cursor',
-            icon: 'cursor'
-          }
-        case 'vscodeInsider':
-          return {
-            label: 'VSCode Insider',
-            icon: 'vscodeInsider'
-          }
-        default:
-          return {
-            label: 'VSCode',
-            icon: 'vscode'
-          }
-      }
-    },
-    []
-  )
-  const handleGotoIDE = useCallback(
-    async (devbox: DevboxDetailType, currentIDE: string = 'vscode') => {
-      try {
-        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
-          devboxName: devbox.name,
-          runtimeName: devbox.runtimeVersion
-        })
-        const { workingDir } = await getSSHRuntimeInfo(devbox.runtimeVersion)
-
-        let editorUri = ''
-        switch (currentIDE) {
-          case 'cursor':
-            editorUri = `cursor://`
-            break
-          case 'vscodeInsider':
-            editorUri = `vscode-insiders://`
-            break
-          case 'vscode':
-            editorUri = `vscode://`
-            break
-          default:
-            editorUri = `vscode://`
-        }
-
-        const fullUri = `${editorUri}mlhiter.devbox-sealos?sshDomain=${encodeURIComponent(
-          `${userName}@${SEALOS_DOMAIN}`
-        )}&sshPort=${encodeURIComponent(
-          devbox.sshPort as number
-        )}&base64PrivateKey=${encodeURIComponent(
-          base64PrivateKey
-        )}&sshHostLabel=${encodeURIComponent(
-          `${SEALOS_DOMAIN}/${NAMESPACE}/${devbox.name}`
-        )}&workingDir=${encodeURIComponent(workingDir)}`
-
-        window.location.href = fullUri
-      } catch (error: any) {
-        console.error(error, '==')
-      }
-    },
-    []
-  )
+  const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
 
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxDetailType) => {
@@ -182,7 +99,8 @@ const Header = ({
     [setLoading, t, toast, refetchDevboxDetail]
   )
   return (
-    <Flex justify="space-between" align="center" pl={4}>
+    <Flex justify="space-between" align="center" pl={4} pt={2} flexWrap={'wrap'} gap={5}>
+      {/* left back button and title */}
       <Flex alignItems={'center'} gap={2}>
         <MyIcon
           name="arrowLeft"
@@ -195,10 +113,11 @@ const Header = ({
         <Box fontSize="2xl" fontWeight="bold">
           {devboxDetail.name}
         </Box>
+        {/* detail button */}
         <Flex alignItems={'center'}>
           <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
           {!isLargeScreen && (
-            <Box mx={4}>
+            <Box ml={4}>
               <Button
                 width={'96px'}
                 height={'40px'}
@@ -216,89 +135,34 @@ const Header = ({
           )}
         </Flex>
       </Flex>
-      <Flex>
-        <Button
-          height={'40px'}
-          size={'sm'}
-          fontSize={'14px'}
-          bg={'white'}
-          color={'grayModern.600'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
-          borderWidth={1}
-          borderRightWidth={0}
-          borderRightRadius={0}
-          onClick={() => handleGotoIDE(devboxDetail, currentIDE)}
-          leftIcon={<MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />}
-          isDisabled={devboxDetail.status.value !== 'Running'}>
-          {getCurrentIDELabelAndIcon(currentIDE).label}
-        </Button>
-        <Menu placement="bottom-end">
-          <MenuButton
-            height={'40px'}
-            bg={'white'}
-            color={'grayModern.600'}
-            mr={6}
-            p={2}
-            borderWidth={1}
-            borderLeftRadius={0}
-            borderLeftWidth={0}
-            boxShadow={
-              '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
-            }
-            as={IconButton}
-            _hover={{
-              color: 'brightBlue.600'
+      {/* right main button group */}
+      <Flex gap={5}>
+        <Box>
+          <IDEButton
+            devboxName={devboxDetail.name}
+            runtimeVersion={devboxDetail.runtimeVersion}
+            sshPort={devboxDetail.sshPort as number}
+            status={devboxDetail.status}
+            isBigButton={isBigButton}
+            leftButtonProps={{
+              height: '40px',
+              borderWidth: '1 0 1 1',
+              bg: 'white',
+              color: 'grayModern.600'
             }}
-            isDisabled={devboxDetail.status.value !== 'Running'}
-            icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
-            _before={{
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '1px',
-              height: '20px',
-              backgroundColor: 'grayModern.250'
+            rightButtonProps={{
+              height: '40px',
+              borderWidth: '1 1 1 0',
+              bg: 'white',
+              color: 'grayModern.600',
+              mr: 0,
+              boxShadow:
+                '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
             }}
           />
-          <MenuList
-            color={'grayModern.600'}
-            fontWeight={500}
-            fontSize={'12px'}
-            defaultValue={currentIDE}
-            px={1}>
-            {[
-              { value: 'vscode' as IDEType, label: 'VSCode' },
-              { value: 'cursor' as IDEType, label: 'Cursor' },
-              { value: 'vscodeInsider' as IDEType, label: 'VSCode Insider' }
-            ].map((item) => (
-              <MenuItem
-                key={item.value}
-                value={item.value}
-                onClick={() => setCurrentIDE(item.value)}
-                icon={<MyIcon name={item.value} w={'16px'} />}
-                _hover={{
-                  bg: '#1118240D',
-                  borderRadius: 4
-                }}
-                _focus={{
-                  bg: '#1118240D',
-                  borderRadius: 4
-                }}>
-                <Flex justifyContent="space-between" alignItems="center" width="100%">
-                  {item.label}
-                  {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
-                </Flex>
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Menu>
+        </Box>
         {devboxDetail.status.value === 'Running' && (
           <Button
-            mr={5}
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}
@@ -307,14 +171,13 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={<MyIcon name={'shutdown'} w={'16px'} />}
+            leftIcon={isBigButton ? <MyIcon name={'shutdown'} w={'16px'} /> : undefined}
             onClick={() => handlePauseDevbox(devboxDetail)}>
-            {t('pause')}
+            {isBigButton ? t('pause') : <MyIcon name={'shutdown'} w={'16px'} />}
           </Button>
         )}
         {devboxDetail.status.value === 'Stopped' && (
           <Button
-            mr={5}
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}
@@ -323,14 +186,12 @@ const Header = ({
               color: 'brightBlue.600'
             }}
             borderWidth={1}
-            leftIcon={<MyIcon name={'start'} w={'16px'} />}
+            leftIcon={isBigButton ? <MyIcon name={'start'} w={'16px'} /> : undefined}
             onClick={() => handleStartDevbox(devboxDetail)}>
-            {t('boot')}
+            {isBigButton ? t('start') : <MyIcon name={'start'} w={'16px'} />}
           </Button>
         )}
         <Button
-          mr={5}
-          w={'96px'}
           h={'40px'}
           fontSize={'14px'}
           bg={'white'}
@@ -339,28 +200,26 @@ const Header = ({
             color: 'brightBlue.600'
           }}
           borderWidth={1}
-          leftIcon={<MyIcon name={'change'} w={'16px'} />}
+          leftIcon={isBigButton ? <MyIcon name={'change'} w={'16px'} /> : undefined}
           onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
-          {t('update')}
+          {!isBigButton ? <MyIcon name={'change'} w={'16px'} /> : t('update')}
         </Button>
+        {devboxDetail.status.value !== 'Stopped' && (
+          <Button
+            h={'40px'}
+            fontSize={'14px'}
+            bg={'white'}
+            color={'grayModern.600'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            borderWidth={1}
+            leftIcon={isBigButton ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
+            onClick={() => handleRestartDevbox(devboxDetail)}>
+            {isBigButton ? t('restart') : <MyIcon name={'restart'} w={'16px'} />}
+          </Button>
+        )}
         <Button
-          mr={5}
-          w={'96px'}
-          h={'40px'}
-          fontSize={'14px'}
-          bg={'white'}
-          color={'grayModern.600'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
-          borderWidth={1}
-          leftIcon={<MyIcon name={'restart'} w={'16px'} />}
-          onClick={() => handleRestartDevbox(devboxDetail)}>
-          {t('restart')}
-        </Button>
-        <Button
-          mr={5}
-          w={'96px'}
           h={'40px'}
           fontSize={'14px'}
           bg={'white'}
@@ -369,9 +228,9 @@ const Header = ({
             color: 'red.600'
           }}
           borderWidth={1}
-          leftIcon={<MyIcon name={'delete'} w={'16px'} />}
+          leftIcon={isBigButton ? <MyIcon name={'delete'} w={'16px'} /> : undefined}
           onClick={() => setDelDevbox(devboxDetail)}>
-          {t('delete')}
+          {isBigButton ? t('delete') : <MyIcon name={'delete'} w={'16px'} />}
         </Button>
       </Flex>
       {delDevbox && (
@@ -380,7 +239,6 @@ const Header = ({
           onClose={() => setDelDevbox(null)}
           onSuccess={() => {
             setDelDevbox(null)
-            refetchDevboxDetail()
             router.push('/')
           }}
         />
