@@ -44,7 +44,8 @@ clean:
 .PHONY: build
 build: ## Build service-hub binary.
 	LD_FLAGS="-s -w"; \
-	CGO_ENABLED=0 GOOS=linux go build -tags=jsoniter -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
+	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+=" -X github.com/labring/sealos/controllers/pkg/crypto.encryptionKey=${CRYPTOKEY}"; \
+	CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
 
 .PHONY: docker-build
 docker-build: build

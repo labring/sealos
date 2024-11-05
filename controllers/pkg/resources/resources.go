@@ -85,27 +85,6 @@ type Monitor struct {
 	Property   string      `json:"property,omitempty" bson:"property,omitempty"`
 }
 
-type ActiveMonitor struct {
-	Time      time.Time         `json:"time,omitempty" bson:"time"`
-	Namespace string            `json:"namespace" bson:"namespace"`
-	AppType   string            `json:"app_type" bson:"app_type"`
-	AppName   string            `json:"app_name" bson:"app_name"`
-	Used      UsedMap           `json:"used,omitempty" bson:"used,omitempty"`
-	Amount    int64             `json:"amount" bson:"amount,omitempty"`
-	Owner     string            `json:"owner" bson:"owner,omitempty"`
-	UserUID   uuid.UUID         `json:"user_uid" bson:"user_uid"`
-	Status    ConsumptionStatus `json:"status" bson:"status"`
-	//Rule      string            `json:"rule" bson:"rule,omitempty"`
-}
-
-type ConsumptionStatus string
-
-const (
-	Consumed      ConsumptionStatus = "consumed"
-	Unconsumed    ConsumptionStatus = "unconsumed"
-	ErrorConsumed ConsumptionStatus = "error_consumed"
-)
-
 type BillingType int
 
 type Billing struct {
@@ -215,8 +194,6 @@ var AppTypeReverse = map[uint8]string{
 
 // resource consumption
 type EnumUsedMap map[uint8]int64
-
-type UsedMap map[string]float64
 
 type PropertyType struct {
 	// For the monitoring storage enumeration type, use uint 8 to save memory
