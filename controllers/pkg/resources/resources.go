@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/labring/sealos/controllers/pkg/common"
 
 	"github.com/labring/sealos/controllers/pkg/gpu"
@@ -86,7 +87,7 @@ type Monitor struct {
 }
 
 type ActiveBilling struct {
-	ID        string            `json:"_id,omitempty" bson:"_id"`
+	ID        string            `json:"_id,omitempty" bson:"_id,omitempty"`
 	Time      time.Time         `json:"time,omitempty" bson:"time"`
 	Namespace string            `json:"namespace" bson:"namespace"`
 	AppType   string            `json:"app_type" bson:"app_type"`

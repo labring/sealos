@@ -282,13 +282,15 @@ func (m *MongoDB) initTables() error {
 	if exist, err := m.collectionExist(m.AccountDBName, m.ActiveBillingConn); exist || err != nil {
 		return err
 	}
-	cmd := bson.D{
-		primitive.E{Key: "create", Value: m.ActiveBillingConn},
-		primitive.E{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
-		// default ttl set 30 days
-		primitive.E{Key: "expireAfterSeconds", Value: 30 * 24 * 60 * 60},
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: "time", Value: 1}},
+		Options: options.Index().SetExpireAfterSeconds(30 * 24 * 60 * 60),
 	}
-	return m.Client.Database(m.AccountDBName).RunCommand(context.Background(), cmd).Err()
+	_, err := m.getActiveBillingCollection().Indexes().CreateOne(context.Background(), indexModel)
+	if err != nil {
+		return fmt.Errorf("failed to create index: %v", err)
+	}
+	return nil
 }
 
 func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
