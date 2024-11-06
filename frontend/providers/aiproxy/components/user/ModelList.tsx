@@ -1,5 +1,5 @@
 'use client'
-import { Badge, Center, Flex, Spinner, Text, Tooltip } from '@chakra-ui/react'
+import { Badge, Center, Flex, Spinner, Text } from '@chakra-ui/react'
 import { ListIcon } from '@/ui/icons/home/Icons'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'

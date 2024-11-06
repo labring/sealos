@@ -31,8 +31,9 @@ export default function Home(): JSX.Element {
         justifyContent="flex-start"
         alignItems="flex-start"
         gap="22px"
-        h="full"
+        minW="260px"
         w="full"
+        h="full"
         overflow="auto">
         <ModelList />
       </Flex>
