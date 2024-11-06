@@ -80,6 +80,7 @@ export const adaptDevboxDetail = (
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
+    networks: devbox.portInfos,
     lastTerminatedReason:
       devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting
@@ -185,11 +186,13 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 export const adaptIngressListItem = (ingress: V1Ingress): IngressListItemType => {
   const firstRule = ingress.spec?.rules?.[0]
   const firstPath = firstRule?.http?.paths?.[0]
-
+  const protocol = ingress.metadata?.annotations?.['nginx.ingress.kubernetes.io/backend-protocol']
+  console.log('ingress', ingress.spec)
   return {
     name: ingress.metadata?.name || '',
     namespace: ingress.metadata?.namespace || '',
-    host: firstRule?.host || '',
-    port: firstPath?.backend?.service?.port?.number || 0
+    address: firstRule?.host || '',
+    port: firstPath?.backend?.service?.port?.number || 0,
+    protocol: protocol || 'http'
   }
 }

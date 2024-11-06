@@ -2,7 +2,7 @@ import path from 'path'
 import * as os from 'os'
 import * as vscode from 'vscode'
 
-import { parseSSHConfig } from '../api'
+import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 
@@ -89,7 +89,6 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
       )
 
       parseSSHConfig(defaultSSHConfigPath).then((data) => {
-        console.log(data)
         this.treeData = data as DevboxListItem[]
         this._onDidChangeTreeData.fire(undefined)
       })
@@ -119,8 +118,6 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
       vscode.window.showInformationMessage('只能打开 Devbox 项目')
       return
     }
-
-    console.log(item.host)
 
     vscode.commands.executeCommand(
       'vscode.openFolder',

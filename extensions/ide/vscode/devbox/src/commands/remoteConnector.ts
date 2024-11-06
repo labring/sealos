@@ -3,8 +3,9 @@ import * as os from 'os'
 import * as fs from 'fs'
 import * as vscode from 'vscode'
 import SSHConfig from 'ssh-config'
-import { Disposable } from '../common/dispose'
 import { execSync } from 'child_process'
+
+import { Disposable } from '../common/dispose'
 import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 
 const defaultSSHConfigPath = path.resolve(os.homedir(), '.ssh/config')
@@ -26,51 +27,6 @@ export class RemoteSSHConnector extends Disposable {
     }
   }
 
-  private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
-    const isOfficialVscode =
-      vscode.env.uriScheme === 'vscode' ||
-      vscode.env.uriScheme === 'vscode-insiders'
-    if (!isOfficialVscode) {
-      return true
-    }
-
-    const msVscodeRemoteExt = vscode.extensions.getExtension(
-      'ms-vscode-remote.remote-ssh'
-    )
-    if (msVscodeRemoteExt) {
-      return true
-    }
-
-    const install = 'Install'
-    const cancel = 'Cancel'
-
-    const action = await vscode.window.showInformationMessage(
-      'Please install "Remote - SSH" extension to connect to a Gitpod workspace.',
-      { modal: true },
-      install,
-      cancel
-    )
-
-    if (action === cancel) {
-      return false
-    }
-
-    vscode.window.showInformationMessage(
-      'Installing "ms-vscode-remote.remote-ssh" extension'
-    )
-
-    await vscode.commands.executeCommand(
-      'extension.open',
-      'ms-vscode-remote.remote-ssh'
-    )
-    await vscode.commands.executeCommand(
-      'workbench.extensions.installExtension',
-      'ms-vscode-remote.remote-ssh'
-    )
-
-    return true
-  }
-
   private async connectRemoteSSH(args: {
     sshDomain: string
     sshPort: string
@@ -83,27 +39,21 @@ export class RemoteSSHConnector extends Disposable {
     const { sshDomain, sshPort, base64PrivateKey, sshHostLabel, workingDir } =
       args
 
-    const randomSuffix = Math.random().toString(36).substring(2, 15)
-    const newSshHostLabel = sshHostLabel.replace(/\//g, '-')
-    const suffixSSHHostLabel = `${newSshHostLabel}-${randomSuffix}`
-
-    modifiedRemoteSSHConfig(newSshHostLabel, suffixSSHHostLabel)
+    modifiedRemoteSSHConfig(sshHostLabel)
 
     const sshUser = sshDomain.split('@')[0]
     const sshHost = sshDomain.split('@')[1]
 
-    // sshHostLabel: usw.sailos.io/ns-admin/devbox-1
-    // identityFileSSHLabel: usw.sailos.io_ns-admin_devbox-1
-    const identityFileSSHLabel = sshHostLabel.replace(/\//g, '_')
+    // sshHostLabel: usw.sailos.io_ns-admin_devbox-1
 
     const normalPrivateKey = Buffer.from(base64PrivateKey, 'base64')
 
     const sshConfig = new SSHConfig().append({
-      Host: suffixSSHHostLabel,
+      Host: sshHostLabel,
       HostName: sshHost,
       User: sshUser,
       Port: sshPort,
-      IdentityFile: `~/.ssh/sealos/${identityFileSSHLabel}`,
+      IdentityFile: `~/.ssh/sealos/${sshHostLabel}`,
       IdentitiesOnly: 'yes',
       StrictHostKeyChecking: 'no',
     })
@@ -116,41 +66,35 @@ export class RemoteSSHConnector extends Disposable {
           recursive: true,
         })
         fs.writeFileSync(defaultSSHConfigPath, '', 'utf8')
-        // 设置 .ssh/config 文件的权限
+        // .ssh/config authority
         if (os.platform() === 'win32') {
-          // Windows 系统
+          // Windows
           execSync(`icacls "${defaultSSHConfigPath}" /inheritance:r`)
           execSync(
             `icacls "${defaultSSHConfigPath}" /grant:r ${process.env.USERNAME}:F`
           )
           execSync(`icacls "${defaultSSHConfigPath}" /remove:g everyone`)
         } else {
-          // Unix-like 系统 (Mac, Linux)
+          // Unix-like system (Mac, Linux)
           execSync(`chmod 600 "${defaultSSHConfigPath}"`)
         }
       }
-      // 2. ensure .ssh/sealos/devbox_config exists and has the correct jurisdiction
+      // 2. ensure .ssh/sealos/devbox_config exists and has the correct authority
       if (!fs.existsSync(defaultDevboxSSHConfigPath)) {
         fs.mkdirSync(path.resolve(os.homedir(), '.ssh/sealos'), {
           recursive: true,
         })
         fs.writeFileSync(defaultDevboxSSHConfigPath, '', 'utf8')
-        // 针对mac和windows区别处理
         if (os.platform() === 'win32') {
-          // 移除继承的权限
           execSync(`icacls "${defaultDevboxSSHConfigPath}" /inheritance:r`)
-          // 为当前用户授予完全控制权限
           execSync(
             `icacls "${defaultDevboxSSHConfigPath}" /grant:r ${process.env.USERNAME}:F`
           )
-          // 确保其他用户无法访问
           execSync(`icacls "${defaultDevboxSSHConfigPath}" /remove:g everyone`)
         } else {
-          // 设置文件权限为 600（仅文件所有者可读写）
           execSync(`chmod 600 "${defaultDevboxSSHConfigPath}"`)
         }
       }
-
       // 3. ensure .ssh/config includes .ssh/sealos/devbox_config
       const existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf8')
       if (!existingSSHConfig.includes('Include ~/.ssh/sealos/devbox_config')) {
@@ -174,7 +118,7 @@ export class RemoteSSHConnector extends Disposable {
 
         if (
           line.startsWith('Host') &&
-          line.substring(5).trim().startsWith(newSshHostLabel)
+          line.substring(5).trim().startsWith(sshHostLabel)
         ) {
           // 如果当前行是要删除的 Host，开始跳过
           skipLines = true
@@ -219,20 +163,14 @@ export class RemoteSSHConnector extends Disposable {
 
     // create sealos privateKey file in .ssh/sealos
     try {
-      const sshKeyPath = defaultSSHKeyPath + `/${identityFileSSHLabel}`
+      const sshKeyPath = defaultSSHKeyPath + `/${sshHostLabel}`
       fs.writeFileSync(sshKeyPath, normalPrivateKey)
 
-      // 针对mac和windows区别处理
       if (os.platform() === 'win32') {
-        // noscan
-        // 移除继承的权限
         execSync(`icacls "${sshKeyPath}" /inheritance:r`)
-        // 为当前用户授予完全控制权限
         execSync(`icacls "${sshKeyPath}" /grant:r ${process.env.USERNAME}:F`)
-        // 确保其他用户无法访问
         execSync(`icacls "${sshKeyPath}" /remove:g everyone`)
       } else {
-        // 设置文件权限为 600（仅文件所有者可读写）
         execSync(`chmod 600 "${sshKeyPath}"`)
       }
     } catch (error) {
@@ -245,7 +183,7 @@ export class RemoteSSHConnector extends Disposable {
     await vscode.commands.executeCommand(
       'vscode.openFolder',
       vscode.Uri.parse(
-        `vscode-remote://ssh-remote+${suffixSSHHostLabel}${workingDir}`
+        `vscode-remote://ssh-remote+${sshHostLabel}${workingDir}`
       ),
       {
         forceNewWindow: true,
@@ -254,5 +192,51 @@ export class RemoteSSHConnector extends Disposable {
     await vscode.window.showInformationMessage(
       `Connected to ${sshHost} with port ${sshPort} successfully.`
     )
+  }
+
+  private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
+    const isOfficialVscode =
+      vscode.env.uriScheme === 'vscode' ||
+      vscode.env.uriScheme === 'vscode-insiders' ||
+      vscode.env.uriScheme === 'cursor'
+    if (!isOfficialVscode) {
+      return true
+    }
+
+    const msVscodeRemoteExt = vscode.extensions.getExtension(
+      'ms-vscode-remote.remote-ssh'
+    )
+    if (msVscodeRemoteExt) {
+      return true
+    }
+
+    const install = 'Install'
+    const cancel = 'Cancel'
+
+    const action = await vscode.window.showInformationMessage(
+      'Please install "Remote - SSH" extension to connect to a Gitpod workspace.',
+      { modal: true },
+      install,
+      cancel
+    )
+
+    if (action === cancel) {
+      return false
+    }
+
+    vscode.window.showInformationMessage(
+      'Installing "ms-vscode-remote.remote-ssh" extension'
+    )
+
+    await vscode.commands.executeCommand(
+      'extension.open',
+      'ms-vscode-remote.remote-ssh'
+    )
+    await vscode.commands.executeCommand(
+      'workbench.extensions.installExtension',
+      'ms-vscode-remote.remote-ssh'
+    )
+
+    return true
   }
 }

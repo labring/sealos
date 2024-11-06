@@ -66,6 +66,10 @@
         "command": "devboxDashboard.openDevbox",
         "title": "Open Devbox",
         "icon": "images/open.svg"
+      },
+      {
+        "command": "devbox.openExternalLink",
+        "title": "Devbox:Open in Browser"
       }
     ],
     "views": {
@@ -78,6 +82,18 @@
           "id": "devboxFeedback",
           "name": "Feedback"
         }
+      ],
+      "networkView": [
+        {
+          "id": "networkView",
+          "name": "Network"
+        }
+      ],
+      "dbView": [
+        {
+          "id": "dbView",
+          "name": "Database"
+        }
       ]
     },
     "viewsContainers": {
@@ -86,6 +102,18 @@
           "id": "devboxView",
           "title": "Devbox",
           "icon": "images/explorer.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "networkView",
+          "title": "Network",
+          "icon": "images/network.svg"
+        },
+        {
+          "id": "dbView",
+          "title": "Database",
+          "icon": "images/database.svg"
         }
       ]
     },

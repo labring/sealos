@@ -81,7 +81,7 @@ const IDEButton = ({
         )}&sshPort=${encodeURIComponent(sshPort)}&base64PrivateKey=${encodeURIComponent(
           base64PrivateKey
         )}&sshHostLabel=${encodeURIComponent(
-          `${env.sealosDomain}-${env.namespace}-${devboxName}`
+          `${env.sealosDomain}_${env.namespace}_${devboxName}`
         )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`
 
         window.location.href = fullUri

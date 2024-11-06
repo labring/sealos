@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 
-import { KBDevboxType } from '@/types/k8s'
+import { devboxKey } from '@/constants/devbox'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { getPayloadWithoutVerification, verifyToken } from '@/services/backend/auth'
-import { adaptDevboxListItem } from '@/utils/adapt'
+import { adaptIngressListItem } from '@/utils/adapt'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,19 +40,20 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const devboxResult = await k8sCustomObjects.getNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha1',
+    const ingressesResult = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
-      'devboxes',
-      devboxName
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${devboxKey}=${devboxName}`
     )
 
-    const devbox = adaptDevboxListItem(devboxResult.body as KBDevboxType)
+    const networks = ingressesResult.body.items.map(adaptIngressListItem)
 
     return jsonRes({
       data: {
-        devbox
+        networks
       }
     })
   } catch (err: any) {

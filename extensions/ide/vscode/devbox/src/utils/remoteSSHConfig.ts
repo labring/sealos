@@ -1,16 +1,12 @@
 import * as vscode from 'vscode'
 
 // update Remote-SSH config
-export const modifiedRemoteSSHConfig = async (
-  sshHostLabel: string,
-  suffixSshHostLabel: string
-) => {
+export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
   const existingSSHHostPlatforms = vscode.workspace
     .getConfiguration('remote.SSH')
     .get<{ [host: string]: string }>('remotePlatform', {})
 
-  console.log('existingSSHHostPlatforms', existingSSHHostPlatforms)
-  // delete repeated remotePlatform by sshDomain/namespace/devboxName
+  // delete repeated remotePlatform by sshDomain_namespace_devboxName
   const newSSHHostPlatforms = Object.keys(existingSSHHostPlatforms).reduce(
     (acc: { [host: string]: string }, host: string) => {
       if (host.startsWith(sshHostLabel)) {
@@ -22,7 +18,7 @@ export const modifiedRemoteSSHConfig = async (
     {}
   )
   // add new ssh host label
-  newSSHHostPlatforms[suffixSshHostLabel] = 'linux'
+  newSSHHostPlatforms[sshHostLabel] = 'linux'
 
   await vscode.workspace
     .getConfiguration('remote.SSH')
