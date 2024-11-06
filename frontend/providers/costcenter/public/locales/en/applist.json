@@ -10,5 +10,6 @@
 	"APP-STORE": "APP Store",
 	"DB-BACKUP": "Database Backup",
 	"all_app_type": "ALL APP TYPE",
-	"DEV-BOX": "Devbox"
+	"DEV-BOX": "Devbox",
+	"LLM-TOKEN": "AI Proxy"
 }
