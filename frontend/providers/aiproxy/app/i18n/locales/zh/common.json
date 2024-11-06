@@ -1,6 +1,6 @@
 {
-  "title": "Ai 代理",
-  "description": "Ai 代理",
+  "title": "AI 代理",
+  "description": "AI 代理",
   "Sidebar": {
     "Home": "AI Proxy",
     "Logs": "调用日志",
@@ -55,7 +55,7 @@
   "copy": "复制",
   "createKey": "新建",
   "Key": {
-    "create": "新建 AI Proxy"
+    "create": "新建 API Key"
   },
   "confirm": "确认",
   "keystatus": {
@@ -74,5 +74,16 @@
   "price": {
     "title": "模型价格",
     "per1kTokens": "1k tokens"
-  }
+  },
+  "ernie": "百度文心",
+  "qwen": "阿里千问",
+  "chatglm": "智谱",
+  "deepseek": "deepseek",
+  "moonshot": "月之暗面",
+  "sparkdesk": "讯飞星火",
+  "abab": "minimax",
+  "doubao": "字节豆包",
+  "glm": "智谱",
+  "o": "OpenAI",
+  "gpt": "OpenAI"
 }

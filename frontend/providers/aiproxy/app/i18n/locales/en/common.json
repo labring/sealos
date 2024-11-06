@@ -1,6 +1,6 @@
 {
-  "title": "Ai proxy",
-  "description": "Ai agent",
+  "title": "AI proxy",
+  "description": "AI agent",
   "Sidebar": {
     "Home": "AI Proxy",
     "Logs": "call log",
@@ -55,7 +55,7 @@
   "copy": "copy",
   "createKey": "New",
   "Key": {
-    "create": "Create a new AI Proxy"
+    "create": "Create a new API Key"
   },
   "confirm": "confirm",
   "keystatus": {
@@ -74,5 +74,16 @@
   "price": {
     "title": "mode price",
     "per1kTokens": "1k tokens"
-  }
+  },
+  "ernie": "baidu-ernie",
+  "qwen": "alibaba-qwen",
+  "chatglm": "bigModel-chatglm",
+  "deepseek": "deepseek",
+  "moonshot": "moonshot",
+  "sparkdesk": "sparkdesk",
+  "abab": "minimax",
+  "doubao": "ByteDance-Doubao",
+  "glm": "glm",
+  "o": "OpenAI",
+  "gpt": "OpenAI"
 }

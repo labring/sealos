@@ -19,51 +19,10 @@ import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
 import { useMemo } from 'react'
 import { MyTooltip } from '@/components/MyTooltip'
-// 图标映射和标识符关系
-const modelGroups = {
-  ernie: {
-    icon: ErnieIcon,
-    identifiers: ['ernie']
-  },
-  qwen: {
-    icon: QwenIcon,
-    identifiers: ['qwen']
-  },
-  chatglm: {
-    icon: ChatglmIcon,
-    identifiers: ['chatglm', 'glm']
-  },
-  deepseek: {
-    icon: DeepseekIcon,
-    identifiers: ['deepseek']
-  },
-  moonshot: {
-    icon: MoonshotIcon,
-    identifiers: ['moonshot']
-  },
-  sparkdesk: {
-    icon: SparkdeskIcon,
-    identifiers: ['sparkdesk']
-  },
-  abab: {
-    icon: AbabIcon,
-    identifiers: ['abab']
-  },
-  doubao: {
-    icon: DoubaoIcon,
-    identifiers: ['doubao']
-  }
-}
+import { ModelIdentifier } from '@/types/front'
 
-const getIdentifier = (modelName: string): string => {
-  return modelName.toLowerCase().split(/[-._\d]/)[0]
-}
-
-// 获取模型图标
-const getModelIcon = (modelName: string): StaticImageData => {
-  const identifier = getIdentifier(modelName)
-  const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
-  return group?.icon || OpenAIIcon
+const getIdentifier = (modelName: string): ModelIdentifier => {
+  return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
 }
 
 const sortModels = (models: string[]): string[] => {
@@ -73,10 +32,12 @@ const sortModels = (models: string[]): string[] => {
   // 分组
   models.forEach((model) => {
     const identifier = getIdentifier(model)
-    if (!groupMap.has(identifier)) {
-      groupMap.set(identifier, [])
+    // 特殊处理 gpt 和 o1，将它们归为同一组 'openai'
+    const groupKey = identifier === 'gpt' || identifier === 'o' ? 'openai' : identifier
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, [])
     }
-    groupMap.get(identifier)?.push(model)
+    groupMap.get(groupKey)?.push(model)
   })
 
   // 按照 identifier 排序并扁平化结果
@@ -87,6 +48,53 @@ const sortModels = (models: string[]): string[] => {
 
 // 模型组件
 const ModelComponent = ({ modelName }: { modelName: string }) => {
+  // 图标映射和标识符关系
+  const modelGroups = {
+    openai: {
+      icon: OpenAIIcon,
+      identifiers: ['gpt', 'o1']
+    },
+    ernie: {
+      icon: ErnieIcon,
+      identifiers: ['ernie']
+    },
+    qwen: {
+      icon: QwenIcon,
+      identifiers: ['qwen']
+    },
+    chatglm: {
+      icon: ChatglmIcon,
+      identifiers: ['chatglm', 'glm']
+    },
+    deepseek: {
+      icon: DeepseekIcon,
+      identifiers: ['deepseek']
+    },
+    moonshot: {
+      icon: MoonshotIcon,
+      identifiers: ['moonshot']
+    },
+    sparkdesk: {
+      icon: SparkdeskIcon,
+      identifiers: ['sparkdesk']
+    },
+    abab: {
+      icon: AbabIcon,
+      identifiers: ['abab']
+    },
+    doubao: {
+      icon: DoubaoIcon,
+      identifiers: ['doubao']
+    }
+  }
+
+  // 获取模型图标
+  const getModelIcon = (modelName: string): StaticImageData => {
+    const identifier = getIdentifier(modelName)
+    const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
+    return group?.icon || OpenAIIcon
+  }
+
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   const iconSrc = getModelIcon(modelName)
@@ -102,7 +110,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
   return (
     <Flex align="center" gap="12px">
       <Image src={iconSrc} alt={modelName} width={20} height={20} />
-      <MyTooltip label={t('copy')}>
+      <MyTooltip label={t(getIdentifier(modelName))} width="auto" height="auto">
         <Text
           color="grayModern.900"
           fontFamily="PingFang SC"

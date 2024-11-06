@@ -18,16 +18,17 @@ import { useI18n } from '@/providers/i18n/i18nContext'
 import { useQuery } from '@tanstack/react-query'
 import { ModelPrice } from '@/types/backend'
 import { getModelPrices } from '@/api/platform'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
-  Column,
   createColumnHelper,
   getCoreRowModel,
   useReactTable,
   flexRender
 } from '@tanstack/react-table'
-import { TFunction } from 'i18next'
 import { SealosCoin } from '@sealos/ui'
+import { ModelIdentifier } from '@/types/front'
+import { MyTooltip } from '@/components/MyTooltip'
+import { useMessage } from '@sealos/ui'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
 import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
@@ -115,6 +116,10 @@ function PriceTable() {
     }
   }
 
+  const getIdentifier = (modelName: string): ModelIdentifier => {
+    return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
+  }
+
   const getModelIcon = (modelName: string): StaticImageData => {
     const identifier = getIdentifier(modelName)
     const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
@@ -122,31 +127,61 @@ function PriceTable() {
   }
 
   const ModelComponent = ({ modelName }: { modelName: string }) => {
+    const { message } = useMessage({
+      warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+      warningIconBg: 'var(--Yellow-500, #F79009)',
+      warningIconFill: 'white',
+      successBoxBg: 'var(--Green-50, #EDFBF3)',
+      successIconBg: 'var(--Green-600, #039855)',
+      successIconFill: 'white'
+    })
     const iconSrc = getModelIcon(modelName)
 
     return (
       <Flex align="center" gap="12px">
         <Image src={iconSrc} alt={modelName} width={20} height={20} />
-        <Text
-          color="grayModern.900"
-          fontFamily="PingFang SC"
-          fontSize="12px"
-          fontWeight={500}
-          lineHeight="16px"
-          letterSpacing="0.5px">
-          {modelName}
-        </Text>
+        <MyTooltip label={t(getIdentifier(modelName))} width="auto" height="auto">
+          <Text
+            color="grayModern.900"
+            fontFamily="PingFang SC"
+            fontSize="12px"
+            fontWeight={500}
+            lineHeight="16px"
+            letterSpacing="0.5px"
+            onClick={() =>
+              navigator.clipboard.writeText(modelName).then(
+                () => {
+                  message({
+                    status: 'success',
+                    title: t('copySuccess'),
+                    isClosable: true,
+                    duration: 2000,
+                    position: 'top'
+                  })
+                },
+                (err) => {
+                  message({
+                    status: 'warning',
+                    title: t('copyFailed'),
+                    description: err?.message || t('copyFailed'),
+                    isClosable: true,
+                    position: 'top'
+                  })
+                }
+              )
+            }
+            cursor="pointer">
+            {modelName}
+          </Text>
+        </MyTooltip>
       </Flex>
     )
-  }
-
-  const getIdentifier = (modelName: string): string => {
-    return modelName.toLowerCase().split(/[-._\d]/)[0]
   }
 
   const sortModelsByIdentifier = (models: ModelPrice[]): ModelPrice[] => {
     const groupedModels = new Map<string, ModelPrice[]>()
 
+    // Group models by identifier
     models.forEach((model) => {
       const identifier = getIdentifier(model.name)
       if (!groupedModels.has(identifier)) {
@@ -155,9 +190,15 @@ function PriceTable() {
       groupedModels.get(identifier)!.push(model)
     })
 
-    const sortedEntries = Array.from(groupedModels.entries()).sort((a, b) =>
-      a[0].localeCompare(b[0])
-    )
+    // Define order based on modelGroups
+    const orderMap = new Map(Object.keys(modelGroups).map((key, index) => [key, index]))
+
+    // Sort based on modelGroups order, unknown models go to the end
+    const sortedEntries = Array.from(groupedModels.entries()).sort((a, b) => {
+      const orderA = orderMap.has(a[0]) ? orderMap.get(a[0])! : Number.MAX_VALUE
+      const orderB = orderMap.has(b[0]) ? orderMap.get(b[0])! : Number.MAX_VALUE
+      return orderA - orderB
+    })
 
     return sortedEntries.flatMap(([_, models]) => models)
   }

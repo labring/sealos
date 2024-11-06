@@ -316,7 +316,11 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
               }
             )
           }}>
-          <MyTooltip label={t('copy')}>{'sk-' + '*'.repeat(info.getValue().length)}</MyTooltip>
+          <MyTooltip label={t('copy')}>
+            {'sk-' +
+              info.getValue().substring(0, 8) +
+              '*'.repeat(Math.max(0, info.getValue().length - 8))}
+          </MyTooltip>
         </Text>
       )
     }),
