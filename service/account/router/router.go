@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -76,15 +77,17 @@ func RegisterPayRouter() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Create a buffered channel interrupt and use the signal.
-	rootCtx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
 	// Start the HTTP server to listen on port 2333.
+	srv := &http.Server{
+		Addr:    ":2333",
+		Handler: router,
+	}
 	go func() {
-		err := router.Run(":2333")
-		fmt.Println("account service is running on port 2333")
-		if err != nil {
-			log.Fatalf("Error running server: %v", err)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
 		}
 	}()
 
@@ -98,12 +101,18 @@ func RegisterPayRouter() {
 	go startReconcileBilling(ctx)
 
 	// process hourly archive
-	go StartHourlyBillingActiveArchive(ctx)
-
-	//dao.ActiveBillingTask.Start()
+	go startHourlyBillingActiveArchive(ctx)
 
 	// Wait for interrupt signal.
 	<-rootCtx.Done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown: ", err)
+	}
+
+	dao.BillingTask.Stop()
 
 	// Terminate procedure.
 	os.Exit(0)
@@ -168,7 +177,7 @@ func startReconcileBilling(ctx context.Context) {
 	}
 }
 
-func StartHourlyBillingActiveArchive(ctx context.Context) {
+func startHourlyBillingActiveArchive(ctx context.Context) {
 	logrus.Info("Starting hourly billing active archive service")
 	now := time.Now().UTC()
 	lastHourStart := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, now.Location())
