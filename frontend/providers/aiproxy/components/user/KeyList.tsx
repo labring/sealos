@@ -806,7 +806,7 @@ function CreateKeyModal({
           background="grayModern.25"
           w="full">
           <Flex w="360px" justifyContent="space-between" alignItems="center">
-            <Flex w="98px" alignItems="center" gap="10px" flexShrink={0}>
+            <Flex alignItems="center" gap="10px" flexShrink={0}>
               {t('Key.create')}
             </Flex>
             <Flex
@@ -847,7 +847,7 @@ function CreateKeyModal({
                 fontWeight={500}
                 lineHeight="20px"
                 letterSpacing="0.1px">
-                {t('key.name')}
+                {t('key.createName')}
               </Text>
               <FormControl isInvalid={!!error}>
                 <Input

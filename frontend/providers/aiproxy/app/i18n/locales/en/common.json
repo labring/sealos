@@ -2,12 +2,12 @@
   "title": "AI proxy",
   "description": "AI agent",
   "Sidebar": {
-    "Home": "AI Proxy",
-    "Logs": "call log",
-    "Price": "model price"
+    "Home": "API Keys",
+    "Logs": "Logs",
+    "Price": "Pricing"
   },
   "keyList": {
-    "title": "AI Proxy"
+    "title": "API Keys"
   },
   "key": {
     "key": "API Key",
@@ -27,16 +27,17 @@
     "updateSuccess": "Update status successful",
     "updateFailed": "Update status failed",
     "unused": "not use",
-    "inputPrice": "Enter unit price",
-    "outputPrice": "Output unit price"
+    "inputPrice": "Input price",
+    "outputPrice": "Output price",
+    "createName": "Name"
   },
   "logs": {
-    "call_log": "call log",
-    "name": "name",
+    "call_log": "Logs",
+    "name": "Name",
     "status": "state",
-    "time": "time",
+    "time": "Time",
     "modal": "Model",
-    "prompt_tokens": "enter",
+    "prompt_tokens": "input",
     "completion_tokens": "output",
     "price": "price",
     "select_modal": "Please select a model",
@@ -55,9 +56,9 @@
   "copy": "copy",
   "createKey": "New",
   "Key": {
-    "create": "Create a new API Key"
+    "create": "Create API Key"
   },
-  "confirm": "confirm",
+  "confirm": "Confirm",
   "keystatus": {
     "enabled": "enable",
     "disabled": "Disable",
@@ -70,9 +71,9 @@
   "enable": "enable",
   "copySuccess": "Copied successfully",
   "copyFailed": "Copy failed",
-  "noData": "You don’t have an AI Proxy yet",
+  "noData": "You don’t have an API Key yet",
   "price": {
-    "title": "mode price",
+    "title": "Pricing",
     "per1kTokens": "1k tokens"
   },
   "ernie": "baidu-ernie",

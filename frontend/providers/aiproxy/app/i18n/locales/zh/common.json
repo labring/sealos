@@ -2,12 +2,12 @@
   "title": "AI 代理",
   "description": "AI 代理",
   "Sidebar": {
-    "Home": "AI Proxy",
+    "Home": "API Keys",
     "Logs": "调用日志",
     "Price": "模型价格"
   },
   "keyList": {
-    "title": "AI Proxy"
+    "title": "API Keys"
   },
   "key": {
     "key": "API Key",
@@ -28,7 +28,8 @@
     "updateFailed": "状态更新失败",
     "unused": "未使用",
     "inputPrice": "输入单价",
-    "outputPrice": "输出单价"
+    "outputPrice": "输出单价",
+    "createName": "名称"
   },
   "logs": {
     "call_log": "调用日志",
@@ -50,7 +51,7 @@
   "Page": "页",
   "Total": "总数",
   "modelList": {
-    "title": "可支持的模型"
+    "title": "支持的模型"
   },
   "copy": "复制",
   "createKey": "新建",
@@ -70,7 +71,7 @@
   "enable": "启用",
   "copySuccess": "复制成功",
   "copyFailed": "复制失败",
-  "noData": "你还没有 AI Proxy",
+  "noData": "你还没有 API Key",
   "price": {
     "title": "模型价格",
     "per1kTokens": "1k tokens"

@@ -55,6 +55,15 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       }
     }
 
+    ;(async () => {
+      try {
+        const lang = await sealosApp.getLanguage()
+        i18n.changeLanguage(lang.lng)
+      } catch (error) {
+        i18n.changeLanguage('zh')
+      }
+    })()
+
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

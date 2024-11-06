@@ -106,6 +106,8 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
                   fontWeight={500}
                   lineHeight="16px"
                   letterSpacing="0.5px"
+                  textAlign="center"
+                  whiteSpace="nowrap"
                   _groupHover={{ color: 'grayModern.900' }}>
                   {menu.value}
                 </Text>
