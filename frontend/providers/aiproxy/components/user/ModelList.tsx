@@ -1,11 +1,13 @@
 'use client'
-import { Badge, Center, Flex, Spinner, Text } from '@chakra-ui/react'
+import { Badge, Center, Flex, Spinner, Text, Tooltip } from '@chakra-ui/react'
 import { ListIcon } from '@/ui/icons/home/Icons'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import Image, { StaticImageData } from 'next/image'
 import { useQuery } from '@tanstack/react-query'
 import { getModels } from '@/api/platform'
+import { useMessage } from '@sealos/ui'
+// icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
 import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
 import ChatglmIcon from '@/ui/svg/icons/modelist/chatglm.svg'
@@ -15,7 +17,8 @@ import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
 import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
-import GlmIcon from '@/ui/svg/icons/modelist/glm.svg'
+import { useMemo } from 'react'
+import { MyTooltip } from '@/components/MyTooltip'
 // 图标映射和标识符关系
 const modelGroups = {
   ernie: {
@@ -52,46 +55,89 @@ const modelGroups = {
   }
 }
 
+const getIdentifier = (modelName: string): string => {
+  return modelName.toLowerCase().split(/[-._\d]/)[0]
+}
+
 // 获取模型图标
 const getModelIcon = (modelName: string): StaticImageData => {
-  const identifier = modelName.toLowerCase().split(/[-._\d]/)[0]
+  const identifier = getIdentifier(modelName)
   const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
   return group?.icon || OpenAIIcon
 }
 
-// 按图标分组模型
-const sortModelsByIcon = (models: string[]): string[] => {
-  const groupedModels = new Map<StaticImageData, string[]>()
+const sortModels = (models: string[]): string[] => {
+  // 使用 Map 进行分组
+  const groupMap = new Map<string, string[]>()
 
-  // 按图标分组
+  // 分组
   models.forEach((model) => {
-    const icon = getModelIcon(model)
-    if (!groupedModels.has(icon)) {
-      groupedModels.set(icon, [])
+    const identifier = getIdentifier(model)
+    if (!groupMap.has(identifier)) {
+      groupMap.set(identifier, [])
     }
-    groupedModels.get(icon)?.push(model)
+    groupMap.get(identifier)?.push(model)
   })
 
-  // 将分组后的模型展平为数组
-  return Array.from(groupedModels.values()).flat()
+  // 按照 identifier 排序并扁平化结果
+  return Array.from(groupMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0])) // 按 identifier 排序
+    .flatMap(([_, models]) => models.sort()) // 扁平化并保持每组内的排序
 }
 
 // 模型组件
 const ModelComponent = ({ modelName }: { modelName: string }) => {
+  const { lng } = useI18n()
+  const { t } = useTranslationClientSide(lng, 'common')
   const iconSrc = getModelIcon(modelName)
+  const { message } = useMessage({
+    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningIconFill: 'white',
+    successBoxBg: 'var(--Green-50, #EDFBF3)',
+    successIconBg: 'var(--Green-600, #039855)',
+    successIconFill: 'white'
+  })
 
   return (
     <Flex align="center" gap="12px">
       <Image src={iconSrc} alt={modelName} width={20} height={20} />
-      <Text
-        color="grayModern.900"
-        fontFamily="PingFang SC"
-        fontSize="12px"
-        fontWeight={500}
-        lineHeight="16px"
-        letterSpacing="0.5px">
-        {modelName}
-      </Text>
+      <MyTooltip label={t('copy')}>
+        <Text
+          color="grayModern.900"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px"
+          onClick={() =>
+            navigator.clipboard.writeText(modelName).then(
+              () => {
+                message({
+                  status: 'success',
+                  title: t('copySuccess'),
+                  isClosable: true,
+                  duration: 2000,
+                  position: 'top'
+                })
+              },
+              (err) => {
+                message({
+                  status: 'warning',
+                  title: t('copyFailed'),
+                  description: err?.message || t('copyFailed'),
+                  isClosable: true,
+                  position: 'top'
+                })
+              }
+            )
+          }
+          cursor="pointer"
+          _hover={{ color: 'blue.500' }}
+          transition="color 0.2s ease">
+          {modelName}
+        </Text>
+      </MyTooltip>
     </Flex>
   )
 }
@@ -102,8 +148,7 @@ const ModelList: React.FC = () => {
   const { t } = useTranslationClientSide(lng, 'common')
   const { isLoading, data } = useQuery(['getModels'], () => getModels())
 
-  // 对模型进行排序
-  const sortedModels = data ? sortModelsByIcon(data) : []
+  const sortedData = useMemo(() => sortModels(data || []), [data])
 
   return (
     <>
@@ -146,7 +191,7 @@ const ModelList: React.FC = () => {
             <Spinner size="md" color="grayModern.800" />
           </Center>
         ) : (
-          sortedModels.map((model) => <ModelComponent key={model} modelName={model} />)
+          sortedData.map((model) => <ModelComponent key={model} modelName={model} />)
         )}
       </Flex>
     </>

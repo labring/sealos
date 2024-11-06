@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       justify="center"
       align="center"
       bg="white">
-      <Flex borderRadius="12px" h="full" w="full" direction="column" padding="24px 32px 12px 32px">
+      <Flex borderRadius="12px" h="full" w="full" direction="column" padding="24px 32px 18px 32px">
         {children}
       </Flex>
     </Flex>

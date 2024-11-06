@@ -3,7 +3,8 @@
   "description": "Ai 代理",
   "Sidebar": {
     "Home": "AI Proxy",
-    "Logs": "调用日志"
+    "Logs": "调用日志",
+    "Price": "模型价格"
   },
   "keyList": {
     "title": "AI Proxy"
@@ -25,7 +26,9 @@
     "deleteFailed": "删除失败",
     "updateSuccess": "状态更新成功",
     "updateFailed": "状态更新失败",
-    "unused": "未使用"
+    "unused": "未使用",
+    "inputPrice": "输入单价",
+    "outputPrice": "输出单价"
   },
   "logs": {
     "call_log": "调用日志",
@@ -67,5 +70,9 @@
   "enable": "启用",
   "copySuccess": "复制成功",
   "copyFailed": "复制失败",
-  "noData": "你还没有 AI Proxy"
+  "noData": "你还没有 AI Proxy",
+  "price": {
+    "title": "模型价格",
+    "per1kTokens": "1k tokens"
+  }
 }

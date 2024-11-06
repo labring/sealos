@@ -3,7 +3,8 @@
   "description": "Ai agent",
   "Sidebar": {
     "Home": "AI Proxy",
-    "Logs": "call log"
+    "Logs": "call log",
+    "Price": "model price"
   },
   "keyList": {
     "title": "AI Proxy"
@@ -25,7 +26,9 @@
     "deleteFailed": "Failed to delete key",
     "updateSuccess": "Update status successful",
     "updateFailed": "Update status failed",
-    "unused": "not use"
+    "unused": "not use",
+    "inputPrice": "Enter unit price",
+    "outputPrice": "Output unit price"
   },
   "logs": {
     "call_log": "call log",
@@ -67,5 +70,9 @@
   "enable": "enable",
   "copySuccess": "Copied successfully",
   "copyFailed": "Copy failed",
-  "noData": "You don’t have an AI Proxy yet"
+  "noData": "You don’t have an AI Proxy yet",
+  "price": {
+    "title": "mode price",
+    "per1kTokens": "1k tokens"
+  }
 }

@@ -16,21 +16,20 @@ export function BaseTable<T extends unknown>({
   isLoading
 }: { table: ReactTable<T>; isLoading: boolean } & TableContainerProps) {
   return (
-    <TableContainer overflowX={'auto'}>
-      <Table variant="unstyled" fontSize={'12px'} width={'full'}>
+    <TableContainer w="full" h="full" overflow="hidden">
+      <Table variant="simple" fontSize="12px" w="full" size="md">
         <Thead>
           {table.getHeaderGroups().map((headers) => {
             return (
-              <Tr key={headers.id}>
+              <Tr key={headers.id} height="42px" alignSelf="stretch" bg="grayModern.100">
                 {headers.headers.map((header, i) => {
                   return (
                     <Th
                       py="13px"
-                      px={'24px'}
+                      px="24px"
                       key={header.id}
-                      bg={'grayModern.100'}
-                      color={'grayModern.600'}
-                      border={'none'}
+                      color="grayModern.600"
+                      border="none"
                       borderTopLeftRadius={i === 0 ? '6px' : '0'}
                       borderBottomLeftRadius={i === 0 ? '6px' : '0'}
                       borderTopRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}
@@ -45,8 +44,13 @@ export function BaseTable<T extends unknown>({
         </Thead>
         <Tbody>
           {isLoading ? (
-            <Tr>
-              <Td h={'300px'} colSpan={table.getAllColumns().length} textAlign="center" py={4}>
+            <Tr height="48px" alignSelf="stretch" border="none">
+              <Td
+                h="300px"
+                colSpan={table.getAllColumns().length}
+                textAlign="center"
+                py={4}
+                border="none">
                 <Spinner size="xl" />
               </Td>
             </Tr>
@@ -55,12 +59,13 @@ export function BaseTable<T extends unknown>({
               return (
                 <Tr
                   key={item.id}
-                  fontSize={'12px'}
-                  borderBottom={'1px solid'}
-                  borderColor={'#F0F1F6'}>
+                  alignSelf="stretch"
+                  borderBottom="1px solid"
+                  borderColor="grayModern.150"
+                  fontSize="12px">
                   {item.getAllCells().map((cell, i) => {
                     return (
-                      <Td py="10px" key={cell.id} px={'24px'}>
+                      <Td py="10px" key={cell.id} px="24px">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Td>
                     )

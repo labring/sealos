@@ -9,9 +9,11 @@ import { useEffect } from 'react'
 import { initAppConfig } from '@/api/platform'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useBackendStore } from '@/store/backend'
+import { useTranslationClientSide } from '@/app/i18n/client'
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const { lng } = useI18n()
+  const { i18n } = useTranslationClientSide(lng)
   const { setAiproxyBackend } = useBackendStore()
   // init session
   useEffect(() => {
@@ -44,40 +46,28 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
     initConfig()
 
-    // const changeI18n = async (data: any) => {
-    //   const lastLang = getcl()
-    //   const newLang = data.currentLanguage
-    //   if (lastLang !== newLang) {
-    //     router.push(pathname, { locale: newLang })
-    //     setLangStore(newLang)
-    //     setRefresh((state) => !state)
-    //   }
-    // }
+    const changeI18n = async (data: any) => {
+      try {
+        const { lng } = await sealosApp.getLanguage()
+        i18n.changeLanguage(lng)
+      } catch (error) {
+        i18n.changeLanguage('zh')
+      }
+    }
 
-    // ;(async () => {
-    //   try {
-    //     const lang = await sealosApp.getLanguage()
-    //     changeI18n({
-    //       currentLanguage: lang.lng
-    //     })
-    //   } catch (error) {
-    //     changeI18n({
-    //       currentLanguage: 'zh'
-    //     })
-    //   }
-    // })()
-
-    // return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
+    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
-    <Flex height="100vh" width="100vw">
-      <Box w="88px">
+    <Flex height="100vh" width="100vw" direction="row">
+      <Box w="88px" h="100vh">
         <SideBar lng={lng} />
       </Box>
       {/* Main Content */}
-      <Box flex={1}>{children}</Box>
+      <Box h="100vh" w="full" flex={1}>
+        {children}
+      </Box>
     </Flex>
   )
 }

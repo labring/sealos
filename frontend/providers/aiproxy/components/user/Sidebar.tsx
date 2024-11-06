@@ -1,27 +1,29 @@
-'use client';
-import { Flex, Text } from '@chakra-ui/react';
-import Image, { StaticImageData } from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+'use client'
+import { Flex, Text } from '@chakra-ui/react'
+import Image, { StaticImageData } from 'next/image'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
-import { useTranslationClientSide } from '@/app/i18n/client';
-import homeIcon from '@/ui/svg/icons/sidebar/home.svg';
-import homeIcon_a from '@/ui/svg/icons/sidebar/home_a.svg';
-import logsIcon from '@/ui/svg/icons/sidebar/logs.svg';
-import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg';
+import { useTranslationClientSide } from '@/app/i18n/client'
+import homeIcon from '@/ui/svg/icons/sidebar/home.svg'
+import homeIcon_a from '@/ui/svg/icons/sidebar/home_a.svg'
+import logsIcon from '@/ui/svg/icons/sidebar/logs.svg'
+import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg'
+import priceIcon from '@/ui/svg/icons/sidebar/price.svg'
+import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg'
 
 type Menu = {
-  id: string;
-  url: string;
-  value: string;
-  icon: StaticImageData;
-  activeIcon: StaticImageData;
-  display: boolean;
-};
+  id: string
+  url: string
+  value: string
+  icon: StaticImageData
+  activeIcon: StaticImageData
+  display: boolean
+}
 
 const SideBar = ({ lng }: { lng: string }): JSX.Element => {
-  const pathname = usePathname();
-  const { t } = useTranslationClientSide(lng, 'common');
+  const pathname = usePathname()
+  const { t } = useTranslationClientSide(lng, 'common')
 
   const menus: Menu[] = [
     {
@@ -39,8 +41,16 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
       icon: logsIcon,
       activeIcon: logsIcon_a,
       display: true
+    },
+    {
+      id: 'price',
+      url: '/price',
+      value: t('Sidebar.Price'),
+      icon: priceIcon,
+      activeIcon: priceIcon_a,
+      display: true
     }
-  ];
+  ]
 
   return (
     <Flex
@@ -49,13 +59,12 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
       px="12px"
       gap="var(--md, 8px)"
       alignContent="center"
-      flexShrink={0}
-    >
+      flexShrink={0}>
       {menus
         .filter((menu) => menu.display)
         .map((menu) => {
-          const fullUrl = `/${lng}${menu.url}`;
-          const isActive = pathname === fullUrl;
+          const fullUrl = `/${lng}${menu.url}`
+          const isActive = pathname === fullUrl
 
           return (
             <Link href={menu.url} key={menu.id} style={{ textDecoration: 'none' }}>
@@ -73,18 +82,17 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
                 role="group"
                 _hover={{ backgroundColor: '#9699B426' }}
                 onMouseEnter={(e) => {
-                  const img = e.currentTarget.querySelector('img');
+                  const img = e.currentTarget.querySelector('img')
                   if (img) {
-                    img.src = menu.activeIcon.src;
+                    img.src = menu.activeIcon.src
                   }
                 }}
                 onMouseLeave={(e) => {
-                  const img = e.currentTarget.querySelector('img');
+                  const img = e.currentTarget.querySelector('img')
                   if (img && !isActive) {
-                    img.src = menu.icon.src;
+                    img.src = menu.icon.src
                   }
-                }}
-              >
+                }}>
                 <Image
                   src={isActive ? menu.activeIcon : menu.icon}
                   alt={menu.value}
@@ -98,16 +106,15 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
                   fontWeight={500}
                   lineHeight="16px"
                   letterSpacing="0.5px"
-                  _groupHover={{ color: 'grayModern.900' }}
-                >
+                  _groupHover={{ color: 'grayModern.900' }}>
                   {menu.value}
                 </Text>
               </Flex>
             </Link>
-          );
+          )
         })}
     </Flex>
-  );
-};
+  )
+}
 
-export default SideBar;
+export default SideBar
