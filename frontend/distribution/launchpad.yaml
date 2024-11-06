@@ -45,8 +45,8 @@ spec:
           value: FLAG_SEALOS_DOMAIN
         - name: MONITOR_URL
           value: http://launchpad-monitor.sealos.svc.cluster.local:8428
-        - name: EXPORT_APP_URL
-          value: "http://FLAG_SEALOS_DOMAIN:5002/api/exportApp"
+        - name: SERVER_BASE_URL
+          value: "http://FLAG_SEALOS_DOMAIN:5002"
         # IMAGE_REPO_URL="http://192.168.0.127:5000/v2"
         - name: IMAGE_REPO_URL
           value: "http://FLAG_SEALOS_DOMAIN:5000/v2"
@@ -56,6 +56,10 @@ spec:
         # IMAGE_REPO_PASSWORD="passw0rd"
         - name: IMAGE_REPO_PASSWORD
           value: "passw0rd"
+        - name: LAUNCHPAD_USERNAME
+          value: "admin"
+        - name: LAUNCHPAD_PASSWORD
+          value: "Sealos@2024"
         ports:
         - containerPort: 3000
 ---

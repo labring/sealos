@@ -395,5 +395,98 @@ def deploy_app_with_image():
     detail_url = 'http://' + CLUSTER_DOMAIN + ':32293/app/detail?namespace=' + namespace + '&&name=' + appname
     return jsonify({'message': 'Application deployed successfully', 'url': detail_url}), 200
 
+def run_command_loadAndPushImage(command):
+    """执行命令并返回结果"""
+    try:
+        res = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return res
+    except subprocess.CalledProcessError as e:
+        print("Error executing command: " + e.stderr.decode().strip())
+        return e.stderr.decode().strip()
+
+# API端点：加载、标记并推送镜像
+@app.route('/api/loadAndPushImage', methods=['POST'])
+def load_and_push_image():
+    # 获取请求参数
+    image_name = request.form.get('image_name')
+    if not image_name:
+        return jsonify({'error': 'image_name is required'}), 400
+
+    tag = request.form.get('tag')
+    if not tag:
+        return jsonify({'error': 'tag is required'}), 400
+
+    namespace = request.form.get('namespace')
+    if not namespace:
+        return jsonify({'error': 'namespace is required'}), 400
+
+    image_file = request.files.get('image_file')
+    if not image_file:
+        return jsonify({'error': 'image_file is required'}), 400
+
+    # 检查并创建保存路径
+    workdir = os.path.join(SAVE_PATH, 'temp')
+    os.makedirs(workdir, exist_ok=True)
+
+    # 保存上传的镜像文件
+    image_path = os.path.join(workdir, image_file.filename)
+    image_file.save(image_path)
+    print('Saved image file to: {}'.format(image_path), flush=True)
+
+    try:
+        # 加载镜像并获取镜像的名称
+        load_output = run_command_loadAndPushImage('docker load -i {}'.format(image_path))
+        print('load_output: {}'.format(load_output))
+        
+        if isinstance(load_output, subprocess.CompletedProcess):
+            load_output_str = load_output.stdout.decode().strip()
+        else:
+            load_output_str = load_output
+
+        # 确认加载输出中是否包含 'Loaded' 字样
+        if 'Loaded' not in load_output_str:
+            return jsonify({'error': 'Failed to load image: ' + load_output_str}), 500
+        print("Loaded image from {}".format(image_path), flush=True)
+
+        # 从docker load的输出中提取镜像名称
+        # 例子输出: Loaded image: sealos.hub:5000/pause:3.6
+        base_image_name = load_output_str.split('Loaded image: ')[-1]
+        print("Base image name extracted: {}".format(base_image_name), flush=True)
+
+        # 给镜像打标签，并加上命名空间
+        full_image_name = 'sealos.hub:5000/{}/{}:{}'.format(namespace, image_name, tag)
+        docker_tag_command = 'docker tag {} {}'.format(base_image_name, full_image_name)
+        print("Running command: {}".format(docker_tag_command))  # 打印出完整命令
+        err = run_command_loadAndPushImage(docker_tag_command)
+
+        # 判断是否出错
+        if isinstance(err, subprocess.CalledProcessError):
+            error_message = err.stderr.decode().strip()  # 获取标准错误信息
+            print("Error during docker tag: {}".format(error_message))
+            return jsonify({'error': 'Failed to tag image: ' + error_message}), 500
+
+        print("Tagged image as {}".format(full_image_name), flush=True)
+
+        # 推送镜像到 sealos.hub
+        docker_push_command = 'docker push {}'.format(full_image_name)
+        print("Running push command: {}".format(docker_push_command))
+        err = run_command_loadAndPushImage(docker_push_command)
+
+        # 判断推送是否成功
+        if isinstance(err, subprocess.CalledProcessError):
+            error_message = err.stderr.decode().strip()  # 获取标准错误信息
+            print("Error during docker push: {}".format(error_message))
+            return jsonify({'error': 'Failed to push image: ' + error_message}), 500
+
+        print("Pushed image to {}".format(full_image_name), flush=True)
+
+    finally:
+        # 确保删除临时镜像文件
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    # 返回成功响应
+    return jsonify({'message': 'Image {} loaded, tagged, and pushed successfully'.format(full_image_name)}), 200
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)
