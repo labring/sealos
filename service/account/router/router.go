@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -69,8 +70,8 @@ func RegisterPayRouter() {
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo)
 	router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
-		POST(helper.AdminChargeBilling, api.AdminChargeBilling).
-		POST(helper.AdminActiveBilling, api.AdminActiveBilling)
+		POST(helper.AdminChargeBilling, api.AdminChargeBilling)
+	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
@@ -93,12 +94,12 @@ func RegisterPayRouter() {
 		go startRewardProcessingTimer(ctx)
 	}
 	// process llm task
-	//go startReconcileLLMBilling(ctx)
+	go startReconcileBilling(ctx)
 
 	// process hourly archive
 	go StartHourlyBillingActiveArchive(ctx)
 
-	dao.ActiveBillingTask.Start()
+	//dao.ActiveBillingTask.Start()
 
 	// Wait for interrupt signal.
 	<-rootCtx.Done()
@@ -123,39 +124,39 @@ func startRewardProcessingTimer(ctx context.Context) {
 	}
 }
 
-//var lastReconcileTime atomic.Value
+var lastReconcileTime atomic.Value
 
-//func startReconcileLLMBilling(ctx context.Context) {
-//	// initialize to one hour ago
-//	lastReconcileTime.Store(time.Now().UTC().Add(-time.Hour))
-//
-//	tickerTime, err := time.ParseDuration(env.GetEnvWithDefault("LLM_BILLING_RECONCILE_INTERVAL", "1m"))
-//	if err != nil {
-//		logrus.Errorf("Failed to parse LLM_BILLING_RECONCILE_INTERVAL: %v", err)
-//		tickerTime = time.Minute
-//	}
-//	// create a timer and execute it once every minute
-//	ticker := time.NewTicker(tickerTime)
-//	defer ticker.Stop()
-//
-//	logrus.Info("Starting LLM billing reconciliation service, interval: ", tickerTime.String())
-//
-//	// This command is executed for the first time to process the data within the last hour
-//	doLLMTokenReconcile(time.Now().UTC().Add(-time.Hour), time.Now().UTC())
-//
-//	for {
-//		select {
-//		case <-ctx.Done():
-//			logrus.Info("Stopping LLM billing reconciliation service")
-//			return
-//		case t := <-ticker.C:
-//			currentTime := t.UTC()
-//			lastTime := lastReconcileTime.Load().(time.Time)
-//			doLLMTokenReconcile(lastTime, currentTime)
-//		}
-//	}
-//}
-//
+func startReconcileBilling(ctx context.Context) {
+	// initialize to one hour ago
+	lastReconcileTime.Store(time.Now().UTC().Add(-time.Hour))
+
+	tickerTime, err := time.ParseDuration(env.GetEnvWithDefault("BILLING_RECONCILE_INTERVAL", "1m"))
+	if err != nil {
+		logrus.Errorf("Failed to parse LLM_BILLING_RECONCILE_INTERVAL: %v", err)
+		tickerTime = time.Minute
+	}
+	// create a timer and execute it once every minute
+	ticker := time.NewTicker(tickerTime)
+	defer ticker.Stop()
+
+	logrus.Info("Starting LLM billing reconciliation service, interval: ", tickerTime.String())
+
+	// This command is executed for the first time to process the data within the last hour
+	doBillingReconcile(time.Now().UTC().Add(-time.Hour), time.Now().UTC())
+
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Info("Stopping LLM billing reconciliation service")
+			return
+		case t := <-ticker.C:
+			currentTime := t.UTC()
+			lastTime := lastReconcileTime.Load().(time.Time)
+			doBillingReconcile(lastTime, currentTime)
+		}
+	}
+}
+
 //func StartHourlyLLMBillingArchive(ctx context.Context) {
 //	logrus.Info("Starting hourly LLM billing archive service")
 //	now := time.Now().UTC()
@@ -224,12 +225,12 @@ func doHourlyArchive(hourStart time.Time) error {
 		maxRetries, lastErr)
 }
 
-//func doLLMTokenReconcile(startTime, endTime time.Time) {
-//	logrus.Infof("Starting reconciliation from %v to %v", startTime, endTime)
-//	if err := dao.DBClient.ReconcileUnsettledLLMBilling(startTime, endTime); err != nil {
-//		logrus.Errorf("Failed to reconcile LLM billing: %v", err)
-//		return
-//	}
-//	lastReconcileTime.Store(endTime)
-//	logrus.Infof("Successfully reconciled LLM billing until %v", endTime)
-//}
+func doBillingReconcile(startTime, endTime time.Time) {
+	logrus.Infof("Starting reconciliation from %v to %v", startTime, endTime)
+	if err := dao.DBClient.ReconcileActiveBilling(startTime, endTime); err != nil {
+		logrus.Errorf("Failed to reconcile LLM billing: %v", err)
+		return
+	}
+	lastReconcileTime.Store(endTime)
+	logrus.Infof("Successfully reconciled LLM billing until %v", endTime)
+}

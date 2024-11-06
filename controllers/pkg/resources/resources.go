@@ -85,7 +85,8 @@ type Monitor struct {
 	Property   string      `json:"property,omitempty" bson:"property,omitempty"`
 }
 
-type ActiveMonitor struct {
+type ActiveBilling struct {
+	ID        string            `json:"_id,omitempty" bson:"_id"`
 	Time      time.Time         `json:"time,omitempty" bson:"time"`
 	Namespace string            `json:"namespace" bson:"namespace"`
 	AppType   string            `json:"app_type" bson:"app_type"`
@@ -102,6 +103,7 @@ type ConsumptionStatus string
 
 const (
 	Consumed      ConsumptionStatus = "consumed"
+	Processing    ConsumptionStatus = "processing"
 	Unconsumed    ConsumptionStatus = "unconsumed"
 	ErrorConsumed ConsumptionStatus = "error_consumed"
 )

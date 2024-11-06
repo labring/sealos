@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
 	"gorm.io/gorm"
@@ -66,9 +68,10 @@ type Interface interface {
 	ProcessPendingTaskRewards() error
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
 	ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error
+	ReconcileActiveBilling(startTime, endTime time.Time) error
 	ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error
 	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
-	ActiveMonitor(req resources.ActiveMonitor) error
+	ActiveBilling(req resources.ActiveBilling) error
 }
 
 type Account struct {
@@ -292,6 +295,15 @@ func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
 	// Check if the collection already exists
 	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
 	return len(collections) > 0, err
+}
+
+func (m *MongoDB) SaveActiveBillings(billing ...*resources.ActiveBilling) error {
+	billings := make([]interface{}, len(billing))
+	for i, b := range billing {
+		billings[i] = b
+	}
+	_, err := m.getActiveBillingCollection().InsertMany(context.Background(), billings)
+	return err
 }
 
 func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
@@ -1567,35 +1579,118 @@ func (m *Account) GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.Us
 	return userRealNameInfo, nil
 }
 
-func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
-	//userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: req.UserUID})
-	//if err != nil {
-	//	return fmt.Errorf("failed to get user cr: %v", err)
-	//}
-	id, err := gonanoid.New(12)
-	if err != nil {
-		return fmt.Errorf("generate order id failed: %v", err)
+func (m *Account) ReconcileActiveBilling(startTime, endTime time.Time) error {
+	ctx := context.Background()
+	billings := make(map[uuid.UUID]*billingBatch)
+
+	// Process billings in batches
+	if err := m.processBillingBatches(ctx, startTime, endTime, billings); err != nil {
+		return fmt.Errorf("failed to process billing batches: %w", err)
 	}
-	billing := &resources.Billing{
-		OrderID:   id,
-		Type:      accountv1.SubConsumption,
+
+	// Handle each user's billings
+	for uid, batch := range billings {
+		if err := m.reconcileUserBilling(ctx, uid, batch); err != nil {
+			logrus.Errorf("failed to reconcile billing for user %s: %v", uid, err)
+			continue
+		}
+	}
+
+	return nil
+}
+
+type billingBatch struct {
+	IDs    []string
+	Amount int64
+}
+
+func (m *Account) processBillingBatches(ctx context.Context, startTime, endTime time.Time, billings map[uuid.UUID]*billingBatch) error {
+	filter := bson.M{
+		"time": bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		},
+		"status": bson.M{"$nin": []resources.ConsumptionStatus{
+			resources.Processing,
+			resources.Consumed,
+		}},
+	}
+
+	for {
+		var billing resources.ActiveBilling
+		err := m.MongoDB.getActiveBillingCollection().FindOneAndUpdate(
+			ctx,
+			filter,
+			bson.M{"$set": bson.M{"status": resources.Processing}},
+			options.FindOneAndUpdate().
+				SetReturnDocument(options.After).
+				SetSort(bson.M{"time": 1}),
+		).Decode(&billing)
+
+		if err == mongo.ErrNoDocuments {
+			break
+		}
+		// TODO error handling
+		if err != nil {
+			logrus.Errorf("failed to find and update billing: %v", err)
+			continue
+		}
+
+		batch, ok := billings[billing.UserUID]
+		if !ok {
+			batch = &billingBatch{
+				IDs:    make([]string, 0),
+				Amount: 0,
+			}
+			billings[billing.UserUID] = batch
+		}
+		batch.IDs = append(batch.IDs, billing.ID)
+		batch.Amount += billing.Amount
+	}
+
+	return nil
+}
+
+func (m *Account) reconcileUserBilling(ctx context.Context, uid uuid.UUID, batch *billingBatch) error {
+	return m.ck.DB.Transaction(func(tx *gorm.DB) error {
+		// Deduct balance
+		if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: uid}, batch.Amount, tx); err != nil {
+			return fmt.Errorf("failed to deduct balance: %w", err)
+		}
+
+		// Update billing status
+		_, err := m.MongoDB.getActiveBillingCollection().UpdateMany(
+			ctx,
+			bson.M{"_id": bson.M{"$in": batch.IDs}},
+			bson.M{"$set": bson.M{"status": resources.Consumed}},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update billing status: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
+	billing := &resources.ActiveBilling{
 		Namespace: req.Namespace,
-		AppType:   resources.AppType[req.AppType],
+		AppType:   req.AppType,
 		AppName:   req.AppName,
 		Amount:    req.Amount,
 		//Owner:     userCr.CrName,
 		Time:    time.Now().UTC(),
-		Status:  resources.Unsettled,
+		Status:  resources.Unconsumed,
 		UserUID: req.UserUID,
 	}
-	err = m.MongoDB.SaveBillings(billing)
+	err := m.MongoDB.SaveActiveBillings(billing)
 	if err != nil {
-		return fmt.Errorf("add balance failed: %v", err)
+		return fmt.Errorf("save active monitor failed: %v", err)
 	}
 	return nil
 }
 
-func (m *Account) ActiveMonitor(req resources.ActiveMonitor) error {
+func (m *Account) ActiveBilling(req resources.ActiveBilling) error {
 	return m.ck.DB.Transaction(func(tx *gorm.DB) error {
 		if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: req.UserUID}, req.Amount, tx); err != nil {
 			return fmt.Errorf("failed to deduct balance: %v", err)
@@ -1785,21 +1880,6 @@ func (m *Account) ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error {
 	return nil
 }
 
-/*
-type ActiveMonitor struct {
-	Time      time.Time         `json:"time" bson:"time"`
-	Namespace string            `json:"namespace" bson:"namespace"`
-	AppType   string            `json:"app_type" bson:"app_type"`
-	Name      string            `json:"name" bson:"name"`
-	Used      UsedMap           `json:"used,omitempty" bson:"used,omitempty"`
-	Amount    int64             `json:"amount" bson:"amount,omitempty"`
-	Owner     string            `json:"owner" bson:"owner,omitempty"`
-	UserUID   uuid.UUID         `json:"user_uid" bson:"user_uid"`
-	Status    ConsumptionStatus `json:"status" bson:"status"`
-	//Rule      string            `json:"rule" bson:"rule,omitempty"`
-}
-*/
-
 func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.M{
@@ -1807,7 +1887,7 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 				"$gte": hourStart,
 				"$lt":  hourEnd,
 			},
-			"status": resources.ErrorConsumed,
+			"status": resources.Consumed,
 		}}},
 		{{Key: "$group", Value: bson.M{
 			"_id": bson.M{

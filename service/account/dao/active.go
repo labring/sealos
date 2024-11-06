@@ -9,11 +9,11 @@ import (
 )
 
 type ActiveBillingReq struct {
-	resources.ActiveMonitor
+	resources.ActiveBilling
 }
 
 func (a *ActiveBillingReq) Execute() error {
-	return DBClient.ActiveMonitor(a.ActiveMonitor)
+	return DBClient.ActiveBilling(a.ActiveBilling)
 }
 
 func ParseAdminActiveBillingReq(c *gin.Context) (*ActiveBillingReq, error) {
