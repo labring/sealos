@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -77,7 +78,7 @@ func RegisterPayRouter() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Create a buffered channel interrupt and use the signal.
-	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	// Start the HTTP server to listen on port 2333.
@@ -114,6 +115,7 @@ func RegisterPayRouter() {
 
 	dao.BillingTask.Stop()
 
+	log.Println("Server exiting")
 	// Terminate procedure.
 	os.Exit(0)
 }

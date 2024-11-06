@@ -74,7 +74,6 @@ func (tq *TaskQueue) worker(id int) {
 			if !ok {
 				return
 			}
-			logrus.Infof("Worker %d processing task", id)
 			if err := task.Execute(); err != nil {
 				// TODO handle task execution failures
 				logrus.Errorf("Worker %d failed to process task: %v", id, err)
