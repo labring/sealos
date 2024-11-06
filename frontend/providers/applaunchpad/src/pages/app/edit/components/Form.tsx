@@ -949,7 +949,8 @@ const Form = ({
                     <Box>{t('Advanced Configuration')}</Box>
                     <Center
                       bg={'grayModern.200'}
-                      w={'48px'}
+                      minW={'48px'}
+                      px={'8px'}
                       height={'28px'}
                       ml={'14px'}
                       fontSize={'11px'}
@@ -1056,8 +1057,7 @@ const Form = ({
                         onClick={() => setConfigEdit({ mountPath: '', value: '' })}
                         leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
                       >
-                        {t('Add')}
-                        {t('Configuration File')}
+                        {t('form.add_configmap')}
                       </Button>
                     </Flex>
                     <Box mt={4} pl={`${labelWidth}px`}>
