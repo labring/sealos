@@ -133,8 +133,15 @@ export default function Home(): React.JSX.Element {
   })
 
   return (
-    <Box h="100%" pr={'8px'} pb={'8px'}>
-      <Box h={'100%'} bg={'white'} borderRadius={'12px'} px={'32px'} pt={'24px'}>
+    <Flex w="full" h="full" flexDirection={'column'} pr={'8px'} pb={'8px'} overflow={'hidden'}>
+      <Flex
+        flexDirection={'column'}
+        flex={1}
+        h={'0'}
+        bg={'white'}
+        borderRadius={'12px'}
+        px={'32px'}
+        pt={'24px'}>
         <Flex justifyContent={'space-between'} color={'black'} fontSize={'20px'} fontWeight={500}>
           <Text>{t('logs.call_log')}</Text>
           <Button
@@ -158,7 +165,7 @@ export default function Home(): React.JSX.Element {
           </Button>
         </Flex>
 
-        <Flex flexDirection={'column'} gap={4} mt={'16px'} flexWrap={'wrap'}>
+        <Flex flexDirection={'column'} mb={'24px'} gap={4} mt={'16px'} flexWrap={'wrap'}>
           <Flex flex={1} justifyContent={'space-between'} gap={'20px'}>
             <Flex alignItems={'center'} flex={1}>
               <Box flexShrink={0} w={'100px'}>
@@ -257,18 +264,16 @@ export default function Home(): React.JSX.Element {
           </Flex>
         </Flex>
 
-        <Box mt={'24px'}>
-          <BaseTable table={table} isLoading={isLoading} />
-          <SwitchPage
-            justifyContent={'end'}
-            currentPage={page}
-            totalPage={Math.ceil(total / pageSize)}
-            totalItem={total}
-            pageSize={pageSize}
-            setCurrentPage={(idx: number) => setPage(idx)}
-          />
-        </Box>
-      </Box>
-    </Box>
+        <BaseTable table={table} isLoading={isLoading} />
+        <SwitchPage
+          justifyContent={'end'}
+          currentPage={page}
+          totalPage={Math.ceil(total / pageSize)}
+          totalItem={total}
+          pageSize={pageSize}
+          setCurrentPage={(idx: number) => setPage(idx)}
+        />
+      </Flex>
+    </Flex>
   )
 }

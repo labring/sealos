@@ -39,7 +39,7 @@ export default function SwitchPage({
     }
   }
   return (
-    <Flex minW="370px" h="32px" align={'center'} mt={'20px'} fontSize="14px" {...props}>
+    <Flex minW="370px" h="32px" align={'center'} mb={'8px'} fontSize="14px" {...props}>
       <Text fontSize="14px" color={'grayModern.500'}>
         {t('Total')}:
       </Text>
