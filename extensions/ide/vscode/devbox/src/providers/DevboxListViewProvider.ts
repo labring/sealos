@@ -1,9 +1,11 @@
 import * as vscode from 'vscode'
+import fs from 'fs'
 
 import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 import { defaultDevboxSSHConfigPath } from '../constant/file'
+import { GlobalStateManager } from '../utils/globalStateManager'
 
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -124,8 +126,52 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     )
   }
 
-  delete(item: MyTreeItem) {
-    vscode.window.showInformationMessage('delete' + item.label)
+  async delete(item: MyTreeItem) {
+    const deletedHost = item.host
+    GlobalStateManager.remove(deletedHost)
+    // 删除ssh 配置
+    // TODO：抽象出一个 crud ssh 文件的模型
+    try {
+      const content = await fs.promises.readFile(
+        defaultDevboxSSHConfigPath,
+        'utf8'
+      )
+      const lines = content.split('\n')
+
+      let newLines = []
+      let skipLines = false
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+
+        if (line.startsWith('Host ')) {
+          const hostValue = line.split(' ')[1]
+          if (hostValue === deletedHost) {
+            skipLines = true
+            continue
+          } else {
+            skipLines = false
+          }
+        }
+
+        if (skipLines && line.startsWith('Host ')) {
+          skipLines = false
+        }
+
+        if (!skipLines) {
+          newLines.push(lines[i])
+        }
+      }
+
+      await fs.promises.writeFile(
+        defaultDevboxSSHConfigPath,
+        newLines.join('\n')
+      )
+
+      this.refresh()
+    } catch (error) {
+      vscode.window.showErrorMessage(`删除 SSH 配置失败: ${error.message}`)
+    }
   }
 
   getChildren(element?: MyTreeItem): Thenable<MyTreeItem[]> {

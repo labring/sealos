@@ -60,4 +60,8 @@ export class GlobalStateManager {
     }
     GlobalStateManager.context.globalState.update(devboxId, newState)
   }
+
+  static remove(devboxId: string) {
+    GlobalStateManager.context.globalState.update(devboxId, undefined)
+  }
 }
