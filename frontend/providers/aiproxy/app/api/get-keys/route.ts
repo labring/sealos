@@ -65,7 +65,7 @@ async function fetchTokens(
     }
 
     return {
-      tokens: result.data.tokens,
+      tokens: result.data.tokens.sort((a, b) => a.name.localeCompare(b.name)),
       total: result.data.total
     }
   } catch (error) {

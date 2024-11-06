@@ -257,7 +257,10 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
   const { data, isLoading } = useQuery({
     queryKey: ['getKeys', page, pageSize],
     queryFn: () => getKeys({ page, perPage: pageSize }),
-    refetchOnReconnect: true
+    refetchOnReconnect: true,
+    onSuccess(data) {
+      setTotal(data.total)
+    }
   })
 
   const columnHelper = createColumnHelper<TokenInfo>()
@@ -588,7 +591,6 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
     columns,
     getCoreRowModel: getCoreRowModel()
   })
-  console.log(data)
 
   return (
     <Box w="full" h="full" gap="24px">
@@ -649,7 +651,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         </Box>
       ) : (
         <>
-          <TableContainer w="full" h="full" overflow="hidden">
+          <TableContainer w="full" h="full" maxH="full" overflowY="auto">
             <Table variant="simple" w="full" size="md">
               <Thead>
                 {table.getHeaderGroups().map((headerGroup) => (

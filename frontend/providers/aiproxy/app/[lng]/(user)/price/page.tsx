@@ -255,7 +255,6 @@ function PriceTable() {
 
   const sortedData = useMemo(() => sortModelsByIdentifier(data || []), [data])
 
-  console.log('sortedData', sortedData)
   const table = useReactTable({
     data: sortedData,
     columns,

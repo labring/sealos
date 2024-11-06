@@ -37,7 +37,7 @@ async function fetchModels(): Promise<string[]> {
       throw new Error(result.message || 'get models API request failed')
     }
 
-    return result.data
+    return result.data.sort((a, b) => a.localeCompare(b))
   } catch (error) {
     console.error('Error fetching models:', error)
     return Promise.reject(error)
