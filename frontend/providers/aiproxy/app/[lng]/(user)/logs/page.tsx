@@ -230,18 +230,16 @@ export default function Home(): React.JSX.Element {
             </Flex>
           </Flex>
 
-          <Flex alignItems={'center'}>
+          <Flex alignItems={'center'} maxW={'50%'} pr={'10px'}>
             <Box flexShrink={0} w={'100px'}>
               {t('logs.time')}
             </Box>
-            <Flex flexBasis={'500px'}>
-              <SelectDateRange
-                startTime={startTime}
-                setStartTime={setStartTime}
-                endTime={endTime}
-                setEndTime={setEndTime}
-              />
-            </Flex>
+            <SelectDateRange
+              startTime={startTime}
+              setStartTime={setStartTime}
+              endTime={endTime}
+              setEndTime={setEndTime}
+            />
           </Flex>
         </Flex>
 
