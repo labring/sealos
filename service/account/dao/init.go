@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/goccy/go-json"
 
 	"github.com/labring/sealos/service/account/helper"
@@ -26,15 +28,15 @@ type Region struct {
 }
 
 var (
-	DBClient Interface
-	JwtMgr   *helper.JWTManager
-	Cfg      *Config
-	//ActiveBillingTask *helper.TaskQueue
-	Debug bool
+	DBClient    Interface
+	JwtMgr      *helper.JWTManager
+	Cfg         *Config
+	BillingTask *helper.TaskQueue
+	Debug       bool
 )
 
-func Init(_ context.Context) error {
-	//ActiveBillingTask = helper.NewTaskQueue(ctx, env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_WORKER_COUNT", 10), env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_QUEUE_SIZE", 10000))
+func Init(ctx context.Context) error {
+	BillingTask = helper.NewTaskQueue(ctx, env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_WORKER_COUNT", 10), env.GetIntEnvWithDefault("ACTIVE_BILLING_TASK_QUEUE_SIZE", 10000))
 	var err error
 	globalCockroach := os.Getenv(helper.ENVGlobalCockroach)
 	if globalCockroach == "" {
