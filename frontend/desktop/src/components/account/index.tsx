@@ -200,7 +200,7 @@ export default function Account() {
           py={'12px'}
           px={'16px'}
         >
-          <Text>kubeconfig</Text>
+          <Text>Kubeconfig</Text>
           <Flex alignItems={'center'}>
             <IconButton
               variant={'white-bg-icon'}
