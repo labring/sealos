@@ -1936,8 +1936,7 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 		}
 
 		filter := bson.M{
-			"user_uid":  result.ID.UserUID,
-			"app_type":  result.ID.AppType,
+			"app_type":  resources.AppType[result.ID.AppType],
 			"app_name":  result.ID.AppName,
 			"namespace": result.ID.Namespace,
 			"owner":     result.ID.Owner,
@@ -1973,21 +1972,6 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 			errs = append(errs, fmt.Errorf("failed to upsert billing for user %s, app %s: %v",
 				result.ID.UserUID, result.ID.AppName, err))
 			continue
-		}
-		// update active billing status
-		if _, err = m.MongoDB.getActiveBillingCollection().UpdateMany(context.Background(), bson.M{
-			"time": bson.M{
-				"$gte": hourStart,
-				"$lt":  hourEnd,
-			},
-			"user_uid":  result.ID.UserUID,
-			"app_type":  result.ID.AppType,
-			"app_name":  result.ID.AppName,
-			"namespace": result.ID.Namespace,
-			"owner":     result.ID.Owner,
-			"status":    resources.ErrorConsumed,
-		}, bson.M{"$set": bson.M{"status": resources.Consumed}}); err != nil {
-			errs = append(errs, fmt.Errorf("failed to update active billing status: %v", err))
 		}
 	}
 	if err = cursor.Err(); err != nil {
