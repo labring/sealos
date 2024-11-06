@@ -1602,7 +1602,7 @@ func (m *Account) ReconcileActiveBilling(startTime, endTime time.Time) error {
 }
 
 type billingBatch struct {
-	IDs    []string
+	IDs    []primitive.ObjectID
 	Amount int64
 }
 
@@ -1641,7 +1641,7 @@ func (m *Account) processBillingBatches(ctx context.Context, startTime, endTime 
 		batch, ok := billings[billing.UserUID]
 		if !ok {
 			batch = &billingBatch{
-				IDs:    make([]string, 0),
+				IDs:    make([]primitive.ObjectID, 0),
 				Amount: 0,
 			}
 			billings[billing.UserUID] = batch

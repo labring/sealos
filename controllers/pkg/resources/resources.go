@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/google/uuid"
 
 	"github.com/labring/sealos/controllers/pkg/common"
@@ -87,16 +89,16 @@ type Monitor struct {
 }
 
 type ActiveBilling struct {
-	ID        string            `json:"_id,omitempty" bson:"_id,omitempty"`
-	Time      time.Time         `json:"time,omitempty" bson:"time"`
-	Namespace string            `json:"namespace" bson:"namespace"`
-	AppType   string            `json:"app_type" bson:"app_type"`
-	AppName   string            `json:"app_name" bson:"app_name"`
-	Used      UsedMap           `json:"used,omitempty" bson:"used,omitempty"`
-	Amount    int64             `json:"amount" bson:"amount,omitempty"`
-	Owner     string            `json:"owner" bson:"owner,omitempty"`
-	UserUID   uuid.UUID         `json:"user_uid" bson:"user_uid"`
-	Status    ConsumptionStatus `json:"status" bson:"status"`
+	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Time      time.Time          `json:"time,omitempty" bson:"time"`
+	Namespace string             `json:"namespace" bson:"namespace"`
+	AppType   string             `json:"app_type" bson:"app_type"`
+	AppName   string             `json:"app_name" bson:"app_name"`
+	Used      UsedMap            `json:"used,omitempty" bson:"used,omitempty"`
+	Amount    int64              `json:"amount" bson:"amount,omitempty"`
+	Owner     string             `json:"owner" bson:"owner,omitempty"`
+	UserUID   uuid.UUID          `json:"user_uid" bson:"user_uid"`
+	Status    ConsumptionStatus  `json:"status" bson:"status"`
 	//Rule      string            `json:"rule" bson:"rule,omitempty"`
 }
 
