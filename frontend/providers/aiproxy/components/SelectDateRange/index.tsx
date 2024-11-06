@@ -189,7 +189,7 @@ export default function SelectDateRange({
               variant={'unstyled'}
               flex={1}
               value={fromValue}
-              minW="90px"
+              minW="50px"
               onChange={handleFromChange}
               onBlur={() => {
                 selectedRange?.from && setStartTime(startOfDay(selectedRange.from))

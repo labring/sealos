@@ -230,30 +230,11 @@ export default function Home(): React.JSX.Element {
             </Flex>
           </Flex>
 
-          <Flex justifyContent={'space-between'} gap={'20px'}>
-            {/* <Flex alignItems={'center'} flex={1}>
-              <Box flexShrink={0} w={'100px'}>
-                {t('logs.status')}
-              </Box>
-              <MySelect
-                boxStyle={{
-                  w: '100%'
-                }}
-                maxW={'500px'}
-                w={'100%'}
-                height="32px"
-                value={modelName}
-                list={mockStatus.map((item) => ({
-                  value: item,
-                  label: item
-                }))}
-                onchange={(val: string) => setModelName(val)}
-              />
-            </Flex> */}
-            <Flex alignItems={'center'} flex={1}>
-              <Box flexShrink={0} w={'100px'}>
-                {t('logs.time')}
-              </Box>
+          <Flex alignItems={'center'}>
+            <Box flexShrink={0} w={'100px'}>
+              {t('logs.time')}
+            </Box>
+            <Flex flexBasis={'500px'}>
               <SelectDateRange
                 startTime={startTime}
                 setStartTime={setStartTime}
