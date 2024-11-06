@@ -1,18 +1,18 @@
-import path from 'path'
-import * as os from 'os'
 import * as vscode from 'vscode'
 
 import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
+import { defaultDevboxSSHConfigPath } from '../constant/file'
 
-export class TreeView extends Disposable {
+export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
     super()
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
+      // view
       const projectTreeDataProvider = new MyTreeDataProvider('devboxDashboard')
+      // TODO： 完善 feedback部分
       const feedbackTreeDataProvider = new MyTreeDataProvider('devboxFeedback')
-      // views
       const devboxDashboardView = vscode.window.createTreeView(
         'devboxDashboard',
         {
@@ -20,8 +20,6 @@ export class TreeView extends Disposable {
         }
       )
       this._register(devboxDashboardView)
-
-      // 添加视图可见性变化事件监听器
       this._register(
         devboxDashboardView.onDidChangeVisibility(() => {
           if (devboxDashboardView.visible) {
@@ -29,7 +27,6 @@ export class TreeView extends Disposable {
           }
         })
       )
-
       // commands
       this._register(
         vscode.commands.registerCommand('devboxDashboard.refresh', () => {
@@ -83,12 +80,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
 
   private refreshData(): void {
     if (this.treeName === 'devboxDashboard') {
-      const defaultSSHConfigPath = path.resolve(
-        os.homedir(),
-        '.ssh/sealos/devbox_config'
-      )
-
-      parseSSHConfig(defaultSSHConfigPath).then((data) => {
+      parseSSHConfig(defaultDevboxSSHConfigPath).then((data) => {
         this.treeData = data as DevboxListItem[]
         this._onDidChangeTreeData.fire(undefined)
       })
@@ -108,9 +100,11 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     return element
   }
 
+  // TODO: 根据不同的代理跳转到不同的页面，而且可以进行设置里的配置
   create(item: MyTreeItem) {
-    vscode.commands.executeCommand('devbox.openWebview')
-    vscode.window.showInformationMessage('create')
+    vscode.commands.executeCommand('devbox.openExternalLink', [
+      'https://usw.sailos.io/?openapp=system-devbox',
+    ])
   }
 
   async open(item: MyTreeItem) {
@@ -138,7 +132,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     if (!element) {
       // 第一级：显示所有域名
       const domains = [
-        ...new Set(this.treeData.map((item) => item.host.split('-')[0])),
+        ...new Set(this.treeData.map((item) => item.host.split('_')[0])),
       ]
       return Promise.resolve(
         domains.map(
@@ -157,10 +151,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
         ...new Set(
           this.treeData
             .filter((item) => item.host.startsWith(element.label as string))
-            .map((item) => {
-              const parts = item.host.split('-')
-              return parts.slice(1, 3).join('-')
-            })
+            .map((item) => item.host.split('_')[1])
         ),
       ]
       return Promise.resolve(
@@ -178,15 +169,15 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     } else if (!element.devboxName) {
       // 第三级：显示指定命名空间下的所有 devbox
       const devboxes = this.treeData.filter((item) => {
-        const parts = item.host.split('-')
+        const parts = item.host.split('_')
         const domain = parts[0]
-        const namespace = parts.slice(1, 3).join('-')
+        const namespace = parts[1]
         return domain === element.domain && namespace === element.namespace
       })
       return Promise.resolve(
         devboxes.map((devbox) => {
-          const parts = devbox.host.split('-')
-          const devboxName = parts.slice(3, -1).join('-')
+          const parts = devbox.host.split('_')
+          const devboxName = parts.slice(2).join('_')
           const treeItem = new MyTreeItem(
             devboxName,
             devbox.hostName,
@@ -195,9 +186,9 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
             element.namespace,
             devboxName,
             devbox.host,
-            devbox.remotePath // 添加这个参数
+            devbox.remotePath
           )
-          treeItem.contextValue = 'devbox' // 确保设置了正确的 contextValue
+          treeItem.contextValue = 'devbox'
           return treeItem
         })
       )

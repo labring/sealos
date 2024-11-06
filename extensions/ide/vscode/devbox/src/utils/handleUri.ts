@@ -20,6 +20,10 @@ export class UriHandler {
       GlobalStateManager.setToken(params.sshHostLabel, params.token)
     }
 
+    if (params.workingDir && params.sshHostLabel) {
+      GlobalStateManager.setWorkDir(params.sshHostLabel, params.workingDir)
+    }
+
     if (params.sshPort === '0') {
       vscode.window.showInformationMessage(
         `SSH Port is not correct,maybe your devbox's nodeport is over the limit`
@@ -44,13 +48,14 @@ export class UriHandler {
   }
 
   private validateParams(params: any): boolean {
+    console.log(params)
     return !!(
       params.sshDomain &&
       params.sshPort &&
       params.base64PrivateKey &&
       params.sshHostLabel &&
       params.workingDir &&
-      params.authToken
+      params.token
     )
   }
 }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { Webview } from './commands/webview'
 import { RemoteSSHConnector } from './commands/remoteConnector'
-import { TreeView } from './commands/treeview'
+import { DevboxListViewProvider } from './providers/DevboxListViewProvider'
 import { UriHandler } from './utils/handleUri'
 import { NetworkViewProvider } from './providers/NetworkViewProvider'
 import { DBViewProvider } from './providers/DbViewProvider'
@@ -22,9 +22,9 @@ export async function activate(context: vscode.ExtensionContext) {
   const remoteConnector = new RemoteSSHConnector(context)
   context.subscriptions.push(remoteConnector)
 
-  // tree view
-  const treeView = new TreeView(context)
-  context.subscriptions.push(treeView)
+  // devboxList view
+  const devboxListViewProvider = new DevboxListViewProvider(context)
+  context.subscriptions.push(devboxListViewProvider)
 
   // token manager
   GlobalStateManager.init(context)

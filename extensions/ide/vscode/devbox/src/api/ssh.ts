@@ -1,48 +1,51 @@
-const fs = require('fs')
+import fs from 'fs'
 
-export const parseSSHConfig = (configFilePath: string) => {
+import { GlobalStateManager } from '../utils/globalStateManager'
+
+export const parseSSHConfig = (filePath: string) => {
   return new Promise((resolve, reject) => {
-    fs.readFile(configFilePath, 'utf-8', (err: any, data: any) => {
+    fs.readFile(filePath, 'utf-8', (err: any, data: any) => {
       if (err) {
         return reject(err)
       }
 
       const lines = data.split('\n')
       const devboxList = [] as any[]
-      let currentHost = {} as any
-      let lastComment = ''
+      let currentHostObj = {} as any
 
       lines.forEach((line: string) => {
         line = line.trim()
 
-        if (line.startsWith('#')) {
-          // 保存注释，特别是 WorkingDir 注释
-          lastComment = line
-          if (line.startsWith('# WorkingDir:')) {
-            currentHost.remotePath = line.split(':')[1].trim()
+        if (line.startsWith('Host ')) {
+          // TODO：这里改成注入，而不是硬编码
+          if (!!currentHostObj.StrictHostKeyChecking) {
+            currentHostObj.remotePath =
+              GlobalStateManager.getWorkDir('remotePath')
+            devboxList.push(currentHostObj)
           }
-        } else if (line.startsWith('Host ')) {
-          // 如果当前有主机信息且是 usw.sailos.io，则保存
-          if (currentHost.hostName === 'usw.sailos.io') {
-            devboxList.push(currentHost)
-          }
-          // 开始新的主机信息
-          currentHost = { host: line.split(' ')[1] }
+          currentHostObj = { host: line.split(' ')[1] }
         } else if (line.startsWith('HostName ')) {
-          currentHost.hostName = line.split(' ')[1]
+          currentHostObj.hostName = line.split(' ')[1]
         } else if (line.startsWith('User ')) {
-          currentHost.user = line.split(' ')[1]
+          currentHostObj.user = line.split(' ')[1]
         } else if (line.startsWith('Port ')) {
-          currentHost.port = line.split(' ')[1]
+          currentHostObj.port = line.split(' ')[1]
         } else if (line.startsWith('IdentityFile ')) {
-          currentHost.identityFile = line.split(' ')[1]
+          currentHostObj.identityFile = line.split(' ')[1]
+        } else if (line.startsWith('IdentitiesOnly ')) {
+          currentHostObj.IdentitiesOnly = line.split(' ')[1]
+        } else if (line.startsWith('StrictHostKeyChecking ')) {
+          currentHostObj.StrictHostKeyChecking = line.split(' ')[1]
         }
       })
 
-      // 最后一个主机信息处理
-      if (currentHost.hostName === 'usw.sailos.io') {
-        devboxList.push(currentHost)
+      // the last one
+      if (!!currentHostObj.StrictHostKeyChecking) {
+        currentHostObj.remotePath = GlobalStateManager.getWorkDir('remotePath')
+        devboxList.push(currentHostObj)
       }
+
+      console.log(devboxList)
 
       resolve(devboxList)
     })

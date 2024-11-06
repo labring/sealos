@@ -59,13 +59,14 @@
         "icon": "images/create.svg"
       },
       {
-        "command": "devboxDashboard.deleteDevbox",
-        "title": "Delete Devbox"
-      },
-      {
         "command": "devboxDashboard.openDevbox",
         "title": "Open Devbox",
         "icon": "images/open.svg"
+      },
+      {
+        "command": "devboxDashboard.deleteDevbox",
+        "title": "Delete Devbox",
+        "icon": "images/delete.svg"
       },
       {
         "command": "devbox.openExternalLink",
@@ -73,7 +74,7 @@
       }
     ],
     "views": {
-      "devboxView": [
+      "devboxListView": [
         {
           "id": "devboxDashboard",
           "name": "My Projects"
@@ -99,7 +100,7 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "devboxView",
+          "id": "devboxListView",
           "title": "Devbox",
           "icon": "images/explorer.svg"
         }
@@ -138,13 +139,14 @@
       ],
       "view/item/context": [
         {
-          "command": "devboxDashboard.deleteDevbox",
-          "when": "view == devboxDashboard && viewItem == devbox"
-        },
-        {
           "command": "devboxDashboard.openDevbox",
           "when": "view == devboxDashboard && viewItem == devbox",
-          "group": "inline"
+          "group": "inline@1"
+        },
+        {
+          "command": "devboxDashboard.deleteDevbox",
+          "when": "view == devboxDashboard && viewItem == devbox",
+          "group": "inline@2"
         }
       ]
     }

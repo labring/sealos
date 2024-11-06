@@ -1,4 +1,3 @@
-import path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
 import * as vscode from 'vscode'
@@ -7,13 +6,15 @@ import { execSync } from 'child_process'
 
 import { Disposable } from '../common/dispose'
 import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
-
-const defaultSSHConfigPath = path.resolve(os.homedir(), '.ssh/config')
-const defaultDevboxSSHConfigPath = path.resolve(
-  os.homedir(),
-  '.ssh/sealos/devbox_config'
-)
-const defaultSSHKeyPath = path.resolve(os.homedir(), '.ssh/sealos')
+import {
+  defaultSSHConfigPath,
+  defaultDevboxSSHConfigPath,
+  defaultSSHKeyPath,
+} from '../constant/file'
+import {
+  convertSSHConfigToVersion2,
+  ensureFileExists,
+} from '../utils/sshConfig'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -25,6 +26,22 @@ export class RemoteSSHConnector extends Disposable {
         )
       )
     }
+  }
+  private sshConfigPreProcess() {
+    // 1. ensure .ssh/config exists
+    ensureFileExists(defaultSSHConfigPath, '.ssh')
+    // 2. ensure .ssh/sealos/devbox_config exists
+    ensureFileExists(defaultDevboxSSHConfigPath, '.ssh/sealos')
+    // 3. ensure .ssh/config includes .ssh/sealos/devbox_config
+    const existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf8')
+    if (!existingSSHConfig.includes('Include ~/.ssh/sealos/devbox_config')) {
+      let existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf-8')
+      const newConfig =
+        'Include ~/.ssh/sealos/devbox_config\n' + existingSSHConfig
+      fs.writeFileSync(defaultSSHConfigPath, newConfig)
+    }
+    // 4. ensure sshConfig from version1 to version2
+    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
   }
 
   private async connectRemoteSSH(args: {
@@ -59,51 +76,9 @@ export class RemoteSSHConnector extends Disposable {
     })
     const sshConfigString = SSHConfig.stringify(sshConfig)
 
-    try {
-      // 1. ensure .ssh/config exists
-      if (!fs.existsSync(defaultSSHConfigPath)) {
-        fs.mkdirSync(path.resolve(os.homedir(), '.ssh'), {
-          recursive: true,
-        })
-        fs.writeFileSync(defaultSSHConfigPath, '', 'utf8')
-        // .ssh/config authority
-        if (os.platform() === 'win32') {
-          // Windows
-          execSync(`icacls "${defaultSSHConfigPath}" /inheritance:r`)
-          execSync(
-            `icacls "${defaultSSHConfigPath}" /grant:r ${process.env.USERNAME}:F`
-          )
-          execSync(`icacls "${defaultSSHConfigPath}" /remove:g everyone`)
-        } else {
-          // Unix-like system (Mac, Linux)
-          execSync(`chmod 600 "${defaultSSHConfigPath}"`)
-        }
-      }
-      // 2. ensure .ssh/sealos/devbox_config exists and has the correct authority
-      if (!fs.existsSync(defaultDevboxSSHConfigPath)) {
-        fs.mkdirSync(path.resolve(os.homedir(), '.ssh/sealos'), {
-          recursive: true,
-        })
-        fs.writeFileSync(defaultDevboxSSHConfigPath, '', 'utf8')
-        if (os.platform() === 'win32') {
-          execSync(`icacls "${defaultDevboxSSHConfigPath}" /inheritance:r`)
-          execSync(
-            `icacls "${defaultDevboxSSHConfigPath}" /grant:r ${process.env.USERNAME}:F`
-          )
-          execSync(`icacls "${defaultDevboxSSHConfigPath}" /remove:g everyone`)
-        } else {
-          execSync(`chmod 600 "${defaultDevboxSSHConfigPath}"`)
-        }
-      }
-      // 3. ensure .ssh/config includes .ssh/sealos/devbox_config
-      const existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf8')
-      if (!existingSSHConfig.includes('Include ~/.ssh/sealos/devbox_config')) {
-        let existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf-8')
-        const newConfig =
-          'Include ~/.ssh/sealos/devbox_config\n' + existingSSHConfig
-        fs.writeFileSync(defaultSSHConfigPath, newConfig)
-      }
+    this.sshConfigPreProcess()
 
+    try {
       // 读取现有的 devbox 配置文件
       const existingDevboxConfigLines = fs
         .readFileSync(defaultDevboxSSHConfigPath, 'utf8')
