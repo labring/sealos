@@ -61,10 +61,12 @@ export const ServiceLogConfigs: Record<SupportReconfigureDBType, LoggingConfigur
     [LogTypeEnum.SlowQuery]: {
       path: '/data/mysql/log',
       containerNames: ['mysql', 'lorry'],
-      filter: (files: TFile[]) =>
-        files
-          .filter((f) => f.size > 0 && f.name.toLowerCase().includes('slow-query'))
-          .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime())
+      filter: (files: TFile[]) => {
+        console.log('slow query files:', files);
+        return files
+          .filter((f) => f.size > 1024 && f.name.toLowerCase().includes('slow-query'))
+          .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime());
+      }
     }
   }
 };

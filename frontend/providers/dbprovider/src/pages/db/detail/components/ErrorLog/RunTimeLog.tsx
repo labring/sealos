@@ -48,10 +48,12 @@ const getEmptyLogResult = (page = 0, pageSize = 0) => ({
 export default function RunTimeLog({
   db,
   logType,
-  filteredSubNavList
+  filteredSubNavList,
+  updateSubMenu
 }: {
   db: DBDetailType;
   logType: LogTypeEnum;
+  updateSubMenu: (value: LogTypeEnum) => void;
   filteredSubNavList?: {
     label: string;
     value: LogTypeEnum;
@@ -129,22 +131,15 @@ export default function RunTimeLog({
         accessorKey: 'timestamp',
         cell: ({ row }) => {
           return (
-            <Box
-              flexShrink={0}
-              w="200px"
-              fontSize={'12px'}
-              fontWeight={'500'}
-              color={'grayModern.900'}
-            >
+            <Box flexShrink={0} fontSize={'12px'} fontWeight={'500'} color={'grayModern.900'}>
               {formatTime(row.original.timestamp, 'YYYY-MM-DD HH:mm:ss.SSS')}
             </Box>
           );
         },
         header: () => {
           return (
-            <Flex gap={'4px'} alignItems={'center'} w={'200px'}>
+            <Flex gap={'4px'} alignItems={'center'} w={'140px'}>
               {t('error_log.collection_time')}
-              <MyIcon name="time" />
             </Flex>
           );
         }
@@ -196,26 +191,31 @@ export default function RunTimeLog({
   return (
     <Flex flex={'1 0 0'} h={'0'} flexDirection={'column'}>
       <Flex mt={'8px'} mb="12px" ml={'26px'} position={'relative'} alignItems={'center'} zIndex={2}>
-        {filteredSubNavList?.length === 1 && (
+        {filteredSubNavList?.map((item) => (
           <Box
-            key={filteredSubNavList[0].label}
+            h={'32px'}
+            key={item.label}
             mr={5}
-            py={'8px'}
             cursor={'pointer'}
             fontSize={'md'}
+            borderBottom={'2px solid'}
+            color={item.value === logType ? 'grayModern.900' : 'grayModern.600'}
+            borderBottomColor={item.value === logType ? 'grayModern.900' : 'transparent'}
+            onClick={() => item.value !== logType && updateSubMenu(item.value)}
           >
-            {t(filteredSubNavList[0].label as I18nCommonKey)}
+            {t(item.label as I18nCommonKey)}
           </Box>
-        )}
+        ))}
 
         <SealosMenu
-          width={240}
+          width={200}
           Button={
             <MenuButton
+              ml={'auto'}
               as={Button}
               variant={'outline'}
               leftIcon={<MyIcon name="pods" width={'16px'} height={'16px'} />}
-              minW={'240px'}
+              w={'200px'}
               h={'32px'}
               textAlign={'start'}
               bg={'grayModern.100'}
@@ -223,7 +223,9 @@ export default function RunTimeLog({
               border={'1px solid #E8EBF0'}
             >
               <Flex alignItems={'center'}>
-                <Box flex={1}>{podName}</Box>
+                <Box flex={1} isTruncated>
+                  {podName}
+                </Box>
                 <ChevronDownIcon ml={2} />
               </Flex>
             </MenuButton>
@@ -237,14 +239,14 @@ export default function RunTimeLog({
 
         {db?.dbType !== 'mongodb' && (
           <SealosMenu
-            width={240}
+            width={200}
             Button={
               <MenuButton
                 ml={'12px'}
                 as={Button}
                 variant={'outline'}
                 leftIcon={<MyIcon name="pods" width={'16px'} height={'16px'} />}
-                minW={'240px'}
+                w={'200px'}
                 h={'32px'}
                 textAlign={'start'}
                 bg={'grayModern.100'}
@@ -252,7 +254,9 @@ export default function RunTimeLog({
                 border={'1px solid #E8EBF0'}
               >
                 <Flex alignItems={'center'}>
-                  <Box flex={1}>{logFile?.name}</Box>
+                  <Box flex={1} isTruncated>
+                    {logFile?.name}
+                  </Box>
                   <ChevronDownIcon ml={2} />
                 </Flex>
               </MenuButton>
@@ -265,7 +269,7 @@ export default function RunTimeLog({
           />
         )}
 
-        <InputGroup w={'240px'} h={'32px'} ml={'auto'} mr={'24px'}>
+        <InputGroup w={'200px'} h={'32px'} mr={'24px'} ml={'12px'}>
           <InputLeftElement>
             <MyIcon name="search" />
           </InputLeftElement>
@@ -273,7 +277,6 @@ export default function RunTimeLog({
             placeholder={t('error_log.search_content')}
             value={globalFilter ?? ''}
             onChange={(e) => table.setGlobalFilter(e.target.value)}
-            bg={'white'}
           />
         </InputGroup>
       </Flex>

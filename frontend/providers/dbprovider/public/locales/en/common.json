@@ -176,13 +176,13 @@
   "enable_external_network_access": "Allow public network access",
   "enter_save": "Press Enter to save. 'All' exports the entire database.",
   "error_log": {
-    "analysis": "Log analysis",
-    "collection_time": "Collection time",
-    "content": "information",
-    "error_log": "error log",
-    "runtime_log": "Run log",
-    "search_content": "Search log content",
-    "slow_query": "slow log"
+    "analysis": "Log Analysis",
+    "collection_time": "Collection Time",
+    "content": "Information",
+    "error_log": "Error Log",
+    "runtime_log": "Run Log",
+    "search_content": "Search Log Content",
+    "slow_query": "Slow Log"
   },
   "event_analyze": "Intelligent Analytics",
   "event_analyze_error": "Intelligent analytics error",
