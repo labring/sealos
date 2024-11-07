@@ -302,17 +302,6 @@ func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *dev
 			Value: devbox.Namespace + "-" + devbox.Name,
 		},
 		{
-			Name: "SEALOS_DEVBOX_PASSWORD",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					Key: "SEALOS_DEVBOX_PASSWORD",
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: devbox.Name,
-					},
-				},
-			},
-		},
-		{
 			Name: "SEALOS_DEVBOX_POD_UID",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
@@ -374,6 +363,10 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 					{
 						Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
 						Path: "id.pub",
+					},
+					{
+						Key:  "SEALOS_DEVBOX_AUTHORIZED_KEYS",
+						Path: "authorized_keys",
 					},
 				},
 			},

@@ -194,10 +194,10 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	secret := &corev1.Secret{
 		ObjectMeta: objectMeta,
 		Data: map[string][]byte{
-			"SEALOS_DEVBOX_PASSWORD":    []byte(rand.String(12)),
-			"SEALOS_DEVBOX_JWT_SECRET":  []byte(rand.String(32)),
-			"SEALOS_DEVBOX_PUBLIC_KEY":  publicKey,
-			"SEALOS_DEVBOX_PRIVATE_KEY": privateKey,
+			"SEALOS_DEVBOX_JWT_SECRET":      []byte(rand.String(32)),
+			"SEALOS_DEVBOX_PUBLIC_KEY":      publicKey,
+			"SEALOS_DEVBOX_PRIVATE_KEY":     privateKey,
+			"SEALOS_DEVBOX_AUTHORIZED_KEYS": publicKey,
 		},
 	}
 
