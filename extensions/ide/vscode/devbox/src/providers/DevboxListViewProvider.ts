@@ -6,6 +6,7 @@ import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 import { defaultDevboxSSHConfigPath } from '../constant/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
+import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -82,6 +83,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
 
   private refreshData(): void {
     if (this.treeName === 'devboxDashboard') {
+      convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
       parseSSHConfig(defaultDevboxSSHConfigPath).then((data) => {
         this.treeData = data as DevboxListItem[]
         this._onDidChangeTreeData.fire(undefined)
