@@ -564,10 +564,12 @@ const Form = ({
                   <Input
                     opacity={0.5}
                     width={'200px'}
-                    defaultValue={getRuntimeDetailLabel(
-                      getValues('runtimeType'),
-                      getValues('runtimeVersion')
-                    )}
+                    value={
+                      getRuntimeDetailLabel(
+                        getValues('runtimeType'),
+                        getValues('runtimeVersion')
+                      ) || ''
+                    }
                     disabled
                   />
                 ) : (
