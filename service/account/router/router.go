@@ -15,6 +15,8 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/labring/sealos/service/account/docs"
 
 	"github.com/labring/sealos/service/account/dao"
@@ -40,6 +42,7 @@ func RegisterPayRouter() {
 			log.Fatalf("Error disconnecting database: %v", err)
 		}
 	}()
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	// /account/v1alpha1/{/namespaces | /properties | {/costs | /costs/recharge | /costs/consumption | /costs/properties}}
 	router.Group(helper.GROUP).
 		POST(helper.GetHistoryNamespaces, api.GetBillingHistoryNamespaceList).

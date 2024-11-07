@@ -62,6 +62,7 @@ func AdminChargeBilling(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request : %v", err)})
 		return
 	}
+	helper.CallCounter.WithLabelValues("ChargeBilling", billingReq.UserUID.String()).Inc()
 	err = dao.DBClient.ChargeBilling(billingReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to charge billing : %v", err)})

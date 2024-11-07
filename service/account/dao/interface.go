@@ -69,7 +69,6 @@ type Interface interface {
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
 	ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error
 	ReconcileActiveBilling(startTime, endTime time.Time) error
-	ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error
 	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
 	ActiveBilling(req resources.ActiveBilling) error
 }
@@ -1587,12 +1586,14 @@ func (m *Account) ReconcileActiveBilling(startTime, endTime time.Time) error {
 
 	// Process billings in batches
 	if err := m.processBillingBatches(ctx, startTime, endTime, billings); err != nil {
+		helper.ErrorCounter.WithLabelValues("ReconcileActiveBilling", "processBillingBatches", "").Inc()
 		return fmt.Errorf("failed to process billing batches: %w", err)
 	}
 
 	// Handle each user's billings
 	for uid, batch := range billings {
 		if err := m.reconcileUserBilling(ctx, uid, batch); err != nil {
+			helper.ErrorCounter.WithLabelValues("ReconcileActiveBilling", "reconcileUserBilling", uid.String()).Inc()
 			logrus.Errorf("failed to reconcile billing for user %s: %v", uid, err)
 			continue
 		}
@@ -1695,11 +1696,13 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 func (m *Account) ActiveBilling(req resources.ActiveBilling) error {
 	return m.ck.DB.Transaction(func(tx *gorm.DB) error {
 		if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: req.UserUID}, req.Amount, tx); err != nil {
+			helper.ErrorCounter.WithLabelValues("ActiveBilling", "AddDeductionBalanceWithDB", req.UserUID.String()).Inc()
 			return fmt.Errorf("failed to deduct balance: %v", err)
 		}
 		req.Status = resources.Consumed
 		_, err := m.getActiveBillingCollection().InsertOne(context.Background(), req)
 		if err != nil {
+			helper.ErrorCounter.WithLabelValues("ActiveBilling", "InsertOne", req.UserUID.String()).Inc()
 			return fmt.Errorf("failed to insert (%v) monitor: %v", req, err)
 		}
 		return nil
@@ -1783,105 +1786,6 @@ func (m *Account) ReconcileUnsettledLLMBilling(startTime, endTime time.Time) err
 	return nil
 }
 
-func (m *Account) ArchiveHourlyLLMBilling(hourStart, hourEnd time.Time) error {
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{
-			"time": bson.M{
-				"$gte": hourStart,
-				"$lt":  hourEnd,
-			},
-			"app_type": resources.AppType[resources.LLMToken],
-			"status":   resources.Settled,
-		}}},
-		{{Key: "$group", Value: bson.M{
-			"_id": bson.M{
-				"user_uid":  "$user_uid",
-				"app_name":  "$app_name",
-				"owner":     "$owner",
-				"namespace": "$namespace",
-			},
-			"total_amount": bson.M{"$sum": "$amount"},
-		}}},
-	}
-
-	cursor, err := m.MongoDB.getBillingCollection().Aggregate(context.Background(), pipeline)
-	if err != nil {
-		return fmt.Errorf("failed to aggregate hourly billing: %v", err)
-	}
-	defer cursor.Close(context.Background())
-
-	var errs []error
-	for cursor.Next(context.Background()) {
-		var result struct {
-			ID struct {
-				UserUID   uuid.UUID `bson:"user_uid"`
-				AppName   string    `bson:"app_name"`
-				Owner     string    `bson:"owner"`
-				Namespace string    `bson:"namespace"`
-			} `bson:"_id"`
-			TotalAmount int64 `bson:"total_amount"`
-		}
-
-		if err := cursor.Decode(&result); err != nil {
-			errs = append(errs, fmt.Errorf("failed to decode document: %v", err))
-			continue
-		}
-		if result.ID.Owner == "" {
-			userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: result.ID.UserUID})
-			if err != nil {
-				errs = append(errs, fmt.Errorf("failed to get user cr: %v", err))
-				continue
-			}
-			result.ID.Owner = userCr.CrName
-		}
-
-		filter := bson.M{
-			"user_uid": result.ID.UserUID,
-			"app_type": resources.AppType[resources.LLMToken],
-			"app_name": result.ID.AppName,
-			"time":     hourStart,
-			"type":     accountv1.Consumption,
-		}
-
-		billing := bson.M{
-			"order_id":  gonanoid.Must(12),
-			"type":      accountv1.Consumption,
-			"namespace": result.ID.Namespace,
-			"app_type":  resources.AppType[resources.LLMToken],
-			"app_name":  result.ID.AppName,
-			"amount":    result.TotalAmount,
-			"owner":     result.ID.Owner,
-			"time":      hourStart,
-			"status":    resources.Settled,
-			"user_uid":  result.ID.UserUID,
-		}
-
-		update := bson.M{
-			"$setOnInsert": billing,
-		}
-
-		opts := options.Update().SetUpsert(true)
-		_, err = m.MongoDB.getBillingCollection().UpdateOne(
-			context.Background(),
-			filter,
-			update,
-			opts,
-		)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to upsert billing for user %s, app %s: %v",
-				result.ID.UserUID, result.ID.AppName, err))
-			continue
-		}
-	}
-	if err = cursor.Err(); err != nil {
-		errs = append(errs, fmt.Errorf("cursor error: %v", err))
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("encountered %d errors during archiving: %v", len(errs), errs)
-	}
-	return nil
-}
-
 func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.M{
@@ -1905,6 +1809,7 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 
 	cursor, err := m.MongoDB.getActiveBillingCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
+		helper.ErrorCounter.WithLabelValues("ArchiveHourlyBilling", "Aggregate", "").Inc()
 		return fmt.Errorf("failed to aggregate hourly billing: %v", err)
 	}
 	defer cursor.Close(context.Background())
@@ -1929,6 +1834,7 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 		if result.ID.Owner == "" {
 			userCr, err := m.ck.GetUserCr(&types.UserQueryOpts{UID: result.ID.UserUID})
 			if err != nil {
+				helper.ErrorCounter.WithLabelValues("ArchiveHourlyBilling", "GetUserCr", result.ID.UserUID.String()).Inc()
 				errs = append(errs, fmt.Errorf("failed to get user cr: %v", err))
 				continue
 			}
@@ -1969,6 +1875,7 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 			opts,
 		)
 		if err != nil {
+			helper.ErrorCounter.WithLabelValues("ArchiveHourlyBilling", "UpdateOne", result.ID.UserUID.String()).Inc()
 			errs = append(errs, fmt.Errorf("failed to upsert billing for user %s, app %s: %v",
 				result.ID.UserUID, result.ID.AppName, err))
 			continue

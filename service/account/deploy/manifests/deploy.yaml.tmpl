@@ -43,6 +43,17 @@ spec:
       containers:
         - name: account-service
           image: ghcr.io/labring/sealos-account-service:latest
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
           envFrom:
           - configMapRef:
               name: account-manager-env
