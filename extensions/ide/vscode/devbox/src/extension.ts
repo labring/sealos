@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { Webview } from './commands/webview'
 import { RemoteSSHConnector } from './commands/remoteConnector'
 import { DevboxListViewProvider } from './providers/DevboxListViewProvider'
 import { UriHandler } from './utils/handleUri'
@@ -10,10 +9,6 @@ import { GlobalStateManager } from './utils/globalStateManager'
 import { ToolCommands } from './commands/tools'
 
 export async function activate(context: vscode.ExtensionContext) {
-  // webview
-  const webview = new Webview(context)
-  context.subscriptions.push(webview)
-
   // tools
   const tools = new ToolCommands(context)
   context.subscriptions.push(tools)
