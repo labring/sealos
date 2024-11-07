@@ -28,77 +28,68 @@ export function convertSSHConfigToVersion2(filePath: string) {
   const output: Record<string, Record<string, string>> = {}
   let result = ''
 
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading file:', err)
+  const data = fs.readFileSync(filePath, 'utf8')
+
+  const lines = data.split('\n')
+  let currentWorkDir: any = null
+  let formattedHostName = ''
+
+  lines.forEach((line) => {
+    line = line.trim()
+
+    if (line.startsWith('# WorkingDir:')) {
+      currentWorkDir = line.split(': ')[1].trim()
       return
     }
 
-    const lines = data.split('\n')
-    let currentWorkDir: any = null
-    let formattedHostName = ''
-
-    lines.forEach((line) => {
-      line = line.trim()
-
-      // 处理 WorkingDir 行
-      if (line.startsWith('# WorkingDir:')) {
-        currentWorkDir = line.split(': ')[1].trim()
-        return
-      }
-
-      // 处理 Host 行
-      const hostMatch = line.match(/^Host (.+)/)
-      if (hostMatch) {
-        let hostName = hostMatch[1]
-        if (hostName.includes('_ns-')) {
-          formattedHostName = hostName
+    const hostMatch = line.match(/^Host (.+)/)
+    if (hostMatch) {
+      let hostName = hostMatch[1]
+      if (hostName.includes('_ns-')) {
+        formattedHostName = hostName
+      } else {
+        hostName = hostName.replace(/-([^-\s]+)$/, '')
+        const namespace = hostName.match(/ns-([a-z0-9]+)(?=-)/)
+        if (namespace) {
+          formattedHostName = hostName.replace(
+            /^(.+)-ns-([a-z0-9]+)-(.+)$/,
+            '$1_ns-$2_$3'
+          )
         } else {
-          hostName = hostName.replace(/-([^-\s]+)$/, '')
-          const namespace = hostName.match(/ns-([a-z0-9]+)(?=-)/)
-          if (namespace) {
-            formattedHostName = hostName.replace(
-              /^(.+)-ns-([a-z0-9]+)-(.+)$/,
-              '$1_ns-$2_$3'
-            )
-          } else {
-            formattedHostName = hostName
-          }
-        }
-
-        // 初始化 Host 对象
-        output[formattedHostName] = {
-          workDir: currentWorkDir,
-        }
-        return
-      }
-
-      // 处理其他配置项
-      if (currentWorkDir && line) {
-        const keyValueMatch = line.match(/(\S+)\s+(.+)/)
-        if (keyValueMatch) {
-          const [_, key, value] = keyValueMatch
-          output[formattedHostName][key] = value
+          formattedHostName = hostName
         }
       }
-    })
 
-    for (const [host, config] of Object.entries(output)) {
-      if (config.workDir) {
-        GlobalStateManager.setWorkDir(host, config.workDir)
+      output[formattedHostName] = {
+        workDir: currentWorkDir,
       }
-
-      result += `Host ${host}\n`
-      for (const [key, value] of Object.entries(config)) {
-        if (key !== 'workDir') {
-          result += `  ${key} ${value}\n`
-        }
-      }
-      result += '\n'
+      return
     }
-    result = result.trim()
-    fs.writeFileSync(filePath, result, 'utf8')
+
+    if (line && !line.startsWith('# WorkingDir:')) {
+      const keyValueMatch = line.match(/(\S+)\s+(.+)/)
+      if (keyValueMatch) {
+        const [_, key, value] = keyValueMatch
+        output[formattedHostName][key] = value
+      }
+    }
   })
+
+  for (const [host, config] of Object.entries(output)) {
+    if (config.workDir) {
+      GlobalStateManager.setWorkDir(host, config.workDir)
+    }
+
+    result += `Host ${host}\n`
+    for (const [key, value] of Object.entries(config)) {
+      if (key !== 'workDir') {
+        result += `  ${key} ${value}\n`
+      }
+    }
+    result += '\n'
+  }
+  result = result.trim()
+  fs.writeFileSync(filePath, result, { encoding: 'utf8', flag: 'w' })
 }
 
 export function ensureFileExists(filePath: string, parentDir: string) {

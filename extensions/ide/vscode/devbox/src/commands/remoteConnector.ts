@@ -101,7 +101,7 @@ export class RemoteSSHConnector extends Disposable {
         if (skipLines) {
           if (
             line.startsWith('Host ') ||
-            i === existingDevboxConfigLines.length - 1
+            i === existingDevboxConfigLines.length
           ) {
             skipLines = false
           }
@@ -118,11 +118,7 @@ export class RemoteSSHConnector extends Disposable {
       )
 
       // 5. write new ssh config to .ssh/sealos/devbox_config
-      fs.appendFileSync(defaultDevboxSSHConfigPath, sshConfigString)
-      vscode.window.showInformationMessage(
-        `SSH configuration for ${sshHost} with port ${sshPort} has been added.`,
-        { modal: false }
-      )
+      fs.appendFileSync(defaultDevboxSSHConfigPath, `\n${sshConfigString}\n`)
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to write SSH configuration: ${error}`
@@ -160,11 +156,6 @@ export class RemoteSSHConnector extends Disposable {
 
     // refresh devboxList
     await vscode.commands.executeCommand('devboxDashboard.refresh')
-
-    await vscode.window.showInformationMessage(
-      `Connected to ${sshHost} with port ${sshPort} successfully.`,
-      { modal: false }
-    )
   }
 
   private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
