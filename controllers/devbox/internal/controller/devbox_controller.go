@@ -179,6 +179,14 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 				return fmt.Errorf("failed to update secret: %w", err)
 			}
 		}
+
+		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
+			devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = devboxSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
+			if err := r.Update(ctx, devboxSecret); err != nil {
+				return fmt.Errorf("failed to update secret: %w", err)
+			}
+		}
+
 		return nil
 	}
 	if client.IgnoreNotFound(err) != nil {
