@@ -99,7 +99,7 @@ const AppDetail = ({
             {
               label: 'import_through_file',
               value: TabEnum.DumpImport,
-              icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
+              icon: <MyIcon name="file" w={'16px'} h={'16px'} />
             }
           ]
         : []),
@@ -178,7 +178,7 @@ const AppDetail = ({
           border={theme.borders.base}
           borderRadius={'lg'}
         >
-          <Flex m={'26px'} mb={'8px'} alignItems={'flex-start'}>
+          <Flex m={'26px'} mb={'8px'} alignItems={'flex-start'} flexWrap={'wrap'}>
             {listNav.map((item) => (
               <Flex
                 alignItems={'center'}
@@ -204,6 +204,7 @@ const AppDetail = ({
                     })}
               >
                 {item.icon}
+
                 {t(item.label as I18nCommonKey)}
               </Flex>
             ))}

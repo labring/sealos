@@ -136,7 +136,7 @@ export default function RunTimeLog({
               fontWeight={'500'}
               color={'grayModern.900'}
             >
-              {formatTime(row.original.timestamp)}
+              {formatTime(row.original.timestamp, 'YYYY-MM-DD HH:mm:ss.SSS')}
             </Box>
           );
         },
@@ -184,7 +184,13 @@ export default function RunTimeLog({
       globalFilter
     },
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: 'includesString'
+    globalFilterFn: (row, columnId, filterValue) => {
+      const timestamp = formatTime(row.original.timestamp, 'YYYY-MM-DD HH:mm:ss.SSS')
+        .toLowerCase()
+        .includes(filterValue.toLowerCase());
+      const content = row.original.content.toLowerCase().includes(filterValue.toLowerCase());
+      return timestamp || content;
+    }
   });
 
   return (

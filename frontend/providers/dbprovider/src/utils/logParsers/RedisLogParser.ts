@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import { ILogParser, LogParserParams, LogResult, RedisLogEntry } from '@/types/log';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
+import dayjs from 'dayjs';
 
 export class RedisLogParser implements ILogParser {
   private static readonly REDIS_LOG_PATTERN =
@@ -105,6 +106,7 @@ export class RedisLogParser implements ILogParser {
       .split('\n')
       .filter((line) => line.trim())
       .map((line) => {
+        // console.log(line, 'line');
         const match = line.match(RedisLogParser.REDIS_LOG_PATTERN);
         if (!match) {
           return {
@@ -120,7 +122,7 @@ export class RedisLogParser implements ILogParser {
         return {
           processId,
           role,
-          timestamp,
+          timestamp: dayjs(timestamp).add(8, 'hour').format('DD MMM YYYY HH:mm:ss.SSS'),
           level: level === '#' ? 'WARNING' : 'INFO',
           content: content.trim()
         };

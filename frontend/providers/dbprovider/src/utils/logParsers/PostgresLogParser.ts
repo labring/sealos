@@ -157,6 +157,10 @@ export class PostgresLogParser implements ILogParser {
       header: false
     });
 
+    // parsed.data.forEach((row) => {
+    //   console.log(row, 'row');
+    // });
+
     return parsed.data
       .filter((row) => row[0])
       .map((row) => ({

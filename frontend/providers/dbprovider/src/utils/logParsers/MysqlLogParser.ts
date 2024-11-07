@@ -226,14 +226,19 @@ export class MysqlLogParser implements ILogParser {
 
     for (const log of logs) {
       const lines = log.trim().split('\n');
-      const timestamp = lines[0].trim();
-      const content = lines.slice(1).join('\n');
 
-      entries.push({
-        timestamp,
-        level: 'INFO',
-        content: content
-      });
+      const timestampMatch = lines[0].trim().match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+
+      if (timestampMatch) {
+        const timestamp = lines[0].trim();
+        const content = lines.slice(1).join('\n');
+
+        entries.push({
+          timestamp,
+          level: 'INFO',
+          content: content.trim()
+        });
+      }
     }
 
     return entries;

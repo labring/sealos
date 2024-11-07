@@ -14,7 +14,7 @@ export type ComponentRef = {
 const DB_LOG_TYPES: Record<SupportReconfigureDBType, LogTypeEnum[]> = {
   postgresql: [LogTypeEnum.RuntimeLog],
   mongodb: [LogTypeEnum.RuntimeLog],
-  'apecloud-mysql': [LogTypeEnum.SlowQuery, LogTypeEnum.ErrorLog],
+  'apecloud-mysql': [LogTypeEnum.ErrorLog, LogTypeEnum.SlowQuery],
   redis: [LogTypeEnum.RuntimeLog]
 };
 
@@ -35,8 +35,8 @@ const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>
       const dbType = db?.dbType as SupportReconfigureDBType;
       const availableMenus = DB_LOG_TYPES[dbType] || [];
 
-      if (availableMenus.includes(LogTypeEnum.SlowQuery)) {
-        return LogTypeEnum.SlowQuery;
+      if (availableMenus.includes(LogTypeEnum.ErrorLog)) {
+        return LogTypeEnum.ErrorLog;
       }
 
       return LogTypeEnum.RuntimeLog;
@@ -56,11 +56,11 @@ const ErrorLog = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>
     });
   };
 
-  const { availableSubMenus, filteredSubNavList } = useMemo(() => {
+  const { filteredSubNavList } = useMemo(() => {
     const SubNavList = [
       { label: t('error_log.runtime_log'), value: LogTypeEnum.RuntimeLog },
-      { label: t('error_log.slow_query'), value: LogTypeEnum.SlowQuery },
-      { label: t('error_log.error_log'), value: LogTypeEnum.ErrorLog }
+      { label: t('error_log.error_log'), value: LogTypeEnum.ErrorLog },
+      { label: t('error_log.slow_query'), value: LogTypeEnum.SlowQuery }
     ];
 
     const availableSubMenus = DB_LOG_TYPES[db.dbType as SupportReconfigureDBType] || [];
