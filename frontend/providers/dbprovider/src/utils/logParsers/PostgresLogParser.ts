@@ -7,7 +7,7 @@ export class PostgresLogParser implements ILogParser {
   constructor(private k8sExec: k8s.Exec, private namespace: string) {}
 
   async readLogs(params: LogParserParams): Promise<LogResult> {
-    const { podName, containerNames, logPath, page, pageSize, keyword = 'GMT' } = params;
+    const { podName, containerNames, logPath, page, pageSize, keyword = 'CST' } = params;
     const start = performance.now();
 
     const totalCount = await this.getKeywordCount(podName, containerNames, logPath, keyword);
