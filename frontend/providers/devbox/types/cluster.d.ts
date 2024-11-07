@@ -1,4 +1,4 @@
-import { DBType } from './db'
+import { DBType, DBStatusEnum } from './db'
 
 export type KbPgClusterType = {
   apiVersion: 'apps.kubeblocks.io/v1alpha1'
@@ -7,7 +7,7 @@ export type KbPgClusterType = {
     annotations: Record<string, string>
     creationTimestamp: Date
     labels: {
-      'clusterdefinition.kubeblocks.io/name': `${DBTypeEnum}`
+      'clusterdefinition.kubeblocks.io/name': DBType
       'clusterversion.kubeblocks.io/name': string
       'sealos-db-provider/postgresql': string
       [key: string]: string
@@ -21,12 +21,12 @@ export type KbPgClusterType = {
 }
 
 export interface KubeBlockClusterSpec {
-  clusterDefinitionRef: `${DBTypeEnum}`
+  clusterDefinitionRef: DBType
   clusterVersionRef: string
   terminationPolicy: string
   componentSpecs: {
-    componentDefRef: `${DBTypeEnum}`
-    name: `${DBTypeEnum}`
+    componentDefRef: DBType
+    name: DBType
     replicas: number
     resources: {
       limits: {
