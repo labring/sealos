@@ -37,16 +37,6 @@ export default async function handsler(req: NextApiRequest, res: NextApiResponse
 
     const logConfig = ServiceLogConfigs[dbType][logType];
 
-    console.log('/api/logs/get', {
-      podName,
-      dbType,
-      logType,
-      logPath,
-      page,
-      pageSize,
-      logConfig
-    });
-
     if (!logConfig) {
       throw new Error('Invalid log type');
     }

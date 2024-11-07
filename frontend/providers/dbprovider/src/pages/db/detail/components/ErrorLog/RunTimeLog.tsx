@@ -66,7 +66,7 @@ export default function RunTimeLog({
   const [data, setData] = useState<LogContent[]>([]);
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(100);
 
   const [globalFilter, setGlobalFilter] = useState('');
 
