@@ -377,6 +377,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -455,6 +458,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -533,6 +539,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
