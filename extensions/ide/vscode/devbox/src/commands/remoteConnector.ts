@@ -164,6 +164,10 @@ export class RemoteSSHConnector extends Disposable {
         forceNewWindow: true,
       }
     )
+
+    // refresh devboxList
+    await vscode.commands.executeCommand('devboxDashboard.refresh')
+
     await vscode.window.showInformationMessage(
       `Connected to ${sshHost} with port ${sshPort} successfully.`
     )
