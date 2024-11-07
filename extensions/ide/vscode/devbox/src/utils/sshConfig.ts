@@ -82,7 +82,6 @@ export function convertSSHConfigToVersion2(filePath: string) {
         }
       }
     })
-    console.log('output', output)
 
     for (const [host, config] of Object.entries(output)) {
       if (config.workDir) {

@@ -48,7 +48,6 @@ export class UriHandler {
   }
 
   private validateParams(params: any): boolean {
-    console.log(params)
     return !!(
       params.sshDomain &&
       params.sshPort &&

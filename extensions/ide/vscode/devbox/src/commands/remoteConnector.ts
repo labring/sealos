@@ -79,12 +79,11 @@ export class RemoteSSHConnector extends Disposable {
     this.sshConfigPreProcess()
 
     try {
-      // 读取现有的 devbox 配置文件
       const existingDevboxConfigLines = fs
         .readFileSync(defaultDevboxSSHConfigPath, 'utf8')
         .split('\n')
 
-      // 用于存储需要保留的配置行
+      //  replace the existing ssh config item
       const newDevboxConfigLines = []
       let skipLines = false
 
@@ -92,18 +91,16 @@ export class RemoteSSHConnector extends Disposable {
         const line = existingDevboxConfigLines[i].trim()
 
         if (
-          line.startsWith('Host') &&
+          line.startsWith('Host ') &&
           line.substring(5).trim().startsWith(sshHostLabel)
         ) {
-          // 如果当前行是要删除的 Host，开始跳过
           skipLines = true
           continue
         }
 
         if (skipLines) {
-          // 检查是否到达下一个 Host 或文件结束
           if (
-            (line.startsWith('Host') && !line.startsWith('HostName')) ||
+            line.startsWith('Host ') ||
             i === existingDevboxConfigLines.length - 1
           ) {
             skipLines = false
@@ -115,20 +112,16 @@ export class RemoteSSHConnector extends Disposable {
         }
       }
 
-      // 将新的配置写回文件
       fs.writeFileSync(
         defaultDevboxSSHConfigPath,
         newDevboxConfigLines.join('\n')
       )
 
       // 5. write new ssh config to .ssh/sealos/devbox_config
-      fs.appendFileSync(
-        defaultDevboxSSHConfigPath,
-        `\n# WorkingDir: ${workingDir}\n`
-      )
       fs.appendFileSync(defaultDevboxSSHConfigPath, sshConfigString)
       vscode.window.showInformationMessage(
-        `SSH configuration for ${sshHost} with port ${sshPort} has been added.`
+        `SSH configuration for ${sshHost} with port ${sshPort} has been added.`,
+        { modal: false }
       )
     } catch (error) {
       vscode.window.showErrorMessage(
@@ -136,7 +129,7 @@ export class RemoteSSHConnector extends Disposable {
       )
     }
 
-    // create sealos privateKey file in .ssh/sealos
+    // 6. create sealos privateKey file in .ssh/sealos
     try {
       const sshKeyPath = defaultSSHKeyPath + `/${sshHostLabel}`
       fs.writeFileSync(sshKeyPath, normalPrivateKey)
@@ -169,7 +162,8 @@ export class RemoteSSHConnector extends Disposable {
     await vscode.commands.executeCommand('devboxDashboard.refresh')
 
     await vscode.window.showInformationMessage(
-      `Connected to ${sshHost} with port ${sshPort} successfully.`
+      `Connected to ${sshHost} with port ${sshPort} successfully.`,
+      { modal: false }
     )
   }
 
