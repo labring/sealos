@@ -77,15 +77,19 @@ export async function GET(req: NextRequest) {
     languageList.forEach((item: any) => {
       const language = item.metadata.name
       const versions = runtimes.filter((runtime: any) => runtime.spec.classRef === language)
-      languageVersionMap[language] = []
-      versions.forEach((version: any) => {
-        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
-        languageVersionMap[language].push({
-          id: version.metadata.name,
-          label: version.spec.version,
-          defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
-        })
-      })
+      const defaultVersion = versions.find(
+        (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] === 'true'
+      )
+      const otherVersions = versions.filter(
+        (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] !== 'true'
+      )
+      const sortedVersions = defaultVersion ? [defaultVersion, ...otherVersions] : versions
+
+      languageVersionMap[language] = sortedVersions.map((version: any) => ({
+        id: version.metadata.name,
+        label: version.spec.version,
+        defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
+      }))
       if (languageVersionMap[language].length === 0) {
         delete languageVersionMap[language]
         const index = languageTypeList.findIndex((item) => item.id === language)
@@ -98,15 +102,19 @@ export async function GET(req: NextRequest) {
     frameworkList.forEach((item: any) => {
       const framework = item.metadata.name
       const versions = runtimes.filter((runtime: any) => runtime.spec.classRef === framework)
-      frameworkVersionMap[framework] = []
-      versions.forEach((version: any) => {
-        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
-        frameworkVersionMap[framework].push({
-          id: version.metadata.name,
-          label: version.spec.version,
-          defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
-        })
-      })
+      const defaultVersion = versions.find(
+        (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] === 'true'
+      )
+      const otherVersions = versions.filter(
+        (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] !== 'true'
+      )
+      const sortedVersions = defaultVersion ? [defaultVersion, ...otherVersions] : versions
+
+      frameworkVersionMap[framework] = sortedVersions.map((version: any) => ({
+        id: version.metadata.name,
+        label: version.spec.version,
+        defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
+      }))
       if (frameworkVersionMap[framework].length === 0) {
         delete frameworkVersionMap[framework]
         const index = frameworkTypeList.findIndex((item) => item.id === framework)
@@ -115,23 +123,28 @@ export async function GET(req: NextRequest) {
         }
       }
     })
+
     osList.forEach((item: any) => {
       const os = item.metadata.name
       const versions = runtimes.filter((runtime: any) => runtime.spec.classRef === os)
-      osVersionMap[os] = []
-      versions.forEach((version: any) => {
-        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
-        osVersionMap[os].push({
-          id: version.metadata.name,
-          label: version.spec.version,
-          defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
-        })
-      })
+      const defaultVersion = versions.find(
+        (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] === 'true'
+      )
+      const otherVersions = versions.filter(
+        (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] !== 'true'
+      )
+      const sortedVersions = defaultVersion ? [defaultVersion, ...otherVersions] : versions
+
+      osVersionMap[os] = sortedVersions.map((version: any) => ({
+        id: version.metadata.name,
+        label: version.spec.version,
+        defaultPorts: version.spec.config.appPorts.map((item: any) => item.port)
+      }))
       if (osVersionMap[os].length === 0) {
         delete osVersionMap[os]
         const index = osTypeList.findIndex((item) => item.id === os)
         if (index !== -1) {
-          frameworkTypeList.splice(index, 1)
+          osTypeList.splice(index, 1)
         }
       }
     })
