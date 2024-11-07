@@ -85,6 +85,10 @@ export async function GET(req: NextRequest) {
       )
       const sortedVersions = defaultVersion ? [defaultVersion, ...otherVersions] : versions
 
+      sortedVersions.forEach((version: any) => {
+        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
+      })
+
       languageVersionMap[language] = sortedVersions.map((version: any) => ({
         id: version.metadata.name,
         label: version.spec.version,
@@ -110,6 +114,10 @@ export async function GET(req: NextRequest) {
       )
       const sortedVersions = defaultVersion ? [defaultVersion, ...otherVersions] : versions
 
+      sortedVersions.forEach((version: any) => {
+        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
+      })
+
       frameworkVersionMap[framework] = sortedVersions.map((version: any) => ({
         id: version.metadata.name,
         label: version.spec.version,
@@ -134,6 +142,10 @@ export async function GET(req: NextRequest) {
         (v: any) => v.metadata.annotations?.['devbox.sealos.io/defaultVersion'] !== 'true'
       )
       const sortedVersions = defaultVersion ? [defaultVersion, ...otherVersions] : versions
+
+      sortedVersions.forEach((version: any) => {
+        runtimeNamespaceMap[version.metadata.name] = item.metadata.namespace
+      })
 
       osVersionMap[os] = sortedVersions.map((version: any) => ({
         id: version.metadata.name,
