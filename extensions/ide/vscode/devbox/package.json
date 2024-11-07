@@ -67,6 +67,10 @@
       {
         "command": "devbox.openExternalLink",
         "title": "Devbox:Open in Browser"
+      },
+      {
+        "command": "devbox.copy",
+        "title": "Copy Connection String"
       }
     ],
     "views": {

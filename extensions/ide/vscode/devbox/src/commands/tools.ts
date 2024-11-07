@@ -12,6 +12,14 @@ export class ToolCommands extends Disposable {
           vscode.env.openExternal(vscode.Uri.parse(args))
         })
       )
+      this._register(
+        vscode.commands.registerCommand('devbox.copy', (connection: string) => {
+          vscode.env.clipboard.writeText(connection)
+          vscode.window.showInformationMessage(
+            'Connection string copied to clipboard!'
+          )
+        })
+      )
     }
   }
 }

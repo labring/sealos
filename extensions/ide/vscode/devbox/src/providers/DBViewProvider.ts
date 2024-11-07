@@ -71,7 +71,7 @@ export class DBViewProvider implements vscode.TreeDataProvider<DatabaseItem> {
         )}${database.password.padEnd(15)}${database.host.padEnd(
           20
         )}${database.port.toString().padEnd(10)}${database.connection}`
-        items.push(new DatabaseItem(label, 'database'))
+        items.push(new DatabaseItem(label, 'database', database.connection))
       })
 
       return items
@@ -83,8 +83,17 @@ export class DBViewProvider implements vscode.TreeDataProvider<DatabaseItem> {
 class DatabaseItem extends vscode.TreeItem {
   constructor(
     public override readonly label: string,
-    public override readonly contextValue: string
+    public override readonly contextValue: string,
+    public readonly connection?: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None)
+
+    if (connection) {
+      this.command = {
+        title: 'Copy Connection String',
+        command: 'devbox.copy',
+        arguments: [connection],
+      }
+    }
   }
 }
