@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "Devbox",
   "description": "help code for cloud devbox in sailos/sealos",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "keywords": [
     "devbox",
     "remote development",
@@ -151,7 +151,7 @@
     "ms-vscode-remote.remote-ssh"
   ],
   "scripts": {
-    "vscode:prepublish": "npm run build && npm run package",
+    "vscode:prepublish": "npm run package",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
