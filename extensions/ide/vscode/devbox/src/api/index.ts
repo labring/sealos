@@ -50,6 +50,7 @@ const showStatus = (status: number) => {
 }
 
 const getBaseURL = () => {
+  // inject env from launch.json(configurations.env)
   const isDevelopment = process.env.NODE_ENV === 'development'
   // TODO: 硬编码改为软编码
   return isDevelopment

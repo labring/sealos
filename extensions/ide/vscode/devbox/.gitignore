@@ -4,4 +4,4 @@ node_modules
 .vscode-test/
 *.vsix
 
-.env*.local
+.env
