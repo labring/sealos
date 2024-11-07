@@ -49,8 +49,16 @@ const showStatus = (status: number) => {
   return `${message}, please check the network or contact the administrator!`
 }
 
+const getBaseURL = () => {
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  // TODO: 硬编码改为软编码
+  return isDevelopment
+    ? 'http://127.0.0.1:3000'
+    : 'https://devbox.usw.sailos.io'
+}
+
 const request = axios.create({
-  baseURL: 'http://127.0.0.1:3000',
+  baseURL: getBaseURL(),
   withCredentials: true,
   timeout: 60000,
 })
