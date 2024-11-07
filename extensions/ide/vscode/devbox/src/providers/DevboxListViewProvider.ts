@@ -107,7 +107,9 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
   // TODO: 根据不同的代理跳转到不同的页面，而且可以进行设置里的配置
   create(item: MyTreeItem) {
     vscode.commands.executeCommand('devbox.openExternalLink', [
-      'https://usw.sailos.io/?openapp=system-devbox',
+      `https://usw.sailos.io/?openapp=system-devbox?${encodeURIComponent(
+        `page=create`
+      )}`,
     ])
   }
 
