@@ -12,33 +12,13 @@ export const config = {
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      */
-    {
-      source: '/((?!api|_next/static|_next/image|favicon.ico).*)'
-    },
-
-    // 排除 assets路径
-    {
-      source: '/((?!assets/).*)'
-    },
-
-    // 排除特定文件
-    '/((?!sw\\.js).*)',
-    '/((?!site\\.webmanifest).*)',
-
-    // 排除以特定字符串开头的路径
-    '/((?!icon/).*)',
-    '/((?!chrome/).*)'
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)'
   ]
 }
 
 export function middleware(req: NextRequest): NextResponse {
-  // 如果是 API 请求，直接放行，不添加语言前缀
-  if (req.nextUrl.pathname.includes('/api/')) {
-    return NextResponse.next()
-  }
-
   // static file  /public/xxx.svg
   if (
     req.nextUrl.pathname.endsWith('.svg') ||
@@ -48,24 +28,29 @@ export function middleware(req: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
-  if (req.nextUrl.pathname.indexOf('icon') > -1 || req.nextUrl.pathname.indexOf('chrome') > -1)
+  if (req.nextUrl.pathname.indexOf('icon') > -1 || req.nextUrl.pathname.indexOf('chrome') > -1) {
     return NextResponse.next()
+  }
 
-  let lng: string | undefined | null
-  lng = acceptLanguage.get(req.headers.get('Accept-Language'))
-  if (!lng) lng = fallbackLng
+  // 从路径中获取语言设置
+  let lng = req.nextUrl.pathname.split('/')[1]
 
-  if (req.nextUrl.pathname === '/' || req.nextUrl.pathname === '/zh') {
+  // 如果路径中没有有效的语言代码，则使用默认语言
+  if (!languages.includes(lng)) {
+    lng = fallbackLng
+  }
+
+  // 处理根路径和语言路径的重定向
+  if (
+    req.nextUrl.pathname === '/' ||
+    languages.some((lang) => req.nextUrl.pathname === `/${lang}`)
+  ) {
     const newUrl = new URL(`/${lng}/home`, req.url)
     return NextResponse.redirect(newUrl)
   }
 
-  // Redirect if lng in path is not supported
-  if (
-    !languages.some((loc) => req.nextUrl.pathname.startsWith(`/${loc}`)) &&
-    !req.nextUrl.pathname.startsWith('/_next') &&
-    !req.nextUrl.pathname.startsWith('/api/') // 添加这个条件，确保 API 路由不会被重定向
-  ) {
+  // 处理其他需要添加语言前缀的路径
+  if (!languages.some((loc) => req.nextUrl.pathname.startsWith(`/${loc}`))) {
     const newUrl = new URL(`/${lng}${req.nextUrl.pathname}${req.nextUrl.search}`, req.url)
     return NextResponse.redirect(newUrl)
   }

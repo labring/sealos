@@ -11,6 +11,7 @@ import logsIcon from '@/ui/svg/icons/sidebar/logs.svg'
 import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg'
 import priceIcon from '@/ui/svg/icons/sidebar/price.svg'
 import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg'
+import { useI18n } from '@/providers/i18n/i18nContext'
 
 type Menu = {
   id: string
@@ -21,8 +22,9 @@ type Menu = {
   display: boolean
 }
 
-const SideBar = ({ lng }: { lng: string }): JSX.Element => {
+const SideBar = (): JSX.Element => {
   const pathname = usePathname()
+  const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
   const menus: Menu[] = [
@@ -67,7 +69,7 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
           const isActive = pathname === fullUrl
 
           return (
-            <Link href={menu.url} key={menu.id} style={{ textDecoration: 'none' }}>
+            <Link href={fullUrl} key={menu.id} style={{ textDecoration: 'none' }}>
               <Flex
                 display="flex"
                 w="64px"
@@ -80,19 +82,7 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
                 borderRadius="8px"
                 cursor="pointer"
                 role="group"
-                _hover={{ backgroundColor: '#9699B426' }}
-                onMouseEnter={(e) => {
-                  const img = e.currentTarget.querySelector('img')
-                  if (img) {
-                    img.src = menu.activeIcon.src
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const img = e.currentTarget.querySelector('img')
-                  if (img && !isActive) {
-                    img.src = menu.icon.src
-                  }
-                }}>
+                _hover={{ backgroundColor: '#9699B426' }}>
                 <Image
                   src={isActive ? menu.activeIcon : menu.icon}
                   alt={menu.value}
@@ -107,8 +97,7 @@ const SideBar = ({ lng }: { lng: string }): JSX.Element => {
                   lineHeight="16px"
                   letterSpacing="0.5px"
                   textAlign="center"
-                  whiteSpace="nowrap"
-                  _groupHover={{ color: 'grayModern.900' }}>
+                  whiteSpace="nowrap">
                   {menu.value}
                 </Text>
               </Flex>

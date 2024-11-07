@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
 import {
   FallbackNs,
   initReactI18next,
-  useTranslation as useTranslationOrg,
+  useTranslation,
   UseTranslationOptions,
   UseTranslationResponse
 } from 'react-i18next'
@@ -28,7 +27,7 @@ i18next
     ...getOptions(),
     lng: undefined, // let detect the language on client side
     detection: {
-      order: ['path', 'htmlTag', 'cookie', 'navigator']
+      order: ['path', 'htmlTag', 'navigator']
     },
     preload: runsOnServerSide ? languages : []
   })
@@ -41,26 +40,11 @@ export function useTranslationClientSide<
   ns?: Ns,
   options?: UseTranslationOptions<KPrefix>
 ): UseTranslationResponse<FallbackNs<Ns>, KPrefix> {
-  const ret = useTranslationOrg(ns, options)
-  const { i18n } = ret
+  const ret = useTranslation(ns, options)
 
-  // server side handle
-  // if (runsOnServerSide) {
-  //   if (lng && i18n.resolvedLanguage !== lng) {
-  //     i18n.changeLanguage(lng);
-  //   }
-  //   return ret;
-  // }
-
-  // client side handle
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    if (!lng || i18n.resolvedLanguage === lng) {
-      return
-    }
-    i18n.changeLanguage(lng)
-    localStorage.setItem('userLanguage', lng)
-  }, [lng, i18n, i18n.resolvedLanguage])
+  if (lng && lng !== i18next.resolvedLanguage) {
+    i18next.changeLanguage(lng)
+  }
 
   return ret
 }

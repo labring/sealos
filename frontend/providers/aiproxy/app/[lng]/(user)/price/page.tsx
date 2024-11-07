@@ -207,7 +207,17 @@ function PriceTable() {
   const columns = [
     columnHelper.accessor((row) => row.name, {
       id: 'name',
-      header: () => t('key.name'),
+      header: () => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {t('key.name')}
+        </Text>
+      ),
       cell: (info) => <ModelComponent modelName={info.getValue()} />
     }),
     columnHelper.accessor((row) => row.prompt, {

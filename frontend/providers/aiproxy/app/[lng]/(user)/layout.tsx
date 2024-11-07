@@ -5,19 +5,38 @@ import SideBar from '@/components/user/Sidebar'
 
 import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { initAppConfig } from '@/api/platform'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useBackendStore } from '@/store/backend'
 import { useTranslationClientSide } from '@/app/i18n/client'
+import { usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const pathname = usePathname()
   const { lng } = useI18n()
   const { i18n } = useTranslationClientSide(lng)
   const { setAiproxyBackend } = useBackendStore()
+
+  const handleI18nChange = useCallback(
+    (data: { currentLanguage: string }) => {
+      const currentLng = i18n.resolvedLanguage // 这里会获取最新的 resolvedLanguage
+      const newLng = data.currentLanguage
+
+      if (currentLng !== newLng) {
+        const currentPath = window.location.pathname
+        const pathWithoutLang = currentPath.split('/').slice(2).join('/')
+        router.push(`/${newLng}/${pathWithoutLang}`)
+      }
+    },
+    [i18n.resolvedLanguage]
+  )
+
   // init session
   useEffect(() => {
-    const response = createSealosApp()
+    const cleanup = createSealosApp()
     ;(async () => {
       try {
         const newSession = JSON.stringify(await sealosApp.getSession())
@@ -26,18 +45,24 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           localStorage.setItem('session', newSession)
           window.location.reload()
         }
-        console.log('devbox: app init success')
+        console.log('aiproxy: app init success')
       } catch (err) {
-        console.log('devbox: app is not running in desktop')
+        console.log('aiproxy: app is not running in desktop')
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session')
         }
       }
     })()
-    return response
+    return () => {
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup()
+      }
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // init config and language
   useEffect(() => {
     const initConfig = async () => {
       const { aiproxyBackend } = await initAppConfig()
@@ -46,32 +71,41 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
     initConfig()
 
-    const changeI18n = async (data: any) => {
+    const initLanguage = async () => {
+      const pathLng = pathname.split('/')[1]
       try {
-        const { lng } = await sealosApp.getLanguage()
-        i18n.changeLanguage(lng)
+        const lang = await sealosApp.getLanguage()
+        if (pathLng !== lang.lng) {
+          const pathParts = pathname.split('/')
+          pathParts[1] = lang.lng
+          router.push(pathParts.join('/'))
+          router.refresh()
+        }
       } catch (error) {
-        i18n.changeLanguage('zh')
+        if (error instanceof Error) {
+          console.debug('Language initialization error:', error.message)
+        } else {
+          console.debug('Unknown language initialization error:', error)
+        }
       }
     }
 
-    ;(async () => {
-      try {
-        const lang = await sealosApp.getLanguage()
-        i18n.changeLanguage(lang.lng)
-      } catch (error) {
-        i18n.changeLanguage('zh')
-      }
-    })()
+    initLanguage()
 
-    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
+    const cleanup = sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, handleI18nChange)
+
+    return () => {
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup()
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
     <Flex height="100vh" width="100vw" direction="row">
       <Box w="88px" h="100vh">
-        <SideBar lng={lng} />
+        <SideBar />
       </Box>
       {/* Main Content */}
       <Box h="100vh" w="full" flex={1}>

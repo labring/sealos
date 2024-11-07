@@ -39,11 +39,9 @@ export default async function RootLayout({
   params
 }: Readonly<{
   children: React.ReactNode
-  params: {
-    lng: string
-  }
+  params: Promise<{ lng: string }>
 }>): Promise<React.JSX.Element> {
-  const { lng } = await params
+  const lng = (await params).lng
   return (
     <html lang={lng} dir={dir(lng)}>
       <body>
