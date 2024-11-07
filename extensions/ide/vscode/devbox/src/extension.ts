@@ -5,7 +5,7 @@ import { RemoteSSHConnector } from './commands/remoteConnector'
 import { DevboxListViewProvider } from './providers/DevboxListViewProvider'
 import { UriHandler } from './utils/handleUri'
 import { NetworkViewProvider } from './providers/NetworkViewProvider'
-import { DBViewProvider } from './providers/DbViewProvider'
+import { DBViewProvider } from './providers/DBViewProvider'
 import { GlobalStateManager } from './utils/globalStateManager'
 import { ToolCommands } from './commands/tools'
 
