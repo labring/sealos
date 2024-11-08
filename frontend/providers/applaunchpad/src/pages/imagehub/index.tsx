@@ -1,13 +1,12 @@
-import { useLoading } from '@/hooks/useLoading';
-import { serviceSideProps } from '@/utils/i18n';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/router';
-import { useRef, useState } from 'react';
-
 import { getImageHubs } from '@/api/app';
 import SwitchPage from '@/components/ImageHub/SwitchPage';
 import List from '@/components/ImageHub/list';
-import { Box, Flex } from '@chakra-ui/react';
+import { useLoading } from '@/hooks/useLoading';
+import { serviceSideProps } from '@/utils/i18n';
+import { Flex } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
 
 const formatImageData = (items: any) => {
   const result: any[] = [];
@@ -21,14 +20,13 @@ const formatImageData = (items: any) => {
       });
     });
   });
+  result.sort((a, b) => a.image.localeCompare(b.image)); // 按image字母排序
   return result;
 };
 
 const Home = ({ namespace }: { namespace: string }) => {
   const router = useRouter();
   const { Loading } = useLoading();
-  const currentNamespace = useRef<string>(namespace);
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -44,13 +42,12 @@ const Home = ({ namespace }: { namespace: string }) => {
     <Flex backgroundColor={'grayModern.100'} px={'32px'} h={'100vh'} flexDirection={'column'}>
       <List
         namespaces={[]}
-        currentNamespace={currentNamespace.current}
         apps={formatImageData(data?.items || {})}
-        refetchApps={(namespace: string) => {
-          currentNamespace.current = namespace;
+        refetchApps={() => {
           refetch();
         }}
       />
+
       <SwitchPage
         flexShrink={0}
         my={'8px'}

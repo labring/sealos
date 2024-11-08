@@ -30,6 +30,34 @@ export const getImageHubs = (data: { page: number; pageSize: number }) =>
     data
   );
 
+/**
+ * 删除镜像
+ */
+export const deleteImageHub = (repository: string, tag: string) =>
+  GET(`/api/imagehub/delete?repository=${repository}&tag=${tag}`);
+
+/**
+ * 上传镜像
+ */
+export const uploadImageHub = (data: {
+  image_name: string;
+  tag: string;
+  namespace: string;
+  image_file: File;
+}) => {
+  const formData = new FormData();
+  formData.append('image_name', data.image_name);
+  formData.append('tag', data.tag);
+  formData.append('namespace', data.namespace);
+  formData.append('image_file', data.image_file);
+
+  return POST<{ message: string }>('/api/imagehub/upload', formData, {
+    headers: {
+      // 不设置 Content-Type，让浏览器自动处理
+    }
+  });
+};
+
 export const postDeployApp = (namespace: string, yamlList: string[]) =>
   POST(`/api/applyApp?namespace=${namespace}`, { yamlList });
 

@@ -33,7 +33,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-class ImageRegistryClient {
+export class ImageRegistryClient {
   private authHeader: string;
 
   constructor(private config: Config) {
@@ -162,6 +162,60 @@ class ImageRegistryClient {
       pageSize,
       totalPages
     };
+  }
+
+  async getManifestDigest(repository: string, tag: string): Promise<string | null> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/${repository}/manifests/${tag}`, {
+        method: 'HEAD',
+        headers: {
+          Authorization: this.authHeader,
+          Accept: 'application/vnd.docker.distribution.manifest.v2+json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get manifest digest: ${response.status} ${response.statusText}`);
+      }
+
+      const digest = response.headers.get('Docker-Content-Digest');
+      if (!digest) {
+        throw new Error('Manifest digest not found in response headers');
+      }
+
+      return digest;
+    } catch (error) {
+      console.error(`Error getting manifest digest for ${repository}:${tag}:`, error);
+      return null;
+    }
+  }
+
+  async deleteImage(repository: string, tag: string): Promise<boolean> {
+    try {
+      // 首先获取镜像的 manifest digest
+      const digest = await this.getManifestDigest(repository, tag);
+      if (!digest) {
+        throw new Error('Failed to get manifest digest');
+      }
+
+      // 使用 digest 删除镜像
+      const response = await fetch(`${this.config.baseUrl}/${repository}/manifests/${digest}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: this.authHeader,
+          Accept: 'application/vnd.docker.distribution.manifest.v2+json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete image: ${response.status} ${response.statusText}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`Error deleting image ${repository}:${tag}:`, error);
+      return false;
+    }
   }
 }
 

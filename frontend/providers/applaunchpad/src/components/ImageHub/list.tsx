@@ -1,10 +1,6 @@
-import { uploadApp } from '@/api/app';
-import { createNamespace } from '@/api/platform';
+import { deleteImageHub, uploadImageHub } from '@/api/app';
 import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
-import { useConfirm } from '@/hooks/useConfirm';
-import { useGlobalStore } from '@/store/global';
-import { useUserStore } from '@/store/user';
 import {
   Box,
   Button,
@@ -24,39 +20,38 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import type { ThemeType } from '@sealos/ui';
-import { MyTable, useMessage } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
-const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
+type ImageItem = {
+  created: string;
+  image: string;
+  size: string;
+  tag: string;
+};
 
 const AppList = ({
-  namespaces = [],
-  currentNamespace,
   apps = [],
+  namespaces,
   refetchApps
 }: {
-  apps: any[];
   namespaces: string[];
-  currentNamespace: string;
-  refetchApps: (namespace: string) => void;
+  apps: ImageItem[];
+  refetchApps: () => void;
 }) => {
+  console.log(apps, 'apps');
+
   const { t } = useTranslation();
-  const { setLoading } = useGlobalStore();
-  const { userSourcePrice } = useUserStore();
   const { message: toast } = useMessage();
   const theme = useTheme<ThemeType>();
   const router = useRouter();
-  const currentNamespaceRef = useRef<string>(currentNamespace);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [ns, setNs] = useState('');
-
-  const [delAppName, setDelAppName] = useState('');
-  const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: 'pause_message'
-  });
+  const [imageNs, setImageNs] = useState('default');
+  const [imageName, setImageName] = useState('');
+  const [imageTag, setImageTag] = useState('');
+  const [image, setImage] = useState<ImageItem>();
 
   const [files, setFiles] = useState<File[]>([]);
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
@@ -96,8 +91,16 @@ const AppList = ({
       {
         title: '操作',
         key: 'operation',
-        render: (item: any) => (
-          <Button variant="ghost" colorScheme="red" size="sm">
+        render: (item: ImageItem) => (
+          <Button
+            variant="ghost"
+            colorScheme="red"
+            size="sm"
+            onClick={() => {
+              setImage(item);
+              onOpen();
+            }}
+          >
             删除
           </Button>
         )
@@ -146,7 +149,7 @@ const AppList = ({
             onUploadOpen();
           }}
         >
-          {t('upload_file')}
+          上传镜像
         </Button>
       </Flex>
 
@@ -210,29 +213,30 @@ const AppList = ({
         ))}
       </Box>
 
-      <PauseChild />
-
       <Modal
         isOpen={isOpen}
         onClose={() => {
           onClose();
-          setNs('');
+          setImage(undefined);
         }}
         closeOnOverlayClick={false}
       >
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>{t('New Namaspace')}</ModalHeader>
+          <ModalHeader>删除镜像</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Input value={ns} onChange={(e) => setNs(e.target.value)} />
+            确定删除镜像吗
+            <Box px={'2px'} color={'grayModern.900'} fontWeight={'bold'} userSelect={'all'}>
+              {image?.image}:{image?.tag}
+            </Box>
           </ModalBody>
           <ModalFooter>
             <Button
               width={'64px'}
               onClick={() => {
+                setImage(undefined);
                 onClose();
-                setNs('');
               }}
               variant={'outline'}
             >
@@ -243,22 +247,10 @@ const AppList = ({
               ml={3}
               variant={'solid'}
               onClick={async () => {
-                if (!validateNamespace(ns)) {
-                  toast({
-                    title: '无效的命名空间名称',
-                    description:
-                      "命名空间名称必须由小写字母、数字或'-'组成，并且必须以字母或数字开头和结尾。",
-                    status: 'error',
-                    duration: 5000,
-                    isClosable: true
-                  });
-                  return;
-                }
-
-                await createNamespace({ ns });
+                await deleteImageHub(image?.image as string, image?.tag as string);
                 onClose();
-                setNs('');
-                refetchApps('default');
+                setImage(undefined);
+                refetchApps();
                 toast({
                   title: 'success',
                   status: 'success'
@@ -273,10 +265,23 @@ const AppList = ({
 
       <Modal isOpen={isUploadOpen} onClose={onUploadClose} closeOnOverlayClick={false}>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader> {t('upload_file')}</ModalHeader>
+        <ModalContent maxW={'600px'}>
+          <ModalHeader>上传镜像</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
+            <Flex alignItems={'center'} gap={'12px'}>
+              <Box w={'70px'}>镜像名称:</Box>
+              <Input value={imageName} onChange={(e) => setImageName(e.target.value)} />
+            </Flex>
+            <Flex alignItems={'center'} gap={'12px'} mt={'12px'}>
+              <Box w={'70px'}>镜像TAG:</Box>
+              <Input value={imageTag} onChange={(e) => setImageTag(e.target.value)} />
+            </Flex>
+
+            <Flex alignItems={'center'} gap={'12px'} mt={'12px'}>
+              <Box w={'70px'}>命名空间:</Box>
+              <Input value={imageNs} onChange={(e) => setImageNs(e.target.value)} />
+            </Flex>
             <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
           </ModalBody>
           <ModalFooter>
@@ -287,14 +292,16 @@ const AppList = ({
               variant="outline"
               onClick={async () => {
                 try {
-                  await uploadApp({
-                    appname: 'name',
-                    namespace: 'namespace',
-                    file: files[0]
+                  await uploadImageHub({
+                    image_name: imageName,
+                    tag: imageTag,
+                    namespace: imageNs,
+                    image_file: files[0]
                   });
+                  refetchApps();
                   toast({
                     status: 'success',
-                    title: '上传并部署成功'
+                    title: '上传成功'
                   });
                   onUploadClose();
                 } catch (error) {
@@ -310,15 +317,6 @@ const AppList = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      {!!delAppName && (
-        <DelModal
-          namespace={currentNamespaceRef.current}
-          appName={delAppName}
-          onClose={() => setDelAppName('')}
-          onSuccess={() => refetchApps(currentNamespaceRef.current)}
-        />
-      )}
     </Flex>
   );
 };
