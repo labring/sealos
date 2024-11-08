@@ -21,6 +21,18 @@ export const OrderTypeList: {
     label: 'dbprovider'
   },
   {
+    id: WorkOrderType.AccountCenter,
+    label: 'account_center'
+  },
+  {
+    id: WorkOrderType.AIProxy,
+    label: 'AI Proxy'
+  },
+  {
+    id: WorkOrderType.DevBox,
+    label: 'Devbox'
+  },
+  {
     id: WorkOrderType.CronJob,
     label: 'cronjob'
   },
@@ -36,10 +48,7 @@ export const OrderTypeList: {
     id: WorkOrderType.FunctionServer,
     label: 'functionserver'
   },
-  {
-    id: WorkOrderType.AccountCenter,
-    label: 'account_center'
-  },
+
   {
     id: WorkOrderType.Other,
     label: 'other'
