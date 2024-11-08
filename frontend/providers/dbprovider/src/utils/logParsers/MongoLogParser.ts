@@ -48,7 +48,6 @@ export class MongoLogParser implements ILogParser {
 
           break;
         } catch (error) {
-          console.warn(`Failed to read logs from container ${containerName}:`, error);
           continue;
         }
       }
