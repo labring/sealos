@@ -94,17 +94,17 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
         new DatabaseItem(
           `${'DBType'.padEnd(15)}${'Username'.padEnd(15)}${'Password'.padEnd(
             15
-          )}${'Host'.padEnd(25)}${'Port'.padEnd(10)}Connection`,
+          )}${'Host'.padEnd(80)}${'Port'.padEnd(40)}Connection`,
           'header'
         )
       )
 
       this.databases.forEach((database) => {
-        const label = `${database.dbType.padEnd(15)}${database.username.padEnd(
+        const label = `${database.dbType.padEnd(15)} ${database.username.padEnd(
           15
-        )}${database.password.padEnd(15)}${database.host.padEnd(
-          20
-        )}${database.port.toString().padEnd(10)}${database.connection}`
+        )}${database.password.padEnd(15)} ${database.host.padEnd(
+          45
+        )} ${database.port.toString().padEnd(10)} ${database.connection}`
         items.push(new DatabaseItem(label, 'database', database.connection))
       })
 
