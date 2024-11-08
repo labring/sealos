@@ -131,7 +131,7 @@ const StoreModal = ({
               </Box>
               <Input
                 width={'100%'}
-                placeholder="如：/data"
+                placeholder={t('form.storage_path_placeholder')}
                 title={
                   isEditStore
                     ? t('Can not change storage path') || 'Can not change storage path'

@@ -48,7 +48,8 @@ export enum DevboxStatusEnum {
   Running = 'Running',
   Pending = 'Pending',
   Error = 'Error',
-  Delete = 'Delete'
+  Delete = 'Delete',
+  Unknown = 'Unknown'
 }
 export enum DevboxReleaseStatusEnum {
   Success = 'Success',
@@ -126,26 +127,33 @@ export const devboxStatusMap = {
     color: '#DC6803',
     backgroundColor: '#FFFAEB',
     dotColor: '#DC6803'
+  },
+  [DevboxStatusEnum.Unknown]: {
+    label: 'Unknown',
+    value: DevboxStatusEnum.Unknown,
+    color: '#787A90',
+    backgroundColor: '#F5F5F8',
+    dotColor: '#787A90'
   }
 }
 
 export const devboxReleaseStatusMap = {
   [DevboxReleaseStatusEnum.Success]: {
-    label: 'Success',
+    label: 'release_success',
     value: DevboxReleaseStatusEnum.Success,
     color: '#039855',
     backgroundColor: '#EDFBF3',
     dotColor: '#039855'
   },
   [DevboxReleaseStatusEnum.Pending]: {
-    label: 'Pending',
+    label: 'release_pending',
     value: DevboxReleaseStatusEnum.Pending,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DevboxReleaseStatusEnum.Failed]: {
-    label: 'Failed',
+    label: 'release_failed',
     value: DevboxReleaseStatusEnum.Failed,
     color: '#F04438',
     backgroundColor: '#FEF3F2',

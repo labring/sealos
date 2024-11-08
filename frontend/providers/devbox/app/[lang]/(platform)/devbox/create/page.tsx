@@ -12,49 +12,30 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  DEVBOX_AFFINITY_ENABLE,
-  SQUASH_ENABLE,
-  languageVersionMap,
-  runtimeNamespaceMap
-} from '@/stores/static'
 import Form from './components/Form'
 import Yaml from './components/Yaml'
 import Header from './components/Header'
+
 import type { YamlItemType } from '@/types'
-import { useUserStore } from '@/stores/user'
-import { patchYamlList } from '@/utils/tools'
+import type { DevboxEditType, DevboxKindsType, ProtocolType } from '@/types/devbox'
+
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
+
+import { useEnvStore } from '@/stores/env'
+import { useUserStore } from '@/stores/user'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
+import { useRuntimeStore } from '@/stores/runtime'
+
+import { patchYamlList } from '@/utils/tools'
 import { createDevbox, updateDevbox } from '@/api/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
-import type { DevboxEditType, DevboxKindsType, ProtocolType } from '@/types/devbox'
 import { LanguageTypeEnum, defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
-
-const formData2Yamls = (data: DevboxEditType) => [
-  {
-    filename: 'service.yaml',
-    value: json2Service(data)
-  },
-  {
-    filename: 'devbox.yaml',
-    value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE)
-  },
-  ...(data.networks.find((item) => item.openPublicDomain)
-    ? [
-        {
-          filename: 'ingress.yaml',
-          value: json2Ingress(data)
-        }
-      ]
-    : [])
-]
 
 const DevboxCreatePage = () => {
   const router = useRouter()
@@ -62,12 +43,16 @@ const DevboxCreatePage = () => {
 
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
+
+  const { env } = useEnvStore()
   const { checkQuotaAllow } = useUserStore()
+  const { runtimeNamespaceMap, languageVersionMap } = useRuntimeStore()
   const { setDevboxDetail, devboxList } = useDevboxStore()
 
   const crOldYamls = useRef<DevboxKindsType[]>([])
   const formOldYamls = useRef<YamlItemType[]>([])
   const oldDevboxEditData = useRef<DevboxEditType>()
+
   const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
@@ -75,6 +60,29 @@ const DevboxCreatePage = () => {
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
+
+  const formData2Yamls = (data: DevboxEditType) => [
+    {
+      filename: 'devbox.yaml',
+      value: json2Devbox(data, runtimeNamespaceMap, env.devboxAffinityEnable, env.squashEnable)
+    },
+    ...(data.networks.length > 0
+      ? [
+          {
+            filename: 'service.yaml',
+            value: json2Service(data)
+          }
+        ]
+      : []),
+    ...(data.networks.find((item) => item.openPublicDomain)
+      ? [
+          {
+            filename: 'ingress.yaml',
+            value: json2Ingress(data, env.ingressSecret)
+          }
+        ]
+      : [])
+  ]
 
   const defaultEdit = {
     ...defaultDevboxEditValue,
@@ -85,7 +93,7 @@ const DevboxCreatePage = () => {
       port: port,
       protocol: 'HTTP' as ProtocolType,
       openPublicDomain: true,
-      publicDomain: nanoid(),
+      publicDomain: `${nanoid()}.${env.ingressDomain}`,
       customDomain: ''
     }))
   }
@@ -126,16 +134,24 @@ const DevboxCreatePage = () => {
     return [
       {
         filename: 'devbox.yaml',
-        value: json2Devbox(data, runtimeNamespaceMap, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE)
+        value: json2Devbox(data, runtimeNamespaceMap, env.devboxAffinityEnable, env.squashEnable)
       },
-      {
-        filename: 'service.yaml',
-        value: json2Service(data)
-      },
-      {
-        filename: 'ingress.yaml',
-        value: json2Ingress(data)
-      }
+      ...(data.networks.length > 0
+        ? [
+            {
+              filename: 'service.yaml',
+              value: json2Service(data)
+            }
+          ]
+        : []),
+      ...(data.networks.find((item) => item.openPublicDomain)
+        ? [
+            {
+              filename: 'ingress.yaml',
+              value: json2Ingress(data, env.ingressSecret)
+            }
+          ]
+        : [])
     ]
   }
 
@@ -171,23 +187,31 @@ const DevboxCreatePage = () => {
             value: json2Devbox(
               defaultEdit,
               runtimeNamespaceMap,
-              DEVBOX_AFFINITY_ENABLE,
-              SQUASH_ENABLE
+              env.devboxAffinityEnable,
+              env.squashEnable
             )
           },
-          {
-            filename: 'service.yaml',
-            value: json2Service(defaultEdit)
-          },
-          {
-            filename: 'ingress.yaml',
-            value: json2Ingress(defaultEdit)
-          }
+          ...(defaultEdit.networks.length > 0
+            ? [
+                {
+                  filename: 'service.yaml',
+                  value: json2Service(defaultEdit)
+                }
+              ]
+            : []),
+          ...(defaultEdit.networks.find((item) => item.openPublicDomain)
+            ? [
+                {
+                  filename: 'ingress.yaml',
+                  value: json2Ingress(defaultEdit, env.ingressSecret)
+                }
+              ]
+            : [])
         ])
         return null
       }
       setIsLoading(true)
-      return setDevboxDetail(devboxName)
+      return setDevboxDetail(devboxName, env.sealosDomain)
     },
     {
       onSuccess(res) {

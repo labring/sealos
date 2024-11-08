@@ -5,7 +5,15 @@ export const useLoading = (props?: { defaultLoading: boolean }) => {
   const [isLoading, setIsLoading] = useState(props?.defaultLoading || false)
 
   const Loading = useCallback(
-    ({ loading, fixed = true }: { loading?: boolean; fixed?: boolean }): JSX.Element | null => {
+    ({
+      loading,
+      fixed = true,
+      size = 'xl'
+    }: {
+      loading?: boolean
+      fixed?: boolean
+      size?: string
+    }): JSX.Element | null => {
       return (
         <Flex
           position={fixed ? 'fixed' : 'absolute'}
@@ -23,7 +31,7 @@ export const useLoading = (props?: { defaultLoading: boolean }) => {
             speed="0.65s"
             emptyColor="gray.200"
             color="brightBlue.600"
-            size="xl"
+            size={size}
           />
         </Flex>
       )

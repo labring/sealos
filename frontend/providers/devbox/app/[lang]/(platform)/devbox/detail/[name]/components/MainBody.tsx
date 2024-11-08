@@ -5,11 +5,13 @@ import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/reac
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
+import PodLineChart from '@/components/PodLineChart'
+
 import { useCopyData } from '@/utils/tools'
 import { NetworkType } from '@/types/devbox'
+
+import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
-import PodLineChart from '@/components/PodLineChart'
-import { NAMESPACE, SEALOS_DOMAIN } from '@/stores/static'
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
 
@@ -17,6 +19,7 @@ const MainBody = () => {
   const t = useTranslations()
   const { copyData } = useCopyData()
   const { devboxDetail } = useDevboxStore()
+  const { env } = useEnvStore()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const networkColumn: {
@@ -47,8 +50,10 @@ const MainBody = () => {
               ml={4}
               color={'grayModern.600'}
               onClick={() =>
-                copyData(`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`)
-              }>{`http://${devboxDetail?.name}.${NAMESPACE}.svc.cluster.local:${item.port}`}</Text>
+                copyData(
+                  `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`
+                )
+              }>{`http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`}</Text>
           </Tooltip>
         )
       }
@@ -58,7 +63,7 @@ const MainBody = () => {
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
-          const address = item.customDomain || `${item.publicDomain}.${SEALOS_DOMAIN}`
+          const address = item.customDomain || item.publicDomain
           return (
             <Tooltip
               label={t('open_link')}
@@ -102,8 +107,8 @@ const MainBody = () => {
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
             </Box>
-            <Box h={'60px'} minW={'180px'}>
-              <Box h={'60px'} minW={'180px'}>
+            <Box h={'60px'} minW={['200px', '250px', '300px']}>
+              <Box h={'60px'} minW={['200px', '250px', '300px']}>
                 <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
               </Box>
             </Box>

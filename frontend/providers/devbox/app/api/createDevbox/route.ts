@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
+    // NOTE： runtimeNamespaceMap will be too big？
     const { devboxForm, runtimeNamespaceMap } = (await req.json()) as {
       devboxForm: DevboxEditType
       runtimeNamespaceMap: runtimeNamespaceMapType
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const { SEALOS_DOMAIN, INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env
     const devbox = json2Devbox(
       devboxForm,
       runtimeNamespaceMap,
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       SQUASH_ENABLE
     )
     const service = json2Service(devboxForm)
-    const ingress = json2Ingress(devboxForm, SEALOS_DOMAIN as string, INGRESS_SECRET as string)
+    const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string)
 
     await applyYamlList([devbox, service, ingress], 'create')
 

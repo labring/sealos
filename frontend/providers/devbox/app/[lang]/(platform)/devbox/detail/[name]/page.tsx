@@ -9,30 +9,45 @@ import Version from './components/Version'
 import MainBody from './components/MainBody'
 import BasicInfo from './components/BasicInfo'
 import { useLoading } from '@/hooks/useLoading'
+
+import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name
   const { Loading } = useLoading()
-  const [initialized, setInitialized] = useState(false)
-  const { devboxDetail, setDevboxDetail, loadDetailMonitorData } = useDevboxStore()
+
+  const { env } = useEnvStore()
   const { screenWidth } = useGlobalStore()
+  const { devboxDetail, setDevboxDetail, loadDetailMonitorData, intervalLoadPods } =
+    useDevboxStore()
+
   const [showSlider, setShowSlider] = useState(false)
+  const [initialized, setInitialized] = useState(false)
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth])
 
-  const { refetch } = useQuery(['initDevboxDetail'], () => setDevboxDetail(devboxName), {
-    refetchOnMount: true,
-    refetchInterval: 1 * 60 * 1000,
-    onSettled() {
-      setInitialized(true)
-    },
-    onSuccess: (data) => {
-      if (data) {
-        loadDetailMonitorData(data.name)
+  const { refetch } = useQuery(
+    ['initDevboxDetail'],
+    () => setDevboxDetail(devboxName, env.sealosDomain),
+    {
+      onSettled() {
+        setInitialized(true)
       }
     }
-  })
+  )
+
+  useQuery(
+    ['devbox-detail-pod'],
+    () => {
+      if (devboxDetail?.isPause) return null
+      return intervalLoadPods(devboxName, true)
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 3000
+    }
+  )
 
   useQuery(
     ['loadDetailMonitorData', devboxName, devboxDetail?.isPause],
@@ -68,6 +83,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
               zIndex={1}
               transition={'0.4s'}
               bg={'white'}
+              borderWidth={1}
               borderRadius={'lg'}
               {...(isLargeScreen
                 ? {}
@@ -79,11 +95,23 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
                   })}>
               <BasicInfo />
             </Box>
-            <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
+            <Flex
+              flexDirection={'column'}
+              minH={'100%'}
+              flex={'1 0 0'}
+              w={0}
+              overflow={'overlay'}
+              sx={{
+                '&::-webkit-scrollbar': {
+                  display: 'none'
+                },
+                msOverflowStyle: 'none', // IE and Edge
+                scrollbarWidth: 'none' // Firefox
+              }}>
               <Box mb={4} bg={'white'} borderRadius={'lg'} flexShrink={0} minH={'257px'}>
                 <MainBody />
               </Box>
-              <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
+              <Box bg={'white'} borderRadius={'lg'} flex={'1'}>
                 <Version />
               </Box>
             </Flex>

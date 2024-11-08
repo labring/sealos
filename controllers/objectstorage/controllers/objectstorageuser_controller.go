@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -219,8 +218,10 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		updated = true
 	}
 
-	if used.Value() != size {
-		resourceQuota.Status.Used[ResourceObjectStorageSize] = resource.MustParse(strconv.FormatInt(size, 10))
+	stringSize := ConvertBytesToString(size)
+
+	if used.String() != stringSize {
+		resourceQuota.Status.Used[ResourceObjectStorageSize] = resource.MustParse(stringSize)
 		if err := r.Status().Update(ctx, resourceQuota); err != nil {
 			r.Logger.Error(err, "failed to update status", "name", resourceQuota.Name, "namespace", userNamespace)
 			return ctrl.Result{}, err
@@ -431,6 +432,30 @@ func (r *ObjectStorageUserReconciler) initObjectStorageKeySecret(secret *corev1.
 	}
 
 	return updated
+}
+
+func ConvertBytesToString(bytes int64) string {
+	var unit string
+	var value float64
+
+	switch {
+	case bytes >= 1<<40: // 1 TiB
+		value = float64(bytes) / (1 << 40)
+		unit = "Ti"
+	case bytes >= 1<<30: // 1 GiB
+		value = float64(bytes) / (1 << 30)
+		unit = "Gi"
+	case bytes >= 1<<20: // 1 MiB
+		value = float64(bytes) / (1 << 20)
+		unit = "Mi"
+	case bytes >= 1<<10: // 1 KiB
+		value = float64(bytes) / (1 << 10)
+		unit = "Ki"
+	default:
+		return fmt.Sprintf("%d", bytes)
+	}
+
+	return fmt.Sprintf("%.0f%s", value, unit)
 }
 
 // SetupWithManager sets up the controller with the Manager.

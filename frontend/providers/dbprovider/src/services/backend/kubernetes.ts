@@ -331,6 +331,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     applyYamlList,
     delYamlList,
     getUserQuota: () => getUserQuota(kc, namespace),
-    getUserBalance: () => getUserBalance(kc)
+    getUserBalance: () => getUserBalance(kc),
+    k8sExec: new k8s.Exec(kc)
   });
 }

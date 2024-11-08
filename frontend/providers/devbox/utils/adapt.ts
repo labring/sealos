@@ -8,7 +8,12 @@ import {
 } from '@/constants/devbox'
 import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
-import { DevboxListItemType, DevboxVersionListItemType, PodDetailType } from '@/types/devbox'
+import {
+  DevboxDetailType,
+  DevboxListItemType,
+  DevboxVersionListItemType,
+  PodDetailType
+} from '@/types/devbox'
 import { V1Ingress, V1Pod } from '@kubernetes/client-node'
 import { DBListItemType, KbPgClusterType } from '@/types/cluster'
 import { IngressListItemType } from '@/types/ingress'
@@ -18,7 +23,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
     runtimeType: devbox.spec.runtimeType || '',
-    runtimeVersion: devbox.spec.runtimeVersion || '',
+    runtimeVersion: devbox.spec.runtimeRef.name || '',
     status:
       devbox.status.phase && devboxStatusMap[devbox.status.phase]
         ? devboxStatusMap[devbox.status.phase]
@@ -37,11 +42,55 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    networks: devbox.portInfos || [],
-    lastTerminatedState: devbox.lastTerminatedState || {}
+    lastTerminatedReason:
+      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+        ? devbox.status.state.waiting
+          ? devbox.status.state.waiting.reason
+          : devbox.status.state.terminated
+          ? devbox.status.state.terminated.reason
+          : ''
+        : ''
   }
 }
 
+export const adaptDevboxDetail = (
+  devbox: KBDevboxType & { portInfos: any[] }
+): DevboxDetailType => {
+  return {
+    id: devbox.metadata?.uid || ``,
+    name: devbox.metadata.name || 'devbox',
+    runtimeType: devbox.spec.runtimeType || '',
+    runtimeVersion: devbox.spec.runtimeRef.name || '',
+    status:
+      devbox.status.phase && devboxStatusMap[devbox.status.phase]
+        ? devboxStatusMap[devbox.status.phase]
+        : devboxStatusMap.Error,
+    sshPort: devbox.status.network.nodePort,
+    isPause: devbox.status.phase === 'Stopped',
+    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    cpu: cpuFormatToM(devbox.spec.resource.cpu),
+    memory: memoryFormatToMi(devbox.spec.resource.memory),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    networks: devbox.portInfos || [],
+    lastTerminatedReason:
+      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+        ? devbox.status.state.waiting
+          ? devbox.status.state.waiting.reason
+          : devbox.status.state.terminated
+          ? devbox.status.state.terminated.reason
+          : ''
+        : ''
+  }
+}
 export const adaptDevboxVersionListItem = (
   devboxRelease: KBDevboxReleaseType
 ): DevboxVersionListItemType => {
@@ -49,7 +98,7 @@ export const adaptDevboxVersionListItem = (
     id: devboxRelease.metadata?.uid || '',
     name: devboxRelease.metadata.name || 'devbox-release-default',
     devboxName: devboxRelease.spec.devboxName || 'devbox',
-    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     tag: devboxRelease.spec.newTag || 'v1.0.0',
     status:
       devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
