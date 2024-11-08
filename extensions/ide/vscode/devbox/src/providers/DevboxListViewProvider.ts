@@ -198,50 +198,33 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
 
   getChildren(element?: MyTreeItem): Thenable<MyTreeItem[]> {
     if (!element) {
-      // 第一级：显示所有域名
-      const domains = [
-        ...new Set(this.treeData.map((item) => item.host.split('_')[0])),
-      ]
+      // domain/namespace
+      const domainNamespacePairs = this.treeData.reduce((acc, item) => {
+        const [domain, namespace] = item.host.split('_')
+        acc.add(`${domain}/${namespace}`)
+        return acc
+      }, new Set<string>())
+
       return Promise.resolve(
-        domains.map(
-          (domain) =>
-            new MyTreeItem(
-              domain,
-              domain,
-              0,
-              vscode.TreeItemCollapsibleState.Collapsed
-            )
-        )
+        Array.from(domainNamespacePairs).map((pair) => {
+          const [domain, namespace] = pair.split('/')
+          return new MyTreeItem(
+            pair,
+            domain,
+            0,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            namespace
+          )
+        })
       )
-    } else if (!element.namespace) {
-      // 第二级：显示指定域名下所有命名空间
-      const namespaces = [
-        ...new Set(
-          this.treeData
-            .filter((item) => item.host.startsWith(element.label as string))
-            .map((item) => item.host.split('_')[1])
-        ),
-      ]
-      return Promise.resolve(
-        namespaces.map(
-          (namespace) =>
-            new MyTreeItem(
-              namespace,
-              (element.label as string) ?? '',
-              0,
-              vscode.TreeItemCollapsibleState.Collapsed,
-              namespace
-            )
-        )
-      )
-    } else if (!element.devboxName) {
-      // 第三级：显示指定命名空间下的所有 devbox
+    } else {
+      // devbox
+      const [domain, namespace] = element.label?.toString().split('/') || []
       const devboxes = this.treeData.filter((item) => {
         const parts = item.host.split('_')
-        const domain = parts[0]
-        const namespace = parts[1]
-        return domain === element.domain && namespace === element.namespace
+        return parts[0] === domain && parts[1] === namespace
       })
+
       return Promise.resolve(
         devboxes.map((devbox) => {
           const parts = devbox.host.split('_')
@@ -251,7 +234,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
             devbox.hostName,
             devbox.port,
             vscode.TreeItemCollapsibleState.None,
-            element.namespace,
+            namespace,
             devboxName,
             devbox.host,
             devbox.remotePath
@@ -261,7 +244,6 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
         })
       )
     }
-    return Promise.resolve([])
   }
 }
 
