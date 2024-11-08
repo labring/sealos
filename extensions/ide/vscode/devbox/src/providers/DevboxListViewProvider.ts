@@ -105,8 +105,14 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     return element
   }
 
-  // TODO: 根据不同的代理跳转到不同的页面，而且可以进行设置里的配置
   async create(item: MyTreeItem) {
+    const apiUrl = vscode.workspace.getConfiguration('devbox').get('apiUrl')
+    if (apiUrl) {
+      vscode.commands.executeCommand('devbox.openExternalLink', [
+        `${apiUrl}/?openapp=system-devbox?${encodeURIComponent('page=create')}`,
+      ])
+      return
+    }
     const regions = [
       { label: 'USW', url: uswUrl },
       { label: 'HZH', url: hzhUrl },
@@ -117,7 +123,8 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     const selected = await vscode.window.showQuickPick(
       regions.map((region) => region.label),
       {
-        placeHolder: 'Please select a region',
+        placeHolder:
+          'Please select a region.And you can customize your API base address in the settings(devbox.apiUrl).',
       }
     )
 

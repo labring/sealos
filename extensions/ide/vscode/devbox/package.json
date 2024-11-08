@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "Devbox",
   "description": "help code for cloud devbox in sailos/sealos",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "keywords": [
     "devbox",
     "remote development",
@@ -38,15 +38,10 @@
       "type": "object",
       "title": "devbox",
       "properties": {
-        "devbox.region": {
+        "devbox.apiUrl": {
           "type": "string",
-          "default": "默认值",
-          "description": "设置项1的描述"
-        },
-        "yourExtension.setting2": {
-          "type": "boolean",
-          "default": true,
-          "description": "设置项2的描述"
+          "default": "",
+          "description": "Customize your API base address for crud devbox in private deployment scenario. For example, https://usw.sailos.io. If you set it,devbox crud will use it and you cannot select region(USW/HZH/BJA/GZG) manually."
         }
       }
     },
