@@ -1,16 +1,17 @@
+import * as vscode from 'vscode'
 import axios, {
   InternalAxiosRequestConfig,
   AxiosHeaders,
   AxiosResponse,
   AxiosRequestConfig,
 } from 'axios'
-import { GlobalStateManager } from '../utils/globalStateManager'
+
 import {
   defaultProductionUrl,
   developmentUrl,
   isDevelopment,
 } from '../constant/api'
-import * as vscode from 'vscode'
+import { GlobalStateManager } from '../utils/globalStateManager'
 
 const showStatus = (status: number) => {
   let message = ''

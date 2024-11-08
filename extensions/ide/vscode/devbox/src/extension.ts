@@ -1,14 +1,14 @@
 import * as vscode from 'vscode'
 
+import { updateBaseUrl } from './api'
+import { UriHandler } from './utils/handleUri'
+import { isDevelopment } from './constant/api'
+import { ToolCommands } from './commands/tools'
 import { RemoteSSHConnector } from './commands/remoteConnector'
 import { DevboxListViewProvider } from './providers/DevboxListViewProvider'
-import { UriHandler } from './utils/handleUri'
 import { NetworkViewProvider } from './providers/NetworkViewProvider'
 import { DBViewProvider } from './providers/DBViewProvider'
 import { GlobalStateManager } from './utils/globalStateManager'
-import { ToolCommands } from './commands/tools'
-import { updateBaseUrl } from './api'
-import { isDevelopment } from './constant/api'
 
 export async function activate(context: vscode.ExtensionContext) {
   // tools
