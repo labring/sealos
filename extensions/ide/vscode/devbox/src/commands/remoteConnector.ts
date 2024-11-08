@@ -27,21 +27,49 @@ export class RemoteSSHConnector extends Disposable {
       )
     }
   }
+
+  private replaceHomePathInConfig(content: string): string {
+    return content.replace(
+      /Include ~\/.ssh\/sealos\/devbox_config/g,
+      `Include ${os.homedir()}/.ssh/sealos/devbox_config`
+    )
+  }
+
   private sshConfigPreProcess() {
     // 1. ensure .ssh/config exists
     ensureFileExists(defaultSSHConfigPath, '.ssh')
     // 2. ensure .ssh/sealos/devbox_config exists
     ensureFileExists(defaultDevboxSSHConfigPath, '.ssh/sealos')
-    // 3. ensure .ssh/config includes .ssh/sealos/devbox_config
-    const existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf8')
-    if (!existingSSHConfig.includes('Include ~/.ssh/sealos/devbox_config')) {
-      let existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf-8')
-      const newConfig =
-        'Include ~/.ssh/sealos/devbox_config\n' + existingSSHConfig
-      fs.writeFileSync(defaultSSHConfigPath, newConfig)
+
+    const customConfigFile = vscode.workspace
+      .getConfiguration('remote.SSH')
+      .get<string>('configFile', '')
+
+    if (customConfigFile) {
+      const resolvedPath = customConfigFile.replace(/^~/, os.homedir())
+      try {
+        const existingSSHConfig = fs.readFileSync(resolvedPath, 'utf8')
+        const updatedConfig = this.replaceHomePathInConfig(existingSSHConfig)
+        if (updatedConfig !== existingSSHConfig) {
+          fs.writeFileSync(resolvedPath, updatedConfig)
+        }
+      } catch (error) {
+        console.error(`Error reading/writing SSH config: ${error}`)
+        this.handleDefaultSSHConfig()
+      }
+    } else {
+      this.handleDefaultSSHConfig()
     }
     // 4. ensure sshConfig from version1 to version2
     convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+  }
+
+  private handleDefaultSSHConfig() {
+    const existingSSHConfig = fs.readFileSync(defaultSSHConfigPath, 'utf8')
+    const updatedConfig = this.replaceHomePathInConfig(existingSSHConfig)
+    if (updatedConfig !== existingSSHConfig) {
+      fs.writeFileSync(defaultSSHConfigPath, updatedConfig)
+    }
   }
 
   private async connectRemoteSSH(args: {
