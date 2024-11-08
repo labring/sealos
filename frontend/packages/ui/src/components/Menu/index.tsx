@@ -28,6 +28,8 @@ export const SealosMenu = ({ width, Button, menuList }: Props) => {
     <Menu offset={[0, 10]} autoSelect={false} isLazy>
       {Button}
       <MenuList
+        maxH={'300px'}
+        overflowY={'auto'}
         borderRadius={'md'}
         minW={`${width}px !important`}
         p={'6px'}

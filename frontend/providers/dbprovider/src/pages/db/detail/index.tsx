@@ -20,6 +20,8 @@ import Pods from './components/Pods';
 import { I18nCommonKey } from '@/types/i18next';
 import ReconfigureTable from './components/Reconfigure/index';
 import useDetailDriver from '@/hooks/useDetailDriver';
+import ErrorLog from '@/pages/db/detail/components/ErrorLog';
+import MyIcon from '@/components/Icon';
 
 enum TabEnum {
   pod = 'pod',
@@ -27,7 +29,8 @@ enum TabEnum {
   monitor = 'monitor',
   InternetMigration = 'InternetMigration',
   DumpImport = 'DumpImport',
-  Reconfigure = 'reconfigure'
+  Reconfigure = 'reconfigure',
+  ErrorLog = 'errorLog'
 }
 
 const AppDetail = ({
@@ -54,13 +57,60 @@ const AppDetail = ({
       SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [
-      { label: 'monitor_list', value: TabEnum.monitor },
-      { label: 'replicas_list', value: TabEnum.pod },
-      ...(PublicNetMigration ? [{ label: 'dbconfig.parameter', value: TabEnum.Reconfigure }] : []),
-      ...(BackupSupported ? [{ label: 'backup_list', value: TabEnum.backup }] : []),
-      ...(PublicNetMigration ? [{ label: 'online_import', value: TabEnum.InternetMigration }] : []),
+      {
+        label: 'monitor_list',
+        value: TabEnum.monitor,
+        icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
+      },
+      {
+        label: 'replicas_list',
+        value: TabEnum.pod,
+        icon: <MyIcon name="instance" w={'16px'} h={'16px'} />
+      },
+      ...(PublicNetMigration
+        ? [
+            {
+              label: 'dbconfig.parameter',
+              value: TabEnum.Reconfigure,
+              icon: <MyIcon name="config" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
+      ...(BackupSupported
+        ? [
+            {
+              label: 'backup_list',
+              value: TabEnum.backup,
+              icon: <MyIcon name="backup" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
+      ...(PublicNetMigration
+        ? [
+            {
+              label: 'online_import',
+              value: TabEnum.InternetMigration,
+              icon: <MyIcon name="import" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
       ...(PublicNetMigration && !!SystemEnv.minio_url
-        ? [{ label: 'import_through_file', value: TabEnum.DumpImport }]
+        ? [
+            {
+              label: 'import_through_file',
+              value: TabEnum.DumpImport,
+              icon: <MyIcon name="file" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
+      ...(BackupSupported
+        ? [
+            {
+              label: 'error_log.analysis',
+              value: TabEnum.ErrorLog,
+              icon: <MyIcon name="log" w={'16px'} h={'16px'} />
+            }
+          ]
         : [])
     ];
 
@@ -80,7 +130,7 @@ const AppDetail = ({
   const { dbDetail, loadDBDetail, dbPods } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
 
-  useQuery([dbName, 'loadDBDetail', 'intervalLoadPods'], () => loadDBDetail(dbName), {
+  useQuery(['loadDBDetail', 'intervalLoadPods', dbName], () => loadDBDetail(dbName), {
     refetchInterval: 3000,
     onError(err) {
       router.replace('/dbs');
@@ -128,9 +178,11 @@ const AppDetail = ({
           border={theme.borders.base}
           borderRadius={'lg'}
         >
-          <Flex m={'26px'} mb={'8px'} alignItems={'flex-start'}>
+          <Flex m={'26px'} mb={'8px'} alignItems={'flex-start'} flexWrap={'wrap'}>
             {listNav.map((item) => (
-              <Box
+              <Flex
+                alignItems={'center'}
+                gap={'4px'}
                 key={item.value}
                 mr={5}
                 pb={2}
@@ -151,8 +203,10 @@ const AppDetail = ({
                         )
                     })}
               >
+                {item.icon}
+
                 {t(item.label as I18nCommonKey)}
-              </Box>
+              </Flex>
             ))}
             <Box flex={1}></Box>
             {listType === TabEnum.pod && <Box color={'grayModern.600'}>{dbPods.length} Items</Box>}
@@ -196,6 +250,7 @@ const AppDetail = ({
             {listType === TabEnum.Reconfigure && (
               <ReconfigureTable ref={ReconfigureTableRef} db={dbDetail} />
             )}
+            {listType === TabEnum.ErrorLog && <ErrorLog ref={ReconfigureTableRef} db={dbDetail} />}
           </Box>
         </Flex>
       </Flex>

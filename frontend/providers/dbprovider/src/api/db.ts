@@ -1,18 +1,22 @@
-import { GET, POST, DELETE } from '@/services/request';
-import { adaptDBListItem, adaptDBDetail, adaptPod, adaptEvents } from '@/utils/adapt';
+import type { SecretResponse } from '@/pages/api/getSecretByName';
+import { DELETE, GET, POST } from '@/services/request';
+import { KbPgClusterType } from '@/types/cluster';
 import type {
   BackupItemType,
   DBEditType,
   DBType,
   OpsRequestItemType,
-  PodDetailType
+  PodDetailType,
+  SupportReconfigureDBType
 } from '@/types/db';
-import { json2Restart } from '@/utils/json2Yaml';
-import { json2StartOrStop } from '../utils/json2Yaml';
-import type { SecretResponse } from '@/pages/api/getSecretByName';
-import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
-import { KbPgClusterType } from '@/types/cluster';
+import { LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
+import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/adapt';
+import { json2Restart } from '@/utils/json2Yaml';
+import { TFile } from '@/utils/kubeFileSystem';
+import { LogResult } from '@/utils/logParsers/LogParser';
+import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
+import { json2StartOrStop } from '../utils/json2Yaml';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -110,4 +114,43 @@ export const getOpsRequest = ({
     name,
     label,
     dbType
+  });
+
+export const getLogFiles = ({
+  podName,
+  dbType,
+  logType
+}: {
+  podName: string;
+  dbType: SupportReconfigureDBType;
+  logType: LogTypeEnum;
+}) =>
+  POST<TFile[]>(`/api/logs/getFiles`, {
+    podName,
+    dbType,
+    logType
+  });
+
+export const getLogContent = ({
+  logPath,
+  page,
+  pageSize,
+  dbType,
+  logType,
+  podName
+}: {
+  logPath: string;
+  page: number;
+  pageSize: number;
+  dbType: SupportReconfigureDBType;
+  logType: LogTypeEnum;
+  podName: string;
+}) =>
+  POST<LogResult>(`/api/logs/get`, {
+    logPath,
+    page,
+    pageSize,
+    dbType,
+    logType,
+    podName
   });
