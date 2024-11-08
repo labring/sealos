@@ -112,7 +112,7 @@ const AppList = ({
   };
 
   return (
-    <Box flex={1}>
+    <Flex flexDirection={'column'} h={`calc(100% - 48px)`}>
       <Flex h={'88px'} alignItems={'center'}>
         <Center
           w="46px"
@@ -148,19 +148,10 @@ const AppList = ({
         >
           {t('upload_file')}
         </Button>
-
-        <Button
-          h={'40px'}
-          w={'156px'}
-          flex={'0 0 auto'}
-          leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
-          onClick={() => router.push(`/app/edit?namespace=${currentNamespaceRef.current}`)}
-        >
-          {t('Create Application')}
-        </Button>
       </Flex>
 
       <Grid
+        height={'40px'}
         templateColumns={`repeat(${columns.length},1fr)`}
         overflowX={'auto'}
         borderRadius={'md'}
@@ -185,7 +176,7 @@ const AppList = ({
         ))}
       </Grid>
 
-      <Box h={'300px'} overflow={'auto'}>
+      <Box h={'0'} flex={1} overflowY={'auto'}>
         {apps.map((item: any, index1) => (
           <Grid
             templateColumns={`repeat(${columns.length},1fr)`}
@@ -328,7 +319,7 @@ const AppList = ({
           onSuccess={() => refetchApps(currentNamespaceRef.current)}
         />
       )}
-    </Box>
+    </Flex>
   );
 };
 

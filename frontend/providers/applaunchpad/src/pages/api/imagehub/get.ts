@@ -211,17 +211,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const response = await client.getAllImagesAndTags({ page, pageSize });
+
     const formattedData = formatData(response.items);
 
     jsonRes(res, {
       data: {
         items: formattedData,
-        pagination: {
-          total: response.total,
-          page: response.page,
-          pageSize: response.pageSize,
-          totalPages: response.totalPages
-        }
+        total: response.total,
+        page: response.page,
+        pageSize: response.pageSize,
+        totalPages: response.totalPages
       }
     });
   } catch (error: any) {

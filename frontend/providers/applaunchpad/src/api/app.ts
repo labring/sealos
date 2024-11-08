@@ -25,7 +25,10 @@ export const getImageTags = (data: { repository: string }) =>
   GET<{ name: string; tags: string[] }>('/api/getImages', data);
 
 export const getImageHubs = (data: { page: number; pageSize: number }) =>
-  GET<PaginatedResponse<TagDetail[]>>('/api/imagehub/get', data);
+  GET<{ items: TagDetail[]; total: number; page: number; pageSize: number; totalPages: number }>(
+    '/api/imagehub/get',
+    data
+  );
 
 export const postDeployApp = (namespace: string, yamlList: string[]) =>
   POST(`/api/applyApp?namespace=${namespace}`, { yamlList });

@@ -40,16 +40,8 @@ const Home = ({ namespace }: { namespace: string }) => {
     }
   );
 
-  console.log(data);
-
   return (
-    <Flex
-      backgroundColor={'grayModern.100'}
-      px={'32px'}
-      pb={5}
-      h={'100vh'}
-      flexDirection={'column'}
-    >
+    <Flex backgroundColor={'grayModern.100'} px={'32px'} h={'100vh'} flexDirection={'column'}>
       <List
         namespaces={[]}
         currentNamespace={currentNamespace.current}
@@ -60,6 +52,8 @@ const Home = ({ namespace }: { namespace: string }) => {
         }}
       />
       <SwitchPage
+        flexShrink={0}
+        my={'8px'}
         justifyContent={'end'}
         currentPage={page}
         totalPage={data?.totalPages || 0}
