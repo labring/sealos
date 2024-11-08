@@ -13,7 +13,7 @@ import { UserTask } from '@/types/task';
 // handle baidu
 export const uploadConvertData = ({ newType, bdVid }: { newType: number[]; bdVid?: string }) => {
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-  const defaultUrl = 'https://sealos.run/self-hosting';
+  const defaultUrl = 'https://ads.sealos.run';
   if (!bdVid) {
     return Promise.reject('upload convert data params error');
   }
