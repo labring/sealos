@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const devboxName = payload.devboxName
     const namespace = payload.namespace
 
-    const { k8sCore, k8sCustomObjects, k8sNetworkingApp } = await getK8s({
+    const { k8sCore, k8sNetworkingApp } = await getK8s({
       kubeconfig:
         process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '',
       useDefaultConfig: process.env.NODE_ENV !== 'development'

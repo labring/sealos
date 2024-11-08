@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { getDBList, DBResponse } from '../api/db'
+import { Disposable } from '../common/dispose'
 
 interface Database {
   dbType: string
@@ -10,7 +11,40 @@ interface Database {
   connection: string
 }
 
-export class DBViewProvider implements vscode.TreeDataProvider<DatabaseItem> {
+export class DBViewProvider extends Disposable {
+  constructor(context: vscode.ExtensionContext) {
+    super()
+    if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
+      // view
+      const dbTreeDataProvider = new MyDbTreeDataProvider()
+      const dbView = vscode.window.createTreeView('dbView', {
+        treeDataProvider: dbTreeDataProvider,
+      })
+      this._register(dbView)
+
+      // commands
+      this._register(
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+          dbTreeDataProvider.refresh()
+        })
+      )
+      this._register(
+        dbView.onDidChangeVisibility(() => {
+          if (dbView.visible) {
+            dbTreeDataProvider.refresh()
+          }
+        })
+      )
+      this._register(
+        vscode.commands.registerCommand('devbox.refreshDatabase', () => {
+          dbTreeDataProvider.refresh()
+        })
+      )
+    }
+  }
+}
+
+class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<DatabaseItem | undefined> =
     new vscode.EventEmitter<DatabaseItem | undefined>()
   readonly onDidChangeTreeData: vscode.Event<DatabaseItem | undefined> =
@@ -21,6 +55,10 @@ export class DBViewProvider implements vscode.TreeDataProvider<DatabaseItem> {
   private databases: Database[] = []
 
   private async init() {
+    this.refresh()
+  }
+
+  async refresh(): Promise<void> {
     const dbList = await getDBList()
     this.databases = dbList.map((db: DBResponse) => ({
       dbName: db.dbName,
@@ -31,10 +69,6 @@ export class DBViewProvider implements vscode.TreeDataProvider<DatabaseItem> {
       port: db.port,
       connection: db.connection,
     }))
-    this.refresh()
-  }
-
-  refresh(): void {
     this._onDidChangeTreeData.fire(undefined)
   }
 

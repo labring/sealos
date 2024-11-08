@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { getNetworkList, NetworkResponse } from '../api/network'
+import { Disposable } from '../common/dispose'
 
 interface Network {
   address: string
@@ -7,29 +8,61 @@ interface Network {
   protocol: string
 }
 
-export class NetworkViewProvider
+export class NetworkViewProvider extends Disposable {
+  constructor(context: vscode.ExtensionContext) {
+    super()
+    if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
+      const networkTreeDataProvider = new MyNetworkTreeDataProvider()
+      const networkView = vscode.window.createTreeView('networkView', {
+        treeDataProvider: networkTreeDataProvider,
+      })
+      this._register(networkView)
+
+      this._register(
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+          networkTreeDataProvider.refresh()
+        })
+      )
+      this._register(
+        networkView.onDidChangeVisibility(() => {
+          if (networkView.visible) {
+            networkTreeDataProvider.refresh()
+          }
+        })
+      )
+      this._register(
+        vscode.commands.registerCommand('devbox.refreshNetwork', () => {
+          networkTreeDataProvider.refresh()
+        })
+      )
+    }
+  }
+}
+
+class MyNetworkTreeDataProvider
   implements vscode.TreeDataProvider<NetworkItem>
 {
   private _onDidChangeTreeData: vscode.EventEmitter<NetworkItem | undefined> =
     new vscode.EventEmitter<NetworkItem | undefined>()
   readonly onDidChangeTreeData: vscode.Event<NetworkItem | undefined> =
     this._onDidChangeTreeData.event
+  private networks: Network[] = []
+
   constructor() {
     this.init()
   }
-  private networks: Network[] = []
 
   private async init() {
+    this.refresh()
+  }
+
+  async refresh(): Promise<void> {
     const networks = await getNetworkList()
     this.networks = networks.map((network: NetworkResponse) => ({
       address: network.address,
       port: network.port,
       protocol: network.protocol,
     }))
-    this.refresh()
-  }
-
-  refresh(): void {
     this._onDidChangeTreeData.fire(undefined)
   }
 

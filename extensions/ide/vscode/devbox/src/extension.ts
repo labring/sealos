@@ -37,26 +37,12 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   // network view
-  const networkViewProvider = new NetworkViewProvider()
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('networkView', networkViewProvider)
-  )
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      networkViewProvider.refresh()
-    })
-  )
+  const networkViewProvider = new NetworkViewProvider(context)
+  context.subscriptions.push(networkViewProvider)
 
   // db view
-  const dbViewProvider = new DBViewProvider()
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('dbView', dbViewProvider)
-  )
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      dbViewProvider.refresh()
-    })
-  )
+  const dbViewProvider = new DBViewProvider(context)
+  context.subscriptions.push(dbViewProvider)
 
   // handle uri
   const uriHandler = new UriHandler()
