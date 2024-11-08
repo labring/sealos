@@ -74,7 +74,6 @@ request.interceptors.request.use(
     }
     let _headers: AxiosHeaders = config.headers
 
-    //获取token，并将其添加至请求头中
     const workspaceFolders = vscode.workspace.workspaceFolders
 
     if (workspaceFolders && workspaceFolders.length > 0) {

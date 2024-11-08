@@ -4,6 +4,7 @@ import fs from 'fs'
 import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
+import { getDevboxDetail } from '../api/devbox'
 import { defaultDevboxSSHConfigPath } from '../constant/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
@@ -88,6 +89,28 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
       parseSSHConfig(defaultDevboxSSHConfigPath).then((data) => {
         this.treeData = data as DevboxListItem[]
         this._onDidChangeTreeData.fire(undefined)
+      })
+      this.treeData.forEach(async (item) => {
+        const token = GlobalStateManager.getToken(item.host)
+        if (!token) {
+          return
+        }
+        // get devbox detail
+        const data = await getDevboxDetail(token)
+        const status = data.status.value
+        switch (status) {
+          case 'Running':
+            item.iconPath = new vscode.ThemeIcon('vm-running')
+            break
+          case 'Stopped':
+            item.iconPath = new vscode.ThemeIcon('vm')
+            break
+          case 'Error':
+            item.iconPath = new vscode.ThemeIcon('error')
+            break
+          default:
+            item.iconPath = new vscode.ThemeIcon('question')
+        }
       })
     } else if (this.treeName === 'devboxFeedback') {
       this.treeData = [
@@ -199,7 +222,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
 
       this.refresh()
     } catch (error) {
-      vscode.window.showErrorMessage(`删除 SSH 配置失败: ${error.message}`)
+      vscode.window.showErrorMessage(`Delete devbox failed: ${error.message}`)
     }
   }
 
@@ -259,7 +282,7 @@ class MyTreeItem extends vscode.TreeItem {
   namespace?: string
   devboxName?: string
   sshPort: number
-  host: string // 添加这一行
+  host: string
   remotePath: string
 
   constructor(
@@ -270,18 +293,18 @@ class MyTreeItem extends vscode.TreeItem {
     namespace?: string,
     devboxName?: string,
     host?: string,
-    remotePath?: string // 添加这个参数
+    remotePath?: string,
+    iconPath?: vscode.ThemeIcon
   ) {
     super(label, collapsibleState)
     this.domain = domain
     this.namespace = namespace
     this.devboxName = devboxName
     this.sshPort = sshPort
-    this.host = host || '' // 初始化 host 属性
-    this.remotePath = remotePath || '/home/sealos/project' // 设置默认值
-    // ... 其余代码保持不变
+    this.host = host || ''
+    this.remotePath = remotePath || '/home/sealos/project'
+    this.iconPath = iconPath
 
-    // 添加这行代码
     this.contextValue = devboxName ? 'devbox' : undefined
   }
 }

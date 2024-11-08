@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 export interface DevboxListItem {
   hostName: string
   host: string
@@ -6,4 +8,5 @@ export interface DevboxListItem {
   identityFile?: string
   status?: string
   remotePath?: string
+  iconPath?: vscode.ThemeIcon
 }
