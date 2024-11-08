@@ -1,7 +1,7 @@
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import type { ButtonProps } from '@chakra-ui/react';
-import { Box, Button, Menu, MenuButton, MenuItem, MenuList, useDisclosure } from '@chakra-ui/react';
-import React, { forwardRef, useMemo, useRef } from 'react';
+import { Box, Button, Portal, forwardRef, useOutsideClick } from '@chakra-ui/react';
+import React, { useMemo, useRef, useState } from 'react';
 
 interface Props extends ButtonProps {
   width?: string;
@@ -15,105 +15,128 @@ interface Props extends ButtonProps {
   onchange?: (val: string) => void;
 }
 
-const MySelect = (
-  { placeholder, value, width = 'auto', height = '30px', list, onchange, ...props }: Props,
-  selectRef: any
-) => {
-  const ref = useRef<HTMLButtonElement>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+const MySelect = forwardRef<Props, 'button'>(
+  (
+    { placeholder, value, width = 'auto', height = '30px', list, onchange, ...props },
+    selectRef
+  ) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
+    useOutsideClick({
+      ref: ref,
+      handler: () => setIsOpen(false)
+    });
 
-  return (
-    <Menu autoSelect={false}>
-      <MenuButton
-        as={Button}
-        rightIcon={<ChevronDownIcon />}
-        width={width}
-        height={height}
-        ref={ref}
-        display={'flex'}
-        alignItems={'center'}
-        justifyContent={'space-between'}
-        border={'1px solid #E8EBF0'}
-        borderRadius={'md'}
-        fontSize={'12px'}
-        fontWeight={'400'}
-        variant={'outline'}
-        _hover={{
-          borderColor: 'brightBlue.300',
-          bg: 'grayModern.50'
-        }}
-        _active={{
-          transform: ''
-        }}
-        {...(isOpen
-          ? {
-              borderColor: 'brightBlue.600',
-              bg: '#FFF'
-            }
-          : {
-              bg: '#F7F8FA'
-            })}
-        textAlign={'left'}
-        {...props}
-      >
-        {activeMenu ? (
-          <>
-            <Box noOfLines={1}>{activeMenu.label}</Box>
-          </>
-        ) : (
-          <>
-            <Box>{placeholder}</Box>
-          </>
-        )}
-      </MenuButton>
-      <MenuList
-        minW={(() => {
-          const w = ref.current?.clientWidth;
-          if (w) {
-            return `${w}px !important`;
+    const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
+
+    return (
+      <Box ref={ref} position="relative" width={width}>
+        <Button
+          ref={buttonRef}
+          rightIcon={
+            <ChevronDownIcon
+              transition="transform 0.2s"
+              transform={isOpen ? 'rotate(180deg)' : undefined}
+            />
           }
-          return Array.isArray(width)
-            ? width.map((item) => `${item} !important`)
-            : `${width} !important`;
-        })()}
-        p={'6px'}
-        borderRadius={'base'}
-        border={'1px solid #E8EBF0'}
-        boxShadow={
-          '0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)'
-        }
-        zIndex={99}
-        // transform={'translateY(40px) !important'}
-        overflow={'overlay'}
-        maxH={'300px'}
-      >
-        {list.map((item) => (
-          <MenuItem
-            key={item.value}
-            {...(value === item.value
-              ? {
-                  color: 'brightBlue.600'
-                }
-              : {})}
-            borderRadius={'4px'}
-            _hover={{
-              bg: 'rgba(17, 24, 36, 0.05)',
-              color: 'brightBlue.600'
-            }}
-            onClick={() => {
-              if (onchange && value !== item.value) {
-                onchange(item.value);
-              }
-            }}
-          >
-            <Box>{item.label}</Box>
-          </MenuItem>
-        ))}
-      </MenuList>
-    </Menu>
-  );
-};
+          width="100%"
+          height={height}
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          border="1px solid"
+          borderColor={isOpen ? 'brightBlue.600' : '#E8EBF0'}
+          borderRadius="md"
+          fontSize="12px"
+          fontWeight="400"
+          variant="outline"
+          _hover={{
+            borderColor: 'brightBlue.300',
+            bg: 'grayModern.50'
+          }}
+          _active={{
+            transform: 'none'
+          }}
+          bg={isOpen ? '#FFF' : '#F7F8FA'}
+          textAlign="left"
+          transition="all 0.2s"
+          onClick={() => setIsOpen(!isOpen)}
+          {...props}
+        >
+          {activeMenu ? (
+            <Box noOfLines={1}>{activeMenu.label}</Box>
+          ) : (
+            <Box color="gray.500">{placeholder}</Box>
+          )}
+        </Button>
 
-export default React.memo(forwardRef(MySelect));
+        {isOpen && (
+          <Portal>
+            <Box
+              position="fixed"
+              zIndex={2000}
+              width={buttonRef.current?.offsetWidth}
+              maxH="300px"
+              bg="white"
+              borderRadius="base"
+              border="1px solid #E8EBF0"
+              boxShadow="0px 4px 10px rgba(19, 51, 107, 0.10), 0px 0px 1px rgba(19, 51, 107, 0.10)"
+              p="6px"
+              overflowY="auto"
+              sx={{
+                '&::-webkit-scrollbar': {
+                  width: '4px'
+                },
+                '&::-webkit-scrollbar-track': {
+                  bg: 'transparent'
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  bg: 'rgba(19, 51, 107, 0.2)',
+                  borderRadius: '2px'
+                }
+              }}
+              top={(() => {
+                if (!buttonRef.current) return 0;
+                const rect = buttonRef.current.getBoundingClientRect();
+                return `${rect.bottom + 4}px`;
+              })()}
+              left={(() => {
+                if (!buttonRef.current) return 0;
+                const rect = buttonRef.current.getBoundingClientRect();
+                return `${rect.left}px`;
+              })()}
+            >
+              {list.map((item) => (
+                <Box
+                  key={item.value}
+                  px="3"
+                  py="2"
+                  color={value === item.value ? 'brightBlue.600' : undefined}
+                  borderRadius="4px"
+                  transition="colors 0.2s"
+                  cursor="pointer"
+                  _hover={{
+                    bg: 'rgba(17, 24, 36, 0.05)',
+                    color: 'brightBlue.600'
+                  }}
+                  onClick={() => {
+                    if (onchange && value !== item.value) {
+                      onchange(item.value);
+                    }
+                    setIsOpen(false);
+                  }}
+                >
+                  {item.label}
+                </Box>
+              ))}
+            </Box>
+          </Portal>
+        )}
+      </Box>
+    );
+  }
+);
+
+export default MySelect;
