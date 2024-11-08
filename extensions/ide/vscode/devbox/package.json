@@ -58,22 +58,34 @@
       {
         "command": "devboxDashboard.refresh",
         "title": "Refresh Devbox",
-        "icon": "images/refresh.svg"
+        "icon": {
+          "light": "images/light/refresh.svg",
+          "dark": "images/dark/refresh.svg"
+        }
       },
       {
         "command": "devboxDashboard.createDevbox",
         "title": "Create Devbox",
-        "icon": "images/create.svg"
+        "icon": {
+          "light": "images/light/create.svg",
+          "dark": "images/dark/create.svg"
+        }
       },
       {
         "command": "devboxDashboard.openDevbox",
         "title": "Open Devbox",
-        "icon": "images/open.svg"
+        "icon": {
+          "light": "images/light/open.svg",
+          "dark": "images/dark/open.svg"
+        }
       },
       {
         "command": "devboxDashboard.deleteDevbox",
         "title": "Delete Devbox",
-        "icon": "images/delete.svg"
+        "icon": {
+          "light": "images/light/delete.svg",
+          "dark": "images/dark/delete.svg"
+        }
       },
       {
         "command": "devbox.openExternalLink",
@@ -86,12 +98,18 @@
       {
         "command": "devbox.refreshDatabase",
         "title": "Refresh Database",
-        "icon": "images/refresh.svg"
+        "icon": {
+          "light": "images/light/refresh.svg",
+          "dark": "images/dark/refresh.svg"
+        }
       },
       {
         "command": "devbox.refreshNetwork",
         "title": "Refresh Network",
-        "icon": "images/refresh.svg"
+        "icon": {
+          "light": "images/light/refresh.svg",
+          "dark": "images/dark/refresh.svg"
+        }
       }
     ],
     "views": {
