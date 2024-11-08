@@ -26,13 +26,13 @@ const getIdentifier = (modelName: string): ModelIdentifier => {
 }
 
 const sortModels = (models: string[]): string[] => {
-  // 使用 Map 进行分组
+  // group by identifier
   const groupMap = new Map<string, string[]>()
 
-  // 分组
+  // group by identifier
   models.forEach((model) => {
     const identifier = getIdentifier(model)
-    // 特殊处理 gpt 和 o1，将它们归为同一组 'openai'
+    // special handle gpt and o1, group them as 'openai'
     const groupKey = identifier === 'gpt' || identifier === 'o' ? 'openai' : identifier
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, [])
@@ -40,15 +40,13 @@ const sortModels = (models: string[]): string[] => {
     groupMap.get(groupKey)?.push(model)
   })
 
-  // 按照 identifier 排序并扁平化结果
+  // sort by identifier and flatten the result
   return Array.from(groupMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0])) // 按 identifier 排序
-    .flatMap(([_, models]) => models.sort()) // 扁平化并保持每组内的排序
+    .sort((a, b) => a[0].localeCompare(b[0])) // sort by identifier
+    .flatMap(([_, models]) => models.sort()) // flatten and keep the order in each group
 }
 
-// 模型组件
 const ModelComponent = ({ modelName }: { modelName: string }) => {
-  // 图标映射和标识符关系
   const modelGroups = {
     openai: {
       icon: OpenAIIcon,
@@ -88,7 +86,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
     }
   }
 
-  // 获取模型图标
+  // get model icon
   const getModelIcon = (modelName: string): StaticImageData => {
     const identifier = getIdentifier(modelName)
     const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
@@ -150,7 +148,6 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
   )
 }
 
-// 模型列表组件
 const ModelList: React.FC = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')

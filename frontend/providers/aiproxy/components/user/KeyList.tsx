@@ -16,7 +16,6 @@ import {
   Th,
   Thead,
   Tr,
-  Tooltip,
   Modal,
   ModalOverlay,
   ModalContent,

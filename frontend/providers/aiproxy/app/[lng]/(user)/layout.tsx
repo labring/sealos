@@ -22,7 +22,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
   const handleI18nChange = useCallback(
     (data: { currentLanguage: string }) => {
-      const currentLng = i18n.resolvedLanguage // 这里会获取最新的 resolvedLanguage
+      const currentLng = i18n.resolvedLanguage // get the latest resolvedLanguage
       const newLng = data.currentLanguage
 
       if (currentLng !== newLng) {

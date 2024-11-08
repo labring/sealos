@@ -32,15 +32,15 @@ export function middleware(req: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
-  // 从路径中获取语言设置
+  // get language from pathname
   let lng = req.nextUrl.pathname.split('/')[1]
 
-  // 如果路径中没有有效的语言代码，则使用默认语言
+  // if pathname does not contain valid language code, use fallback language
   if (!languages.includes(lng)) {
     lng = fallbackLng
   }
 
-  // 处理根路径和语言路径的重定向
+  // handle root path and language path redirect
   if (
     req.nextUrl.pathname === '/' ||
     languages.some((lang) => req.nextUrl.pathname === `/${lang}`)
@@ -49,7 +49,7 @@ export function middleware(req: NextRequest): NextResponse {
     return NextResponse.redirect(newUrl)
   }
 
-  // 处理其他需要添加语言前缀的路径
+  // handle other paths that need to add language prefix
   if (!languages.some((loc) => req.nextUrl.pathname.startsWith(`/${loc}`))) {
     const newUrl = new URL(`/${lng}${req.nextUrl.pathname}${req.nextUrl.search}`, req.url)
     return NextResponse.redirect(newUrl)
