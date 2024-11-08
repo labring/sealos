@@ -1,5 +1,0 @@
-auth:
-  appTokenJwtKey: 1234567890
-  aiProxyBackendKey: 1234567890
-backend:
-  aiproxy: http://localhost:8080
