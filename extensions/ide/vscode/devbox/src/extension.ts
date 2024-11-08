@@ -7,6 +7,8 @@ import { NetworkViewProvider } from './providers/NetworkViewProvider'
 import { DBViewProvider } from './providers/DBViewProvider'
 import { GlobalStateManager } from './utils/globalStateManager'
 import { ToolCommands } from './commands/tools'
+import { updateBaseUrl } from './api'
+import { isDevelopment } from './constant/api'
 
 export async function activate(context: vscode.ExtensionContext) {
   // tools
@@ -21,8 +23,18 @@ export async function activate(context: vscode.ExtensionContext) {
   const devboxListViewProvider = new DevboxListViewProvider(context)
   context.subscriptions.push(devboxListViewProvider)
 
-  // token manager
+  // globalState manager
   GlobalStateManager.init(context)
+
+  // update api base url
+  const workspaceFolders = vscode.workspace.workspaceFolders
+  if (workspaceFolders && workspaceFolders.length > 0 && !isDevelopment) {
+    const workspaceFolder = workspaceFolders[0]
+    const remoteUri = workspaceFolder.uri.authority
+    const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
+    const region = GlobalStateManager.getRegion(devboxId)
+    updateBaseUrl(`http://devbox.${region}`)
+  }
 
   // network view
   const networkViewProvider = new NetworkViewProvider()

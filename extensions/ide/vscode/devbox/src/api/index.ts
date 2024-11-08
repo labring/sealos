@@ -5,6 +5,11 @@ import axios, {
   AxiosRequestConfig,
 } from 'axios'
 import { GlobalStateManager } from '../utils/globalStateManager'
+import {
+  defaultProductionUrl,
+  developmentUrl,
+  isDevelopment,
+} from '../constant/api'
 import * as vscode from 'vscode'
 
 const showStatus = (status: number) => {
@@ -49,17 +54,12 @@ const showStatus = (status: number) => {
   return `${message}, please check the network or contact the administrator!`
 }
 
-const getBaseURL = () => {
-  // inject env from launch.json(configurations.env)
-  const isDevelopment = process.env.NODE_ENV === 'development'
-  // TODO: 硬编码改为软编码
-  return isDevelopment
-    ? 'http://127.0.0.1:3000'
-    : 'https://devbox.usw.sailos.io'
+export const updateBaseUrl = (newBaseUrl: string) => {
+  request.defaults.baseURL = newBaseUrl
 }
 
 const request = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: isDevelopment ? developmentUrl : defaultProductionUrl,
   withCredentials: true,
   timeout: 60000,
 })

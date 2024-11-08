@@ -24,6 +24,11 @@ export class UriHandler {
       GlobalStateManager.setWorkDir(params.sshHostLabel, params.workingDir)
     }
 
+    if (params.sshDomain && params.sshHostLabel) {
+      const region = params.sshDomain.split('@')[1]
+      GlobalStateManager.setRegion(params.sshHostLabel, region)
+    }
+
     if (params.sshPort === '0') {
       vscode.window.showInformationMessage(
         `SSH Port is not correct,maybe your devbox's nodeport is over the limit`

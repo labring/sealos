@@ -7,6 +7,7 @@ import { DevboxListItem } from '../types/devbox'
 import { defaultDevboxSSHConfigPath } from '../constant/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
+import { uswUrl, hzhUrl, bjaUrl, gzgUrl } from '../constant/api'
 
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -105,12 +106,29 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
   }
 
   // TODO: 根据不同的代理跳转到不同的页面，而且可以进行设置里的配置
-  create(item: MyTreeItem) {
-    vscode.commands.executeCommand('devbox.openExternalLink', [
-      `https://usw.sailos.io/?openapp=system-devbox?${encodeURIComponent(
-        `page=create`
-      )}`,
-    ])
+  async create(item: MyTreeItem) {
+    const regions = [
+      { label: 'USW', url: uswUrl },
+      { label: 'HZH', url: hzhUrl },
+      { label: 'BJA', url: bjaUrl },
+      { label: 'GZG', url: gzgUrl },
+    ]
+
+    const selected = await vscode.window.showQuickPick(
+      regions.map((region) => region.label),
+      {
+        placeHolder: 'Please select a region',
+      }
+    )
+
+    if (selected) {
+      const targetUrl = regions.find((r) => r.label === selected)?.url
+      vscode.commands.executeCommand('devbox.openExternalLink', [
+        `${targetUrl}/?openapp=system-devbox?${encodeURIComponent(
+          'page=create'
+        )}`,
+      ])
+    }
   }
 
   async open(item: MyTreeItem) {

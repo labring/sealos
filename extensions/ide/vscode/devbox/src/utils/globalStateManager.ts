@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 interface DevboxGlobalState {
   token: string
   workDir: string
+  region: string
 }
 
 export class GlobalStateManager {
@@ -17,6 +18,7 @@ export class GlobalStateManager {
   // devboxId:{
   //   token: string
   //   workDir: string
+  //   region: string
   // }
   static getToken(devboxId: string): string | undefined {
     const state = (GlobalStateManager.context.globalState.get(
@@ -24,6 +26,7 @@ export class GlobalStateManager {
     ) as DevboxGlobalState) || {
       token: '',
       workDir: '',
+      region: '',
     }
     return state.token
   }
@@ -33,8 +36,20 @@ export class GlobalStateManager {
     ) as DevboxGlobalState) || {
       token: '',
       workDir: '',
+      region: '',
     }
     return state.workDir
+  }
+
+  static getRegion(devboxId: string): string | undefined {
+    const state = (GlobalStateManager.context.globalState.get(
+      devboxId
+    ) as DevboxGlobalState) || {
+      token: '',
+      workDir: '',
+      region: '',
+    }
+    return state.region
   }
 
   static setToken(devboxId: string, token: string) {
@@ -57,6 +72,18 @@ export class GlobalStateManager {
     const newState = {
       ...state,
       workDir,
+    }
+    GlobalStateManager.context.globalState.update(devboxId, newState)
+  }
+
+  static setRegion(devboxId: string, region: string) {
+    const state =
+      (GlobalStateManager.context.globalState.get(
+        devboxId
+      ) as DevboxGlobalState) || {}
+    const newState = {
+      ...state,
+      region,
     }
     GlobalStateManager.context.globalState.update(devboxId, newState)
   }
