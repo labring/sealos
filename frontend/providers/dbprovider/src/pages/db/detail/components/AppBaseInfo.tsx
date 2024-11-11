@@ -54,6 +54,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBStatefulSetByName', db.dbName, db.dbType],
     () => getDBStatefulSetByName(db.dbName, db.dbType),
     {
+      retry: 2,
       enabled: !!db.dbName && !!db.dbType
     }
   );
@@ -73,6 +74,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       enabled: supportConnectDB,
       retry: 3,
       onSuccess(data) {
+        console.log(data, !!data, 'service');
         setIsChecked(!!data);
       },
       onError(error) {
@@ -147,7 +149,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
       [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
       [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
-      [DBTypeEnum.redis]: `redis-cli -h ${secret.host} -p ${secret.port}`,
+      [DBTypeEnum.redis]: `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`,
       [DBTypeEnum.kafka]: ``,
       [DBTypeEnum.qdrant]: ``,
       [DBTypeEnum.nebula]: ``,
@@ -168,6 +170,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const openNetWorkService = async () => {
     try {
+      console.log('openNetWorkService', dbStatefulSet, db);
       if (!dbStatefulSet || !db) {
         return toast({
           title: 'Missing Parameters',
@@ -175,7 +178,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         });
       }
       const yaml = json2NetworkService({ dbDetail: db, dbStatefulSet: dbStatefulSet });
-      console.log(yaml);
       await applyYamlList([yaml], 'create');
       onClose();
       setIsChecked(true);

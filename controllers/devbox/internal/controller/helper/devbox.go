@@ -35,7 +35,6 @@ import (
 )
 
 const (
-	rate         = 10
 	DevBoxPartOf = "devbox"
 )
 
@@ -211,8 +210,16 @@ func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	expectContainer := expectPod.Spec.Containers[0]
 
 	// Check CPU and memory limits
+	if container.Resources.Requests.Cpu().Cmp(*expectContainer.Resources.Requests.Cpu()) != 0 {
+		slog.Info("CPU requests are not equal")
+		return false
+	}
 	if container.Resources.Limits.Cpu().Cmp(*expectContainer.Resources.Limits.Cpu()) != 0 {
 		slog.Info("CPU limits are not equal")
+		return false
+	}
+	if container.Resources.Requests.Memory().Cmp(*expectContainer.Resources.Requests.Memory()) != 0 {
+		slog.Info("Memory requests are not equal")
 		return false
 	}
 	if container.Resources.Limits.Memory().Cmp(*expectContainer.Resources.Limits.Memory()) != 0 {
@@ -376,7 +383,10 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestEphemeralStorage, limitEphemeralStorage string) corev1.ResourceRequirements {
+func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox,
+	requestCPURate, requestMemoryRate float64,
+	requestEphemeralStorage, limitEphemeralStorage string,
+) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: calculateResourceRequest(
 			corev1.ResourceList{
@@ -384,6 +394,7 @@ func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestEphemera
 				corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
 				corev1.ResourceEphemeralStorage: resource.MustParse(requestEphemeralStorage),
 			},
+			requestCPURate, requestMemoryRate,
 		),
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
@@ -397,7 +408,7 @@ func IsExceededQuotaError(err error) bool {
 	return strings.Contains(err.Error(), "exceeded quota")
 }
 
-func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
+func calculateResourceRequest(limit corev1.ResourceList, requestCPURate, requestMemoryRate float64) corev1.ResourceList {
 	if limit == nil {
 		return nil
 	}
@@ -405,13 +416,13 @@ func calculateResourceRequest(limit corev1.ResourceList) corev1.ResourceList {
 	// Calculate CPU request
 	if cpu, ok := limit[corev1.ResourceCPU]; ok {
 		cpuValue := cpu.AsApproximateFloat64()
-		cpuRequest := cpuValue / rate
+		cpuRequest := cpuValue / requestCPURate
 		request[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuRequest*1000), resource.DecimalSI)
 	}
 	// Calculate memory request
 	if memory, ok := limit[corev1.ResourceMemory]; ok {
 		memoryValue := memory.AsApproximateFloat64()
-		memoryRequest := memoryValue / rate
+		memoryRequest := memoryValue / requestMemoryRate
 		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
 	}
 

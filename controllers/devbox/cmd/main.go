@@ -69,6 +69,8 @@ func main() {
 	var registryUser string
 	var registryPassword string
 	var authAddr string
+	var requestCPURate float64
+	var requestMemoryRate float64
 	var requestEphemeralStorage string
 	var limitEphemeralStorage string
 	var debugMode bool
@@ -87,6 +89,8 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.BoolVar(&debugMode, "debug", false, "If set, debug mode will be enabled")
+	flag.Float64Var(&requestCPURate, "request-cpu-rate", 10, "The request rate of cpu limit in devbox.")
+	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
 	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
 	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
 	opts := zap.Options{
@@ -183,6 +187,8 @@ func main() {
 		Scheme:                  mgr.GetScheme(),
 		CommitImageRegistry:     registryAddr,
 		Recorder:                mgr.GetEventRecorderFor("devbox-controller"),
+		RequestCPURate:          requestCPURate,
+		RequestMemoryRate:       requestMemoryRate,
 		RequestEphemeralStorage: requestEphemeralStorage,
 		LimitEphemeralStorage:   limitEphemeralStorage,
 		DebugMode:               debugMode,
