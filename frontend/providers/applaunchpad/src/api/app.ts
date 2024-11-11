@@ -13,6 +13,7 @@ import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { ExportAppPayload } from '@/pages/api/exportApp';
 import { NodeInfo } from '@/pages/api/getNodes';
 import { UploadAppPayload } from '@/pages/api/uploadApp';
+import { PaginatedResponse, TagDetail } from '@/pages/api/imagehub/get';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
 
@@ -22,6 +23,40 @@ export const getImages = () => GET<{ repositories: string[] }>('/api/getImages')
 
 export const getImageTags = (data: { repository: string }) =>
   GET<{ name: string; tags: string[] }>('/api/getImages', data);
+
+export const getImageHubs = (data: { page: number; pageSize: number }) =>
+  GET<{ items: TagDetail[]; total: number; page: number; pageSize: number; totalPages: number }>(
+    '/api/imagehub/get',
+    data
+  );
+
+/**
+ * 删除镜像
+ */
+export const deleteImageHub = (repository: string, tag: string) =>
+  GET(`/api/imagehub/delete?repository=${repository}&tag=${tag}`);
+
+/**
+ * 上传镜像
+ */
+export const uploadImageHub = (data: {
+  image_name: string;
+  tag: string;
+  namespace: string;
+  image_file: File;
+}) => {
+  const formData = new FormData();
+  formData.append('image_name', data.image_name);
+  formData.append('tag', data.tag);
+  formData.append('namespace', data.namespace);
+  formData.append('image_file', data.image_file);
+
+  return POST<{ message: string }>('/api/imagehub/upload', formData, {
+    headers: {
+      // 不设置 Content-Type，让浏览器自动处理
+    }
+  });
+};
 
 export const postDeployApp = (namespace: string, yamlList: string[]) =>
   POST(`/api/applyApp?namespace=${namespace}`, { yamlList });

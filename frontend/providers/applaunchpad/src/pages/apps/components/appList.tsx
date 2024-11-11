@@ -61,6 +61,7 @@ const AppList = ({
   const currentNamespaceRef = useRef<string>(currentNamespace);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [ns, setNs] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -382,7 +383,20 @@ const AppList = ({
             </option>
           ))}
         </Select>
-        <Button mr={'12px'} h={'40px'} w={'156px'} flex={'0 0 auto'} onClick={onOpen}>
+
+        <Button
+          mr={'12px'}
+          h={'40px'}
+          w={'100px'}
+          flex={'0 0 auto'}
+          onClick={() => {
+            router.push('/imagehub');
+          }}
+        >
+          镜像管理
+        </Button>
+
+        <Button mr={'12px'} h={'40px'} w={'100px'} flex={'0 0 auto'} onClick={onOpen}>
           {t('New Namaspace')}
         </Button>
 
@@ -502,8 +516,11 @@ const AppList = ({
               取消
             </Button>
             <Button
+              isLoading={isUploading}
+              isDisabled={isUploading}
               variant="outline"
               onClick={async () => {
+                setIsUploading(true);
                 try {
                   await uploadApp({
                     appname: 'name',
@@ -521,6 +538,7 @@ const AppList = ({
                     title: 'error'
                   });
                 }
+                setIsUploading(false);
               }}
             >
               确定
