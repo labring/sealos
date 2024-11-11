@@ -17,7 +17,8 @@ import {
   ModalHeader,
   ModalOverlay,
   useDisclosure,
-  useTheme
+  useTheme,
+  Spinner
 } from '@chakra-ui/react';
 import type { ThemeType } from '@sealos/ui';
 import { useMessage } from '@sealos/ui';
@@ -55,6 +56,8 @@ const AppList = ({
 
   const [files, setFiles] = useState<File[]>([]);
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
+
+  const [isUploading, setIsUploading] = useState(false);
 
   const columns = useMemo<
     {
@@ -134,6 +137,17 @@ const AppList = ({
           ( {apps.length} )
         </Box>
         <Box flex={1}></Box>
+
+        <Button
+          h={'40px'}
+          mr={'14px'}
+          minW={'140px'}
+          onClick={() => {
+            router.push('/apps');
+          }}
+        >
+          应用列表
+        </Button>
 
         <Button
           leftIcon={
@@ -235,8 +249,8 @@ const AppList = ({
             <Button
               width={'64px'}
               onClick={() => {
-                setImage(undefined);
                 onClose();
+                setImage(undefined);
               }}
               variant={'outline'}
             >
@@ -290,7 +304,10 @@ const AppList = ({
             </Button>
             <Button
               variant="outline"
+              isLoading={isUploading}
+              isDisabled={isUploading}
               onClick={async () => {
+                setIsUploading(true);
                 try {
                   await uploadImageHub({
                     image_name: imageName,
@@ -309,6 +326,8 @@ const AppList = ({
                     status: 'error',
                     title: 'error'
                   });
+                } finally {
+                  setIsUploading(false);
                 }
               }}
             >
