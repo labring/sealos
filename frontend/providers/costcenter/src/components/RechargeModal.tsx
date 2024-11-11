@@ -346,14 +346,14 @@ const RechargeModal = forwardRef(
       {}
     );
     const [defaultSteps, ratios, steps, specialBonus] = useMemo(() => {
-      const defaultSteps = Object.entries(bonuses?.data?.discount.defaultSteps || {}).toSorted(
+      const defaultSteps = Object.entries(bonuses?.data?.discount.defaultSteps || {}).sort(
         (a, b) => +a[0] - +b[0]
       );
       const ratios = defaultSteps.map(([key, value]) => value);
       const steps = defaultSteps.map(([key, value]) => +key);
-      const specialBonus = Object.entries(
-        bonuses?.data?.discount.firstRechargeDiscount || {}
-      ).toSorted((a, b) => +a[0] - +b[0]);
+      const specialBonus = Object.entries(bonuses?.data?.discount.firstRechargeDiscount || {}).sort(
+        (a, b) => +a[0] - +b[0]
+      );
       const temp: number[] = [];
       specialBonus.forEach(([k, v]) => {
         const step = +k;

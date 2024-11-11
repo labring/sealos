@@ -84,7 +84,7 @@ function Valuation() {
             }
           ];
         })
-        .toSorted((a, b) => a.idx - b.idx) || [],
+        .sort((a, b) => a.idx - b.idx) || [],
     [_data, t, cycleIdx]
   );
   const PriceTableData = useMemo(
