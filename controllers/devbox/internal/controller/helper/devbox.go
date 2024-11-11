@@ -28,6 +28,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/ptr"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/label"
@@ -309,17 +310,6 @@ func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *dev
 			Value: devbox.Namespace + "-" + devbox.Name,
 		},
 		{
-			Name: "SEALOS_DEVBOX_PASSWORD",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					Key: "SEALOS_DEVBOX_PASSWORD",
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: devbox.Name,
-					},
-				},
-			},
-		},
-		{
 			Name: "SEALOS_DEVBOX_POD_UID",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
@@ -382,7 +372,12 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 						Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
 						Path: "id.pub",
 					},
+					{
+						Key:  "SEALOS_DEVBOX_AUTHORIZED_KEYS",
+						Path: "authorized_keys",
+					},
 				},
+				DefaultMode: ptr.To(int32(0644)),
 			},
 		},
 	}
