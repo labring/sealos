@@ -191,9 +191,19 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
   }
 
   async delete(item: MyTreeItem) {
+    const result = await vscode.window.showWarningMessage(
+      `Are you sure to delete ${item.label}?（This action only delete the devbox from the local ssh config）`,
+      { modal: true },
+      'Yes',
+      'No'
+    )
+
+    if (result !== 'Yes') {
+      return
+    }
+
     const deletedHost = item.host
     GlobalStateManager.remove(deletedHost)
-    // 删除ssh 配置
     // TODO：抽象出一个 crud ssh 文件的模型
     try {
       const content = await fs.promises.readFile(
