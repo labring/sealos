@@ -35,6 +35,19 @@ export class NetworkViewProvider extends Disposable {
           networkTreeDataProvider.refresh()
         })
       )
+
+      this._register(
+        vscode.commands.registerCommand(
+          'devbox.openInIntegratedBrowser',
+          (item) => networkTreeDataProvider.openInIntegratedBrowser(item)
+        )
+      )
+      this._register(
+        vscode.commands.registerCommand(
+          'devbox.openInExternalBrowser',
+          (item) => networkTreeDataProvider.openInExternalBrowser(item)
+        )
+      )
     }
   }
 }
@@ -54,6 +67,19 @@ class MyNetworkTreeDataProvider
 
   private async init() {
     this.refresh()
+  }
+  openInIntegratedBrowser(item: NetworkItem) {
+    vscode.commands.executeCommand(
+      'simpleBrowser.show',
+      `https://${item.address.split(/\s+/).pop()}`
+    )
+  }
+
+  openInExternalBrowser(item: NetworkItem) {
+    vscode.commands.executeCommand(
+      'devbox.openExternalLink',
+      `https://${item.address.split(/\s+/).pop()}`
+    )
   }
 
   async refresh(): Promise<void> {
@@ -79,7 +105,8 @@ class MyNetworkTreeDataProvider
         return [
           new NetworkItem(
             'Not connected to the remote environment',
-            'no-remote'
+            'no-remote',
+            ''
           ),
         ]
       }
@@ -87,7 +114,8 @@ class MyNetworkTreeDataProvider
       items.push(
         new NetworkItem(
           `${'Port'.padEnd(40)}${'Protocol'.padEnd(60)}Address`,
-          'header'
+          'header',
+          ''
         )
       )
 
@@ -95,7 +123,7 @@ class MyNetworkTreeDataProvider
         const label = `${network.port
           .toString()
           .padEnd(38)}${network.protocol.padEnd(60)}${network.address}`
-        items.push(new NetworkItem(label, 'network'))
+        items.push(new NetworkItem(label, 'network', network.address))
       })
 
       return items
@@ -107,7 +135,8 @@ class MyNetworkTreeDataProvider
 class NetworkItem extends vscode.TreeItem {
   constructor(
     public override readonly label: string,
-    public override readonly contextValue: string
+    public override readonly contextValue: string,
+    public address: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None)
 

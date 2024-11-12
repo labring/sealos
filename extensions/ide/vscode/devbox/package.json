@@ -109,6 +109,22 @@
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
         }
+      },
+      {
+        "command": "devbox.openInIntegratedBrowser",
+        "title": "Open in Integrated Browser",
+        "icon": {
+          "light": "images/light/globe.svg",
+          "dark": "images/dark/globe.svg"
+        }
+      },
+      {
+        "command": "devbox.openInExternalBrowser",
+        "title": "Open in External Browser",
+        "icon": {
+          "light": "images/light/link-external.svg",
+          "dark": "images/dark/link-external.svg"
+        }
       }
     ],
     "views": {
@@ -200,6 +216,16 @@
           "command": "devbox.copy",
           "when": "view == dbView && viewItem == database",
           "group": "inline"
+        },
+        {
+          "command": "devbox.openInIntegratedBrowser",
+          "when": "view == networkView && viewItem == network",
+          "group": "inline@1"
+        },
+        {
+          "command": "devbox.openInExternalBrowser",
+          "when": "view == networkView && viewItem == network",
+          "group": "inline@2"
         }
       ]
     }
