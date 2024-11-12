@@ -82,9 +82,11 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
   }
   copyConnectionString(item: DatabaseItem) {
     if (item.connectionString && item.contextValue === 'database') {
-      vscode.env.clipboard.writeText(item.connectionString)
+      vscode.env.clipboard.writeText(
+        `${item.password}\n${item.connectionString}`
+      )
       vscode.window.showInformationMessage(
-        'Connection string copied to clipboard!'
+        'Password and Connection string,copied to clipboard!'
       )
     }
   }
@@ -106,19 +108,26 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
       items.push(
         new DatabaseItem(
           `${'DBType'.padEnd(15)}${'Username'.padEnd(15)}${'Password'.padEnd(
-            15
-          )}${'Host'.padEnd(80)}${'Port'.padEnd(40)}Connection`,
+            35
+          )}${'Host'.padEnd(60)}${'Port'.padEnd(40)}Connection`,
           'header'
         )
       )
 
       this.databases.forEach((database) => {
         const label = `${database.dbType.padEnd(15)} ${database.username.padEnd(
-          15
-        )}${database.password.padEnd(15)} ${database.host.padEnd(
+          17
+        )}${'*'.repeat(10).padEnd(16)} ${database.host.padEnd(
           45
         )} ${database.port.toString().padEnd(34)} ${'*'.repeat(20)}`
-        items.push(new DatabaseItem(label, 'database', database.connection))
+        items.push(
+          new DatabaseItem(
+            label,
+            'database',
+            database.connection,
+            database.password
+          )
+        )
       })
 
       return items
@@ -131,7 +140,8 @@ class DatabaseItem extends vscode.TreeItem {
   constructor(
     public override readonly label: string,
     public override readonly contextValue: string,
-    public readonly connectionString?: string
+    public readonly connectionString?: string,
+    public readonly password?: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None)
   }
