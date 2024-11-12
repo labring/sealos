@@ -358,12 +358,6 @@ func GenerateSSHVolumeMounts() []corev1.VolumeMount {
 		},
 		{
 			Name:      "devbox-ssh-keys",
-			MountPath: "/usr/start/.ssh/id",
-			SubPath:   "id",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "devbox-ssh-keys",
 			MountPath: "/usr/start/.ssh/id.pub",
 			SubPath:   "id.pub",
 			ReadOnly:  true,
@@ -379,10 +373,6 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: devbox.Name,
 				Items: []corev1.KeyToPath{
-					{
-						Key:  "SEALOS_DEVBOX_PRIVATE_KEY",
-						Path: "id",
-					},
 					{
 						Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
 						Path: "id.pub",
