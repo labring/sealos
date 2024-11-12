@@ -1,6 +1,8 @@
 import { deleteImageHub, uploadImageHub } from '@/api/app';
 import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
+import { ImageHubItem } from '@/pages/api/imagehub/get';
+import { formatPodTime } from '@/utils/tools';
 import {
   Box,
   Button,
@@ -17,21 +19,14 @@ import {
   ModalHeader,
   ModalOverlay,
   useDisclosure,
-  useTheme,
-  Spinner
+  useTheme
 } from '@chakra-ui/react';
 import type { ThemeType } from '@sealos/ui';
 import { useMessage } from '@sealos/ui';
+import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
-
-type ImageItem = {
-  created: string;
-  image: string;
-  size: string;
-  tag: string;
-};
 
 const AppList = ({
   apps = [],
@@ -39,7 +34,7 @@ const AppList = ({
   refetchApps
 }: {
   namespaces: string[];
-  apps: ImageItem[];
+  apps: ImageHubItem[];
   refetchApps: () => void;
 }) => {
   console.log(apps, 'apps');
@@ -52,7 +47,7 @@ const AppList = ({
   const [imageNs, setImageNs] = useState('default');
   const [imageName, setImageName] = useState('');
   const [imageTag, setImageTag] = useState('');
-  const [image, setImage] = useState<ImageItem>();
+  const [image, setImage] = useState<ImageHubItem>();
 
   const [files, setFiles] = useState<File[]>([]);
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
@@ -63,14 +58,14 @@ const AppList = ({
     {
       title: string;
       key: string;
-      render?: (item: any) => JSX.Element;
+      render?: (item: ImageHubItem) => JSX.Element;
     }[]
   >(
     () => [
       {
         title: '镜像',
         key: 'image',
-        render: (item: any) => (
+        render: (item: ImageHubItem) => (
           <Box pl={4} color={'myGray.900'} fontSize={'md'} fontWeight={'bold'}>
             {item.image}
           </Box>
@@ -84,7 +79,7 @@ const AppList = ({
       {
         title: '时间',
         key: 'created',
-        render: (item: any) => <Box>{item.created}</Box>
+        render: (item: any) => <Box>{dayjs(item.created).format('YYYY-MM-DD HH:mm:ss')}</Box>
       },
       {
         title: '大小',
@@ -94,7 +89,7 @@ const AppList = ({
       {
         title: '操作',
         key: 'operation',
-        render: (item: ImageItem) => (
+        render: (item: ImageHubItem) => (
           <Button
             variant="ghost"
             colorScheme="red"
@@ -211,7 +206,7 @@ const AppList = ({
             {columns.map((col, index2) => (
               <Flex
                 className={index2 === 0 ? '' : ''}
-                data-id={item.id}
+                data-id={item.image + item.name}
                 key={col.key}
                 alignItems={'center'}
                 px={3}

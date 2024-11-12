@@ -13,7 +13,7 @@ import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { ExportAppPayload } from '@/pages/api/exportApp';
 import { NodeInfo } from '@/pages/api/getNodes';
 import { UploadAppPayload } from '@/pages/api/uploadApp';
-import { PaginatedResponse, TagDetail } from '@/pages/api/imagehub/get';
+import { ImageHubItem } from '@/pages/api/imagehub/get';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
 
@@ -25,7 +25,7 @@ export const getImageTags = (data: { repository: string }) =>
   GET<{ name: string; tags: string[] }>('/api/getImages', data);
 
 export const getImageHubs = (data: { page: number; pageSize: number }) =>
-  GET<{ items: TagDetail[]; total: number; page: number; pageSize: number; totalPages: number }>(
+  GET<{ items: ImageHubItem[]; total: number; page: number; pageSize: number; totalPages: number }>(
     '/api/imagehub/get',
     data
   );

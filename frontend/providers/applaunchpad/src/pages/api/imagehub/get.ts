@@ -10,6 +10,13 @@ interface Config {
   password: string;
 }
 
+export interface ImageHubItem {
+  image: string;
+  tag: string;
+  size?: number;
+  created?: string;
+}
+
 export interface TagDetail {
   name: string;
   size?: number;
@@ -115,48 +122,54 @@ export class ImageRegistryClient {
 
   async getAllImagesAndTags(
     pagination?: PaginationParams
-  ): Promise<PaginatedResponse<Record<string, TagDetail[]>>> {
+  ): Promise<PaginatedResponse<ImageHubItem[]>> {
     const { page = 1, pageSize = 10 } = pagination || {};
 
     // 获取所有仓库
     const allRepositories = await this.getRepositories();
-    const total = allRepositories.length;
-    const totalPages = Math.ceil(total / pageSize);
+    const allTags: ImageHubItem[] = [];
 
-    // 计算当前页的仓库
-    const startIndex = (page - 1) * pageSize;
-    const repositories = allRepositories.slice(startIndex, startIndex + pageSize);
-
-    const result: Record<string, TagDetail[]> = {};
-
+    // 获取所有仓库的所有标签
     await Promise.allSettled(
-      repositories.map(async (repository) => {
+      allRepositories.map(async (repository) => {
         try {
           const tags = await this.getTagsList(repository);
-          if (!tags.length) {
-            result[repository] = [];
-            return;
-          }
+          if (!tags.length) return;
 
           const tagDetailsPromises = await Promise.allSettled(
             tags.map((tag) => this.getTagDetails(repository, tag))
           );
 
-          result[repository] = tagDetailsPromises
+          tagDetailsPromises
             .filter(
               (r): r is PromiseFulfilledResult<TagDetail | null> =>
                 r.status === 'fulfilled' && r.value !== null
             )
-            .map((r) => r.value as TagDetail);
+            .forEach((r) => {
+              allTags.push({
+                image: repository,
+                tag: r.value?.name || '',
+                size: r.value?.size,
+                created: r.value?.created
+              });
+            });
         } catch (error) {
           console.error(`Error processing repository ${repository}:`, error);
-          result[repository] = [];
         }
       })
     );
 
+    allTags.sort((a, b) => {
+      return a.image.localeCompare(b.image);
+    });
+
+    // 根据标记总数计算分页
+    const total = allTags.length;
+    const totalPages = Math.ceil(total / pageSize);
+    const paginatedTags = allTags.slice((page - 1) * pageSize, page * pageSize);
+
     return {
-      items: result,
+      items: paginatedTags,
       total,
       page,
       pageSize,
@@ -266,11 +279,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const response = await client.getAllImagesAndTags({ page, pageSize });
 
-    const formattedData = formatData(response.items);
-
     jsonRes(res, {
       data: {
-        items: formattedData,
+        items: response.items,
         total: response.total,
         page: response.page,
         pageSize: response.pageSize,

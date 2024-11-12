@@ -12,14 +12,9 @@ export const config = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  if (req.method !== 'POST') {
-    return jsonRes(res, {
-      code: 405,
-      error: new Error('Method not allowed')
-    });
-  }
-
   try {
+    const SERVER_BASE_URL = process.env.SERVER_BASE_URL || '';
+
     // 验证会话
     await authSession(req.headers);
 
@@ -57,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     // 发送请求到目标 API
-    const response = await fetch('http://192.168.0.134:5002/api/loadAndPushImage', {
+    const response = await fetch(`${SERVER_BASE_URL}/api/loadAndPushImage`, {
       method: 'POST',
       body: formData
     });
