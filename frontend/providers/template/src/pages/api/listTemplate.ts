@@ -21,7 +21,8 @@ export function replaceRawWithCDN(url: string, cdnUrl: string) {
 export const readTemplates = (
   jsonPath: string,
   cdnUrl?: string,
-  blacklistedCategories?: string[]
+  blacklistedCategories?: string[],
+  language?: string
 ): TemplateType[] => {
   const jsonData = fs.readFileSync(jsonPath, 'utf8');
   const _templates: TemplateType[] = JSON.parse(jsonData);
@@ -41,12 +42,24 @@ export const readTemplates = (
         item.spec.icon = replaceRawWithCDN(item.spec.icon, cdnUrl);
       }
       return item;
+    })
+    .filter((item) => {
+      if (!language) return true;
+
+      if (!item.spec.locale) return true;
+      console.log(item.spec.locale === language || (item.spec.i18n && item.spec.i18n[language]));
+      if (item.spec.locale === language || (item.spec.i18n && item.spec.i18n[language]))
+        return true;
+
+      return false;
     });
 
   return templates;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const language = req.query.language as string;
+
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const cdnUrl = process.env.CDN_URL;
@@ -76,7 +89,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories);
+    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
+    console.log(language, templates.length);
+
     const categories = templates.map((item) => (item.spec?.categories ? item.spec.categories : []));
     const topKeys = findTopKeyWords(categories, menuCount);
 

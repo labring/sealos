@@ -43,7 +43,7 @@ const Header = ({
   templateDetail: TemplateType;
   cloudDomain: string;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { copyData } = useCopyData();
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList?.map((i) => i.value).join('---\n');
@@ -127,7 +127,7 @@ const Header = ({
       <Flex ml={'24px'} w="520px" flexDirection={'column'}>
         <Flex alignItems={'center'} gap={'12px'}>
           <Text fontSize={'24px'} fontWeight={600} color={'#24282C'}>
-            {templateDetail?.spec?.title}
+            {templateDetail?.spec?.i18n?.[i18n.language]?.title ?? templateDetail?.spec?.title}
           </Text>
           {DeployCountComponent}
           <Flex
@@ -138,7 +138,13 @@ const Header = ({
             _hover={{
               background: '#F4F6F8'
             }}
-            onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}
+            onClick={(e) =>
+              goGithub(
+                e,
+                templateDetail?.spec?.i18n?.[i18n.language]?.gitRepo ??
+                  templateDetail?.spec?.gitRepo
+              )
+            }
           >
             <HomePageIcon />
             <Text fontSize={'12px '} fontWeight={400} pl="6px">
@@ -224,7 +230,13 @@ const Header = ({
           </Popover>
         </Flex>
 
-        <Tooltip label={templateDetail?.spec?.description} closeDelay={200}>
+        <Tooltip
+          label={
+            templateDetail?.spec?.i18n?.[i18n.language]?.description ??
+            templateDetail?.spec?.description
+          }
+          closeDelay={200}
+        >
           <Text
             overflow={'hidden'}
             noOfLines={1}
@@ -233,9 +245,15 @@ const Header = ({
             fontSize={'12px'}
             color={'5A646E'}
             fontWeight={400}
-            onClick={() => copyData(templateDetail?.spec?.description)}
+            onClick={() =>
+              copyData(
+                templateDetail?.spec?.i18n?.[i18n.language]?.description ??
+                  templateDetail?.spec?.description
+              )
+            }
           >
-            {templateDetail?.spec?.description}
+            {templateDetail?.spec?.i18n?.[i18n.language]?.description ??
+              templateDetail?.spec?.description}
           </Text>
         </Tooltip>
       </Flex>

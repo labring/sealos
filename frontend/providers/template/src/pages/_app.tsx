@@ -47,7 +47,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { loadUserSourcePrice } = useUserStore();
 
   useEffect(() => {
-    initSystemConfig();
+    initSystemConfig(i18n.language);
     loadUserSourcePrice();
   }, []);
 

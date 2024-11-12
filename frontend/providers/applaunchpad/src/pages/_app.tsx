@@ -20,6 +20,7 @@ import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import { AppEditSyncedFields } from '@/types/app';
+import Script from 'next/script';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -184,7 +185,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <button
+          {/* <button
             onClick={() => {
               const lastLang = getLangStore();
               let lang = lastLang === 'en' ? 'zh' : 'en';
@@ -196,7 +197,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             }}
           >
             changeLanguage
-          </button>
+          </button> */}
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />
