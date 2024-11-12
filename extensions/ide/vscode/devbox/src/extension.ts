@@ -15,6 +15,9 @@ export async function activate(context: vscode.ExtensionContext) {
   const tools = new ToolCommands(context)
   context.subscriptions.push(tools)
 
+  // globalState manager
+  GlobalStateManager.init(context)
+
   // remote connector
   const remoteConnector = new RemoteSSHConnector(context)
   context.subscriptions.push(remoteConnector)
@@ -22,9 +25,6 @@ export async function activate(context: vscode.ExtensionContext) {
   // devboxList view
   const devboxListViewProvider = new DevboxListViewProvider(context)
   context.subscriptions.push(devboxListViewProvider)
-
-  // globalState manager
-  GlobalStateManager.init(context)
 
   // update api base url
   const workspaceFolders = vscode.workspace.workspaceFolders
