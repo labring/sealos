@@ -192,7 +192,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
 
   async delete(item: MyTreeItem) {
     const result = await vscode.window.showWarningMessage(
-      `Are you sure to delete ${item.label}?（This action only delete the devbox from the local ssh config）`,
+      `Are you sure to delete ${item.label}?\n(This action will only delete the devbox ssh config in the local environment.)`,
       { modal: true },
       'Yes',
       'No'
