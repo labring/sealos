@@ -77,41 +77,53 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
   constructor(treeName: string) {
     this.treeName = treeName
     this.refreshData()
+    if (this.treeName === 'devboxDashboard') {
+      setInterval(() => {
+        this.refresh()
+      }, 3 * 1000)
+    }
   }
 
   refresh(): void {
     this.refreshData()
   }
 
-  private refreshData(): void {
+  private async refreshData(): Promise<void> {
     if (this.treeName === 'devboxDashboard') {
       convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
-      parseSSHConfig(defaultDevboxSSHConfigPath).then((data) => {
-        this.treeData = data as DevboxListItem[]
-        this._onDidChangeTreeData.fire(undefined)
-      })
-      this.treeData.forEach(async (item) => {
-        const token = GlobalStateManager.getToken(item.host)
-        if (!token) {
-          return
-        }
-        // get devbox detail
-        const data = await getDevboxDetail(token)
-        const status = data.status.value
-        switch (status) {
-          case 'Running':
-            item.iconPath = new vscode.ThemeIcon('vm-running')
-            break
-          case 'Stopped':
-            item.iconPath = new vscode.ThemeIcon('vm')
-            break
-          case 'Error':
-            item.iconPath = new vscode.ThemeIcon('error')
-            break
-          default:
-            item.iconPath = new vscode.ThemeIcon('question')
-        }
-      })
+      const data = await parseSSHConfig(defaultDevboxSSHConfigPath)
+      this.treeData = data as DevboxListItem[]
+
+      await Promise.all(
+        this.treeData.map(async (item) => {
+          const token = GlobalStateManager.getToken(item.host)
+          if (!token) {
+            return
+          }
+          try {
+            const data = await getDevboxDetail(token)
+            const status = data.status.value
+            switch (status) {
+              case 'Running':
+                item.iconPath = new vscode.ThemeIcon('debug-start')
+                break
+              case 'Stopped':
+                item.iconPath = new vscode.ThemeIcon('debug-pause')
+                break
+              case 'Error':
+                item.iconPath = new vscode.ThemeIcon('error')
+                break
+              default:
+                item.iconPath = new vscode.ThemeIcon('question')
+            }
+          } catch (error) {
+            console.error(`get devbox detail failed: ${error}`)
+            item.iconPath = new vscode.ThemeIcon('warning')
+          }
+        })
+      )
+
+      this._onDidChangeTreeData.fire(undefined)
     } else if (this.treeName === 'devboxFeedback') {
       this.treeData = [
         {
@@ -267,7 +279,8 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
             namespace,
             devboxName,
             devbox.host,
-            devbox.remotePath
+            devbox.remotePath,
+            devbox.iconPath
           )
           treeItem.contextValue = 'devbox'
           return treeItem

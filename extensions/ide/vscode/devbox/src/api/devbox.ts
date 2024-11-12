@@ -1,8 +1,14 @@
 import { GET } from './index'
 
 export const getDevboxDetail = async (token: string) => {
-  const { devbox } = await GET('/api/v1/getDevboxDetail', {
-    authorization: token,
-  })
+  const { devbox } = await GET(
+    '/api/v1/getDevboxDetail',
+    {},
+    {
+      headers: {
+        Authorization: encodeURIComponent(token),
+      },
+    }
+  )
   return devbox
 }

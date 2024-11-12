@@ -80,9 +80,11 @@ request.interceptors.request.use(
       const workspaceFolder = workspaceFolders[0]
       const remoteUri = workspaceFolder.uri.authority
       const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
-      _headers['Authorization'] = encodeURIComponent(
-        GlobalStateManager.getToken(devboxId) || ''
-      )
+      if (!_headers['Authorization']) {
+        _headers['Authorization'] = encodeURIComponent(
+          GlobalStateManager.getToken(devboxId) || ''
+        )
+      }
     }
 
     if (!config.headers || config.headers['Content-Type'] === '') {
