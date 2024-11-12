@@ -8,22 +8,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
-const formatImageData = (items: any) => {
-  const result: any[] = [];
-  Object.entries(items).forEach(([imageName, versions]: [string, any]) => {
-    versions.forEach((version: any) => {
-      result.push({
-        image: imageName,
-        tag: version.name,
-        created: version.created,
-        size: version.size
-      });
-    });
-  });
-  result.sort((a, b) => a.image.localeCompare(b.image)); // 按image字母排序
-  return result;
-};
-
 const Home = ({ namespace }: { namespace: string }) => {
   const router = useRouter();
   const { Loading } = useLoading();
@@ -42,7 +26,7 @@ const Home = ({ namespace }: { namespace: string }) => {
     <Flex backgroundColor={'grayModern.100'} px={'32px'} h={'100vh'} flexDirection={'column'}>
       <List
         namespaces={[]}
-        apps={formatImageData(data?.items || {})}
+        apps={data?.items || []}
         refetchApps={() => {
           refetch();
         }}
