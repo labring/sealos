@@ -184,9 +184,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           const accountTransaction = await globalPrisma.accountTransaction.create({
             data: {
-              userUid,
               type: 'REALNAME_AUTH_REWARD',
-              balance: newBalance,
+              userUid: userUid,
+              balance: rewardBigInt,
               deduction_balance: 0, // No deduction in this case
               message: 'Real name authentication reward',
               billing_id: userRealNameInfo.id // You'll need to implement this function
