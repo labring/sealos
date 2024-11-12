@@ -543,7 +543,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 	volumes = append(volumes, devbox.Spec.ExtraVolumes...)
 
 	volumeMounts := runtime.Spec.Config.VolumeMounts
-	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts())
+	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
 	volumeMounts = append(volumeMounts, devbox.Spec.ExtraVolumeMounts...)
 
 	containers := []corev1.Container{

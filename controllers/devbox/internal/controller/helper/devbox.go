@@ -348,11 +348,20 @@ func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox, runtime *devbo
 	return commit.Image
 }
 
-func GenerateSSHVolumeMounts() corev1.VolumeMount {
-	return corev1.VolumeMount{
-		Name:      "devbox-ssh-keys",
-		MountPath: "/usr/start/.ssh",
-		ReadOnly:  true,
+func GenerateSSHVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "devbox-ssh-keys",
+			MountPath: "/usr/start/.ssh/authorized_keys",
+			SubPath:   "authorized_keys",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "devbox-ssh-keys",
+			MountPath: "/usr/start/.ssh/id.pub",
+			SubPath:   "id.pub",
+			ReadOnly:  true,
+		},
 	}
 }
 
@@ -365,10 +374,6 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 				SecretName: devbox.Name,
 				Items: []corev1.KeyToPath{
 					{
-						Key:  "SEALOS_DEVBOX_PRIVATE_KEY",
-						Path: "id",
-					},
-					{
 						Key:  "SEALOS_DEVBOX_PUBLIC_KEY",
 						Path: "id.pub",
 					},
@@ -377,7 +382,7 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 						Path: "authorized_keys",
 					},
 				},
-				DefaultMode: ptr.To(int32(0644)),
+				DefaultMode: ptr.To(int32(420)),
 			},
 		},
 	}
