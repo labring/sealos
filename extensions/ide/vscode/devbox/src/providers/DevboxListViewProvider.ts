@@ -15,15 +15,19 @@ export class DevboxListViewProvider extends Disposable {
     super()
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view
-      const projectTreeDataProvider = new MyTreeDataProvider('devboxDashboard')
+      const projectTreeDataProvider = new ProjectTreeDataProvider()
       // TODO： 完善 feedback部分
-      const feedbackTreeDataProvider = new MyTreeDataProvider('devboxFeedback')
+      const feedbackTreeDataProvider = new FeedbackTreeDataProvider()
       const devboxDashboardView = vscode.window.createTreeView(
         'devboxDashboard',
         {
           treeDataProvider: projectTreeDataProvider,
         }
       )
+      const feedbackTreeView = vscode.window.createTreeView('devboxFeedback', {
+        treeDataProvider: feedbackTreeDataProvider,
+      })
+      this._register(feedbackTreeView)
       this._register(devboxDashboardView)
       this._register(
         devboxDashboardView.onDidChangeVisibility(() => {
@@ -41,7 +45,7 @@ export class DevboxListViewProvider extends Disposable {
       this._register(
         vscode.commands.registerCommand(
           'devboxDashboard.createDevbox',
-          (item: MyTreeItem) => {
+          (item: ProjectTreeItem) => {
             projectTreeDataProvider.create(item)
           }
         )
@@ -49,7 +53,7 @@ export class DevboxListViewProvider extends Disposable {
       this._register(
         vscode.commands.registerCommand(
           'devboxDashboard.openDevbox',
-          (item: MyTreeItem) => {
+          (item: ProjectTreeItem) => {
             projectTreeDataProvider.open(item)
           }
         )
@@ -57,7 +61,7 @@ export class DevboxListViewProvider extends Disposable {
       this._register(
         vscode.commands.registerCommand(
           'devboxDashboard.deleteDevbox',
-          (item: MyTreeItem) => {
+          (item: ProjectTreeItem) => {
             projectTreeDataProvider.delete(item)
           }
         )
@@ -66,22 +70,21 @@ export class DevboxListViewProvider extends Disposable {
   }
 }
 
-class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<MyTreeItem | undefined> =
-    new vscode.EventEmitter<MyTreeItem | undefined>()
-  readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined> =
+class ProjectTreeDataProvider
+  implements vscode.TreeDataProvider<ProjectTreeItem>
+{
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    ProjectTreeItem | undefined
+  > = new vscode.EventEmitter<ProjectTreeItem | undefined>()
+  readonly onDidChangeTreeData: vscode.Event<ProjectTreeItem | undefined> =
     this._onDidChangeTreeData.event
   private treeData: DevboxListItem[] = []
-  private treeName: string
 
-  constructor(treeName: string) {
-    this.treeName = treeName
+  constructor() {
     this.refreshData()
-    if (this.treeName === 'devboxDashboard') {
-      setInterval(() => {
-        this.refresh()
-      }, 3 * 1000)
-    }
+    setInterval(() => {
+      this.refresh()
+    }, 3 * 1000)
   }
 
   refresh(): void {
@@ -89,58 +92,47 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
   }
 
   private async refreshData(): Promise<void> {
-    if (this.treeName === 'devboxDashboard') {
-      convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
-      const data = await parseSSHConfig(defaultDevboxSSHConfigPath)
-      this.treeData = data as DevboxListItem[]
+    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+    const data = await parseSSHConfig(defaultDevboxSSHConfigPath)
+    this.treeData = data as DevboxListItem[]
 
-      await Promise.all(
-        this.treeData.map(async (item) => {
-          const token = GlobalStateManager.getToken(item.host)
-          if (!token) {
-            return
+    await Promise.all(
+      this.treeData.map(async (item) => {
+        const token = GlobalStateManager.getToken(item.host)
+        if (!token) {
+          return
+        }
+        try {
+          const data = await getDevboxDetail(token)
+          const status = data.status.value
+          switch (status) {
+            case 'Running':
+              item.iconPath = new vscode.ThemeIcon('debug-start')
+              break
+            case 'Stopped':
+              item.iconPath = new vscode.ThemeIcon('debug-pause')
+              break
+            case 'Error':
+              item.iconPath = new vscode.ThemeIcon('error')
+              break
+            default:
+              item.iconPath = new vscode.ThemeIcon('question')
           }
-          try {
-            const data = await getDevboxDetail(token)
-            const status = data.status.value
-            switch (status) {
-              case 'Running':
-                item.iconPath = new vscode.ThemeIcon('debug-start')
-                break
-              case 'Stopped':
-                item.iconPath = new vscode.ThemeIcon('debug-pause')
-                break
-              case 'Error':
-                item.iconPath = new vscode.ThemeIcon('error')
-                break
-              default:
-                item.iconPath = new vscode.ThemeIcon('question')
-            }
-          } catch (error) {
-            console.error(`get devbox detail failed: ${error}`)
-            item.iconPath = new vscode.ThemeIcon('warning')
-          }
-        })
-      )
+        } catch (error) {
+          console.error(`get devbox detail failed: ${error}`)
+          item.iconPath = new vscode.ThemeIcon('warning')
+        }
+      })
+    )
 
-      this._onDidChangeTreeData.fire(undefined)
-    } else if (this.treeName === 'devboxFeedback') {
-      this.treeData = [
-        {
-          hostName: 'Give me a feedback in the GitHub repository',
-          host: '',
-          port: 0,
-        },
-      ]
-      this._onDidChangeTreeData.fire(undefined)
-    }
+    this._onDidChangeTreeData.fire(undefined)
   }
 
-  getTreeItem(element: MyTreeItem): vscode.TreeItem {
+  getTreeItem(element: ProjectTreeItem): vscode.TreeItem {
     return element
   }
 
-  async create(item: MyTreeItem) {
+  async create(item: ProjectTreeItem) {
     const apiUrl = vscode.workspace.getConfiguration('devbox').get('apiUrl')
     if (apiUrl) {
       vscode.commands.executeCommand('devbox.openExternalLink', [
@@ -173,7 +165,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     }
   }
 
-  async open(item: MyTreeItem) {
+  async open(item: ProjectTreeItem) {
     if (item.contextValue !== 'devbox') {
       vscode.window.showInformationMessage('只能打开 Devbox 项目')
       return
@@ -190,7 +182,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     )
   }
 
-  async delete(item: MyTreeItem) {
+  async delete(item: ProjectTreeItem) {
     const result = await vscode.window.showWarningMessage(
       `Are you sure to delete ${item.label}?\n(This action will only delete the devbox ssh config in the local environment.)`,
       { modal: true },
@@ -248,7 +240,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
     }
   }
 
-  getChildren(element?: MyTreeItem): Thenable<MyTreeItem[]> {
+  getChildren(element?: ProjectTreeItem): Thenable<ProjectTreeItem[]> {
     if (!element) {
       // domain/namespace
       const domainNamespacePairs = this.treeData.reduce((acc, item) => {
@@ -260,7 +252,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
       return Promise.resolve(
         Array.from(domainNamespacePairs).map((pair) => {
           const [domain, namespace] = pair.split('/')
-          return new MyTreeItem(
+          return new ProjectTreeItem(
             pair,
             domain,
             0,
@@ -281,7 +273,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
         devboxes.map((devbox) => {
           const parts = devbox.host.split('_')
           const devboxName = parts.slice(2).join('_')
-          const treeItem = new MyTreeItem(
+          const treeItem = new ProjectTreeItem(
             devboxName,
             devbox.hostName,
             devbox.port,
@@ -300,7 +292,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<MyTreeItem> {
   }
 }
 
-class MyTreeItem extends vscode.TreeItem {
+class ProjectTreeItem extends vscode.TreeItem {
   domain: string
   namespace?: string
   devboxName?: string
@@ -329,5 +321,50 @@ class MyTreeItem extends vscode.TreeItem {
     this.iconPath = iconPath
 
     this.contextValue = devboxName ? 'devbox' : undefined
+  }
+}
+
+class FeedbackTreeDataProvider
+  implements vscode.TreeDataProvider<FeedbackTreeItem>
+{
+  getTreeItem(element: FeedbackTreeItem): vscode.TreeItem {
+    return element
+  }
+  getChildren(element?: FeedbackTreeItem): Thenable<FeedbackTreeItem[]> {
+    return Promise.resolve([
+      new FeedbackTreeItem(
+        'Give us a feedback in our GitHub repository',
+        vscode.TreeItemCollapsibleState.None,
+        new vscode.ThemeIcon('github'),
+        {
+          command: 'devbox.openExternalLink',
+          title: 'Open GitHub',
+          arguments: ['https://github.com/labring/sealos/issues/new/choose'],
+        }
+      ),
+      new FeedbackTreeItem(
+        'Give us a feedback in our help desk system',
+        vscode.TreeItemCollapsibleState.None,
+        new vscode.ThemeIcon('comment'),
+        {
+          command: 'devbox.openExternalLink',
+          title: 'Open Help Desk',
+          arguments: ['https://hzh.sealos.run/?openapp=system-workorder'],
+        }
+      ),
+    ])
+  }
+}
+class FeedbackTreeItem extends vscode.TreeItem {
+  constructor(
+    label: string,
+    collapsibleState: vscode.TreeItemCollapsibleState,
+    iconPath?: vscode.ThemeIcon,
+    command?: vscode.Command
+  ) {
+    super(label, collapsibleState)
+    this.iconPath = iconPath
+    this.contextValue = 'feedback'
+    this.command = command
   }
 }
