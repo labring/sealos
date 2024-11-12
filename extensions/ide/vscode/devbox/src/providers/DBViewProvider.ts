@@ -82,11 +82,9 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
   }
   copyConnectionString(item: DatabaseItem) {
     if (item.connectionString && item.contextValue === 'database') {
-      vscode.env.clipboard.writeText(
-        `${item.password}\n${item.connectionString}`
-      )
+      vscode.env.clipboard.writeText(item.connectionString)
       vscode.window.showInformationMessage(
-        'Password and Connection string,copied to clipboard!'
+        'Connection string is copied to clipboard!'
       )
     }
   }
@@ -107,9 +105,9 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
 
       items.push(
         new DatabaseItem(
-          `${'DBType'.padEnd(15)}${'Username'.padEnd(15)}${'Password'.padEnd(
-            35
-          )}${'Host'.padEnd(60)}${'Port'.padEnd(40)}Connection`,
+          `${'DBType'.padEnd(15)}${'Username'.padEnd(38)}${'Host'.padEnd(
+            80
+          )}${'Port'.padEnd(40)}Connection`,
           'header'
         )
       )
@@ -117,9 +115,9 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
       this.databases.forEach((database) => {
         const label = `${database.dbType.padEnd(15)} ${database.username.padEnd(
           17
-        )}${'*'.repeat(10).padEnd(16)} ${database.host.padEnd(
-          45
-        )} ${database.port.toString().padEnd(34)} ${'*'.repeat(20)}`
+        )}${database.host.padEnd(65)} ${database.port
+          .toString()
+          .padEnd(34)} ${'*'.repeat(20)}`
         items.push(
           new DatabaseItem(
             label,
