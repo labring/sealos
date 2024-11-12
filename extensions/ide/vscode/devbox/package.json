@@ -88,7 +88,11 @@
       },
       {
         "command": "devbox.copy",
-        "title": "Copy Connection String"
+        "title": "Copy Connection String",
+        "icon": {
+          "light": "images/light/copy.svg",
+          "dark": "images/dark/copy.svg"
+        }
       },
       {
         "command": "devbox.refreshDatabase",
@@ -191,6 +195,11 @@
           "command": "devboxDashboard.deleteDevbox",
           "when": "view == devboxDashboard && viewItem == devbox",
           "group": "inline@2"
+        },
+        {
+          "command": "devbox.copy",
+          "when": "view == dbView && viewItem == database",
+          "group": "inline"
         }
       ]
     }

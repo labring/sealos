@@ -40,6 +40,11 @@ export class DBViewProvider extends Disposable {
           dbTreeDataProvider.refresh()
         })
       )
+      this._register(
+        vscode.commands.registerCommand('devbox.copy', (item: DatabaseItem) => {
+          dbTreeDataProvider.copyConnectionString(item)
+        })
+      )
     }
   }
 }
@@ -75,6 +80,14 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
   getTreeItem(element: DatabaseItem): vscode.TreeItem {
     return element
   }
+  copyConnectionString(item: DatabaseItem) {
+    if (item.connectionString && item.contextValue === 'database') {
+      vscode.env.clipboard.writeText(item.connectionString)
+      vscode.window.showInformationMessage(
+        'Connection string copied to clipboard!'
+      )
+    }
+  }
 
   async getChildren(element?: DatabaseItem): Promise<DatabaseItem[]> {
     if (!element) {
@@ -104,7 +117,7 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
           15
         )}${database.password.padEnd(15)} ${database.host.padEnd(
           45
-        )} ${database.port.toString().padEnd(10)} ${database.connection}`
+        )} ${database.port.toString().padEnd(34)} ${'*'.repeat(20)}`
         items.push(new DatabaseItem(label, 'database', database.connection))
       })
 
@@ -118,16 +131,8 @@ class DatabaseItem extends vscode.TreeItem {
   constructor(
     public override readonly label: string,
     public override readonly contextValue: string,
-    public readonly connection?: string
+    public readonly connectionString?: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None)
-
-    if (connection) {
-      this.command = {
-        title: 'Copy Connection String',
-        command: 'devbox.copy',
-        arguments: [connection],
-      }
-    }
   }
 }
