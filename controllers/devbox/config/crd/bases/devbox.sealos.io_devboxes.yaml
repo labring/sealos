@@ -32,12 +32,6 @@ spec:
     - jsonPath: .spec.state
       name: State
       type: string
-    - jsonPath: .spec.runtimeRef.name
-      name: RuntimeRef
-      type: string
-    - jsonPath: .status.podPhase
-      name: PodPhase
-      type: string
     - jsonPath: .status.network.type
       name: NetworkType
       type: string
@@ -1040,8 +1034,6 @@ spec:
                       - name
                       type: object
                     type: array
-                  image:
-                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -1092,7 +1084,7 @@ spec:
                     type: array
                   releaseArgs:
                     default:
-                    - /home/sealos/project/entrypoint.sh
+                    - /home/devbox/project/entrypoint.sh
                     items:
                       type: string
                     type: array
@@ -1104,7 +1096,7 @@ spec:
                       type: string
                     type: array
                   user:
-                    default: sealos
+                    default: devbox
                     type: string
                   volumeMounts:
                     items:
@@ -2758,10 +2750,8 @@ spec:
                       type: object
                     type: array
                   workingDir:
-                    default: /home/sealos/project
+                    default: /home/devbox/project
                     type: string
-                required:
-                - image
                 type: object
               image:
                 type: string
@@ -2821,15 +2811,6 @@ spec:
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
                 type: object
-              runtimeRef:
-                properties:
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                required:
-                - name
-                type: object
               squash:
                 default: false
                 type: boolean
@@ -2879,6 +2860,8 @@ spec:
                   type: object
                 type: array
             required:
+            - config
+            - image
             - resource
             - state
             type: object
