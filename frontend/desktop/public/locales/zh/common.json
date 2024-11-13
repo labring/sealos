@@ -185,7 +185,7 @@
   "realName_verification": "实名认证",
   "realname_auth_now": "点击进行实名",
   "realname_auth_reminder": "实名认证提醒",
-  "realname_auth_reminder_desc": "国内可用区需要实名认证，未实名认证将会被限制充值，实名认证成功奖励sealos余额5元",
+  "realname_auth_reminder_desc": "国内可用区需要实名认证，未实名认证将会被限制充值，实名认证成功奖励 Sealos 余额 {{reward}} 元。",
   "realname_auth_tips_a": "1、请确保所填写的姓名、身份证号码和手机号码信息一致。",
   "realname_auth_tips_b": "2、部分虚拟运营商提供的号段可能无法验证通过，请申请工单通过人工协助认证。",
   "realname_info": "实名信息",

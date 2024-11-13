@@ -189,7 +189,7 @@
   "realName_verification": "Real Name Verification",
   "realname_auth_now": "Click to verify your name",
   "realname_auth_reminder": "Real-name authentication reminder",
-  "realname_auth_reminder_desc": "Real-name verification is required for regions in China. Without real-name verification, top-up will be restricted. Successful real-name verification will be rewarded with a 5 yuan Sealos balance.",
+  "realname_auth_reminder_desc": "Real-name verification is required for regions in China. Without real-name verification, top-up will be restricted. Successful real-name verification will be rewarded with a {{reward}} Sealos balance.",
   "realname_auth_tips_a": "1. Please ensure that the name, ID number and mobile phone number filled in are consistent.",
   "realname_auth_tips_b": "2. The number segments provided by some virtual operators may not pass verification. Please apply for a work order and pass manual verification.",
   "realname_info": "RealName",
