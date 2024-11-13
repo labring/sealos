@@ -181,6 +181,14 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 				return fmt.Errorf("failed to update secret: %w", err)
 			}
 		}
+
+		if _, ok := devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"]; !ok {
+			devboxSecret.Data["SEALOS_DEVBOX_AUTHORIZED_KEYS"] = devboxSecret.Data["SEALOS_DEVBOX_PUBLIC_KEY"]
+			if err := r.Update(ctx, devboxSecret); err != nil {
+				return fmt.Errorf("failed to update secret: %w", err)
+			}
+		}
+
 		return nil
 	}
 	if client.IgnoreNotFound(err) != nil {
@@ -196,10 +204,10 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	secret := &corev1.Secret{
 		ObjectMeta: objectMeta,
 		Data: map[string][]byte{
-			"SEALOS_DEVBOX_PASSWORD":    []byte(rand.String(12)),
-			"SEALOS_DEVBOX_JWT_SECRET":  []byte(rand.String(32)),
-			"SEALOS_DEVBOX_PUBLIC_KEY":  publicKey,
-			"SEALOS_DEVBOX_PRIVATE_KEY": privateKey,
+			"SEALOS_DEVBOX_JWT_SECRET":      []byte(rand.String(32)),
+			"SEALOS_DEVBOX_PUBLIC_KEY":      publicKey,
+			"SEALOS_DEVBOX_PRIVATE_KEY":     privateKey,
+			"SEALOS_DEVBOX_AUTHORIZED_KEYS": publicKey,
 		},
 	}
 
@@ -535,7 +543,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 	volumes = append(volumes, devbox.Spec.ExtraVolumes...)
 
 	volumeMounts := runtime.Spec.Config.VolumeMounts
-	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts())
+	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
 	volumeMounts = append(volumeMounts, devbox.Spec.ExtraVolumeMounts...)
 
 	containers := []corev1.Container{

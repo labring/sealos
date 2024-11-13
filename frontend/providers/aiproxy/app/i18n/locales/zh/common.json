@@ -1,0 +1,91 @@
+{
+  "title": "AI 代理",
+  "description": "AI 代理",
+  "Sidebar": {
+    "Home": "API Keys",
+    "Logs": "调用日志",
+    "Price": "模型价格"
+  },
+  "keyList": {
+    "title": "API Keys"
+  },
+  "key": {
+    "key": "API Key",
+    "name": "名称",
+    "createdAt": "创建时间",
+    "lastUsedAt": "最后使用时间",
+    "status": "状态",
+    "namePlaceholder": "请输入名称",
+    "nameRequired": "请输入 Key 名字",
+    "nameMaxLength": "key 长度不合法",
+    "nameOnlyLettersAndNumbers": "Key 名字包含特殊字符",
+    "createSuccess": "创建成功",
+    "createFailed": "创建失败",
+    "actions": "操作",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "updateSuccess": "状态更新成功",
+    "updateFailed": "状态更新失败",
+    "unused": "未使用",
+    "inputPrice": "输入单价",
+    "outputPrice": "输出单价",
+    "createName": "名称"
+  },
+  "logs": {
+    "call_log": "调用日志",
+    "name": "名称",
+    "modal": "模型",
+    "status": "状态",
+    "time": "时间",
+    "model": "模型",
+    "prompt_tokens": "输入",
+    "completion_tokens": "输出",
+    "price": "价格",
+    "select_modal": "请选择模型",
+    "select_token_name": "请选择名称",
+    "total_price": "总金额",
+    "total_price_tip": "（输入 token 数×输入价格）＋（输出 token 数 × 输出价格）",
+    "success": "成功",
+    "failed": "失败"
+  },
+  "Page": "页",
+  "Total": "总数",
+  "modelList": {
+    "title": "支持的模型"
+  },
+  "copy": "复制",
+  "createKey": "新建",
+  "Key": {
+    "create": "新建 API Key"
+  },
+  "confirm": "确认",
+  "keystatus": {
+    "enabled": "启用",
+    "disabled": "禁用",
+    "expired": "过期",
+    "exhausted": "耗尽",
+    "unknown": "未知"
+  },
+  "delete": "删除",
+  "disable": "禁用",
+  "enable": "启用",
+  "copySuccess": "复制成功",
+  "copyFailed": "复制失败",
+  "noData": "你还没有 API Key",
+  "price": {
+    "title": "模型价格",
+    "per1kTokens": "1k tokens"
+  },
+  "ernie": "百度文心",
+  "qwen": "阿里千问",
+  "chatglm": "智谱",
+  "deepseek": "Deepseek",
+  "moonshot": "月之暗面",
+  "sparkdesk": "讯飞星火",
+  "abab": "Minimax",
+  "doubao": "字节豆包",
+  "glm": "智谱",
+  "o": "OpenAI",
+  "gpt": "OpenAI",
+  "createKey2": "新建 Key"
+}
