@@ -47,7 +47,7 @@ export const readTemplates = (
       if (!language) return true;
 
       if (!item.spec.locale) return true;
-      console.log(item.spec.locale === language || (item.spec.i18n && item.spec.i18n[language]));
+
       if (item.spec.locale === language || (item.spec.i18n && item.spec.i18n[language]))
         return true;
 
@@ -90,7 +90,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
-    console.log(language, templates.length);
+
+    const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+    console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
 
     const categories = templates.map((item) => (item.spec?.categories ? item.spec.categories : []));
     const topKeys = findTopKeyWords(categories, menuCount);
