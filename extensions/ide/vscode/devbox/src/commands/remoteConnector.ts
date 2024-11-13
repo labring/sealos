@@ -26,10 +26,14 @@ export class RemoteSSHConnector extends Disposable {
   }
 
   private replaceHomePathInConfig(content: string): string {
-    return content.replace(
-      /Include ~\/.ssh\/sealos\/devbox_config/g,
-      `Include ${os.homedir()}/.ssh/sealos/devbox_config`
-    )
+    const includePattern = /Include ~\/.ssh\/sealos\/devbox_config/
+    const includeLine = `Include ${os.homedir()}/.ssh/sealos/devbox_config`
+
+    if (includePattern.test(content)) {
+      return content.replace(includePattern, includeLine)
+    } else {
+      return `${includeLine}\n${content}`
+    }
   }
 
   private sshConfigPreProcess() {

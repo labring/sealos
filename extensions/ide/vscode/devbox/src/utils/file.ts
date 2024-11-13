@@ -6,10 +6,18 @@ import { execa } from 'execa'
 // File access permission modification
 export const ensureFileAccessPermission = async (path: string) => {
   if (os.platform() === 'win32') {
-    const username = os.userInfo().username
-    await execa('icacls', [path, '/inheritance:r'])
-    await execa('icacls', [path, '/grant:r', `${username}:F`])
-    await execa('icacls', [path, '/remove:g', 'everyone'])
+    try {
+      const username = os.userInfo().username
+      if (!username) {
+        throw new Error('can not get username')
+      }
+      await execa('icacls', [path, '/inheritance:r'])
+      await execa('icacls', [path, '/grant:r', `${username}:F`])
+      await execa('icacls', [path, '/remove:g', 'everyone'])
+    } catch (error) {
+      console.error('set file access permission failed:', error)
+      throw new Error(`set file access permission failed: ${error.message}`)
+    }
   } else {
     await execa('chmod', ['600', path])
   }
