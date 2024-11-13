@@ -1,8 +1,8 @@
 import * as os from 'os'
 import * as fs from 'fs'
 import path from 'path'
-import { execSync } from 'child_process'
 import { GlobalStateManager } from './globalStateManager'
+import { ensureFileAccessPermission } from './file'
 
 // 将老版本的 ssh 配置改成新版本的 ssh 配置
 // # WorkingDir: /home/sealos/project
@@ -99,14 +99,6 @@ export function ensureFileExists(filePath: string, parentDir: string) {
     })
     fs.writeFileSync(filePath, '', 'utf8')
     // .ssh/config authority
-    if (os.platform() === 'win32') {
-      // Windows
-      execSync(`icacls "${filePath}" /inheritance:r`)
-      execSync(`icacls "${filePath}" /grant:r ${process.env.USERNAME}:F`)
-      execSync(`icacls "${filePath}" /remove:g everyone`)
-    } else {
-      // Unix-like system (Mac, Linux)
-      execSync(`chmod 600 "${filePath}"`)
-    }
+    ensureFileAccessPermission(filePath)
   }
 }

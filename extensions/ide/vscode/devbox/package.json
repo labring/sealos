@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "Devbox",
   "description": "help code for cloud devbox in sailos/sealos",
-  "version": "0.9.13",
+  "version": "0.9.14",
   "keywords": [
     "devbox",
     "remote development",
@@ -260,6 +260,7 @@
   },
   "dependencies": {
     "axios": "^1.7.5",
+    "execa": "^9.5.1",
     "ssh-config": "^5.0.0"
   }
 }

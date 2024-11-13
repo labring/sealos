@@ -2,7 +2,6 @@ import * as os from 'os'
 import * as fs from 'fs'
 import * as vscode from 'vscode'
 import SSHConfig from 'ssh-config'
-import { execSync } from 'child_process'
 
 import { Disposable } from '../common/dispose'
 import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
@@ -15,6 +14,7 @@ import {
   convertSSHConfigToVersion2,
   ensureFileExists,
 } from '../utils/sshConfig'
+import { ensureFileAccessPermission } from '../utils/file'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -157,14 +157,7 @@ export class RemoteSSHConnector extends Disposable {
     try {
       const sshKeyPath = defaultSSHKeyPath + `/${sshHostLabel}`
       fs.writeFileSync(sshKeyPath, normalPrivateKey)
-
-      if (os.platform() === 'win32') {
-        execSync(`icacls "${sshKeyPath}" /inheritance:r`)
-        execSync(`icacls "${sshKeyPath}" /grant:r ${process.env.USERNAME}:F`)
-        execSync(`icacls "${sshKeyPath}" /remove:g everyone`)
-      } else {
-        execSync(`chmod 600 "${sshKeyPath}"`)
-      }
+      ensureFileAccessPermission(sshKeyPath)
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to write SSH private key: ${error}`
