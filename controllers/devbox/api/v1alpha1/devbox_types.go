@@ -81,33 +81,20 @@ type DevboxSpec struct {
 	// +kubebuilder:default=false
 	Squash bool `json:"squash"`
 
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	RuntimeRef RuntimeRef `json:"runtimeRef"`
+
+	// +kubebuilder:validation:Optional
+	TemplateID string `json:"templateID"`
+
+	// +kubebuilder:validation:Optional
+	Image string `json:"image"`
+
+	// +kubebuilder:validation:Optional
+	Config Config `json:"config"`
 
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
-
-	// todo add rewrite labels and annotations...
-	// +kubebuilder:validation:Optional
-	ExtraLabels map[string]string `json:"extraLabels,omitempty"`
-	// +kubebuilder:validation:Optional
-	ExtraAnnotations map[string]string `json:"extraAnnotations,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	Command []string `json:"command,omitempty"`
-	// +kubebuilder:validation:Optional
-	Args []string `json:"args,omitempty"`
-	// +kubebuilder:validation:Optional
-	WorkingDir string `json:"workingDir,omitempty"`
-	// todo add rewrite env...
-	// +kubebuilder:validation:Optional
-	ExtraEnvs []corev1.EnvVar `json:"extraEnvs"`
-
-	// todo add rewrite volumes and volume mounts..
-	// +kubebuilder:validation:Optional
-	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
-	// +kubebuilder:validation:Optional
-	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`

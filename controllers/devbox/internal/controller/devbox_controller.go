@@ -112,6 +112,14 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	mutated, err := r.mutateDevbox(ctx, devbox)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if mutated {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	_ = r.Status().Update(ctx, devbox)
 
@@ -157,6 +165,22 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
+}
+
+func (r *DevboxReconciler) mutateDevbox(ctx context.Context, devbox *devboxv1alpha1.Devbox) (bool, error) {
+	if devbox.Spec.RuntimeRef.Name == "" {
+		return false, nil
+	}
+	rt, err := r.getRuntime(ctx, devbox)
+	if err != nil {
+		return false, err
+	}
+	if devbox.Spec.Image == "" {
+		devbox.Spec.Image = rt.Spec.Config.Image
+		devbox.Spec.Config = rt.Spec.Config
+		return true, r.Update(ctx, devbox)
+	}
+	return false, nil
 }
 
 func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
@@ -527,7 +551,6 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
 	envs := runtime.Spec.Config.Env
-	envs = append(envs, devbox.Spec.ExtraEnvs...)
 	envs = append(envs, helper.GenerateDevboxEnvVars(devbox, nextCommitHistory)...)
 
 	//get image name
@@ -540,11 +563,9 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 
 	volumes := runtime.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
-	volumes = append(volumes, devbox.Spec.ExtraVolumes...)
 
 	volumeMounts := runtime.Spec.Config.VolumeMounts
 	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
-	volumeMounts = append(volumeMounts, devbox.Spec.ExtraVolumeMounts...)
 
 	containers := []corev1.Container{
 		{
