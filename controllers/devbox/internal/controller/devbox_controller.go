@@ -112,14 +112,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	mutated, err := r.mutateDevbox(ctx, devbox)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if mutated {
-		return ctrl.Result{Requeue: true}, nil
-	}
-
 	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	_ = r.Status().Update(ctx, devbox)
 
@@ -165,22 +157,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
-}
-
-func (r *DevboxReconciler) mutateDevbox(ctx context.Context, devbox *devboxv1alpha1.Devbox) (bool, error) {
-	if devbox.Spec.RuntimeRef.Name == "" {
-		return false, nil
-	}
-	rt, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return false, err
-	}
-	if devbox.Spec.Image == "" {
-		devbox.Spec.Image = rt.Spec.Config.Image
-		devbox.Spec.Config = rt.Spec.Config
-		return true, r.Update(ctx, devbox)
-	}
-	return false, nil
 }
 
 func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
@@ -284,12 +260,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
-		runtimecr, err := r.getRuntime(ctx, devbox)
-		if err != nil {
-			return err
-		}
 		nextCommitHistory := r.generateNextCommitHistory(devbox)
-		expectPod := r.generateDevboxPod(devbox, runtimecr, nextCommitHistory)
+		expectPod := r.generateDevboxPod(devbox, nextCommitHistory)
 
 		switch len(podList.Items) {
 		case 0:
@@ -367,12 +339,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 }
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return err
-	}
 	var servicePorts []corev1.ServicePort
-	for _, port := range runtimecr.Spec.Config.Ports {
+	for _, port := range devbox.Spec.Config.Ports {
 		servicePorts = append(servicePorts, corev1.ServicePort{
 			Name:       port.Name,
 			Port:       port.ContainerPort,
@@ -423,7 +391,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 
 	// Retrieve the updated Service to get the NodePort
 	var updatedService corev1.Service
-	err = retry.OnError(
+	err := retry.OnError(
 		retry.DefaultRetry,
 		func(err error) bool { return client.IgnoreNotFound(err) == nil },
 		func() error {
@@ -448,19 +416,6 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	devbox.Status.Network.NodePort = nodePort
 
 	return r.Status().Update(ctx, devbox)
-}
-
-// get the runtime
-func (r *DevboxReconciler) getRuntime(ctx context.Context, devbox *devboxv1alpha1.Devbox) (*devboxv1alpha1.Runtime, error) {
-	runtimeNamespace := devbox.Spec.RuntimeRef.Namespace
-	if runtimeNamespace == "" {
-		runtimeNamespace = devbox.Namespace
-	}
-	runtimecr := &devboxv1alpha1.Runtime{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: runtimeNamespace, Name: devbox.Spec.RuntimeRef.Name}, runtimecr); err != nil {
-		return nil, err
-	}
-	return runtimecr, nil
 }
 
 // create a new pod, add predicated status to nextCommitHistory
@@ -537,34 +492,33 @@ func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj clie
 	return client.IgnoreNotFound(err)
 }
 
-func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime, nextCommitHistory *devboxv1alpha1.CommitHistory) *corev1.Pod {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) *corev1.Pod {
 	objectMeta := metav1.ObjectMeta{
 		Name:        nextCommitHistory.Pod,
 		Namespace:   devbox.Namespace,
-		Labels:      helper.GeneratePodLabels(devbox, runtime),
-		Annotations: helper.GeneratePodAnnotations(devbox, runtime),
+		Labels:      helper.GeneratePodLabels(devbox),
+		Annotations: helper.GeneratePodAnnotations(devbox),
 	}
 
-	// set up ports and env by using runtime ports and devbox extra ports
-	ports := runtime.Spec.Config.Ports
+	ports := devbox.Spec.Config.Ports
 	// TODO: add extra ports to pod, currently not support
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
-	envs := runtime.Spec.Config.Env
+	envs := devbox.Spec.Config.Env
 	envs = append(envs, helper.GenerateDevboxEnvVars(devbox, nextCommitHistory)...)
 
 	//get image name
 	var imageName string
 	if r.DebugMode {
-		imageName = runtime.Spec.Config.Image
+		imageName = devbox.Spec.Image
 	} else {
-		imageName = helper.GetLastSuccessCommitImageName(devbox, runtime)
+		imageName = helper.GetLastSuccessCommitImageName(devbox)
 	}
 
-	volumes := runtime.Spec.Config.Volumes
+	volumes := devbox.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
 
-	volumeMounts := runtime.Spec.Config.VolumeMounts
+	volumeMounts := devbox.Spec.Config.VolumeMounts
 	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
 
 	containers := []corev1.Container{
@@ -575,9 +529,9 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			Ports:        ports,
 			VolumeMounts: volumeMounts,
 
-			WorkingDir: helper.GenerateWorkingDir(devbox, runtime),
-			Command:    helper.GenerateCommand(devbox, runtime),
-			Args:       helper.GenerateDevboxArgs(devbox, runtime),
+			WorkingDir: helper.GetWorkingDir(devbox),
+			Command:    helper.GetCommand(devbox),
+			Args:       helper.GetArgs(devbox),
 			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestCPURate, r.RequestMemoryRate, r.RequestEphemeralStorage, r.LimitEphemeralStorage),
 		},
 	}
