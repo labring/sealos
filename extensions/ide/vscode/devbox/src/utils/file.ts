@@ -16,8 +16,16 @@ export const ensureFileAccessPermission = async (path: string) => {
 }
 
 export function ensureFileExists(filePath: string, parentDir: string) {
-  if (!fs.existsSync(filePath)) {
-    fs.mkdirSync(path.resolve(os.homedir(), parentDir), {
+  if (filePath.indexOf('\0') !== -1 || parentDir.indexOf('\0') !== -1) {
+    throw new Error('Invalid path')
+  }
+  const safeFilePath = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '')
+  const safeParentDir = path
+    .normalize(parentDir)
+    .replace(/^(\.\.(\/|\\|$))+/, '')
+
+  if (!fs.existsSync(safeFilePath)) {
+    fs.mkdirSync(path.resolve(os.homedir(), safeParentDir), {
       recursive: true,
     })
     fs.writeFileSync(filePath, '', 'utf8')
