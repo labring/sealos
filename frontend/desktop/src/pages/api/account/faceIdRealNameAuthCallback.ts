@@ -12,6 +12,7 @@ type TencentCloudFaceAuthConfig = {
   secretId: string;
   secretKey: string;
   ruleId: string;
+  realNameAuthReward?: number;
 };
 
 type JsonValue = string | number | boolean | object | null;
@@ -88,6 +89,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('faceidRealNameAuth: Real name authentication configuration not found');
     }
 
+    const realNameAuthReward = config.realNameAuthReward;
+
     const userRealNameFaceAuthInfo = await getUserRealNameInfo(bizToken, config);
     const isFaceRecognitionSuccess = userRealNameFaceAuthInfo.Text?.ErrCode === 0;
 
@@ -145,15 +148,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (isFaceRecognitionSuccess) {
-      await globalPrisma.userRealNameInfo.update({
-        where: { userUid },
-        data: {
-          realName: userRealNameFaceAuthInfo.Text?.Name,
-          idCard: userRealNameFaceAuthInfo.Text?.IdCard,
-          isVerified: true,
-          additionalInfo
-        }
-      });
+      if (realNameAuthReward) {
+        await globalPrisma.$transaction(async (globalPrisma) => {
+          const currentAccount = await globalPrisma.account.findUniqueOrThrow({
+            where: { userUid }
+          });
+
+          if (!currentAccount.balance) {
+            throw new Error('faceidRealNameAuth: Account balance not found');
+          }
+
+          const currentActivityBonus = currentAccount.activityBonus || BigInt(0);
+          const rewardBigInt = BigInt(realNameAuthReward);
+
+          const newActivityBonus = currentActivityBonus + rewardBigInt;
+          const newBalance = currentAccount.balance + rewardBigInt;
+
+          const updatedAccount = await globalPrisma.account.update({
+            where: { userUid },
+            data: {
+              activityBonus: newActivityBonus,
+              balance: newBalance
+            }
+          });
+
+          const userRealNameInfo = await globalPrisma.userRealNameInfo.update({
+            where: { userUid },
+            data: {
+              realName: userRealNameFaceAuthInfo.Text?.Name,
+              idCard: userRealNameFaceAuthInfo.Text?.IdCard,
+              isVerified: true,
+              additionalInfo: additionalInfo
+            }
+          });
+
+          const accountTransaction = await globalPrisma.accountTransaction.create({
+            data: {
+              type: 'REALNAME_AUTH_REWARD',
+              userUid: userUid,
+              balance: rewardBigInt,
+              balance_before: currentAccount.balance,
+              deduction_balance: 0, // No deduction in this case
+              deduction_balance_before: currentAccount.deduction_balance,
+              message: 'Real name authentication reward',
+              billing_id: userRealNameInfo.id // You'll need to implement this function
+            }
+          });
+
+          return {
+            account: updatedAccount,
+            transaction: accountTransaction,
+            userRealNameInfo: userRealNameInfo
+          };
+        });
+      } else {
+        await globalPrisma.userRealNameInfo.update({
+          where: { userUid },
+          data: {
+            realName: userRealNameFaceAuthInfo.Text?.Name,
+            idCard: userRealNameFaceAuthInfo.Text?.IdCard,
+            isVerified: true,
+            additionalInfo: additionalInfo
+          }
+        });
+      }
 
       res.setHeader('Content-Type', 'text/html');
       return res.send(`
@@ -187,7 +245,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: {
           isVerified: false,
           idVerifyFailedTimes: { increment: 1 },
-          additionalInfo
+          additionalInfo: additionalInfo
         }
       });
 
@@ -221,7 +279,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } catch (error) {
     console.error('faceidRealNameAuth: Internal error');
-    console.error(error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+    } else {
+      console.error('Unknown error:', error);
+    }
     res.setHeader('Content-Type', 'text/html');
     return res.status(500).send(`
       <!DOCTYPE html>

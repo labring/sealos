@@ -20,6 +20,7 @@ function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigT
   return {
     enterpriseRealNameAuthEnabled: !!common.enterpriseRealNameAuthEnabled,
     realNameAuthEnabled: !!common.realNameAuthEnabled,
+    realNameReward: common.realNameReward || 0,
     guideEnabled: !!common.guideEnabled,
     rechargeEnabled: !!common.rechargeEnabled,
     cfSiteKey: common.cfSiteKey || '',
