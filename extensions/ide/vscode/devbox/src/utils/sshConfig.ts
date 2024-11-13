@@ -1,8 +1,5 @@
-import * as os from 'os'
 import * as fs from 'fs'
-import path from 'path'
 import { GlobalStateManager } from './globalStateManager'
-import { ensureFileAccessPermission } from './file'
 
 // 将老版本的 ssh 配置改成新版本的 ssh 配置
 // # WorkingDir: /home/sealos/project
@@ -90,15 +87,4 @@ export function convertSSHConfigToVersion2(filePath: string) {
   }
   result = result.trim()
   fs.writeFileSync(filePath, result, { encoding: 'utf8', flag: 'w' })
-}
-
-export function ensureFileExists(filePath: string, parentDir: string) {
-  if (!fs.existsSync(filePath)) {
-    fs.mkdirSync(path.resolve(os.homedir(), parentDir), {
-      recursive: true,
-    })
-    fs.writeFileSync(filePath, '', 'utf8')
-    // .ssh/config authority
-    ensureFileAccessPermission(filePath)
-  }
 }

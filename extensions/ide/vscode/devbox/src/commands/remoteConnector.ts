@@ -10,11 +10,8 @@ import {
   defaultDevboxSSHConfigPath,
   defaultSSHKeyPath,
 } from '../constant/file'
-import {
-  convertSSHConfigToVersion2,
-  ensureFileExists,
-} from '../utils/sshConfig'
-import { ensureFileAccessPermission } from '../utils/file'
+import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
+import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
