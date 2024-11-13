@@ -187,7 +187,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               type: 'REALNAME_AUTH_REWARD',
               userUid: userUid,
               balance: rewardBigInt,
+              balance_before: currentAccount.balance,
               deduction_balance: 0, // No deduction in this case
+              deduction_balance_before: currentAccount.deduction_balance,
               message: 'Real name authentication reward',
               billing_id: userRealNameInfo.id // You'll need to implement this function
             }

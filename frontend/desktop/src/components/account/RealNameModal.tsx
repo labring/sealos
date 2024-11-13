@@ -364,7 +364,10 @@ export function FaceIdRealNameAuthORcode(
                 realName: result.data?.realName
               });
 
+              // refetch user info
               queryClient.invalidateQueries([session?.token, 'UserInfo']);
+              // refetch user amount
+              queryClient.invalidateQueries(['getAmount']);
 
               stopPolling();
 

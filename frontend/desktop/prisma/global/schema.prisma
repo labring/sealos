@@ -45,15 +45,17 @@ model Account {
 }
 
 model AccountTransaction {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type              String
-  userUid           String   @db.Uuid
-  deduction_balance BigInt
-  balance           BigInt
-  message           String?
-  created_at        DateTime @default(now()) @db.Timestamptz(3)
-  updated_at        DateTime @default(now()) @db.Timestamptz(3)
-  billing_id        String   @db.Uuid
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                     String
+  userUid                  String   @db.Uuid
+  deduction_balance        BigInt
+  deduction_balance_before BigInt?
+  balance                  BigInt
+  balance_before           BigInt?
+  message                  String?
+  created_at               DateTime @default(now()) @db.Timestamptz(3)
+  updated_at               DateTime @default(now()) @db.Timestamptz(3)
+  billing_id               String   @db.Uuid
 }
 
 model ErrorPaymentCreate {
@@ -349,24 +351,24 @@ model Task {
   order         Int
   isActive      Boolean    @default(true)
   isNewUserTask Boolean    @default(false)
-  taskType      TaskType   
+  taskType      TaskType
   createdAt     DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
   userTasks     UserTask[]
 }
 
 model UserTask {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userUid     String     @db.Uuid
-  taskId      String     @db.Uuid
-  status      TaskStatus
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String     @db.Uuid
+  taskId       String     @db.Uuid
+  status       TaskStatus
   rewardStatus TaskStatus
-  completedAt DateTime
-  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+  completedAt  DateTime
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
 
-  user        User       @relation(fields: [userUid], references: [uid])
-  task        Task       @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userUid], references: [uid])
+  task Task @relation(fields: [taskId], references: [id])
 
   @@unique([userUid, taskId])
   @@index([taskId])
