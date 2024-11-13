@@ -1,8 +1,8 @@
 import { GET } from './index'
 
-export const getDevboxDetail = async (token: string) => {
+export const getDevboxDetail = async (token: string, hostName: string) => {
   const { devbox } = await GET(
-    '/api/v1/getDevboxDetail',
+    `https://devbox.${hostName}/api/v1/getDevboxDetail`,
     {},
     {
       headers: {

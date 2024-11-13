@@ -16,7 +16,6 @@ export class DevboxListViewProvider extends Disposable {
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view
       const projectTreeDataProvider = new ProjectTreeDataProvider()
-      // TODO： 完善 feedback部分
       const feedbackTreeDataProvider = new FeedbackTreeDataProvider()
       const devboxDashboardView = vscode.window.createTreeView(
         'devboxDashboard',
@@ -62,7 +61,11 @@ export class DevboxListViewProvider extends Disposable {
         vscode.commands.registerCommand(
           'devboxDashboard.deleteDevbox',
           (item: ProjectTreeItem) => {
-            projectTreeDataProvider.delete(item)
+            projectTreeDataProvider.delete(
+              item.host,
+              item.label as string,
+              false
+            )
           }
         )
       )
@@ -103,7 +106,7 @@ class ProjectTreeDataProvider
           return
         }
         try {
-          const data = await getDevboxDetail(token)
+          const data = await getDevboxDetail(token, item.hostName)
           const status = data.status.value
           switch (status) {
             case 'Running':
@@ -120,6 +123,18 @@ class ProjectTreeDataProvider
           }
         } catch (error) {
           console.error(`get devbox detail failed: ${error}`)
+          if (
+            error.toString().includes('500:secrets') &&
+            error.toString().includes('not found')
+          ) {
+            const hostParts = item.host.split('_')
+            const devboxName = hostParts.slice(2).join('_')
+            if (error.toString().includes(devboxName)) {
+              await this.delete(item.host, devboxName, true)
+
+              return
+            }
+          }
           item.iconPath = new vscode.ThemeIcon('warning')
         }
       })
@@ -182,19 +197,23 @@ class ProjectTreeDataProvider
     )
   }
 
-  async delete(item: ProjectTreeItem) {
-    const result = await vscode.window.showWarningMessage(
-      `Are you sure to delete ${item.label}?\n(This action will only delete the devbox ssh config in the local environment.)`,
-      { modal: true },
-      'Yes',
-      'No'
-    )
-
-    if (result !== 'Yes') {
-      return
+  async delete(
+    deletedHost: string,
+    devboxName: string,
+    isDeletedByWeb?: boolean
+  ) {
+    if (!isDeletedByWeb) {
+      const result = await vscode.window.showWarningMessage(
+        `Are you sure to delete ${devboxName}?\n(This action will only delete the devbox ssh config in the local environment.)`,
+        { modal: true },
+        'Yes',
+        'No'
+      )
+      if (result !== 'Yes') {
+        return
+      }
     }
 
-    const deletedHost = item.host
     GlobalStateManager.remove(deletedHost)
     // TODO：抽象出一个 crud ssh 文件的模型
     try {
