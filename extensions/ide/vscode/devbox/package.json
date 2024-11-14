@@ -34,17 +34,6 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "configuration": {
-      "type": "object",
-      "title": "devbox",
-      "properties": {
-        "devbox.apiUrl": {
-          "type": "string",
-          "default": "",
-          "description": "Customize your API base address for crud devbox in private deployment scenario. For example, https://usw.sailos.io. If you set it,devbox crud will use it and you cannot select region(USW/HZH/BJA/GZG) manually."
-        }
-      }
-    },
     "commands": [
       {
         "command": "devbox.connectRemoteSSH",

@@ -88,6 +88,21 @@ export class GlobalStateManager {
     GlobalStateManager.context.globalState.update(devboxId, newState)
   }
 
+  static getApiRegionList(): string[] {
+    const state =
+      (GlobalStateManager.context.globalState.get(
+        'api-region-list'
+      ) as string[]) || []
+    return state
+  }
+  static addApiRegion(region: string) {
+    const state = GlobalStateManager.getApiRegionList()
+    if (!state.includes(region)) {
+      const newState = [...state, region]
+      GlobalStateManager.context.globalState.update('api-region-list', newState)
+    }
+  }
+
   static remove(devboxId: string) {
     GlobalStateManager.context.globalState.update(devboxId, undefined)
   }

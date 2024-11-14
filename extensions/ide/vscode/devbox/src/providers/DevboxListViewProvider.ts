@@ -5,10 +5,9 @@ import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 import { getDevboxDetail } from '../api/devbox'
-import { defaultDevboxSSHConfigPath, defaultSSHKeyPath } from '../constant/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
-import { uswUrl, hzhUrl, bjaUrl, gzgUrl } from '../constant/api'
+import { defaultDevboxSSHConfigPath, defaultSSHKeyPath } from '../constant/file'
 
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -148,30 +147,15 @@ class ProjectTreeDataProvider
   }
 
   async create(item: ProjectTreeItem) {
-    const apiUrl = vscode.workspace.getConfiguration('devbox').get('apiUrl')
-    if (apiUrl) {
-      vscode.commands.executeCommand('devbox.openExternalLink', [
-        `${apiUrl}/?openapp=system-devbox?${encodeURIComponent('page=create')}`,
-      ])
-      return
-    }
-    const regions = [
-      { label: 'USW', url: uswUrl },
-      { label: 'HZH', url: hzhUrl },
-      { label: 'BJA', url: bjaUrl },
-      { label: 'GZG', url: gzgUrl },
-    ]
+    const regions = GlobalStateManager.getApiRegionList()
 
-    const selected = await vscode.window.showQuickPick(
-      regions.map((region) => region.label),
-      {
-        placeHolder:
-          'Please select a region.And you can customize your API base address in the settings(devbox.apiUrl).',
-      }
-    )
+    const selected = await vscode.window.showQuickPick(regions, {
+      placeHolder:
+        'Please select a region.RegionList are added by your each connection',
+    })
 
     if (selected) {
-      const targetUrl = regions.find((r) => r.label === selected)?.url
+      const targetUrl = selected
       vscode.commands.executeCommand('devbox.openExternalLink', [
         `${targetUrl}/?openapp=system-devbox?${encodeURIComponent(
           'page=create'

@@ -12,6 +12,7 @@ import {
 } from '../constant/file'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
+import { GlobalStateManager } from '../utils/globalStateManager'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -111,6 +112,8 @@ export class RemoteSSHConnector extends Disposable {
       StrictHostKeyChecking: 'no',
     })
     const sshConfigString = SSHConfig.stringify(sshConfig)
+
+    GlobalStateManager.addApiRegion(sshHost)
 
     this.sshConfigPreProcess()
 
