@@ -393,6 +393,7 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   createTime: '2022/1/22',
   status: appStatusMap.waiting,
   isPause: false,
+  isStop: false,
   appName: 'appName',
   imageName: 'nginx',
   currentContainerName: 'container1',
@@ -420,7 +421,8 @@ export const MOCK_APP_DETAIL: AppDetailType = {
           protocol: 'HTTP',
           openPublicDomain: false,
           publicDomain: '',
-          customDomain: ''
+          customDomain: '',
+          isStop: false
         }
       ],
       envs: []

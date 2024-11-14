@@ -30,7 +30,8 @@ import {
   PodStatusEnum,
   publicDomainKey,
   gpuNodeSelectorKey,
-  gpuResourceKey
+  gpuResourceKey,
+  stopKey
 } from '@/constants/app';
 import {
   cpuFormatToM,
@@ -71,6 +72,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     name: app.metadata?.name || 'app name',
     status: appStatusMap.waiting,
     isPause: !!app?.metadata?.annotations?.[pauseKey],
+    isStop: !!app?.metadata?.annotations?.[stopKey],
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(
@@ -299,6 +301,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
+    isStop: !!appDeploy?.metadata?.annotations?.[stopKey],
     imageName:
       appDeploy?.metadata?.annotations?.originImageName ||
       appDeploy.spec?.template?.spec?.containers?.[0]?.image ||

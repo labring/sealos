@@ -30,6 +30,7 @@ interface ManifestLayer {
 interface PaginationParams {
   page?: number;
   pageSize?: number;
+  search?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -123,7 +124,7 @@ export class ImageRegistryClient {
   async getAllImagesAndTags(
     pagination?: PaginationParams
   ): Promise<PaginatedResponse<ImageHubItem[]>> {
-    const { page = 1, pageSize = 10 } = pagination || {};
+    const { page = 1, pageSize = 10, search = '' } = pagination || {};
 
     // 获取所有仓库
     const allRepositories = await this.getRepositories();
@@ -163,10 +164,15 @@ export class ImageRegistryClient {
       return a.image.localeCompare(b.image);
     });
 
-    // 根据标记总数计算分页
-    const total = allTags.length;
+    // 在排序之后，分页之前添加搜索过滤
+    const filteredTags = search
+      ? allTags.filter((item) => item.image.toLowerCase().includes(search.toLowerCase()))
+      : allTags;
+
+    // 使用过滤后的结果计算分页
+    const total = filteredTags.length;
     const totalPages = Math.ceil(total / pageSize);
-    const paginatedTags = allTags.slice((page - 1) * pageSize, page * pageSize);
+    const paginatedTags = filteredTags.slice((page - 1) * pageSize, page * pageSize);
 
     return {
       items: paginatedTags,
@@ -270,6 +276,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     // 获取分页参数
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 10;
+    const search = (req.query.search as string) || '';
 
     const client = new ImageRegistryClient({
       baseUrl: process.env.IMAGE_REPO_URL!,
@@ -277,7 +284,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       password: process.env.IMAGE_REPO_PASSWORD!
     });
 
-    const response = await client.getAllImagesAndTags({ page, pageSize });
+    const response = await client.getAllImagesAndTags({ page, pageSize, search });
 
     jsonRes(res, {
       data: {

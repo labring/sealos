@@ -3,7 +3,8 @@ export enum AppStatusEnum {
   creating = 'creating',
   waiting = 'waiting',
   error = 'error',
-  pause = 'pause'
+  pause = 'pause',
+  stop = 'stop'
 }
 export const appStatusMap = {
   [AppStatusEnum.running]: {
@@ -28,7 +29,7 @@ export const appStatusMap = {
     dotColor: 'rgba(240, 68, 56, 1)'
   },
   [AppStatusEnum.pause]: {
-    label: 'Paused',
+    label: '已停止',
     value: AppStatusEnum.pause,
     color: 'rgba(111, 93, 215, 1)',
     backgroundColor: 'rgba(240, 238, 255, 1)',
@@ -37,6 +38,13 @@ export const appStatusMap = {
   [AppStatusEnum.waiting]: {
     label: 'Waiting',
     value: AppStatusEnum.waiting,
+    color: 'grayModern.500',
+    backgroundColor: 'grayModern.100',
+    dotColor: 'grayModern.500'
+  },
+  [AppStatusEnum.stop]: {
+    label: '已暂停',
+    value: AppStatusEnum.stop,
     color: 'grayModern.500',
     backgroundColor: 'grayModern.100',
     dotColor: 'grayModern.500'
@@ -78,6 +86,8 @@ export const ProtocolList = [
 
 export const noGpuSliderKey = 'NoGpu';
 export const pauseKey = 'deploy.cloud.sealos.io/pause';
+export const stopKey = 'deploy.cloud.sealos.io/stop';
+
 export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 export const deployPVCResizeKey = 'deploy.cloud.sealos.io/resize';

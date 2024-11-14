@@ -65,7 +65,7 @@ const AppList = ({
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: 'pause_message'
+    content: '确认停止应用吗？'
   });
 
   const [files, setFiles] = useState<File[]>([]);
@@ -96,7 +96,7 @@ const AppList = ({
     async (appName: string) => {
       try {
         setLoading(true);
-        await pauseAppByName(currentNamespaceRef.current, appName);
+        await pauseAppByName(currentNamespaceRef.current, appName, 'none');
         toast({
           title: t('Application paused'),
           status: 'success'
@@ -169,7 +169,12 @@ const AppList = ({
         title: t('Status'),
         key: 'status',
         render: (item: AppListItemType) => (
-          <AppStatusTag status={item.status} isPause={item.isPause} showBorder={false} />
+          <AppStatusTag
+            status={item.status}
+            isStop={item.isStop}
+            isPause={item.isPause}
+            showBorder={false}
+          />
         )
       },
       {
@@ -284,7 +289,7 @@ const AppList = ({
                           <>
                             <MyIcon name={'pause'} w={'16px'} />
                             <Box ml={2} fontWeight={'bold'}>
-                              {t('Pause')}
+                              停止
                             </Box>
                           </>
                         ),
