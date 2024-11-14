@@ -45,6 +45,7 @@ export interface AppListItemType {
   name: string;
   status: AppStatusMapType;
   isPause: boolean;
+  isStop: boolean;
   createTime: string;
   cpu: number;
   memory: number;
@@ -122,6 +123,7 @@ export interface AppDetailType extends AppEditType {
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
   crYamlList: DeployKindsType[];
+  isStop: boolean;
 
   // pods: PodDetailType[];
 }

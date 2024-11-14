@@ -32,6 +32,7 @@ const map = {
   close: require('./icons/close.svg').default,
   terminal: require('./icons/terminal.svg').default,
   log: require('./icons/log.svg').default,
+  stop: require('./icons/stop.svg').default,
   nvidia: require('./icons/gpu/nvidia.svg').default,
   enlarge: require('./icons/enlarge.svg').default
 };

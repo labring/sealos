@@ -229,7 +229,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   return yaml.dump(template[type]);
 };
 
-export const json2Service = (data: AppEditType) => {
+export const json2Service = (data: AppEditType, selectorName?: string) => {
   // openPublicDomain === open node port
   const ports = data.containers.flatMap((item) =>
     item.networks.map((network, i) => ({
@@ -260,7 +260,7 @@ export const json2Service = (data: AppEditType) => {
     spec: {
       ports: closedPublicPorts,
       selector: {
-        app: data.appName
+        app: selectorName ?? data.appName
       }
     }
   };
@@ -278,7 +278,7 @@ export const json2Service = (data: AppEditType) => {
       type: 'NodePort',
       ports: openPublicPorts,
       selector: {
-        app: data.appName
+        app: selectorName ?? data.appName
       }
     }
   };

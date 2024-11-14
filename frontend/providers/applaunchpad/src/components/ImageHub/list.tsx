@@ -24,21 +24,22 @@ import {
 import type { ThemeType } from '@sealos/ui';
 import { useMessage } from '@sealos/ui';
 import dayjs from 'dayjs';
+import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 const AppList = ({
   apps = [],
   namespaces,
-  refetchApps
+  refetchApps,
+  onSearch
 }: {
   namespaces: string[];
   apps: ImageHubItem[];
   refetchApps: () => void;
+  onSearch: (value: string) => void;
 }) => {
-  console.log(apps, 'apps');
-
   const { t } = useTranslation();
   const { message: toast } = useMessage();
   const theme = useTheme<ThemeType>();
@@ -53,6 +54,16 @@ const AppList = ({
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
 
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState({ imageNs: '', imageName: '', imageTag: '' });
+  const [inputValue, setInputValue] = useState('');
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        onSearch(value);
+      }, 500),
+    []
+  );
 
   const columns = useMemo<
     {
@@ -107,11 +118,6 @@ const AppList = ({
     []
   );
 
-  const validateNamespace = (name: string) => {
-    const regex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
-    return regex.test(name);
-  };
-
   return (
     <Flex flexDirection={'column'} h={`calc(100% - 48px)`}>
       <Flex h={'88px'} alignItems={'center'}>
@@ -132,6 +138,17 @@ const AppList = ({
           ( {apps.length} )
         </Box>
         <Box flex={1}></Box>
+
+        <Input
+          placeholder="搜索"
+          mr={'14px'}
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setInputValue(newValue);
+            debouncedSearch(newValue);
+          }}
+        />
 
         <Button
           h={'40px'}
@@ -279,17 +296,47 @@ const AppList = ({
           <ModalCloseButton />
           <ModalBody>
             <Flex alignItems={'center'} gap={'12px'}>
-              <Box w={'70px'}>镜像名称:</Box>
-              <Input value={imageName} onChange={(e) => setImageName(e.target.value)} />
+              <Flex alignItems={'center'} w={'80px'}>
+                镜像名称: <span style={{ color: 'red' }}>✳</span>
+              </Flex>
+              <Input
+                errorBorderColor="red.300"
+                isInvalid={error.imageName !== ''}
+                value={imageName}
+                onChange={(e) => {
+                  setImageName(e.target.value);
+                  setError((prev) => ({ ...prev, imageName: '' }));
+                }}
+              />
             </Flex>
             <Flex alignItems={'center'} gap={'12px'} mt={'12px'}>
-              <Box w={'70px'}>镜像TAG:</Box>
-              <Input value={imageTag} onChange={(e) => setImageTag(e.target.value)} />
+              <Flex alignItems={'center'} w={'80px'}>
+                镜像TAG: <span style={{ color: 'red' }}>✳</span>
+              </Flex>
+              <Input
+                errorBorderColor="red.300"
+                isInvalid={error.imageTag !== ''}
+                value={imageTag}
+                onChange={(e) => {
+                  setImageTag(e.target.value);
+                  setError((prev) => ({ ...prev, imageTag: '' }));
+                }}
+              />
             </Flex>
 
             <Flex alignItems={'center'} gap={'12px'} mt={'12px'}>
-              <Box w={'70px'}>命名空间:</Box>
-              <Input value={imageNs} onChange={(e) => setImageNs(e.target.value)} />
+              <Flex alignItems={'center'} w={'80px'}>
+                命名空间: <span style={{ color: 'red' }}>✳</span>
+              </Flex>
+              <Input
+                errorBorderColor="red.300"
+                isInvalid={error.imageNs !== ''}
+                value={imageNs}
+                onChange={(e) => {
+                  setImageNs(e.target.value);
+                  setError((prev) => ({ ...prev, imageNs: '' }));
+                }}
+              />
             </Flex>
             <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
           </ModalBody>
@@ -302,6 +349,22 @@ const AppList = ({
               isLoading={isUploading}
               isDisabled={isUploading}
               onClick={async () => {
+                const newError = {
+                  imageName: imageName ? '' : 'Image Name is required',
+                  imageTag: imageTag ? '' : 'Image Tag is required',
+                  imageNs: imageNs ? '' : 'Namespace is required'
+                };
+
+                setError(newError);
+
+                if (Object.values(newError).some((err) => err !== '')) {
+                  toast({
+                    status: 'error',
+                    title: '请填写所有必填项'
+                  });
+                  return;
+                }
+
                 setIsUploading(true);
                 try {
                   await uploadImageHub({

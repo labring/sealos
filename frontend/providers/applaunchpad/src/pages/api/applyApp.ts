@@ -6,11 +6,15 @@ import { jsonRes } from '@/services/backend/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const namespace = req.query.namespace as string;
+  const handleType = req.query.handleType as 'create' | 'replace';
   const { yamlList }: { yamlList: string[] } = req.body;
+
   console.log(req.body);
+  console.log(handleType);
   console.log(yamlList);
   console.log(namespace);
-  if (!yamlList || yamlList.length < 2) {
+
+  if (!yamlList?.length) {
     jsonRes(res, {
       code: 500,
       error: 'params error'
@@ -22,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const applyRes = await applyYamlList(yamlList, 'create', namespace);
+    const applyRes = await applyYamlList(yamlList, handleType ?? 'create', namespace);
 
     jsonRes(res, { data: applyRes.map((item) => item.kind) });
   } catch (err: any) {

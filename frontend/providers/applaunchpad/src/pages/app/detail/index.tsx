@@ -87,6 +87,7 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
           appName={appName}
           appStatus={appDetail?.status}
           isPause={appDetail?.isPause}
+          isStop={appDetail?.isStop}
           refetch={refetch}
           setShowSlider={setShowSlider}
           isLargeScreen={isLargeScreen}

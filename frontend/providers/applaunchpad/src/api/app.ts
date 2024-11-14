@@ -24,7 +24,7 @@ export const getImages = () => GET<{ repositories: string[] }>('/api/getImages')
 export const getImageTags = (data: { repository: string }) =>
   GET<{ name: string; tags: string[] }>('/api/getImages', data);
 
-export const getImageHubs = (data: { page: number; pageSize: number }) =>
+export const getImageHubs = (data: { page: number; pageSize: number; search?: string }) =>
   GET<{ items: ImageHubItem[]; total: number; page: number; pageSize: number; totalPages: number }>(
     '/api/imagehub/get',
     data
@@ -58,8 +58,11 @@ export const uploadImageHub = (data: {
   });
 };
 
-export const postDeployApp = (namespace: string, yamlList: string[]) =>
-  POST(`/api/applyApp?namespace=${namespace}`, { yamlList });
+export const postDeployApp = (
+  namespace: string,
+  yamlList: string[],
+  handleType?: 'create' | 'replace'
+) => POST(`/api/applyApp?namespace=${namespace}&handleType=${handleType}`, { yamlList });
 
 export const putApp = (
   namespace: string,
@@ -109,8 +112,11 @@ export const getPodEvents = (namespace: string, podName: string) =>
 export const restartAppByName = (namespace: string, appName: string) =>
   GET(`/api/restartApp?namespace=${namespace}&&appName=${appName}`);
 
-export const pauseAppByName = (namespace: string, appName: string) =>
-  GET(`/api/pauseApp?namespace=${namespace}&&appName=${appName}`);
+export const pauseAppByName = (
+  namespace: string,
+  appName: string,
+  isStop: 'true' | 'none' | 'recover'
+) => GET(`/api/pauseApp?namespace=${namespace}&&appName=${appName}&&isStop=${isStop}`);
 
 export const startAppByName = (namespace: string, appName: string) =>
   GET(`/api/startApp?namespace=${namespace}&&appName=${appName}`);

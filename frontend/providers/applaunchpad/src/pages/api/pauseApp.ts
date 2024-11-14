@@ -3,12 +3,15 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { pauseKey } from '@/constants/app';
+import { pauseKey, stopKey } from '@/constants/app';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const reqNamespace = req.query.namespace as string;
   try {
-    const { appName } = req.query as { appName: string };
+    const { appName, isStop } = req.query as {
+      appName: string;
+      isStop: 'true' | 'none' | 'recover';
+    };
     if (!appName) {
       throw new Error('appName is empty');
     }
@@ -19,6 +22,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const app = await getDeployApp(appName, reqNamespace);
     if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
       throw new Error('app data error');
+    }
+
+    console.log(isStop, appName);
+
+    if (isStop === 'true') {
+      app.metadata.annotations[stopKey] = 'stop';
+      await apiClient.replace(app);
+      return jsonRes(res, { data: 'success stop' });
+    } else if (isStop === 'recover') {
+      if (app.metadata.annotations[stopKey]) {
+        delete app.metadata.annotations[stopKey];
+      }
+      await apiClient.replace(app);
+      return jsonRes(res, { data: 'success recover' });
     }
 
     // store restart data
@@ -41,7 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
       }`;
 
-      requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, reqNamespace)); // delete HorizontalPodAutoscaler
+      requestQueue.push(
+        k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, reqNamespace)
+      ); // delete HorizontalPodAutoscaler
     } catch (error: any) {
       if (error?.statusCode !== 404) {
         return Promise.reject('无法读取到hpa');

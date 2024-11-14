@@ -6,15 +6,20 @@ import { useTranslation } from 'next-i18next';
 
 const AppStatusTag = ({
   status,
+  isStop,
   isPause,
   showBorder = false
 }: {
   status: AppStatusMapType;
+  isStop: boolean;
   isPause: boolean;
   showBorder: boolean;
 }) => {
   const { t } = useTranslation();
-  const statusMap = useMemo(() => (isPause ? appStatusMap.pause : status), [isPause, status]);
+  const statusMap = useMemo(
+    () => (isStop ? appStatusMap.stop : isPause ? appStatusMap.pause : status),
+    [isStop, isPause, status]
+  );
   return (
     <Flex
       color={statusMap.color}

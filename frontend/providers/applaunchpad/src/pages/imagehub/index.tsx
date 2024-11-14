@@ -13,10 +13,11 @@ const Home = ({ namespace }: { namespace: string }) => {
   const { Loading } = useLoading();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { isLoading, data, refetch } = useQuery(
-    ['getImageHubs', page, pageSize],
-    () => getImageHubs({ page, pageSize }),
+    ['getImageHubs', page, pageSize, searchTerm],
+    () => getImageHubs({ page, pageSize, search: searchTerm }),
     {
       retry: 3
     }
@@ -27,9 +28,8 @@ const Home = ({ namespace }: { namespace: string }) => {
       <List
         namespaces={[]}
         apps={data?.items || []}
-        refetchApps={() => {
-          refetch();
-        }}
+        refetchApps={refetch}
+        onSearch={setSearchTerm}
       />
 
       <SwitchPage
