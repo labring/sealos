@@ -214,9 +214,33 @@ class ProjectTreeDataProvider
       }
     }
 
-    GlobalStateManager.remove(deletedHost)
-    // TODO：抽象出一个 crud ssh 文件的模型
     try {
+      // 1. remove global state
+      GlobalStateManager.remove(deletedHost)
+
+      // 2. remove remote-ssh config
+      const existingSSHHostPlatforms = vscode.workspace
+        .getConfiguration('remote.SSH')
+        .get<{ [host: string]: string }>('remotePlatform', {})
+      const newSSHHostPlatforms = Object.keys(existingSSHHostPlatforms).reduce(
+        (acc: { [host: string]: string }, host: string) => {
+          if (host.startsWith(deletedHost)) {
+            return acc
+          }
+          acc[host] = existingSSHHostPlatforms[host]
+          return acc
+        },
+        {}
+      )
+      await vscode.workspace
+        .getConfiguration('remote.SSH')
+        .update(
+          'remotePlatform',
+          newSSHHostPlatforms,
+          vscode.ConfigurationTarget.Global
+        )
+
+      // 3. remove ssh config
       const content = await fs.promises.readFile(
         defaultDevboxSSHConfigPath,
         'utf8'
