@@ -95,8 +95,15 @@ class ProjectTreeDataProvider
 
   private async refreshData(): Promise<void> {
     convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
-    const data = await parseSSHConfig(defaultDevboxSSHConfigPath)
-    this.treeData = data as DevboxListItem[]
+    const data = (await parseSSHConfig(
+      defaultDevboxSSHConfigPath
+    )) as DevboxListItem[]
+
+    data.forEach((item) => {
+      GlobalStateManager.addApiRegion(item.hostName)
+    })
+
+    this.treeData = data
 
     await Promise.all(
       this.treeData.map(async (item) => {
