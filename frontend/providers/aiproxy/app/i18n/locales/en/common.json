@@ -4,7 +4,11 @@
   "Sidebar": {
     "Home": "API Keys",
     "Logs": "Logs",
-    "Price": "Pricing"
+    "Price": "Pricing",
+    "Dashboard": "Channels",
+    "GlobalLogs": "Logs",
+    "GlobalConfigs": "Config",
+    "NsManager": "NS Manage"
   },
   "keyList": {
     "title": "API Keys"

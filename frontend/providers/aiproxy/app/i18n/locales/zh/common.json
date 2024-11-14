@@ -4,7 +4,11 @@
   "Sidebar": {
     "Home": "API Keys",
     "Logs": "调用日志",
-    "Price": "模型价格"
+    "Price": "模型价格",
+    "Dashboard": "AI 渠道",
+    "GlobalLogs": "全局日志",
+    "GlobalConfigs": "全局配置",
+    "NsManager": "NS管理"
   },
   "keyList": {
     "title": "API Keys"
