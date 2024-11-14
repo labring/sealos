@@ -38,7 +38,7 @@ func DoRequestHelper(a Adaptor, c *gin.Context, meta *meta.Meta, requestBody io.
 	return resp, nil
 }
 
-func DoRequest(c *gin.Context, req *http.Request) (*http.Response, error) {
+func DoRequest(_ *gin.Context, req *http.Request) (*http.Response, error) {
 	resp, err := client.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err

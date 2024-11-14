@@ -79,7 +79,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	defer resp.Body.Close()
 
 	responseText := ""
-	responseId := fmt.Sprintf("chatcmpl-%s", random.GetUUID())
+	responseID := fmt.Sprintf("chatcmpl-%s", random.GetUUID())
 	createdTime := helper.GetTimestamp()
 
 	var palmResponse ChatResponse
@@ -92,7 +92,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	common.SetEventStreamHeaders(c)
 
 	fullTextResponse := streamResponsePaLM2OpenAI(&palmResponse)
-	fullTextResponse.Id = responseId
+	fullTextResponse.ID = responseID
 	fullTextResponse.Created = createdTime
 	if len(palmResponse.Candidates) > 0 {
 		responseText = palmResponse.Candidates[0].Content

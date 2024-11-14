@@ -42,11 +42,11 @@ func TokenAuth(c *gin.Context) {
 		return
 	}
 	if token.Subnet != "" {
-		if !network.IsIpInSubnets(ctx, c.ClientIP(), token.Subnet) {
+		if !network.IsIPInSubnets(ctx, c.ClientIP(), token.Subnet) {
 			abortWithMessage(c, http.StatusForbidden,
 				fmt.Sprintf("令牌 (%s[%d]) 只能在指定网段使用：%s，当前 ip：%s",
 					token.Name,
-					token.Id,
+					token.ID,
 					token.Subnet,
 					c.ClientIP(),
 				),
@@ -71,7 +71,7 @@ func TokenAuth(c *gin.Context) {
 			abortWithMessage(c,
 				http.StatusForbidden,
 				fmt.Sprintf("令牌 (%s[%d]) 无权使用任何模型",
-					token.Name, token.Id,
+					token.Name, token.ID,
 				),
 			)
 			return
@@ -82,7 +82,7 @@ func TokenAuth(c *gin.Context) {
 		abortWithMessage(c,
 			http.StatusForbidden,
 			fmt.Sprintf("令牌 (%s[%d]) 无权使用模型：%s",
-				token.Name, token.Id, requestModel,
+				token.Name, token.ID, requestModel,
 			),
 		)
 		return
@@ -93,7 +93,7 @@ func TokenAuth(c *gin.Context) {
 	}
 
 	if group.QPM > 0 {
-		ok, err := RateLimit(ctx, fmt.Sprintf("group_qpm:%s", group.Id), int(group.QPM), time.Minute)
+		ok, err := RateLimit(ctx, fmt.Sprintf("group_qpm:%s", group.ID), int(group.QPM), time.Minute)
 		if err != nil {
 			abortWithMessage(c, http.StatusInternalServerError, err.Error())
 			return
@@ -101,7 +101,7 @@ func TokenAuth(c *gin.Context) {
 		if !ok {
 			abortWithMessage(c, http.StatusTooManyRequests,
 				fmt.Sprintf("%s 请求过于频繁",
-					group.Id,
+					group.ID,
 				),
 			)
 			return
@@ -110,17 +110,17 @@ func TokenAuth(c *gin.Context) {
 
 	c.Set(ctxkey.Group, token.Group)
 	c.Set(ctxkey.GroupQPM, group.QPM)
-	c.Set(ctxkey.TokenId, token.Id)
+	c.Set(ctxkey.TokenID, token.ID)
 	c.Set(ctxkey.TokenName, token.Name)
 	c.Set(ctxkey.TokenUsedAmount, token.UsedAmount)
 	c.Set(ctxkey.TokenQuota, token.Quota)
-	if len(parts) > 1 {
-		// c.Set(ctxkey.SpecificChannelId, parts[1])
-	}
+	// if len(parts) > 1 {
+	// 	c.Set(ctxkey.SpecificChannelId, parts[1])
+	// }
 
 	// set channel id for proxy relay
-	if channelId := c.Param("channelid"); channelId != "" {
-		c.Set(ctxkey.SpecificChannelId, channelId)
+	if channelID := c.Param("channelid"); channelID != "" {
+		c.Set(ctxkey.SpecificChannelID, channelID)
 	}
 
 	c.Next()

@@ -45,7 +45,7 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 			case model.ContentTypeText:
 				contentText = part.Text
 			case model.ContentTypeImageURL:
-				_, data, _ := image.GetImageFromUrl(part.ImageURL.Url)
+				_, data, _ := image.GetImageFromURL(part.ImageURL.URL)
 				imageUrls = append(imageUrls, data)
 			}
 		}
@@ -70,7 +70,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 		choice.FinishReason = "stop"
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Model:   response.Model,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
@@ -92,7 +92,7 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 		choice.FinishReason = &constant.StopFinishReason
 	}
 	response := openai.ChatCompletionsStreamResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   ollamaResponse.Model,

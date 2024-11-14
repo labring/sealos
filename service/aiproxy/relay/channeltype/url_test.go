@@ -3,11 +3,11 @@ package channeltype
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestChannelBaseURLs(t *testing.T) {
-	Convey("channel base urls", t, func() {
-		So(len(ChannelBaseURLs), ShouldEqual, Dummy)
+	convey.Convey("channel base urls", t, func() {
+		convey.So(len(ChannelBaseURLs), convey.ShouldEqual, Dummy)
 	})
 }

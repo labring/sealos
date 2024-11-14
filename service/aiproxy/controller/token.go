@@ -14,7 +14,7 @@ import (
 
 func GetTokens(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -47,7 +47,7 @@ func GetTokens(c *gin.Context) {
 
 func GetGroupTokens(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -81,7 +81,7 @@ func GetGroupTokens(c *gin.Context) {
 func SearchTokens(c *gin.Context) {
 	keyword := c.Query("keyword")
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -117,7 +117,7 @@ func SearchTokens(c *gin.Context) {
 func SearchGroupTokens(c *gin.Context) {
 	keyword := c.Query("keyword")
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -159,7 +159,7 @@ func GetToken(c *gin.Context) {
 		})
 		return
 	}
-	token, err := model.GetTokenById(id)
+	token, err := model.GetTokenByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -184,7 +184,7 @@ func GetGroupToken(c *gin.Context) {
 		return
 	}
 	group := c.Param("group")
-	token, err := model.GetGroupTokenById(group, id)
+	token, err := model.GetGroupTokenByID(group, id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -251,7 +251,7 @@ func AddToken(c *gin.Context) {
 	}
 
 	cleanToken := &model.Token{
-		GroupId:   group,
+		GroupID:   group,
 		Name:      model.EmptyNullString(token.Name),
 		Key:       random.GenerateKey(),
 		ExpiredAt: expiredAt,
@@ -283,7 +283,7 @@ func DeleteToken(c *gin.Context) {
 		})
 		return
 	}
-	err = model.DeleteTokenById(id)
+	err = model.DeleteTokenByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -307,7 +307,7 @@ func DeleteGroupToken(c *gin.Context) {
 		})
 		return
 	}
-	err = model.DeleteTokenByIdAndGroupId(id, group)
+	err = model.DeleteTokenByIDAndGroupID(id, group)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -347,7 +347,7 @@ func UpdateToken(c *gin.Context) {
 		})
 		return
 	}
-	cleanToken, err := model.GetTokenById(id)
+	cleanToken, err := model.GetTokenByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -406,7 +406,7 @@ func UpdateGroupToken(c *gin.Context) {
 		})
 		return
 	}
-	cleanToken, err := model.GetGroupTokenById(group, id)
+	cleanToken, err := model.GetGroupTokenByID(group, id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -460,7 +460,7 @@ func UpdateTokenStatus(c *gin.Context) {
 		})
 		return
 	}
-	cleanToken, err := model.GetTokenById(id)
+	cleanToken, err := model.GetTokenByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -521,7 +521,7 @@ func UpdateGroupTokenStatus(c *gin.Context) {
 		})
 		return
 	}
-	cleanToken, err := model.GetGroupTokenById(group, id)
+	cleanToken, err := model.GetGroupTokenByID(group, id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

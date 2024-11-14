@@ -3,7 +3,7 @@ package anthropic
 // https://docs.anthropic.com/claude/reference/messages_post
 
 type Metadata struct {
-	UserId string `json:"user_id"`
+	UserID string `json:"user_id"`
 }
 
 type ImageSource struct {
@@ -17,11 +17,11 @@ type Content struct {
 	Text   string       `json:"text,omitempty"`
 	Source *ImageSource `json:"source,omitempty"`
 	// tool_calls
-	Id        string `json:"id,omitempty"`
+	ID        string `json:"id,omitempty"`
 	Name      string `json:"name,omitempty"`
 	Input     any    `json:"input,omitempty"`
 	Content   string `json:"content,omitempty"`
-	ToolUseId string `json:"tool_use_id,omitempty"`
+	ToolUseID string `json:"tool_use_id,omitempty"`
 }
 
 type Message struct {
@@ -69,7 +69,7 @@ type Response struct {
 	StopReason   *string   `json:"stop_reason"`
 	StopSequence *string   `json:"stop_sequence"`
 	Error        Error     `json:"error"`
-	Id           string    `json:"id"`
+	ID           string    `json:"id"`
 	Type         string    `json:"type"`
 	Role         string    `json:"role"`
 	Model        string    `json:"model"`
@@ -82,7 +82,7 @@ type Delta struct {
 	StopSequence *string `json:"stop_sequence"`
 	Type         string  `json:"type"`
 	Text         string  `json:"text"`
-	PartialJson  string  `json:"partial_json,omitempty"`
+	PartialJSON  string  `json:"partial_json,omitempty"`
 }
 
 type StreamResponse struct {

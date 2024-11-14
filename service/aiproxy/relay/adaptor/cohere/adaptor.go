@@ -15,13 +15,11 @@ import (
 type Adaptor struct{}
 
 // ConvertImageRequest implements adaptor.Adaptor.
-func (*Adaptor) ConvertImageRequest(request *model.ImageRequest) (any, error) {
+func (*Adaptor) ConvertImageRequest(_ *model.ImageRequest) (any, error) {
 	return nil, errors.New("not implemented")
 }
 
-// ConvertImageRequest implements adaptor.Adaptor.
-
-func (a *Adaptor) Init(meta *meta.Meta) {
+func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
@@ -34,7 +32,7 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *model.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}

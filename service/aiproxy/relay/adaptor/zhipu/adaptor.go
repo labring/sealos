@@ -20,7 +20,7 @@ type Adaptor struct {
 	APIVersion string
 }
 
-func (a *Adaptor) Init(meta *meta.Meta) {
+func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
 func (a *Adaptor) SetVersionByModeName(modelName string) {
@@ -56,7 +56,7 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
@@ -91,7 +91,7 @@ func (a *Adaptor) ConvertImageRequest(request *model.ImageRequest) (any, error) 
 	newRequest := ImageRequest{
 		Model:  request.Model,
 		Prompt: request.Prompt,
-		UserId: request.User,
+		UserID: request.User,
 	}
 	return newRequest, nil
 }

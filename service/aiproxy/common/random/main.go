@@ -24,9 +24,9 @@ func GenerateKey() string {
 	for i := 0; i < 16; i++ {
 		key[i] = keyChars[rand.Intn(len(keyChars))]
 	}
-	uuid_ := GetUUID()
+	uuid := GetUUID()
 	for i := 0; i < 32; i++ {
-		c := uuid_[i]
+		c := uuid[i]
 		if i%2 == 0 && c >= 'a' && c <= 'z' {
 			c = c - 'a' + 'A'
 		}
@@ -52,6 +52,6 @@ func GetRandomNumberString(length int) string {
 }
 
 // RandRange returns a random number between min and max (max is not included)
-func RandRange(min, max int) int {
-	return min + rand.Intn(max-min)
+func RandRange(_min, _max int) int {
+	return _min + rand.Intn(_max-_min)
 }

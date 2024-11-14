@@ -33,11 +33,11 @@ type Token struct {
 	Group        *Group          `gorm:"foreignKey:GroupId" json:"-"`
 	Key          string          `gorm:"type:char(48);uniqueIndex" json:"key"`
 	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
-	GroupId      string          `gorm:"index;uniqueIndex:idx_group_name" json:"group"`
+	GroupID      string          `gorm:"index;uniqueIndex:idx_group_name" json:"group"`
 	Subnet       string          `json:"subnet"`
 	Models       []string        `gorm:"serializer:json;type:text" json:"models"`
 	Status       int             `gorm:"default:1;index" json:"status"`
-	Id           int             `gorm:"primaryKey" json:"id"`
+	ID           int             `gorm:"primaryKey" json:"id"`
 	Quota        float64         `gorm:"bigint" json:"quota"`
 	UsedAmount   float64         `gorm:"bigint" json:"used_amount"`
 	RequestCount int             `gorm:"type:int" json:"request_count"`
@@ -58,6 +58,7 @@ func (t *Token) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//nolint:goconst
 func getTokenOrder(order string) string {
 	switch order {
 	case "name":
@@ -84,6 +85,8 @@ func getTokenOrder(order string) string {
 		return "request_count asc"
 	case "request_count-desc":
 		return "request_count desc"
+	case "id":
+		return "id asc"
 	default:
 		return "id desc"
 	}
@@ -92,7 +95,7 @@ func getTokenOrder(order string) string {
 func InsertToken(token *Token, autoCreateGroup bool) error {
 	if autoCreateGroup {
 		group := &Group{
-			Id: token.GroupId,
+			ID: token.GroupID,
 		}
 		if err := OnConflictDoNothing().Create(group).Error; err != nil {
 			return err
@@ -102,7 +105,7 @@ func InsertToken(token *Token, autoCreateGroup bool) error {
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if maxTokenNum > 0 {
 			var count int64
-			err := tx.Model(&Token{}).Where("group_id = ?", token.GroupId).Count(&count).Error
+			err := tx.Model(&Token{}).Where("group_id = ?", token.GroupID).Count(&count).Error
 			if err != nil {
 				return err
 			}
@@ -314,32 +317,32 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	}
 	switch token.Status {
 	case TokenStatusExhausted:
-		return nil, fmt.Errorf("令牌 (%s[%d]) 额度已用尽", token.Name, token.Id)
+		return nil, fmt.Errorf("令牌 (%s[%d]) 额度已用尽", token.Name, token.ID)
 	case TokenStatusExpired:
-		return nil, fmt.Errorf("令牌 (%s[%d]) 已过期", token.Name, token.Id)
+		return nil, fmt.Errorf("令牌 (%s[%d]) 已过期", token.Name, token.ID)
 	}
 	if token.Status != TokenStatusEnabled {
-		return nil, fmt.Errorf("令牌 (%s[%d]) 状态不可用", token.Name, token.Id)
+		return nil, fmt.Errorf("令牌 (%s[%d]) 状态不可用", token.Name, token.ID)
 	}
 	if !time.Time(token.ExpiredAt).IsZero() && time.Time(token.ExpiredAt).Before(time.Now()) {
-		err := UpdateTokenStatusAndAccessedAt(token.Id, TokenStatusExpired)
+		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExpired)
 		if err != nil {
 			logger.SysError("failed to update token status" + err.Error())
 		}
-		return nil, fmt.Errorf("令牌 (%s[%d]) 已过期", token.Name, token.Id)
+		return nil, fmt.Errorf("令牌 (%s[%d]) 已过期", token.Name, token.ID)
 	}
 	if token.Quota > 0 && token.UsedAmount >= token.Quota {
 		// in this case, we can make sure the token is exhausted
-		err := UpdateTokenStatusAndAccessedAt(token.Id, TokenStatusExhausted)
+		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExhausted)
 		if err != nil {
 			logger.SysError("failed to update token status" + err.Error())
 		}
-		return nil, fmt.Errorf("令牌 (%s[%d]) 额度已用尽", token.Name, token.Id)
+		return nil, fmt.Errorf("令牌 (%s[%d]) 额度已用尽", token.Name, token.ID)
 	}
 	return token, nil
 }
 
-func GetGroupTokenById(group string, id int) (*Token, error) {
+func GetGroupTokenByID(group string, id int) (*Token, error) {
 	if id == 0 || group == "" {
 		return nil, errors.New("id 或 group 为空！")
 	}
@@ -350,17 +353,17 @@ func GetGroupTokenById(group string, id int) (*Token, error) {
 	return &token, HandleNotFound(err, ErrTokenNotFound)
 }
 
-func GetTokenById(id int) (*Token, error) {
+func GetTokenByID(id int) (*Token, error) {
 	if id == 0 {
 		return nil, errors.New("id 为空！")
 	}
-	token := Token{Id: id}
+	token := Token{ID: id}
 	err := DB.First(&token, "id = ?", id).Error
 	return &token, HandleNotFound(err, ErrTokenNotFound)
 }
 
 func UpdateTokenStatus(id int, status int) (err error) {
-	token := Token{Id: id}
+	token := Token{ID: id}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
@@ -385,7 +388,7 @@ func UpdateTokenStatus(id int, status int) (err error) {
 }
 
 func UpdateTokenStatusAndAccessedAt(id int, status int) (err error) {
-	token := Token{Id: id}
+	token := Token{ID: id}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
@@ -460,11 +463,11 @@ func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
-func DeleteTokenByIdAndGroupId(id int, groupId string) (err error) {
-	if id == 0 || groupId == "" {
+func DeleteTokenByIDAndGroupID(id int, groupID string) (err error) {
+	if id == 0 || groupID == "" {
 		return errors.New("id 或 group 为空！")
 	}
-	token := Token{Id: id, GroupId: groupId}
+	token := Token{ID: id, GroupID: groupID}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
@@ -483,11 +486,11 @@ func DeleteTokenByIdAndGroupId(id int, groupId string) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
-func DeleteTokenById(id int) (err error) {
+func DeleteTokenByID(id int) (err error) {
 	if id == 0 {
 		return errors.New("id 为空！")
 	}
-	token := Token{Id: id}
+	token := Token{ID: id}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
@@ -524,7 +527,7 @@ func UpdateToken(token *Token) (err error) {
 }
 
 func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error) {
-	token := &Token{Id: id}
+	token := &Token{ID: id}
 	defer func() {
 		if amount > 0 && err == nil && token.Quota > 0 {
 			if err := CacheUpdateTokenUsedAmountOnlyIncrease(token.Key, token.UsedAmount); err != nil {
@@ -553,7 +556,7 @@ func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error)
 }
 
 func UpdateTokenName(id int, name string) (err error) {
-	token := &Token{Id: id}
+	token := &Token{ID: id}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
@@ -577,7 +580,7 @@ func UpdateTokenName(id int, name string) (err error) {
 }
 
 func UpdateGroupTokenName(group string, id int, name string) (err error) {
-	token := &Token{Id: id, GroupId: group}
+	token := &Token{ID: id, GroupID: group}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {

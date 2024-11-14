@@ -41,9 +41,9 @@ func OnConflictDoNothing() *gorm.DB {
 	})
 }
 
-func BatchRecordConsume(ctx context.Context, group string, code int, channelId int, promptTokens int, completionTokens int, modelName string, tokenId int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
+func BatchRecordConsume(ctx context.Context, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
 	errs := []error{}
-	err := RecordConsumeLog(ctx, group, code, channelId, promptTokens, completionTokens, modelName, tokenId, tokenName, amount, price, completionPrice, endpoint, content)
+	err := RecordConsumeLog(ctx, group, code, channelID, promptTokens, completionTokens, modelName, tokenID, tokenName, amount, price, completionPrice, endpoint, content)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to record log: %w", err))
 	}
@@ -51,11 +51,11 @@ func BatchRecordConsume(ctx context.Context, group string, code int, channelId i
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to update group used amount and request count: %w", err))
 	}
-	err = UpdateTokenUsedAmount(tokenId, amount, 1)
+	err = UpdateTokenUsedAmount(tokenID, amount, 1)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to update token used amount: %w", err))
 	}
-	err = UpdateChannelUsedAmount(channelId, amount, 1)
+	err = UpdateChannelUsedAmount(channelID, amount, 1)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to update channel used amount: %w", err))
 	}

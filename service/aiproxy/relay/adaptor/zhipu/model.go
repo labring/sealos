@@ -14,14 +14,14 @@ type Message struct {
 type Request struct {
 	Temperature *float64  `json:"temperature,omitempty"`
 	TopP        *float64  `json:"top_p,omitempty"`
-	RequestId   string    `json:"request_id,omitempty"`
+	RequestID   string    `json:"request_id,omitempty"`
 	Prompt      []Message `json:"prompt"`
 	Incremental bool      `json:"incremental,omitempty"`
 }
 
 type ResponseData struct {
-	TaskId      string    `json:"task_id"`
-	RequestId   string    `json:"request_id"`
+	TaskID      string    `json:"task_id"`
+	RequestID   string    `json:"request_id"`
 	TaskStatus  string    `json:"task_status"`
 	Choices     []Message `json:"choices"`
 	model.Usage `json:"usage"`
@@ -35,8 +35,8 @@ type Response struct {
 }
 
 type StreamMetaResponse struct {
-	RequestId   string `json:"request_id"`
-	TaskId      string `json:"task_id"`
+	RequestID   string `json:"request_id"`
+	TaskID      string `json:"task_id"`
 	TaskStatus  string `json:"task_status"`
 	model.Usage `json:"usage"`
 }
@@ -67,5 +67,5 @@ type EmbeddingData struct {
 type ImageRequest struct {
 	Model  string `json:"model"`
 	Prompt string `json:"prompt"`
-	UserId string `json:"user_id,omitempty"`
+	UserID string `json:"user_id,omitempty"`
 }

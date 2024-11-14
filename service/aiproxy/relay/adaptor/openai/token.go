@@ -92,12 +92,12 @@ func CountTokenMessages(messages []model.Message, model string) int {
 						}
 					}
 				case "image_url":
-					imageUrl, ok := m["image_url"].(map[string]any)
+					imageURL, ok := m["image_url"].(map[string]any)
 					if ok {
-						url := imageUrl["url"].(string)
+						url := imageURL["url"].(string)
 						detail := ""
-						if imageUrl["detail"] != nil {
-							detail = imageUrl["detail"].(string)
+						if imageURL["detail"] != nil {
+							detail = imageURL["detail"].(string)
 						}
 						imageTokens, err := countImageTokens(url, detail, model)
 						if err != nil {

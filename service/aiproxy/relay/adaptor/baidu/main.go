@@ -39,7 +39,7 @@ type ChatRequest struct {
 	TopP            *float64  `json:"top_p,omitempty"`
 	PenaltyScore    *float64  `json:"penalty_score,omitempty"`
 	System          string    `json:"system,omitempty"`
-	UserId          string    `json:"user_id,omitempty"`
+	UserID          string    `json:"user_id,omitempty"`
 	Messages        []Message `json:"messages"`
 	MaxOutputTokens int       `json:"max_output_tokens,omitempty"`
 	Stream          bool      `json:"stream,omitempty"`
@@ -64,7 +64,7 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 		DisableSearch:   false,
 		EnableCitation:  false,
 		MaxOutputTokens: request.MaxTokens,
-		UserId:          request.User,
+		UserID:          request.User,
 	}
 	for _, message := range request.Messages {
 		if message.Role == "system" {
@@ -89,7 +89,7 @@ func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
 		FinishReason: "stop",
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      response.Id,
+		ID:      response.ID,
 		Object:  "chat.completion",
 		Created: response.Created,
 		Choices: []openai.TextResponseChoice{choice},
@@ -105,7 +105,7 @@ func streamResponseBaidu2OpenAI(baiduResponse *ChatStreamResponse) *openai.ChatC
 		choice.FinishReason = &constant.StopFinishReason
 	}
 	response := openai.ChatCompletionsStreamResponse{
-		Id:      baiduResponse.Id,
+		ID:      baiduResponse.ID,
 		Object:  "chat.completion.chunk",
 		Created: baiduResponse.Created,
 		Model:   "ernie-bot",

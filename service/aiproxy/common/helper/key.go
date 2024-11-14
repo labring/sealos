@@ -1,5 +1,7 @@
 package helper
 
+type Key string
+
 const (
-	RequestIdKey = "X-Request-Id"
+	RequestIDKey Key = "X-Request-Id"
 )

@@ -79,7 +79,7 @@ func getImageCostPrice(imageRequest *relaymodel.ImageRequest) (float64, error) {
 	return imageCostPrice, nil
 }
 
-func RelayImageHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatusCode {
+func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	ctx := c.Request.Context()
 	meta := meta.GetByContext(c)
 	imageRequest, err := getImageRequest(c, meta.Mode)
@@ -161,21 +161,21 @@ func RelayImageHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 
 	defer func(ctx context.Context) {
 		if resp == nil || resp.StatusCode != http.StatusOK {
-			model.RecordConsumeLog(ctx, meta.Group, resp.StatusCode, meta.ChannelId, imageRequest.N, 0, imageRequest.Model, meta.TokenId, meta.TokenName, 0, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
+			_ = model.RecordConsumeLog(ctx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, 0, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
 			return
 		}
 
 		_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.TokenName, amount)
 		if err != nil {
 			logger.Error(ctx, "error consuming token remain balance: "+err.Error())
-			err = model.CreateConsumeError(meta.Group, meta.TokenName, imageRequest.Model, err.Error(), amount, meta.TokenId)
+			err = model.CreateConsumeError(meta.Group, meta.TokenName, imageRequest.Model, err.Error(), amount, meta.TokenID)
 			if err != nil {
 				logger.Error(ctx, "failed to create consume error: "+err.Error())
 			}
 		} else {
 			amount = _amount
 		}
-		err = model.BatchRecordConsume(ctx, meta.Group, resp.StatusCode, meta.ChannelId, imageRequest.N, 0, imageRequest.Model, meta.TokenId, meta.TokenName, amount, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
+		err = model.BatchRecordConsume(ctx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, amount, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
 		if err != nil {
 			logger.Error(ctx, "failed to record consume log: "+err.Error())
 		}

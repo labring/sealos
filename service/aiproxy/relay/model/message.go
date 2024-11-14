@@ -4,7 +4,7 @@ type Message struct {
 	Content    any     `json:"content,omitempty"`
 	Name       *string `json:"name,omitempty"`
 	Role       string  `json:"role,omitempty"`
-	ToolCallId string  `json:"tool_call_id,omitempty"`
+	ToolCallID string  `json:"tool_call_id,omitempty"`
 	ToolCalls  []Tool  `json:"tool_calls,omitempty"`
 }
 
@@ -67,7 +67,7 @@ func (m Message) ParseContent() []MessageContent {
 					contentList = append(contentList, MessageContent{
 						Type: ContentTypeImageURL,
 						ImageURL: &ImageURL{
-							Url: subObj["url"].(string),
+							URL: subObj["url"].(string),
 						},
 					})
 				}
@@ -79,7 +79,7 @@ func (m Message) ParseContent() []MessageContent {
 }
 
 type ImageURL struct {
-	Url    string `json:"url,omitempty"`
+	URL    string `json:"url,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }
 

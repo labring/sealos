@@ -11,7 +11,7 @@ func SetUpLogger(server *gin.Engine) {
 	server.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		var requestID string
 		if param.Keys != nil {
-			requestID = param.Keys[helper.RequestIdKey].(string)
+			requestID = param.Keys[string(helper.RequestIDKey)].(string)
 		}
 		return fmt.Sprintf("[GIN] %s | %s | %3d | %13v | %15s | %7s %s\n",
 			param.TimeStamp.Format("2006/01/02 - 15:04:05"),

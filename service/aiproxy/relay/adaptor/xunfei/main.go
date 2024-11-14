@@ -61,7 +61,7 @@ func StreamHandler(c *gin.Context, resp *http.Response, promptTokens int, modelN
 			v.Delta.Role = "assistant"
 			responseText += v.Delta.StringContent()
 		}
-		response.Id = id
+		response.ID = id
 		response.Model = modelName
 		err = render.ObjectData(c, response)
 		if err != nil {
@@ -97,7 +97,7 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 	}
 	usage := openai.ResponseText2Usage(responseText, modelName, promptTokens)
 	response.Usage = *usage
-	response.Id = helper.GetResponseID(c)
+	response.ID = helper.GetResponseID(c)
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil

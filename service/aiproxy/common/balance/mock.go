@@ -14,14 +14,14 @@ func NewMockGroupBalance() *MockGroupBalance {
 	return &MockGroupBalance{}
 }
 
-func (q *MockGroupBalance) GetGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
+func (q *MockGroupBalance) GetGroupRemainBalance(_ context.Context, _ string) (float64, PostGroupConsumer, error) {
 	return mockBalance, q, nil
 }
 
-func (q *MockGroupBalance) PostGroupConsume(ctx context.Context, tokenName string, usage float64) (float64, error) {
+func (q *MockGroupBalance) PostGroupConsume(_ context.Context, _ string, usage float64) (float64, error) {
 	return usage, nil
 }
 
-func (q *MockGroupBalance) GetBalance(ctx context.Context) (float64, error) {
+func (q *MockGroupBalance) GetBalance(_ context.Context) (float64, error) {
 	return mockBalance, nil
 }

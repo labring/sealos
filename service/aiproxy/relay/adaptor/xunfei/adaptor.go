@@ -28,7 +28,7 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *model.GeneralOpenAIRequest) (any, error) {
 	domain, err := getXunfeiDomain(request.Model)
 	if err != nil {
 		return nil, err

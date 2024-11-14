@@ -25,7 +25,7 @@ const (
 type Group struct {
 	CreatedAt    time.Time `json:"created_at"`
 	AccessedAt   time.Time `json:"accessed_at"`
-	Id           string    `gorm:"primaryKey" json:"id"`
+	ID           string    `gorm:"primaryKey" json:"id"`
 	Tokens       []*Token  `gorm:"foreignKey:GroupId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Status       int       `gorm:"type:int;default:1;index" json:"status"`
 	UsedAmount   float64   `gorm:"bigint;index" json:"used_amount"`
@@ -46,10 +46,9 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//nolint:goconst
 func getGroupOrder(order string) string {
 	switch order {
-	case "id":
-		return "id asc"
 	case "id-desc":
 		return "id desc"
 	case "request_count":
@@ -72,6 +71,8 @@ func getGroupOrder(order string) string {
 		return "used_amount asc"
 	case "used_amount-desc":
 		return "used_amount desc"
+	case "id":
+		return "id asc"
 	default:
 		return "id desc"
 	}
@@ -96,16 +97,16 @@ func GetGroups(startIdx int, num int, order string, onlyDisabled bool) (groups [
 	return groups, total, err
 }
 
-func GetGroupById(id string) (*Group, error) {
+func GetGroupByID(id string) (*Group, error) {
 	if id == "" {
 		return nil, errors.New("id 为空！")
 	}
-	group := Group{Id: id}
+	group := Group{ID: id}
 	err := DB.First(&group, "id = ?", id).Error
 	return &group, HandleNotFound(err, ErrGroupNotFound)
 }
 
-func DeleteGroupById(id string) (err error) {
+func DeleteGroupByID(id string) (err error) {
 	if id == "" {
 		return errors.New("id 为空！")
 	}
@@ -121,7 +122,7 @@ func DeleteGroupById(id string) (err error) {
 	}()
 	result := DB.
 		Delete(&Group{
-			Id: id,
+			ID: id,
 		})
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }

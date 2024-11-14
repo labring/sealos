@@ -11,13 +11,13 @@ import (
 
 type ConsumeError struct {
 	CreatedAt  time.Time       `gorm:"index" json:"created_at"`
-	GroupId    string          `gorm:"index" json:"group_id"`
+	GroupID    string          `gorm:"index" json:"group_id"`
 	TokenName  EmptyNullString `gorm:"index;not null" json:"token_name"`
 	Model      string          `gorm:"index" json:"model"`
 	Content    string          `gorm:"type:text" json:"content"`
-	Id         int             `gorm:"primaryKey" json:"id"`
+	ID         int             `gorm:"primaryKey" json:"id"`
 	UsedAmount float64         `gorm:"index" json:"used_amount"`
-	TokenId    int             `gorm:"index" json:"token_id"`
+	TokenID    int             `gorm:"index" json:"token_id"`
 }
 
 func (c *ConsumeError) MarshalJSON() ([]byte, error) {
@@ -31,19 +31,19 @@ func (c *ConsumeError) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func CreateConsumeError(group string, tokenName string, model string, content string, usedAmount float64, tokenId int) error {
-	return LOG_DB.Create(&ConsumeError{
-		GroupId:    group,
+func CreateConsumeError(group string, tokenName string, model string, content string, usedAmount float64, tokenID int) error {
+	return LogDB.Create(&ConsumeError{
+		GroupID:    group,
 		TokenName:  EmptyNullString(tokenName),
 		Model:      model,
 		Content:    content,
 		UsedAmount: usedAmount,
-		TokenId:    tokenId,
+		TokenID:    tokenID,
 	}).Error
 }
 
-func SearchConsumeError(keyword string, group string, tokenName string, model string, content string, usedAmount float64, tokenId int, page int, perPage int, order string) ([]*ConsumeError, int64, error) {
-	tx := LOG_DB.Model(&ConsumeError{})
+func SearchConsumeError(keyword string, group string, tokenName string, model string, content string, usedAmount float64, tokenID int, page int, perPage int, order string) ([]*ConsumeError, int64, error) {
+	tx := LogDB.Model(&ConsumeError{})
 
 	// Handle exact match conditions for non-zero values
 	if group != "" {
@@ -61,8 +61,8 @@ func SearchConsumeError(keyword string, group string, tokenName string, model st
 	if usedAmount > 0 {
 		tx = tx.Where("used_amount = ?", usedAmount)
 	}
-	if tokenId != 0 {
-		tx = tx.Where("token_id = ?", tokenId)
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
 	}
 
 	// Handle keyword search for zero value fields
@@ -70,7 +70,7 @@ func SearchConsumeError(keyword string, group string, tokenName string, model st
 		var conditions []string
 		var values []interface{}
 
-		if tokenId == 0 {
+		if tokenID == 0 {
 			conditions = append(conditions, "token_id = ?")
 			values = append(values, keyword)
 		}
@@ -121,7 +121,7 @@ func SearchConsumeError(keyword string, group string, tokenName string, model st
 		return nil, 0, nil
 	}
 
-	page -= 1
+	page--
 	if page < 0 {
 		page = 0
 	}

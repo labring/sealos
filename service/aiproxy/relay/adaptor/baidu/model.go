@@ -7,7 +7,7 @@ import (
 )
 
 type ChatResponse struct {
-	Id     string `json:"id"`
+	ID     string `json:"id"`
 	Object string `json:"object"`
 	Result string `json:"result"`
 	Error
@@ -19,7 +19,7 @@ type ChatResponse struct {
 
 type ChatStreamResponse struct {
 	ChatResponse
-	SentenceId int  `json:"sentence_id"`
+	SentenceID int  `json:"sentence_id"`
 	IsEnd      bool `json:"is_end"`
 }
 
@@ -34,7 +34,7 @@ type EmbeddingData struct {
 }
 
 type EmbeddingResponse struct {
-	Id     string          `json:"id"`
+	ID     string          `json:"id"`
 	Object string          `json:"object"`
 	Data   []EmbeddingData `json:"data"`
 	Error

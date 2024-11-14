@@ -5,27 +5,32 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image"
+
+	// import gif decoder
 	_ "image/gif"
+	// import jpeg decoder
 	_ "image/jpeg"
+	// import png decoder
 	_ "image/png"
 	"io"
 	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/labring/sealos/service/aiproxy/common/client"
-
+	// import webp decoder
 	_ "golang.org/x/image/webp"
+
+	"github.com/labring/sealos/service/aiproxy/common/client"
 )
 
 // Regex to match data URL pattern
 var dataURLPattern = regexp.MustCompile(`data:image/([^;]+);base64,(.*)`)
 
-func IsImageUrl(resp *http.Response) bool {
+func IsImageURL(resp *http.Response) bool {
 	return strings.HasPrefix(resp.Header.Get("Content-Type"), "image/")
 }
 
-func GetImageSizeFromUrl(url string) (width int, height int, err error) {
+func GetImageSizeFromURL(url string) (width int, height int, err error) {
 	resp, err := client.UserContentRequestHTTPClient.Get(url)
 	if err != nil {
 		return
@@ -36,7 +41,7 @@ func GetImageSizeFromUrl(url string) (width int, height int, err error) {
 		return 0, 0, fmt.Errorf("status code: %d", resp.StatusCode)
 	}
 
-	isImage := IsImageUrl(resp)
+	isImage := IsImageURL(resp)
 	if !isImage {
 		return
 	}
@@ -47,7 +52,7 @@ func GetImageSizeFromUrl(url string) (width int, height int, err error) {
 	return img.Width, img.Height, nil
 }
 
-func GetImageFromUrl(url string) (string, string, error) {
+func GetImageFromURL(url string) (string, string, error) {
 	// Check if the URL is a data URL
 	matches := dataURLPattern.FindStringSubmatch(url)
 	if len(matches) == 3 {
@@ -73,7 +78,7 @@ func GetImageFromUrl(url string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	isImage := IsImageUrl(resp)
+	isImage := IsImageURL(resp)
 	if !isImage {
 		return "", "", fmt.Errorf("not an image")
 	}
@@ -100,5 +105,5 @@ func GetImageSize(image string) (width int, height int, err error) {
 	if strings.HasPrefix(image, "data:image/") {
 		return GetImageSizeFromBase64(image)
 	}
-	return GetImageSizeFromUrl(image)
+	return GetImageSizeFromURL(image)
 }

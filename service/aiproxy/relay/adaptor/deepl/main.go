@@ -76,7 +76,7 @@ func StreamHandler(c *gin.Context, resp *http.Response, modelName string) *model
 	}
 	fullTextResponse := StreamResponseDeepL2OpenAI(&deeplResponse)
 	fullTextResponse.Model = modelName
-	fullTextResponse.Id = helper.GetResponseID(c)
+	fullTextResponse.ID = helper.GetResponseID(c)
 	common.SetEventStreamHeaders(c)
 	err = render.ObjectData(c, fullTextResponse)
 	if err != nil {
@@ -105,7 +105,7 @@ func Handler(c *gin.Context, resp *http.Response, modelName string) *model.Error
 	}
 	fullTextResponse := ResponseDeepL2OpenAI(&deeplResponse)
 	fullTextResponse.Model = modelName
-	fullTextResponse.Id = helper.GetResponseID(c)
+	fullTextResponse.ID = helper.GetResponseID(c)
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)

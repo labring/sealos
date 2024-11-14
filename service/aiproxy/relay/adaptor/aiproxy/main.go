@@ -57,7 +57,7 @@ func responseAIProxyLibrary2OpenAI(response *LibraryResponse) *openai.TextRespon
 		FinishReason: "stop",
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: []openai.TextResponseChoice{choice},
@@ -70,7 +70,7 @@ func documentsAIProxyLibrary(documents []LibraryDocument) *openai.ChatCompletion
 	choice.Delta.Content = aiProxyDocuments2Markdown(documents)
 	choice.FinishReason = &constant.StopFinishReason
 	return &openai.ChatCompletionsStreamResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "",
@@ -82,7 +82,7 @@ func streamResponseAIProxyLibrary2OpenAI(response *LibraryStreamResponse) *opena
 	var choice openai.ChatCompletionsStreamResponseChoice
 	choice.Delta.Content = response.Content
 	return &openai.ChatCompletionsStreamResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   response.Model,

@@ -13,7 +13,7 @@ import (
 func abortWithMessage(c *gin.Context, statusCode int, message string) {
 	c.JSON(statusCode, gin.H{
 		"error": gin.H{
-			"message": helper.MessageWithRequestId(message, c.GetString(helper.RequestIdKey)),
+			"message": helper.MessageWithRequestID(message, c.GetString(string(helper.RequestIDKey))),
 			"type":    "aiproxy_error",
 		},
 	})

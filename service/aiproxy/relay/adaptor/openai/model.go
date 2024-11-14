@@ -52,7 +52,7 @@ type WhisperVerboseJSONResponse struct {
 type Segment struct {
 	Text             string  `json:"text"`
 	Tokens           []int   `json:"tokens"`
-	Id               int     `json:"id"`
+	ID               int     `json:"id"`
 	Seek             int     `json:"seek"`
 	Start            float64 `json:"start"`
 	End              float64 `json:"end"`
@@ -80,7 +80,7 @@ type TextResponseChoice struct {
 }
 
 type TextResponse struct {
-	Id          string               `json:"id"`
+	ID          string               `json:"id"`
 	Model       string               `json:"model,omitempty"`
 	Object      string               `json:"object"`
 	Choices     []TextResponseChoice `json:"choices"`
@@ -102,7 +102,7 @@ type EmbeddingResponse struct {
 }
 
 type ImageData struct {
-	Url           string `json:"url,omitempty"`
+	URL           string `json:"url,omitempty"`
 	B64Json       string `json:"b64_json,omitempty"`
 	RevisedPrompt string `json:"revised_prompt,omitempty"`
 }
@@ -120,7 +120,7 @@ type ChatCompletionsStreamResponseChoice struct {
 
 type ChatCompletionsStreamResponse struct {
 	Usage   *model.Usage                          `json:"usage,omitempty"`
-	Id      string                                `json:"id"`
+	ID      string                                `json:"id"`
 	Object  string                                `json:"object"`
 	Model   string                                `json:"model"`
 	Choices []ChatCompletionsStreamResponseChoice `json:"choices"`

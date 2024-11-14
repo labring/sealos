@@ -44,17 +44,17 @@ type ImageRequest struct {
 }
 
 type TaskResponse struct {
-	RequestId string `json:"request_id,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 	Code      string `json:"code,omitempty"`
 	Message   string `json:"message,omitempty"`
 	Output    struct {
-		TaskId     string `json:"task_id,omitempty"`
+		TaskID     string `json:"task_id,omitempty"`
 		TaskStatus string `json:"task_status,omitempty"`
 		Code       string `json:"code,omitempty"`
 		Message    string `json:"message,omitempty"`
 		Results    []struct {
 			B64Image string `json:"b64_image,omitempty"`
-			Url      string `json:"url,omitempty"`
+			URL      string `json:"url,omitempty"`
 			Code     string `json:"code,omitempty"`
 			Message  string `json:"message,omitempty"`
 		} `json:"results,omitempty"`
@@ -127,7 +127,7 @@ type EmbeddingResponse struct {
 type Error struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
-	RequestId string `json:"request_id"`
+	RequestID string `json:"request_id"`
 }
 
 type Usage struct {

@@ -112,7 +112,7 @@ func logHelper(ctx context.Context, level string, msg string) {
 	if level == loggerINFO {
 		writer = gin.DefaultWriter
 	}
-	id := ctx.Value(helper.RequestIdKey)
+	id := ctx.Value(helper.RequestIDKey)
 	if id == nil {
 		id = helper.GenRequestID()
 	}

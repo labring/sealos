@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetApiRouter(router *gin.Engine) {
+func SetAPIRouter(router *gin.Engine) {
 	apiRouter := router.Group("/api")
 	if env.Bool("GZIP_ENABLED", false) {
 		apiRouter.Use(gzip.Gzip(gzip.DefaultCompression))

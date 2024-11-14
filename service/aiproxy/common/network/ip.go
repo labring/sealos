@@ -25,7 +25,7 @@ func isValidSubnet(subnet string) error {
 	return nil
 }
 
-func isIpInSubnet(ctx context.Context, ip string, subnet string) bool {
+func isIPInSubnet(ctx context.Context, ip string, subnet string) bool {
 	_, ipNet, err := net.ParseCIDR(subnet)
 	if err != nil {
 		logger.Errorf(ctx, "failed to parse subnet: %s", err.Error())
@@ -43,9 +43,9 @@ func IsValidSubnets(subnets string) error {
 	return nil
 }
 
-func IsIpInSubnets(ctx context.Context, ip string, subnets string) bool {
+func IsIPInSubnets(ctx context.Context, ip string, subnets string) bool {
 	for _, subnet := range splitSubnets(subnets) {
-		if isIpInSubnet(ctx, ip, subnet) {
+		if isIPInSubnet(ctx, ip, subnet) {
 			return true
 		}
 	}

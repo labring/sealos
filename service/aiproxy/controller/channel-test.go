@@ -93,7 +93,7 @@ func testChannel(channel *model.Channel, request *relaymodel.GeneralOpenAIReques
 	if err != nil {
 		return nil, err
 	}
-	logger.SysLogf("testing channel #%d, request: \n%s", channel.Id, jsonData)
+	logger.SysLogf("testing channel #%d, request: \n%s", channel.ID, jsonData)
 	requestBody := bytes.NewBuffer(jsonData)
 	c.Request.Body = io.NopCloser(requestBody)
 	resp, err := adaptor.DoRequest(c, meta, requestBody)
@@ -117,7 +117,7 @@ func testChannel(channel *model.Channel, request *relaymodel.GeneralOpenAIReques
 	if err != nil {
 		return nil, err
 	}
-	logger.SysLogf("testing channel #%d, response: \n%s", channel.Id, respBody)
+	logger.SysLogf("testing channel #%d, response: \n%s", channel.ID, respBody)
 	return nil, nil
 }
 
@@ -130,7 +130,7 @@ func TestChannel(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelById(id, false)
+	channel, err := model.GetChannelByID(id, false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -168,7 +168,7 @@ func TestChannel(c *gin.Context) {
 
 var (
 	testAllChannelsLock    sync.Mutex
-	testAllChannelsRunning bool = false
+	testAllChannelsRunning = false
 )
 
 func testChannels(onlyDisabled bool) error {
@@ -192,10 +192,10 @@ func testChannels(onlyDisabled bool) error {
 			tok := time.Now()
 			milliseconds := tok.Sub(tik).Milliseconds()
 			if isChannelEnabled && monitor.ShouldDisableChannel(openaiErr, -1) {
-				model.DisableChannelById(channel.Id)
+				_ = model.DisableChannelByID(channel.ID)
 			}
 			if !isChannelEnabled && monitor.ShouldEnableChannel(err, openaiErr) {
-				model.EnableChannelById(channel.Id)
+				_ = model.EnableChannelByID(channel.ID)
 			}
 			channel.UpdateResponseTime(milliseconds)
 			time.Sleep(time.Second * 1)

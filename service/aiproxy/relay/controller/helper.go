@@ -57,7 +57,7 @@ func getPreConsumedAmount(textRequest *relaymodel.GeneralOpenAIRequest, promptTo
 		preConsumedTokens += int64(textRequest.MaxTokens)
 	}
 	return decimal.
-		NewFromInt(int64(preConsumedTokens)).
+		NewFromInt(preConsumedTokens).
 		Mul(decimal.NewFromFloat(price)).
 		Div(decimal.NewFromInt(billingprice.PriceUnit)).
 		InexactFloat64()
@@ -78,7 +78,7 @@ func preCheckGroupBalance(ctx context.Context, textRequest *relaymodel.GeneralOp
 
 func postConsumeAmount(ctx context.Context, postGroupConsumer balance.PostGroupConsumer, code int, endpoint string, usage *relaymodel.Usage, meta *meta.Meta, price, completionPrice float64, content string) {
 	if usage == nil {
-		err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelId, 0, 0, meta.OriginModelName, meta.TokenId, meta.TokenName, 0, price, completionPrice, endpoint, content)
+		err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelID, 0, 0, meta.OriginModelName, meta.TokenID, meta.TokenName, 0, price, completionPrice, endpoint, content)
 		if err != nil {
 			logger.Error(ctx, "error batch record consume: "+err.Error())
 		}
@@ -97,7 +97,7 @@ func postConsumeAmount(ctx context.Context, postGroupConsumer balance.PostGroupC
 			_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.TokenName, amount)
 			if err != nil {
 				logger.Error(ctx, "error consuming token remain amount: "+err.Error())
-				err = model.CreateConsumeError(meta.Group, meta.TokenName, meta.OriginModelName, err.Error(), amount, meta.TokenId)
+				err = model.CreateConsumeError(meta.Group, meta.TokenName, meta.OriginModelName, err.Error(), amount, meta.TokenID)
 				if err != nil {
 					logger.Error(ctx, "failed to create consume error: "+err.Error())
 				}
@@ -106,7 +106,7 @@ func postConsumeAmount(ctx context.Context, postGroupConsumer balance.PostGroupC
 			}
 		}
 	}
-	err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelId, promptTokens, completionTokens, meta.OriginModelName, meta.TokenId, meta.TokenName, amount, price, completionPrice, endpoint, content)
+	err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelID, promptTokens, completionTokens, meta.OriginModelName, meta.TokenID, meta.TokenName, amount, price, completionPrice, endpoint, content)
 	if err != nil {
 		logger.Error(ctx, "error batch record consume: "+err.Error())
 	}

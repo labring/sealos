@@ -66,8 +66,8 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *ChatRequest {
 		if mimeType, ok := mimeTypeMap[textRequest.ResponseFormat.Type]; ok {
 			geminiRequest.GenerationConfig.ResponseMimeType = mimeType
 		}
-		if textRequest.ResponseFormat.JsonSchema != nil {
-			geminiRequest.GenerationConfig.ResponseSchema = textRequest.ResponseFormat.JsonSchema.Schema
+		if textRequest.ResponseFormat.JSONSchema != nil {
+			geminiRequest.GenerationConfig.ResponseSchema = textRequest.ResponseFormat.JSONSchema.Schema
 			geminiRequest.GenerationConfig.ResponseMimeType = mimeTypeMap["json_object"]
 		}
 	}
@@ -107,11 +107,11 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *ChatRequest {
 					Text: part.Text,
 				})
 			} else if part.Type == model.ContentTypeImageURL {
-				imageNum += 1
+				imageNum++
 				if imageNum > VisionMaxImageNum {
 					continue
 				}
-				mimeType, data, _ := image.GetImageFromUrl(part.ImageURL.Url)
+				mimeType, data, _ := image.GetImageFromURL(part.ImageURL.URL)
 				parts = append(parts, Part{
 					InlineData: &InlineData{
 						MimeType: mimeType,
@@ -217,7 +217,7 @@ func getToolCalls(candidate *ChatCandidate) []model.Tool {
 		return toolCalls
 	}
 	toolCall := model.Tool{
-		Id:   fmt.Sprintf("call_%s", random.GetUUID()),
+		ID:   fmt.Sprintf("call_%s", random.GetUUID()),
 		Type: "function",
 		Function: model.Function{
 			Arguments: conv.BytesToString(argsBytes),
@@ -230,7 +230,7 @@ func getToolCalls(candidate *ChatCandidate) []model.Tool {
 
 func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: make([]openai.TextResponseChoice, 0, len(response.Candidates)),
@@ -263,7 +263,7 @@ func streamResponseGeminiChat2OpenAI(geminiResponse *ChatResponse) *openai.ChatC
 	choice.Delta.Content = geminiResponse.GetResponseText()
 	// choice.FinishReason = &constant.StopFinishReason
 	var response openai.ChatCompletionsStreamResponse
-	response.Id = fmt.Sprintf("chatcmpl-%s", random.GetUUID())
+	response.ID = fmt.Sprintf("chatcmpl-%s", random.GetUUID())
 	response.Created = helper.GetTimestamp()
 	response.Object = "chat.completion.chunk"
 	response.Model = "gemini"

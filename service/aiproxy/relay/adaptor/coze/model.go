@@ -13,8 +13,8 @@ type ErrorInformation struct {
 }
 
 type Request struct {
-	ConversationId string    `json:"conversation_id,omitempty"`
-	BotId          string    `json:"bot_id"`
+	ConversationID string    `json:"conversation_id,omitempty"`
+	BotID          string    `json:"bot_id"`
 	User           string    `json:"user"`
 	Query          string    `json:"query"`
 	ChatHistory    []Message `json:"chat_history,omitempty"`
@@ -22,7 +22,7 @@ type Request struct {
 }
 
 type Response struct {
-	ConversationId string    `json:"conversation_id,omitempty"`
+	ConversationID string    `json:"conversation_id,omitempty"`
 	Msg            string    `json:"msg,omitempty"`
 	Messages       []Message `json:"messages,omitempty"`
 	Code           int       `json:"code,omitempty"`
@@ -32,7 +32,7 @@ type StreamResponse struct {
 	Message          *Message          `json:"message,omitempty"`
 	ErrorInformation *ErrorInformation `json:"error_information,omitempty"`
 	Event            string            `json:"event,omitempty"`
-	ConversationId   string            `json:"conversation_id,omitempty"`
+	ConversationID   string            `json:"conversation_id,omitempty"`
 	Index            int               `json:"index,omitempty"`
 	IsFinish         bool              `json:"is_finish,omitempty"`
 }

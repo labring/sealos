@@ -38,7 +38,7 @@ type Channel struct {
 	Models           []string          `gorm:"serializer:json;type:text" json:"models"`
 	Balance          float64           `json:"balance"`
 	ResponseDuration int64             `gorm:"bigint" json:"response_duration"`
-	Id               int               `gorm:"primaryKey" json:"id"`
+	ID               int               `gorm:"primaryKey" json:"id"`
 	UsedAmount       float64           `gorm:"bigint" json:"used_amount"`
 	RequestCount     int               `gorm:"type:int" json:"request_count"`
 	Status           int               `gorm:"default:1;index" json:"status"`
@@ -63,12 +63,9 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//nolint:goconst
 func getChannelOrder(order string) string {
 	switch order {
-	case "id":
-		return "id asc"
-	case "id-desc":
-		return "id desc"
 	case "name":
 		return "name asc"
 	case "name-desc":
@@ -109,6 +106,8 @@ func getChannelOrder(order string) string {
 		return "priority asc"
 	case "priority-desc":
 		return "priority desc"
+	case "id":
+		return "id asc"
 	default:
 		return "id desc"
 	}
@@ -252,8 +251,8 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 	return channels, total, err
 }
 
-func GetChannelById(id int, omitKey bool) (*Channel, error) {
-	channel := Channel{Id: id}
+func GetChannelByID(id int, omitKey bool) (*Channel, error) {
+	channel := Channel{ID: id}
 	var err error
 	if omitKey {
 		err = DB.Omit("key").First(&channel, "id = ?", id).Error
@@ -281,8 +280,8 @@ func UpdateChannel(channel *Channel) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func (channel *Channel) UpdateResponseTime(responseTime int64) {
-	err := DB.Model(channel).Select("test_at", "response_duration").Updates(Channel{
+func (c *Channel) UpdateResponseTime(responseTime int64) {
+	err := DB.Model(c).Select("test_at", "response_duration").Updates(Channel{
 		TestAt:           time.Now(),
 		ResponseDuration: responseTime,
 	}).Error
@@ -291,8 +290,8 @@ func (channel *Channel) UpdateResponseTime(responseTime int64) {
 	}
 }
 
-func (channel *Channel) UpdateBalance(balance float64) {
-	err := DB.Model(channel).Select("balance_updated_at", "balance").Updates(Channel{
+func (c *Channel) UpdateBalance(balance float64) {
+	err := DB.Model(c).Select("balance_updated_at", "balance").Updates(Channel{
 		BalanceUpdatedAt: time.Now(),
 		Balance:          balance,
 	}).Error
@@ -301,22 +300,22 @@ func (channel *Channel) UpdateBalance(balance float64) {
 	}
 }
 
-func DeleteChannelById(id int) error {
-	result := DB.Delete(&Channel{Id: id})
+func DeleteChannelByID(id int) error {
+	result := DB.Delete(&Channel{ID: id})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func UpdateChannelStatusById(id int, status int) error {
+func UpdateChannelStatusByID(id int, status int) error {
 	result := DB.Model(&Channel{}).Where("id = ?", id).Update("status", status)
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func DisableChannelById(id int) error {
-	return UpdateChannelStatusById(id, ChannelStatusAutoDisabled)
+func DisableChannelByID(id int) error {
+	return UpdateChannelStatusByID(id, ChannelStatusAutoDisabled)
 }
 
-func EnableChannelById(id int) error {
-	return UpdateChannelStatusById(id, ChannelStatusEnabled)
+func EnableChannelByID(id int) error {
+	return UpdateChannelStatusByID(id, ChannelStatusEnabled)
 }
 
 func UpdateChannelUsedAmount(id int, amount float64, requestCount int) error {

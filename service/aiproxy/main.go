@@ -81,7 +81,7 @@ func main() {
 	// Initialize HTTP server
 	server := gin.New()
 	server.Use(gin.Recovery())
-	server.Use(middleware.RequestId())
+	server.Use(middleware.RequestID)
 	middleware.SetUpLogger(server)
 
 	router.SetRouter(server)

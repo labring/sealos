@@ -23,7 +23,7 @@ import (
 
 type OpenAIModelPermission struct {
 	Group              *string `json:"group"`
-	Id                 string  `json:"id"`
+	ID                 string  `json:"id"`
 	Object             string  `json:"object"`
 	Organization       string  `json:"organization"`
 	Created            int     `json:"created"`
@@ -38,7 +38,7 @@ type OpenAIModelPermission struct {
 
 type OpenAIModels struct {
 	Parent     *string                 `json:"parent"`
-	Id         string                  `json:"id"`
+	ID         string                  `json:"id"`
 	Object     string                  `json:"object"`
 	OwnedBy    string                  `json:"owned_by"`
 	Root       string                  `json:"root"`
@@ -49,13 +49,13 @@ type OpenAIModels struct {
 var (
 	models           []OpenAIModels
 	modelsMap        map[string]OpenAIModels
-	channelId2Models map[int][]string
+	channelID2Models map[int][]string
 )
 
 func init() {
 	var permission []OpenAIModelPermission
 	permission = append(permission, OpenAIModelPermission{
-		Id:                 "modelperm-LwHkVFn8AcMItP432fKKDIKJ",
+		ID:                 "modelperm-LwHkVFn8AcMItP432fKKDIKJ",
 		Object:             "model_permission",
 		Created:            1626777600,
 		AllowCreateEngine:  true,
@@ -81,7 +81,7 @@ func init() {
 		modelNames := adaptor.GetModelList()
 		for _, modelName := range modelNames {
 			models = append(models, OpenAIModels{
-				Id:         modelName,
+				ID:         modelName,
 				Object:     "model",
 				Created:    1626777600,
 				OwnedBy:    channelName,
@@ -98,7 +98,7 @@ func init() {
 		channelName, channelModelList := openai.GetCompatibleChannelMeta(channelType)
 		for _, modelName := range channelModelList {
 			models = append(models, OpenAIModels{
-				Id:         modelName,
+				ID:         modelName,
 				Object:     "model",
 				Created:    1626777600,
 				OwnedBy:    channelName,
@@ -110,16 +110,16 @@ func init() {
 	}
 	modelsMap = make(map[string]OpenAIModels)
 	for _, model := range models {
-		modelsMap[model.Id] = model
+		modelsMap[model.ID] = model
 	}
-	channelId2Models = make(map[int][]string)
+	channelID2Models = make(map[int][]string)
 	for i := 1; i < channeltype.Dummy; i++ {
 		adaptor := relay.GetAdaptor(channeltype.ToAPIType(i))
 		meta := &meta.Meta{
 			ChannelType: i,
 		}
 		adaptor.Init(meta)
-		channelId2Models[i] = adaptor.GetModelList()
+		channelID2Models[i] = adaptor.GetModelList()
 	}
 }
 
@@ -127,7 +127,7 @@ func BuiltinModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    channelId2Models,
+		"data":    channelID2Models,
 	})
 }
 
@@ -279,7 +279,7 @@ func ListModels(c *gin.Context) {
 			continue
 		}
 		availableOpenAIModels = append(availableOpenAIModels, OpenAIModels{
-			Id:      modelName,
+			ID:      modelName,
 			Object:  "model",
 			Created: 1626777600,
 			OwnedBy: "custom",
@@ -295,12 +295,12 @@ func ListModels(c *gin.Context) {
 }
 
 func RetrieveModel(c *gin.Context) {
-	modelId := c.Param("model")
-	model, ok := modelsMap[modelId]
-	if !ok || !slices.Contains(c.GetStringSlice(ctxkey.AvailableModels), modelId) {
+	modelID := c.Param("model")
+	model, ok := modelsMap[modelID]
+	if !ok || !slices.Contains(c.GetStringSlice(ctxkey.AvailableModels), modelID) {
 		c.JSON(200, gin.H{
 			"error": relaymodel.Error{
-				Message: fmt.Sprintf("The model '%s' does not exist", modelId),
+				Message: fmt.Sprintf("The model '%s' does not exist", modelID),
 				Type:    "invalid_request_error",
 				Param:   "model",
 				Code:    "model_not_found",

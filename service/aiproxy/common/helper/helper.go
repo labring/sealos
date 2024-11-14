@@ -12,7 +12,7 @@ func GenRequestID() string {
 }
 
 func GetResponseID(c *gin.Context) string {
-	logID := c.GetString(RequestIdKey)
+	logID := c.GetString(string(RequestIDKey))
 	return fmt.Sprintf("chatcmpl-%s", logID)
 }
 
@@ -23,6 +23,6 @@ func AssignOrDefault(value string, defaultValue string) string {
 	return defaultValue
 }
 
-func MessageWithRequestId(message string, id string) string {
+func MessageWithRequestID(message string, id string) string {
 	return fmt.Sprintf("%s (request id: %s)", message, id)
 }

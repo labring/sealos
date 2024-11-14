@@ -20,7 +20,7 @@ type ResponseChoices struct {
 }
 
 type ChatResponse struct {
-	Id      string            `json:"Id,omitempty"`
+	ID      string            `json:"Id,omitempty"`
 	Note    string            `json:"Note,omitempty"`
 	ReqID   string            `json:"Req_id,omitempty"`
 	Choices []ResponseChoices `json:"Choices,omitempty"`

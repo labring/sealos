@@ -57,7 +57,7 @@ type TokenCache struct {
 	Name       string           `json:"name" redis:"n"`
 	Subnet     string           `json:"subnet" redis:"s"`
 	Models     redisStringSlice `json:"models" redis:"m"`
-	Id         int              `json:"id" redis:"i"`
+	ID         int              `json:"id" redis:"i"`
 	Status     int              `json:"status" redis:"st"`
 	Quota      float64          `json:"quota" redis:"q"`
 	UsedAmount float64          `json:"used_amount" redis:"u"`
@@ -65,8 +65,8 @@ type TokenCache struct {
 
 func (t *Token) ToTokenCache() *TokenCache {
 	return &TokenCache{
-		Id:         t.Id,
-		Group:      t.GroupId,
+		ID:         t.ID,
+		Group:      t.GroupID,
 		Name:       t.Name.String(),
 		Models:     t.Models,
 		Subnet:     t.Subnet,
@@ -109,7 +109,7 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 	cacheKey := fmt.Sprintf(TokenCacheKey, key)
 	tokenCache := &TokenCache{}
 	err := common.RDB.HGetAll(context.Background(), cacheKey).Scan(tokenCache)
-	if err == nil && tokenCache.Id != 0 {
+	if err == nil && tokenCache.ID != 0 {
 		tokenCache.Key = key
 		return tokenCache, nil
 	} else if err != nil && err != redis.Nil {
@@ -178,14 +178,14 @@ func CacheIncreaseTokenUsedAmount(key string, amount float64) error {
 }
 
 type GroupCache struct {
-	Id     string `json:"-" redis:"-"`
+	ID     string `json:"-" redis:"-"`
 	Status int    `json:"status" redis:"st"`
 	QPM    int64  `json:"qpm" redis:"q"`
 }
 
 func (g *Group) ToGroupCache() *GroupCache {
 	return &GroupCache{
-		Id:     g.Id,
+		ID:     g.ID,
 		Status: g.Status,
 		QPM:    g.QPM,
 	}
@@ -230,7 +230,7 @@ func CacheSetGroup(group *Group) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	key := fmt.Sprintf(GroupCacheKey, group.Id)
+	key := fmt.Sprintf(GroupCacheKey, group.ID)
 	pipe := common.RDB.Pipeline()
 	pipe.HSet(context.Background(), key, group.ToGroupCache())
 	expireTime := SyncFrequency + time.Duration(rand.Int63n(60)-30)*time.Second
@@ -241,7 +241,7 @@ func CacheSetGroup(group *Group) error {
 
 func CacheGetGroup(id string) (*GroupCache, error) {
 	if !common.RedisEnabled {
-		group, err := GetGroupById(id)
+		group, err := GetGroupByID(id)
 		if err != nil {
 			return nil, err
 		}
@@ -252,13 +252,13 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 	groupCache := &GroupCache{}
 	err := common.RDB.HGetAll(context.Background(), cacheKey).Scan(groupCache)
 	if err == nil && groupCache.Status != 0 {
-		groupCache.Id = id
+		groupCache.ID = id
 		return groupCache, nil
 	} else if err != nil && err != redis.Nil {
 		logger.SysLogf("get group (%s) from redis error: %s", id, err.Error())
 	}
 
-	group, err := GetGroupById(id)
+	group, err := GetGroupByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func CacheGetModelsByType(channelType int) []string {
 }
 
 func InitChannelCache() {
-	newChannelId2channel := make(map[int]*Channel)
+	newChannelID2channel := make(map[int]*Channel)
 	var channels []*Channel
 	DB.Where("status = ?", ChannelStatusEnabled).Find(&channels)
 	for _, channel := range channels {
@@ -304,7 +304,7 @@ func InitChannelCache() {
 		if len(channel.ModelMapping) == 0 {
 			channel.ModelMapping = config.GetDefaultChannelModelMapping()[channel.Type]
 		}
-		newChannelId2channel[channel.Id] = channel
+		newChannelID2channel[channel.ID] = channel
 	}
 	newModel2channels := make(map[string][]*Channel)
 	for _, channel := range channels {

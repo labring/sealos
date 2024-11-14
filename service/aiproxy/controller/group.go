@@ -14,7 +14,7 @@ import (
 
 func GetGroups(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -48,7 +48,7 @@ func GetGroups(c *gin.Context) {
 func SearchGroups(c *gin.Context) {
 	keyword := c.Query("keyword")
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -87,7 +87,7 @@ func GetGroup(c *gin.Context) {
 		})
 		return
 	}
-	group, err := model.GetGroupById(id)
+	group, err := model.GetGroupByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -125,21 +125,21 @@ func GetGroupDashboard(c *gin.Context) {
 }
 
 type UpdateGroupQPMRequest struct {
-	Id  string `json:"id"`
+	ID  string `json:"id"`
 	QPM int64  `json:"qpm"`
 }
 
 func UpdateGroupQPM(c *gin.Context) {
 	req := UpdateGroupQPMRequest{}
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
-	if err != nil || req.Id == "" {
+	if err != nil || req.ID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "无效的参数",
 		})
 		return
 	}
-	err = model.UpdateGroupQPM(req.Id, req.QPM)
+	err = model.UpdateGroupQPM(req.ID, req.QPM)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -154,21 +154,21 @@ func UpdateGroupQPM(c *gin.Context) {
 }
 
 type UpdateGroupStatusRequest struct {
-	Id     string `json:"id"`
+	ID     string `json:"id"`
 	Status int    `json:"status"`
 }
 
 func UpdateGroupStatus(c *gin.Context) {
 	req := UpdateGroupStatusRequest{}
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
-	if err != nil || req.Id == "" {
+	if err != nil || req.ID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "无效的参数",
 		})
 		return
 	}
-	err = model.UpdateGroupStatus(req.Id, req.Status)
+	err = model.UpdateGroupStatus(req.ID, req.Status)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -191,7 +191,7 @@ func DeleteGroup(c *gin.Context) {
 		})
 		return
 	}
-	err := model.DeleteGroupById(id)
+	err := model.DeleteGroupByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -206,14 +206,14 @@ func DeleteGroup(c *gin.Context) {
 }
 
 type CreateGroupRequest struct {
-	Id  string `json:"id"`
+	ID  string `json:"id"`
 	QPM int64  `json:"qpm"`
 }
 
 func CreateGroup(c *gin.Context) {
 	var group CreateGroupRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&group)
-	if err != nil || group.Id == "" {
+	if err != nil || group.ID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "无效的参数",
@@ -221,7 +221,7 @@ func CreateGroup(c *gin.Context) {
 		return
 	}
 	if err := model.CreateGroup(&model.Group{
-		Id:  group.Id,
+		ID:  group.ID,
 		QPM: group.QPM,
 	}); err != nil {
 		c.JSON(http.StatusOK, gin.H{

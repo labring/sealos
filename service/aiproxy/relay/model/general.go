@@ -1,7 +1,7 @@
 package model
 
 type ResponseFormat struct {
-	JsonSchema *JSONSchema `json:"json_schema,omitempty"`
+	JSONSchema *JSONSchema `json:"json_schema,omitempty"`
 	Type       string      `json:"type,omitempty"`
 }
 

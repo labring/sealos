@@ -47,22 +47,22 @@ func awsModelID(requestModel string) (string, error) {
 }
 
 func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelId, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
 
 	awsReq := &bedrockruntime.InvokeModelInput{
-		ModelId:     aws.String(awsModelId),
+		ModelId:     aws.String(awsModelID),
 		Accept:      aws.String("application/json"),
 		ContentType: aws.String("application/json"),
 	}
 
-	claudeReq_, ok := c.Get(ctxkey.ConvertedRequest)
+	convReq, ok := c.Get(ctxkey.ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
-	claudeReq := claudeReq_.(*anthropic.Request)
+	claudeReq := convReq.(*anthropic.Request)
 	awsClaudeReq := &Request{
 		AnthropicVersion: "bedrock-2023-05-31",
 	}
@@ -101,22 +101,22 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 
 func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	createdTime := helper.GetTimestamp()
-	awsModelId, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
 
 	awsReq := &bedrockruntime.InvokeModelWithResponseStreamInput{
-		ModelId:     aws.String(awsModelId),
+		ModelId:     aws.String(awsModelID),
 		Accept:      aws.String("application/json"),
 		ContentType: aws.String("application/json"),
 	}
 
-	claudeReq_, ok := c.Get(ctxkey.ConvertedRequest)
+	convReq, ok := c.Get(ctxkey.ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
-	claudeReq := claudeReq_.(*anthropic.Request)
+	claudeReq := convReq.(*anthropic.Request)
 
 	awsClaudeReq := &Request{
 		AnthropicVersion: "bedrock-2023-05-31",
@@ -141,7 +141,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 	var id string
 	var lastToolCallChoice openai.ChatCompletionsStreamResponseChoice
 
-	c.Stream(func(w io.Writer) bool {
+	c.Stream(func(_ io.Writer) bool {
 		event, ok := <-stream.Events()
 		if !ok {
 			render.StringData(c, "[DONE]")
@@ -161,24 +161,23 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			if meta != nil {
 				usage.PromptTokens += meta.Usage.InputTokens
 				usage.CompletionTokens += meta.Usage.OutputTokens
-				if len(meta.Id) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
-					id = fmt.Sprintf("chatcmpl-%s", meta.Id)
+				if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
+					id = fmt.Sprintf("chatcmpl-%s", meta.ID)
 					return true
-				} else { // finish_reason case
-					if len(lastToolCallChoice.Delta.ToolCalls) > 0 {
-						lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
-						if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
-							lastArgs.Arguments = "{}"
-							response.Choices[len(response.Choices)-1].Delta.Content = nil
-							response.Choices[len(response.Choices)-1].Delta.ToolCalls = lastToolCallChoice.Delta.ToolCalls
-						}
+				}
+				if len(lastToolCallChoice.Delta.ToolCalls) > 0 {
+					lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
+					if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
+						lastArgs.Arguments = "{}"
+						response.Choices[len(response.Choices)-1].Delta.Content = nil
+						response.Choices[len(response.Choices)-1].Delta.ToolCalls = lastToolCallChoice.Delta.ToolCalls
 					}
 				}
 			}
 			if response == nil {
 				return true
 			}
-			response.Id = id
+			response.ID = id
 			response.Model = c.GetString(ctxkey.OriginalModel)
 			response.Created = createdTime
 

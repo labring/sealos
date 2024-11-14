@@ -21,7 +21,7 @@ func ValidateTextRequest(textRequest *model.GeneralOpenAIRequest, relayMode int)
 			return errors.New("field prompt is required")
 		}
 	case relaymode.ChatCompletions:
-		if textRequest.Messages == nil || len(textRequest.Messages) == 0 {
+		if len(textRequest.Messages) == 0 {
 			return errors.New("field messages is required")
 		}
 	case relaymode.Embeddings:

@@ -38,7 +38,7 @@ func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.Er
 		return openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError), nil
 	}
 
-	aliResponse, err := asyncTaskWait(aliTaskResponse.Output.TaskId, apiKey)
+	aliResponse, err := asyncTaskWait(aliTaskResponse.Output.TaskID, apiKey)
 	if err != nil {
 		return openai.ErrorWrapper(err, "ali_async_task_wait_failed", http.StatusInternalServerError), nil
 	}
@@ -140,7 +140,7 @@ func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *ope
 		var b64Json string
 		if responseFormat == "b64_json" {
 			// 读取 data.Url 的图片数据并转存到 b64Json
-			imageData, err := getImageData(data.Url)
+			imageData, err := getImageData(data.URL)
 			if err != nil {
 				// 处理获取图片数据失败的情况
 				logger.SysError("getImageData Error getting image data: " + err.Error())
@@ -155,7 +155,7 @@ func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *ope
 		}
 
 		imageResponse.Data = append(imageResponse.Data, openai.ImageData{
-			Url:           data.Url,
+			URL:           data.URL,
 			B64Json:       b64Json,
 			RevisedPrompt: "",
 		})

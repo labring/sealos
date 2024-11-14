@@ -41,7 +41,7 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
 	cozeRequest := Request{
 		Stream: textRequest.Stream,
 		User:   textRequest.User,
-		BotId:  strings.TrimPrefix(textRequest.Model, "bot-"),
+		BotID:  strings.TrimPrefix(textRequest.Model, "bot-"),
 	}
 	for i, message := range textRequest.Messages {
 		if i == len(textRequest.Messages)-1 {
@@ -76,7 +76,7 @@ func StreamResponseCoze2OpenAI(cozeResponse *StreamResponse) (*openai.ChatComple
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
 	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
-	openaiResponse.Id = cozeResponse.ConversationId
+	openaiResponse.ID = cozeResponse.ConversationID
 	return &openaiResponse, response
 }
 
@@ -98,7 +98,7 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 		FinishReason: "stop",
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", cozeResponse.ConversationId),
+		ID:      fmt.Sprintf("chatcmpl-%s", cozeResponse.ConversationID),
 		Model:   "coze-bot",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
@@ -162,7 +162,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &responseText
 }
 
-func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *string) {
+func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *string) {
 	defer resp.Body.Close()
 
 	var cozeResponse Response

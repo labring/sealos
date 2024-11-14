@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultAccountUrl     = "http://account-service.account-system.svc.cluster.local:2333"
+	defaultAccountURL     = "http://account-service.account-system.svc.cluster.local:2333"
 	balancePrecision      = 1000000
 	appType               = "LLM-TOKEN"
 	sealosRequester       = "sealos-admin"
@@ -28,7 +28,7 @@ const (
 
 var (
 	_                       GroupBalance = (*Sealos)(nil)
-	sealosHttpClient                     = &http.Client{}
+	sealosHTTPClient                     = &http.Client{}
 	decimalBalancePrecision              = decimal.NewFromInt(balancePrecision)
 	minConsumeAmount                     = decimal.NewFromInt(1)
 	jwtToken                string
@@ -37,25 +37,25 @@ var (
 )
 
 type Sealos struct {
-	accountUrl string
+	accountURL string
 }
 
 // FIXME: 如果获取余额能成功，但是消费永远失败，需要加一个失败次数限制，如果失败次数超过一定阈值，暂停服务
-func InitSealos(jwtKey string, accountUrl string) error {
+func InitSealos(jwtKey string, accountURL string) error {
 	token, err := newSealosToken(jwtKey)
 	if err != nil {
 		return fmt.Errorf("failed to generate sealos jwt token: %s", err)
 	}
 	jwtToken = token
-	Default = NewSealos(accountUrl)
+	Default = NewSealos(accountURL)
 	return nil
 }
 
-func NewSealos(accountUrl string) *Sealos {
-	if accountUrl == "" {
-		accountUrl = defaultAccountUrl
+func NewSealos(accountURL string) *Sealos {
+	if accountURL == "" {
+		accountURL = defaultAccountURL
 	}
-	return &Sealos{accountUrl: accountUrl}
+	return &Sealos{accountURL: accountURL}
 }
 
 type sealosClaims struct {
@@ -142,7 +142,7 @@ func cacheDecreaseGroupBalance(ctx context.Context, group string, amount int64) 
 func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
 	if cache, err := cacheGetGroupBalance(ctx, group); err == nil && cache.UserUID != "" {
 		return decimal.NewFromInt(cache.Balance).Div(decimalBalancePrecision).InexactFloat64(),
-			newSealosPostGroupConsumer(s.accountUrl, group, cache.UserUID, cache.Balance), nil
+			newSealosPostGroupConsumer(s.accountURL, group, cache.UserUID, cache.Balance), nil
 	} else if err != nil && err != redis.Nil {
 		logger.Errorf(ctx, "get group (%s) balance cache failed: %s", group, err)
 	}
@@ -160,18 +160,18 @@ func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float
 	}
 
 	return decimal.NewFromInt(balance).Div(decimalBalancePrecision).InexactFloat64(),
-		newSealosPostGroupConsumer(s.accountUrl, group, userUID, balance), nil
+		newSealosPostGroupConsumer(s.accountURL, group, userUID, balance), nil
 }
 
 func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance int64, userUID string, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		fmt.Sprintf("%s/admin/v1alpha1/account-with-workspace?namespace=%s", s.accountUrl, group), nil)
+		fmt.Sprintf("%s/admin/v1alpha1/account-with-workspace?namespace=%s", s.accountURL, group), nil)
 	if err != nil {
 		return 0, "", err
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtToken))
-	resp, err := sealosHttpClient.Do(req)
+	resp, err := sealosHTTPClient.Do(req)
 	if err != nil {
 		return 0, "", err
 	}
@@ -195,22 +195,22 @@ func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance
 }
 
 type SealosPostGroupConsumer struct {
-	accountUrl string
+	accountURL string
 	group      string
 	uid        string
 	balance    int64
 }
 
-func newSealosPostGroupConsumer(accountUrl, group, uid string, balance int64) *SealosPostGroupConsumer {
+func newSealosPostGroupConsumer(accountURL, group, uid string, balance int64) *SealosPostGroupConsumer {
 	return &SealosPostGroupConsumer{
-		accountUrl: accountUrl,
+		accountURL: accountURL,
 		group:      group,
 		uid:        uid,
 		balance:    balance,
 	}
 }
 
-func (s *SealosPostGroupConsumer) GetBalance(ctx context.Context) (float64, error) {
+func (s *SealosPostGroupConsumer) GetBalance(_ context.Context) (float64, error) {
 	return decimal.NewFromInt(s.balance).Div(decimalBalancePrecision).InexactFloat64(), nil
 }
 
@@ -249,13 +249,13 @@ func (s *SealosPostGroupConsumer) postConsume(ctx context.Context, amount int64,
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		fmt.Sprintf("%s/admin/v1alpha1/charge-billing", s.accountUrl), bytes.NewBuffer(reqBody))
+		fmt.Sprintf("%s/admin/v1alpha1/charge-billing", s.accountURL), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtToken))
-	resp, err := sealosHttpClient.Do(req)
+	resp, err := sealosHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("post group (%s) consume failed: %w", s.group, err)
 	}

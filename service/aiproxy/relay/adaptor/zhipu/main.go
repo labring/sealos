@@ -97,7 +97,7 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *Request {
 
 func responseZhipu2OpenAI(response *Response) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
-		Id:      response.Data.TaskId,
+		ID:      response.Data.TaskID,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: make([]openai.TextResponseChoice, 0, len(response.Data.Choices)),
@@ -137,7 +137,7 @@ func streamMetaResponseZhipu2OpenAI(zhipuResponse *StreamMetaResponse) (*openai.
 	choice.Delta.Content = ""
 	choice.FinishReason = &constant.StopFinishReason
 	response := openai.ChatCompletionsStreamResponse{
-		Id:      zhipuResponse.RequestId,
+		ID:      zhipuResponse.RequestID,
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "chatglm",

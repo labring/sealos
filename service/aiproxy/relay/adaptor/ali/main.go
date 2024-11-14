@@ -91,7 +91,7 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStat
 			Error: model.Error{
 				Message: aliResponse.Message,
 				Type:    aliResponse.Code,
-				Param:   aliResponse.RequestId,
+				Param:   aliResponse.RequestID,
 				Code:    aliResponse.Code,
 			},
 			StatusCode: resp.StatusCode,
@@ -130,7 +130,7 @@ func embeddingResponseAli2OpenAI(response *EmbeddingResponse) *openai.EmbeddingR
 
 func responseAli2OpenAI(response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
-		Id:      response.RequestId,
+		ID:      response.RequestID,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: response.Output.Choices,
@@ -155,7 +155,7 @@ func streamResponseAli2OpenAI(aliResponse *ChatResponse) *openai.ChatCompletions
 		choice.FinishReason = &finishReason
 	}
 	response := openai.ChatCompletionsStreamResponse{
-		Id:      aliResponse.RequestId,
+		ID:      aliResponse.RequestID,
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "qwen",
@@ -238,7 +238,7 @@ func Handler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *
 			Error: model.Error{
 				Message: aliResponse.Message,
 				Type:    aliResponse.Code,
-				Param:   aliResponse.RequestId,
+				Param:   aliResponse.RequestID,
 				Code:    aliResponse.Code,
 			},
 			StatusCode: resp.StatusCode,

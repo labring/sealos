@@ -11,46 +11,46 @@ var (
 	metricFailChan    = make(chan int, config.MetricFailChanSize)
 )
 
-func consumeSuccess(channelId int) {
-	if len(store[channelId]) > config.MetricQueueSize {
-		store[channelId] = store[channelId][1:]
+func consumeSuccess(channelID int) {
+	if len(store[channelID]) > config.MetricQueueSize {
+		store[channelID] = store[channelID][1:]
 	}
-	store[channelId] = append(store[channelId], true)
+	store[channelID] = append(store[channelID], true)
 }
 
-func consumeFail(channelId int) (bool, float64) {
-	if len(store[channelId]) > config.MetricQueueSize {
-		store[channelId] = store[channelId][1:]
+func consumeFail(channelID int) (bool, float64) {
+	if len(store[channelID]) > config.MetricQueueSize {
+		store[channelID] = store[channelID][1:]
 	}
-	store[channelId] = append(store[channelId], false)
+	store[channelID] = append(store[channelID], false)
 	successCount := 0
-	for _, success := range store[channelId] {
+	for _, success := range store[channelID] {
 		if success {
 			successCount++
 		}
 	}
-	successRate := float64(successCount) / float64(len(store[channelId]))
-	if len(store[channelId]) < config.MetricQueueSize {
+	successRate := float64(successCount) / float64(len(store[channelID]))
+	if len(store[channelID]) < config.MetricQueueSize {
 		return false, successRate
 	}
 	if successRate < config.MetricSuccessRateThreshold {
-		store[channelId] = make([]bool, 0)
+		store[channelID] = make([]bool, 0)
 		return true, successRate
 	}
 	return false, successRate
 }
 
 func metricSuccessConsumer() {
-	for channelId := range metricSuccessChan {
-		consumeSuccess(channelId)
+	for channelID := range metricSuccessChan {
+		consumeSuccess(channelID)
 	}
 }
 
 func metricFailConsumer() {
-	for channelId := range metricFailChan {
-		disable, _ := consumeFail(channelId)
+	for channelID := range metricFailChan {
+		disable, _ := consumeFail(channelID)
 		if disable {
-			model.DisableChannelById(channelId)
+			_ = model.DisableChannelByID(channelID)
 		}
 	}
 }
@@ -62,15 +62,15 @@ func init() {
 	}
 }
 
-func Emit(channelId int, success bool) {
+func Emit(channelID int, success bool) {
 	if !config.EnableMetric {
 		return
 	}
 	go func() {
 		if success {
-			metricSuccessChan <- channelId
+			metricSuccessChan <- channelID
 		} else {
-			metricFailChan <- channelId
+			metricFailChan <- channelID
 		}
 	}()
 }

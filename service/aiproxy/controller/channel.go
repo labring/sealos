@@ -13,7 +13,7 @@ import (
 
 func GetChannels(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -94,7 +94,7 @@ func AddChannels(c *gin.Context) {
 func SearchChannels(c *gin.Context) {
 	keyword := c.Query("keyword")
 	p, _ := strconv.Atoi(c.Query("p"))
-	p -= 1
+	p--
 	if p < 0 {
 		p = 0
 	}
@@ -137,7 +137,7 @@ func GetChannel(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelById(id, false)
+	channel, err := model.GetChannelByID(id, false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -220,7 +220,7 @@ func AddChannel(c *gin.Context) {
 
 func DeleteChannel(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	err := model.DeleteChannelById(id)
+	err := model.DeleteChannelByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -236,12 +236,12 @@ func DeleteChannel(c *gin.Context) {
 
 type UpdateChannelRequest struct {
 	AddChannelRequest
-	Id int `json:"id"`
+	ID int `json:"id"`
 }
 
 func (r *UpdateChannelRequest) ToChannel() *model.Channel {
 	c := r.AddChannelRequest.ToChannel()
-	c.Id = r.Id
+	c.ID = r.ID
 	return c
 }
 
@@ -268,7 +268,7 @@ func UpdateChannel(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data": UpdateChannelRequest{
-			Id: ch.Id,
+			ID: ch.ID,
 			AddChannelRequest: AddChannelRequest{
 				Type:         ch.Type,
 				Name:         ch.Name,
@@ -299,7 +299,7 @@ func UpdateChannelStatus(c *gin.Context) {
 		})
 		return
 	}
-	err = model.UpdateChannelStatusById(id, status.Status)
+	err = model.UpdateChannelStatusByID(id, status.Status)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

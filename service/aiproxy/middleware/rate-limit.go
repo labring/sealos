@@ -60,20 +60,19 @@ func RateLimit(ctx context.Context, key string, maxRequestNum int, duration time
 	}
 	if common.RedisEnabled {
 		return redisRateLimitRequest(ctx, key, maxRequestNum, duration)
-	} else {
-		// It's safe to call multi times.
-		inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
-		return inMemoryRateLimiter.Request(key, maxRequestNum, duration), nil
 	}
+	// It's safe to call multi times.
+	inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
+	return inMemoryRateLimiter.Request(key, maxRequestNum, duration), nil
 }
 
 func GlobalAPIRateLimit(c *gin.Context) {
-	globalApiRateLimitNum := config.GetGlobalApiRateLimitNum()
-	if globalApiRateLimitNum <= 0 {
+	globalAPIRateLimitNum := config.GetGlobalAPIRateLimitNum()
+	if globalAPIRateLimitNum <= 0 {
 		c.Next()
 		return
 	}
-	ok, err := RateLimit(c.Request.Context(), "global_qpm", int(globalApiRateLimitNum), time.Minute)
+	ok, err := RateLimit(c.Request.Context(), "global_qpm", int(globalAPIRateLimitNum), time.Minute)
 	if err != nil {
 		fmt.Println(err.Error())
 		c.Status(http.StatusInternalServerError)

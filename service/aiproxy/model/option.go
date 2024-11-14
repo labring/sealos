@@ -35,7 +35,7 @@ func InitOptionMap() {
 	config.OptionMap["ModelPrice"] = billingprice.ModelPrice2JSONString()
 	config.OptionMap["CompletionPrice"] = billingprice.CompletionPrice2JSONString()
 	config.OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
-	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalApiRateLimitNum(), 10)
+	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
 	config.OptionMap["DefaultGroupQPM"] = strconv.FormatInt(config.GetDefaultGroupQPM(), 10)
 	defaultChannelModelsJSON, _ := json.Marshal(config.GetDefaultChannelModels())
 	config.OptionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
@@ -103,21 +103,26 @@ func UpdateOptions(options map[string]string) error {
 
 var ErrUnknownOptionKey = errors.New("unknown option key")
 
+func isTrue(value string) bool {
+	result, _ := strconv.ParseBool(value)
+	return result
+}
+
 func updateOptionMap(key string, value string) (err error) {
 	config.OptionMapRWMutex.Lock()
 	defer config.OptionMapRWMutex.Unlock()
 	config.OptionMap[key] = value
 	switch key {
 	case "DisableServe":
-		config.SetDisableServe(value == "true")
+		config.SetDisableServe(isTrue(value))
 	case "AutomaticDisableChannelEnabled":
-		config.SetAutomaticDisableChannelEnabled(value == "true")
+		config.SetAutomaticDisableChannelEnabled(isTrue(value))
 	case "AutomaticEnableChannelWhenTestSucceedEnabled":
-		config.SetAutomaticEnableChannelWhenTestSucceedEnabled(value == "true")
+		config.SetAutomaticEnableChannelWhenTestSucceedEnabled(isTrue(value))
 	case "ApproximateTokenEnabled":
-		config.SetApproximateTokenEnabled(value == "true")
+		config.SetApproximateTokenEnabled(isTrue(value))
 	case "BillingEnabled":
-		billingprice.SetBillingEnabled(value == "true")
+		billingprice.SetBillingEnabled(isTrue(value))
 	case "GroupMaxTokenNum":
 		groupMaxTokenNum, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
@@ -129,11 +134,11 @@ func updateOptionMap(key string, value string) (err error) {
 	case "GeminiVersion":
 		config.SetGeminiVersion(value)
 	case "GlobalApiRateLimitNum":
-		globalApiRateLimitNum, err := strconv.ParseInt(value, 10, 64)
+		globalAPIRateLimitNum, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return err
 		}
-		config.SetGlobalApiRateLimitNum(globalApiRateLimitNum)
+		config.SetGlobalAPIRateLimitNum(globalAPIRateLimitNum)
 	case "DefaultGroupQPM":
 		defaultGroupQPM, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {

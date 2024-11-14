@@ -122,7 +122,7 @@ func ResponseCohere2OpenAI(cohereResponse *Response) *openai.TextResponse {
 		FinishReason: stopReasonCohere2OpenAI(cohereResponse.FinishReason),
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", cohereResponse.ResponseID),
+		ID:      fmt.Sprintf("chatcmpl-%s", cohereResponse.ResponseID),
 		Model:   "model",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
@@ -162,7 +162,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 			continue
 		}
 
-		response.Id = fmt.Sprintf("chatcmpl-%d", createdTime)
+		response.ID = fmt.Sprintf("chatcmpl-%d", createdTime)
 		response.Model = c.GetString("original_model")
 		response.Created = createdTime
 
@@ -181,7 +181,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	var cohereResponse Response

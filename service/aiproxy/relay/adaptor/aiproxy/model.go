@@ -3,7 +3,7 @@ package aiproxy
 type LibraryRequest struct {
 	Model     string `json:"model"`
 	Query     string `json:"query"`
-	LibraryId string `json:"libraryId"`
+	LibraryID string `json:"libraryId"`
 	Stream    bool   `json:"stream"`
 }
 

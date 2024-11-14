@@ -72,13 +72,13 @@ func ConvertRequest(textRequest *relaymodel.GeneralOpenAIRequest) *Request {
 }
 
 func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelId, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
 
 	awsReq := &bedrockruntime.InvokeModelInput{
-		ModelId:     aws.String(awsModelId),
+		ModelId:     aws.String(awsModelID),
 		Accept:      aws.String("application/json"),
 		ContentType: aws.String("application/json"),
 	}
@@ -132,7 +132,7 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 		FinishReason: llamaResponse.StopReason,
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: []openai.TextResponseChoice{choice},
@@ -142,13 +142,13 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 
 func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	createdTime := helper.GetTimestamp()
-	awsModelId, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
 
 	awsReq := &bedrockruntime.InvokeModelWithResponseStreamInput{
-		ModelId:     aws.String(awsModelId),
+		ModelId:     aws.String(awsModelID),
 		Accept:      aws.String("application/json"),
 		ContentType: aws.String("application/json"),
 	}
@@ -172,7 +172,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	var usage relaymodel.Usage
-	c.Stream(func(w io.Writer) bool {
+	c.Stream(func(_ io.Writer) bool {
 		event, ok := <-stream.Events()
 		if !ok {
 			c.Render(-1, common.CustomEvent{Data: "data: [DONE]"})
@@ -196,7 +196,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 				usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 			}
 			response := StreamResponseLlama2OpenAI(&llamaResp)
-			response.Id = fmt.Sprintf("chatcmpl-%s", random.GetUUID())
+			response.ID = fmt.Sprintf("chatcmpl-%s", random.GetUUID())
 			response.Model = c.GetString(ctxkey.OriginalModel)
 			response.Created = createdTime
 			err = render.ObjectData(c, response)

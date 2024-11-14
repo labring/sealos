@@ -52,7 +52,7 @@ func responseTencent2OpenAI(response *ChatResponse) *openai.TextResponse {
 
 func streamResponseTencent2OpenAI(TencentResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
 	response := openai.ChatCompletionsStreamResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "tencent-hunyuan",
@@ -148,14 +148,14 @@ func Handler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *
 	return nil, &fullTextResponse.Usage
 }
 
-func ParseConfig(config string) (appId int64, secretId string, secretKey string, err error) {
+func ParseConfig(config string) (appID int64, secretID string, secretKey string, err error) {
 	parts := strings.Split(config, "|")
 	if len(parts) != 3 {
 		err = errors.New("invalid tencent config")
 		return
 	}
-	appId, err = strconv.ParseInt(parts[0], 10, 64)
-	secretId = parts[1]
+	appID, err = strconv.ParseInt(parts[0], 10, 64)
+	secretID = parts[1]
 	secretKey = parts[2]
 	return
 }
@@ -171,7 +171,7 @@ func hmacSha256(s, key string) string {
 	return conv.BytesToString(hashed.Sum(nil))
 }
 
-func GetSign(req *model.GeneralOpenAIRequest, adaptor *Adaptor, secId, secKey string) string {
+func GetSign(req *model.GeneralOpenAIRequest, adaptor *Adaptor, secID, secKey string) string {
 	// build canonical request string
 	host := "hunyuan.tencentcloudapi.com"
 	httpRequestMethod := "POST"
@@ -213,7 +213,7 @@ func GetSign(req *model.GeneralOpenAIRequest, adaptor *Adaptor, secId, secKey st
 	// build authorization
 	authorization := fmt.Sprintf("%s Credential=%s/%s, SignedHeaders=%s, Signature=%s",
 		algorithm,
-		secId,
+		secID,
 		credentialScope,
 		signedHeaders,
 		signature)

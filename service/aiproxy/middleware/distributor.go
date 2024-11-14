@@ -25,14 +25,14 @@ func Distribute(c *gin.Context) {
 	group := c.GetString(ctxkey.Group)
 	requestModel := c.GetString(ctxkey.RequestModel)
 	var channel *model.Channel
-	channelId, ok := c.Get(ctxkey.SpecificChannelId)
+	channelID, ok := c.Get(ctxkey.SpecificChannelID)
 	if ok {
-		id, err := strconv.Atoi(channelId.(string))
+		id, err := strconv.Atoi(channelID.(string))
 		if err != nil {
 			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 Id")
 			return
 		}
-		channel, err = model.GetChannelById(id, false)
+		channel, err = model.GetChannelByID(id, false)
 		if err != nil {
 			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 Id")
 			return
@@ -47,7 +47,7 @@ func Distribute(c *gin.Context) {
 		if err != nil {
 			message := fmt.Sprintf("当前分组 %s 下对于模型 %s 无可用渠道", group, requestModel)
 			if channel != nil {
-				logger.SysError(fmt.Sprintf("渠道不存在：%d", channel.Id))
+				logger.SysError(fmt.Sprintf("渠道不存在：%d", channel.ID))
 				message = "数据库一致性已被破坏，请联系管理员"
 			}
 			abortWithMessage(c, http.StatusServiceUnavailable, message)
@@ -60,7 +60,7 @@ func Distribute(c *gin.Context) {
 
 func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, modelName string) {
 	c.Set(ctxkey.Channel, channel.Type)
-	c.Set(ctxkey.ChannelId, channel.Id)
+	c.Set(ctxkey.ChannelID, channel.ID)
 	c.Set(ctxkey.APIKey, channel.Key)
 	c.Set(ctxkey.ChannelName, channel.Name)
 	c.Set(ctxkey.ModelMapping, channel.ModelMapping)

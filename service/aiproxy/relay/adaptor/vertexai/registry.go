@@ -10,15 +10,15 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-type VertexAIModelType int
+type ModelType int
 
 const (
-	VerterAIClaude VertexAIModelType = iota + 1
+	VerterAIClaude ModelType = iota + 1
 	VerterAIGemini
 )
 
 var (
-	modelMapping = map[string]VertexAIModelType{}
+	modelMapping = map[string]ModelType{}
 	modelList    = []string{}
 )
 

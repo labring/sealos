@@ -50,11 +50,11 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		requestURL := strings.Split(meta.RequestURLPath, "?")[0]
 		requestURL = fmt.Sprintf("%s?api-version=%s", requestURL, meta.Config.APIVersion)
 		task := strings.TrimPrefix(requestURL, "/v1/")
-		model_ := meta.ActualModelName
-		model_ = strings.Replace(model_, ".", "", -1)
+		model := meta.ActualModelName
+		model = strings.Replace(model, ".", "", -1)
 		// https://github.com/labring/sealos/service/aiproxy/issues/1191
 		// {your endpoint}/openai/deployments/{your azure_model}/chat/completions?api-version={api_version}
-		requestURL = fmt.Sprintf("/openai/deployments/%s/%s", model_, task)
+		requestURL = fmt.Sprintf("/openai/deployments/%s/%s", model, task)
 		return GetFullRequestURL(meta.BaseURL, requestURL, meta.ChannelType), nil
 	case channeltype.Minimax:
 		return minimax.GetRequestURL(meta)
@@ -84,7 +84,7 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *model.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
@@ -124,13 +124,19 @@ func (a *Adaptor) ConvertSTTRequest(request *http.Request) (io.ReadCloser, error
 	for key, values := range request.MultipartForm.Value {
 		for _, value := range values {
 			if key == "model" {
-				multipartWriter.WriteField(key, a.meta.ActualModelName)
+				err = multipartWriter.WriteField(key, a.meta.ActualModelName)
+				if err != nil {
+					return nil, err
+				}
 				continue
 			}
 			if key == "response_format" {
 				a.responseFormat = value
 			}
-			multipartWriter.WriteField(key, value)
+			err = multipartWriter.WriteField(key, value)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

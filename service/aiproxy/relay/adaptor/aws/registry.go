@@ -6,14 +6,14 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 )
 
-type AwsModelType int
+type ModelType int
 
 const (
-	AwsClaude AwsModelType = iota + 1
+	AwsClaude ModelType = iota + 1
 	AwsLlama3
 )
 
-var adaptors = map[string]AwsModelType{}
+var adaptors = map[string]ModelType{}
 
 func init() {
 	for model := range claude.AwsModelIDMap {

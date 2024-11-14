@@ -17,25 +17,19 @@ import (
 
 type Adaptor struct{}
 
-func (a *Adaptor) Init(meta *meta.Meta) {
+func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	// https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
 	suffix := "chat/"
-	if strings.HasPrefix(meta.ActualModelName, "Embedding") {
-		suffix = "embeddings/"
-	}
-	if strings.HasPrefix(meta.ActualModelName, "bge-large") {
-		suffix = "embeddings/"
-	}
-	if strings.HasPrefix(meta.ActualModelName, "tao-8k") {
+	if strings.HasPrefix(meta.ActualModelName, "Embedding") ||
+		strings.HasPrefix(meta.ActualModelName, "bge-large") ||
+		strings.HasPrefix(meta.ActualModelName, "tao-8k") {
 		suffix = "embeddings/"
 	}
 	switch meta.ActualModelName {
-	case "ERNIE-4.0":
-		suffix += "completions_pro"
-	case "ERNIE-Bot-4":
+	case "ERNIE-4.0-8K", "ERNIE-4.0", "ERNIE-Bot-4":
 		suffix += "completions_pro"
 	case "ERNIE-Bot":
 		suffix += "completions"
@@ -43,8 +37,6 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		suffix += "eb-instant"
 	case "ERNIE-Speed":
 		suffix += "ernie_speed"
-	case "ERNIE-4.0-8K":
-		suffix += "completions_pro"
 	case "ERNIE-3.5-8K":
 		suffix += "completions"
 	case "ERNIE-3.5-8K-0205":
@@ -94,7 +86,7 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}

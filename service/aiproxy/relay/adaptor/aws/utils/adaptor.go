@@ -31,11 +31,11 @@ func (a *Adaptor) Init(meta *meta.Meta) {
 	})
 }
 
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
+func (a *Adaptor) GetRequestURL(_ *meta.Meta) (string, error) {
 	return "", nil
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
+func (a *Adaptor) SetupRequestHeader(_ *gin.Context, _ *http.Request, _ *meta.Meta) error {
 	return nil
 }
 
@@ -46,6 +46,6 @@ func (a *Adaptor) ConvertImageRequest(request *model.ImageRequest) (any, error) 
 	return request, nil
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
+func (a *Adaptor) DoRequest(_ *gin.Context, _ *meta.Meta, _ io.Reader) (*http.Response, error) {
 	return nil, nil
 }

@@ -7,13 +7,11 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 )
 
-func RequestId() func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := helper.GenRequestID()
-		c.Set(helper.RequestIdKey, id)
-		ctx := context.WithValue(c.Request.Context(), helper.RequestIdKey, id)
-		c.Request = c.Request.WithContext(ctx)
-		c.Header(helper.RequestIdKey, id)
-		c.Next()
-	}
+func RequestID(c *gin.Context) {
+	id := helper.GenRequestID()
+	c.Set(string(helper.RequestIDKey), id)
+	ctx := context.WithValue(c.Request.Context(), helper.RequestIDKey, id)
+	c.Request = c.Request.WithContext(ctx)
+	c.Header(string(helper.RequestIDKey), id)
+	c.Next()
 }

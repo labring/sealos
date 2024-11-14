@@ -12,6 +12,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/env"
+
+	// import fastjson serializer
 	_ "github.com/labring/sealos/service/aiproxy/common/fastJSONSerializer"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"gorm.io/driver/mysql"
@@ -21,8 +23,8 @@ import (
 )
 
 var (
-	DB     *gorm.DB
-	LOG_DB *gorm.DB
+	DB    *gorm.DB
+	LogDB *gorm.DB
 )
 
 func chooseDB(envName string) (*gorm.DB, error) {
@@ -137,7 +139,7 @@ func migrateDB() error {
 
 func InitLogDB() {
 	if os.Getenv("LOG_SQL_DSN") == "" {
-		LOG_DB = DB
+		LogDB = DB
 		if config.DisableAutoMigrateDB {
 			return
 		}
@@ -152,13 +154,13 @@ func InitLogDB() {
 
 	logger.SysLog("using secondary database for table logs")
 	var err error
-	LOG_DB, err = chooseDB("LOG_SQL_DSN")
+	LogDB, err = chooseDB("LOG_SQL_DSN")
 	if err != nil {
 		logger.FatalLog("failed to initialize secondary database: " + err.Error())
 		return
 	}
 
-	setDBConns(LOG_DB)
+	setDBConns(LogDB)
 
 	if config.DisableAutoMigrateDB {
 		return
@@ -175,7 +177,7 @@ func InitLogDB() {
 
 func migrateLOGDB() error {
 	var err error
-	if err = LOG_DB.AutoMigrate(
+	if err = LogDB.AutoMigrate(
 		&Log{},
 		&ConsumeError{},
 	); err != nil {
@@ -211,8 +213,8 @@ func closeDB(db *gorm.DB) error {
 }
 
 func CloseDB() error {
-	if LOG_DB != DB {
-		err := closeDB(LOG_DB)
+	if LogDB != DB {
+		err := closeDB(LogDB)
 		if err != nil {
 			return err
 		}

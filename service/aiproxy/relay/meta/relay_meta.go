@@ -18,11 +18,11 @@ type Meta struct {
 	RequestURLPath  string
 	BaseURL         string
 	ActualModelName string
-	ChannelId       int
+	ChannelID       int
 	ChannelType     int
 	APIType         int
 	Mode            int
-	TokenId         int
+	TokenID         int
 	PromptTokens    int
 	IsStream        bool
 }
@@ -31,8 +31,8 @@ func GetByContext(c *gin.Context) *Meta {
 	meta := Meta{
 		Mode:            relaymode.GetByPath(c.Request.URL.Path),
 		ChannelType:     c.GetInt(ctxkey.Channel),
-		ChannelId:       c.GetInt(ctxkey.ChannelId),
-		TokenId:         c.GetInt(ctxkey.TokenId),
+		ChannelID:       c.GetInt(ctxkey.ChannelID),
+		TokenID:         c.GetInt(ctxkey.TokenID),
 		TokenName:       c.GetString(ctxkey.TokenName),
 		Group:           c.GetString(ctxkey.Group),
 		ModelMapping:    c.GetStringMapString(ctxkey.ModelMapping),

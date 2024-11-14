@@ -32,17 +32,17 @@ var Cache = cache.New(50*time.Minute, 55*time.Minute)
 
 const defaultScope = "https://www.googleapis.com/auth/cloud-platform"
 
-func getToken(ctx context.Context, channelId int, adcJson string) (string, error) {
-	cacheKey := fmt.Sprintf("vertexai-token-%d", channelId)
+func getToken(ctx context.Context, channelID int, adcJSON string) (string, error) {
+	cacheKey := fmt.Sprintf("vertexai-token-%d", channelID)
 	if token, found := Cache.Get(cacheKey); found {
 		return token.(string), nil
 	}
 	adc := &ApplicationDefaultCredentials{}
-	if err := json.Unmarshal(conv.StringToBytes(adcJson), adc); err != nil {
+	if err := json.Unmarshal(conv.StringToBytes(adcJSON), adc); err != nil {
 		return "", fmt.Errorf("failed to decode credentials file: %w", err)
 	}
 
-	c, err := credentials.NewIamCredentialsClient(ctx, option.WithCredentialsJSON(conv.StringToBytes(adcJson)))
+	c, err := credentials.NewIamCredentialsClient(ctx, option.WithCredentialsJSON(conv.StringToBytes(adcJSON)))
 	if err != nil {
 		return "", fmt.Errorf("failed to create client: %w", err)
 	}

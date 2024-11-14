@@ -110,7 +110,7 @@ func GetAuthHeader(token string) http.Header {
 	return h
 }
 
-func GetResponseBody(method, url string, channel *model.Channel, headers http.Header) ([]byte, error) {
+func GetResponseBody(method, url string, _ *model.Channel, headers http.Header) ([]byte, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
@@ -310,7 +310,7 @@ func UpdateChannelBalance(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelById(id, false)
+	channel, err := model.GetChannelByID(id, false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -349,11 +349,10 @@ func updateAllChannelsBalance() error {
 		balance, err := updateChannelBalance(channel)
 		if err != nil {
 			continue
-		} else {
-			// err is nil & balance <= 0 means quota is used up
-			if balance <= 0 {
-				model.DisableChannelById(channel.Id)
-			}
+		}
+		// err is nil & balance <= 0 means quota is used up
+		if balance <= 0 {
+			_ = model.DisableChannelByID(channel.ID)
 		}
 		time.Sleep(time.Second)
 	}

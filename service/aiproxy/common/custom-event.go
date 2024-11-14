@@ -28,7 +28,7 @@ var dataReplacer = strings.NewReplacer(
 type CustomEvent struct {
 	Data  string
 	Event string
-	Id    string
+	ID    string
 	Retry uint
 }
 
@@ -41,7 +41,10 @@ const nn = "\n\n"
 var nnBytes = conv.StringToBytes(nn)
 
 func writeData(w io.Writer, data string) error {
-	dataReplacer.WriteString(w, data)
+	_, err := dataReplacer.WriteString(w, data)
+	if err != nil {
+		return err
+	}
 	if strings.HasPrefix(data, "data") {
 		_, err := w.Write(nnBytes)
 		return err

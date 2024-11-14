@@ -19,6 +19,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
+const toolUseType = "tool_use"
+
 func stopReasonClaude2OpenAI(reason *string) string {
 	if reason == nil {
 		return ""
@@ -30,7 +32,7 @@ func stopReasonClaude2OpenAI(reason *string) string {
 		return "stop"
 	case "max_tokens":
 		return "length"
-	case "tool_use":
+	case toolUseType:
 		return "tool_calls"
 	default:
 		return *reason
@@ -107,15 +109,15 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
 				content.Type = "tool_result"
 				content.Content = content.Text
 				content.Text = ""
-				content.ToolUseId = message.ToolCallId
+				content.ToolUseID = message.ToolCallID
 			}
 			claudeMessage.Content = append(claudeMessage.Content, content)
 			for i := range message.ToolCalls {
 				inputParam := make(map[string]any)
 				_ = json.Unmarshal(conv.StringToBytes(message.ToolCalls[i].Function.Arguments), &inputParam)
 				claudeMessage.Content = append(claudeMessage.Content, Content{
-					Type:  "tool_use",
-					Id:    message.ToolCalls[i].Id,
+					Type:  toolUseType,
+					ID:    message.ToolCalls[i].ID,
 					Name:  message.ToolCalls[i].Function.Name,
 					Input: inputParam,
 				})
@@ -136,7 +138,7 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
 				content.Source = &ImageSource{
 					Type: "base64",
 				}
-				mimeType, data, _ := image.GetImageFromUrl(part.ImageURL.Url)
+				mimeType, data, _ := image.GetImageFromURL(part.ImageURL.URL)
 				content.Source.MediaType = mimeType
 				content.Source.Data = data
 			}
@@ -161,9 +163,9 @@ func StreamResponseClaude2OpenAI(claudeResponse *StreamResponse) (*openai.ChatCo
 	case "content_block_start":
 		if claudeResponse.ContentBlock != nil {
 			responseText = claudeResponse.ContentBlock.Text
-			if claudeResponse.ContentBlock.Type == "tool_use" {
+			if claudeResponse.ContentBlock.Type == toolUseType {
 				tools = append(tools, model.Tool{
-					Id:   claudeResponse.ContentBlock.Id,
+					ID:   claudeResponse.ContentBlock.ID,
 					Type: "function",
 					Function: model.Function{
 						Name:      claudeResponse.ContentBlock.Name,
@@ -178,7 +180,7 @@ func StreamResponseClaude2OpenAI(claudeResponse *StreamResponse) (*openai.ChatCo
 			if claudeResponse.Delta.Type == "input_json_delta" {
 				tools = append(tools, model.Tool{
 					Function: model.Function{
-						Arguments: claudeResponse.Delta.PartialJson,
+						Arguments: claudeResponse.Delta.PartialJSON,
 					},
 				})
 			}
@@ -217,10 +219,10 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 	}
 	tools := make([]model.Tool, 0)
 	for _, v := range claudeResponse.Content {
-		if v.Type == "tool_use" {
+		if v.Type == toolUseType {
 			args, _ := json.Marshal(v.Input)
 			tools = append(tools, model.Tool{
-				Id:   v.Id,
+				ID:   v.ID,
 				Type: "function", // compatible with other OpenAI derivative applications
 				Function: model.Function{
 					Name:      v.Name,
@@ -240,7 +242,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 		FinishReason: stopReasonClaude2OpenAI(claudeResponse.StopReason),
 	}
 	fullTextResponse := openai.TextResponse{
-		Id:      fmt.Sprintf("chatcmpl-%s", claudeResponse.Id),
+		ID:      fmt.Sprintf("chatcmpl-%s", claudeResponse.ID),
 		Model:   claudeResponse.Model,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
@@ -296,18 +298,17 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		if meta != nil {
 			usage.PromptTokens += meta.Usage.InputTokens
 			usage.CompletionTokens += meta.Usage.OutputTokens
-			if len(meta.Id) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
+			if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
 				modelName = meta.Model
-				id = fmt.Sprintf("chatcmpl-%s", meta.Id)
+				id = fmt.Sprintf("chatcmpl-%s", meta.ID)
 				continue
-			} else { // finish_reason case
-				if len(lastToolCallChoice.Delta.ToolCalls) > 0 {
-					lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
-					if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
-						lastArgs.Arguments = "{}"
-						response.Choices[len(response.Choices)-1].Delta.Content = nil
-						response.Choices[len(response.Choices)-1].Delta.ToolCalls = lastToolCallChoice.Delta.ToolCalls
-					}
+			}
+			if len(lastToolCallChoice.Delta.ToolCalls) > 0 {
+				lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
+				if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
+					lastArgs.Arguments = "{}"
+					response.Choices[len(response.Choices)-1].Delta.Content = nil
+					response.Choices[len(response.Choices)-1].Delta.ToolCalls = lastToolCallChoice.Delta.ToolCalls
 				}
 			}
 		}
@@ -315,7 +316,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 			continue
 		}
 
-		response.Id = id
+		response.ID = id
 		response.Model = modelName
 		response.Created = createdTime
 
@@ -339,7 +340,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	var claudeResponse Response

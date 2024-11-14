@@ -2,7 +2,7 @@ package config
 
 import (
 	"os"
-	"strings"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,8 +16,8 @@ var (
 )
 
 var (
-	DebugEnabled    = strings.ToLower(os.Getenv("DEBUG")) == "true"
-	DebugSQLEnabled = strings.ToLower(os.Getenv("DEBUG_SQL")) == "true"
+	DebugEnabled, _    = strconv.ParseBool(os.Getenv("DEBUG"))
+	DebugSQLEnabled, _ = strconv.ParseBool(os.Getenv("DEBUG_SQL"))
 )
 
 var (
@@ -106,7 +106,7 @@ var (
 var AdminKey = env.String("ADMIN_KEY", "")
 
 var (
-	globalApiRateLimitNum      atomic.Int64
+	globalAPIRateLimitNum      atomic.Int64
 	defaultChannelModels       atomic.Value
 	defaultChannelModelMapping atomic.Value
 	defaultGroupQPM            atomic.Int64
@@ -119,12 +119,12 @@ func init() {
 }
 
 // 全局qpm，不是根据ip限制，而是所有请求共享一个qpm
-func GetGlobalApiRateLimitNum() int64 {
-	return globalApiRateLimitNum.Load()
+func GetGlobalAPIRateLimitNum() int64 {
+	return globalAPIRateLimitNum.Load()
 }
 
-func SetGlobalApiRateLimitNum(num int64) {
-	globalApiRateLimitNum.Store(num)
+func SetGlobalAPIRateLimitNum(num int64) {
+	globalAPIRateLimitNum.Store(num)
 }
 
 // group默认qpm，如果group没有设置qpm，则使用该qpm

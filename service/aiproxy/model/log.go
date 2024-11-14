@@ -17,16 +17,16 @@ type Log struct {
 	TokenName        string    `gorm:"index" json:"token_name"`
 	Endpoint         string    `gorm:"index" json:"endpoint"`
 	Content          string    `gorm:"type:text" json:"content"`
-	GroupId          string    `gorm:"index" json:"group"`
+	GroupID          string    `gorm:"index" json:"group"`
 	Model            string    `gorm:"index" json:"model"`
 	Price            float64   `json:"price"`
-	Id               int       `json:"id"`
+	ID               int       `json:"id"`
 	CompletionPrice  float64   `json:"completion_price"`
-	TokenId          int       `gorm:"index" json:"token_id"`
+	TokenID          int       `gorm:"index" json:"token_id"`
 	UsedAmount       float64   `gorm:"index" json:"used_amount"`
 	PromptTokens     int       `json:"prompt_tokens"`
 	CompletionTokens int       `json:"completion_tokens"`
-	ChannelId        int       `gorm:"index" json:"channel"`
+	ChannelID        int       `gorm:"index" json:"channel"`
 	Code             int       `gorm:"index" json:"code"`
 }
 
@@ -41,87 +41,88 @@ func (l *Log) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func RecordConsumeLog(ctx context.Context, group string, code int, channelId int, promptTokens int, completionTokens int, modelName string, tokenId int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
+func RecordConsumeLog(_ context.Context, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
 	log := &Log{
-		GroupId:          group,
+		GroupID:          group,
 		CreatedAt:        time.Now(),
 		Code:             code,
 		PromptTokens:     promptTokens,
 		CompletionTokens: completionTokens,
-		TokenId:          tokenId,
+		TokenID:          tokenID,
 		TokenName:        tokenName,
 		Model:            modelName,
 		UsedAmount:       amount,
 		Price:            price,
 		CompletionPrice:  completionPrice,
-		ChannelId:        channelId,
+		ChannelID:        channelID,
 		Endpoint:         endpoint,
 		Content:          content,
 	}
-	return LOG_DB.Create(log).Error
+	return LogDB.Create(log).Error
 }
 
+//nolint:goconst
 func getLogOrder(order string) string {
-	orderBy := "id desc"
 	switch order {
-	case "id":
-		orderBy = "id asc"
 	case "id-desc":
-		orderBy = "id desc"
+		return "id desc"
 	case "used_amount":
-		orderBy = "used_amount asc"
+		return "used_amount asc"
 	case "used_amount-desc":
-		orderBy = "used_amount desc"
+		return "used_amount desc"
 	case "price":
-		orderBy = "price asc"
+		return "price asc"
 	case "price-desc":
-		orderBy = "price desc"
+		return "price desc"
 	case "completion_price":
-		orderBy = "completion_price asc"
+		return "completion_price asc"
 	case "completion_price-desc":
-		orderBy = "completion_price desc"
+		return "completion_price desc"
 	case "token_id":
-		orderBy = "token_id asc"
+		return "token_id asc"
 	case "token_id-desc":
-		orderBy = "token_id desc"
+		return "token_id desc"
 	case "token_name":
-		orderBy = "token_name asc"
+		return "token_name asc"
 	case "token_name-desc":
-		orderBy = "token_name desc"
+		return "token_name desc"
 	case "prompt_tokens":
-		orderBy = "prompt_tokens asc"
+		return "prompt_tokens asc"
 	case "prompt_tokens-desc":
-		orderBy = "prompt_tokens desc"
+		return "prompt_tokens desc"
 	case "completion_tokens":
-		orderBy = "completion_tokens asc"
+		return "completion_tokens asc"
 	case "completion_tokens-desc":
-		orderBy = "completion_tokens desc"
+		return "completion_tokens desc"
 	case "endpoint":
-		orderBy = "endpoint asc"
+		return "endpoint asc"
 	case "endpoint-desc":
-		orderBy = "endpoint desc"
+		return "endpoint desc"
 	case "group":
-		orderBy = "group_id asc"
+		return "group_id asc"
 	case "group-desc":
-		orderBy = "group_id desc"
+		return "group_id desc"
 	case "created_at":
-		orderBy = "created_at asc"
+		return "created_at asc"
 	case "created_at-desc":
-		orderBy = "created_at desc"
+		return "created_at desc"
+	case "id":
+		return "id asc"
+	default:
+		return "id desc"
 	}
-	return orderBy
 }
 
-func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, tokenId int, tokenName string, startIdx int, num int, channel int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
-	tx := LOG_DB.Model(&Log{})
+func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
+	tx := LogDB.Model(&Log{})
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
 	}
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
-	if tokenId != 0 {
-		tx = tx.Where("token_id = ?", tokenId)
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
@@ -132,8 +133,8 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 	if !endTimestamp.IsZero() {
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
-	if channel != 0 {
-		tx = tx.Where("channel_id = ?", channel)
+	if channelID != 0 {
+		tx = tx.Where("channel_id = ?", channelID)
 	}
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
@@ -156,13 +157,13 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 	return logs, total, err
 }
 
-func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, tokenId int, tokenName string, startIdx int, num int, channel int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
-	tx := LOG_DB.Model(&Log{}).Where("group_id = ?", group)
+func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
+	tx := LogDB.Model(&Log{}).Where("group_id = ?", group)
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
 	}
-	if tokenId != 0 {
-		tx = tx.Where("token_id = ?", tokenId)
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
@@ -173,8 +174,8 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 	if !endTimestamp.IsZero() {
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
-	if channel != 0 {
-		tx = tx.Where("channel_id = ?", channel)
+	if channelID != 0 {
+		tx = tx.Where("channel_id = ?", channelID)
 	}
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
@@ -197,8 +198,8 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 	return logs, total, err
 }
 
-func SearchLogs(keyword string, page int, perPage int, code int, endpoint string, groupId string, tokenId int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channel int, order string) (logs []*Log, total int64, err error) {
-	tx := LOG_DB.Model(&Log{})
+func SearchLogs(keyword string, page int, perPage int, code int, endpoint string, groupID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
+	tx := LogDB.Model(&Log{})
 
 	// Handle exact match conditions for non-zero values
 	if code != 0 {
@@ -207,11 +208,11 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
 	}
-	if groupId != "" {
-		tx = tx.Where("group_id = ?", groupId)
+	if groupID != "" {
+		tx = tx.Where("group_id = ?", groupID)
 	}
-	if tokenId != 0 {
-		tx = tx.Where("token_id = ?", tokenId)
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
@@ -228,8 +229,8 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	if !endTimestamp.IsZero() {
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
-	if channel != 0 {
-		tx = tx.Where("channel_id = ?", channel)
+	if channelID != 0 {
+		tx = tx.Where("channel_id = ?", channelID)
 	}
 
 	// Handle keyword search for zero value fields
@@ -241,7 +242,7 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 			conditions = append(conditions, "code = ?")
 			values = append(values, keyword)
 		}
-		if channel == 0 {
+		if channelID == 0 {
 			conditions = append(conditions, "channel_id = ?")
 			values = append(values, keyword)
 		}
@@ -253,7 +254,7 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 			}
 			values = append(values, "%"+keyword+"%")
 		}
-		if groupId == "" {
+		if groupID == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "group_id ILIKE ?")
 			} else {
@@ -299,7 +300,7 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 		return nil, 0, nil
 	}
 
-	page -= 1
+	page--
 	if page < 0 {
 		page = 0
 	}
@@ -307,11 +308,11 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	return logs, total, err
 }
 
-func SearchGroupLogs(group string, keyword string, page int, perPage int, code int, endpoint string, tokenId int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channel int, order string) (logs []*Log, total int64, err error) {
+func SearchGroupLogs(group string, keyword string, page int, perPage int, code int, endpoint string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
 	if group == "" {
 		return nil, 0, errors.New("group is empty")
 	}
-	tx := LOG_DB.Model(&Log{}).Where("group_id = ?", group)
+	tx := LogDB.Model(&Log{}).Where("group_id = ?", group)
 
 	// Handle exact match conditions for non-zero values
 	if code != 0 {
@@ -320,8 +321,8 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
 	}
-	if tokenId != 0 {
-		tx = tx.Where("token_id = ?", tokenId)
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
@@ -338,8 +339,8 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 	if !endTimestamp.IsZero() {
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
-	if channel != 0 {
-		tx = tx.Where("channel_id = ?", channel)
+	if channelID != 0 {
+		tx = tx.Where("channel_id = ?", channelID)
 	}
 
 	// Handle keyword search for zero value fields
@@ -351,7 +352,7 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 			conditions = append(conditions, "code = ?")
 			values = append(values, keyword)
 		}
-		if channel == 0 {
+		if channelID == 0 {
 			conditions = append(conditions, "channel_id = ?")
 			values = append(values, keyword)
 		}
@@ -401,7 +402,7 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 		return nil, 0, nil
 	}
 
-	page -= 1
+	page--
 	if page < 0 {
 		page = 0
 	}
@@ -415,7 +416,7 @@ func SumUsedQuota(startTimestamp time.Time, endTimestamp time.Time, modelName st
 	if common.UsingPostgreSQL {
 		ifnull = "COALESCE"
 	}
-	tx := LOG_DB.Table("logs").Select(fmt.Sprintf("%s(sum(quota),0)", ifnull))
+	tx := LogDB.Table("logs").Select(fmt.Sprintf("%s(sum(quota),0)", ifnull))
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
@@ -446,7 +447,7 @@ func SumUsedToken(startTimestamp time.Time, endTimestamp time.Time, modelName st
 	if common.UsingPostgreSQL {
 		ifnull = "COALESCE"
 	}
-	tx := LOG_DB.Table("logs").Select(fmt.Sprintf("%s(sum(prompt_tokens),0) + %s(sum(completion_tokens),0)", ifnull, ifnull))
+	tx := LogDB.Table("logs").Select(fmt.Sprintf("%s(sum(prompt_tokens),0) + %s(sum(completion_tokens),0)", ifnull, ifnull))
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
@@ -470,12 +471,12 @@ func SumUsedToken(startTimestamp time.Time, endTimestamp time.Time, modelName st
 }
 
 func DeleteOldLog(timestamp time.Time) (int64, error) {
-	result := LOG_DB.Where("created_at < ?", timestamp).Delete(&Log{})
+	result := LogDB.Where("created_at < ?", timestamp).Delete(&Log{})
 	return result.RowsAffected, result.Error
 }
 
-func DeleteGroupLogs(groupId string) (int64, error) {
-	result := LOG_DB.Where("group_id = ?", groupId).Delete(&Log{})
+func DeleteGroupLogs(groupID string) (int64, error) {
+	result := LogDB.Where("group_id = ?", groupID).Delete(&Log{})
 	return result.RowsAffected, result.Error
 }
 
@@ -498,7 +499,7 @@ func SearchLogsByDayAndModel(group string, start time.Time, end time.Time) (LogS
 		groupSelect = "strftime('%Y-%m-%d', datetime(created_at, 'unixepoch')) as day"
 	}
 
-	err = LOG_DB.Raw(`
+	err = LogDB.Raw(`
 		SELECT `+groupSelect+`,
 		model, count(1) as request_count,
 		sum(prompt_tokens) as prompt_tokens,
