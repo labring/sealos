@@ -1,9 +1,8 @@
 module github.com/labring/sealos/service/aiproxy
 
-// +heroku goVersion go1.22.0
 go 1.22.7
 
-toolchain go1.23.3
+replace github.com/labring/sealos/service/aiproxy => ../aiproxy
 
 require (
 	cloud.google.com/go/iam v1.2.2

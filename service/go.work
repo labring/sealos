@@ -1,12 +1,13 @@
-go 1.22
+go 1.22.7
 
 use (
-	./database
-	./pay
-	./account
-	./launchpad
-	./exceptionmonitor
 	.
+	./account
+	./aiproxy
+	./database
+	./exceptionmonitor
+	./launchpad
+	./pay
 )
 
 replace (
