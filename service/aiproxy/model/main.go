@@ -176,14 +176,10 @@ func InitLogDB() {
 }
 
 func migrateLOGDB() error {
-	var err error
-	if err = LogDB.AutoMigrate(
+	return LogDB.AutoMigrate(
 		&Log{},
 		&ConsumeError{},
-	); err != nil {
-		return err
-	}
-	return nil
+	)
 }
 
 func setDBConns(db *gorm.DB) *sql.DB {
