@@ -152,7 +152,7 @@ export default function Desktop(props: any) {
         message({
           title: title,
           status: 'info',
-          duration: null
+          isClosable: true
         });
       } else {
         if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
@@ -160,7 +160,7 @@ export default function Desktop(props: any) {
         message({
           title: title,
           status: 'info',
-          duration: null
+          isClosable: true
         });
       }
     };

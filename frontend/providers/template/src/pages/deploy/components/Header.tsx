@@ -122,7 +122,12 @@ const Header = ({
         backgroundColor={'#FBFBFC'}
         border={' 1px solid rgba(255, 255, 255, 0.50)'}
       >
-        <Image src={templateDetail?.spec?.icon} alt="" width={'60px'} height={'60px'} />
+        <Image
+          src={templateDetail?.spec?.i18n?.[i18n.language]?.icon ?? templateDetail?.spec?.icon}
+          alt=""
+          width={'60px'}
+          height={'60px'}
+        />
       </Flex>
       <Flex ml={'24px'} w="520px" flexDirection={'column'}>
         <Flex alignItems={'center'} gap={'12px'}>

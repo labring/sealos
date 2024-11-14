@@ -163,7 +163,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                         border={' 1px solid rgba(255, 255, 255, 0.50)'}
                       >
                         <Image
-                          src={item?.spec?.icon}
+                          src={item.spec.i18n?.[i18n.language]?.icon ?? item?.spec?.icon}
                           alt="logo"
                           width={'36px'}
                           height={'36px'}
@@ -176,7 +176,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                         </Text>
                         {envs?.SHOW_AUTHOR === 'true' && (
                           <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
-                            By {item.spec.i18n?.[i18n.language]?.author ?? item.spec.author}
+                            By {item.spec.author}
                           </Text>
                         )}
                       </Flex>
