@@ -1,0 +1,601 @@
+package model
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	json "github.com/json-iterator/go"
+
+	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+const (
+	ErrTokenNotFound = "token"
+)
+
+const (
+	TokenStatusEnabled   = 1 // don't use 0, 0 is the default value!
+	TokenStatusDisabled  = 2 // also don't use 0
+	TokenStatusExpired   = 3
+	TokenStatusExhausted = 4
+)
+
+type Token struct {
+	CreatedAt    time.Time       `json:"created_at"`
+	ExpiredAt    time.Time       `json:"expired_at"`
+	AccessedAt   time.Time       `json:"accessed_at"`
+	Group        *Group          `gorm:"foreignKey:GroupId" json:"-"`
+	Key          string          `gorm:"type:char(48);uniqueIndex" json:"key"`
+	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
+	GroupId      string          `gorm:"index;uniqueIndex:idx_group_name" json:"group"`
+	Subnet       string          `json:"subnet"`
+	Models       []string        `gorm:"serializer:json;type:text" json:"models"`
+	Status       int             `gorm:"default:1;index" json:"status"`
+	Id           int             `gorm:"primaryKey" json:"id"`
+	Quota        float64         `gorm:"bigint" json:"quota"`
+	UsedAmount   float64         `gorm:"bigint" json:"used_amount"`
+	RequestCount int             `gorm:"type:int" json:"request_count"`
+}
+
+func (t *Token) MarshalJSON() ([]byte, error) {
+	type Alias Token
+	return json.Marshal(&struct {
+		Alias
+		CreatedAt  int64 `json:"created_at"`
+		AccessedAt int64 `json:"accessed_at"`
+		ExpiredAt  int64 `json:"expired_at"`
+	}{
+		Alias:      (Alias)(*t),
+		CreatedAt:  t.CreatedAt.UnixMilli(),
+		AccessedAt: t.AccessedAt.UnixMilli(),
+		ExpiredAt:  t.ExpiredAt.UnixMilli(),
+	})
+}
+
+func getTokenOrder(order string) string {
+	switch order {
+	case "name":
+		return "name asc"
+	case "name-desc":
+		return "name desc"
+	case "accessed_at":
+		return "accessed_at asc"
+	case "accessed_at-desc":
+		return "accessed_at desc"
+	case "expired_at":
+		return "expired_at asc"
+	case "expired_at-desc":
+		return "expired_at desc"
+	case "group":
+		return "group_id asc"
+	case "group-desc":
+		return "group_id desc"
+	case "used_amount":
+		return "used_amount asc"
+	case "used_amount-desc":
+		return "used_amount desc"
+	case "request_count":
+		return "request_count asc"
+	case "request_count-desc":
+		return "request_count desc"
+	default:
+		return "id desc"
+	}
+}
+
+func InsertToken(token *Token, autoCreateGroup bool) error {
+	if autoCreateGroup {
+		group := &Group{
+			Id: token.GroupId,
+		}
+		if err := OnConflictDoNothing().Create(group).Error; err != nil {
+			return err
+		}
+	}
+	maxTokenNum := config.GetGroupMaxTokenNum()
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if maxTokenNum > 0 {
+			var count int64
+			err := tx.Model(&Token{}).Where("group_id = ?", token.GroupId).Count(&count).Error
+			if err != nil {
+				return err
+			}
+			if count >= int64(maxTokenNum) {
+				return errors.New("group max token num reached")
+			}
+		}
+		return tx.Create(token).Error
+	})
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return errors.New("token name already exists in this group")
+		}
+		return err
+	}
+	return nil
+}
+
+func GetTokens(startIdx int, num int, order string, group string, status int) (tokens []*Token, total int64, err error) {
+	tx := DB.Model(&Token{})
+
+	if group != "" {
+		tx = tx.Where("group_id = ?", group)
+	}
+	if status != 0 {
+		tx = tx.Where("status = ?", status)
+	}
+
+	err = tx.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if total <= 0 {
+		return nil, 0, nil
+	}
+	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
+	return tokens, total, err
+}
+
+func GetGroupTokens(group string, startIdx int, num int, order string, status int) (tokens []*Token, total int64, err error) {
+	if group == "" {
+		return nil, 0, errors.New("group is empty")
+	}
+
+	tx := DB.Model(&Token{}).Where("group_id = ?", group)
+
+	if status != 0 {
+		tx = tx.Where("status = ?", status)
+	}
+
+	err = tx.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if total <= 0 {
+		return nil, 0, nil
+	}
+	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
+	return tokens, total, err
+}
+
+func SearchTokens(keyword string, startIdx int, num int, order string, status int, name string, key string, group string) (tokens []*Token, total int64, err error) {
+	tx := DB.Model(&Token{})
+	if group != "" {
+		tx = tx.Where("group_id = ?", group)
+	}
+	if status != 0 {
+		tx = tx.Where("status = ?", status)
+	}
+	if name != "" {
+		tx = tx.Where("name = ?", name)
+	}
+	if key != "" {
+		tx = tx.Where("key = ?", key)
+	}
+
+	if keyword != "" {
+		var conditions []string
+		var values []interface{}
+		if status == 0 {
+			conditions = append(conditions, "status = ?")
+			values = append(values, 1)
+		}
+		if group == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "group_id ILIKE ?")
+			} else {
+				conditions = append(conditions, "group_id LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
+		}
+		if name == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "name ILIKE ?")
+			} else {
+				conditions = append(conditions, "name LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
+		}
+		if key == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "key ILIKE ?")
+			} else {
+				conditions = append(conditions, "key LIKE ?")
+			}
+			values = append(values, keyword)
+		}
+		if len(conditions) > 0 {
+			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
+		}
+	}
+
+	err = tx.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	if total <= 0 {
+		return nil, 0, nil
+	}
+	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
+	return tokens, total, err
+}
+
+func SearchGroupTokens(group string, keyword string, startIdx int, num int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
+	if group == "" {
+		return nil, 0, errors.New("group is empty")
+	}
+	tx := DB.Model(&Token{}).Where("group_id = ?", group)
+	if status != 0 {
+		tx = tx.Where("status = ?", status)
+	}
+	if name != "" {
+		tx = tx.Where("name = ?", name)
+	}
+	if key != "" {
+		tx = tx.Where("key = ?", key)
+	}
+
+	if keyword != "" {
+		var conditions []string
+		var values []interface{}
+		if status == 0 {
+			conditions = append(conditions, "status = ?")
+			values = append(values, 1)
+		}
+		if name == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "name ILIKE ?")
+			} else {
+				conditions = append(conditions, "name LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
+		}
+		if key == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "key ILIKE ?")
+			} else {
+				conditions = append(conditions, "key LIKE ?")
+			}
+			values = append(values, keyword)
+		}
+		if len(conditions) > 0 {
+			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
+		}
+	}
+
+	err = tx.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	if total <= 0 {
+		return nil, 0, nil
+	}
+	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
+	return tokens, total, err
+}
+
+func GetTokenByKey(key string) (*Token, error) {
+	var token Token
+	err := DB.Where("key = ?", key).First(&token).Error
+	return &token, HandleNotFound(err, ErrTokenNotFound)
+}
+
+func GetTokenUsedAmount(id int) (float64, error) {
+	var amount float64
+	err := DB.Model(&Token{}).Where("id = ?", id).Select("used_amount").Scan(&amount).Error
+	return amount, HandleNotFound(err, ErrTokenNotFound)
+}
+
+func GetTokenUsedAmountByKey(key string) (float64, error) {
+	var amount float64
+	err := DB.Model(&Token{}).Where("key = ?", key).Select("used_amount").Scan(&amount).Error
+	return amount, HandleNotFound(err, ErrTokenNotFound)
+}
+
+func ValidateAndGetToken(key string) (token *TokenCache, err error) {
+	if key == "" {
+		return nil, errors.New("未提供令牌")
+	}
+	token, err = CacheGetTokenByKey(key)
+	if err != nil {
+		logger.SysError("CacheGetTokenByKey failed: " + err.Error())
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("无效的令牌")
+		}
+		return nil, fmt.Errorf("令牌验证失败")
+	}
+	switch token.Status {
+	case TokenStatusExhausted:
+		return nil, fmt.Errorf("令牌 (%s[%d]) 额度已用尽", token.Name, token.Id)
+	case TokenStatusExpired:
+		return nil, fmt.Errorf("令牌 (%s[%d]) 已过期", token.Name, token.Id)
+	}
+	if token.Status != TokenStatusEnabled {
+		return nil, fmt.Errorf("令牌 (%s[%d]) 状态不可用", token.Name, token.Id)
+	}
+	if !time.Time(token.ExpiredAt).IsZero() && time.Time(token.ExpiredAt).Before(time.Now()) {
+		err := UpdateTokenStatusAndAccessedAt(token.Id, TokenStatusExpired)
+		if err != nil {
+			logger.SysError("failed to update token status" + err.Error())
+		}
+		return nil, fmt.Errorf("令牌 (%s[%d]) 已过期", token.Name, token.Id)
+	}
+	if token.Quota > 0 && token.UsedAmount >= token.Quota {
+		// in this case, we can make sure the token is exhausted
+		err := UpdateTokenStatusAndAccessedAt(token.Id, TokenStatusExhausted)
+		if err != nil {
+			logger.SysError("failed to update token status" + err.Error())
+		}
+		return nil, fmt.Errorf("令牌 (%s[%d]) 额度已用尽", token.Name, token.Id)
+	}
+	return token, nil
+}
+
+func GetGroupTokenById(group string, id int) (*Token, error) {
+	if id == 0 || group == "" {
+		return nil, errors.New("id 或 group 为空！")
+	}
+	token := Token{}
+	err := DB.
+		Where("id = ? and group_id = ?", id, group).
+		First(&token).Error
+	return &token, HandleNotFound(err, ErrTokenNotFound)
+}
+
+func GetTokenById(id int) (*Token, error) {
+	if id == 0 {
+		return nil, errors.New("id 为空！")
+	}
+	token := Token{Id: id}
+	err := DB.First(&token, "id = ?", id).Error
+	return &token, HandleNotFound(err, ErrTokenNotFound)
+}
+
+func UpdateTokenStatus(id int, status int) (err error) {
+	token := Token{Id: id}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(&token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where("id = ?", id).
+		Updates(
+			map[string]interface{}{
+				"status": status,
+			},
+		)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateTokenStatusAndAccessedAt(id int, status int) (err error) {
+	token := Token{Id: id}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(&token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where("id = ?", id).Updates(
+		map[string]interface{}{
+			"status":      status,
+			"accessed_at": time.Now(),
+		},
+	)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateGroupTokenStatusAndAccessedAt(group string, id int, status int) (err error) {
+	token := Token{}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(&token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where("id = ? and group_id = ?", id, group).
+		Updates(
+			map[string]interface{}{
+				"status":      status,
+				"accessed_at": time.Now(),
+			},
+		)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
+	token := Token{}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(&token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where("id = ? and group_id = ?", id, group).
+		Updates(
+			map[string]interface{}{
+				"status": status,
+			},
+		)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func DeleteTokenByIdAndGroupId(id int, groupId string) (err error) {
+	if id == 0 || groupId == "" {
+		return errors.New("id 或 group 为空！")
+	}
+	token := Token{Id: id, GroupId: groupId}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where(token).
+		Delete(&token)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func DeleteTokenById(id int) (err error) {
+	if id == 0 {
+		return errors.New("id 为空！")
+	}
+	token := Token{Id: id}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where(token).
+		Delete(&token)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateToken(token *Token) (err error) {
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.Omit("created_at", "status", "key", "group_id", "used_amount", "request_count").Save(token)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+			return errors.New("token name already exists in this group")
+		}
+	}
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error) {
+	token := &Token{Id: id}
+	defer func() {
+		if amount > 0 && err == nil && token.Quota > 0 {
+			if err := CacheUpdateTokenUsedAmountOnlyIncrease(token.Key, token.UsedAmount); err != nil {
+				logger.SysError("CacheUpdateTokenUsedAmountOnlyIncrease failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+				{Name: "quota"},
+				{Name: "used_amount"},
+			},
+		}).
+		Where("id = ?", id).
+		Updates(
+			map[string]interface{}{
+				"used_amount":   gorm.Expr("used_amount + ?", amount),
+				"request_count": gorm.Expr("request_count + ?", requestCount),
+				"accessed_at":   time.Now(),
+			},
+		)
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateTokenName(id int, name string) (err error) {
+	token := &Token{Id: id}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where("id = ?", id).
+		Update("name", name)
+	if result.Error != nil && errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+		return errors.New("token name already exists in this group")
+	}
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateGroupTokenName(group string, id int, name string) (err error) {
+	token := &Token{Id: id, GroupId: group}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				logger.SysError("CacheDeleteToken failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(token).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "key"},
+			},
+		}).
+		Where("id = ? and group_id = ?", id, group).
+		Update("name", name)
+	if result.Error != nil && errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+		return errors.New("token name already exists in this group")
+	}
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
