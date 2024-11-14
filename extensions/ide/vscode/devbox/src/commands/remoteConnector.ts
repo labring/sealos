@@ -170,7 +170,6 @@ export class RemoteSSHConnector extends Disposable {
       )
     }
 
-    // 创建一个新的连接并打开新的窗口
     await vscode.commands.executeCommand(
       'vscode.openFolder',
       vscode.Uri.parse(

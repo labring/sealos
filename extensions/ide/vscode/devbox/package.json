@@ -125,6 +125,14 @@
           "light": "images/light/link-external.svg",
           "dark": "images/dark/link-external.svg"
         }
+      },
+      {
+        "command": "devbox.gotoDatabaseWebPage",
+        "title": "Goto Database Web Page",
+        "icon": {
+          "light": "images/light/link-external.svg",
+          "dark": "images/dark/link-external.svg"
+        }
       }
     ],
     "views": {
@@ -193,12 +201,17 @@
         {
           "command": "devbox.refreshDatabase",
           "when": "view == dbView",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "devbox.refreshNetwork",
           "when": "view == networkView",
           "group": "navigation"
+        },
+        {
+          "command": "devbox.gotoDatabaseWebPage",
+          "when": "view == dbView",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [

@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 import { getDBList, DBResponse } from '../api/db'
 import { Disposable } from '../common/dispose'
+import { isDevelopment } from '../constant/api'
+import { GlobalStateManager } from '../utils/globalStateManager'
 
 interface Database {
   dbType: string
@@ -45,6 +47,22 @@ export class DBViewProvider extends Disposable {
           dbTreeDataProvider.copyConnectionString(item)
         })
       )
+      let targetUrl = ''
+      const workspaceFolders = vscode.workspace.workspaceFolders
+      if (workspaceFolders && workspaceFolders.length > 0) {
+        const workspaceFolder = workspaceFolders[0]
+        const remoteUri = workspaceFolder.uri.authority
+        const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
+        const region = GlobalStateManager.getRegion(devboxId)
+        targetUrl = `http://${region}?openapp=system-dbprovider`
+        this._register(
+          vscode.commands.registerCommand('devbox.gotoDatabaseWebPage', () => {
+            vscode.commands.executeCommand('devbox.openExternalLink', [
+              targetUrl,
+            ])
+          })
+        )
+      }
     }
   }
 }
