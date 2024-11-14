@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TokenInfo } from '@/types/getKeys'
 
-import { parseJwtToken } from '@/utils/auth'
+import { parseJwtToken } from '@/utils/backend/auth'
 
 export const dynamic = 'force-dynamic'
 export interface KeysSearchResponse {

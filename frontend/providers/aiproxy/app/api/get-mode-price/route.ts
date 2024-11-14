@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/auth'
+import { parseJwtToken } from '@/utils/backend/auth'
 import { ModelPrice } from '@/types/backend'
 
 export const dynamic = 'force-dynamic'

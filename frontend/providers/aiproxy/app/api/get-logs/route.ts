@@ -1,5 +1,5 @@
 import { LogItem } from '@/types/log'
-import { parseJwtToken } from '@/utils/auth'
+import { parseJwtToken } from '@/utils/backend/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
