@@ -18,7 +18,7 @@ import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
 import { useMemo } from 'react'
-import { MyTooltip } from '@/components/MyTooltip'
+import { MyTooltip } from '@/components/common/MyTooltip'
 import { ModelIdentifier } from '@/types/front'
 
 const getIdentifier = (modelName: string): ModelIdentifier => {

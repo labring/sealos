@@ -5,7 +5,7 @@ import { useTranslationServerSide } from '@/app/i18n/server'
 import { fallbackLng, languages } from '@/app/i18n/settings'
 import ChakraProviders from '@/providers/chakra/providers'
 import { I18nProvider } from '@/providers/i18n/i18nContext'
-import QueryProvider from '@/providers/chakra/QueryProvider'
+import QueryProvider from '@/providers/tanstack-query/QueryProvider'
 import InitializeApp from '@/components/InitializeApp'
 
 import './globals.css'

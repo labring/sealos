@@ -27,7 +27,7 @@ import {
 } from '@tanstack/react-table'
 import { SealosCoin } from '@sealos/ui'
 import { ModelIdentifier } from '@/types/front'
-import { MyTooltip } from '@/components/MyTooltip'
+import { MyTooltip } from '@/components/common/MyTooltip'
 import { useMessage } from '@sealos/ui'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'

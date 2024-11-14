@@ -44,9 +44,9 @@ import { ChainIcon } from '@/ui/icons/home/Icons'
 import { useMessage } from '@sealos/ui'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { TokenInfo } from '@/types/getKeys'
-import SwitchPage from '@/components/SwitchPage'
+import SwitchPage from '@/components/common/SwitchPage'
 import { useBackendStore } from '@/store/backend'
-import { MyTooltip } from '@/components/MyTooltip'
+import { MyTooltip } from '@/components/common/MyTooltip'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
