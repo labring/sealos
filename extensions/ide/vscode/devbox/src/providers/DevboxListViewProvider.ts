@@ -5,7 +5,7 @@ import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 import { getDevboxDetail } from '../api/devbox'
-import { defaultDevboxSSHConfigPath } from '../constant/file'
+import { defaultDevboxSSHConfigPath, defaultSSHKeyPath } from '../constant/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 import { uswUrl, hzhUrl, bjaUrl, gzgUrl } from '../constant/api'
@@ -276,6 +276,12 @@ class ProjectTreeDataProvider
         defaultDevboxSSHConfigPath,
         newLines.join('\n')
       )
+
+      // 4. delete private key file
+      const privateKeyPath = `${defaultSSHKeyPath}/${deletedHost}`
+      fs.rmSync(privateKeyPath)
+
+      // TODO： delete known_host public key
 
       this.refresh()
     } catch (error) {
