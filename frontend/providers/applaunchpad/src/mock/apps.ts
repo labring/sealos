@@ -23,6 +23,7 @@ export const MOCK_APPS: AppListItemType[] = [
     },
     activeReplicas: 1,
     isPause: false,
+    isStop: false,
     maxReplicas: 1,
     minReplicas: 1,
     storeAmount: 0
@@ -35,6 +36,7 @@ export const MOCK_APPS: AppListItemType[] = [
     cpu: 100,
     memory: 100,
     isPause: false,
+    isStop: false,
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),
@@ -56,6 +58,7 @@ export const MOCK_APPS: AppListItemType[] = [
     status: appStatusMap.running,
     createTime: 'string',
     isPause: false,
+    isStop: false,
     cpu: 100,
     memory: 100,
     usedCpu: {
@@ -421,8 +424,7 @@ export const MOCK_APP_DETAIL: AppDetailType = {
           protocol: 'HTTP',
           openPublicDomain: false,
           publicDomain: '',
-          customDomain: '',
-          isStop: false
+          customDomain: ''
         }
       ],
       envs: []
