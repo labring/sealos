@@ -34,4 +34,7 @@ export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
   await vscode.workspace
     .getConfiguration('remote.SSH')
     .update('localServerDownload', 'off', vscode.ConfigurationTarget.Global)
+  await vscode.workspace
+    .getConfiguration('remote.SSH')
+    .update('useLocalServer', true, vscode.ConfigurationTarget.Global)
 }
