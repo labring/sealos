@@ -36,6 +36,8 @@ export class RemoteSSHConnector extends Disposable {
       return content.replace(includePattern, includeLine)
     } else if (includePattern2.test(content)) {
       return content.replace(includePattern2, includeLine)
+    } else if (content.includes(includeLine)) {
+      return content
     } else {
       return `${includeLine}\n${content}`
     }
