@@ -78,7 +78,8 @@
         "user-guide/objectstorage/objectstorage",
         "user-guide/cronjob/cronjob",
         "user-guide/terminal/terminal",
-        "user-guide/kubepanel/kubepanel"
+        "user-guide/kubepanel/kubepanel",
+        "user-guide/devbox/devbox"
       ]
     },
     {
