@@ -38,8 +38,8 @@ type Token struct {
 	Models       []string        `gorm:"serializer:json;type:text" json:"models"`
 	Status       int             `gorm:"default:1;index" json:"status"`
 	ID           int             `gorm:"primaryKey" json:"id"`
-	Quota        float64         `gorm:"bigint" json:"quota"`
-	UsedAmount   float64         `gorm:"bigint" json:"used_amount"`
+	Quota        float64         `json:"quota"`
+	UsedAmount   float64         `gorm:"index" json:"used_amount"`
 	RequestCount int             `gorm:"type:int" json:"request_count"`
 }
 

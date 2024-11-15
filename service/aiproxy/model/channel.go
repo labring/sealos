@@ -40,7 +40,7 @@ type Channel struct {
 	Balance          float64           `json:"balance"`
 	ResponseDuration int64             `gorm:"bigint" json:"response_duration"`
 	ID               int               `gorm:"primaryKey" json:"id"`
-	UsedAmount       float64           `gorm:"bigint" json:"used_amount"`
+	UsedAmount       float64           `json:"used_amount"`
 	RequestCount     int               `gorm:"type:int" json:"request_count"`
 	Status           int               `gorm:"default:1;index" json:"status"`
 	Type             int               `gorm:"default:0;index" json:"type"`
