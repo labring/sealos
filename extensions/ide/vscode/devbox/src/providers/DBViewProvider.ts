@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 import { getDBList, DBResponse } from '../api/db'
 import { Disposable } from '../common/dispose'
-import { isDevelopment } from '../constant/api'
 import { GlobalStateManager } from '../utils/globalStateManager'
 
 interface Database {
@@ -123,8 +122,8 @@ class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
 
       items.push(
         new DatabaseItem(
-          `${'DBType'.padEnd(15)}${'Username'.padEnd(38)}${'Host'.padEnd(
-            80
+          `${'DBType'.padEnd(15)}${'Username'.padEnd(50)}${'Host'.padEnd(
+            66
           )}${'Port'.padEnd(40)}Connection`,
           'header'
         )
