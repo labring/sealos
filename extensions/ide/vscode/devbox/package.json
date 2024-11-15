@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "Devbox",
   "description": "help code for cloud devbox in sailos/sealos",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "keywords": [
     "devbox",
     "remote development",
