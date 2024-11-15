@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: aiproxy
-  namespace: aiproxy
+  namespace: aiproxy-system
   labels:
     cloud.sealos.io/app-deploy-manager: aiproxy
 spec:
@@ -48,8 +48,8 @@ spec:
               name: aiproxy-env
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 50m
+              memory: 50Mi
             limits:
               cpu: 500m
               memory: 512Mi
