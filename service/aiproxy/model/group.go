@@ -26,7 +26,7 @@ type Group struct {
 	CreatedAt    time.Time `json:"created_at"`
 	AccessedAt   time.Time `json:"accessed_at"`
 	ID           string    `gorm:"primaryKey" json:"id"`
-	Tokens       []*Token  `gorm:"foreignKey:GroupId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	Tokens       []*Token  `gorm:"foreignKey:GroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Status       int       `gorm:"type:int;default:1;index" json:"status"`
 	UsedAmount   float64   `gorm:"bigint;index" json:"used_amount"`
 	QPM          int64     `gorm:"bigint" json:"qpm"`

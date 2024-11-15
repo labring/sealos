@@ -30,7 +30,7 @@ type Token struct {
 	CreatedAt    time.Time       `json:"created_at"`
 	ExpiredAt    time.Time       `json:"expired_at"`
 	AccessedAt   time.Time       `json:"accessed_at"`
-	Group        *Group          `gorm:"foreignKey:GroupId" json:"-"`
+	Group        *Group          `gorm:"foreignKey:GroupID" json:"-"`
 	Key          string          `gorm:"type:char(48);uniqueIndex" json:"key"`
 	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
 	GroupID      string          `gorm:"index;uniqueIndex:idx_group_name" json:"group"`
