@@ -1,6 +1,7 @@
 export interface IngressListItemType {
   name: string
   namespace: string
-  host: string
+  address: string
   port: number
+  protocol: string
 }

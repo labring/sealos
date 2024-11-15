@@ -1,31 +1,4 @@
-export enum DBTypeEnum {
-  postgresql = 'postgresql',
-  mongodb = 'mongodb',
-  mysql = 'apecloud-mysql',
-  redis = 'redis',
-  kafka = 'kafka',
-  qdrant = 'qdrant',
-  nebula = 'nebula',
-  weaviate = 'weaviate',
-  milvus = 'milvus'
-}
-
-export enum DBStatusEnum {
-  Creating = 'Creating',
-  Starting = 'Starting',
-  Stopping = 'Stopping',
-  Stopped = 'Stopped',
-  Running = 'Running',
-  Updating = 'Updating',
-  SpecUpdating = 'SpecUpdating',
-  Rebooting = 'Rebooting',
-  Upgrade = 'Upgrade',
-  VerticalScaling = 'VerticalScaling',
-  VolumeExpanding = 'VolumeExpanding',
-  Failed = 'Failed',
-  UnKnow = 'UnKnow',
-  Deleting = 'Deleting'
-}
+import { DBType, DBStatusEnum } from './db'
 
 export type KbPgClusterType = {
   apiVersion: 'apps.kubeblocks.io/v1alpha1'
@@ -34,7 +7,7 @@ export type KbPgClusterType = {
     annotations: Record<string, string>
     creationTimestamp: Date
     labels: {
-      'clusterdefinition.kubeblocks.io/name': `${DBTypeEnum}`
+      'clusterdefinition.kubeblocks.io/name': DBType
       'clusterversion.kubeblocks.io/name': string
       'sealos-db-provider/postgresql': string
       [key: string]: string
@@ -48,12 +21,12 @@ export type KbPgClusterType = {
 }
 
 export interface KubeBlockClusterSpec {
-  clusterDefinitionRef: `${DBTypeEnum}`
+  clusterDefinitionRef: DBType
   clusterVersionRef: string
   terminationPolicy: string
   componentSpecs: {
-    componentDefRef: `${DBTypeEnum}`
-    name: `${DBTypeEnum}`
+    componentDefRef: DBType
+    name: DBType
     replicas: number
     resources: {
       limits: {
@@ -97,7 +70,7 @@ export interface KubeBlockClusterStatus {
 export interface DBListItemType {
   id: string
   name: string
-  dbType: string
+  dbType: DBType
   createTime: string
   cpu: number
   memory: number

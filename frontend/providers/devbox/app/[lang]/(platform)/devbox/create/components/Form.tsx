@@ -6,7 +6,6 @@ import {
   Center,
   Flex,
   FormControl,
-  FormErrorMessage,
   Grid,
   IconButton,
   Image,
@@ -377,6 +376,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -455,6 +457,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -533,6 +538,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -555,10 +563,12 @@ const Form = ({
                   <Input
                     opacity={0.5}
                     width={'200px'}
-                    defaultValue={getRuntimeDetailLabel(
-                      getValues('runtimeType'),
-                      getValues('runtimeVersion')
-                    )}
+                    value={
+                      getRuntimeDetailLabel(
+                        getValues('runtimeType'),
+                        getValues('runtimeVersion')
+                      ) || ''
+                    }
                     disabled
                   />
                 ) : (

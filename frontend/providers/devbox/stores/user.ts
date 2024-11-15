@@ -32,6 +32,7 @@ export const useUserStore = create<State>()(
       checkQuotaAllow: ({ cpu, memory, nodeports }, usedData): string | undefined => {
         const quote = get().userQuota
 
+        console.log(cpu, memory, nodeports)
         const request = {
           cpu: cpu / 1000,
           memory: memory / 1024,
@@ -39,7 +40,7 @@ export const useUserStore = create<State>()(
         }
 
         if (usedData) {
-          const { cpu, memory, nodeports } = usedData
+          const { cpu = 0, memory = 0, nodeports = 0 } = usedData
 
           request.cpu -= cpu / 1000
           request.memory -= memory / 1024

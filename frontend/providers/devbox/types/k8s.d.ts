@@ -128,6 +128,9 @@ export type KBRuntimeType = {
     namespace: string
     uid: string
     creationTimestamp: string
+    annotations: {
+      'devbox.sealos.io/defaultVersion': boolean
+    }
   }
   spec: {
     classRef: string

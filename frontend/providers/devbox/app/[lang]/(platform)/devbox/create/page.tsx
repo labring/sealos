@@ -31,7 +31,13 @@ import { useRuntimeStore } from '@/stores/runtime'
 import { patchYamlList } from '@/utils/tools'
 import { createDevbox, updateDevbox } from '@/api/devbox'
 import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
-import { LanguageTypeEnum, defaultDevboxEditValue, editModeMap } from '@/constants/devbox'
+import {
+  FrameworkTypeEnum,
+  LanguageTypeEnum,
+  OSTypeEnum,
+  defaultDevboxEditValue,
+  editModeMap
+} from '@/constants/devbox'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 
@@ -46,7 +52,8 @@ const DevboxCreatePage = () => {
 
   const { env } = useEnvStore()
   const { checkQuotaAllow } = useUserStore()
-  const { runtimeNamespaceMap, languageVersionMap } = useRuntimeStore()
+  const { runtimeNamespaceMap, languageVersionMap, frameworkVersionMap, osVersionMap } =
+    useRuntimeStore()
   const { setDevboxDetail, devboxList } = useDevboxStore()
 
   const crOldYamls = useRef<DevboxKindsType[]>([])
@@ -60,6 +67,7 @@ const DevboxCreatePage = () => {
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
+  const runtime = searchParams.get('runtime') || ''
 
   const formData2Yamls = (data: DevboxEditType) => [
     {
@@ -86,8 +94,18 @@ const DevboxCreatePage = () => {
 
   const defaultEdit = {
     ...defaultDevboxEditValue,
-    runtimeVersion: languageVersionMap[LanguageTypeEnum.go][0].id,
-    networks: languageVersionMap[LanguageTypeEnum.go][0].defaultPorts.map((port) => ({
+    runtimeType: runtime || LanguageTypeEnum.go,
+    runtimeVersion: runtime
+      ? languageVersionMap[runtime as LanguageTypeEnum]?.[0]?.id ||
+        frameworkVersionMap[runtime as FrameworkTypeEnum]?.[0]?.id ||
+        osVersionMap[runtime as OSTypeEnum]?.[0]?.id
+      : languageVersionMap[LanguageTypeEnum.go][0].id,
+    networks: (
+      languageVersionMap[runtime as LanguageTypeEnum]?.[0]?.defaultPorts ||
+      frameworkVersionMap[runtime as FrameworkTypeEnum]?.[0]?.defaultPorts ||
+      osVersionMap[runtime as OSTypeEnum]?.[0]?.defaultPorts ||
+      languageVersionMap[LanguageTypeEnum.go][0].defaultPorts
+    ).map((port) => ({
       networkName: `${defaultDevboxEditValue.name}-${nanoid()}`,
       portName: nanoid(),
       port: port,
