@@ -1,17 +1,17 @@
-import dayjs from 'dayjs'
-import dynamic from 'next/dynamic'
-import { useTranslations } from 'next-intl'
 import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react'
+import dayjs from 'dayjs'
+import { useTranslations } from 'next-intl'
+import dynamic from 'next/dynamic'
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import PodLineChart from '@/components/PodLineChart'
 
-import { useCopyData } from '@/utils/tools'
 import { NetworkType } from '@/types/devbox'
+import { useCopyData } from '@/utils/tools'
 
-import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import { useEnvStore } from '@/stores/env'
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
 
@@ -154,7 +154,7 @@ const MainBody = () => {
             {t('network')} ( {devboxDetail?.networks?.length} )
           </Text>
         </Flex>
-        {devboxDetail?.networks?.length > 0 ? (
+        {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
           <MyTable
             columns={networkColumn}
             data={devboxDetail?.networks}

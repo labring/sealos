@@ -1,7 +1,7 @@
 import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useMutation } from '@tanstack/react-query'
 import type { UseMutationOptions } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
+import { useTranslations } from 'next-intl'
 
 import { getErrText } from '@/utils/tools'
 
@@ -13,7 +13,7 @@ interface Props extends UseMutationOptions<any, any, any, any> {
 export const useRequest = ({ successToast, errorToast, onSuccess, onError, ...props }: Props) => {
   const { message: toast } = useMessage()
   const t = useTranslations()
-  const mutation = useMutation<unknown, unknown, any, unknown>({
+  const mutation = useMutation({
     ...props,
     onSuccess(res, variables: void, context: unknown) {
       onSuccess?.(res, variables, context)

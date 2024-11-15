@@ -1,22 +1,22 @@
+import { InfoOutlineIcon } from '@chakra-ui/icons'
 import {
   Box,
+  BoxProps,
+  Button,
+  Flex,
+  Input,
+  Modal,
   ModalBody,
   ModalCloseButton,
-  BoxProps,
-  Flex,
-  useTheme,
-  Input,
-  ModalFooter,
-  Button,
-  Modal,
-  ModalOverlay,
   ModalContent,
-  ModalHeader
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  useTheme
 } from '@chakra-ui/react'
 import { Tip } from '@sealos/ui'
-import React, { useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { InfoOutlineIcon } from '@chakra-ui/icons'
+import { useRef } from 'react'
 
 import { postAuthCname } from '@/api/platform'
 import { useRequest } from '@/hooks/useRequest'
@@ -96,7 +96,7 @@ const CustomAccessModal = ({
             />
           </ModalBody>
           <ModalFooter>
-            <Button width={'80px'} isLoading={isLoading} onClick={authCNAME}>
+            <Button width={'80px'} isLoading={isLoading} onClick={()=>authCNAME()}>
               {t('confirm')}
             </Button>
           </ModalFooter>

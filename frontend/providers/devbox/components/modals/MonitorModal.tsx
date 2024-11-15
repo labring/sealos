@@ -10,8 +10,8 @@ import {
 } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
 
-import { useDevboxStore } from '@/stores/devbox'
 import PodLineChart from '@/components/PodLineChart'
+import { useDevboxStore } from '@/stores/devbox'
 
 const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => void }) => {
   const theme = useTheme()
@@ -24,30 +24,34 @@ const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => voi
       <ModalContent maxW={'90vw'}>
         <ModalHeader>{t('monitor')}</ModalHeader>
         <ModalCloseButton />
-        <ModalBody fontSize={'12px'} fontWeight={'bold'} color={'grayModern.900'}>
-          <Box
-            p={'24px'}
-            bg={'grayModern.25'}
-            border={theme.borders.base}
-            mb={'16px'}
-            borderRadius={'lg'}>
-            <Box mb={'12px'}>
-              CPU&ensp;({devboxDetail.usedCpu.yData[devboxDetail.usedCpu.yData.length - 1]}%)
+        {
+          devboxDetail && 
+          <ModalBody fontSize={'12px'} fontWeight={'bold'} color={'grayModern.900'}>
+  
+            <Box
+              p={'24px'}
+              bg={'grayModern.25'}
+              border={theme.borders.base}
+              mb={'16px'}
+              borderRadius={'lg'}>
+              <Box mb={'12px'}>
+                CPU&ensp;({devboxDetail.usedCpu.yData[devboxDetail.usedCpu.yData.length - 1]}%)
+              </Box>
+              <Box height={'100px'}>
+                <PodLineChart type={'blue'} data={devboxDetail.usedCpu} isShowLabel />
+              </Box>
             </Box>
-            <Box height={'100px'}>
-              <PodLineChart type={'blue'} data={devboxDetail.usedCpu} isShowLabel />
+            <Box p={'24px'} bg={'grayModern.25'} border={theme.borders.base} borderRadius={'lg'}>
+              <Box mb={'12px'}>
+                {t('memory')}&ensp;(
+                {devboxDetail.usedMemory.yData[devboxDetail.usedMemory.yData.length - 1]}%)
+              </Box>
+              <Box height={'100px'}>
+                <PodLineChart type={'purple'} data={devboxDetail.usedMemory} isShowLabel />
+              </Box>
             </Box>
-          </Box>
-          <Box p={'24px'} bg={'grayModern.25'} border={theme.borders.base} borderRadius={'lg'}>
-            <Box mb={'12px'}>
-              {t('memory')}&ensp;(
-              {devboxDetail.usedMemory.yData[devboxDetail.usedMemory.yData.length - 1]}%)
-            </Box>
-            <Box height={'100px'}>
-              <PodLineChart type={'purple'} data={devboxDetail.usedMemory} isShowLabel />
-            </Box>
-          </Box>
-        </ModalBody>
+          </ModalBody>
+        }
       </ModalContent>
     </Modal>
   )

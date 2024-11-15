@@ -1,9 +1,9 @@
 import yaml from 'js-yaml'
 
+import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import { DevboxEditType, json2DevboxV2Data, runtimeNamespaceMapType } from '@/types/devbox'
 import { str2Num } from './tools'
 import { getUserNamespace } from './user'
-import { DevboxEditType, runtimeNamespaceMapType } from '@/types/devbox'
-import { devboxKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (
   data: DevboxEditType,
@@ -66,7 +66,65 @@ export const json2Devbox = (
   }
   return yaml.dump(json)
 }
+export const json2DevboxV2 = (
+  data: json2DevboxV2Data,
+  devboxAffinityEnable: string = 'true',
+  squashEnable: string = 'false'
+) => {
+  // runtimeNamespace inject
+  // const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
 
+  let json: any = {
+    apiVersion: 'devbox.sealos.io/v1alpha1',
+    kind: 'Devbox',
+    metadata: {
+      name: data.name
+    },
+    spec: {
+      squash: squashEnable === 'true',
+      network: {
+        type: 'NodePort',
+        extraPorts: data.networks.map((item) => ({
+          containerPort: item.port
+        }))
+      },
+      resource: {
+        cpu: `${str2Num(Math.floor(data.cpu))}m`,
+        memory: `${str2Num(data.memory)}Mi`
+      },
+      templateID: data.templateUid,
+      image: data.image,
+      config: JSON.parse(data.templateConfig),
+      state: 'Running'
+    }
+  }
+  if (devboxAffinityEnable === 'true') {
+    json.spec.tolerations = [
+      {
+        key: 'devbox.sealos.io/node',
+        operator: 'Exists',
+        effect: 'NoSchedule'
+      }
+    ]
+    json.spec.affinity = {
+      nodeAffinity: {
+        requiredDuringSchedulingIgnoredDuringExecution: {
+          nodeSelectorTerms: [
+            {
+              matchExpressions: [
+                {
+                  key: 'devbox.sealos.io/node',
+                  operator: 'Exists'
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+  return yaml.dump(json)
+}
 export const json2StartOrStop = ({
   devboxName,
   type
@@ -118,7 +176,7 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json)
 }
 
-export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
+export const json2Ingress = (data: Pick<DevboxEditType, 'name'|'networks'>, ingressSecret: string) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -251,8 +309,7 @@ export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
 
   return result.join('\n---\n')
 }
-
-export const json2Service = (data: DevboxEditType) => {
+export const json2Service = (data: Pick<DevboxEditType, 'name'|'networks'>) => {
   if (data.networks.length === 0) {
     return ''
   }
@@ -280,7 +337,6 @@ export const json2Service = (data: DevboxEditType) => {
   }
   return yaml.dump(template)
 }
-
 export const limitRangeYaml = `
 apiVersion: v1
 kind: LimitRange

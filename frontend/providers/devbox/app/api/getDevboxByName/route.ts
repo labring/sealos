@@ -1,11 +1,10 @@
-import { NextRequest } from 'next/server'
-
-import { defaultEnv } from '@/stores/env'
-import { authSession } from '@/services/backend/auth'
-import { jsonRes } from '@/services/backend/response'
-import { getK8s } from '@/services/backend/kubernetes'
-import { KBDevboxType, KBRuntimeType } from '@/types/k8s'
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox'
+import { authSession } from '@/services/backend/auth'
+import { getK8s } from '@/services/backend/kubernetes'
+import { jsonRes } from '@/services/backend/response'
+import { devboxDB } from '@/services/db/init'
+import { KBDevboxTypeV2 } from '@/types/k8s'
+import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,29 +33,32 @@ export async function GET(req: NextRequest) {
       namespace,
       'devboxes',
       devboxName
-    )) as { body: KBDevboxType }
-    const { body: runtimeBody } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha1',
-      ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
-      'runtimes',
-      devboxBody.spec.runtimeRef.name
-    )) as { body: KBRuntimeType }
-
-    // add runtimeType, runtimeVersion, networks to devbox yaml
-    let resp = {
-      ...devboxBody,
-      spec: {
-        ...devboxBody.spec,
-        runtimeType: runtimeBody.spec.classRef
+    )) as { body: KBDevboxTypeV2 }
+    const template = await devboxDB.template.findUnique({
+      where: {
+        uid: devboxBody.spec.templateID,
+        isDeleted: false
       },
-      portInfos: []
-    } as KBDevboxType & { portInfos: any[] }
-
-    if (devboxBody.spec.network.extraPorts.length === 0) {
-      return jsonRes({ data: resp })
+      select: {
+        templateRepository: {
+          select: {
+            uid: true,
+            iconId: true,
+            name: true,
+            kind: true,
+          }
+        },
+        uid: true,
+        image: true,
+        name: true,
+      }
+    })
+    if (!template) {
+      return jsonRes({
+        code: 500,
+        error: 'template not found'
+      })
     }
-
     // get ingresses and service
     const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sCustomObjects.listNamespacedCustomObject(
@@ -90,29 +92,23 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    resp.portInfos = devboxBody.spec.network.extraPorts.map((network: any) => {
-      const matchingIngress = ingressList.find(
-        (ingress: any) => ingress.port === network.containerPort
-      )
-
-      const servicePort = service?.spec?.ports?.find(
-        (port: any) => port.port === network.containerPort
-      )
-      const servicePortName = servicePort?.name
-
-      if (matchingIngress) {
-        return {
-          ...matchingIngress,
-          portName: servicePortName
-        }
-      }
-
-      return {
-        ...network,
-        port: network.containerPort
-      }
-    })
-
+    const portInfos: any[] = []
+    const servicePort = service?.spec?.ports?.[0]
+    if (ingressList.length > 0) {
+      portInfos.push({
+        ...ingressList[0],
+        portName: servicePort?.name
+      })
+    } else {
+      portInfos.push({
+        ...servicePort
+      })
+    }
+    const resp = [
+      devboxBody,
+      portInfos,
+      template
+    ] as const
     return jsonRes({ data: resp })
   } catch (err: any) {
     return jsonRes({
