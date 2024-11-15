@@ -21,7 +21,7 @@ type Log struct {
 	GroupID          string    `gorm:"index" json:"group"`
 	Model            string    `gorm:"index" json:"model"`
 	Price            float64   `json:"price"`
-	ID               int       `json:"id"`
+	ID               int       `gorm:"primaryKey" json:"id"`
 	CompletionPrice  float64   `json:"completion_price"`
 	TokenID          int       `gorm:"index" json:"token_id"`
 	UsedAmount       float64   `gorm:"index" json:"used_amount"`

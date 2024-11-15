@@ -27,10 +27,10 @@ type Group struct {
 	AccessedAt   time.Time `json:"accessed_at"`
 	ID           string    `gorm:"primaryKey" json:"id"`
 	Tokens       []*Token  `gorm:"foreignKey:GroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
-	Status       int       `gorm:"type:int;default:1;index" json:"status"`
+	Status       int       `gorm:"default:1;index" json:"status"`
 	UsedAmount   float64   `gorm:"index" json:"used_amount"`
-	QPM          int64     `gorm:"bigint" json:"qpm"`
-	RequestCount int       `gorm:"type:int;index" json:"request_count"`
+	QPM          int64     `gorm:"index" json:"qpm"`
+	RequestCount int       `gorm:"index" json:"request_count"`
 }
 
 func (g *Group) MarshalJSON() ([]byte, error) {
