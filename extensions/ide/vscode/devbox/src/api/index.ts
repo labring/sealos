@@ -6,11 +6,7 @@ import axios, {
   AxiosRequestConfig,
 } from 'axios'
 
-import {
-  defaultProductionUrl,
-  developmentUrl,
-  isDevelopment,
-} from '../constant/api'
+import { developmentUrl, isDevelopment } from '../constant/api'
 import { GlobalStateManager } from '../utils/globalStateManager'
 
 const showStatus = (status: number) => {
@@ -60,7 +56,7 @@ export const updateBaseUrl = (newBaseUrl: string) => {
 }
 
 const request = axios.create({
-  baseURL: isDevelopment ? developmentUrl : defaultProductionUrl,
+  baseURL: isDevelopment ? developmentUrl : '.',
   withCredentials: true,
   timeout: 60000,
 })
