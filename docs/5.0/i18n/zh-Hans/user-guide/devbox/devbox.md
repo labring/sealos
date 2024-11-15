@@ -12,7 +12,8 @@ Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可�
 
 解决方案：手动安装 Devbox 插件。
 
-1. 从 VSCode 插件市场下载 [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) 插件 vsix 文件。
+1. 从 VSCode 插件市场下载 [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) 插件的 vsix
+   文件。
 
 ![devbox](https://raw.githubusercontent.com/mlhiter/typora-images/master/CleanShot%202024-11-15%20at%2017.18.13%402x.png)
 
