@@ -8,6 +8,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -201,7 +202,7 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 
 		if id == 0 {
 			conditions = append(conditions, "id = ?")
-			values = append(values, keyword)
+			values = append(values, helper.String2Int(keyword))
 		}
 		if name == "" {
 			if common.UsingPostgreSQL {
@@ -221,7 +222,7 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 		}
 		if channelType == 0 {
 			conditions = append(conditions, "type = ?")
-			values = append(values, keyword)
+			values = append(values, helper.String2Int(keyword))
 		}
 		if baseURL == "" {
 			if common.UsingPostgreSQL {

@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/random"
@@ -25,4 +26,15 @@ func AssignOrDefault(value string, defaultValue string) string {
 
 func MessageWithRequestID(message string, id string) string {
 	return fmt.Sprintf("%s (request id: %s)", message, id)
+}
+
+func String2Int(keyword string) int {
+	if keyword == "" {
+		return 0
+	}
+	i, err := strconv.Atoi(keyword)
+	if err != nil {
+		return 0
+	}
+	return i
 }

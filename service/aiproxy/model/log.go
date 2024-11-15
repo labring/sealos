@@ -10,6 +10,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 )
 
 type Log struct {
@@ -240,11 +241,11 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 
 		if code == 0 {
 			conditions = append(conditions, "code = ?")
-			values = append(values, keyword)
+			values = append(values, helper.String2Int(keyword))
 		}
 		if channelID == 0 {
 			conditions = append(conditions, "channel_id = ?")
-			values = append(values, keyword)
+			values = append(values, helper.String2Int(keyword))
 		}
 		if endpoint == "" {
 			if common.UsingPostgreSQL {
@@ -350,11 +351,11 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 
 		if code == 0 {
 			conditions = append(conditions, "code = ?")
-			values = append(values, keyword)
+			values = append(values, helper.String2Int(keyword))
 		}
 		if channelID == 0 {
 			conditions = append(conditions, "channel_id = ?")
-			values = append(values, keyword)
+			values = append(values, helper.String2Int(keyword))
 		}
 		if endpoint == "" {
 			if common.UsingPostgreSQL {
