@@ -46,12 +46,12 @@ type Token struct {
 func (t *Token) MarshalJSON() ([]byte, error) {
 	type Alias Token
 	return json.Marshal(&struct {
-		Alias
+		*Alias
 		CreatedAt  int64 `json:"created_at"`
 		AccessedAt int64 `json:"accessed_at"`
 		ExpiredAt  int64 `json:"expired_at"`
 	}{
-		Alias:      (Alias)(*t),
+		Alias:      (*Alias)(t),
 		CreatedAt:  t.CreatedAt.UnixMilli(),
 		AccessedAt: t.AccessedAt.UnixMilli(),
 		ExpiredAt:  t.ExpiredAt.UnixMilli(),

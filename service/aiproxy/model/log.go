@@ -34,10 +34,10 @@ type Log struct {
 func (l *Log) MarshalJSON() ([]byte, error) {
 	type Alias Log
 	return json.Marshal(&struct {
-		Alias
+		*Alias
 		CreatedAt int64 `json:"created_at"`
 	}{
-		Alias:     (Alias)(*l),
+		Alias:     (*Alias)(l),
 		CreatedAt: l.CreatedAt.UnixMilli(),
 	})
 }

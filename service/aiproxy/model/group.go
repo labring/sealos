@@ -36,11 +36,11 @@ type Group struct {
 func (g *Group) MarshalJSON() ([]byte, error) {
 	type Alias Group
 	return json.Marshal(&struct {
-		Alias
+		*Alias
 		CreatedAt  int64 `json:"created_at"`
 		AccessedAt int64 `json:"accessed_at"`
 	}{
-		Alias:      (Alias)(*g),
+		Alias:      (*Alias)(g),
 		CreatedAt:  g.CreatedAt.UnixMilli(),
 		AccessedAt: g.AccessedAt.UnixMilli(),
 	})

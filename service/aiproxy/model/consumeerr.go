@@ -24,10 +24,10 @@ type ConsumeError struct {
 func (c *ConsumeError) MarshalJSON() ([]byte, error) {
 	type Alias ConsumeError
 	return json.Marshal(&struct {
-		Alias
+		*Alias
 		CreatedAt int64 `json:"created_at"`
 	}{
-		Alias:     (Alias)(*c),
+		Alias:     (*Alias)(c),
 		CreatedAt: c.CreatedAt.UnixMilli(),
 	})
 }

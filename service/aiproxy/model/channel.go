@@ -50,13 +50,13 @@ type Channel struct {
 func (c *Channel) MarshalJSON() ([]byte, error) {
 	type Alias Channel
 	return json.Marshal(&struct {
-		Alias
+		*Alias
 		CreatedAt        int64 `json:"created_at"`
 		AccessedAt       int64 `json:"accessed_at"`
 		TestAt           int64 `json:"test_at"`
 		BalanceUpdatedAt int64 `json:"balance_updated_at"`
 	}{
-		Alias:            (Alias)(*c),
+		Alias:            (*Alias)(c),
 		CreatedAt:        c.CreatedAt.UnixMilli(),
 		AccessedAt:       c.AccessedAt.UnixMilli(),
 		TestAt:           c.TestAt.UnixMilli(),
