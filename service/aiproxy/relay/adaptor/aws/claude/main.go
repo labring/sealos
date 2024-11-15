@@ -159,6 +159,9 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			}
 
 			response, meta := anthropic.StreamResponseClaude2OpenAI(&claudeResp)
+			if response == nil {
+				return true
+			}
 			if meta != nil {
 				usage.PromptTokens += meta.Usage.InputTokens
 				usage.CompletionTokens += meta.Usage.OutputTokens
@@ -174,9 +177,6 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 						response.Choices[len(response.Choices)-1].Delta.ToolCalls = lastToolCallChoice.Delta.ToolCalls
 					}
 				}
-			}
-			if response == nil {
-				return true
 			}
 			response.ID = id
 			response.Model = c.GetString(ctxkey.OriginalModel)

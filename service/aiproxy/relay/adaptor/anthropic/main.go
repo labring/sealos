@@ -295,6 +295,9 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		}
 
 		response, meta := StreamResponseClaude2OpenAI(&claudeResponse)
+		if response == nil {
+			continue
+		}
 		if meta != nil {
 			usage.PromptTokens += meta.Usage.InputTokens
 			usage.CompletionTokens += meta.Usage.OutputTokens
@@ -311,9 +314,6 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 					response.Choices[len(response.Choices)-1].Delta.ToolCalls = lastToolCallChoice.Delta.ToolCalls
 				}
 			}
-		}
-		if response == nil {
-			continue
 		}
 
 		response.ID = id

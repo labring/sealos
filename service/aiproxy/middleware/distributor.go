@@ -3,12 +3,12 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 )
@@ -22,34 +22,29 @@ func Distribute(c *gin.Context) {
 		abortWithMessage(c, http.StatusServiceUnavailable, "服务暂停中")
 		return
 	}
-	group := c.GetString(ctxkey.Group)
 	requestModel := c.GetString(ctxkey.RequestModel)
 	var channel *model.Channel
 	channelID, ok := c.Get(ctxkey.SpecificChannelID)
 	if ok {
 		id, err := strconv.Atoi(channelID.(string))
 		if err != nil {
-			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 Id")
+			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 ID")
 			return
 		}
-		channel, err = model.GetChannelByID(id, false)
-		if err != nil {
-			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 Id")
+		channel, ok = model.CacheGetChannelByID(id)
+		if !ok {
+			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 ID")
 			return
 		}
-		if channel.Status != model.ChannelStatusEnabled {
-			abortWithMessage(c, http.StatusForbidden, "该渠道已被禁用")
+		if !slices.Contains(channel.Models, requestModel) {
+			abortWithMessage(c, http.StatusServiceUnavailable, fmt.Sprintf("渠道 %s 不支持模型 %s", channel.Name, requestModel))
 			return
 		}
 	} else {
 		var err error
 		channel, err = model.CacheGetRandomSatisfiedChannel(requestModel)
 		if err != nil {
-			message := fmt.Sprintf("当前分组 %s 下对于模型 %s 无可用渠道", group, requestModel)
-			if channel != nil {
-				logger.SysError(fmt.Sprintf("渠道不存在：%d", channel.ID))
-				message = "数据库一致性已被破坏，请联系管理员"
-			}
+			message := fmt.Sprintf("%s 不可用", requestModel)
 			abortWithMessage(c, http.StatusServiceUnavailable, message)
 			return
 		}

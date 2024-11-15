@@ -271,10 +271,11 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 }
 
 var (
-	model2channels  map[string][]*Channel
-	allModels       []string
-	type2Models     map[int][]string
-	channelSyncLock sync.RWMutex
+	model2channels    map[string][]*Channel
+	allModels         []string
+	type2Models       map[int][]string
+	channelID2channel map[int]*Channel
+	channelSyncLock   sync.RWMutex
 )
 
 func CacheGetAllModels() []string {
@@ -344,6 +345,7 @@ func InitChannelCache() {
 	model2channels = newModel2channels
 	allModels = models
 	type2Models = newType2Models
+	channelID2channel = newChannelID2channel
 	channelSyncLock.Unlock()
 	logger.SysDebug("channels synced from database")
 }
@@ -387,4 +389,11 @@ func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 	}
 
 	return channels[rand.Intn(len(channels))], nil
+}
+
+func CacheGetChannelByID(id int) (*Channel, bool) {
+	channelSyncLock.RLock()
+	channel, ok := channelID2channel[id]
+	channelSyncLock.RUnlock()
+	return channel, ok
 }
