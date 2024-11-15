@@ -1,28 +1,27 @@
 import {
+  Box,
   Button,
+  ButtonProps,
   Flex,
+  IconButton,
   Menu,
   MenuButton,
-  MenuList,
-  Tooltip,
-  IconButton,
   MenuItem,
-  ButtonProps,
-  Box
+  MenuList,
+  Tooltip
 } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import MyIcon from './Icon'
+import { getSSHConnectionInfo } from '@/api/devbox'
 import { useEnvStore } from '@/stores/env'
-import { useIDEStore, IDEType } from '@/stores/ide'
+import { IDEType, useIDEStore } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
-import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import MyIcon from './Icon'
 
 interface Props {
   devboxName: string
-  runtimeVersion: string
   sshPort: number
   status: DevboxStatusMapType
   isBigButton?: boolean
@@ -32,7 +31,6 @@ interface Props {
 
 const IDEButton = ({
   devboxName,
-  runtimeVersion,
   sshPort,
   status,
   isBigButton = true,
@@ -57,11 +55,9 @@ const IDEButton = ({
       })
 
       try {
-        const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
-          devboxName,
-          runtimeName: runtimeVersion
+        const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
+          devboxName
         })
-        const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
 
         const idePrefix = ideObj[currentIDE].prefix
         const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
@@ -71,7 +67,6 @@ const IDEButton = ({
         )}&sshHostLabel=${encodeURIComponent(
           `${env.sealosDomain}_${env.namespace}_${devboxName}`
         )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`
-
         window.location.href = fullUri
       } catch (error: any) {
         console.error(error, '==')
@@ -79,7 +74,7 @@ const IDEButton = ({
         setLoading(false)
       }
     },
-    [devboxName, env.namespace, env.sealosDomain, runtimeVersion, setLoading, sshPort, toast, t]
+    [devboxName, env.namespace, env.sealosDomain, setLoading, sshPort, toast, t]
   )
 
   return (

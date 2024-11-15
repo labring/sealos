@@ -5,3 +5,13 @@ export interface IngressListItemType {
   port: number
   protocol: string
 }
+
+export type PortInfos = {
+  networkName: string;
+  portName: string;
+  port: number;
+  protocol: ProtocolType;
+  openPublicDomain: boolean;
+  publicDomain: string;
+  customDomain: string;
+}[]

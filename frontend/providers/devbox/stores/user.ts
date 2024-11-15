@@ -5,14 +5,14 @@ import { immer } from 'zustand/middleware/immer'
 import { getUserQuota } from '@/api/platform'
 import { DevboxEditType } from '@/types/devbox'
 import { UserQuotaItemType } from '@/types/user'
-
+type TQuota = Pick<DevboxEditType, 'memory'|'cpu'> & { nodeports: number }
 type State = {
   balance: number
   userQuota: UserQuotaItemType[]
   loadUserQuota: () => Promise<null>
   checkQuotaAllow: (
-    request: DevboxEditType & { nodeports: number },
-    usedData?: DevboxEditType & { nodeports: number }
+    request: TQuota,
+    usedData?: TQuota
   ) => string | undefined
 }
 

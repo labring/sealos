@@ -1,12 +1,13 @@
-import dayjs from 'dayjs'
-import yaml from 'js-yaml'
 import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
+import dayjs from 'dayjs'
 import duration from 'dayjs/plugin/duration'
 import * as jsonpatch from 'fast-json-patch'
+import yaml from 'js-yaml'
+import { useTranslations } from 'next-intl'
 
 import { YamlKindEnum } from '@/constants/devbox'
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
+import { customAlphabet } from 'nanoid'
 
 dayjs.extend(duration)
 
@@ -329,3 +330,4 @@ export const isElementInViewport = (element: Element) => {
   const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0
   return vertInView && horInView
 }
+export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
