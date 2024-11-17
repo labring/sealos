@@ -85,7 +85,7 @@ jobs:
           bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"     
           echo repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-objectstorage >> $GITHUB_OUTPUT
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos
           path: /tmp/

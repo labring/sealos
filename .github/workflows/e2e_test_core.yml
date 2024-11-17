@@ -63,22 +63,22 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Download image-cri-shim
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: image-cri-shim-amd64
           path: /tmp/
       - name: Download sealctl
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealctl-amd64
           path: /tmp/
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-amd64
           path: /tmp/
       - name: Download e2e test
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e.test
           path: /tmp/

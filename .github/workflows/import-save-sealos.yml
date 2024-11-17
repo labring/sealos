@@ -12,7 +12,7 @@ jobs:
         with:
           sealosVersion: "4.1.7"
       - name: Save Binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sealos
           path: /usr/bin/sealos

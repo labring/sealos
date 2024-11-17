@@ -35,12 +35,12 @@ jobs:
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
       - name: Download sealos binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-${{ matrix.arch }}
           path: /tmp/sealos/bin/
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-amd64
           path: /tmp/verify/
@@ -49,12 +49,12 @@ jobs:
           sudo chmod a+x /tmp/verify/sealos
           sudo /tmp/verify/sealos version
       - name: Download patch image tar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: patch-image-${{ matrix.arch }}.tar
           path: /tmp/sealos/images/
       - name: Download e2e test
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e.test
           path: /tmp/

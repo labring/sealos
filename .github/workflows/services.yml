@@ -208,7 +208,7 @@ jobs:
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos
           path: /tmp/
