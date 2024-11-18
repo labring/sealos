@@ -28,23 +28,29 @@ export class RemoteSSHConnector extends Disposable {
 
   private replaceHomePathInConfig(content: string): string {
     const includePattern = new RegExp(
-      `Include ${os.homedir()}/.ssh/sealos/devbox_config`
+      `Include ${os.homedir()}/.ssh/sealos/devbox_config`,
+      'g'
     )
     const includePattern2 = new RegExp(
-      `Include "${os.homedir()}/.ssh/sealos/devbox_config"`
+      `Include "${os.homedir()}/.ssh/sealos/devbox_config"`,
+      'g'
     )
 
     const includeLine = `Include ~/.ssh/sealos/devbox_config`
 
+    if (includePattern.test(content)) {
+      return content.replace(includePattern, '')
+    }
+
+    if (includePattern2.test(content)) {
+      return content.replace(includePattern2, '')
+    }
+
     if (content.includes(includeLine)) {
       return content
-    } else if (includePattern.test(content)) {
-      return content.replace(includePattern, includeLine)
-    } else if (includePattern2.test(content)) {
-      return content.replace(includePattern2, includeLine)
-    } else {
-      return `${includeLine}\n${content}`
     }
+
+    return `${includeLine}\n${content}`
   }
 
   private sshConfigPreProcess() {
