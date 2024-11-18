@@ -76,9 +76,15 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
         </div>
         <div className="footer-bottom-wrap">
           <div className="footer-bottom">
-            <div className="footer-bottom-text">
-              Made by Sealos Team.{' '}
-              <Link to={'https://beian.miit.gov.cn/'}>粤ICP备2023048773号</Link>&nbsp;
+            <div className="footer-bottom-text flex-wrap">
+              Made by Sealos Team.
+              <img
+                className="w-4 h-4"
+                src={require('@site/static/img/beian.png').default}
+                alt="beian"
+              />
+              <Link to={'https://beian.miit.gov.cn/'}>浙公网安备33011002017870号</Link>
+              <Link to={'https://beian.miit.gov.cn/'}>粤ICP备2023048773号</Link>
               珠海环界云计算有限公司版权所有
             </div>
             <div className="link">
@@ -130,8 +136,15 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
       <div className="footer-bottom-wrap">
         <div className="footer-bottom">
           <div className="footer-bottom-text">
-            Made by Sealos Team. <Link to={'https://beian.miit.gov.cn/'}>粤ICP备2023048773号</Link>
-            &nbsp; 珠海环界云计算有限公司版权所有
+            Made by Sealos Team.
+            <img
+              className="w-4 h-4"
+              src={require('@site/static/img/beian.png').default}
+              alt="beian"
+            />
+            <Link to={'https://beian.miit.gov.cn/'}>浙公网安备33011002017870号</Link>
+            <Link to={'https://beian.miit.gov.cn/'}>粤ICP备2023048773号</Link>
+            珠海环界云计算有限公司版权所有
           </div>
           <div className="link">
             {FooterLinks.map((item) => {

@@ -1,0 +1,91 @@
+{
+  "title": "AI proxy",
+  "description": "AI proxy",
+  "Sidebar": {
+    "Home": "API Keys",
+    "Logs": "Logs",
+    "Price": "Pricing"
+  },
+  "keyList": {
+    "title": "API Keys"
+  },
+  "key": {
+    "key": "API Key",
+    "name": "Name",
+    "createdAt": "Creation time",
+    "lastUsedAt": "Last use time",
+    "status": "State",
+    "namePlaceholder": "Please enter name",
+    "nameRequired": "Please enter key name",
+    "nameMaxLength": "Key length is illegal",
+    "nameOnlyLettersAndNumbers": "key name contains special characters",
+    "createSuccess": "Created successfully",
+    "createFailed": "Creation failed",
+    "actions": "Operation",
+    "deleteSuccess": "Delete key successfully",
+    "deleteFailed": "Failed to delete key",
+    "updateSuccess": "Update status successful",
+    "updateFailed": "Update status failed",
+    "unused": "Not use",
+    "inputPrice": "Input price",
+    "outputPrice": "Output price",
+    "createName": "Name"
+  },
+  "logs": {
+    "call_log": "Logs",
+    "name": "Name",
+    "status": "State",
+    "time": "Time",
+    "modal": "Model",
+    "prompt_tokens": "Input",
+    "completion_tokens": "Output",
+    "price": "Price",
+    "select_modal": "Please select model",
+    "select_token_name": "Please select name",
+    "model": "Model",
+    "total_price": "Total amount",
+    "total_price_tip": "(Number of input tokens × Input price) + (Number of output tokens × Output price)",
+    "success": "Success",
+    "failed": "Failed"
+  },
+  "Page": "Page",
+  "Total": "Total",
+  "modelList": {
+    "title": "Supported models"
+  },
+  "copy": "Copy",
+  "createKey": "New",
+  "Key": {
+    "create": "Create API Key"
+  },
+  "confirm": "Confirm",
+  "keystatus": {
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "expired": "Expired",
+    "exhausted": "Exhausted",
+    "unknown": "Unknown"
+  },
+  "delete": "Delete",
+  "disable": "Disable",
+  "enable": "Enable",
+  "copySuccess": "Copied",
+  "copyFailed": "Copy failed",
+  "noData": "You don’t have an API Key yet",
+  "price": {
+    "title": "Pricing",
+    "per1kTokens": "1k tokens"
+  },
+  "ernie": "Baidu-Ernie",
+  "qwen": "Alibaba-Qwen",
+  "chatglm": "BigModel-Chatglm",
+  "deepseek": "Deepseek",
+  "moonshot": "Moonshot",
+  "sparkdesk": "Sparkdesk",
+  "abab": "Minimax",
+  "doubao": "ByteDance-Doubao",
+  "glm": "Glm",
+  "o": "OpenAI",
+  "gpt": "OpenAI",
+  "createKey2": "Create Key"
+}

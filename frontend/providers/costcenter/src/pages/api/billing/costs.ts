@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
             en: string;
           }
         ]
-      >((d) => [d.data.toSorted(([aDate], [bDate]) => aDate - bDate), d.region.name]);
+      >((d) => [d.data.sort(([aDate], [bDate]) => aDate - bDate), d.region.name]);
 
     let pointers: number[] = new Array(someArr.length).fill(0);
     const maxPointers = someArr.map((d) => d[0].length);

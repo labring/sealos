@@ -10,7 +10,7 @@ type State = {
   systemConfig: SystemConfigType | undefined;
   menuKeys: string;
   sideBarMenu: SideBarMenuType[];
-  initSystemConfig: () => Promise<SystemConfigType>;
+  initSystemConfig: (language?: string) => Promise<SystemConfigType>;
   initSystemEnvs: () => Promise<EnvResponse>;
   setSideBarMenu: (data: SideBarMenuType[]) => void;
 };
@@ -27,9 +27,9 @@ export const useSystemConfigStore = create<State>()(
           value: 'SideBar.Applications'
         }
       ],
-      async initSystemConfig() {
+      async initSystemConfig(language?: string) {
         const data = await getSystemConfig();
-        const { menuKeys } = await getTemplates();
+        const { menuKeys } = await getTemplates(language);
 
         if (get().menuKeys !== menuKeys) {
           const menus = menuKeys.split(',').map((i) => ({

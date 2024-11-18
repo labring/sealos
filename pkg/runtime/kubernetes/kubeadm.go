@@ -345,6 +345,17 @@ func (k *KubeadmRuntime) setAPIServerEndpoint(endpoint string) {
 	k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken.APIServerEndpoint = endpoint
 }
 
+func (k *KubeadmRuntime) setJoinInternalIP(nodeIP string) {
+	k.kubeadmConfig.JoinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{
+		"node-ip": nodeIP,
+	}
+}
+func (k *KubeadmRuntime) setInitInternalIP(nodeIP string) {
+	k.kubeadmConfig.InitConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{
+		"node-ip": nodeIP,
+	}
+}
+
 func (k *KubeadmRuntime) setInitAdvertiseAddress(advertiseAddress string) {
 	k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.AdvertiseAddress = advertiseAddress
 }
@@ -459,6 +470,7 @@ func (k *KubeadmRuntime) CompleteKubeadmConfig(fns ...func(*KubeadmRuntime) erro
 		}
 	}
 	k.setInitAdvertiseAddress(k.getMaster0IP())
+	k.setInitInternalIP(k.getMaster0IP())
 	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.kubeadmConfig.ClusterConfiguration.APIServer.ExtraArgs == nil {
 		k.kubeadmConfig.ClusterConfiguration.APIServer.ExtraArgs = make(map[string]string)
@@ -481,6 +493,7 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	}
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
+	k.setJoinInternalIP(iputils.GetHostIP(node))
 
 	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
 	if err != nil {
@@ -499,6 +512,7 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 		return nil, err
 	}
 	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
+	k.setJoinInternalIP(iputils.GetHostIP(masterIP))
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:%d", k.getMaster0IP(), k.getAPIServerPort()))
 
 	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()

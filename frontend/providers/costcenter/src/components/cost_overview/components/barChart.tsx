@@ -21,8 +21,8 @@ export default function Chart({
   const { t } = useTranslation();
   const series = data.map(([sourceRaw, seriesName]) => {
     const source = [
-      ...sourceRaw
-        .toSorted(([aDate], [bDate]) => aDate - bDate)
+      ...[...sourceRaw]
+        .sort(([aDate], [bDate]) => aDate - bDate)
         .reduce<[Date, number][]>(
           (pre, [curDate, curVal]) => {
             const len = pre.length;

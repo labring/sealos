@@ -93,26 +93,6 @@ export default function AppMenu() {
           <Text ml="10px" fontSize={'14px'} fontWeight={500}>
             {t('SideBar.My App')}
           </Text>
-
-          <Center
-            ml="auto"
-            bg="rgba(150, 153, 180, 0.15)"
-            color={'#485058'}
-            w="28px"
-            h="28px"
-            borderRadius={'50%'}
-            bottom={'28px'}
-            right={'16px'}
-            fontSize={'12px'}
-            fontWeight={500}
-            cursor={'pointer'}
-            onClick={(e) => {
-              e.stopPropagation();
-              changeI18n();
-            }}
-          >
-            {i18n?.language === 'en' ? 'En' : '中'}
-          </Center>
         </Flex>
       ) : (
         <Center

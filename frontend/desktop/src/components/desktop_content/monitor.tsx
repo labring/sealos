@@ -62,7 +62,7 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
         </Flex>
       )}
 
-      <Flex alignItems={'center'} mt={'12px'} gap={'20px'}>
+      <Flex alignItems={'center'} mt={'12px'} gap={'12px'}>
         <CircularProgress
           size={'90px'}
           trackColor={runningPodPercentage === 0 ? '#FFFFFF33' : '#FF8398'}
@@ -81,11 +81,13 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
         >
           <Flex alignItems={'center'} gap={'8px'}>
             <Box bg={'#2BE0B3'} w={'7px'} h={'7px'} borderRadius={'2px'}></Box>
-            <Text>{t('common:healthy_pod', { count: runningPodCount })}</Text>
+            <Text fontSize={'11px'}>{t('common:healthy_pod', { count: runningPodCount })}</Text>
           </Flex>
           <Flex alignItems={'center'} gap={'8px'}>
             <Box bg={'#FF8398'} w={'7px'} h={'7px'} borderRadius={'2px'}></Box>
-            <Text>{t('common:alarm_pod', { count: totalPodCount - runningPodCount })}</Text>
+            <Text fontSize={'11px'}>
+              {t('common:alarm_pod', { count: totalPodCount - runningPodCount })}
+            </Text>
           </Flex>
         </Flex>
       </Flex>

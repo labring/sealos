@@ -46,6 +46,8 @@ import { DeleteIcon, PictureIcon, UploadIcon, AttachmentIcon } from '../icons';
 
 export function useRealNameAuthNotification(props?: UseToastOptions) {
   const { t } = useTranslation();
+  const { commonConfig } = useConfigStore((s) => s);
+  const realNameReward = commonConfig?.realNameReward;
 
   const realNameAuthNotification = useToast({
     position: 'top',
@@ -108,7 +110,9 @@ export function useRealNameAuthNotification(props?: UseToastOptions) {
                 lineHeight="20px"
                 letterSpacing="0.25px"
               >
-                {t('common:realname_auth_reminder_desc')}
+                {t('common:realname_auth_reminder_desc', {
+                  reward: realNameReward
+                })}
                 <RealNameModal onFormSuccess={props.onClose}>
                   <Text
                     as="span"
@@ -364,7 +368,10 @@ export function FaceIdRealNameAuthORcode(
                 realName: result.data?.realName
               });
 
+              // refetch user info
               queryClient.invalidateQueries([session?.token, 'UserInfo']);
+              // refetch user amount
+              queryClient.invalidateQueries(['getAmount']);
 
               stopPolling();
 

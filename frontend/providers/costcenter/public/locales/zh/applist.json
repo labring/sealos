@@ -10,5 +10,6 @@
 	"APP-STORE": "应用商店",
 	"DB-BACKUP":"数据库备份",
 	"all_app_type": "所有应用类型",
-	"DEV-BOX": "Devbox"
+	"DEV-BOX": "Devbox",
+	"LLM-TOKEN": "AI Proxy"
 }

@@ -12,7 +12,7 @@ import {
   MenuButton,
   Flex
 } from '@chakra-ui/react';
-import type { ButtonProps } from '@chakra-ui/react';
+import type { BoxProps, ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
 interface Props extends ButtonProps {
@@ -26,6 +26,7 @@ interface Props extends ButtonProps {
   }[];
   onchange?: (val: string) => void;
   isInvalid?: boolean;
+  boxStyle?: BoxProps;
 }
 
 const MySelect = (
@@ -37,6 +38,7 @@ const MySelect = (
     list,
     onchange,
     isInvalid,
+    boxStyle,
     ...props
   }: Props,
   selectRef: any
@@ -62,6 +64,7 @@ const MySelect = (
         onClick={() => {
           isOpen ? onClose() : onOpen();
         }}
+        {...boxStyle}
       >
         <MenuButton
           as={Button}
