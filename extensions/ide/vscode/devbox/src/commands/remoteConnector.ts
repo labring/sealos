@@ -33,12 +33,12 @@ export class RemoteSSHConnector extends Disposable {
     )
     const includeLine = `Include "${os.homedir()}/.ssh/sealos/devbox_config"`
 
-    if (includePattern.test(content)) {
+    if (content.includes(includeLine)) {
+      return content
+    } else if (includePattern.test(content)) {
       return content.replace(includePattern, includeLine)
     } else if (includePattern2.test(content)) {
       return content.replace(includePattern2, includeLine)
-    } else if (content.includes(includeLine)) {
-      return content
     } else {
       return `${includeLine}\n${content}`
     }
