@@ -11,9 +11,14 @@ import rehypeRewrite from 'rehype-rewrite';
 import styles from './index.module.scss';
 import { parseGithubUrl } from '@/utils/tools';
 import { Octokit, App } from 'octokit';
+import { useTranslation } from 'next-i18next';
 
 const ReadMe = ({ templateDetail }: { templateDetail: TemplateType }) => {
+  const { i18n } = useTranslation();
   const [templateReadMe, setTemplateReadMe] = useState('');
+
+  const readme =
+    templateDetail?.spec?.i18n?.[i18n.language]?.readme ?? templateDetail?.spec?.readme;
 
   // const octokit = new Octokit({
   //   auth: ''
@@ -29,23 +34,20 @@ const ReadMe = ({ templateDetail }: { templateDetail: TemplateType }) => {
   //   })();
   // }, []);
 
-  const githubOptions = useMemo(
-    () => parseGithubUrl(templateDetail?.spec?.readme),
-    [templateDetail?.spec?.readme]
-  );
+  const githubOptions = useMemo(() => parseGithubUrl(readme), [readme]);
 
   useEffect(() => {
-    if (templateDetail?.spec?.readme) {
+    if (readme) {
       (async () => {
         try {
-          const res = await (await fetch(templateDetail?.spec?.readme)).text();
+          const res = await (await fetch(readme)).text();
           setTemplateReadMe(res);
         } catch (error) {
           console.log(error);
         }
       })();
     }
-  }, [templateDetail?.spec?.readme]);
+  }, [readme]);
 
   // @ts-ignore
   const myRewrite = (node, index, parent) => {

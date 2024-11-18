@@ -38,7 +38,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
   const { setInsideCloud } = useCachedStore();
   const { envs } = useSystemConfigStore();
 
-  const { data } = useQuery(['listTemplate'], getTemplates, {
+  const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
     refetchInterval: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
     retry: 3
@@ -52,7 +52,9 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
     });
 
     const searchResults = typeFilteredResults?.filter((item: TemplateType) => {
-      return item?.metadata?.name?.toLowerCase().includes(searchValue.toLowerCase());
+      const nameMatches = item?.metadata?.name?.toLowerCase().includes(searchValue.toLowerCase());
+      const titleMatches = item?.spec?.title?.toLowerCase().includes(searchValue.toLowerCase());
+      return nameMatches || titleMatches;
     });
 
     return searchResults;
@@ -161,7 +163,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                         border={' 1px solid rgba(255, 255, 255, 0.50)'}
                       >
                         <Image
-                          src={item?.spec?.icon}
+                          src={item.spec.i18n?.[i18n.language]?.icon ?? item?.spec?.icon}
                           alt="logo"
                           width={'36px'}
                           height={'36px'}
@@ -170,11 +172,11 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                       </Box>
                       <Flex ml="16px" noOfLines={2} flexDirection={'column'}>
                         <Text fontSize={'18px'} fontWeight={600} color={'#111824'}>
-                          {item?.spec?.title}
+                          {item.spec.i18n?.[i18n.language]?.title ?? item.spec.title}
                         </Text>
                         {envs?.SHOW_AUTHOR === 'true' && (
                           <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
-                            By {item?.spec?.author}
+                            By {item.spec.author}
                           </Text>
                         )}
                       </Flex>
@@ -209,7 +211,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                       color={'5A646E'}
                       fontWeight={400}
                     >
-                      {item?.spec?.description}
+                      {item.spec.i18n?.[i18n.language]?.description ?? item.spec.description}
                     </Text>
                     <Flex
                       mt="auto"
@@ -232,7 +234,15 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
                           </Tag>
                         ))}
                       </Flex>
-                      <Center cursor={'pointer'} onClick={(e) => goGithub(e, item?.spec?.gitRepo)}>
+                      <Center
+                        cursor={'pointer'}
+                        onClick={(e) =>
+                          goGithub(
+                            e,
+                            item.spec?.i18n?.[i18n.language]?.gitRepo ?? item?.spec?.gitRepo
+                          )
+                        }
+                      >
                         <ShareIcon color={'#667085'} />
                       </Center>
                     </Flex>
