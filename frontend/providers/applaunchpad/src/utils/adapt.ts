@@ -31,7 +31,8 @@ import {
   publicDomainKey,
   gpuNodeSelectorKey,
   gpuResourceKey,
-  stopKey
+  stopKey,
+  priorityKey
 } from '@/constants/app';
 import {
   cpuFormatToM,
@@ -73,6 +74,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     status: appStatusMap.waiting,
     isPause: !!app?.metadata?.annotations?.[pauseKey],
     isStop: !!app?.metadata?.annotations?.[stopKey],
+    priority: app.metadata?.labels?.[priorityKey] || '1',
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(
@@ -301,6 +303,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
+    priority: appDeploy?.metadata?.labels?.[priorityKey] || '1',
     isStop: !!appDeploy?.metadata?.annotations?.[stopKey],
     imageName:
       appDeploy?.metadata?.annotations?.originImageName ||
@@ -428,7 +431,8 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'configMapList',
     'storeList',
     'gpu',
-    'nodeName'
+    'nodeName',
+    'priority'
   ];
   const res: Record<string, any> = {};
 

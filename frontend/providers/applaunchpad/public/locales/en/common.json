@@ -232,5 +232,6 @@
   "Containers": "Containers",
   "node_info": "Node Info",
   "upload_file": "Upload And Deploy",
-  "upload_file_tip": "Click Upload File"
+  "upload_file_tip": "Click Upload File",
+  "priority": "Priority"
 }

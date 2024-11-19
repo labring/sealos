@@ -740,6 +740,22 @@ const Form = ({
                   />
                 </Flex>
               </FormControl>
+
+              {/* priority */}
+              <FormControl mb={7} isInvalid={!!errors.priority} w={'500px'}>
+                <Flex alignItems={'center'}>
+                  <Label>{t('priority')}</Label>
+                  <Input
+                    width={'350px'}
+                    type={'text'}
+                    placeholder={'优先级'}
+                    {...register('priority', {
+                      required: '优先级不能为空'
+                    })}
+                  />
+                </Flex>
+              </FormControl>
+
               {/* replicas */}
               <Box mb={7}>
                 <Flex alignItems={'center'}>

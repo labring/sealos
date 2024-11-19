@@ -5,6 +5,7 @@ import {
   gpuResourceKey,
   maxReplicasKey,
   minReplicasKey,
+  priorityKey,
   publicDomainKey
 } from '@/constants/app';
 import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/store/static';
@@ -25,6 +26,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     },
     labels: {
       [appDeployKey]: data.appName,
+      [priorityKey]: data.priority || '1',
       app: data.appName
     }
   };

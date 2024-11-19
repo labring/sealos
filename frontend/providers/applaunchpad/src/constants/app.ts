@@ -95,6 +95,8 @@ export const appDeployKey = 'cloud.sealos.io/app-deploy-manager';
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
 export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';
+export const priorityKey = 'deploy.cloud.sealos.io/priority'; // 0-100之间的优先级
+
 export enum Coin {
   cny = 'cny',
   shellCoin = 'shellCoin',
