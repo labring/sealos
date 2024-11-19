@@ -156,28 +156,6 @@ export const handleTemplateToInstanceYaml = (
     }
   } = template;
 
-  console.log({
-    apiVersion: 'app.sealos.io/v1',
-    kind: 'Instance',
-    metadata: {
-      name: instanceName
-    },
-    spec: {
-      gitRepo,
-      templateType: templateType || template_type,
-      categories: categories || [],
-      defaults: defaults || {},
-      inputs: inputs || {},
-      author: author || '',
-      title: title || '',
-      url: url || '',
-      readme: readme || '',
-      icon: icon || '',
-      description: description || '',
-      draft: draft || false
-    }
-  });
-
   return {
     apiVersion: 'app.sealos.io/v1',
     kind: 'Instance',

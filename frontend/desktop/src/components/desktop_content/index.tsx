@@ -27,6 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { UserInfo } from '@/api/auth';
 import TaskModal from '../task/taskModal';
 import FloatingTaskButton from '../task/floatButton';
+import OnlineServiceButton from './serviceButton';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -176,6 +177,7 @@ export default function Desktop(props: any) {
       backgroundSize={'cover'}
       position={'relative'}
     >
+      {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
       <Flex
         gap={'8px'}

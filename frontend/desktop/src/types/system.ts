@@ -61,6 +61,7 @@ export type LayoutConfigType = {
   logo: string;
   backgroundImage: string;
   meta: MetaConfigType;
+  customerServiceURL?: string;
 
   protocol?: ProtocolConfigType;
   common: {

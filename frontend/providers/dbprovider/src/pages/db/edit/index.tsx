@@ -19,7 +19,7 @@ import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
@@ -34,7 +34,7 @@ const defaultEdit = {
 };
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
-  const { startGuide } = useDriver();
+  const { startGuide, isGuided } = useDriver();
   const { t } = useTranslation();
   const router = useRouter();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
@@ -67,6 +67,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const formHook = useForm<DBEditType>({
     defaultValues: defaultEdit
   });
+
+  useEffect(() => {
+    if (isGuided) {
+      formHook.setValue('storage', 1);
+    }
+  }, [isGuided]);
 
   const generateYamlList = (data: DBEditType) => {
     return [

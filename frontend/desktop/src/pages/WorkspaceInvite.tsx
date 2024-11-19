@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 
 const Callback: NextPage = () => {
   const router = useRouter();
+  const { layoutConfig } = useConfigStore();
   const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
   const logo = useConfigStore().layoutConfig?.logo;
@@ -109,7 +110,7 @@ const Callback: NextPage = () => {
         >
           <Image boxSize={'34px'} borderRadius="full" src={logo} alt="logo" />
           <Text fontWeight={700} fontSize={'24px'}>
-            Sealos
+            {layoutConfig?.title ?? 'Sealos'}
           </Text>
         </Flex>
         {isValid ? (

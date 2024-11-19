@@ -146,9 +146,9 @@ export default function useDriver({
             <Flex gap={'6px'} alignItems={'center'} fontSize={'13px'} fontWeight={500}>
               <DriverStarIcon />
               <Text color={'#24282C'}>{t('guide_deploy_button')}</Text>
-              <Text>{reward}</Text>
+              {/* <Text>{reward}</Text>
               <SealosCoin />
-              <Text>{t('balance')}</Text>
+              <Text>{t('balance')}</Text> */}
             </Flex>
           )
         }
