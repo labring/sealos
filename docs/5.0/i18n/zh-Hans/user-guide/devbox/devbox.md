@@ -15,13 +15,13 @@ Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可�
 1. 从 VSCode 插件市场下载 [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) 插件的 vsix
    文件。
 
-<img src="https://raw.githubusercontent.com/mlhiter/typora-images/master/CleanShot%202024-11-15%20at%2017.18.13%402x.png" alt="devbox" style="zoom:50%;" />
+![devbox-1](./images/1.png)
 
 2. 打开 Cursor 的扩展窗口。
 
 3. 将下载的文件拖拽到扩展窗口中。
 
-​    <img src="https://raw.githubusercontent.com/mlhiter/typora-images/master/CleanShot%202024-11-19%20at%2015.03.36%402x.png" style="zoom:50%;" />
+![devbox-2](./images/2.png)
 
 ### 2. Cursor 和 VSCode 都无法连接
 

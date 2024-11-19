@@ -15,13 +15,13 @@ Solution: Manually install the Devbox plugin.
 1. Download the vsix file of the [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) plugin
    from the VSCode plugin market.
 
-<img src="https://raw.githubusercontent.com/mlhiter/typora-images/master/CleanShot%202024-11-15%20at%2017.18.13%402x.png" alt="devbox" style="zoom:50%;" />
+![devbox-1](./images/1.png)
 
 2. Open the Cursor's extension window.
 
 3. Drag the downloaded file into the extension window.
 
-​    <img src="https://raw.githubusercontent.com/mlhiter/typora-images/master/CleanShot%202024-11-19%20at%2015.03.36%402x.png" style="zoom:50%;" />
+![devbox-2](./images/2.png)
 
 ### 2. Cursor and VSCode cannot connect
 
