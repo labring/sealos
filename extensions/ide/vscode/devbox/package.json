@@ -9,15 +9,15 @@
     "remote"
   ],
   "bugs": {
-    "url": "https://github.com/mlhiter/devbox/issues"
+    "url": "https://github.com/labring/sealos/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mlhiter/devbox"
+    "url": "https://github.com/labring/sealos"
   },
-  "homepage": "https://github.com/mlhiter/devbox/blob/master/README.md",
+  "homepage": "https://github.com/labring/sealos/blob/main/extensions/ide/vscode/devbox/README.md",
   "publisher": "labring",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.91.0"
