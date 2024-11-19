@@ -11,9 +11,9 @@ export const ensureFileAccessPermission = async (path: string) => {
       if (!username) {
         throw new Error('can not get username')
       }
-      await execa('icacls', [path, '/inheritance:r'])
-      await execa('icacls', [path, '/grant:r', `${username}:F`])
-      await execa('icacls', [path, '/remove:g', 'everyone'])
+      // await execa('icacls', [path, '/inheritance:r'])
+      // await execa('icacls', [path, '/grant:r', `${username}:F`])
+      // await execa('icacls', [path, '/remove:g', 'everyone'])
     } catch (error) {
       console.error('set file access permission failed:', error)
       throw new Error(`set file access permission failed: ${error.message}`)

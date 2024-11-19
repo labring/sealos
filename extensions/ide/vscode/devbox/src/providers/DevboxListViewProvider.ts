@@ -129,18 +129,18 @@ class ProjectTreeDataProvider
           }
         } catch (error) {
           console.error(`get devbox detail failed: ${error}`)
-          if (
-            error.toString().includes('500:secrets') &&
-            error.toString().includes('not found')
-          ) {
-            const hostParts = item.host.split('_')
-            const devboxName = hostParts.slice(2).join('_')
-            if (error.toString().includes(devboxName)) {
-              await this.delete(item.host, devboxName, true)
+          // if (
+          //   error.toString().includes('500:secrets') &&
+          //   error.toString().includes('not found')
+          // ) {
+          //   const hostParts = item.host.split('_')
+          //   const devboxName = hostParts.slice(2).join('_')
+          //   if (error.toString().includes(devboxName)) {
+          //     await this.delete(item.host, devboxName, true)
 
-              return
-            }
-          }
+          //     return
+          //   }
+          // }
           item.iconPath = new vscode.ThemeIcon('warning')
         }
       })
