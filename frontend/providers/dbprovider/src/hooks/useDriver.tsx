@@ -38,6 +38,7 @@ export default function useDriver() {
   const { t } = useTranslation();
   const [reward, setReward] = useState(1);
   const { createCompleted, setCreateCompleted } = useGuideStore();
+  const [isGuided, setIsGuided] = useState(false);
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -90,10 +91,10 @@ export default function useDriver() {
             <Flex gap={'6px'} alignItems={'center'} fontSize={'13px'} fontWeight={500}>
               <DriverStarIcon />
               <Text color={'#24282C'}>{t('guide_deploy_button')}</Text>
-              <Text>{reward}</Text>
+              {/* <Text>{reward}</Text>
               <SealosCoin />
               <Text>{t('balance')}</Text>
-              <PopoverBodyInfo />
+              <PopoverBodyInfo /> */}
             </Flex>
           )
         }
@@ -117,16 +118,20 @@ export default function useDriver() {
       try {
         const data = await getUserTasks();
         if (data.needGuide && !createCompleted) {
-          setReward(formatMoney(Number(data.task.reward)));
-          requestAnimationFrame(() => {
-            startGuide();
-          });
+          setIsGuided(true);
+          // hide guide
+          // setReward(formatMoney(Number(data.task.reward)));
+          // requestAnimationFrame(() => {
+          //   startGuide();
+          // });
         }
-      } catch (error) {}
+      } catch (error) {
+        setIsGuided(false);
+      }
     };
     handleUserGuide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { startGuide, closeGuide };
+  return { startGuide, closeGuide, isGuided };
 }

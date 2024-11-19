@@ -273,7 +273,7 @@ export default function useDetailDriver() {
     allowPreviousStep: false,
     isShowButtons: false,
     allowKeyboardControl: false,
-    steps: [...baseSteps, ...giftStep],
+    steps: [...baseSteps],
     onDestroyed: () => {
       console.log('onDestroyed Detail');
       setDetailCompleted(true);
