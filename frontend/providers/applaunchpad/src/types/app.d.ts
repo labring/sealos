@@ -56,11 +56,13 @@ export interface AppListItemType {
   minReplicas: number;
   maxReplicas: number;
   storeAmount: number;
+  priority: string;
 }
 
 export interface AppEditType {
   appName: string;
   nodeName: string;
+  priority: string;
   replicas: number | '';
   gpu?: GpuType;
   hpa: {

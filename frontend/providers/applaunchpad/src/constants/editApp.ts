@@ -27,6 +27,7 @@ export const defaultEditVal: AppEditType = {
   nodeName: '',
   replicas: 1,
   currentContainerName: 'hello-world',
+  priority: '1',
   containers: [
     {
       name: 'container1',

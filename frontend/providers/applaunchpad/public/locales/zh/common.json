@@ -232,5 +232,6 @@
   "Containers": "容器配置",
   "node_info": "节点信息",
   "upload_file": "上传文件并部署",
-  "upload_file_tip": "点击上传文件"
+  "upload_file_tip": "点击上传文件",
+  "priority": "优先级"
 }

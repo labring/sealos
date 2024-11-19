@@ -177,10 +177,16 @@ const AppList = ({
           />
         )
       },
+
       {
         title: t('Creation Time'),
         dataIndex: 'createTime',
         key: 'createTime'
+      },
+      {
+        title: t('priority'),
+        dataIndex: 'priority',
+        key: 'priority'
       },
       {
         title: t('CPU'),
