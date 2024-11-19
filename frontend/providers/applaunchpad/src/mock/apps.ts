@@ -7,6 +7,7 @@ export const MOCK_APPS: AppListItemType[] = [
   {
     id: 'string',
     name: 'string',
+    priority: '1',
     status: appStatusMap.running,
     createTime: 'string',
     cpu: 100,
@@ -24,54 +25,6 @@ export const MOCK_APPS: AppListItemType[] = [
     activeReplicas: 1,
     isPause: false,
     isStop: false,
-    maxReplicas: 1,
-    minReplicas: 1,
-    storeAmount: 0
-  },
-  {
-    id: 'string2',
-    name: 'string',
-    status: appStatusMap.running,
-    createTime: 'string',
-    cpu: 100,
-    memory: 100,
-    isPause: false,
-    isStop: false,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    activeReplicas: 1,
-    maxReplicas: 1,
-    minReplicas: 1,
-    storeAmount: 0
-  },
-  {
-    id: 'string3',
-    name: 'string',
-    status: appStatusMap.running,
-    createTime: 'string',
-    isPause: false,
-    isStop: false,
-    cpu: 100,
-    memory: 100,
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    activeReplicas: 1,
     maxReplicas: 1,
     minReplicas: 1,
     storeAmount: 0
@@ -393,6 +346,7 @@ export const MOCK_PODS: PodDetailType[] = [
 export const MOCK_APP_DETAIL: AppDetailType = {
   crYamlList: [],
   id: '4bd50c41-149e-4da5-89d5-0308b9dd75c6',
+  priority: '1',
   createTime: '2022/1/22',
   status: appStatusMap.waiting,
   isPause: false,
