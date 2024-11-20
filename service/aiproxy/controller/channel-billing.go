@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -106,12 +107,12 @@ type SiliconFlowUsageResponse struct {
 // GetAuthHeader get auth header
 func GetAuthHeader(token string) http.Header {
 	h := http.Header{}
-	h.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	h.Add("Authorization", "Bearer "+token)
 	return h
 }
 
 func GetResponseBody(method, url string, _ *model.Channel, headers http.Header) ([]byte, error) {
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func GetResponseBody(method, url string, _ *model.Channel, headers http.Header) 
 }
 
 func updateChannelCloseAIBalance(channel *model.Channel) (float64, error) {
-	url := fmt.Sprintf("%s/dashboard/billing/credit_grants", channel.BaseURL)
+	url := channel.BaseURL + "/dashboard/billing/credit_grants"
 	body, err := GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
 	if err != nil {
 		return 0, err
@@ -149,7 +150,7 @@ func updateChannelCloseAIBalance(channel *model.Channel) (float64, error) {
 }
 
 func updateChannelOpenAISBBalance(channel *model.Channel) (float64, error) {
-	url := fmt.Sprintf("https://api.openai-sb.com/sb-api/user/status?api_key=%s", channel.Key)
+	url := "https://api.openai-sb.com/sb-api/user/status?api_key=" + channel.Key
 	body, err := GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
 	if err != nil {
 		return 0, err
@@ -269,7 +270,7 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 	default:
 		return 0, errors.New("尚未实现")
 	}
-	url := fmt.Sprintf("%s/v1/dashboard/billing/subscription", baseURL)
+	url := baseURL + "/v1/dashboard/billing/subscription"
 
 	body, err := GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
 	if err != nil {
@@ -281,12 +282,12 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		return 0, err
 	}
 	now := time.Now()
-	startDate := fmt.Sprintf("%s-01", now.Format("2006-01"))
+	startDate := now.Format("2006-01") + "-01"
 	endDate := now.Format("2006-01-02")
 	if !subscription.HasPaymentMethod {
 		startDate = now.AddDate(0, 0, -100).Format("2006-01-02")
 	}
-	url = fmt.Sprintf("%s/v1/dashboard/billing/usage?start_date=%s&end_date=%s", baseURL, startDate, endDate)
+	url = baseURL + "/v1/dashboard/billing/usage?start_date=" + startDate + "&end_date=" + endDate
 	body, err = GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
 	if err != nil {
 		return 0, err

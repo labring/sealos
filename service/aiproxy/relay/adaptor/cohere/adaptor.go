@@ -2,7 +2,6 @@ package cohere
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -23,7 +22,7 @@ func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return fmt.Sprintf("%s/v1/chat", meta.BaseURL), nil
+	return meta.BaseURL + "/v1/chat", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {

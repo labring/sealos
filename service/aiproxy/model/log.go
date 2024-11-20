@@ -14,21 +14,21 @@ import (
 )
 
 type Log struct {
-	CreatedAt        time.Time `gorm:"index" json:"created_at"`
-	TokenName        string    `gorm:"index" json:"token_name"`
-	Endpoint         string    `gorm:"index" json:"endpoint"`
-	Content          string    `gorm:"type:text" json:"content"`
-	GroupID          string    `gorm:"index" json:"group"`
-	Model            string    `gorm:"index" json:"model"`
+	CreatedAt        time.Time `gorm:"index"             json:"created_at"`
+	TokenName        string    `gorm:"index"             json:"token_name"`
+	Endpoint         string    `gorm:"index"             json:"endpoint"`
+	Content          string    `gorm:"type:text"         json:"content"`
+	GroupID          string    `gorm:"index"             json:"group"`
+	Model            string    `gorm:"index"             json:"model"`
 	Price            float64   `json:"price"`
-	ID               int       `gorm:"primaryKey" json:"id"`
+	ID               int       `gorm:"primaryKey"        json:"id"`
 	CompletionPrice  float64   `json:"completion_price"`
-	TokenID          int       `gorm:"index" json:"token_id"`
-	UsedAmount       float64   `gorm:"index" json:"used_amount"`
+	TokenID          int       `gorm:"index"             json:"token_id"`
+	UsedAmount       float64   `gorm:"index"             json:"used_amount"`
 	PromptTokens     int       `json:"prompt_tokens"`
 	CompletionTokens int       `json:"completion_tokens"`
-	ChannelID        int       `gorm:"index" json:"channel"`
-	Code             int       `gorm:"index" json:"code"`
+	ChannelID        int       `gorm:"index"             json:"channel"`
+	Code             int       `gorm:"index"             json:"code"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
@@ -417,7 +417,7 @@ func SumUsedQuota(startTimestamp time.Time, endTimestamp time.Time, modelName st
 	if common.UsingPostgreSQL {
 		ifnull = "COALESCE"
 	}
-	tx := LogDB.Table("logs").Select(fmt.Sprintf("%s(sum(quota),0)", ifnull))
+	tx := LogDB.Table("logs").Select(ifnull + "(sum(quota),0)")
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
@@ -489,7 +489,7 @@ type LogStatistic struct {
 	CompletionTokens int    `gorm:"column:completion_tokens"`
 }
 
-func SearchLogsByDayAndModel(group string, start time.Time, end time.Time) (LogStatistics []*LogStatistic, err error) {
+func SearchLogsByDayAndModel(group string, start time.Time, end time.Time) (logStatistics []*LogStatistic, err error) {
 	groupSelect := "DATE_FORMAT(FROM_UNIXTIME(created_at), '%Y-%m-%d') as day"
 
 	if common.UsingPostgreSQL {
@@ -510,7 +510,7 @@ func SearchLogsByDayAndModel(group string, start time.Time, end time.Time) (LogS
 		AND created_at BETWEEN ? AND ?
 		GROUP BY day, model
 		ORDER BY day, model
-	`, group, start, end).Scan(&LogStatistics).Error
+	`, group, start, end).Scan(&logStatistics).Error
 
-	return LogStatistics, err
+	return logStatistics, err
 }

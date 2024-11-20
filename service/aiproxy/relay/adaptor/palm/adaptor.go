@@ -2,7 +2,6 @@ package palm
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -19,12 +18,12 @@ func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return fmt.Sprintf("%s/v1beta2/models/chat-bison-001:generateMessage", meta.BaseURL), nil
+	return meta.BaseURL + "/v1beta2/models/chat-bison-001:generateMessage", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("x-goog-api-key", meta.APIKey)
+	req.Header.Set("X-Goog-Api-Key", meta.APIKey)
 	return nil
 }
 

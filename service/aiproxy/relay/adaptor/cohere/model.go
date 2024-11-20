@@ -6,7 +6,7 @@ type Request struct {
 	PresencePenalty  *float64      `json:"presence_penalty,omitempty"`
 	FrequencyPenalty *float64      `json:"frequency_penalty,omitempty"`
 	Model            string        `json:"model,omitempty"`
-	Message          string        `json:"message" required:"true"`
+	Message          string        `json:"message"                     required:"true"`
 	Preamble         string        `json:"preamble,omitempty"`
 	PromptTruncation string        `json:"prompt_truncation,omitempty"`
 	ConversationID   string        `json:"conversation_id,omitempty"`
@@ -24,19 +24,19 @@ type Request struct {
 }
 
 type ChatMessage struct {
-	Role    string `json:"role" required:"true"`
+	Role    string `json:"role"    required:"true"`
 	Message string `json:"message" required:"true"`
 }
 
 type Tool struct {
 	ParameterDefinitions map[string]ParameterSpec `json:"parameter_definitions"`
-	Name                 string                   `json:"name" required:"true"`
-	Description          string                   `json:"description" required:"true"`
+	Name                 string                   `json:"name"                  required:"true"`
+	Description          string                   `json:"description"           required:"true"`
 }
 
 type ParameterSpec struct {
 	Description string `json:"description"`
-	Type        string `json:"type" required:"true"`
+	Type        string `json:"type"        required:"true"`
 	Required    bool   `json:"required"`
 }
 
@@ -47,7 +47,7 @@ type ToolResult struct {
 
 type ToolCall struct {
 	Parameters map[string]interface{} `json:"parameters" required:"true"`
-	Name       string                 `json:"name" required:"true"`
+	Name       string                 `json:"name"       required:"true"`
 }
 
 type StreamResponse struct {

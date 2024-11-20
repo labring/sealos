@@ -2,6 +2,7 @@ package baidu
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -265,7 +266,7 @@ func GetAccessToken(apiKey string) (string, error) {
 	if accessToken == nil {
 		return "", errors.New("GetAccessToken return a nil token")
 	}
-	return (*accessToken).AccessToken, nil
+	return accessToken.AccessToken, nil
 }
 
 func getBaiduAccessTokenHelper(apiKey string) (*AccessToken, error) {
@@ -273,8 +274,11 @@ func getBaiduAccessTokenHelper(apiKey string) (*AccessToken, error) {
 	if len(parts) != 2 {
 		return nil, errors.New("invalid baidu apikey")
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s",
-		parts[0], parts[1]), nil)
+	req, err := http.NewRequestWithContext(context.Background(),
+		http.MethodPost,
+		fmt.Sprintf("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s",
+			parts[0], parts[1]),
+		nil)
 	if err != nil {
 		return nil, err
 	}

@@ -70,7 +70,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
 	if meta.ChannelType == channeltype.Azure {
-		req.Header.Set("api-key", meta.APIKey)
+		req.Header.Set("Api-Key", meta.APIKey)
 		return nil
 	}
 	if a.contentType != "" {
@@ -78,7 +78,7 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	}
 	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
 	if meta.ChannelType == channeltype.OpenRouter {
-		req.Header.Set("HTTP-Referer", "https://github.com/labring/sealos/service/aiproxy")
+		req.Header.Set("Http-Referer", "https://github.com/labring/sealos/service/aiproxy")
 		req.Header.Set("X-Title", "One API")
 	}
 	return nil

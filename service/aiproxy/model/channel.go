@@ -26,24 +26,24 @@ const (
 )
 
 type Channel struct {
-	CreatedAt        time.Time         `gorm:"index" json:"created_at"`
+	CreatedAt        time.Time         `gorm:"index"                         json:"created_at"`
 	AccessedAt       time.Time         `json:"accessed_at"`
 	TestAt           time.Time         `json:"test_at"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text" json:"model_mapping"`
-	Config           ChannelConfig     `gorm:"serializer:json;type:text" json:"config"`
+	Config           ChannelConfig     `gorm:"serializer:json;type:text"     json:"config"`
 	Other            string            `json:"other"`
-	Key              string            `gorm:"type:text;index" json:"key"`
-	Name             string            `gorm:"index" json:"name"`
-	BaseURL          string            `gorm:"index" json:"base_url"`
-	Models           []string          `gorm:"serializer:json;type:text" json:"models"`
+	Key              string            `gorm:"type:text;index"               json:"key"`
+	Name             string            `gorm:"index"                         json:"name"`
+	BaseURL          string            `gorm:"index"                         json:"base_url"`
+	Models           []string          `gorm:"serializer:json;type:text"     json:"models"`
 	Balance          float64           `json:"balance"`
-	ResponseDuration int64             `gorm:"index" json:"response_duration"`
-	ID               int               `gorm:"primaryKey" json:"id"`
-	UsedAmount       float64           `gorm:"index" json:"used_amount"`
-	RequestCount     int               `gorm:"index" json:"request_count"`
-	Status           int               `gorm:"default:1;index" json:"status"`
-	Type             int               `gorm:"default:0;index" json:"type"`
+	ResponseDuration int64             `gorm:"index"                         json:"response_duration"`
+	ID               int               `gorm:"primaryKey"                    json:"id"`
+	UsedAmount       float64           `gorm:"index"                         json:"used_amount"`
+	RequestCount     int               `gorm:"index"                         json:"request_count"`
+	Status           int               `gorm:"default:1;index"               json:"status"`
+	Type             int               `gorm:"default:0;index"               json:"type"`
 	Priority         int32             `json:"priority"`
 }
 

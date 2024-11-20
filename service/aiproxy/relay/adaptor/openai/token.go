@@ -25,7 +25,7 @@ var (
 func init() {
 	gpt35TokenEncoder, err := tiktoken.EncodingForModel("gpt-3.5-turbo")
 	if err != nil {
-		logger.FatalLog(fmt.Sprintf("failed to get gpt-3.5-turbo token encoder: %s", err.Error()))
+		logger.FatalLog("failed to get gpt-3.5-turbo token encoder: " + err.Error())
 	}
 	defaultTokenEncoder = gpt35TokenEncoder
 }

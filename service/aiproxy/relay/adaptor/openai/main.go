@@ -171,7 +171,7 @@ func STTHandler(c *gin.Context, resp *http.Response, meta *meta.Meta, responseFo
 	var text string
 	switch responseFormat {
 	case "text":
-		text, err = getTextFromText(responseBody)
+		text = getTextFromText(responseBody)
 	case "srt":
 		text, err = getTextFromSRT(responseBody)
 	case "verbose_json":
@@ -233,8 +233,8 @@ func getTextFromSRT(body []byte) (string, error) {
 	return builder.String(), nil
 }
 
-func getTextFromText(body []byte) (string, error) {
-	return strings.TrimSuffix(conv.BytesToString(body), "\n"), nil
+func getTextFromText(body []byte) string {
+	return strings.TrimSuffix(conv.BytesToString(body), "\n")
 }
 
 func getTextFromJSON(body []byte) (string, error) {

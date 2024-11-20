@@ -1,7 +1,7 @@
 package random
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"strings"
 
 	"github.com/google/uuid"
@@ -22,7 +22,7 @@ const (
 func GenerateKey() string {
 	key := make([]byte, 48)
 	for i := 0; i < 16; i++ {
-		key[i] = keyChars[rand.Intn(len(keyChars))]
+		key[i] = keyChars[rand.IntN(len(keyChars))]
 	}
 	uuid := GetUUID()
 	for i := 0; i < 32; i++ {
@@ -38,7 +38,7 @@ func GenerateKey() string {
 func GetRandomString(length int) string {
 	key := make([]byte, length)
 	for i := 0; i < length; i++ {
-		key[i] = keyChars[rand.Intn(len(keyChars))]
+		key[i] = keyChars[rand.IntN(len(keyChars))]
 	}
 	return conv.BytesToString(key)
 }
@@ -46,12 +46,12 @@ func GetRandomString(length int) string {
 func GetRandomNumberString(length int) string {
 	key := make([]byte, length)
 	for i := 0; i < length; i++ {
-		key[i] = keyNumbers[rand.Intn(len(keyNumbers))]
+		key[i] = keyNumbers[rand.IntN(len(keyNumbers))]
 	}
 	return conv.BytesToString(key)
 }
 
 // RandRange returns a random number between min and max (max is not included)
 func RandRange(_min, _max int) int {
-	return _min + rand.Intn(_max-_min)
+	return _min + rand.IntN(_max-_min)
 }

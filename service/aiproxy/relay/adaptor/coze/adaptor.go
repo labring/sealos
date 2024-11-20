@@ -2,7 +2,6 @@ package coze
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -22,7 +21,7 @@ func (a *Adaptor) Init(meta *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return fmt.Sprintf("%s/open_api/v2/chat", meta.BaseURL), nil
+	return meta.BaseURL + "/open_api/v2/chat", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {

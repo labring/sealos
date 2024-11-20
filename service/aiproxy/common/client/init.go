@@ -21,7 +21,7 @@ func Init() {
 		logger.SysLog(fmt.Sprintf("using %s as proxy to fetch user content", config.UserContentRequestProxy))
 		proxyURL, err := url.Parse(config.UserContentRequestProxy)
 		if err != nil {
-			logger.FatalLog(fmt.Sprintf("USER_CONTENT_REQUEST_PROXY set but invalid: %s", config.UserContentRequestProxy))
+			logger.FatalLog("USER_CONTENT_REQUEST_PROXY set but invalid: " + config.UserContentRequestProxy)
 		}
 		transport := &http.Transport{
 			Proxy: http.ProxyURL(proxyURL),
@@ -38,7 +38,7 @@ func Init() {
 		logger.SysLog(fmt.Sprintf("using %s as api relay proxy", config.RelayProxy))
 		proxyURL, err := url.Parse(config.RelayProxy)
 		if err != nil {
-			logger.FatalLog(fmt.Sprintf("USER_CONTENT_REQUEST_PROXY set but invalid: %s", config.UserContentRequestProxy))
+			logger.FatalLog("USER_CONTENT_REQUEST_PROXY set but invalid: " + config.UserContentRequestProxy)
 		}
 		transport = &http.Transport{
 			Proxy: http.ProxyURL(proxyURL),

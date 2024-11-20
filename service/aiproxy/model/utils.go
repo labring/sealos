@@ -11,15 +11,15 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type ErrNotFound string
+type NotFoundError string
 
-func (e ErrNotFound) Error() string {
-	return fmt.Sprintf("%s not found", string(e))
+func (e NotFoundError) Error() string {
+	return string(e) + " not found"
 }
 
 func HandleNotFound(err error, errMsg ...string) error {
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return ErrNotFound(strings.Join(errMsg, " "))
+		return NotFoundError(strings.Join(errMsg, " "))
 	}
 	return err
 }
@@ -30,7 +30,7 @@ func HandleUpdateResult(result *gorm.DB, entityName string) error {
 		return HandleNotFound(result.Error, entityName)
 	}
 	if result.RowsAffected == 0 {
-		return ErrNotFound(entityName)
+		return NotFoundError(entityName)
 	}
 	return nil
 }

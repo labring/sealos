@@ -28,7 +28,7 @@ type TextRequest struct {
 // ImageRequest docs: https://platform.openai.com/docs/api-reference/images/create
 type ImageRequest struct {
 	Model          string `json:"model"`
-	Prompt         string `json:"prompt" binding:"required"`
+	Prompt         string `binding:"required"               json:"prompt"`
 	Size           string `json:"size,omitempty"`
 	Quality        string `json:"quality,omitempty"`
 	ResponseFormat string `json:"response_format,omitempty"`

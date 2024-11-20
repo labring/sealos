@@ -92,8 +92,9 @@ func main() {
 
 	// Create HTTP server
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: server,
+		Addr:              ":" + port,
+		ReadHeaderTimeout: 10 * time.Second,
+		Handler:           server,
 	}
 
 	// Graceful shutdown setup

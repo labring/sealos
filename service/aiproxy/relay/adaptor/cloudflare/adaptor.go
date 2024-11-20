@@ -47,9 +47,9 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		return fmt.Sprintf("%s/v1/chat/completions", urlPrefix), nil
+		return urlPrefix + "/v1/chat/completions", nil
 	case relaymode.Embeddings:
-		return fmt.Sprintf("%s/v1/embeddings", urlPrefix), nil
+		return urlPrefix + "/v1/embeddings", nil
 	default:
 		if isAIGateWay {
 			return fmt.Sprintf("%s/%s", urlPrefix, meta.ActualModelName), nil

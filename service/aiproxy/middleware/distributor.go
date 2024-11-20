@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
@@ -14,12 +13,12 @@ import (
 )
 
 type ModelRequest struct {
-	Model string `json:"model" form:"model"`
+	Model string `form:"model" json:"model"`
 }
 
 func Distribute(c *gin.Context) {
 	if config.GetDisableServe() {
-		abortWithMessage(c, http.StatusServiceUnavailable, "服务暂停中")
+		abortWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
 		return
 	}
 	requestModel := c.GetString(ctxkey.RequestModel)
@@ -28,23 +27,23 @@ func Distribute(c *gin.Context) {
 	if ok {
 		id, err := strconv.Atoi(channelID.(string))
 		if err != nil {
-			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 ID")
+			abortWithMessage(c, http.StatusBadRequest, "invalid channel ID")
 			return
 		}
 		channel, ok = model.CacheGetChannelByID(id)
 		if !ok {
-			abortWithMessage(c, http.StatusBadRequest, "无效的渠道 ID")
+			abortWithMessage(c, http.StatusBadRequest, "invalid channel ID")
 			return
 		}
 		if !slices.Contains(channel.Models, requestModel) {
-			abortWithMessage(c, http.StatusServiceUnavailable, fmt.Sprintf("渠道 %s 不支持模型 %s", channel.Name, requestModel))
+			abortWithMessage(c, http.StatusServiceUnavailable, channel.Name+" does not support "+requestModel)
 			return
 		}
 	} else {
 		var err error
 		channel, err = model.CacheGetRandomSatisfiedChannel(requestModel)
 		if err != nil {
-			message := fmt.Sprintf("%s 不可用", requestModel)
+			message := requestModel + " is not available"
 			abortWithMessage(c, http.StatusServiceUnavailable, message)
 			return
 		}

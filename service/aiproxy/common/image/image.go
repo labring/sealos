@@ -2,7 +2,9 @@ package image
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"image"
 
@@ -31,7 +33,11 @@ func IsImageURL(resp *http.Response) bool {
 }
 
 func GetImageSizeFromURL(url string) (width int, height int, err error) {
-	resp, err := client.UserContentRequestHTTPClient.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return 0, 0, err
+	}
+	resp, err := client.UserContentRequestHTTPClient.Do(req)
 	if err != nil {
 		return
 	}
@@ -60,7 +66,11 @@ func GetImageFromURL(url string) (string, string, error) {
 		return "image/" + matches[1], matches[2], nil
 	}
 
-	resp, err := client.UserContentRequestHTTPClient.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return "", "", err
+	}
+	resp, err := client.UserContentRequestHTTPClient.Do(req)
 	if err != nil {
 		return "", "", err
 	}
@@ -80,7 +90,7 @@ func GetImageFromURL(url string) (string, string, error) {
 	}
 	isImage := IsImageURL(resp)
 	if !isImage {
-		return "", "", fmt.Errorf("not an image")
+		return "", "", errors.New("not an image")
 	}
 	return resp.Header.Get("Content-Type"), base64.StdEncoding.EncodeToString(buf), nil
 }

@@ -133,7 +133,7 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 		FinishReason: llamaResponse.StopReason,
 	}
 	fullTextResponse := openai.TextResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: []openai.TextResponseChoice{choice},
@@ -197,7 +197,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 				usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 			}
 			response := StreamResponseLlama2OpenAI(&llamaResp)
-			response.ID = fmt.Sprintf("chatcmpl-%s", random.GetUUID())
+			response.ID = "chatcmpl-" + random.GetUUID()
 			response.Model = c.GetString(ctxkey.OriginalModel)
 			response.Created = createdTime
 			err = render.ObjectData(c, response)

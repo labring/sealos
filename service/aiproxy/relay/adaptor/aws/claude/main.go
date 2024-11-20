@@ -2,7 +2,6 @@
 package aws
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -166,7 +165,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 				usage.PromptTokens += meta.Usage.InputTokens
 				usage.CompletionTokens += meta.Usage.OutputTokens
 				if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
-					id = fmt.Sprintf("chatcmpl-%s", meta.ID)
+					id = "chatcmpl-" + meta.ID
 					return true
 				}
 				if len(lastToolCallChoice.Delta.ToolCalls) > 0 {

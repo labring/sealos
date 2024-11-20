@@ -19,7 +19,7 @@ func AdminAuth(c *gin.Context) {
 	if config.AdminKey != "" && (accessToken == "" || strings.TrimPrefix(accessToken, "Bearer ") != config.AdminKey) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"success": false,
-			"message": "无权进行此操作，未登录且未提供 access token",
+			"message": "unauthorized, no access token provided",
 		})
 		c.Abort()
 		return
@@ -44,7 +44,7 @@ func TokenAuth(c *gin.Context) {
 	if token.Subnet != "" {
 		if !network.IsIPInSubnets(ctx, c.ClientIP(), token.Subnet) {
 			abortWithMessage(c, http.StatusForbidden,
-				fmt.Sprintf("令牌 (%s[%d]) 只能在指定网段使用：%s，当前 ip：%s",
+				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnet: %s, current ip: %s",
 					token.Name,
 					token.ID,
 					token.Subnet,
@@ -70,7 +70,7 @@ func TokenAuth(c *gin.Context) {
 		if requestModel != "" && len(token.Models) == 0 {
 			abortWithMessage(c,
 				http.StatusForbidden,
-				fmt.Sprintf("令牌 (%s[%d]) 无权使用任何模型",
+				fmt.Sprintf("token (%s[%d]) has no permission to use any model",
 					token.Name, token.ID,
 				),
 			)
@@ -81,7 +81,7 @@ func TokenAuth(c *gin.Context) {
 	if requestModel != "" && !slices.Contains(token.Models, requestModel) {
 		abortWithMessage(c,
 			http.StatusForbidden,
-			fmt.Sprintf("令牌 (%s[%d]) 无权使用模型：%s",
+			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
 				token.Name, token.ID, requestModel,
 			),
 		)
@@ -93,16 +93,14 @@ func TokenAuth(c *gin.Context) {
 	}
 
 	if group.QPM > 0 {
-		ok, err := RateLimit(ctx, fmt.Sprintf("group_qpm:%s", group.ID), int(group.QPM), time.Minute)
+		ok, err := RateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
 		if err != nil {
 			abortWithMessage(c, http.StatusInternalServerError, err.Error())
 			return
 		}
 		if !ok {
 			abortWithMessage(c, http.StatusTooManyRequests,
-				fmt.Sprintf("%s 请求过于频繁",
-					group.ID,
-				),
+				group.ID+" is requesting too frequently",
 			)
 			return
 		}

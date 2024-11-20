@@ -2,7 +2,6 @@ package coze
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -98,7 +97,7 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 		FinishReason: "stop",
 	}
 	fullTextResponse := openai.TextResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", cozeResponse.ConversationID),
+		ID:      "chatcmpl-" + cozeResponse.ConversationID,
 		Model:   "coze-bot",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),

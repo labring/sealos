@@ -50,7 +50,7 @@ func getToken(ctx context.Context, channelID int, adcJSON string) (string, error
 
 	req := &credentialspb.GenerateAccessTokenRequest{
 		// See https://pkg.go.dev/cloud.google.com/go/iam/credentials/apiv1/credentialspb#GenerateAccessTokenRequest.
-		Name:  fmt.Sprintf("projects/-/serviceAccounts/%s", adc.ClientEmail),
+		Name:  "projects/-/serviceAccounts/" + adc.ClientEmail,
 		Scope: []string{defaultScope},
 	}
 	resp, err := c.GenerateAccessToken(ctx, req)

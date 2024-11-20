@@ -234,7 +234,7 @@ func GetLogsStat(c *gin.Context) {
 		"message": "",
 		"data": gin.H{
 			"quota": quotaNum,
-			//"token": tokenNum,
+			// "token": tokenNum,
 		},
 	})
 }
@@ -262,7 +262,7 @@ func GetLogsSelfStat(c *gin.Context) {
 		"message": "",
 		"data": gin.H{
 			"quota": quotaNum,
-			//"token": tokenNum,
+			// "token": tokenNum,
 		},
 	})
 }

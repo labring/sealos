@@ -112,7 +112,7 @@ func GetGroupDashboard(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无法获取统计信息",
+			"message": "failed to get statistics",
 			"data":    nil,
 		})
 		return
@@ -135,7 +135,7 @@ func UpdateGroupQPM(c *gin.Context) {
 	if err != nil || req.ID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "invalid parameter",
 		})
 		return
 	}
@@ -164,7 +164,7 @@ func UpdateGroupStatus(c *gin.Context) {
 	if err != nil || req.ID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "invalid parameter",
 		})
 		return
 	}
@@ -187,7 +187,7 @@ func DeleteGroup(c *gin.Context) {
 	if id == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "invalid parameter",
 		})
 		return
 	}
@@ -216,7 +216,7 @@ func CreateGroup(c *gin.Context) {
 	if err != nil || group.ID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "invalid parameter",
 		})
 		return
 	}

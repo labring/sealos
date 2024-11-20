@@ -2,7 +2,6 @@ package ollama
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -70,7 +69,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 		choice.FinishReason = "stop"
 	}
 	fullTextResponse := openai.TextResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      "chatcmpl-" + random.GetUUID(),
 		Model:   response.Model,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
@@ -92,7 +91,7 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 		choice.FinishReason = &constant.StopFinishReason
 	}
 	response := openai.ChatCompletionsStreamResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   ollamaResponse.Model,

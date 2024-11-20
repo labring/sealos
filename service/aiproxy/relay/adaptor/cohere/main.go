@@ -122,7 +122,7 @@ func ResponseCohere2OpenAI(cohereResponse *Response) *openai.TextResponse {
 		FinishReason: stopReasonCohere2OpenAI(cohereResponse.FinishReason),
 	}
 	fullTextResponse := openai.TextResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", cohereResponse.ResponseID),
+		ID:      "chatcmpl-" + cohereResponse.ResponseID,
 		Model:   "model",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),

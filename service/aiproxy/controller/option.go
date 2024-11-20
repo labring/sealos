@@ -31,7 +31,7 @@ func UpdateOption(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "invalid parameter",
 		})
 		return
 	}
@@ -55,7 +55,7 @@ func UpdateOptions(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "invalid parameter",
 		})
 		return
 	}

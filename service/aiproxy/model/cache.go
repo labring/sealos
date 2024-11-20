@@ -5,7 +5,7 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"sort"
 	"sync"
 	"time"
@@ -51,15 +51,15 @@ func (t redisTime) MarshalBinary() ([]byte, error) {
 }
 
 type TokenCache struct {
-	ExpiredAt  redisTime        `json:"expired_at" redis:"e"`
-	Group      string           `json:"group" redis:"g"`
-	Key        string           `json:"-" redis:"-"`
-	Name       string           `json:"name" redis:"n"`
-	Subnet     string           `json:"subnet" redis:"s"`
-	Models     redisStringSlice `json:"models" redis:"m"`
-	ID         int              `json:"id" redis:"i"`
-	Status     int              `json:"status" redis:"st"`
-	Quota      float64          `json:"quota" redis:"q"`
+	ExpiredAt  redisTime        `json:"expired_at"  redis:"e"`
+	Group      string           `json:"group"       redis:"g"`
+	Key        string           `json:"-"           redis:"-"`
+	Name       string           `json:"name"        redis:"n"`
+	Subnet     string           `json:"subnet"      redis:"s"`
+	Models     redisStringSlice `json:"models"      redis:"m"`
+	ID         int              `json:"id"          redis:"i"`
+	Status     int              `json:"status"      redis:"st"`
+	Quota      float64          `json:"quota"       redis:"q"`
 	UsedAmount float64          `json:"used_amount" redis:"u"`
 }
 
@@ -91,7 +91,7 @@ func CacheSetToken(token *Token) error {
 	key := fmt.Sprintf(TokenCacheKey, token.Key)
 	pipe := common.RDB.Pipeline()
 	pipe.HSet(context.Background(), key, token.ToTokenCache())
-	expireTime := SyncFrequency + time.Duration(rand.Int63n(60)-30)*time.Second
+	expireTime := SyncFrequency + time.Duration(rand.Int64N(60)-30)*time.Second
 	pipe.Expire(context.Background(), key, expireTime)
 	_, err := pipe.Exec(context.Background())
 	return err
@@ -178,9 +178,9 @@ func CacheIncreaseTokenUsedAmount(key string, amount float64) error {
 }
 
 type GroupCache struct {
-	ID     string `json:"-" redis:"-"`
+	ID     string `json:"-"      redis:"-"`
 	Status int    `json:"status" redis:"st"`
-	QPM    int64  `json:"qpm" redis:"q"`
+	QPM    int64  `json:"qpm"    redis:"q"`
 }
 
 func (g *Group) ToGroupCache() *GroupCache {
@@ -233,7 +233,7 @@ func CacheSetGroup(group *Group) error {
 	key := fmt.Sprintf(GroupCacheKey, group.ID)
 	pipe := common.RDB.Pipeline()
 	pipe.HSet(context.Background(), key, group.ToGroupCache())
-	expireTime := SyncFrequency + time.Duration(rand.Int63n(60)-30)*time.Second
+	expireTime := SyncFrequency + time.Duration(rand.Int64N(60)-30)*time.Second
 	pipe.Expire(context.Background(), key, expireTime)
 	_, err := pipe.Exec(context.Background())
 	return err
@@ -254,7 +254,7 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 	if err == nil && groupCache.Status != 0 {
 		groupCache.ID = id
 		return groupCache, nil
-	} else if err != nil && err != redis.Nil {
+	} else if err != nil && !errors.Is(err, redis.Nil) {
 		logger.SysLogf("get group (%s) from redis error: %s", id, err.Error())
 	}
 
@@ -377,10 +377,10 @@ func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 	}
 
 	if totalWeight == 0 {
-		return channels[rand.Intn(len(channels))], nil
+		return channels[rand.IntN(len(channels))], nil
 	}
 
-	r := rand.Int31n(totalWeight)
+	r := rand.Int32N(totalWeight)
 	for _, ch := range channels {
 		r -= ch.Priority
 		if r < 0 {
@@ -388,7 +388,7 @@ func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 		}
 	}
 
-	return channels[rand.Intn(len(channels))], nil
+	return channels[rand.IntN(len(channels))], nil
 }
 
 func CacheGetChannelByID(id int) (*Channel, bool) {

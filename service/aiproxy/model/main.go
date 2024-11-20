@@ -1,7 +1,6 @@
 package model
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -182,7 +181,7 @@ func migrateLOGDB() error {
 	)
 }
 
-func setDBConns(db *gorm.DB) *sql.DB {
+func setDBConns(db *gorm.DB) {
 	if config.DebugSQLEnabled {
 		db = db.Debug()
 	}
@@ -190,13 +189,12 @@ func setDBConns(db *gorm.DB) *sql.DB {
 	sqlDB, err := db.DB()
 	if err != nil {
 		logger.FatalLog("failed to connect database: " + err.Error())
-		return nil
+		return
 	}
 
 	sqlDB.SetMaxIdleConns(env.Int("SQL_MAX_IDLE_CONNS", 100))
 	sqlDB.SetMaxOpenConns(env.Int("SQL_MAX_OPEN_CONNS", 1000))
 	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(env.Int("SQL_MAX_LIFETIME", 60)))
-	return sqlDB
 }
 
 func closeDB(db *gorm.DB) error {

@@ -2,7 +2,6 @@ package deepl
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -22,7 +21,7 @@ func (a *Adaptor) Init(meta *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return fmt.Sprintf("%s/v2/translate", meta.BaseURL), nil
+	return meta.BaseURL + "/v2/translate", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {

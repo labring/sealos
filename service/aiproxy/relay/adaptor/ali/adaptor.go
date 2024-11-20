@@ -2,7 +2,6 @@ package ali
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -24,32 +23,29 @@ func (a *Adaptor) Init(meta *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	fullRequestURL := ""
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		fullRequestURL = fmt.Sprintf("%s/api/v1/services/embeddings/text-embedding/text-embedding", meta.BaseURL)
+		return meta.BaseURL + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
 	case relaymode.ImagesGenerations:
-		fullRequestURL = fmt.Sprintf("%s/api/v1/services/aigc/text2image/image-synthesis", meta.BaseURL)
+		return meta.BaseURL + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	default:
-		fullRequestURL = fmt.Sprintf("%s/api/v1/services/aigc/text-generation/generation", meta.BaseURL)
+		return meta.BaseURL + "/api/v1/services/aigc/text-generation/generation", nil
 	}
-
-	return fullRequestURL, nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
 	if meta.IsStream {
 		req.Header.Set("Accept", "text/event-stream")
-		req.Header.Set("X-DashScope-SSE", "enable")
+		req.Header.Set("X-Dashscope-Sse", "enable")
 	}
 	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
 
 	if meta.Mode == relaymode.ImagesGenerations {
-		req.Header.Set("X-DashScope-Async", "enable")
+		req.Header.Set("X-Dashscope-Async", "enable")
 	}
 	if a.meta.Config.Plugin != "" {
-		req.Header.Set("X-DashScope-Plugin", a.meta.Config.Plugin)
+		req.Header.Set("X-Dashscope-Plugin", a.meta.Config.Plugin)
 	}
 	return nil
 }

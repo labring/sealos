@@ -1,7 +1,6 @@
 package palm
 
 import (
-	"fmt"
 	"net/http"
 
 	json "github.com/json-iterator/go"
@@ -79,7 +78,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	defer resp.Body.Close()
 
 	responseText := ""
-	responseID := fmt.Sprintf("chatcmpl-%s", random.GetUUID())
+	responseID := "chatcmpl-" + random.GetUUID()
 	createdTime := helper.GetTimestamp()
 
 	var palmResponse ChatResponse

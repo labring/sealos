@@ -34,13 +34,13 @@ func (a *Adaptor) SetVersionByModeName(modelName string) {
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
-		return fmt.Sprintf("%s/api/paas/v4/images/generations", meta.BaseURL), nil
+		return meta.BaseURL + "/api/paas/v4/images/generations", nil
 	case relaymode.Embeddings:
-		return fmt.Sprintf("%s/api/paas/v4/embeddings", meta.BaseURL), nil
+		return meta.BaseURL + "/api/paas/v4/embeddings", nil
 	}
 	a.SetVersionByModeName(meta.ActualModelName)
 	if a.APIVersion == "v4" {
-		return fmt.Sprintf("%s/api/paas/v4/chat/completions", meta.BaseURL), nil
+		return meta.BaseURL + "/api/paas/v4/chat/completions", nil
 	}
 	method := "invoke"
 	if meta.IsStream {

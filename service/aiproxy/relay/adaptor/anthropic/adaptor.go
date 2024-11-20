@@ -2,7 +2,6 @@ package anthropic
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -19,23 +18,23 @@ func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return fmt.Sprintf("%s/v1/messages", meta.BaseURL), nil
+	return meta.BaseURL + "/v1/messages", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("x-api-key", meta.APIKey)
-	anthropicVersion := c.Request.Header.Get("anthropic-version")
+	req.Header.Set("X-Api-Key", meta.APIKey)
+	anthropicVersion := c.Request.Header.Get("Anthropic-Version")
 	if anthropicVersion == "" {
 		anthropicVersion = "2023-06-01"
 	}
-	req.Header.Set("anthropic-version", anthropicVersion)
-	req.Header.Set("anthropic-beta", "messages-2023-12-15")
+	req.Header.Set("Anthropic-Version", anthropicVersion)
+	req.Header.Set("Anthropic-Beta", "messages-2023-12-15")
 
 	// https://x.com/alexalbert__/status/1812921642143900036
 	// claude-3-5-sonnet can support 8k context
 	if strings.HasPrefix(meta.ActualModelName, "claude-3-5-sonnet") {
-		req.Header.Set("anthropic-beta", "max-tokens-3-5-sonnet-2024-07-15")
+		req.Header.Set("Anthropic-Beta", "max-tokens-3-5-sonnet-2024-07-15")
 	}
 
 	return nil

@@ -68,12 +68,12 @@ func (r GeneralOpenAIRequest) ParseInput() []string {
 		return nil
 	}
 	var input []string
-	switch r.Input.(type) {
+	switch v := r.Input.(type) {
 	case string:
-		input = []string{r.Input.(string)}
+		input = []string{v}
 	case []any:
-		input = make([]string, 0, len(r.Input.([]any)))
-		for _, item := range r.Input.([]any) {
+		input = make([]string, 0, len(v))
+		for _, item := range v {
 			if str, ok := item.(string); ok {
 				input = append(input, str)
 			}
@@ -83,9 +83,9 @@ func (r GeneralOpenAIRequest) ParseInput() []string {
 }
 
 type TextToSpeechRequest struct {
-	Model          string  `json:"model" binding:"required"`
-	Input          string  `json:"input" binding:"required"`
-	Voice          string  `json:"voice" binding:"required"`
+	Model          string  `binding:"required"     json:"model"`
+	Input          string  `binding:"required"     json:"input"`
+	Voice          string  `binding:"required"     json:"voice"`
 	ResponseFormat string  `json:"response_format"`
 	Speed          float64 `json:"speed"`
 }

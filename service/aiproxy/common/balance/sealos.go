@@ -3,8 +3,9 @@ package balance
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -44,7 +45,7 @@ type Sealos struct {
 func InitSealos(jwtKey string, accountURL string) error {
 	token, err := newSealosToken(jwtKey)
 	if err != nil {
-		return fmt.Errorf("failed to generate sealos jwt token: %s", err)
+		return fmt.Errorf("failed to generate sealos jwt token: %w", err)
 	}
 	jwtToken = token
 	Default = NewSealos(accountURL)
@@ -105,7 +106,7 @@ func cacheSetGroupBalance(ctx context.Context, group string, balance int64, user
 		Balance: balance,
 		UserUID: userUID,
 	})
-	expireTime := sealosCacheExpire + time.Duration(rand.Int63n(10)-5)*time.Second
+	expireTime := sealosCacheExpire + time.Duration(rand.Int64N(10)-5)*time.Second
 	pipe.Expire(ctx, fmt.Sprintf(sealosGroupBalanceKey, group), expireTime)
 	_, err := pipe.Exec(ctx)
 	return err
@@ -143,7 +144,7 @@ func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float
 	if cache, err := cacheGetGroupBalance(ctx, group); err == nil && cache.UserUID != "" {
 		return decimal.NewFromInt(cache.Balance).Div(decimalBalancePrecision).InexactFloat64(),
 			newSealosPostGroupConsumer(s.accountURL, group, cache.UserUID, cache.Balance), nil
-	} else if err != nil && err != redis.Nil {
+	} else if err != nil && !errors.Is(err, redis.Nil) {
 		logger.Errorf(ctx, "get group (%s) balance cache failed: %s", group, err)
 	}
 
@@ -170,7 +171,7 @@ func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance
 		return 0, "", err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtToken))
+	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	resp, err := sealosHTTPClient.Do(req)
 	if err != nil {
 		return 0, "", err
@@ -248,13 +249,15 @@ func (s *SealosPostGroupConsumer) postConsume(ctx context.Context, amount int64,
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		fmt.Sprintf("%s/admin/v1alpha1/charge-billing", s.accountURL), bytes.NewBuffer(reqBody))
+	req, err := http.NewRequestWithContext(ctx,
+		http.MethodPost,
+		s.accountURL+"/admin/v1alpha1/charge-billing",
+		bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtToken))
+	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	resp, err := sealosHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("post group (%s) consume failed: %w", s.group, err)

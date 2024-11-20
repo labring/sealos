@@ -14,7 +14,7 @@ func GenRequestID() string {
 
 func GetResponseID(c *gin.Context) string {
 	logID := c.GetString(string(RequestIDKey))
-	return fmt.Sprintf("chatcmpl-%s", logID)
+	return "chatcmpl-" + logID
 }
 
 func AssignOrDefault(value string, defaultValue string) string {

@@ -23,7 +23,7 @@ func (a *Adaptor) Init(_ *meta.Meta) {
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	version := helper.AssignOrDefault(meta.Config.APIVersion, config.GetGeminiVersion())
-	action := ""
+	var action string
 	switch meta.Mode {
 	case relaymode.Embeddings:
 		action = "batchEmbedContents"
@@ -39,7 +39,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	channelhelper.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("x-goog-api-key", meta.APIKey)
+	req.Header.Set("X-Goog-Api-Key", meta.APIKey)
 	return nil
 }
 

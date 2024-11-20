@@ -2,7 +2,6 @@ package aiproxy
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -21,7 +20,7 @@ func (a *Adaptor) Init(meta *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return fmt.Sprintf("%s/api/library/ask", meta.BaseURL), nil
+	return meta.BaseURL + "/api/library/ask", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {

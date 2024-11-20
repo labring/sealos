@@ -2,7 +2,6 @@ package ollama
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -21,9 +20,9 @@ func (a *Adaptor) Init(_ *meta.Meta) {
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	// https://github.com/ollama/ollama/blob/main/docs/api.md
-	fullRequestURL := fmt.Sprintf("%s/api/chat", meta.BaseURL)
+	fullRequestURL := meta.BaseURL + "/api/chat"
 	if meta.Mode == relaymode.Embeddings {
-		fullRequestURL = fmt.Sprintf("%s/api/embed", meta.BaseURL)
+		fullRequestURL = meta.BaseURL + "/api/embed"
 	}
 	return fullRequestURL, nil
 }

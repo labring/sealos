@@ -300,7 +300,7 @@ func RetrieveModel(c *gin.Context) {
 	if !ok || !slices.Contains(c.GetStringSlice(ctxkey.AvailableModels), modelID) {
 		c.JSON(200, gin.H{
 			"error": relaymodel.Error{
-				Message: fmt.Sprintf("The model '%s' does not exist", modelID),
+				Message: fmt.Sprintf("the model '%s' does not exist", modelID),
 				Type:    "invalid_request_error",
 				Param:   "model",
 				Code:    "model_not_found",

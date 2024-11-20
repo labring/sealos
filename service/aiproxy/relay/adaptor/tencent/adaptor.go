@@ -38,9 +38,9 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
 	req.Header.Set("Authorization", a.Sign)
-	req.Header.Set("X-TC-Action", a.Action)
-	req.Header.Set("X-TC-Version", a.Version)
-	req.Header.Set("X-TC-Timestamp", strconv.FormatInt(a.Timestamp, 10))
+	req.Header.Set("X-Tc-Action", a.Action)
+	req.Header.Set("X-Tc-Version", a.Version)
+	req.Header.Set("X-Tc-Timestamp", strconv.FormatInt(a.Timestamp, 10))
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -201,15 +202,15 @@ func GetGroupToken(c *gin.Context) {
 
 func validateToken(token AddTokenRequest) error {
 	if token.Name == "" {
-		return fmt.Errorf("令牌名称不能为空")
+		return errors.New("token name cannot be empty")
 	}
 	if len(token.Name) > 30 {
-		return fmt.Errorf("令牌名称过长")
+		return errors.New("token name is too long")
 	}
 	if token.Subnet != "" {
 		err := network.IsValidSubnets(token.Subnet)
 		if err != nil {
-			return fmt.Errorf("无效的网段：%s", err.Error())
+			return fmt.Errorf("invalid subnet: %w", err)
 		}
 	}
 	return nil
@@ -219,7 +220,7 @@ type AddTokenRequest struct {
 	Name      string   `json:"name"`
 	Subnet    string   `json:"subnet"`
 	Models    []string `json:"models"`
-	ExpiredAt int64    `json:"expired_at"`
+	ExpiredAt int64    `json:"expiredAt"`
 	Quota     float64  `json:"quota"`
 }
 
@@ -238,7 +239,7 @@ func AddToken(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("参数错误：%s", err.Error()),
+			"message": "parameter error: " + err.Error(),
 		})
 		return
 	}
@@ -343,7 +344,7 @@ func UpdateToken(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("参数错误：%s", err.Error()),
+			"message": "parameter error: " + err.Error(),
 		})
 		return
 	}
@@ -402,7 +403,7 @@ func UpdateGroupToken(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("参数错误：%s", err.Error()),
+			"message": "parameter error: " + err.Error(),
 		})
 		return
 	}

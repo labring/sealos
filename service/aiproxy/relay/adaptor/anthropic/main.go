@@ -2,7 +2,6 @@ package anthropic
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"slices"
 
@@ -242,7 +241,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 		FinishReason: stopReasonClaude2OpenAI(claudeResponse.StopReason),
 	}
 	fullTextResponse := openai.TextResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", claudeResponse.ID),
+		ID:      "chatcmpl-" + claudeResponse.ID,
 		Model:   claudeResponse.Model,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
@@ -303,7 +302,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 			usage.CompletionTokens += meta.Usage.OutputTokens
 			if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
 				modelName = meta.Model
-				id = fmt.Sprintf("chatcmpl-%s", meta.ID)
+				id = "chatcmpl-" + meta.ID
 				continue
 			}
 			if len(lastToolCallChoice.Delta.ToolCalls) > 0 {

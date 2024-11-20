@@ -11,14 +11,14 @@ import (
 )
 
 type ConsumeError struct {
-	CreatedAt  time.Time       `gorm:"index" json:"created_at"`
-	GroupID    string          `gorm:"index" json:"group_id"`
+	CreatedAt  time.Time       `gorm:"index"          json:"created_at"`
+	GroupID    string          `gorm:"index"          json:"group_id"`
 	TokenName  EmptyNullString `gorm:"index;not null" json:"token_name"`
-	Model      string          `gorm:"index" json:"model"`
-	Content    string          `gorm:"type:text" json:"content"`
-	ID         int             `gorm:"primaryKey" json:"id"`
-	UsedAmount float64         `gorm:"index" json:"used_amount"`
-	TokenID    int             `gorm:"index" json:"token_id"`
+	Model      string          `gorm:"index"          json:"model"`
+	Content    string          `gorm:"type:text"      json:"content"`
+	ID         int             `gorm:"primaryKey"     json:"id"`
+	UsedAmount float64         `gorm:"index"          json:"used_amount"`
+	TokenID    int             `gorm:"index"          json:"token_id"`
 }
 
 func (c *ConsumeError) MarshalJSON() ([]byte, error) {

@@ -14,7 +14,7 @@ import (
 )
 
 type Option struct {
-	Key   string `json:"key" gorm:"primaryKey"`
+	Key   string `gorm:"primaryKey" json:"key"`
 	Value string `json:"value"`
 }
 
@@ -91,7 +91,7 @@ func UpdateOptions(options map[string]string) error {
 	errs := make([]error, 0)
 	for key, value := range options {
 		err := UpdateOption(key, value)
-		if err != nil && err != ErrUnknownOptionKey {
+		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
 			errs = append(errs, err)
 		}
 	}

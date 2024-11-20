@@ -2,7 +2,6 @@ package gemini
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 
 	json "github.com/json-iterator/go"
@@ -153,7 +152,7 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *ChatRequest {
 func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *BatchEmbeddingRequest {
 	inputs := request.ParseInput()
 	requests := make([]EmbeddingRequest, len(inputs))
-	model := fmt.Sprintf("models/%s", request.Model)
+	model := "models/" + request.Model
 
 	for i, input := range inputs {
 		requests[i] = EmbeddingRequest{
@@ -217,7 +216,7 @@ func getToolCalls(candidate *ChatCandidate) []model.Tool {
 		return toolCalls
 	}
 	toolCall := model.Tool{
-		ID:   fmt.Sprintf("call_%s", random.GetUUID()),
+		ID:   "call_" + random.GetUUID(),
 		Type: "function",
 		Function: model.Function{
 			Arguments: conv.BytesToString(argsBytes),
@@ -230,7 +229,7 @@ func getToolCalls(candidate *ChatCandidate) []model.Tool {
 
 func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: make([]openai.TextResponseChoice, 0, len(response.Candidates)),
@@ -263,7 +262,7 @@ func streamResponseGeminiChat2OpenAI(geminiResponse *ChatResponse) *openai.ChatC
 	choice.Delta.Content = geminiResponse.GetResponseText()
 	// choice.FinishReason = &constant.StopFinishReason
 	var response openai.ChatCompletionsStreamResponse
-	response.ID = fmt.Sprintf("chatcmpl-%s", random.GetUUID())
+	response.ID = "chatcmpl-" + random.GetUUID()
 	response.Created = helper.GetTimestamp()
 	response.Object = "chat.completion.chunk"
 	response.Model = "gemini"

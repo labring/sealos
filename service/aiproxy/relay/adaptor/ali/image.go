@@ -1,9 +1,9 @@
 package ali
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -38,7 +38,7 @@ func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.Er
 		return openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError), nil
 	}
 
-	aliResponse, err := asyncTaskWait(aliTaskResponse.Output.TaskID, apiKey)
+	aliResponse, err := asyncTaskWait(c, aliTaskResponse.Output.TaskID, apiKey)
 	if err != nil {
 		return openai.ErrorWrapper(err, "ali_async_task_wait_failed", http.StatusInternalServerError), nil
 	}
@@ -66,12 +66,12 @@ func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.Er
 	return nil, nil
 }
 
-func asyncTask(taskID string, key string) (*TaskResponse, error) {
-	url := fmt.Sprintf("https://dashscope.aliyuncs.com/api/v1/tasks/%s", taskID)
+func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, error) {
+	url := "https://dashscope.aliyuncs.com/api/v1/tasks/" + taskID
 
 	var aliResponse TaskResponse
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return &aliResponse, err
 	}
@@ -96,14 +96,14 @@ func asyncTask(taskID string, key string) (*TaskResponse, error) {
 	return &response, nil
 }
 
-func asyncTaskWait(taskID string, key string) (*TaskResponse, error) {
+func asyncTaskWait(ctx context.Context, taskID string, key string) (*TaskResponse, error) {
 	waitSeconds := 2
 	step := 0
 	maxStep := 20
 
 	for {
 		step++
-		rsp, err := asyncTask(taskID, key)
+		rsp, err := asyncTask(ctx, taskID, key)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func asyncTaskWait(taskID string, key string) (*TaskResponse, error) {
 		time.Sleep(time.Duration(waitSeconds) * time.Second)
 	}
 
-	return nil, fmt.Errorf("aliAsyncTaskWait timeout")
+	return nil, errors.New("aliAsyncTaskWait timeout")
 }
 
 func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *openai.ImageResponse {
@@ -164,7 +164,11 @@ func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *ope
 }
 
 func getImageData(url string) ([]byte, error) {
-	response, err := http.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

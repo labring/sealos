@@ -50,17 +50,17 @@ func responseTencent2OpenAI(response *ChatResponse) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func streamResponseTencent2OpenAI(TencentResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
+func streamResponseTencent2OpenAI(tencentResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
 	response := openai.ChatCompletionsStreamResponse{
-		ID:      fmt.Sprintf("chatcmpl-%s", random.GetUUID()),
+		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "tencent-hunyuan",
 	}
-	if len(TencentResponse.Choices) > 0 {
+	if len(tencentResponse.Choices) > 0 {
 		var choice openai.ChatCompletionsStreamResponseChoice
-		choice.Delta.Content = TencentResponse.Choices[0].Delta.Content
-		if TencentResponse.Choices[0].FinishReason == "stop" {
+		choice.Delta.Content = tencentResponse.Choices[0].Delta.Content
+		if tencentResponse.Choices[0].FinishReason == "stop" {
 			choice.FinishReason = &constant.StopFinishReason
 		}
 		response.Choices = append(response.Choices, choice)
