@@ -6,6 +6,8 @@ import yaml
 import time
 import shutil
 import zipfile
+from apscheduler.schedulers.background import BackgroundScheduler
+import re
 
 app = Flask(__name__)
 
@@ -19,6 +21,8 @@ REGISTRY_USER = os.getenv('REGISTRY_USER')
 REGISTRY_PASS = os.getenv('REGISTRY_PASS')
 # 环境变量：文件保存路径
 SAVE_PATH = os.getenv('SAVE_PATH')
+# 环境变量：资源利用比例
+RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '20'
 
 # 辅助函数：执行shell命令
 def run_command(command):
@@ -488,5 +492,121 @@ def load_and_push_image():
     # 返回成功响应
     return jsonify({'message': 'Image {} loaded, tagged, and pushed successfully'.format(full_image_name)}), 200
 
+def get_cluster_resources():
+    """获取集群资源使用情况（基于limits）"""
+    try:
+        # 获取节点总容量
+        cmd = "kubectl get nodes --no-headers -o custom-columns=':status.capacity.cpu',':status.capacity.memory' --kubeconfig=/etc/kubernetes/admin.conf"
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        
+        # 解析节点容量
+        lines = result.stdout.strip().split('\n')
+        total_cpu = 0
+        total_memory = 0
+        
+        for line in lines:
+            cap_cpu, cap_mem = line.split()
+            total_cpu += float(re.sub(r'[^0-9.]', '', cap_cpu))
+            
+            # 转换内存值为Gi
+            mem_gi = float(re.sub(r'[^0-9.]', '', cap_mem))
+            if 'Ki' in cap_mem:
+                mem_gi /= 1048576
+            elif 'Mi' in cap_mem:
+                mem_gi /= 1024
+            total_memory += mem_gi
+
+        # 获取所有Pod的资源限制
+        cmd = "kubectl get pods --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf"
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        pods = json.loads(result.stdout)
+
+        total_cpu_limits = 0
+        total_memory_limits = 0
+
+        for pod in pods['items']:
+            if pod['status']['phase'] in ['Running', 'Pending']:
+                containers = pod['spec'].get('containers', [])
+                for container in containers:
+                    limits = container.get('resources', {}).get('limits', {})
+                    
+                    # 计算CPU限制
+                    if 'cpu' in limits:
+                        cpu_limit = limits['cpu']
+                        if cpu_limit.endswith('m'):
+                            total_cpu_limits += float(cpu_limit[:-1]) / 1000
+                        else:
+                            total_cpu_limits += float(cpu_limit)
+
+                    # 计算内存限制
+                    if 'memory' in limits:
+                        mem_limit = limits['memory']
+                        mem_value = float(re.sub(r'[^0-9.]', '', mem_limit))
+                        if 'Ki' in mem_limit:
+                            total_memory_limits += mem_value / 1048576
+                        elif 'Mi' in mem_limit:
+                            total_memory_limits += mem_value / 1024
+                        elif 'Gi' in mem_limit:
+                            total_memory_limits += mem_value
+                        elif 'Ti' in mem_limit:
+                            total_memory_limits += mem_value * 1024
+
+        # 计算资源使用百分比（基于limits）
+        cpu_usage_percent = (total_cpu_limits / total_cpu) * 100
+        memory_usage_percent = (total_memory_limits / total_memory) * 100
+        
+        print(f"Cluster resources - CPU: {cpu_usage_percent}%, Memory: {memory_usage_percent}%", flush=True)
+        
+        return cpu_usage_percent, memory_usage_percent
+    except Exception as e:
+        print(f"Error getting cluster resources: {str(e)}")
+        return None, None
+
+def scale_high_priority_workloads():
+    """检查资源使用情况并根据需要缩放工作负载"""
+    try:
+        cpu_usage, memory_usage = get_cluster_resources()
+        if cpu_usage is None or memory_usage is None:
+            return
+        
+        # 如果CPU或内存使用率超过RESOURCE_THRESHOLD
+        if cpu_usage > float(RESOURCE_THRESHOLD) or memory_usage > float(RESOURCE_THRESHOLD):
+            print(f"Resource usage is high - CPU: {cpu_usage}%, Memory: {memory_usage}%")
+            
+            # 获取所有deployment和statefulset
+            workload_types = ['deployment', 'statefulset']
+            for workload_type in workload_types:
+                cmd = f"kubectl get {workload_type} --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf"
+                result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+                workloads = json.loads(result.stdout)
+                
+                for workload in workloads['items']:
+                    labels = workload['metadata'].get('labels', {})
+                    priority = labels.get('deploy.cloud.sealos.io/priority', '')
+                    
+                    try:
+                        priority_value = int(priority)
+                        if priority_value > 1:
+                            namespace = workload['metadata']['namespace']
+                            name = workload['metadata']['name']
+                            
+                            # 将副本数设置为0
+                            scale_cmd = f"kubectl scale {workload_type} {name} -n {namespace} --replicas=0 --kubeconfig=/etc/kubernetes/admin.conf"
+                            subprocess.run(scale_cmd, shell=True, check=True)
+                            print(f"Scaled down {workload_type} {namespace}/{name} to 0 replicas")
+                    except ValueError:
+                        continue
+    except Exception as e:
+        print(f"Error in scale_high_priority_workloads: {str(e)}")
+
+# 创建定时任务调度器
+scheduler = BackgroundScheduler()
+scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
+scheduler.start()
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5002)
+    try:
+        app.run(debug=True, host='0.0.0.0', port=5002)
+    finally:
+        scheduler.shutdown()
+

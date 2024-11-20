@@ -1,9 +1,10 @@
+set -e
 if [ -z "$VERSION" ]; then
     echo "VERSION is not set"
     exit 1
 fi
 
-pip3 install pyinstaller flask
+pip3 install pyinstaller flask apscheduler PyYAML
 
 pyinstaller --onefile app.py
 

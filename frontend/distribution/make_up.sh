@@ -1,3 +1,4 @@
+set -e
 if [ ! -d "docker-demo" ]; then
     mkdir docker-demo
 fi

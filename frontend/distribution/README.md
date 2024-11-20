@@ -99,9 +99,13 @@ images = request.json.get('images')
 
 ## 应用打包工具自身打包
 ```
+# 全量打包
 VERSION=${your-version} sh build.sh
+
+# 极简包
+VERSION=${your-version} sh build.sh --light
 ```
-得到app${VERSION}.tar.gz的部署包
+得到app${VERSION}.tar.gz和app${VERSION}-light.tar.gz的部署包
 
 ## 应用打包工具部署至k8s
 解压后运行sh install.sh

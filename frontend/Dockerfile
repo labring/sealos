@@ -36,7 +36,7 @@ COPY ./tsconfig.web.json ./tsconfig.web.json
 COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-pnpm -r --offline --filter=./packages/* install \
+pnpm -r --filter=./packages/* install \
 && pnpm -r --filter=./packages/* run build 
 
 FROM deps AS builder
