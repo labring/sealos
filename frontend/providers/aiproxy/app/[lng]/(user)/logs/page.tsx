@@ -1,7 +1,7 @@
 'use client'
 
 import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react'
-import { MySelect, MyTooltip, SealosCoin } from '@sealos/ui'
+import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui'
 import { useMemo, useState } from 'react'
 
 import { getKeys, getLogs, getModels } from '@/api/platform'
@@ -13,6 +13,7 @@ import { useI18n } from '@/providers/i18n/i18nContext'
 import { LogItem } from '@/types/log'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { useBackendStore } from '@/store/backend'
 
 const mockStatus = ['all', 'success', 'failed']
 
@@ -32,6 +33,7 @@ export default function Home(): React.JSX.Element {
   const [pageSize, setPageSize] = useState(10)
   const [logData, setLogData] = useState<LogItem[]>([])
   const [total, setTotal] = useState(0)
+  const { currencySymbol } = useBackendStore()
 
   const { data: models = [] } = useQuery(['getModels'], () => getModels())
   const { data: tokenData } = useQuery(['getKeys'], () => getKeys({ page: 1, perPage: 100 }))
@@ -116,7 +118,7 @@ export default function Home(): React.JSX.Element {
               <MyTooltip placement="bottom-end" label={t('logs.total_price_tip')}>
                 <Flex alignItems={'center'} gap={'4px'}>
                   {t('logs.total_price')}
-                  <SealosCoin />
+                  <CurrencySymbol type={currencySymbol} />
                 </Flex>
               </MyTooltip>
             </Box>

@@ -1,11 +1,11 @@
-import { Icon, Text } from '@chakra-ui/react';
+import { Icon, Text, TextProps } from '@chakra-ui/react';
 
 export default function CurrencySymbol({
   type = 'shellCoin',
   ...props
 }: {
   type?: 'shellCoin' | 'cny' | 'usd';
-} & Pick<Parameters<typeof Icon>[0], 'w' | 'h' | 'color'>) {
+} & TextProps) {
   return type === 'shellCoin' ? (
     <Icon
       xmlns="http://www.w3.org/2000/svg"

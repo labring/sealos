@@ -18,7 +18,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname()
   const { lng } = useI18n()
   const { i18n } = useTranslationClientSide(lng)
-  const { setAiproxyBackend } = useBackendStore()
+  const { setAiproxyBackend, setCurrencySymbol } = useBackendStore()
 
   const handleI18nChange = useCallback(
     (data: { currentLanguage: string }) => {
@@ -65,8 +65,9 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   // init config and language
   useEffect(() => {
     const initConfig = async () => {
-      const { aiproxyBackend } = await initAppConfig()
+      const { aiproxyBackend, currencySymbol } = await initAppConfig()
       setAiproxyBackend(aiproxyBackend)
+      setCurrencySymbol(currencySymbol)
     }
 
     initConfig()

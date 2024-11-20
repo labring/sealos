@@ -17,6 +17,9 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.AI_PROXY_BACKEND_INTERNAL) {
     appConfig.backend.aiproxyInternal = process.env.AI_PROXY_BACKEND_INTERNAL
   }
+  if (process.env.CURRENCY_SYMBOL) {
+    appConfig.currencySymbol = process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd'
+  }
   return appConfig
 }
 
@@ -30,7 +33,8 @@ function initAppConfig(): AppConfigType {
     backend: {
       aiproxy: '',
       aiproxyInternal: ''
-    }
+    },
+    currencySymbol: 'shellCoin'
   }
   if (!global.AppConfig) {
     try {
@@ -52,7 +56,8 @@ export async function GET(): Promise<NextResponse> {
       code: 200,
       message: 'Success',
       data: {
-        aiproxyBackend: config.backend.aiproxy
+        aiproxyBackend: config.backend.aiproxy,
+        currencySymbol: config.currencySymbol
       }
     })
   } catch (error) {

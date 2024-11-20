@@ -116,7 +116,7 @@ export default function Cost() {
               <Text fontSize={'20px'} color={'#7CE7FF'}>
                 {formatMoney(balance).toFixed(2)}
               </Text>
-              <CurrencySymbol type={currencySymbol} color={'white'} />
+              <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'16px'} />
             </Flex>
           </Box>
           {rechargeEnabled && (
@@ -181,7 +181,7 @@ export default function Cost() {
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.prevMonthAmount).toFixed(2)}
               </Text>
-              <CurrencySymbol type={currencySymbol} color={'white'} />
+              <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'14px'} />
             </Flex>
             <Flex alignItems={'center'} px={'16px'} py={'18px'}>
               <Center
@@ -204,7 +204,7 @@ export default function Cost() {
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.estimatedNextMonthAmount).toFixed(2)}
               </Text>
-              <CurrencySymbol type={currencySymbol} color={'white'} />
+              <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'14px'} />
             </Flex>
           </Flex>
         )}

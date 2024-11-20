@@ -7,6 +7,7 @@ export type AppConfigType = {
     aiproxy: string
     aiproxyInternal: string
   }
+  currencySymbol: 'shellCoin' | 'cny' | 'usd'
 }
 
 declare global {
