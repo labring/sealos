@@ -234,7 +234,7 @@ const Form = ({
                     h={'20px'}
                     color={activeNav === item.id ? 'myGray.400' : 'grayModern.600'}
                   />
-                  <Box>{item.label}</Box>
+                  <Box>{item?.label}</Box>
                 </Flex>
               </Box>
             ))}
@@ -386,7 +386,7 @@ const Form = ({
                               }}
                               mt={'4px'}
                               textAlign={'center'}>
-                              {item.label}
+                              {item?.label}
                             </Text>
                           </Center>
                         )
@@ -467,7 +467,7 @@ const Form = ({
                               }}
                               mt={'4px'}
                               textAlign={'center'}>
-                              {item.label}
+                              {item?.label}
                             </Text>
                           </Center>
                         )
@@ -548,7 +548,7 @@ const Form = ({
                               }}
                               mt={'4px'}
                               textAlign={'center'}>
-                              {item.label}
+                              {item?.label}
                             </Text>
                           </Center>
                         )
