@@ -46,7 +46,7 @@ const IDEButton = ({
   const { setCurrentIDE, currentIDE } = useGlobalStore()
 
   const handleGotoIDE = useCallback(
-    async (currentIDE: string = 'vscode') => {
+    async (currentIDE: IDEType = 'vscode') => {
       setLoading(true)
 
       toast({
@@ -61,22 +61,8 @@ const IDEButton = ({
         })
         const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
 
-        let editorUri = ''
-        switch (currentIDE) {
-          case 'cursor':
-            editorUri = `cursor://`
-            break
-          case 'vscodeInsider':
-            editorUri = `vscode-insiders://`
-            break
-          case 'vscode':
-            editorUri = `vscode://`
-            break
-          default:
-            editorUri = `vscode://`
-        }
-
-        const fullUri = `${editorUri}labring.devbox-aio?sshDomain=${encodeURIComponent(
+        const idePrefix = ideObj[currentIDE].prefix
+        const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
           `${userName}@${env.sealosDomain}`
         )}&sshPort=${encodeURIComponent(sshPort)}&base64PrivateKey=${encodeURIComponent(
           base64PrivateKey
@@ -109,18 +95,10 @@ const IDEButton = ({
           borderRightWidth={0}
           borderRightRadius={0}
           onClick={() => handleGotoIDE(currentIDE)}
-          leftIcon={
-            isBigButton ? (
-              <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
-            ) : undefined
-          }
+          leftIcon={isBigButton ? <MyIcon name={currentIDE} w={'16px'} /> : undefined}
           isDisabled={status.value !== 'Running' || loading}
           {...leftButtonProps}>
-          {!isBigButton ? (
-            <MyIcon name={getCurrentIDELabelAndIcon(currentIDE).icon} w={'16px'} />
-          ) : (
-            getCurrentIDELabelAndIcon(currentIDE).label
-          )}
+          {!isBigButton ? <MyIcon name={currentIDE} w={'16px'} /> : ideObj[currentIDE]?.label}
         </Button>
       </Tooltip>
       <Menu placement="bottom-end" isLazy>
@@ -159,16 +137,12 @@ const IDEButton = ({
           fontSize={'12px'}
           defaultValue={currentIDE}
           px={1}>
-          {[
-            { value: 'vscode' as IDEType, label: 'VSCode' },
-            { value: 'cursor' as IDEType, label: 'Cursor' },
-            { value: 'vscodeInsider' as IDEType, label: 'VSCode Insider' }
-          ].map((item) => (
+          {menuItems.map((item) => (
             <MenuItem
               key={item.value}
               value={item.value}
-              onClick={() => setCurrentIDE(item.value)}
-              icon={<MyIcon name={item.value} w={'16px'} />}
+              onClick={() => setCurrentIDE(item.value as IDEType)}
+              icon={<MyIcon name={item.value as IDEType} w={'16px'} />}
               _hover={{
                 bg: '#1118240D',
                 borderRadius: 4
@@ -178,7 +152,7 @@ const IDEButton = ({
                 borderRadius: 4
               }}>
               <Flex justifyContent="space-between" alignItems="center" width="100%">
-                {item.label}
+                {item?.label}
                 {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
               </Flex>
             </MenuItem>
@@ -189,34 +163,33 @@ const IDEButton = ({
   )
 }
 
-const getCurrentIDELabelAndIcon = (
-  currentIDE: IDEType
-): {
-  label: string
-  icon: IDEType
-} => {
-  switch (currentIDE) {
-    case 'vscode':
-      return {
-        label: 'VSCode',
-        icon: 'vscode'
-      }
-    case 'cursor':
-      return {
-        label: 'Cursor',
-        icon: 'cursor'
-      }
-    case 'vscodeInsider':
-      return {
-        label: 'VSCode Insider',
-        icon: 'vscodeInsider'
-      }
-    default:
-      return {
-        label: 'VSCode',
-        icon: 'vscode'
-      }
+export const ideObj = {
+  vscode: {
+    label: 'VSCode',
+    icon: 'vscode',
+    prefix: 'vscode://',
+    value: 'vscode'
+  },
+  cursor: {
+    label: 'Cursor',
+    icon: 'cursor',
+    prefix: 'cursor://',
+    value: 'cursor'
+  },
+  vscodeInsiders: {
+    label: 'VSCode Insiders',
+    icon: 'vscodeInsiders',
+    prefix: 'vscode-insiders://',
+    value: 'vscodeInsiders'
+  },
+  windsurf: {
+    label: 'Windsurf',
+    icon: 'windsurf',
+    prefix: 'windsurf://',
+    value: 'windsurf'
   }
 }
+
+const menuItems = Object.values(ideObj).map(({ value, label }) => ({ value, label }))
 
 export default IDEButton
