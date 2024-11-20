@@ -52,6 +52,7 @@ export async function activate(context: vscode.ExtensionContext) {
       handleUri: (uri) => uriHandler.handle(uri),
     })
   )
+  console.log('Your extension "devbox" is now active!')
 }
 
 export function deactivate() {}

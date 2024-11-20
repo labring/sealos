@@ -8,7 +8,8 @@ export class UriHandler {
     if (
       uri.scheme !== 'vscode' &&
       uri.scheme !== 'cursor' &&
-      uri.scheme !== 'vscode-insiders'
+      uri.scheme !== 'vscode-insiders'&&
+      uri.scheme !== 'windsurf'
     ) {
       return
     }
