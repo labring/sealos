@@ -35,7 +35,7 @@ type Token struct {
 	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
 	GroupID      string          `gorm:"index;uniqueIndex:idx_group_name"          json:"group"`
 	Subnet       string          `json:"subnet"`
-	Models       []string        `gorm:"serializer:json;type:text"                 json:"models"`
+	Models       []string        `gorm:"serializer:fastjson;type:text"                 json:"models"`
 	Status       int             `gorm:"default:1;index"                           json:"status"`
 	ID           int             `gorm:"primaryKey"                                json:"id"`
 	Quota        float64         `json:"quota"`
