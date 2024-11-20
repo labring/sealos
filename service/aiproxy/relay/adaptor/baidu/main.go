@@ -36,16 +36,16 @@ type Message struct {
 }
 
 type ChatRequest struct {
-	Temperature     *float64  `json:"temperature,omitempty"`
-	TopP            *float64  `json:"top_p,omitempty"`
-	PenaltyScore    *float64  `json:"penalty_score,omitempty"`
-	System          string    `json:"system,omitempty"`
-	UserID          string    `json:"user_id,omitempty"`
-	Messages        []Message `json:"messages"`
-	MaxOutputTokens int       `json:"max_output_tokens,omitempty"`
-	Stream          bool      `json:"stream,omitempty"`
-	DisableSearch   bool      `json:"disable_search,omitempty"`
-	EnableCitation  bool      `json:"enable_citation,omitempty"`
+	Temperature     *float64        `json:"temperature,omitempty"`
+	TopP            *float64        `json:"top_p,omitempty"`
+	PenaltyScore    *float64        `json:"penalty_score,omitempty"`
+	System          string          `json:"system,omitempty"`
+	UserID          string          `json:"user_id,omitempty"`
+	Messages        []model.Message `json:"messages"`
+	MaxOutputTokens int             `json:"max_output_tokens,omitempty"`
+	Stream          bool            `json:"stream,omitempty"`
+	DisableSearch   bool            `json:"disable_search,omitempty"`
+	EnableCitation  bool            `json:"enable_citation,omitempty"`
 }
 
 type Error struct {
@@ -57,7 +57,7 @@ var baiduTokenStore sync.Map
 
 func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 	baiduRequest := ChatRequest{
-		Messages:        make([]Message, 0, len(request.Messages)),
+		Messages:        request.Messages,
 		Temperature:     request.Temperature,
 		TopP:            request.TopP,
 		Stream:          request.Stream,
@@ -80,14 +80,11 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 		baiduRequest.PenaltyScore = &mappedScore
 	}
 
-	for _, message := range request.Messages {
+	for i, message := range request.Messages {
 		if message.Role == "system" {
 			baiduRequest.System = message.StringContent()
-		} else {
-			baiduRequest.Messages = append(baiduRequest.Messages, Message{
-				Role:    message.Role,
-				Content: message.StringContent(),
-			})
+			request.Messages = append(request.Messages[:i], request.Messages[i+1:]...)
+			break
 		}
 	}
 	return &baiduRequest

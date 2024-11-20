@@ -80,15 +80,8 @@ func GetToken(apikey string) string {
 }
 
 func ConvertRequest(request *model.GeneralOpenAIRequest) *Request {
-	messages := make([]Message, 0, len(request.Messages))
-	for _, message := range request.Messages {
-		messages = append(messages, Message{
-			Role:    message.Role,
-			Content: message.StringContent(),
-		})
-	}
 	return &Request{
-		Prompt:      messages,
+		Prompt:      request.Messages,
 		Temperature: request.Temperature,
 		TopP:        request.TopP,
 		Incremental: false,
@@ -108,7 +101,7 @@ func responseZhipu2OpenAI(response *Response) *openai.TextResponse {
 			Index: i,
 			Message: model.Message{
 				Role:    choice.Role,
-				Content: strings.Trim(choice.Content, "\""),
+				Content: strings.Trim(choice.Content.(string), "\""),
 			},
 			FinishReason: "",
 		}
