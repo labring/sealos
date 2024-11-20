@@ -1,11 +1,32 @@
+import { useConfigStore } from '@/stores/config';
 import { setCookie } from '@/utils/cookieUtils';
 import { Flex, FlexProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { useEffect } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { masterApp } from 'sealos-desktop-sdk/master';
 
 export default function LangSelectSimple(props: FlexProps) {
   const { t, i18n } = useTranslation();
+  const { layoutConfig } = useConfigStore();
+
+  useEffect(() => {
+    if (layoutConfig?.forcedLanguage && i18n?.language !== layoutConfig.forcedLanguage) {
+      masterApp?.sendMessageToAll({
+        apiName: 'event-bus',
+        eventName: EVENT_NAME.CHANGE_I18N,
+        data: {
+          currentLanguage: layoutConfig.forcedLanguage
+        }
+      });
+      setCookie('NEXT_LOCALE', layoutConfig.forcedLanguage, {
+        expires: 30,
+        sameSite: 'None',
+        secure: true
+      });
+      i18n?.changeLanguage(layoutConfig.forcedLanguage);
+    }
+  }, [layoutConfig?.forcedLanguage, i18n]);
 
   return (
     <Flex
@@ -20,21 +41,25 @@ export default function LangSelectSimple(props: FlexProps) {
       cursor={'pointer'}
       fontWeight={500}
       {...props}
-      onClick={() => {
-        masterApp?.sendMessageToAll({
-          apiName: 'event-bus',
-          eventName: EVENT_NAME.CHANGE_I18N,
-          data: {
-            currentLanguage: i18n?.language === 'en' ? 'zh' : 'en'
-          }
-        });
-        setCookie('NEXT_LOCALE', i18n?.language === 'en' ? 'zh' : 'en', {
-          expires: 30,
-          sameSite: 'None',
-          secure: true
-        });
-        i18n?.changeLanguage(i18n?.language === 'en' ? 'zh' : 'en');
-      }}
+      onClick={
+        layoutConfig?.forcedLanguage
+          ? undefined
+          : () => {
+              masterApp?.sendMessageToAll({
+                apiName: 'event-bus',
+                eventName: EVENT_NAME.CHANGE_I18N,
+                data: {
+                  currentLanguage: i18n?.language === 'en' ? 'zh' : 'en'
+                }
+              });
+              setCookie('NEXT_LOCALE', i18n?.language === 'en' ? 'zh' : 'en', {
+                expires: 30,
+                sameSite: 'None',
+                secure: true
+              });
+              i18n?.changeLanguage(i18n?.language === 'en' ? 'zh' : 'en');
+            }
+      }
     >
       {i18n?.language === 'en' ? 'En' : '中'}
     </Flex>

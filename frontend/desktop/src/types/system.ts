@@ -62,6 +62,8 @@ export type LayoutConfigType = {
   backgroundImage: string;
   meta: MetaConfigType;
   customerServiceURL?: string;
+  forcedLanguage?: string;
+  currencySymbol?: 'shellCoin' | 'cny' | 'usd';
 
   protocol?: ProtocolConfigType;
   common: {

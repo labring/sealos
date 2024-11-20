@@ -3,7 +3,6 @@ import { useGuideStore } from '@/store/guide';
 import { formatMoney } from '@/utils/tools';
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
-import { SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -146,9 +145,6 @@ export default function useDriver({
             <Flex gap={'6px'} alignItems={'center'} fontSize={'13px'} fontWeight={500}>
               <DriverStarIcon />
               <Text color={'#24282C'}>{t('guide_deploy_button')}</Text>
-              {/* <Text>{reward}</Text>
-              <SealosCoin />
-              <Text>{t('balance')}</Text> */}
             </Flex>
           )
         }

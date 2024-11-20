@@ -16,7 +16,7 @@ import {
   Text,
   useBreakpointValue
 } from '@chakra-ui/react';
-import { MonitorIcon } from '@sealos/ui';
+import { CurrencySymbol, MonitorIcon } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Decimal } from 'decimal.js';
 import { useTranslation } from 'next-i18next';
@@ -24,7 +24,7 @@ import { useMemo } from 'react';
 import CustomTooltip from '../AppDock/CustomTooltip';
 import { blurBackgroundStyles } from '../desktop_content';
 import Monitor from '../desktop_content/monitor';
-import { ClockIcon, DesktopSealosCoinIcon, HelpIcon, InfiniteIcon } from '../icons';
+import { ClockIcon, HelpIcon, InfiniteIcon } from '../icons';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -34,6 +34,9 @@ export default function Cost() {
   const { session } = useSessionStore();
   const user = session?.user;
   const isLargerThanXl = useBreakpointValue({ base: true, xl: false });
+  const currencySymbol = useConfigStore(
+    (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
+  );
 
   const { data } = useQuery({
     queryKey: ['getAmount', { userId: user?.userCrUid }],
@@ -113,7 +116,7 @@ export default function Cost() {
               <Text fontSize={'20px'} color={'#7CE7FF'}>
                 {formatMoney(balance).toFixed(2)}
               </Text>
-              <DesktopSealosCoinIcon />
+              <CurrencySymbol type={currencySymbol} color={'white'} />
             </Flex>
           </Box>
           {rechargeEnabled && (
@@ -178,7 +181,7 @@ export default function Cost() {
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.prevMonthAmount).toFixed(2)}
               </Text>
-              <DesktopSealosCoinIcon />
+              <CurrencySymbol type={currencySymbol} color={'white'} />
             </Flex>
             <Flex alignItems={'center'} px={'16px'} py={'18px'}>
               <Center
@@ -201,7 +204,7 @@ export default function Cost() {
               <Text mr={'4px'} ml={'auto'} color={'white'} fontSize={'14px'} fontWeight={700}>
                 {formatMoney(calculations.estimatedNextMonthAmount).toFixed(2)}
               </Text>
-              <DesktopSealosCoinIcon />
+              <CurrencySymbol type={currencySymbol} color={'white'} />
             </Flex>
           </Flex>
         )}

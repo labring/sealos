@@ -1,17 +1,18 @@
-import { Icon, IconProps } from '@chakra-ui/react';
+import { Icon, Text, TextProps } from '@chakra-ui/react';
 
-/**
- * @deprecated
- */
-export default function SealosCoin(props: IconProps) {
-  return (
+export default function CurrencySymbol({
+  type = 'shellCoin',
+  ...props
+}: {
+  type?: 'shellCoin' | 'cny' | 'usd';
+} & Pick<Parameters<typeof Icon>[0], 'w' | 'h' | 'color'>) {
+  return type === 'shellCoin' ? (
     <Icon
       xmlns="http://www.w3.org/2000/svg"
       width="14px"
       height="14px"
       viewBox="0 0 20 20"
       fill="none"
-      {...props}
     >
       <circle cx="10" cy="10" r="9.66" fill="#E8E8E8" stroke="#37383A" strokeWidth="0.68" />
       <circle cx="9.99995" cy="10" r="8.7366" fill="#CFCFCF" />
@@ -37,5 +38,9 @@ export default function SealosCoin(props: IconProps) {
         fill="#F0F0F0"
       />
     </Icon>
+  ) : type === 'cny' ? (
+    <Text {...props}>￥</Text>
+  ) : (
+    <Text {...props}>$</Text>
   );
 }
