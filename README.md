@@ -59,38 +59,44 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 1. [Login in](https://cloud.sealos.run) , open sealos Devbox.
    
    <img width="656" alt="image" src="https://github.com/user-attachments/assets/79692f6c-315f-4363-9426-b41f541f9a55">
-3. Create a development env, any language, any framework.
+   
+2. Create a development env, any language, any framework.
    
    <img width="1147" alt="image" src="https://github.com/user-attachments/assets/6075bbb0-4765-4786-9154-3adaa139900c">
-5. Use vscode or cursor access to the Env.
+   
+3. Use vscode or cursor access to the Env.
    
    <img width="864" alt="image" src="https://github.com/user-attachments/assets/e5f9dcdc-5149-4e43-aa13-6c17507fbe9f">
    
    <img width="1024" alt="image" src="https://github.com/user-attachments/assets/9a985280-6ff2-48dc-83b9-9abd8f93af17">
 
-## 🚀 Deploy your app on Sealos
+## Create any database on sealos
 
-[Quick Start](https://cloud.sealos.io) 
+1. [Login in](https://cloud.sealos.run) , open sealos database.
+   
+   <img width="567" alt="image" src="https://github.com/user-attachments/assets/74ca3ce9-6ef8-4396-b9c2-7c1940bb7e0c">
 
-* [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/use-app-launchpad)
-* [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/use-database)
-* [Running WordPress on Sealos](https://sealos.io/docs/examples/blog-platform/install-wordpress)
-* [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
-* [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)
+2. Create Database.
 
-![](/docs/4.0/img/sealos-desktop.webp)
+   <img width="874" alt="image" src="https://github.com/user-attachments/assets/4cc88a54-70e6-458f-9766-4578774e7f81">
 
-🔍 Some Screen Shots of Sealos:
+3. Access your database.
 
-<div align="center">
+   <img width="1430" alt="image" src="https://github.com/user-attachments/assets/bcf54218-f4f4-4c89-a107-0bbde6f92d67">
 
-| Templates | App Launchpad |
-| :---: | :---: |
-| ![](/docs/4.0/img/templates.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
-| Database | Serverless |
-| ![](/docs/4.0/img/database.jpg) | ![](/docs/4.0/img/laf.jpg) |
+## Deploy any docker image on sealos
 
-</div>
+1. [Login in](https://cloud.sealos.run) , open sealos App launchpad.
+
+  <img width="567" alt="image" src="https://github.com/user-attachments/assets/5f6481c0-05c6-4892-a096-94b613cee73c">
+
+2. Deploy a docker image, ingress, deployment...
+
+   <img width="971" alt="image" src="https://github.com/user-attachments/assets/a291571f-d9fe-42e5-812e-3d8f274a97ca">
+
+3. Access your service.
+
+   <img width="1016" alt="image" src="https://github.com/user-attachments/assets/a54884cf-a1e8-4178-88af-655234ec7eef">
 
 ## Install
 
