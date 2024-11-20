@@ -594,3 +594,20 @@ func ParseUserUsageReq(c *gin.Context) (*UserUsageReq, error) {
 	}
 	return userUsage, nil
 }
+
+type AdminChargeBillingReq struct {
+	Amount    int64     `json:"amount" bson:"amount" example:"100000000"`
+	Namespace string    `json:"namespace" bson:"namespace" example:"ns-admin"`
+	Owner     string    `json:"owner" bson:"owner" example:"admin"`
+	AppType   string    `json:"appType" bson:"appType"`
+	AppName   string    `json:"appName" bson:"appName"`
+	UserUID   uuid.UUID `json:"userUID" bson:"userUID"`
+}
+
+func ParseAdminChargeBillingReq(c *gin.Context) (*AdminChargeBillingReq, error) {
+	rechargeBilling := &AdminChargeBillingReq{}
+	if err := c.ShouldBindJSON(rechargeBilling); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	return rechargeBilling, nil
+}

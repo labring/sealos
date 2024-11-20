@@ -23,6 +23,7 @@ type UserClaims struct {
 }
 
 type JwtUser struct {
+	Requester    string    `json:"requester,omitempty"`
 	UserUID      uuid.UUID `json:"userUid,omitempty"`
 	UserCrUID    string    `json:"userCrUid,omitempty"`
 	UserCrName   string    `json:"userCrName,omitempty"`

@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"gorm.io/gorm"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -109,6 +111,7 @@ type AccountV2 interface {
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
 	TransferAccountAll(from, to *types.UserQueryOpts) error
 	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error
+	AddDeductionBalanceWithDB(ops *types.UserQueryOpts, amount int64, tx *gorm.DB) error
 	AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error
 }
 

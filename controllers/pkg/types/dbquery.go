@@ -23,6 +23,7 @@ import (
 type UserQueryOpts struct {
 	UID         uuid.UUID
 	ID          string
+	Namespace   string
 	Owner       string
 	IgnoreEmpty bool
 }

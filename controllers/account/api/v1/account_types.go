@@ -34,8 +34,9 @@ type (
 const (
 	// Consumption 消费
 	Consumption common.Type = iota
-	// Recharge 充值
-	Recharge
+	//Subconsumption 子消费
+	SubConsumption
+
 	TransferIn
 	TransferOut
 	ActivityGiving
