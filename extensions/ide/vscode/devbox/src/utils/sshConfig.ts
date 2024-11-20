@@ -27,6 +27,10 @@ export function convertSSHConfigToVersion2(filePath: string) {
 
   const data = fs.readFileSync(filePath, 'utf8')
 
+  if (!data.includes('# WorkingDir:')) {
+    return
+  }
+
   const lines = data.split('\n')
   let currentWorkDir: any = null
   let formattedHostName = ''
