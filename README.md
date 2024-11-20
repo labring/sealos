@@ -54,6 +54,15 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 <img width="916" alt="image" src="https://github.com/labring/sealos/assets/8912557/9e8c1d76-718e-4910-a9ab-94f220a61a9c">
 
+## Create any development environment in sealos with one click
+
+1. [Login in](https://cloud.sealos.run) , open sealos Devbox.
+   <img width="656" alt="image" src="https://github.com/user-attachments/assets/79692f6c-315f-4363-9426-b41f541f9a55">
+2. Create a development env, any language, any framework.
+   <img width="1147" alt="image" src="https://github.com/user-attachments/assets/6075bbb0-4765-4786-9154-3adaa139900c">
+3. Use vscode or cursor access to the Env.
+   <img width="864" alt="image" src="https://github.com/user-attachments/assets/e5f9dcdc-5149-4e43-aa13-6c17507fbe9f">
+   <img width="1024" alt="image" src="https://github.com/user-attachments/assets/9a985280-6ff2-48dc-83b9-9abd8f93af17">
 
 ## 🚀 Deploy your app on Sealos
 
