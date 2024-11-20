@@ -31,12 +31,12 @@ type Channel struct {
 	TestAt           time.Time         `json:"test_at"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text" json:"model_mapping"`
-	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text"     json:"config"`
+	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text" json:"config"`
 	Other            string            `json:"other"`
 	Key              string            `gorm:"type:text;index"               json:"key"`
 	Name             string            `gorm:"index"                         json:"name"`
 	BaseURL          string            `gorm:"index"                         json:"base_url"`
-	Models           []string          `gorm:"serializer:fastjson;type:text"     json:"models"`
+	Models           []string          `gorm:"serializer:fastjson;type:text" json:"models"`
 	Balance          float64           `json:"balance"`
 	ResponseDuration int64             `gorm:"index"                         json:"response_duration"`
 	ID               int               `gorm:"primaryKey"                    json:"id"`
