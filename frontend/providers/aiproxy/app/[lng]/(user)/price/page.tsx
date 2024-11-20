@@ -25,7 +25,7 @@ import {
   useReactTable,
   flexRender
 } from '@tanstack/react-table'
-import { SealosCoin } from '@sealos/ui'
+import { CurrencySymbol } from '@sealos/ui'
 import { ModelIdentifier } from '@/types/front'
 import { MyTooltip } from '@/components/MyTooltip'
 import { useMessage } from '@sealos/ui'
@@ -40,6 +40,7 @@ import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
 import Image, { StaticImageData } from 'next/image'
+import { useBackendStore } from '@/store/backend'
 
 function Price() {
   const { lng } = useI18n()
@@ -80,6 +81,7 @@ function PriceTable() {
     queryFn: () => getModelPrices(),
     refetchOnReconnect: true
   })
+  const { currencySymbol } = useBackendStore()
 
   const modelGroups = {
     ernie: {
@@ -225,17 +227,18 @@ function PriceTable() {
       header: () => {
         return (
           <Box position={'relative'}>
-            <Flex alignItems={'center'} gap={'4px'}>
+            <Flex alignItems={'center'}>
               <Text
                 color="grayModern.600"
                 fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
+                mr={'4px'}
                 letterSpacing="0.5px">
                 {t('key.inputPrice')}
               </Text>
-              <SealosCoin />
+              <CurrencySymbol type={currencySymbol} fontSize={'12px'} h={'15px'} />
               <Text
                 color="grayModern.500"
                 fontFamily="PingFang SC"
@@ -244,7 +247,7 @@ function PriceTable() {
                 lineHeight="16px"
                 letterSpacing="0.5px"
                 textTransform="lowercase">
-                {t('price.per1kTokens').toLowerCase()}
+                /{t('price.per1kTokens').toLowerCase()}
               </Text>
             </Flex>
           </Box>
@@ -266,17 +269,18 @@ function PriceTable() {
       id: 'outputPrice',
       header: () => (
         <Box position={'relative'}>
-          <Flex alignItems={'center'} gap={'4px'}>
+          <Flex alignItems={'center'}>
             <Text
               color="grayModern.600"
               fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={500}
               lineHeight="16px"
+              mr={'4px'}
               letterSpacing="0.5px">
               {t('key.outputPrice')}
             </Text>
-            <SealosCoin />
+            <CurrencySymbol type={currencySymbol} fontSize={'12px'} h={'15px'} />
             <Text
               color="grayModern.500"
               fontFamily="PingFang SC"
@@ -285,7 +289,7 @@ function PriceTable() {
               lineHeight="16px"
               letterSpacing="0.5px"
               textTransform="lowercase">
-              {t('price.per1kTokens').toLowerCase()}
+              /{t('price.per1kTokens').toLowerCase()}
             </Text>
           </Flex>
         </Box>

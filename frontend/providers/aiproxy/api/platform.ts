@@ -4,7 +4,10 @@ import { QueryParams as KeysQueryParams } from '@/app/api/get-keys/route'
 import { GET, POST, DELETE } from '@/utils/request'
 import { ModelPrice } from '@/types/backend'
 
-export const initAppConfig = () => GET<{ aiproxyBackend: string }>('/api/init-app-config')
+export const initAppConfig = () =>
+  GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
+    '/api/init-app-config'
+  )
 
 export const getModels = () => GET<string[]>('/api/get-models')
 
