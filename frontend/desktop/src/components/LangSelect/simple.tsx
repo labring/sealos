@@ -10,21 +10,25 @@ export default function LangSelectSimple(props: FlexProps) {
   const { t, i18n } = useTranslation();
   const { layoutConfig } = useConfigStore();
 
+  const switchLanguage = (targetLang: string) => {
+    masterApp?.sendMessageToAll({
+      apiName: 'event-bus',
+      eventName: EVENT_NAME.CHANGE_I18N,
+      data: {
+        currentLanguage: targetLang
+      }
+    });
+    setCookie('NEXT_LOCALE', targetLang, {
+      expires: 30,
+      sameSite: 'None',
+      secure: true
+    });
+    i18n?.changeLanguage(targetLang);
+  };
+
   useEffect(() => {
     if (layoutConfig?.forcedLanguage && i18n?.language !== layoutConfig.forcedLanguage) {
-      masterApp?.sendMessageToAll({
-        apiName: 'event-bus',
-        eventName: EVENT_NAME.CHANGE_I18N,
-        data: {
-          currentLanguage: layoutConfig.forcedLanguage
-        }
-      });
-      setCookie('NEXT_LOCALE', layoutConfig.forcedLanguage, {
-        expires: 30,
-        sameSite: 'None',
-        secure: true
-      });
-      i18n?.changeLanguage(layoutConfig.forcedLanguage);
+      switchLanguage(layoutConfig.forcedLanguage);
     }
   }, [layoutConfig?.forcedLanguage, i18n]);
 
@@ -44,21 +48,7 @@ export default function LangSelectSimple(props: FlexProps) {
       onClick={
         layoutConfig?.forcedLanguage
           ? undefined
-          : () => {
-              masterApp?.sendMessageToAll({
-                apiName: 'event-bus',
-                eventName: EVENT_NAME.CHANGE_I18N,
-                data: {
-                  currentLanguage: i18n?.language === 'en' ? 'zh' : 'en'
-                }
-              });
-              setCookie('NEXT_LOCALE', i18n?.language === 'en' ? 'zh' : 'en', {
-                expires: 30,
-                sameSite: 'None',
-                secure: true
-              });
-              i18n?.changeLanguage(i18n?.language === 'en' ? 'zh' : 'en');
-            }
+          : () => switchLanguage(i18n?.language === 'en' ? 'zh' : 'en')
       }
     >
       {i18n?.language === 'en' ? 'En' : '中'}

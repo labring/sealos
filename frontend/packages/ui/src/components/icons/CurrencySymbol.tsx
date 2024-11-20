@@ -1,4 +1,4 @@
-import { Icon, Text, TextProps } from '@chakra-ui/react';
+import { Icon, Text } from '@chakra-ui/react';
 
 export default function CurrencySymbol({
   type = 'shellCoin',
