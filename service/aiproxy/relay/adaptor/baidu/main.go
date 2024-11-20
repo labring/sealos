@@ -60,13 +60,26 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 		Messages:        make([]Message, 0, len(request.Messages)),
 		Temperature:     request.Temperature,
 		TopP:            request.TopP,
-		PenaltyScore:    request.FrequencyPenalty,
 		Stream:          request.Stream,
 		DisableSearch:   false,
 		EnableCitation:  false,
 		MaxOutputTokens: request.MaxTokens,
 		UserID:          request.User,
 	}
+	// Convert frequency penalty to penalty score range [1.0, 2.0]
+	if request.FrequencyPenalty != nil {
+		penaltyScore := *request.FrequencyPenalty
+		if penaltyScore < -2.0 {
+			penaltyScore = -2.0
+		}
+		if penaltyScore > 2.0 {
+			penaltyScore = 2.0
+		}
+		// Map [-2.0, 2.0] to [1.0, 2.0]
+		mappedScore := (penaltyScore+2.0)/4.0 + 1.0
+		baiduRequest.PenaltyScore = &mappedScore
+	}
+
 	for _, message := range request.Messages {
 		if message.Role == "system" {
 			baiduRequest.System = message.StringContent()
