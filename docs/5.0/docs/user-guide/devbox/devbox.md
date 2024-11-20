@@ -10,7 +10,7 @@ Devbox: It is a cloud sandbox, which refers to a remote editor environment + a r
 
 ## 1. Create your first Devbox
 
-Log in to [Usw Sealos](usw.sailos.io) or [Hzh Sealos](hzh.sealos.run) and click Devbox.
+Log in to [Usw Sailos](usw.sailos.io) or [Hzh Sealos](hzh.sealos.run) and click Devbox.
 
 ![1](./images/1.png)
 

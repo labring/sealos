@@ -10,7 +10,7 @@ Devbox：就是云沙箱，指一个远程编辑器环境 + 远程运行环境�
 
 ## 一、创建你的第一个 Devbox
 
-登录 [Usw Sealos](usw.sailos.io) 或者 [Hzh Sealos](hzh.sealos.run)，点击云沙箱。
+登录 [Usw Sailos](usw.sailos.io) 或者 [Hzh Sealos](hzh.sealos.run)，点击云沙箱。
 
 ![1](./images/1.png)
 
