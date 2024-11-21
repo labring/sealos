@@ -12,42 +12,32 @@ interface Database {
   connection: string
 }
 
-export class DBViewProvider extends Disposable {
+export class DBViewProvider
+  extends Disposable
+  implements vscode.WebviewViewProvider
+{
+  private _view?: vscode.WebviewView
+
   constructor(context: vscode.ExtensionContext) {
     super()
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view
-      const dbTreeDataProvider = new MyDbTreeDataProvider()
-      const dbView = vscode.window.createTreeView('dbView', {
-        treeDataProvider: dbTreeDataProvider,
-      })
-      this._register(dbView)
-
+      context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('dbView', this, {
+          webviewOptions: {
+            retainContextWhenHidden: true,
+          },
+        })
+      )
       // commands
       this._register(
-        vscode.workspace.onDidChangeWorkspaceFolders(() => {
-          dbTreeDataProvider.refresh()
-        })
-      )
-      this._register(
-        dbView.onDidChangeVisibility(() => {
-          if (dbView.visible) {
-            dbTreeDataProvider.refresh()
-          }
-        })
-      )
-      this._register(
         vscode.commands.registerCommand('devbox.refreshDatabase', () => {
-          dbTreeDataProvider.refresh()
-        })
-      )
-      this._register(
-        vscode.commands.registerCommand('devbox.copy', (item: DatabaseItem) => {
-          dbTreeDataProvider.copyConnectionString(item)
+          this.refreshDatabases()
         })
       )
       let targetUrl = ''
       const workspaceFolders = vscode.workspace.workspaceFolders
+      console.log('workspaceFolders', workspaceFolders)
       if (workspaceFolders && workspaceFolders.length > 0) {
         const workspaceFolder = workspaceFolders[0]
         const remoteUri = workspaceFolder.uri.authority
@@ -64,100 +54,142 @@ export class DBViewProvider extends Disposable {
       }
     }
   }
-}
 
-class MyDbTreeDataProvider implements vscode.TreeDataProvider<DatabaseItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<DatabaseItem | undefined> =
-    new vscode.EventEmitter<DatabaseItem | undefined>()
-  readonly onDidChangeTreeData: vscode.Event<DatabaseItem | undefined> =
-    this._onDidChangeTreeData.event
-  constructor() {
-    this.init()
+  public async resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    token: vscode.CancellationToken
+  ) {
+    this._view = webviewView
+
+    webviewView.webview.options = {
+      enableScripts: true,
+    }
+
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      switch (message.command) {
+        case 'refresh':
+          await this.refreshDatabases()
+          break
+        case 'copy':
+          await this.copyConnectionString(message.connection)
+          break
+      }
+    })
+
+    await this.refreshDatabases()
   }
-  private databases: Database[] = []
 
-  private async init() {
-    this.refresh()
-  }
+  private async refreshDatabases() {
+    if (!this._view) {
+      return
+    }
 
-  async refresh(): Promise<void> {
     const dbList = await getDBList()
-    this.databases = dbList.map((db: DBResponse) => ({
-      dbName: db.dbName,
+    const databases = dbList.map((db: DBResponse) => ({
       dbType: db.dbType,
       username: db.username,
-      password: db.password,
       host: db.host,
       port: db.port,
       connection: db.connection,
     }))
-    this._onDidChangeTreeData.fire(undefined)
+
+    this._view.webview.html = this.getWebviewContent(databases)
   }
 
-  getTreeItem(element: DatabaseItem): vscode.TreeItem {
-    return element
-  }
-  copyConnectionString(item: DatabaseItem) {
-    if (item.connectionString && item.contextValue === 'database') {
-      vscode.env.clipboard.writeText(item.connectionString)
-      vscode.window.showInformationMessage(
-        'Connection string is copied to clipboard!'
-      )
-    }
+  private async copyConnectionString(connection: string) {
+    await vscode.env.clipboard.writeText(connection)
+    vscode.window.showInformationMessage(
+      'Connection string copied to clipboard!'
+    )
   }
 
-  async getChildren(element?: DatabaseItem): Promise<DatabaseItem[]> {
-    if (!element) {
-      const items: DatabaseItem[] = []
-      const remoteName = vscode.env.remoteName
-
-      if (!remoteName) {
-        return [
-          new DatabaseItem(
-            'Not connected to the remote environment',
-            'no-remote'
-          ),
-        ]
-      }
-
-      items.push(
-        new DatabaseItem(
-          `${'DBType'.padEnd(15)}${'Username'.padEnd(50)}${'Host'.padEnd(
-            66
-          )}${'Port'.padEnd(40)}Connection`,
-          'header'
-        )
-      )
-
-      this.databases.forEach((database) => {
-        const label = `${database.dbType.padEnd(15)} ${database.username.padEnd(
-          17
-        )}${database.host.padEnd(65)} ${database.port
-          .toString()
-          .padEnd(34)} ${'*'.repeat(20)}`
-        items.push(
-          new DatabaseItem(
-            label,
-            'database',
-            database.connection,
-            database.password
-          )
-        )
-      })
-
-      return items
-    }
-    return []
-  }
-}
-
-class DatabaseItem extends vscode.TreeItem {
-  constructor(
-    public override readonly label: string,
-    public override readonly contextValue: string,
-    public readonly connectionString?: string,
-    public readonly password?: string
-  ) {
-    super(label, vscode.TreeItemCollapsibleState.None)
+  private getWebviewContent(databases: Database[]) {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              padding: 0;
+              margin: 0;
+              height: 100vh;
+              overflow: auto;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 12px;
+            }
+            th, td {
+              padding: 4px 8px;
+              text-align: left;
+              border: 1px solid var(--vscode-panel-border);
+            }
+            th {
+              position: sticky;
+              top: 0;
+              background-color: var(--vscode-editor-background);
+              z-index: 1;
+            }
+            tr:hover {
+              background-color: var(--vscode-list-hoverBackground);
+            }
+            .copy-btn {
+              padding: 2px 8px;
+              background: var(--vscode-button-background);
+              color: var(--vscode-button-foreground);
+              border: none;
+              border-radius: 2px;
+              cursor: pointer;
+            }
+            .copy-btn:hover {
+              background: var(--vscode-button-hoverBackground);
+            }
+          </style>
+        </head>
+        <body>
+          <table>
+            <thead>
+              <tr>
+                <th>DB Type</th>
+                <th>Username</th>
+                <th>Host</th>
+                <th>Port</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${databases
+                .map(
+                  (db) => `
+                <tr>
+                  <td>${db.dbType}</td>
+                  <td>${db.username}</td>
+                  <td>${db.host}</td>
+                  <td>${db.port}</td>
+                  <td>
+                    <button class="copy-btn" onclick="copyConnection('${db.connection}')">
+                      Copy Connection
+                    </button>
+                  </td>
+                </tr>
+              `
+                )
+                .join('')}
+            </tbody>
+          </table>
+          <script>
+            const vscode = acquireVsCodeApi();
+            function copyConnection(connection) {
+              vscode.postMessage({
+                command: 'copy',
+                connection: connection
+              });
+            }
+          </script>
+        </body>
+      </html>
+    `
   }
 }

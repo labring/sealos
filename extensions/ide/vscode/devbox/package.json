@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "Devbox",
   "description": "help code for cloud devbox in sailos/sealos",
-  "version": "1.2.2024112002",
+  "version": "1.2.2024112101",
   "keywords": [
     "devbox",
     "remote development",
@@ -20,7 +20,7 @@
   "license": "Apache-2.0",
   "icon": "images/icon.png",
   "engines": {
-    "vscode": "^1.91.0"
+    "vscode": "^1.82.0"
   },
   "categories": [
     "Other"
@@ -122,6 +122,10 @@
           "light": "images/light/link-external.svg",
           "dark": "images/dark/link-external.svg"
         }
+      },
+      {
+        "command": "devbox.openDatabaseView",
+        "title": "Open Database View"
       }
     ],
     "views": {
@@ -138,13 +142,17 @@
       "networkView": [
         {
           "id": "networkView",
-          "name": "Network"
+          "name": "Network",
+          "type": "webview",
+          "when": "remoteName == ssh-remote"
         }
       ],
       "dbView": [
         {
+          "type": "webview",
           "id": "dbView",
-          "name": "Database"
+          "name": "Database",
+          "when": "remoteName == ssh-remote"
         }
       ]
     },
