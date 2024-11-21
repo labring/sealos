@@ -11,6 +11,7 @@ export type SystemEnvResponse = {
   BACKUP_ENABLED: boolean;
   SHOW_DOCUMENT: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
+  STORAGE_MAX_SIZE: number;
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -31,7 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       minio_url: process.env.MINIO_URL || '',
       BACKUP_ENABLED: process.env.BACKUP_ENABLED === 'true',
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
-      CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd'
+      CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
+      STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300
     }
   });
 }

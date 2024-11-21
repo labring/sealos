@@ -21,7 +21,8 @@ const useEnvStore = create<EnvState>()(
       minio_url: '',
       BACKUP_ENABLED: false,
       SHOW_DOCUMENT: true,
-      CurrencySymbol: 'shellCoin'
+      CurrencySymbol: 'shellCoin',
+      STORAGE_MAX_SIZE: 300
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();
