@@ -16,8 +16,7 @@ In this guide We'll demonstrate how to create a minimal Next.js demo project wit
 
 1. Click on the "Devbox" icon on Sealos Desktop, then click on the "Create New Project" button to create a new project.
 
-2. In the "Runtime" section, choose "Next.js" as the development framework. Use the sliders to set the CPU cores and
-   memory for the project.
+2. In the "Runtime" section, choose "Next.js" as the development framework. Use the sliders to set the CPU cores and memory for the project.
 
 ![quick-start-1](./images/quick-start-1.png)
 
