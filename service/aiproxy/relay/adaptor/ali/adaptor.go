@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -29,6 +30,9 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.ImagesGenerations:
 		return meta.BaseURL + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	default:
+		if strings.HasPrefix(meta.ActualModelName, "qwen-vl") {
+			return meta.BaseURL + "/api/v1/services/aigc/multimodal-generation/generation", nil
+		}
 		return meta.BaseURL + "/api/v1/services/aigc/text-generation/generation", nil
 	}
 }
