@@ -81,9 +81,8 @@ export class NetworkViewProvider
     const codiconsUri = this._view?.webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
-        'node_modules',
-        '@vscode/codicons',
-        'dist',
+        'resources',
+        'codicons',
         'codicon.css'
       )
     )
