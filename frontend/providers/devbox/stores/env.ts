@@ -13,7 +13,8 @@ export const defaultEnv: Env = {
   squashEnable: 'false',
   namespace: 'default',
   rootRuntimeNamespace: 'devbox-system',
-  ingressDomain: 'sealosusw.site'
+  ingressDomain: 'sealosusw.site',
+  currencySymbol: 'shellCoin'
 }
 
 type State = {

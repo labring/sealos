@@ -25,7 +25,11 @@ export async function GET(req: NextRequest) {
         squashEnable: process.env.SQUASH_ENABLE || defaultEnv.squashEnable,
         namespace: namespace || defaultEnv.namespace,
         rootRuntimeNamespace: process.env.ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
-        ingressDomain: process.env.INGRESS_DOMAIN || defaultEnv.ingressDomain
+        ingressDomain: process.env.INGRESS_DOMAIN || defaultEnv.ingressDomain,
+        currencySymbol: (process.env.CURRENCY_SYMBOL || defaultEnv.currencySymbol) as
+          | 'shellCoin'
+          | 'cny'
+          | 'usd'
       }
     })
   } catch (err: any) {
