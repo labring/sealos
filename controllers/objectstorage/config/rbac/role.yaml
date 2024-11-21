@@ -19,80 +19,92 @@ metadata:
   creationTimestamp: null
   name: manager-role
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - resourcequotas
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - objectstorage.sealos.io
-    resources:
-      - objectstoragebuckets
-    verbs:
-      - create
-      - delete
-      - deletecollection
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - objectstorage.sealos.io
-    resources:
-      - objectstoragebuckets/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - objectstorage.sealos.io
-    resources:
-      - objectstoragebuckets/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - objectstorage.sealos.io
-    resources:
-      - objectstorageusers
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - objectstorage.sealos.io
-    resources:
-      - objectstorageusers/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - objectstorage.sealos.io
-    resources:
-      - objectstorageusers/status
-    verbs:
-      - get
-      - patch
-      - update
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - objectstorage.sealos.io
+  resources:
+  - objectstoragebuckets
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - objectstorage.sealos.io
+  resources:
+  - objectstoragebuckets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - objectstorage.sealos.io
+  resources:
+  - objectstoragebuckets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - objectstorage.sealos.io
+  resources:
+  - objectstorageusers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - objectstorage.sealos.io
+  resources:
+  - objectstorageusers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - objectstorage.sealos.io
+  resources:
+  - objectstorageusers/status
+  verbs:
+  - get
+  - patch
+  - update

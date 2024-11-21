@@ -87,6 +87,7 @@ const (
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resourcequotas/status,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	username := req.Name
