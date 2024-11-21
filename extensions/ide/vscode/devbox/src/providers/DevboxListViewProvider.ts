@@ -160,11 +160,10 @@ class ProjectTreeDataProvider
       placeHolder:
         'Please select a region.RegionList are added by your each connection',
     })
-
     if (selected) {
       const targetUrl = selected
       vscode.commands.executeCommand('devbox.openExternalLink', [
-        `${targetUrl}/?openapp=system-devbox?${encodeURIComponent(
+        `https://${targetUrl}/?openapp=system-devbox?${encodeURIComponent(
           'page=create'
         )}`,
       ])
