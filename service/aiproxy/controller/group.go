@@ -125,21 +125,28 @@ func GetGroupDashboard(c *gin.Context) {
 }
 
 type UpdateGroupQPMRequest struct {
-	ID  string `json:"id"`
-	QPM int64  `json:"qpm"`
+	QPM int64 `json:"qpm"`
 }
 
 func UpdateGroupQPM(c *gin.Context) {
-	req := UpdateGroupQPMRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
-	if err != nil || req.ID == "" {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "invalid parameter",
 		})
 		return
 	}
-	err = model.UpdateGroupQPM(req.ID, req.QPM)
+	req := UpdateGroupQPMRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "invalid parameter",
+		})
+		return
+	}
+	err = model.UpdateGroupQPM(id, req.QPM)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -154,21 +161,28 @@ func UpdateGroupQPM(c *gin.Context) {
 }
 
 type UpdateGroupStatusRequest struct {
-	ID     string `json:"id"`
-	Status int    `json:"status"`
+	Status int `json:"status"`
 }
 
 func UpdateGroupStatus(c *gin.Context) {
-	req := UpdateGroupStatusRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
-	if err != nil || req.ID == "" {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "invalid parameter",
 		})
 		return
 	}
-	err = model.UpdateGroupStatus(req.ID, req.Status)
+	req := UpdateGroupStatusRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "invalid parameter",
+		})
+		return
+	}
+	err = model.UpdateGroupStatus(id, req.Status)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
