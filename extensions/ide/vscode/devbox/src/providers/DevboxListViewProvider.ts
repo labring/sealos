@@ -172,7 +172,7 @@ class ProjectTreeDataProvider
 
   async open(item: ProjectTreeItem) {
     if (item.contextValue !== 'devbox') {
-      vscode.window.showInformationMessage('只能打开 Devbox 项目')
+      vscode.window.showInformationMessage('Only Devbox can be opened')
       return
     }
 
