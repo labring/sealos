@@ -275,7 +275,8 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
     SEALOS_NAMESPACE: namespace || '',
     SEALOS_SERVICE_ACCOUNT: namespace?.replace('ns-', '') || '',
     SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false',
-    DESKTOP_DOMAIN: process.env.DESKTOP_DOMAIN || 'cloud.sealos.io'
+    DESKTOP_DOMAIN: process.env.DESKTOP_DOMAIN || 'cloud.sealos.io',
+    CURRENCY_SYMBOL: (process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd') || 'shellCoin'
   };
   return TemplateEnvs;
 }

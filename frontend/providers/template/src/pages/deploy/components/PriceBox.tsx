@@ -1,27 +1,13 @@
 import React from 'react';
-import { Box, Center, Flex, useTheme, Divider } from '@chakra-ui/react';
+import { Box, Center, Flex, Divider } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { Text, Icon } from '@chakra-ui/react';
+import { Text } from '@chakra-ui/react';
 import { useUserStore } from '@/store/user';
 import MyIcon from '@/components/Icon';
-import { MyTooltip } from '@sealos/ui';
+import { CurrencySymbol, MyTooltip } from '@sealos/ui';
 import { type ResourceUsage } from '@/utils/usage';
 import { PriceIcon } from '@/components/icons/PriceIcon';
-
-export function Currencysymbol({
-  type = 'shellCoin',
-  ...props
-}: {
-  type?: 'shellCoin' | 'cny' | 'usd';
-} & Pick<Parameters<typeof Icon>[0], 'w' | 'h' | 'color'>) {
-  return type === 'shellCoin' ? (
-    <MyIcon name="sealosCoin" />
-  ) : type === 'cny' ? (
-    <Text {...props}>￥</Text>
-  ) : (
-    <Text {...props}>$</Text>
-  );
-}
+import { useSystemConfigStore } from '@/store/config';
 
 const scale = 1000000;
 
@@ -80,6 +66,7 @@ export const usePriceCalculation = ({ cpu, memory, storage, nodeport }: Resource
 const PriceBox = (props: ResourceUsage) => {
   const { t } = useTranslation();
   const priceList = usePriceCalculation(props);
+  const { envs } = useSystemConfigStore();
 
   return (
     <Box bg={'#FFF'} borderRadius={'10px'}>
@@ -122,7 +109,7 @@ const PriceBox = (props: ResourceUsage) => {
               )}
             </Flex>
             <Flex ml={'auto'} minW={'45px'} alignItems={'center'} gap={'4px'} whiteSpace={'nowrap'}>
-              <Currencysymbol type={'shellCoin'} />
+              <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
               {item.value}
             </Flex>
           </Flex>
