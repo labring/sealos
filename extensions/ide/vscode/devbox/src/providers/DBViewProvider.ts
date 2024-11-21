@@ -17,9 +17,10 @@ export class DBViewProvider
   implements vscode.WebviewViewProvider
 {
   private _view?: vscode.WebviewView
-
+  private _extensionUri: vscode.Uri
   constructor(context: vscode.ExtensionContext) {
     super()
+    this._extensionUri = context.extensionUri
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view
       context.subscriptions.push(
@@ -89,6 +90,7 @@ export class DBViewProvider
     const databases = dbList.map((db: DBResponse) => ({
       dbType: db.dbType,
       username: db.username,
+      password: db.password,
       host: db.host,
       port: db.port,
       connection: db.connection,
@@ -105,10 +107,25 @@ export class DBViewProvider
   }
 
   private getWebviewContent(databases: Database[]) {
+    const styleUri = this._view?.webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css')
+    )
+    const codiconsUri = this._view?.webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this._extensionUri,
+        'node_modules',
+        '@vscode/codicons',
+        'dist',
+        'codicon.css'
+      )
+    )
+
     return `
       <!DOCTYPE html>
       <html>
         <head>
+          <link rel="stylesheet" href="${styleUri}">
+          <link rel="stylesheet" href="${codiconsUri}">
           <style>
             body {
               padding: 0;
@@ -119,32 +136,55 @@ export class DBViewProvider
             table {
               width: 100%;
               border-collapse: collapse;
-              font-size: 12px;
             }
             th, td {
-              padding: 4px 8px;
+              padding: 0px 8px;
               text-align: left;
-              border: 1px solid var(--vscode-panel-border);
+              border: none;
+              color: var(--vscode-foreground) !important;
+              font-size: 13px;
+              font-family: var(--vscode-font-family);
             }
             th {
+              font-size: 14px !important;
               position: sticky;
               top: 0;
-              background-color: var(--vscode-editor-background);
               z-index: 1;
+              font-weight: 600;
             }
-            tr:hover {
-              background-color: var(--vscode-list-hoverBackground);
+            tr:nth-child(even) {
+              background-color: color-mix(in srgb, var(--vscode-list-hoverBackground) 30%, transparent);
             }
-            .copy-btn {
-              padding: 2px 8px;
-              background: var(--vscode-button-background);
-              color: var(--vscode-button-foreground);
+            td {
+              padding: 0px 8px;
+              text-align: left;
               border: none;
-              border-radius: 2px;
+              color: var(--vscode-editor-foreground);
+            }
+            .codicon {
+              font-family: codicons;
+              cursor: pointer;
+              padding: 4px;
+              color: var(--vscode-foreground) !important;
+            }
+            .codicon:hover {
+              background-color: var(--vscode-list-hoverBackground);
+              border-radius: 3px;
+            }
+            .actions {
+              opacity: 0;
+              transition: opacity 0.2s;
+            }
+            tr:hover .actions {
+              opacity: 1;
+            }
+            td:nth-child(5) {
+              color: var(--vscode-textLink-foreground) !important;
+              text-decoration: none;
               cursor: pointer;
             }
-            .copy-btn:hover {
-              background: var(--vscode-button-hoverBackground);
+            td:nth-child(5):hover {
+              text-decoration: underline;
             }
           </style>
         </head>
@@ -152,11 +192,12 @@ export class DBViewProvider
           <table>
             <thead>
               <tr>
+                <th style="width: 16px;"></th>
                 <th>DB Type</th>
                 <th>Username</th>
+                <th>Password</th>
                 <th>Host</th>
                 <th>Port</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -164,14 +205,23 @@ export class DBViewProvider
                 .map(
                   (db) => `
                 <tr>
+                  <td style="width: 16px;"></td>
                   <td>${db.dbType}</td>
                   <td>${db.username}</td>
+                  <td>
+                    ${'*'.repeat(8)}
+                    <span class="actions">
+                      <span class="codicon codicon-clippy" onclick="copyPassword('${
+                        db.password
+                      }')" title="Copy Password"></span>
+                    </span>
+                  </td>
                   <td>${db.host}</td>
                   <td>${db.port}</td>
-                  <td>
-                    <button class="copy-btn" onclick="copyConnection('${db.connection}')">
-                      Copy Connection
-                    </button>
+                  <td class="actions">
+                    <span class="codicon codicon-copy" onclick="copyConnection('${
+                      db.connection
+                    }')" title="Copy Connection String"></span>
                   </td>
                 </tr>
               `
@@ -185,6 +235,12 @@ export class DBViewProvider
               vscode.postMessage({
                 command: 'copy',
                 connection: connection
+              });
+            }
+            function copyPassword(password) {
+              vscode.postMessage({
+                command: 'copy',
+                connection: password
               });
             }
           </script>

@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "Devbox",
   "description": "help code for cloud devbox in sailos/sealos",
-  "version": "1.2.2024112102",
+  "version": "1.2.2024112103",
   "keywords": [
     "devbox",
     "remote development",
@@ -269,6 +269,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.36",
     "axios": "^1.7.5",
     "execa": "^9.5.1",
     "ssh-config": "^5.0.0"

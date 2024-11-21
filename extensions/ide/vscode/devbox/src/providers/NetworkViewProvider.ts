@@ -13,9 +13,11 @@ export class NetworkViewProvider
   implements vscode.WebviewViewProvider
 {
   private _view?: vscode.WebviewView
+  private _extensionUri: vscode.Uri
 
   constructor(context: vscode.ExtensionContext) {
     super()
+    this._extensionUri = context.extensionUri
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       context.subscriptions.push(
         vscode.window.registerWebviewViewProvider('networkView', this, {
@@ -76,10 +78,25 @@ export class NetworkViewProvider
   }
 
   private getWebviewContent(networks: Network[]) {
+    const styleUri = this._view?.webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css')
+    )
+    const codiconsUri = this._view?.webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this._extensionUri,
+        'node_modules',
+        '@vscode/codicons',
+        'dist',
+        'codicon.css'
+      )
+    )
+
     return `
       <!DOCTYPE html>
       <html>
         <head>
+          <link rel="stylesheet" href="${styleUri}">
+          <link rel="stylesheet" href="${codiconsUri}">
           <style>
             body {
               padding: 0;
@@ -90,33 +107,55 @@ export class NetworkViewProvider
             table {
               width: 100%;
               border-collapse: collapse;
-              font-size: 12px;
             }
             th, td {
-              padding: 4px 8px;
+              padding: 0px 8px;
               text-align: left;
-              border: 1px solid var(--vscode-panel-border);
+              border: none;
+              color: var(--vscode-foreground) !important;
+              font-size: 13px;
+              font-family: var(--vscode-font-family);
             }
             th {
+              font-size: 14px !important;
               position: sticky;
               top: 0;
-              background-color: var(--vscode-editor-background);
               z-index: 1;
+              font-weight: 600;
             }
-            tr:hover {
-              background-color: var(--vscode-list-hoverBackground);
+            tr:nth-child(even) {
+              background-color: color-mix(in srgb, var(--vscode-list-hoverBackground) 30%, transparent);
             }
-            .action-btn {
-              padding: 2px 8px;
-              background: var(--vscode-button-background);
-              color: var(--vscode-button-foreground);
+            td {
+              padding: 0px 8px;
+              text-align: left;
               border: none;
-              border-radius: 2px;
-              cursor: pointer;
-              margin-right: 4px;
+              color: var(--vscode-editor-foreground);
             }
-            .action-btn:hover {
-              background: var(--vscode-button-hoverBackground);
+            td:nth-child(4) {
+              color: var(--vscode-textLink-foreground) !important;
+              text-decoration: none;
+              cursor: pointer;
+            }
+            td:nth-child(4):hover {
+              text-decoration: underline;
+            }
+            .codicon {
+              font-family: codicons;
+              cursor: pointer;
+              padding: 4px;
+              color: var(--vscode-foreground) !important;
+            }
+            .codicon:hover {
+              background-color: var(--vscode-list-hoverBackground);
+              border-radius: 3px;
+            }
+            .actions {
+              opacity: 0;
+              transition: opacity 0.2s;
+            }
+            tr:hover .actions {
+              opacity: 1;
             }
           </style>
         </head>
@@ -124,10 +163,10 @@ export class NetworkViewProvider
           <table>
             <thead>
               <tr>
+                <th style="width: 16px;"></th>
                 <th>Port</th>
                 <th>Protocol</th>
                 <th>Address</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -135,16 +174,13 @@ export class NetworkViewProvider
                 .map(
                   (network) => `
                 <tr>
+                  <td style="width: 16px;"></td>
                   <td>${network.port}</td>
                   <td>${network.protocol}</td>
                   <td>${network.address}</td>
-                  <td>
-                    <button class="action-btn" onclick="openExternal('https://${network.address}')">
-                      External
-                    </button>
-                    <button class="action-btn" onclick="openIntegrated('https://${network.address}')">
-                      Integrated
-                    </button>
+                  <td class="actions">
+                    <span class="codicon codicon-globe" onclick="openExternal('https://${network.address}')" title="Open in Browser"></span>
+                    <span class="codicon codicon-open-preview" onclick="openIntegrated('https://${network.address}')" title="Preview in Editor"></span>
                   </td>
                 </tr>
               `
