@@ -107,9 +107,6 @@ export class DBViewProvider
   }
 
   private getWebviewContent(databases: Database[]) {
-    const styleUri = this._view?.webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css')
-    )
     const codiconsUri = this._view?.webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -124,7 +121,6 @@ export class DBViewProvider
       <!DOCTYPE html>
       <html>
         <head>
-          <link rel="stylesheet" href="${styleUri}">
           <link rel="stylesheet" href="${codiconsUri}">
           <style>
             body {
