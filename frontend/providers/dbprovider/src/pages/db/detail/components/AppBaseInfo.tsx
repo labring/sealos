@@ -28,7 +28,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { MyTooltip, SealosCoin, useMessage } from '@sealos/ui';
+import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
@@ -454,9 +454,16 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   {t('billing_standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
-                  {SOURCE_PRICE.nodeports}
-                  <SealosCoin ml="8px" mr={'2px'} name="currency" w="20px" h="20px"></SealosCoin> /
-                  {t('Hour')}
+                  <Text mr={'8px'}>{SOURCE_PRICE.nodeports}</Text>
+                  <CurrencySymbol
+                    type={SystemEnv.CurrencySymbol}
+                    shellCoin={{
+                      mr: '2px',
+                      w: '20px',
+                      h: '20px'
+                    }}
+                  />
+                  /{t('Hour')}
                 </Center>
                 <Button
                   minW={'100px'}

@@ -10,6 +10,7 @@ export type SystemEnvResponse = {
   minio_url: string;
   BACKUP_ENABLED: boolean;
   SHOW_DOCUMENT: boolean;
+  CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -29,7 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       migrate_file_image: process.env.MIGRATE_FILE_IMAGE || 'ghcr.io/wallyxjh/test:7.1',
       minio_url: process.env.MINIO_URL || '',
       BACKUP_ENABLED: process.env.BACKUP_ENABLED === 'true',
-      SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true'
+      SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
+      CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd'
     }
   });
 }
