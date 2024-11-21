@@ -2,13 +2,9 @@
 
 ## Quick start
 
-> Learn how to create, develop, and deploy a Next.js app using Sealos DevBox. This guide covers project setup, remote
-> development with Cursor IDE, and cloud deployment.
+> Learn how to create, develop, and deploy a Next.js app using Sealos DevBox. This guide covers project setup, remote development with Cursor IDE, and cloud deployment.
 
-Sealos Devbox is an all-in-one platform designed for integrated online development, testing, and production. It offers a
-seamless solution for creating environments and database dependencies with just a single click, allows developers to
-work locally using their preferred IDEs while streamlining setup processes and enabling automatic application
-deployment.
+Sealos Devbox is an all-in-one platform designed for integrated online development, testing, and production. It offers a seamless solution for creating environments and database dependencies with just a single click, allows developers to work locally using their preferred IDEs while streamlining setup processes and enabling automatic application deployment.
 
 In this guide We'll demonstrate how to create a minimal Next.js demo project with Sealos Devbox.
 
@@ -33,8 +29,7 @@ In this guide We'll demonstrate how to create a minimal Next.js demo project wit
     - By default, Sealos provides a subdomain for your application.
     - If you want to use a custom domain, click on "Custom Domain" and follow the instructions to set it up.
 
-Remember that the container port (3000) should match the port your Next.js application is configured to run on. If you
-change the port in your Next.js configuration, make sure to update it here as well.
+Remember that the container port (3000) should match the port your Next.js application is configured to run on. If you change the port in your Next.js configuration, make sure to update it here as well.
 
 ![quick-start-2](./images/quick-start-2.png)
 
@@ -44,8 +39,7 @@ change the port in your Next.js configuration, make sure to update it here as we
 
 ### Connect with Cursor IDE
 
-After creating your project, you'll see it listed in the Devbox List. Each project has an "Operation" column with
-various options.
+After creating your project, you'll see it listed in the Devbox List. Each project has an "Operation" column with various options.
 
 ![quick-start-4](./images/quick-start-4.png)
 
@@ -56,25 +50,20 @@ various options.
 - From the dropdown menu, select "Cursor".
 - Click on the "Cursor" option that appears.
 
-2. When you click on "Cursor", it will launch the Cursor IDE application on your local machine. Within Cursor, a popup
-   window will appear, prompting you to install the Devbox plugin for Cursor. This plugin enables SSH remote connection
-   to the Devbox runtime.
+2. When you click on "Cursor", it will launch the Cursor IDE application on your local machine. Within Cursor, a popup window will appear, prompting you to install the Devbox plugin for Cursor. This plugin enables SSH remote connection to the Devbox runtime.
 
 - Follow the instructions in the Cursor popup to install the Devbox plugin.
 - Once installed, Cursor will establish a remote connection to your Devbox runtime.
 
-> You can switch between different IDE options (VSCode, Cursor, or VSCode Insiders) at any time by using the dropdown
-> menu in the "Operation" column.
+> You can switch between different IDE options (VSCode, Cursor, or VSCode Insiders) at any time by using the dropdown menu in the "Operation" column.
 
 ### Develop
 
-1. After the connection is established, you'll be able to access and edit your project files directly within the Cursor
-   IDE environment.
+1. After the connection is established, you'll be able to access and edit your project files directly within the Cursor IDE environment.
 
 ![quick-start-5](./images/quick-start-5.png)
 
-This remote connection allows you to develop your Next.js application using Cursor IDE, with all the benefits of a
-cloud-based development environment:
+This remote connection allows you to develop your Next.js application using Cursor IDE, with all the benefits of a cloud-based development environment:
 
 - Your code runs in the Devbox runtime, ensuring consistency across development and production environments.
 - You can access your project from anywhere, on any device with Cursor installed.
@@ -106,15 +95,13 @@ npm run dev
 
 ![quick-start-6](./images/quick-start-6.png)
 
-5. This will open your Next.js application in a new browser tab, allowing you to view and interact with your running
-   service.
+5. This will open your Next.js application in a new browser tab, allowing you to view and interact with your running service.
 
 ![quick-start-7](./images/quick-start-7.png)
 
 ### Release
 
-After you've developed and tested your Next.js application, you can release it as an OCI (Open Container Initiative)
-image. This allows you to version your application and prepare it for deployment.
+After you've developed and tested your Next.js application, you can release it as an OCI (Open Container Initiative) image. This allows you to version your application and prepare it for deployment.
 
 1. In the Cursor IDE terminal, navigate to your project directory and run the build command:
 
@@ -148,18 +135,13 @@ This command creates a production-ready build of your Next.js application in the
 
 ![quick-start-9](./images/quick-start-9.png)
 
-By following these steps, you've successfully created an OCI image of your Next.js application. This image can now be
-used for deployment or shared with other team members. Each release creates a snapshot of your current code, allowing
-you to maintain different versions of your application and easily roll back if needed.
+By following these steps, you've successfully created an OCI image of your Next.js application. This image can now be used for deployment or shared with other team members. Each release creates a snapshot of your current code, allowing you to maintain different versions of your application and easily roll back if needed.
 
-> Remember to create new releases whenever you make significant changes or reach important milestones in your project.
-> This practice helps in maintaining a clear history of your application's development and facilitates easier deployment
-> and collaboration.
+> Remember to create new releases whenever you make significant changes or reach important milestones in your project. This practice helps in maintaining a clear history of your application's development and facilitates easier deployment and collaboration.
 
 ### Deploy
 
-After releasing your Next.js application as an OCI image, you can deploy it to Sealos Cloud for production use. Here's
-how to do it:
+After releasing your Next.js application as an OCI image, you can deploy it to Sealos Cloud for production use. Here's how to do it:
 
 1. In your project's details page, locate the "Version" section.
 
@@ -167,8 +149,7 @@ how to do it:
 
 3. This will redirect you to the App Launchpad application within Sealos.
 
-4. In the App Launchpad application, follow the deployment wizard to configure your application settings. This may
-   include:
+4. In the App Launchpad application, follow the deployment wizard to configure your application settings. This may include:
 
 - Selecting the appropriate environment
 - Setting resource limits (CPU, memory)
@@ -177,24 +158,14 @@ how to do it:
 
 ![quick-start-10](./images/quick-start-10.png)
 
-5. Once you've configured all necessary settings, click the "Deploy Application" button in the top right corner to start
-   the deployment process.
+5. Once you've configured all necessary settings, click the "Deploy Application" button in the top right corner to start the deployment process.
 
 6. You'll be taken to the application details view within App Launchpad.
 
-7. Once the status is "Running", Click on the address provided under "Public Address". This will open your deployed
-   Next.js application in a new browser tab.
+7. Once the status is "Running", Click on the address provided under "Public Address". This will open your deployed Next.js application in a new browser tab.
 
-By following these steps, you've successfully deployed your Next.js application to Sealos Cloud using the App Launchpad
-application. Your application is now accessible via the public address, allowing users to interact with it from anywhere
-on the internet.
+By following these steps, you've successfully deployed your Next.js application to Sealos Cloud using the App Launchpad application. Your application is now accessible via the public address, allowing users to interact with it from anywhere on the internet.
 
-> You can always update your application by creating a new release in Devbox and repeating this deployment process with
-> the new version using App Launchpad.
+> You can always update your application by creating a new release in Devbox and repeating this deployment process with the new version using App Launchpad.
 
-You can always update your application by creating a new release in Devbox and repeating this deployment process with
-the new version using App Launchpad.
-
-This workflow allows you to develop and debug your Next.js application in a cloud environment while still using your
-preferred local IDE. The external address makes it easy to share your work with team members or clients, as they can
-access your running application from anywhere with an internet connection.
+This workflow allows you to develop and debug your Next.js application in a cloud environment while still using your preferred local IDE. The external address makes it easy to share your work with team members or clients, as they can access your running application from anywhere with an internet connection.
