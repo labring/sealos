@@ -1,4 +1,4 @@
-# Quick start
+# Quick Start
 
 > Learn how to create, develop, and deploy a Next.js app using Sealos DevBox. This guide covers project setup, remote development with Cursor IDE, and cloud deployment.
 
