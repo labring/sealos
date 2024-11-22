@@ -15,6 +15,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -94,9 +95,12 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
 
+	consumeCtx := context.WithValue(context.Background(), helper.RequestIDKey, c.Value(helper.RequestIDKey))
+
 	if resp.StatusCode != http.StatusOK {
 		err := RelayErrorHandler(resp)
-		go postConsumeAmount(context.Background(), postGroupConsumer, resp.StatusCode, c.Request.URL.Path, &relaymodel.Usage{
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsumer, resp.StatusCode, c.Request.URL.Path, &relaymodel.Usage{
 			PromptTokens:     0,
 			CompletionTokens: 0,
 		}, meta, price, completionPrice, err.Message)
@@ -108,7 +112,8 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		return respErr
 	}
 
-	go postConsumeAmount(context.Background(), postGroupConsumer, resp.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, "")
+	ConsumeWaitGroup.Add(1)
+	go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsumer, resp.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, "")
 
 	return nil
 }

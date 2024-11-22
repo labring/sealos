@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -74,9 +75,11 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		logger.Errorf(ctx, "DoRequest failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
+	consumeCtx := context.WithValue(context.Background(), helper.RequestIDKey, ctx.Value(helper.RequestIDKey))
 	if isErrorHappened(meta, resp) {
 		err := RelayErrorHandler(resp)
-		go postConsumeAmount(context.Background(), postGroupConsume, resp.StatusCode, c.Request.URL.Path, nil, meta, price, completionPrice, err.Error.Message)
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsume, resp.StatusCode, c.Request.URL.Path, nil, meta, price, completionPrice, err.Error.Message)
 		return err
 	}
 
@@ -84,11 +87,13 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	usage, respErr := adaptor.DoResponse(c, resp, meta)
 	if respErr != nil {
 		logger.Errorf(ctx, "respErr is not nil: %+v", respErr)
-		go postConsumeAmount(context.Background(), postGroupConsume, respErr.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, respErr.Error.Message)
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsume, respErr.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, respErr.Error.Message)
 		return respErr
 	}
 	// post-consume amount
-	go postConsumeAmount(context.Background(), postGroupConsume, resp.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, "")
+	ConsumeWaitGroup.Add(1)
+	go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsume, resp.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, "")
 	return nil
 }
 

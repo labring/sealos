@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay"
@@ -159,13 +160,14 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
 
-	defer func(ctx context.Context) {
+	defer func() {
 		if resp == nil || resp.StatusCode != http.StatusOK {
 			_ = model.RecordConsumeLog(ctx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, 0, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
 			return
 		}
 
-		_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.TokenName, amount)
+		consumeCtx := context.WithValue(context.Background(), helper.RequestIDKey, ctx.Value(helper.RequestIDKey))
+		_amount, err := postGroupConsumer.PostGroupConsume(consumeCtx, meta.TokenName, amount)
 		if err != nil {
 			logger.Error(ctx, "error consuming token remain balance: "+err.Error())
 			err = model.CreateConsumeError(meta.Group, meta.TokenName, imageRequest.Model, err.Error(), amount, meta.TokenID)
@@ -175,11 +177,11 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 		} else {
 			amount = _amount
 		}
-		err = model.BatchRecordConsume(ctx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, amount, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
+		err = model.BatchRecordConsume(consumeCtx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, amount, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
 		if err != nil {
 			logger.Error(ctx, "failed to record consume log: "+err.Error())
 		}
-	}(c.Request.Context())
+	}()
 
 	// do response
 	_, respErr := adaptor.DoResponse(c, resp, meta)

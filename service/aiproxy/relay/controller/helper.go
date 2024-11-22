@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
@@ -19,6 +20,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/shopspring/decimal"
 )
+
+var ConsumeWaitGroup sync.WaitGroup
 
 func getAndValidateTextRequest(c *gin.Context, relayMode int) (*relaymodel.GeneralOpenAIRequest, error) {
 	textRequest := &relaymodel.GeneralOpenAIRequest{}
@@ -76,7 +79,8 @@ func preCheckGroupBalance(ctx context.Context, textRequest *relaymodel.GeneralOp
 	return true, postGroupConsumer, nil
 }
 
-func postConsumeAmount(ctx context.Context, postGroupConsumer balance.PostGroupConsumer, code int, endpoint string, usage *relaymodel.Usage, meta *meta.Meta, price, completionPrice float64, content string) {
+func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, postGroupConsumer balance.PostGroupConsumer, code int, endpoint string, usage *relaymodel.Usage, meta *meta.Meta, price, completionPrice float64, content string) {
+	defer consumeWaitGroup.Done()
 	if usage == nil {
 		err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelID, 0, 0, meta.OriginModelName, meta.TokenID, meta.TokenName, 0, price, completionPrice, endpoint, content)
 		if err != nil {
