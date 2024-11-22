@@ -4,10 +4,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -30,10 +30,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.ImagesGenerations:
 		return meta.BaseURL + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	default:
-		if strings.HasPrefix(meta.ActualModelName, "qwen-vl") {
-			return meta.BaseURL + "/api/v1/services/aigc/multimodal-generation/generation", nil
-		}
-		return meta.BaseURL + "/api/v1/services/aigc/text-generation/generation", nil
+		return meta.BaseURL + "/compatible-mode/v1/chat/completions", nil
 	}
 }
 
@@ -91,7 +88,7 @@ func (a *Adaptor) ConvertTTSRequest(*model.TextToSpeechRequest) (any, error) {
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
 	if meta.IsStream {
-		err, usage = StreamHandler(c, resp)
+		err, _, usage = openai.StreamHandler(c, resp, meta.Mode)
 	} else {
 		switch meta.Mode {
 		case relaymode.Embeddings:
@@ -99,7 +96,7 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 		case relaymode.ImagesGenerations:
 			err, usage = ImageHandler(c, resp, meta.APIKey)
 		default:
-			err, usage = Handler(c, resp)
+			err, usage = openai.Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
 		}
 	}
 	return
