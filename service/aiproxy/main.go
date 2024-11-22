@@ -19,6 +19,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/router"
 )
 
@@ -111,11 +112,13 @@ func main() {
 	<-quit
 	logger.SysLog("shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.SysError("server forced to shutdown: " + err.Error())
 	}
+
+	relaycontroller.ConsumeWaitGroup.Wait()
 
 	logger.SysLog("server exiting")
 }

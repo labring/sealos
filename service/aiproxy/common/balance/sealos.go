@@ -25,6 +25,7 @@ const (
 	appType               = "LLM-TOKEN"
 	sealosRequester       = "sealos-admin"
 	sealosGroupBalanceKey = "sealos:balance:%s"
+	getBalanceRetry       = 3
 )
 
 var (
@@ -34,7 +35,7 @@ var (
 	minConsumeAmount                     = decimal.NewFromInt(1)
 	jwtToken                string
 	sealosRedisCacheEnable  = env.Bool("BALANCE_SEALOS_REDIS_CACHE_ENABLE", true)
-	sealosCacheExpire       = 15 * time.Second
+	sealosCacheExpire       = 3 * time.Minute
 )
 
 type Sealos struct {
@@ -139,8 +140,23 @@ func cacheDecreaseGroupBalance(ctx context.Context, group string, amount int64) 
 	return decreaseGroupBalanceScript.Run(ctx, common.RDB, []string{fmt.Sprintf(sealosGroupBalanceKey, group)}, amount).Err()
 }
 
-// GroupBalance interface implementation
 func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
+	var errs []error
+	for i := 0; ; i++ {
+		balance, consumer, err := s.getGroupRemainBalance(ctx, group)
+		if err == nil {
+			return balance, consumer, nil
+		}
+		errs = append(errs, err)
+		if i == getBalanceRetry-1 {
+			return 0, nil, errors.Join(errs...)
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+// GroupBalance interface implementation
+func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
 	if cache, err := cacheGetGroupBalance(ctx, group); err == nil && cache.UserUID != "" {
 		return decimal.NewFromInt(cache.Balance).Div(decimalBalancePrecision).InexactFloat64(),
 			newSealosPostGroupConsumer(s.accountURL, group, cache.UserUID, cache.Balance), nil
