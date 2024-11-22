@@ -1,275 +1,171 @@
 # Devbox
 
-## Supportive Environment
+## Quick start
 
-System: Windows, MacOS (there is no difference in operation between the two), Editor: VSCode, Cursor, VSCode Insider.
+> Learn how to create, develop, and deploy a Next.js app using Sealos DevBox. This guide covers project setup, remote development with Cursor IDE, and cloud deployment.
 
-## Some concepts
+Sealos Devbox is an all-in-one platform designed for integrated online development, testing, and production. It offers a seamless solution for creating environments and database dependencies with just a single click, allows developers to work locally using their preferred IDEs while streamlining setup processes and enabling automatic application deployment.
 
-Devbox: It is a cloud sandbox, which refers to a remote editor environment + a remote running environment as a whole.
+In this guide We'll demonstrate how to create a minimal Next.js demo project with Sealos Devbox.
 
-## 1. Create your first Devbox
+### Create a Devbox Project
 
-Log in to [Usw Sailos](usw.sailos.io) or [Hzh Sealos](hzh.sealos.run) and click Devbox.
+1. Click on the "Devbox" icon on Sealos Desktop, then click on the "Create New Project" button to create a new project.
 
-![1](./images/1.png)
+2. In the "Runtime" section, choose "Next.js" as the development framework. Use the sliders to set the CPU cores and memory for the project.
 
-Create a new project.
+![quick-start-1](./images/quick-start-1.png)
 
-![2](./images/2.png)
+3. After setting up the basic environment, you'll need to configure the network settings for your project:
 
-Fill in your Devbox configuration.
+- Scroll down to the "Network" section of the configuration page.
+- Container Port:
+    - Enter "3000" in the Container Port field. This is the default port that Next.js uses for development.
+    - If you need additional ports, click the "Add Port" button and specify them.
+- Enable Internet Access:
+    - Toggle the switch to enable internet access for your Devbox. This allows external users to access your Next.js
+      application through the public internet using the provided domain.
+- Domain:
+    - By default, Sealos provides a subdomain for your application.
+    - If you want to use a custom domain, click on "Custom Domain" and follow the instructions to set it up.
 
-- Enter the project name;
+Remember that the container port (3000) should match the port your Next.js application is configured to run on. If you change the port in your Next.js configuration, make sure to update it here as well.
 
-- Select the operating environment and version you want;
+![quick-start-2](./images/quick-start-2.png)
 
-- Select the CPU and memory;
+4. Click on the "Create" button to create your project.
 
-- Configure the network configuration (optional).
+![quick-start-3](./images/quick-start-3.png)
 
-   - **When to use: When you want to access the service running in your Devbox through the domain name**, for example:
+### Connect with Cursor IDE
 
-   - You run `npm run dev` in the nextjs runtime environment, and your service is likely to run on port 3000 (you should
-     know which ports your service runs on).
+After creating your project, you'll see it listed in the Devbox List. Each project has an "Operation" column with various options.
 
-   - Case 1: You know what is in a in advance, so you fill in the container exposure port 3000 when **creating**, **and
-     open public network access** (you don’t need to do the custom domain name later, at this time
-     sealos assigns you a fixed random address for this port).
+![quick-start-4](./images/quick-start-4.png)
 
-   - Case 2: After running the service, you think of opening this port. At this time, open the port in **change** (I
-     will talk about how to enter the change below).
+1. To connect to your project's Devbox runtime using Cursor IDE:
 
-   - At this time, after you open the public network access of the port, you have a corresponding relationship between a
-     domain name and your port. At this time, you visit `qnedemdulyat.usw.sailos.io`
-     (assuming it is this), and you can see your page on the web page.
+- Locate your project in the Devbox List.
+- In the "Operation" column, click on the dropdown arrow next to the VSCode icon.
+- From the dropdown menu, select "Cursor".
+- Click on the "Cursor" option that appears.
 
-The following is the picture I chose:
+2. When you click on "Cursor", it will launch the Cursor IDE application on your local machine. Within Cursor, a popup window will appear, prompting you to install the Devbox plugin for Cursor. This plugin enables SSH remote connection to the Devbox runtime.
 
-![3](./images/3.png)
+- Follow the instructions in the Cursor popup to install the Devbox plugin.
+- Once installed, Cursor will establish a remote connection to your Devbox runtime.
 
-Click Create in the upper right corner.
+> You can switch between different IDE options (VSCode, Cursor, or VSCode Insiders) at any time by using the dropdown menu in the "Operation" column.
 
-## 2. Enter your remote environment
+### Develop
 
-Enter your editor environment on the list page: You can choose any of vscode, cursor, vscode Insider. Here I choose
-Cursor (the very useful AI version of VSCode).
+1. After the connection is established, you'll be able to access and edit your project files directly within the Cursor IDE environment.
 
-![4](./images/4.png)
+![quick-start-5](./images/quick-start-5.png)
 
-Clicking the button will jump to the Cursor.
+This remote connection allows you to develop your Next.js application using Cursor IDE, with all the benefits of a cloud-based development environment:
 
-![5](./images/5.png)
+- Your code runs in the Devbox runtime, ensuring consistency across development and production environments.
+- You can access your project from anywhere, on any device with Cursor installed.
+- Collaboration becomes easier as team members can connect to the same Devbox runtime.
 
-If you don't have the Devbox plugin installed, it will automatically install the plugin for you and open the remote
-environment.
+2. You can start debugging your Next.js application:
 
-![6](./images/6.png)
-
-![7](./images/7.png)
-
-Successfully enter the remote environment.
-
-![8](./images/8.png)
-
-![9](./images/9.png)
-
-## 3. Encode and view the results
-
-Coding: I won’t change the code here.
-
-Run the development environment: Open the terminal and run `npm run dev`.
-
-![10](./images/10.png)
-
-At this time, there are two ways to view your development environment results.
-
-Local port forwarding: The pop-up window in the lower left corner is the local port forwarding that comes with vscode (
-Cursor also has it). You can directly click to open it in the browser or set up port forwarding yourself (there is a
-port in the lower right corner of the above picture, just to the right of the terminal). Local forwarding means
-forwarding the port of the remote environment to the same port of your localhost.
-
-![11](./images/11.png)
-
-Sealos public network port forwarding: Remember the port settings I asked you to add when you created it? (Don’t worry
-if you didn’t create it, I will talk about changing the configuration right away). Now we re-enter the Devbox in the
-Sealos desktop and click to enter the details page.
-
-![12](./images/12.png)
-
-Click the external network address (this address corresponds to the port 3000 we just created. You can see the port of
-the internal network address on the left, and you can see that this line is the port 3000 we created).
-
-![13](./images/13.png)
-
-Mission accomplished!
-
-![14](./images/14.png)
-
-## About Update
-
-There are two ways to enter Update:
-
-The item list has an Update button.。
-
-![15](./images/15.png)
-
-The details page also has an Update button.
-
-![16](./images/16.png)
-
-Update is the same as create, but only limited items can be changed: CPU, memory, and network configuration (most
-important).
-
-We can add new ports here to adapt to our development environment.
-
-![17](./images/17.png)
-
-## 4. Release the version and go online
-
-### Things you need to know before going live
-
-Each remote project has a special file `entrypoint.sh`. Its function is to help you automatically execute some
-instructions when going online, generally running commands for building packages.
-
-**Interpret the current document:**
-
-- `cd /home/sealos/project` (required): Enter your project directory (**We stipulate that your project is in a directory
-  in the container, do not change**).
-- `pnpm run start` (required): Run your production version (**This involves a problem, you need to package your
-  application in advance when you want to release it online**).
-
-![18](./images/18.png)
-
-### Release Process
-
-Package the project in the development environment in advance (see **Things you need to know before going online**) and
-make sure the `entrypoint.sh` file meets the requirements for running the production version service.
-
-![19](./images/19.png)
-
-Go to the details page and click Release.
-
-![20](./images/20.png)
-
-After filling in the form, click Publish (note that the machine will be temporarily shut down after publishing, which
-will cause the vscode connection to be disconnected and reconnected. At this time, you only need to wait until the
-publishing is completed and then reopen the vscode window).
-
-![21](./images/21.png)
-
-Wait for a short while. (Publishing time is slightly longer)
-
-![22](./images/22.png)
-
-Click Go Online.
-
-![23](./images/23.png)
-
-When you go online, you will be redirected to the application deployment page of application management, and most
-parameters will be automatically passed from the Devbox to here.
-
-I just changed the application name and clicked on it. You can adjust other things. Here are two small points: From the
-advanced configuration, you can see the function of your `entrypoint.sh` file, which is actually the command used to
-start the image container. Note that the name should not be the same as the devbox name, otherwise there will be a
-conflict.
-
-![24](./images/24.png)
-
-After successfully going online, jump to the application management details page and click the public network address to
-see the page.
-
-![25](./images/25.png)
-
-![26](./images/26.png)
-
-## 5. Other tips and points to note
-
-- Connect to the remote environment directly via ssh: The cloud sandbox details page provides downloads for the SSH
-  connection string and private key. After downloading the private key, replace the address of the private key file with
-  yourPrivateKeyPath after the connection string -i.
-
-- Deleting Devbox after publishing will not delete the version you have already published. So when you create a new
-  Devbox with the same name later, you can still see the original version history.
-
-- It is not currently supported to create and open a Devbox from scratch on the plugin side (we will complete this part
-  in the second issue). You must enter the editor IDE on the web side to enter the remote environment.
-
-- ![27](./images/27.png)
-
-- The more button in the Devbox list has some convenient ways to do things, such as: release, terminal (just like the
-  terminal of other sealos applications, enter a web page terminal) and common control items (restart, shut down, start
-  up, delete).
-
-![28](./images/28.png)
-
-## FAQ
-
-### 1. Cursor connection problem but VSCode can connect
-
-Cursor Since the plugin version synchronization with VSCode is slow, outdated versions may cause connection problems.
-
-Solution: Manually install the Devbox plugin.
-
-1. Download the vsix file of the [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) plugin
-   from the VSCode plugin market.
-
-![devbox-1](./images/faq-1.png)
-
-2. Open the Cursor's extension window.
-
-3. Drag the downloaded file into the extension window.
-
-![devbox-2](./images/faq-2.png)
-
-### 2. Cursor and VSCode cannot connect
-
-First, understand the principle of the Devbox plugin: add remote environment information by modifying the ssh config
-file, and connect to the remote environment through the Remote-SSH plugin. The plugin first writes the following line of
-code in `~/.ssh/config` (some older versions may write other similar content):
+- Open the terminal within Cursor IDE.
+- Navigate to your project directory if you're not already there.
+- Run the following command to start the Next.js development serve:
 
 ```bash
-Include ~/.ssh/sealos/devbox_config
+npm run dev
 ```
 
-This line of code imports the contents of the file `~/.ssh/sealos/devbox_config` into the current file. And
-`devbox_config` contains normal SSH configuration content, for example:
+- This command will start your Next.js application in development mode.
 
-```config
-Host usw.sailos.io_ns-rqtny6y6_devbox1234
-  HostName usw.sailos.io
-  User devbox
-  Port 40911
-  IdentityFile ~/.ssh/sealos/usw.sailos.io_ns-rqtny6y6_devbox1234
-  IdentitiesOnly yes
-  StrictHostKeyChecking no
-```
+3. To access your running application:
 
-So if there is a problem, it is most likely a plugin bug that causes errors in reading and writing files. You can
-feedback this to us or try to adjust the SSH file yourself.
+- Return to the Sealos Devbox List in your browser.
+- Find the project you just created.
+- Click on the "Detail" button on the right side of your project's row.
 
-### 3. Always stuck in downloading vscode-server or keep retrying
+4. In the project details page:
 
-Cause: Due to some operation (such as restarting Devbox during this process), the download cursor is suspended, and
-re-downloading causes conflicts.
+- Look for the "Network" section.
+- You'll see an "External Address" field.
+- Click on this external address.
 
-Solution:
+![quick-start-6](./images/quick-start-6.png)
 
-1. Enter the web terminal and delete the `.cursor-server` folder.
-   1. Click "Terminal" in the operation button on the right side of the Devbox webpage list item.
-   2. Enter the terminal and go to the user directory first, `cd ..`, then use `ls -a ` to view all files and you can
-      see `.cursor-server`.
-   3. Remove `rm -rf .cursor-server`.
-   4. Just retry the connection.
-2. If there is no content in the newly created Devbox, you can directly delete it and rebuild it.
+5. This will open your Next.js application in a new browser tab, allowing you to view and interact with your running service.
 
-### 4. Report the following error
+![quick-start-7](./images/quick-start-7.png)
+
+### Release
+
+After you've developed and tested your Next.js application, you can release it as an OCI (Open Container Initiative) image. This allows you to version your application and prepare it for deployment.
+
+1. In the Cursor IDE terminal, navigate to your project directory and run the build command:
 
 ```bash
-upstream connect error or disconnect/reset before headers. retried and the latest reset reason: remote connection failure, transport failure reason: delayed connect error: 111
+npm run build
 ```
 
-First of all, you should understand that your current environment is a development environment. The URL you are
-connecting to is a test URL, which is only used in the development environment. This URL corresponds to the port of the
-development environment. In other words, you must run the development environment, such as `npm run dev` to run your
-program first, before you can see the content through the URL, otherwise this error will be reported.
+This command creates a production-ready build of your Next.js application in the '.next' directory.
+
+2. Navigate to your project's details page:
+
+- Go to the Sealos Devbox List in your browser.
+- Find your project and click on the "Detail" button on the right side of your project's row.
+
+3. On the project details page, look for the "Version" section.
+
+4. Click on the "Release" button located in the top right corner of the "Version" section.
+
+5. A "Release" dialog box will appear. Here, you need to provide the following information:
+
+- Image Name: This field is pre-filled with your project's image name.
+- Tag: Enter a version tag for your release (e.g., v1.0).
+- Description: Provide a brief description of this release (e.g., "Initial release" or "Bug fixes for login feature").
+
+![quick-start-8](./images/quick-start-8.png)
+
+6. After filling in the required information, click the "Release" button at the bottom of the dialog box.
+
+7. The system will process your release. Once completed, you'll see a new entry in the "Version" section of your project
+   details page, showing the tag, status, creation time, and description of your release.
+
+![quick-start-9](./images/quick-start-9.png)
+
+By following these steps, you've successfully created an OCI image of your Next.js application. This image can now be used for deployment or shared with other team members. Each release creates a snapshot of your current code, allowing you to maintain different versions of your application and easily roll back if needed.
+
+> Remember to create new releases whenever you make significant changes or reach important milestones in your project. This practice helps in maintaining a clear history of your application's development and facilitates easier deployment and collaboration.
+
+### Deploy
+
+After releasing your Next.js application as an OCI image, you can deploy it to Sealos Cloud for production use. Here's how to do it:
+
+1. In your project's details page, locate the "Version" section.
+
+2. Find the release you want to deploy and click the "Deploy" button in the "Operation" column.
+
+3. This will redirect you to the App Launchpad application within Sealos.
+
+4. In the App Launchpad application, follow the deployment wizard to configure your application settings. This may include:
+
+- Selecting the appropriate environment
+- Setting resource limits (CPU, memory)
+- Configuring environment variables if needed
+- Setting up any required volumes or persistent storage
+
+![quick-start-10](./images/quick-start-10.png)
+
+5. Once you've configured all necessary settings, click the "Deploy Application" button in the top right corner to start the deployment process.
+
+6. You'll be taken to the application details view within App Launchpad.
+
+7. Once the status is "Running", Click on the address provided under "Public Address". This will open your deployed Next.js application in a new browser tab.
+
+By following these steps, you've successfully deployed your Next.js application to Sealos Cloud using the App Launchpad application. Your application is now accessible via the public address, allowing users to interact with it from anywhere on the internet.
+
+> You can always update your application by creating a new release in Devbox and repeating this deployment process with the new version using App Launchpad.
+
+This workflow allows you to develop and debug your Next.js application in a cloud environment while still using your preferred local IDE. The external address makes it easy to share your work with team members or clients, as they can access your running application from anywhere with an internet connection.
