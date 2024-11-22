@@ -170,17 +170,17 @@ export const ideObj = {
     prefix: 'vscode://',
     value: 'vscode'
   },
-  cursor: {
-    label: 'Cursor',
-    icon: 'cursor',
-    prefix: 'cursor://',
-    value: 'cursor'
-  },
   vscodeInsiders: {
     label: 'VSCode Insiders',
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
     value: 'vscodeInsiders'
+  },
+  cursor: {
+    label: 'Cursor',
+    icon: 'cursor',
+    prefix: 'cursor://',
+    value: 'cursor'
   },
   windsurf: {
     label: 'Windsurf',
