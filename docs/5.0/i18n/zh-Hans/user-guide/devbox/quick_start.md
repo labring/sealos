@@ -68,123 +68,104 @@ IDE 在本地工作，同时简化设置流程并实现自动应用程序部署�
 
 - 您的代码在 Devbox 运行时运行，确保跨开发和生产环境的一致性。
 - 您可以从任何地方、通过任何安装了 Cursor 的设备访问您的项目。
-- Collaboration becomes easier as team members can connect to the same Devbox runtime.
+- 由于团队成员可以连接到同一个 Devbox 运行时，协作变得更加容易。
 
-2. You can start debugging your Next.js application:
+2. 您可以开始调试 Next.js 应用程序：
 
-- Open the terminal within Cursor IDE.
-- Navigate to your project directory if you're not already there.
-- Run the following command to start the Next.js development serve:
+- 在 Cursor IDE 中打开终端。
+- 如果您尚未到达项目目录，请导航到该目录。
+- 运行以下命令启动 Next.js 开发服务：
 
 ```bash
 npm run dev
 ```
 
-- This command will start your Next.js application in development mode.
+- 此命令将以开发模式启动你的 Next.js 应用程序。
 
-3. To access your running application:
+3. 要访问您正在运行的应用程序：
 
-- Return to the Sealos Devbox List in your browser.
-- Find the project you just created.
-- Click on the "Detail" button on the right side of your project's row.
+- 返回浏览器中的 Sealos Devbox 列表。
+- 找到您刚刚创建的项目。
+- 单击项目行右侧的“详细信息”按钮。
 
-4. In the project details page:
+4. 在项目详细信息页面中：
 
-- Look for the "Network" section.
-- You'll see an "External Address" field.
-- Click on this external address.
+- 查找“网络”部分。
+- 您会看到一个“外部地址”字段。
+- 点击此外部地址。
 
 ![quick-start-6](./images/quick-start-6.png)
 
-5. This will open your Next.js application in a new browser tab, allowing you to view and interact with your running
-   service.
+5. 这将在新浏览器选项卡中打开您的 Next.js 应用程序，允许您查看并与正在运行的服务进行交互。
 
 ![quick-start-7](./images/quick-start-7.png)
 
-### Release
+### 发布
 
-After you've developed and tested your Next.js application, you can release it as an OCI (Open Container Initiative)
-image. This allows you to version your application and prepare it for deployment.
+开发并测试 Next.js 应用程序后，您可以将其发布为 OCI（开放容器计划）镜像。这样您就可以对应用程序进行版本控制并准备部署。
 
-1. In the Cursor IDE terminal, navigate to your project directory and run the build command:
+1. 在 Cursor IDE 终端中，导航到您的项目目录并运行构建命令：
 
 ```bash
 npm run build
 ```
 
-This command creates a production-ready build of your Next.js application in the '.next' directory.
+此命令在“.next”目录中创建可用于生产的 Next.js 应用程序版本。
 
-2. Navigate to your project's details page:
+2. 导航到您的项目详细信息页面：
 
-- Go to the Sealos Devbox List in your browser.
-- Find your project and click on the "Detail" button on the right side of your project's row.
+- 在浏览器中转到 Sealos Devbox 列表。
+- 找到您的项目并点击项目行右侧的“详细信息”按钮。
 
-3. On the project details page, look for the "Version" section.
+3. 在项目详细信息页面上，查找“版本”部分。
 
-4. Click on the "Release" button located in the top right corner of the "Version" section.
+4. 点击位于“版本”部分右上角的“发布”按钮。
 
-5. A "Release" dialog box will appear. Here, you need to provide the following information:
+5. 将出现“发布”对话框。在这里，您需要提供以下信息：
 
-- Image Name: This field is pre-filled with your project's image name.
-- Tag: Enter a version tag for your release (e.g., v1.0).
-- Description: Provide a brief description of this release (e.g., "Initial release" or "Bug fixes for login feature").
+- 图像名称：此字段已预先填写您的项目图像名称。
+- 标签：输入您发布的版本标签（例如，v1.0）。
+- 描述：提供此版本的简要描述（例如，“初始版本”或“登录功能的错误修复”）。
 
 ![quick-start-8](./images/quick-start-8.png)
 
-6. After filling in the required information, click the "Release" button at the bottom of the dialog box.
+6. 填写完所需信息后，点击对话框底部的“发布”按钮。
 
-7. The system will process your release. Once completed, you'll see a new entry in the "Version" section of your project
-   details page, showing the tag, status, creation time, and description of your release.
+7. 系统将处理您的发布。完成后，您将在项目详情页面的“版本”部分看到一个新条目，其中显示发布的标签、状态、创建时间和描述。
 
 ![quick-start-9](./images/quick-start-9.png)
 
-By following these steps, you've successfully created an OCI image of your Next.js application. This image can now be
-used for deployment or shared with other team members. Each release creates a snapshot of your current code, allowing
-you to maintain different versions of your application and easily roll back if needed.
+通过执行这些步骤，您已成功创建 Next.js 应用程序的 OCI 映像。此映像现在可以用于部署或与其他团队成员共享。每次发布都会创建当前代码的快照，让您可以维护应用程序的不同版本并在需要时轻松回滚。
 
-> Remember to create new releases whenever you make significant changes or reach important milestones in your project.
-> This practice helps in maintaining a clear history of your application's development and facilitates easier deployment
-> and collaboration.
+> 请记住，每当您在项目中做出重大更改或达到重要里程碑时，都要创建新版本。这种做法有助于保持应用程序开发的清晰历史记录，并有助于更轻松地部署和协作。
 
-### Deploy
+### 部署
 
-After releasing your Next.js application as an OCI image, you can deploy it to Sealos Cloud for production use. Here's
-how to do it:
+将 Next.js 应用程序发布为 OCI 镜像后，您可以将其部署到 Sealos Cloud 以供生产使用。操作方法如下：
 
-1. In your project's details page, locate the "Version" section.
+1. 在项目详细信息页面中，找到“版本”部分。
 
-2. Find the release you want to deploy and click the "Deploy" button in the "Operation" column.
+2. 找到需要部署的release，点击“操作”栏中的“部署”按钮。
 
-3. This will redirect you to the App Launchpad application within Sealos.
+3. 这会将您重定向到 Sealos 内的 App Launchpad 应用程序。
 
-4. In the App Launchpad application, follow the deployment wizard to configure your application settings. This may
-   include:
+4. 在 App Launchpad 应用程序中，按照部署向导配置应用程序设置。这可能包括：
 
-- Selecting the appropriate environment
-- Setting resource limits (CPU, memory)
-- Configuring environment variables if needed
-- Setting up any required volumes or persistent storage
+- 选择适当的环境
+- 设置资源限制（CPU、内存）
+- 如果需要，配置环境变量
+- 设置任何所需的卷或持久存储
 
 ![quick-start-10](./images/quick-start-10.png)
 
-5. Once you've configured all necessary settings, click the "Deploy Application" button in the top right corner to start
-   the deployment process.
+5. 配置完所有必要的设置后，单击右上角的“部署应用程序”按钮即可开始部署过程。
 
-6. You'll be taken to the application details view within App Launchpad.
+6. 您将被带到 App Launchpad 内的应用程序详细信息视图。
 
-7. Once the status is "Running", Click on the address provided under "Public Address". This will open your deployed
-   Next.js application in a new browser tab.
+7. 一旦状态为“正在运行”，请单击“公共地址”下提供的地址。这将在新浏览器选项卡中打开您部署的 Next.js 应用程序。
 
-By following these steps, you've successfully deployed your Next.js application to Sealos Cloud using the App Launchpad
-application. Your application is now accessible via the public address, allowing users to interact with it from anywhere
-on the internet.
+通过执行这些步骤，您已成功使用 App Launchpad 应用程序将 Next.js 应用程序部署到 Sealos Cloud。您的应用程序现在可以通过公共地址访问，允许用户从互联网上的任何地方与其交互。
 
-> You can always update your application by creating a new release in Devbox and repeating this deployment process with
-> the new version using App Launchpad.
+> 您可以随时通过在 Devbox 中创建新版本并使用 App Launchpad 对新版本重复此部署过程来更新您的应用程序。
 
-You can always update your application by creating a new release in Devbox and repeating this deployment process with
-the new version using App Launchpad.
-
-This workflow allows you to develop and debug your Next.js application in a cloud environment while still using your
-preferred local IDE. The external address makes it easy to share your work with team members or clients, as they can
-access your running application from anywhere with an internet connection.
+此工作流程允许您在云环境中开发和调试 Next.js 应用程序，同时仍使用您首选的本地 IDE。外部地址使您可以轻松地与团队成员或客户共享您的工作，因为他们可以从任何有互联网连接的地方访问您正在运行的应用程序。
