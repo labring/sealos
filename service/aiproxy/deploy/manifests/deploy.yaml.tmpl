@@ -56,13 +56,14 @@ spec:
           ports:
             - containerPort: 3000
           imagePullPolicy: Always
-          readinessProbe:
+          startupProbe:
             httpGet:
               port: 3000
               path: /api/status
-            initialDelaySeconds: 3
+            initialDelaySeconds: 5
             periodSeconds: 3
-            timeoutSeconds: 3
-            successThreshold: 2
+            failureThreshold: 30
+            successThreshold: 1
+            timeoutSeconds: 1
       serviceAccountName: default
       automountServiceAccountToken: false
