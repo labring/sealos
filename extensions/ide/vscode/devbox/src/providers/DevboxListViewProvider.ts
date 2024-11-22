@@ -1,5 +1,5 @@
-import * as vscode from 'vscode'
 import fs from 'fs'
+import * as vscode from 'vscode'
 
 import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
@@ -8,6 +8,24 @@ import { getDevboxDetail } from '../api/devbox'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 import { defaultDevboxSSHConfigPath, defaultSSHKeyPath } from '../constant/file'
+
+const messages = {
+  pleaseSelectARegion: vscode.l10n.t(
+    'Please select a region,RegionList are added by your each connection.'
+  ),
+  onlyDevboxCanBeOpened: vscode.l10n.t('Only Devbox can be opened.'),
+  areYouSureToDelete: vscode.l10n.t('Are you sure to delete?'),
+  deleteLocalConfigOnly: vscode.l10n.t(
+    'This action will only delete the devbox ssh config in the local environment.'
+  ),
+  deleteDevboxFailed: vscode.l10n.t('Delete Devbox failed.'),
+  feedbackInGitHub: vscode.l10n.t(
+    'Give us a feedback in our GitHub repository.'
+  ),
+  feedbackInHelpDesk: vscode.l10n.t(
+    'Give us a feedback in our help desk system.'
+  ),
+}
 
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -157,8 +175,7 @@ class ProjectTreeDataProvider
     const regions = GlobalStateManager.getApiRegionList()
 
     const selected = await vscode.window.showQuickPick(regions, {
-      placeHolder:
-        'Please select a region.RegionList are added by your each connection',
+      placeHolder: messages.pleaseSelectARegion,
     })
     if (selected) {
       const targetUrl = selected
@@ -172,7 +189,7 @@ class ProjectTreeDataProvider
 
   async open(item: ProjectTreeItem) {
     if (item.contextValue !== 'devbox') {
-      vscode.window.showInformationMessage('Only Devbox can be opened')
+      vscode.window.showInformationMessage(messages.onlyDevboxCanBeOpened)
       return
     }
 
@@ -194,7 +211,7 @@ class ProjectTreeDataProvider
   ) {
     if (!isDeletedByWeb) {
       const result = await vscode.window.showWarningMessage(
-        `Are you sure to delete ${devboxName}?\n(This action will only delete the devbox ssh config in the local environment.)`,
+        `${messages.areYouSureToDelete} ${devboxName}?\n(${messages.deleteLocalConfigOnly})`,
         { modal: true },
         'Yes',
         'No'
@@ -275,7 +292,9 @@ class ProjectTreeDataProvider
 
       this.refresh()
     } catch (error) {
-      vscode.window.showErrorMessage(`Delete devbox failed: ${error.message}`)
+      vscode.window.showErrorMessage(
+        `${messages.deleteDevboxFailed}: ${error.message}`
+      )
     }
   }
 
@@ -372,7 +391,7 @@ class FeedbackTreeDataProvider
   getChildren(element?: FeedbackTreeItem): Thenable<FeedbackTreeItem[]> {
     return Promise.resolve([
       new FeedbackTreeItem(
-        'Give us a feedback in our GitHub repository',
+        messages.feedbackInGitHub,
         vscode.TreeItemCollapsibleState.None,
         new vscode.ThemeIcon('github'),
         {
@@ -382,7 +401,7 @@ class FeedbackTreeDataProvider
         }
       ),
       new FeedbackTreeItem(
-        'Give us a feedback in our help desk system',
+        messages.feedbackInHelpDesk,
         vscode.TreeItemCollapsibleState.None,
         new vscode.ThemeIcon('comment'),
         {

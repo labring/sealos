@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+
 import { getDBList, DBResponse } from '../api/db'
 import { Disposable } from '../common/dispose'
 import { GlobalStateManager } from '../utils/globalStateManager'
@@ -10,6 +11,29 @@ interface Database {
   host: string
   port: number
   connection: string
+}
+interface Messages {
+  columnDBType: string
+  columnUsername: string
+  columnPassword: string
+  columnHost: string
+  columnPort: string
+  copyPassword: string
+  copyConnection: string
+  connectionStringCopied: string
+}
+
+const messages: Messages = {
+  columnDBType: vscode.l10n.t('Type'),
+  columnUsername: vscode.l10n.t('Username'),
+  columnPassword: vscode.l10n.t('Password'),
+  columnHost: vscode.l10n.t('Host'),
+  columnPort: vscode.l10n.t('Port'),
+  copyPassword: vscode.l10n.t('Copy Password'),
+  copyConnection: vscode.l10n.t('Copy Connection String'),
+  connectionStringCopied: vscode.l10n.t(
+    'Connection string copied to clipboard!'
+  ),
 }
 
 export class DBViewProvider
@@ -96,17 +120,15 @@ export class DBViewProvider
       connection: db.connection,
     }))
 
-    this._view.webview.html = this.getWebviewContent(databases)
+    this._view.webview.html = this.getWebviewContent(databases, messages)
   }
 
   private async copyConnectionString(connection: string) {
     await vscode.env.clipboard.writeText(connection)
-    vscode.window.showInformationMessage(
-      'Connection string copied to clipboard!'
-    )
+    vscode.window.showInformationMessage(messages.connectionStringCopied)
   }
 
-  private getWebviewContent(databases: Database[]) {
+  private getWebviewContent(databases: Database[], messages: Messages) {
     const codiconsUri = this._view?.webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -188,11 +210,11 @@ export class DBViewProvider
             <thead>
               <tr>
                 <th style="width: 16px;"></th>
-                <th>DB Type</th>
-                <th>Username</th>
-                <th>Password</th>
-                <th>Host</th>
-                <th>Port</th>
+                <th>${messages.columnDBType}</th>
+                <th>${messages.columnUsername}</th>
+                <th>${messages.columnPassword}</th>
+                <th>${messages.columnHost}</th>
+                <th>${messages.columnPort}</th>
               </tr>
             </thead>
             <tbody>
@@ -208,7 +230,7 @@ export class DBViewProvider
                     <span class="actions">
                       <span class="codicon codicon-clippy" onclick="copyPassword('${
                         db.password
-                      }')" title="Copy Password"></span>
+                      }')" title="${messages.copyPassword}"></span>
                     </span>
                   </td>
                   <td>${db.host}</td>
@@ -216,7 +238,7 @@ export class DBViewProvider
                   <td class="actions">
                     <span class="codicon codicon-copy" onclick="copyConnection('${
                       db.connection
-                    }')" title="Copy Connection String"></span>
+                    }')" title="${messages.copyConnection}"></span>
                   </td>
                 </tr>
               `

@@ -8,6 +8,14 @@ interface Network {
   protocol: string
 }
 
+const messages = {
+  port: vscode.l10n.t('Port'),
+  protocol: vscode.l10n.t('Protocol'),
+  address: vscode.l10n.t('Address'),
+  openInBrowser: vscode.l10n.t('Open in Browser'),
+  previewInEditor: vscode.l10n.t('Preview in Editor'),
+}
+
 export class NetworkViewProvider
   extends Disposable
   implements vscode.WebviewViewProvider
@@ -159,9 +167,9 @@ export class NetworkViewProvider
             <thead>
               <tr>
                 <th style="width: 16px;"></th>
-                <th>Port</th>
-                <th>Protocol</th>
-                <th>Address</th>
+                <th>${messages.port}</th>
+                <th>${messages.protocol}</th>
+                <th>${messages.address}</th>
               </tr>
             </thead>
             <tbody>
@@ -174,8 +182,8 @@ export class NetworkViewProvider
                   <td>${network.protocol}</td>
                   <td>${network.address}</td>
                   <td class="actions">
-                    <span class="codicon codicon-globe" onclick="openExternal('https://${network.address}')" title="Open in Browser"></span>
-                    <span class="codicon codicon-open-preview" onclick="openIntegrated('https://${network.address}')" title="Preview in Editor"></span>
+                    <span class="codicon codicon-globe" onclick="openExternal('https://${network.address}')" title="${messages.openInBrowser}"></span>
+                    <span class="codicon codicon-open-preview" onclick="openIntegrated('https://${network.address}')" title="${messages.previewInEditor}"></span>
                   </td>
                 </tr>
               `

@@ -1,8 +1,8 @@
 {
   "name": "devbox-aio",
-  "displayName": "Devbox",
-  "description": "help code for cloud devbox in sailos/sealos",
-  "version": "1.2.2024112105",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.2.2024112201",
   "keywords": [
     "devbox",
     "remote development",
@@ -22,6 +22,7 @@
   "engines": {
     "vscode": "^1.91.0"
   },
+  "l10n": "./l10n",
   "categories": [
     "Other"
   ],
@@ -37,11 +38,11 @@
     "commands": [
       {
         "command": "devbox.connectRemoteSSH",
-        "title": "Devbox: Connect to Remote SSH"
+        "title": "%devbox.connectRemoteSSH.title%"
       },
       {
         "command": "devboxDashboard.refresh",
-        "title": "Refresh Devbox",
+        "title": "%devbox.refresh.title%",
         "icon": {
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
@@ -49,7 +50,7 @@
       },
       {
         "command": "devboxDashboard.createDevbox",
-        "title": "Create Devbox",
+        "title": "%devbox.create.title%",
         "icon": {
           "light": "images/light/create.svg",
           "dark": "images/dark/create.svg"
@@ -57,7 +58,7 @@
       },
       {
         "command": "devboxDashboard.openDevbox",
-        "title": "Open Devbox",
+        "title": "%devbox.open.title%",
         "icon": {
           "light": "images/light/open.svg",
           "dark": "images/dark/open.svg"
@@ -65,7 +66,7 @@
       },
       {
         "command": "devboxDashboard.deleteDevbox",
-        "title": "Delete Devbox",
+        "title": "%devbox.delete.title%",
         "icon": {
           "light": "images/light/delete.svg",
           "dark": "images/dark/delete.svg"
@@ -73,11 +74,11 @@
       },
       {
         "command": "devbox.openExternalLink",
-        "title": "Devbox:Open in Browser"
+        "title": "%devbox.openInBrowser.title%"
       },
       {
         "command": "devbox.copy",
-        "title": "Copy Connection String",
+        "title": "%devbox.copy.title%",
         "icon": {
           "light": "images/light/copy.svg",
           "dark": "images/dark/copy.svg"
@@ -85,7 +86,7 @@
       },
       {
         "command": "devbox.refreshDatabase",
-        "title": "Refresh Database",
+        "title": "%devbox.refreshDatabase.title%",
         "icon": {
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
@@ -93,7 +94,7 @@
       },
       {
         "command": "devbox.refreshNetwork",
-        "title": "Refresh Network",
+        "title": "%devbox.refreshNetwork.title%",
         "icon": {
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
@@ -101,7 +102,7 @@
       },
       {
         "command": "devbox.gotoDatabaseWebPage",
-        "title": "Goto Database Web Page",
+        "title": "%devbox.gotoDatabaseWebPage.title%",
         "icon": {
           "light": "images/light/link-external.svg",
           "dark": "images/dark/link-external.svg"
@@ -112,17 +113,17 @@
       "devboxListView": [
         {
           "id": "devboxDashboard",
-          "name": "My Projects"
+          "name": "%devbox.myProjects.title%"
         },
         {
           "id": "devboxFeedback",
-          "name": "Feedback"
+          "name": "%devbox.feedback.title%"
         }
       ],
       "networkView": [
         {
           "id": "networkView",
-          "name": "Network",
+          "name": "%devbox.network.title%",
           "type": "webview",
           "when": "remoteName == ssh-remote"
         }
@@ -131,7 +132,7 @@
         {
           "type": "webview",
           "id": "dbView",
-          "name": "Database",
+          "name": "%devbox.database.title%",
           "when": "remoteName == ssh-remote"
         }
       ]
@@ -140,19 +141,19 @@
       "activitybar": [
         {
           "id": "devboxListView",
-          "title": "Devbox",
+          "title": "%devbox.devbox.title%",
           "icon": "images/explorer.svg"
         }
       ],
       "panel": [
         {
           "id": "networkView",
-          "title": "Network",
+          "title": "%devbox.network.title%",
           "icon": "images/network.svg"
         },
         {
           "id": "dbView",
-          "title": "Database",
+          "title": "%devbox.database.title%",
           "icon": "images/database.svg"
         }
       ]
@@ -160,7 +161,7 @@
     "viewsWelcome": [
       {
         "view": "devboxDashboard",
-        "contents": "No Devbox yet, please create a new devbox.\n [Create Devbox](command:devboxDashboard.createDevbox)\n To learn more about how to use Devbox, please visit [Devbox Documentation](https://sailos.io/docs/quick-start)."
+        "contents": "%devbox.welcome.title%"
       }
     ],
     "menus": {
