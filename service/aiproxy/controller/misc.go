@@ -8,12 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type StatusData struct {
+	StartTime int64 `json:"startTime"`
+}
+
 func GetStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data": gin.H{
-			"start_time": common.StartTime,
+		"data": &StatusData{
+			StartTime: common.StartTime,
 		},
 	})
 }

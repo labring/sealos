@@ -10,13 +10,17 @@ import (
 )
 
 func SetAPIRouter(router *gin.Engine) {
-	apiRouter := router.Group("/api")
+	api := router.Group("/api")
 	if env.Bool("GZIP_ENABLED", false) {
-		apiRouter.Use(gzip.Gzip(gzip.DefaultCompression))
+		api.Use(gzip.Gzip(gzip.DefaultCompression))
 	}
+
+	healthRouter := api.Group("")
+	healthRouter.GET("/status", controller.GetStatus)
+
+	apiRouter := api.Group("")
 	apiRouter.Use(middleware.AdminAuth)
 	{
-		apiRouter.GET("/status", controller.GetStatus)
 		apiRouter.GET("/models", controller.BuiltinModels)
 		apiRouter.GET("/models/price", controller.ModelPrice)
 		apiRouter.GET("/models/enabled", controller.EnabledModels)
