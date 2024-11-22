@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import { getNetworkList, NetworkResponse } from '../api/network'
+import { Logger } from '../common/logger'
 import { Disposable } from '../common/dispose'
+import { getNetworkList, NetworkResponse } from '../api/network'
 
 interface Network {
   address: string
@@ -25,6 +26,7 @@ export class NetworkViewProvider
 
   constructor(context: vscode.ExtensionContext) {
     super()
+    Logger.info('Initializing NetworkViewProvider')
     this._extensionUri = context.extensionUri
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       context.subscriptions.push(

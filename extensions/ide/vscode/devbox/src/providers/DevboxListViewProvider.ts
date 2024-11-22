@@ -1,12 +1,13 @@
 import fs from 'fs'
 import * as vscode from 'vscode'
 
+import { Logger } from '../common/logger'
 import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 import { getDevboxDetail } from '../api/devbox'
-import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
+import { GlobalStateManager } from '../utils/globalStateManager'
 import { defaultDevboxSSHConfigPath, defaultSSHKeyPath } from '../constant/file'
 
 const messages = {
@@ -30,6 +31,7 @@ const messages = {
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
     super()
+    Logger.info('Initializing DevboxListViewProvider')
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view
       const projectTreeDataProvider = new ProjectTreeDataProvider()
@@ -101,6 +103,7 @@ class ProjectTreeDataProvider
   private treeData: DevboxListItem[] = []
 
   constructor() {
+    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
     this.refreshData()
     setInterval(() => {
       this.refresh()
@@ -112,7 +115,6 @@ class ProjectTreeDataProvider
   }
 
   private async refreshData(): Promise<void> {
-    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
     const data = (await parseSSHConfig(
       defaultDevboxSSHConfigPath
     )) as DevboxListItem[]

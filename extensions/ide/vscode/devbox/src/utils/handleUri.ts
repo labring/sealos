@@ -1,14 +1,16 @@
 import * as vscode from 'vscode'
 import { GlobalStateManager } from './globalStateManager'
+import { Logger } from '../common/logger'
 
 export class UriHandler {
   constructor() {}
 
   public handle(uri: vscode.Uri): void {
+    Logger.info(`Handling URI: ${uri.toString()}`)
     if (
       uri.scheme !== 'vscode' &&
       uri.scheme !== 'cursor' &&
-      uri.scheme !== 'vscode-insiders'&&
+      uri.scheme !== 'vscode-insiders' &&
       uri.scheme !== 'windsurf'
     ) {
       return

@@ -1,7 +1,10 @@
 import * as vscode from 'vscode'
+import { Logger } from '../common/logger'
 
 // update Remote-SSH config
 export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
+  Logger.info(`Modifying Remote-SSH config for ${sshHostLabel}`)
+
   const existingSSHHostPlatforms = vscode.workspace
     .getConfiguration('remote.SSH')
     .get<{ [host: string]: string }>('remotePlatform', {})
@@ -37,4 +40,6 @@ export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
   await vscode.workspace
     .getConfiguration('remote.SSH')
     .update('useLocalServer', true, vscode.ConfigurationTarget.Global)
+
+  Logger.info(`Modified Remote-SSH config for ${sshHostLabel}`)
 }

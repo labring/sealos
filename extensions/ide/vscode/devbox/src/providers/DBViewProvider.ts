@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { getDBList, DBResponse } from '../api/db'
 import { Disposable } from '../common/dispose'
 import { GlobalStateManager } from '../utils/globalStateManager'
+import { Logger } from '../common/logger'
 
 enum DBTypeEnum {
   postgresql = 'postgresql',
@@ -58,6 +59,7 @@ export class DBViewProvider
   private _extensionUri: vscode.Uri
   constructor(context: vscode.ExtensionContext) {
     super()
+    Logger.info('Initializing DBViewProvider')
     this._extensionUri = context.extensionUri
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view

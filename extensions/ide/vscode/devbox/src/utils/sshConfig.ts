@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import { GlobalStateManager } from './globalStateManager'
+import { Logger } from '../common/logger'
 
 // 将老版本的 ssh 配置改成新版本的 ssh 配置
 // # WorkingDir: /home/sealos/project
@@ -28,8 +29,11 @@ export function convertSSHConfigToVersion2(filePath: string) {
   const data = fs.readFileSync(filePath, 'utf8')
 
   if (!data.includes('# WorkingDir:')) {
+    Logger.info('SSH config is already in the latest version2.')
     return
   }
+
+  Logger.info('Converting SSH config to the latest version2.')
 
   const lines = data.split('\n')
   let currentWorkDir: any = null
@@ -91,4 +95,6 @@ export function convertSSHConfigToVersion2(filePath: string) {
   }
   result = result.trim()
   fs.writeFileSync(filePath, result, { encoding: 'utf8', flag: 'w' })
+
+  Logger.info('SSH config converted to the latest version2.')
 }
