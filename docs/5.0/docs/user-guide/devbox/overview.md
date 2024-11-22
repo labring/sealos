@@ -1,6 +1,6 @@
-# 简介
+# Overview
 
-> 一个用于即时协作开发、无缝部署和严格环境隔离的平台。使用我们的一体化解决方案简化您的工作流程。
+> A platform for instant collaborative development, seamless deployment, and strict environment isolation. Streamline your workflow with our all-in-one solution.
 
 Sealos Devbox is an all-in-one platform designed for integrated online development, testing, and production. It offers a seamless solution for creating environments and database dependencies with just a single click. This innovative platform allows developers to work locally using their preferred IDEs while streamlining setup processes and enabling automatic application deployment.
 
