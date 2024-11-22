@@ -79,7 +79,6 @@
         "user-guide/cronjob/cronjob",
         "user-guide/terminal/terminal",
         "user-guide/kubepanel/kubepanel",
-        "user-guide/devbox/devbox",
         {
           "type": "category",
           "label": "Devbox",
