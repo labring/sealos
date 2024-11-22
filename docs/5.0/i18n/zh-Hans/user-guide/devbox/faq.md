@@ -1,6 +1,6 @@
-## FAQ
+# FAQ
 
-### 1、Cursor 连接出现问题但是 VSCode 可以连接
+## 1、Cursor 连接出现问题但是 VSCode 可以连接
 
 Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可能会导致连接出现问题。
 
@@ -17,7 +17,7 @@ Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可�
 
 ![devbox-2](./images/faq-2.png)
 
-### 2、Cursor 和 VSCode 都无法连接
+## 2、Cursor 和 VSCode 都无法连接
 
 首先明白 Devbox 插件的原理：即通过改动 ssh config 文件来添加远程环境信息，并通过 Remote-SSH 插件进行远程环境的连接。插件首先在
 `~/.ssh/config` 写入下面这行代码（一些老版本可能写入的其他类似的内容）：
@@ -41,7 +41,7 @@ Host usw.sailos.io_ns-rqtny6y6_devbox1234
 
 所以如果出现问题，大概率是插件 BUG 读写文件出错，可以反馈给我们，或者自己尝试调整 SSH 文件。
 
-### 3、一直卡在下载 vscode-server 过程，或者是不断重试
+## 3、一直卡在下载 vscode-server 过程，或者是不断重试
 
 原因：因为某种操作（在这个过程中重启 Devbox 等）导致下载 cursor 假死，重新下载产生冲突。
 
@@ -54,7 +54,7 @@ Host usw.sailos.io_ns-rqtny6y6_devbox1234
    4. 重试连接即可。
 2. 如果是刚创建里面没有内容的话，可以直接删除该 Devbox 重建。
 
-### 4、报如下错误
+## 4、报如下错误
 
 ```bash
 upstream connect error or disconnect/reset before headers. retried and the latest reset reason: remote connection failure, transport failure reason: delayed connect error: 111
