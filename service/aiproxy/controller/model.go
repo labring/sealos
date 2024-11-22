@@ -306,6 +306,7 @@ func RetrieveModel(c *gin.Context) {
 				Code:    "model_not_found",
 			},
 		})
+		return
 	}
 	c.JSON(200, model)
 }
