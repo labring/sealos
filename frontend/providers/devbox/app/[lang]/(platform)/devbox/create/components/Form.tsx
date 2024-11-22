@@ -778,7 +778,7 @@ const Form = ({
                             alignItems={'center'}
                             h={'32px'}
                             bg={'grayModern.50'}
-                            px={2}
+                            px={4}
                             border={theme.borders.base}
                             borderLeft={0}
                             borderTopRightRadius={'md'}
@@ -787,9 +787,11 @@ const Form = ({
                               {network.customDomain ? network.customDomain : network.publicDomain}
                             </Box>
                             <Box
+                              pl={4}
                               fontSize={'11px'}
                               color={'brightBlue.600'}
                               cursor={'pointer'}
+                              whiteSpace={'nowrap'}
                               onClick={() =>
                                 setCustomAccessModalData({
                                   publicDomain: network.publicDomain,
