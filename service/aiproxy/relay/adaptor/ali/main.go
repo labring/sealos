@@ -20,6 +20,10 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *model.GeneralOpenAIReq
 	if request.TopP != nil && *request.TopP >= 1 {
 		*request.TopP = 0.9999
 	}
+	if request.StreamOptions == nil {
+		request.StreamOptions = &model.StreamOptions{}
+	}
+	request.StreamOptions.IncludeUsage = true
 	return request
 }
 
