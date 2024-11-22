@@ -4,8 +4,20 @@ import { getDBList, DBResponse } from '../api/db'
 import { Disposable } from '../common/dispose'
 import { GlobalStateManager } from '../utils/globalStateManager'
 
+enum DBTypeEnum {
+  postgresql = 'postgresql',
+  mongodb = 'mongodb',
+  mysql = 'mysql',
+  redis = 'redis',
+  kafka = 'kafka',
+  qdrant = 'qdrant',
+  nebula = 'nebula',
+  weaviate = 'weaviate',
+  milvus = 'milvus',
+}
+
 interface Database {
-  dbType: string
+  dbType: DBTypeEnum
   username: string
   password: string
   host: string
@@ -21,6 +33,7 @@ interface Messages {
   copyPassword: string
   copyConnection: string
   connectionStringCopied: string
+  openWebTerminal: string
 }
 
 const messages: Messages = {
@@ -34,6 +47,7 @@ const messages: Messages = {
   connectionStringCopied: vscode.l10n.t(
     'Connection string copied to clipboard!'
   ),
+  openWebTerminal: vscode.l10n.t('Open Database Web Terminal'),
 }
 
 export class DBViewProvider
@@ -62,7 +76,6 @@ export class DBViewProvider
       )
       let targetUrl = ''
       const workspaceFolders = vscode.workspace.workspaceFolders
-      console.log('workspaceFolders', workspaceFolders)
       if (workspaceFolders && workspaceFolders.length > 0) {
         const workspaceFolder = workspaceFolders[0]
         const remoteUri = workspaceFolder.uri.authority
@@ -99,10 +112,38 @@ export class DBViewProvider
         case 'copy':
           await this.copyConnectionString(message.connection)
           break
+        case 'openWebTerminal':
+          await this.openWebTerminal(message.dbInfo)
+          break
       }
     })
 
     await this.refreshDatabases()
+  }
+  private async openWebTerminal(dbInfo: Database) {
+    console.log('dbInfo', dbInfo)
+    const commandMap = {
+      postgresql: `psql '${dbInfo.connection}'`,
+      mongodb: `mongosh '${dbInfo.connection}'`,
+      mysql: `mysql -h ${dbInfo.host} -P ${dbInfo.port} -u ${dbInfo.username} -p${dbInfo.password}`,
+      redis: `redis-cli -u redis://${dbInfo.username}:${dbInfo.password}@${dbInfo.host}:${dbInfo.port}`,
+      kafka: ``,
+      qdrant: ``,
+      nebula: ``,
+      weaviate: ``,
+      milvus: ``,
+    }
+    const targetCommand = encodeURIComponent(commandMap[dbInfo.dbType])
+    let targetUrl = ''
+    const workspaceFolders = vscode.workspace.workspaceFolders
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      const workspaceFolder = workspaceFolders[0]
+      const remoteUri = workspaceFolder.uri.authority
+      const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
+      const region = GlobalStateManager.getRegion(devboxId)
+      targetUrl = `http://${region}?openapp=system-terminal?defaultCommand=${targetCommand}`
+      vscode.commands.executeCommand('devbox.openExternalLink', [targetUrl])
+    }
   }
 
   private async refreshDatabases() {
@@ -239,7 +280,16 @@ export class DBViewProvider
                     <span class="codicon codicon-copy" onclick="copyConnection('${
                       db.connection
                     }')" title="${messages.copyConnection}"></span>
+                    <span class="codicon codicon-terminal" onclick="openWebTerminal({
+                      dbType: '${db.dbType}',
+                      host: '${db.host}',
+                      port: ${db.port},
+                      password: '${db.password}',
+                      username: '${db.username}',
+                      connection: '${db.connection}'
+                    })" title="${messages.openWebTerminal}"></span>
                   </td>
+
                 </tr>
               `
                 )
@@ -259,6 +309,12 @@ export class DBViewProvider
                 command: 'copy',
                 connection: password
               });
+            }
+            function openWebTerminal(dbInfo) {
+              vscode.postMessage({
+                command: 'openWebTerminal',
+                dbInfo: dbInfo,
+              })
             }
           </script>
         </body>

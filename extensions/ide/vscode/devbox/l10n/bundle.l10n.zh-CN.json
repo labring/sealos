@@ -17,5 +17,6 @@
   "Protocol": "协议",
   "Address": "地址",
   "Open in Browser": "在浏览器中打开",
-  "Preview in Editor": "在编辑器中预览"
+  "Preview in Editor": "在编辑器中预览",
+  "Open Database Web Terminal": "打开数据库 Web 终端"
 }
