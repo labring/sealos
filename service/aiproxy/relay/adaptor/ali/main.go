@@ -1,20 +1,13 @@
 package ali
 
 import (
-	"bufio"
 	"net/http"
-	"slices"
 	"strings"
 
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
-	"github.com/labring/sealos/service/aiproxy/common/render"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -23,33 +16,11 @@ import (
 
 const EnableSearchModelSuffix = "-internet"
 
-func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
-	enableSearch := false
-	aliModel := request.Model
-	if strings.HasSuffix(aliModel, EnableSearchModelSuffix) {
-		enableSearch = true
-		aliModel = strings.TrimSuffix(aliModel, EnableSearchModelSuffix)
-	}
+func ConvertRequest(request *model.GeneralOpenAIRequest) *model.GeneralOpenAIRequest {
 	if request.TopP != nil && *request.TopP >= 1 {
 		*request.TopP = 0.9999
 	}
-	return &ChatRequest{
-		Model: aliModel,
-		Input: Input{
-			Messages: request.Messages,
-		},
-		Parameters: Parameters{
-			EnableSearch:      enableSearch,
-			IncrementalOutput: request.Stream,
-			Seed:              uint64(request.Seed),
-			MaxTokens:         request.MaxTokens,
-			Temperature:       request.Temperature,
-			TopP:              request.TopP,
-			TopK:              request.TopK,
-			ResultFormat:      "message",
-			Tools:             request.Tools,
-		},
-	}
+	return request
 }
 
 func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequest {
@@ -126,132 +97,4 @@ func embeddingResponseAli2OpenAI(response *EmbeddingResponse) *openai.EmbeddingR
 		})
 	}
 	return &openAIEmbeddingResponse
-}
-
-func responseAli2OpenAI(response *ChatResponse) *openai.TextResponse {
-	fullTextResponse := openai.TextResponse{
-		ID:      response.RequestID,
-		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
-		Choices: response.Output.Choices,
-		Usage: model.Usage{
-			PromptTokens:     response.Usage.InputTokens,
-			CompletionTokens: response.Usage.OutputTokens,
-			TotalTokens:      response.Usage.InputTokens + response.Usage.OutputTokens,
-		},
-	}
-	return &fullTextResponse
-}
-
-func streamResponseAli2OpenAI(aliResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
-	if len(aliResponse.Output.Choices) == 0 {
-		return nil
-	}
-	aliChoice := aliResponse.Output.Choices[0]
-	var choice openai.ChatCompletionsStreamResponseChoice
-	choice.Delta = aliChoice.Message
-	if aliChoice.FinishReason != "null" {
-		finishReason := aliChoice.FinishReason
-		choice.FinishReason = &finishReason
-	}
-	response := openai.ChatCompletionsStreamResponse{
-		ID:      aliResponse.RequestID,
-		Object:  "chat.completion.chunk",
-		Created: helper.GetTimestamp(),
-		Model:   "qwen",
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
-	}
-	return &response
-}
-
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
-	defer resp.Body.Close()
-
-	var usage model.Usage
-	scanner := bufio.NewScanner(resp.Body)
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-		if i := slices.Index(data, '\n'); i >= 0 {
-			return i + 1, data[0:i], nil
-		}
-		if atEOF {
-			return len(data), data, nil
-		}
-		return 0, nil, nil
-	})
-
-	common.SetEventStreamHeaders(c)
-
-	for scanner.Scan() {
-		data := scanner.Bytes()
-		if len(data) < 5 || conv.BytesToString(data[:5]) != "data:" {
-			continue
-		}
-		data = data[5:]
-
-		if conv.BytesToString(data) == "[DONE]" {
-			break
-		}
-
-		var aliResponse ChatResponse
-		err := json.Unmarshal(data, &aliResponse)
-		if err != nil {
-			logger.SysError("error unmarshalling stream response: " + err.Error())
-			continue
-		}
-		if aliResponse.Usage.OutputTokens != 0 {
-			usage.PromptTokens = aliResponse.Usage.InputTokens
-			usage.CompletionTokens = aliResponse.Usage.OutputTokens
-			usage.TotalTokens = aliResponse.Usage.InputTokens + aliResponse.Usage.OutputTokens
-		}
-		response := streamResponseAli2OpenAI(&aliResponse)
-		if response == nil {
-			continue
-		}
-		err = render.ObjectData(c, response)
-		if err != nil {
-			logger.SysError(err.Error())
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
-	}
-
-	render.Done(c)
-
-	return nil, &usage
-}
-
-func Handler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
-	defer resp.Body.Close()
-
-	var aliResponse ChatResponse
-	err := json.NewDecoder(resp.Body).Decode(&aliResponse)
-	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	if aliResponse.Code != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: aliResponse.Message,
-				Type:    aliResponse.Code,
-				Param:   aliResponse.RequestID,
-				Code:    aliResponse.Code,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
-	}
-	fullTextResponse := responseAli2OpenAI(&aliResponse)
-	fullTextResponse.Model = "qwen"
-	jsonResponse, err := json.Marshal(fullTextResponse)
-	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	c.Writer.Header().Set("Content-Type", "application/json")
-	c.Writer.WriteHeader(resp.StatusCode)
-	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
 }

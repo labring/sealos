@@ -1,33 +1,5 @@
 package ali
 
-import (
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
-)
-
-type Input struct {
-	// Prompt   string       `json:"prompt"`
-	Messages []model.Message `json:"messages"`
-}
-
-type Parameters struct {
-	TopP              *float64     `json:"top_p,omitempty"`
-	Temperature       *float64     `json:"temperature,omitempty"`
-	ResultFormat      string       `json:"result_format,omitempty"`
-	Tools             []model.Tool `json:"tools,omitempty"`
-	TopK              int          `json:"top_k,omitempty"`
-	Seed              uint64       `json:"seed,omitempty"`
-	MaxTokens         int          `json:"max_tokens,omitempty"`
-	EnableSearch      bool         `json:"enable_search,omitempty"`
-	IncrementalOutput bool         `json:"incremental_output,omitempty"`
-}
-
-type ChatRequest struct {
-	Model      string     `json:"model"`
-	Input      Input      `json:"input"`
-	Parameters Parameters `json:"parameters,omitempty"`
-}
-
 type ImageRequest struct {
 	Input struct {
 		Prompt         string `json:"prompt"`
@@ -68,39 +40,6 @@ type TaskResponse struct {
 	StatusCode int   `json:"status_code,omitempty"`
 }
 
-type Header struct {
-	Attributes   any    `json:"attributes,omitempty"`
-	Action       string `json:"action,omitempty"`
-	Streaming    string `json:"streaming,omitempty"`
-	TaskID       string `json:"task_id,omitempty"`
-	Event        string `json:"event,omitempty"`
-	ErrorCode    string `json:"error_code,omitempty"`
-	ErrorMessage string `json:"error_message,omitempty"`
-}
-
-type Payload struct {
-	Model     string `json:"model,omitempty"`
-	Task      string `json:"task,omitempty"`
-	TaskGroup string `json:"task_group,omitempty"`
-	Function  string `json:"function,omitempty"`
-	Input     struct {
-		Text string `json:"text,omitempty"`
-	} `json:"input,omitempty"`
-	Parameters struct {
-		Format     string  `json:"format,omitempty"`
-		SampleRate int     `json:"sample_rate,omitempty"`
-		Rate       float64 `json:"rate,omitempty"`
-	} `json:"parameters,omitempty"`
-	Usage struct {
-		Characters int `json:"characters,omitempty"`
-	} `json:"usage,omitempty"`
-}
-
-type WSSMessage struct {
-	Header  Header  `json:"header,omitempty"`
-	Payload Payload `json:"payload,omitempty"`
-}
-
 type EmbeddingRequest struct {
 	Parameters *struct {
 		TextType string `json:"text_type,omitempty"`
@@ -134,16 +73,4 @@ type Usage struct {
 	InputTokens  int `json:"input_tokens"`
 	OutputTokens int `json:"output_tokens"`
 	TotalTokens  int `json:"total_tokens"`
-}
-
-type Output struct {
-	// Text         string                      `json:"text"`
-	// FinishReason string                      `json:"finish_reason"`
-	Choices []openai.TextResponseChoice `json:"choices"`
-}
-
-type ChatResponse struct {
-	Error
-	Output Output `json:"output"`
-	Usage  Usage  `json:"usage"`
 }
