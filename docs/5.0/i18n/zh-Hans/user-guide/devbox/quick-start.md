@@ -1,6 +1,4 @@
-# Devbox
-
-## 快速开始
+# 快速开始
 
 > 了解如何使用 Sealos Devbox 创建、开发和部署 Next.js 应用。本指南涵盖项目设置、使用 Cursor IDE 进行远程开发以及云部署。
 
@@ -8,7 +6,7 @@ Sealos Devbox 是一个一体化平台，专为集成在线开发、测试和生
 
 在本指南中，我们将演示如何使用 Sealos Devbox 创建一个最小的 Next.js 演示项目。
 
-### 创建 Devbox 项目
+## 创建 Devbox 项目
 
 1. 点击 Sealos 桌面上的 Devbox 图标，然后点击“新建项目”按钮，创建一个新项目。
 
@@ -36,7 +34,7 @@ Sealos Devbox 是一个一体化平台，专为集成在线开发、测试和生
 
 ![quick-start-3](./images/quick-start-3.png)
 
-### 连接 Cursor IDE
+## 连接 Cursor IDE
 
 创建项目后，您会在 Devbox 项目列表中看到它。每个项目都有一个“操作”列，其中包含各种选项。
 
@@ -56,7 +54,7 @@ Sealos Devbox 是一个一体化平台，专为集成在线开发、测试和生
 
 > 您可以随时使用“操作”列中的下拉菜单在不同的 IDE 选项（VSCode、Cursor 或 VSCode Insiders）之间切换。
 
-### 开发
+## 开发
 
 1. 建立连接后，您将能够直接在 Cursor IDE 环境中访问和编辑您的项目文件。
 
@@ -98,7 +96,7 @@ npm run dev
 
 ![quick-start-7](./images/quick-start-7.png)
 
-### 发布
+## 发布
 
 开发并测试 Next.js 应用程序后，您可以将其发布为 OCI（开放容器计划）镜像。这样您就可以对应用程序进行版本控制并准备部署。
 
@@ -137,7 +135,7 @@ npm run build
 
 > 请记住，每当您在项目中做出重大更改或达到重要里程碑时，都要创建新版本。这种做法有助于保持应用程序开发的清晰历史记录，并有助于更轻松地部署和协作。
 
-### 部署
+## 部署
 
 将 Next.js 应用程序发布为 OCI 镜像后，您可以将其部署到 Sealos Cloud 以供生产使用。操作方法如下：
 

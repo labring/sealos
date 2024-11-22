@@ -1,6 +1,4 @@
-# Devbox
-
-## Quick start
+# Quick start
 
 > Learn how to create, develop, and deploy a Next.js app using Sealos DevBox. This guide covers project setup, remote development with Cursor IDE, and cloud deployment.
 
@@ -8,7 +6,7 @@ Sealos Devbox is an all-in-one platform designed for integrated online developme
 
 In this guide We'll demonstrate how to create a minimal Next.js demo project with Sealos Devbox.
 
-### Create a Devbox Project
+## Create a Devbox Project
 
 1. Click on the "Devbox" icon on Sealos Desktop, then click on the "Create New Project" button to create a new project.
 
@@ -37,7 +35,7 @@ Remember that the container port (3000) should match the port your Next.js appli
 
 ![quick-start-3](./images/quick-start-3.png)
 
-### Connect with Cursor IDE
+## Connect with Cursor IDE
 
 After creating your project, you'll see it listed in the Devbox List. Each project has an "Operation" column with various options.
 
@@ -57,7 +55,7 @@ After creating your project, you'll see it listed in the Devbox List. Each proje
 
 > You can switch between different IDE options (VSCode, Cursor, or VSCode Insiders) at any time by using the dropdown menu in the "Operation" column.
 
-### Develop
+## Develop
 
 1. After the connection is established, you'll be able to access and edit your project files directly within the Cursor IDE environment.
 
@@ -99,7 +97,7 @@ npm run dev
 
 ![quick-start-7](./images/quick-start-7.png)
 
-### Release
+## Release
 
 After you've developed and tested your Next.js application, you can release it as an OCI (Open Container Initiative) image. This allows you to version your application and prepare it for deployment.
 
@@ -139,7 +137,7 @@ By following these steps, you've successfully created an OCI image of your Next.
 
 > Remember to create new releases whenever you make significant changes or reach important milestones in your project. This practice helps in maintaining a clear history of your application's development and facilitates easier deployment and collaboration.
 
-### Deploy
+## Deploy
 
 After releasing your Next.js application as an OCI image, you can deploy it to Sealos Cloud for production use. Here's how to do it:
 
