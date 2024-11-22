@@ -43,6 +43,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
+      ...data.labels,
       'clusterdefinition.kubeblocks.io/name': data.dbType,
       'clusterversion.kubeblocks.io/name': data.dbVersion,
       [crLabelKey]: data.dbName

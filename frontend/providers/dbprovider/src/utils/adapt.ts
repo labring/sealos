@@ -149,7 +149,8 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     cpu: 1,
     memory: 1,
     replicas: 1,
-    storage: 1
+    storage: 1,
+    labels: 1
   };
   const form: any = {};
 

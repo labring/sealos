@@ -28,4 +28,5 @@ export type EnvResponse = {
   SEALOS_SERVICE_ACCOUNT: string;
   SHOW_AUTHOR: string;
   DESKTOP_DOMAIN: string;
+  CURRENCY_SYMBOL: 'shellCoin' | 'cny' | 'usd';
 };

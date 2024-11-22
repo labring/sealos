@@ -98,6 +98,7 @@ export type MigrateForm = {
   cpu: number;
   memory: number;
   storage: number;
+  labels: Record<string, string>;
 
   sinkHost: string;
   sinkPort: string;

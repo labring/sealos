@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { SealosCoin } from '@sealos/ui'
+import { CurrencySymbol } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
 
 import { usePriceStore } from '@/stores/price'
+import { useEnvStore } from '@/stores/env'
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -22,6 +23,7 @@ const PriceBox = ({
 }) => {
   const theme = useTheme()
   const t = useTranslations()
+  const { env } = useEnvStore()
 
   const { sourcePrice } = usePriceStore()
 
@@ -72,7 +74,7 @@ const PriceBox = ({
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
             <Box flex={'0 0 90px'}>{t(item.label)}:</Box>
             <Flex alignItems={'center'} gap={'4px'}>
-              <SealosCoin />
+              <CurrencySymbol type={env.currencySymbol} />
               {item.value}
             </Flex>
           </Flex>

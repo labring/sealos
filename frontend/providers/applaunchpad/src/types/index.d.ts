@@ -1,5 +1,5 @@
 import { WstLogger } from 'sealos-desktop-sdk/service';
-import { defaultSliderKey } from '@/constants/app';
+import { Coin, defaultSliderKey } from '@/constants/app';
 
 export type QueryType = {
   name: string;
@@ -40,6 +40,7 @@ export type AppConfigType = {
     gpuEnabled: boolean;
   };
   launchpad: {
+    currencySymbol: Coin;
     eventAnalyze: {
       enabled: boolean;
       fastGPTKey?: string;

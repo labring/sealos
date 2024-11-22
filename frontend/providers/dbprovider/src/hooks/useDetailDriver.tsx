@@ -4,7 +4,6 @@ import { useGuideStore } from '@/store/guide';
 import { formatMoney } from '@/utils/tools';
 import { Center, Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
-import { SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -115,7 +114,6 @@ export default function useDetailDriver() {
       //           >
       //             {t('receive')}
       //           </Text>
-      //           <SealosCoin />
       //           <Text mx="4px">{reward}</Text>
       //           <Text fontSize={'14px'} fontWeight={500}>
       //             {t('balance')}
@@ -152,7 +150,6 @@ export default function useDetailDriver() {
       //               h={'72px'}
       //               position={'relative'}
       //             >
-      //               <SealosCoin w="14px" />
       //               <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
       //                 {item.amount}
       //               </Text>
@@ -172,7 +169,6 @@ export default function useDetailDriver() {
       //                 height={'20px'}
       //               >
       //                 <Text>{t('gift')}</Text>
-      //                 <SealosCoin w="10px" />
       //                 <Text>{item.gift}</Text>
       //               </Flex>
       //             </Center>

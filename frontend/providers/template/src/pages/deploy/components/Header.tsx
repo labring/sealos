@@ -24,7 +24,9 @@ import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useMemo } from 'react';
-import PriceBox, { Currencysymbol, usePriceCalculation } from './PriceBox';
+import PriceBox, { usePriceCalculation } from './PriceBox';
+import { CurrencySymbol } from '@sealos/ui';
+import { useSystemConfigStore } from '@/store/config';
 
 const Header = ({
   appName,
@@ -45,6 +47,8 @@ const Header = ({
 }) => {
   const { t, i18n } = useTranslation();
   const { copyData } = useCopyData();
+  const { envs } = useSystemConfigStore();
+
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList?.map((i) => i.value).join('---\n');
     if (!exportYamlString) return;
@@ -274,7 +278,7 @@ const Header = ({
             flexShrink={'0'}
             gap={'4px'}
           >
-            <Currencysymbol w={'16px'} h={'16px'} type={'shellCoin'} />
+            <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
             {priceList?.[priceList.length - 1]?.value}
             <Text fontSize={'16px'}>/{t('Day')}</Text>
             <MyIcon name="help" width={'16px'} height={'16px'} color={'grayModern.500'}></MyIcon>

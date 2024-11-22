@@ -29,7 +29,7 @@ export default function SearchBox() {
   // Filter apps based on search term
   const filteredApps = apps.filter((app) => {
     const appNames = getAppNames(app);
-    return appNames.some((name) => name.toLowerCase().includes(searchTerm.toLowerCase()));
+    return appNames.some((name) => name?.toLowerCase().includes(searchTerm?.toLowerCase()));
   });
 
   return (

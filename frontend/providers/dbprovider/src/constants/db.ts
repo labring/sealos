@@ -269,7 +269,8 @@ export const defaultDBEditValue: DBEditType = {
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
-  storage: 3
+  storage: 3,
+  labels: {}
 };
 
 export const defaultDBDetail: DBDetailType = {

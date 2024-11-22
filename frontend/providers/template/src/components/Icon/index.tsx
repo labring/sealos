@@ -39,7 +39,6 @@ const map = {
   gift: require('./icons/gift.svg').default,
   eyeShow: require('./icons/eyeShow.svg').default,
   tool: require('./icons/tool.svg').default,
-  sealosCoin: require('./icons/sealosCoin.svg').default,
   help: require('./icons/help.svg').default
 };
 
