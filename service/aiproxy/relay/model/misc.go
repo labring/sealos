@@ -29,5 +29,5 @@ type ErrorWithStatusCode struct {
 }
 
 func (e *ErrorWithStatusCode) String() string {
-	return fmt.Sprintf("code: %v, message: %s, type: %s, param: %s, status_code: %d", e.Code, e.Message, e.Type, e.Param, e.StatusCode)
+	return fmt.Sprintf("%s, status_code: %d", e.Error.String(), e.StatusCode)
 }

@@ -287,8 +287,8 @@ func (s *SealosPostGroupConsumer) postConsume(ctx context.Context, amount int64,
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New(sealosResp.Error)
+	if resp.StatusCode != http.StatusOK || sealosResp.Error != "" {
+		return fmt.Errorf("status code: %d, error: %s", resp.StatusCode, sealosResp.Error)
 	}
 
 	return nil

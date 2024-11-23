@@ -106,10 +106,17 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 	if resp.StatusCode != http.StatusOK {
 		err := RelayErrorHandler(resp)
 		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsumer, resp.StatusCode, c.Request.URL.Path, &relaymodel.Usage{
-			PromptTokens:     0,
-			CompletionTokens: 0,
-		}, meta, price, completionPrice, err.Error.Message)
+		go postConsumeAmount(consumeCtx,
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			resp.StatusCode,
+			c.Request.URL.Path,
+			&relaymodel.Usage{
+				PromptTokens:     0,
+				CompletionTokens: 0,
+			}, meta, price, completionPrice,
+			err.String(),
+		)
 		return err
 	}
 
@@ -119,7 +126,13 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 	}
 
 	ConsumeWaitGroup.Add(1)
-	go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsumer, resp.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, "")
+	go postConsumeAmount(consumeCtx,
+		&ConsumeWaitGroup,
+		postGroupConsumer,
+		resp.StatusCode,
+		c.Request.URL.Path,
+		usage, meta, price, completionPrice, "",
+	)
 
 	return nil
 }

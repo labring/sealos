@@ -84,7 +84,17 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if isErrorHappened(meta, resp) {
 		err := RelayErrorHandler(resp)
 		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsume, resp.StatusCode, c.Request.URL.Path, nil, meta, price, completionPrice, err.Error.Message)
+		go postConsumeAmount(consumeCtx,
+			&ConsumeWaitGroup,
+			postGroupConsume,
+			resp.StatusCode,
+			c.Request.URL.Path,
+			nil,
+			meta,
+			price,
+			completionPrice,
+			err.String(),
+		)
 		return err
 	}
 
@@ -93,12 +103,28 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if respErr != nil {
 		logger.Errorf(ctx, "do response failed: %s", respErr)
 		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsume, respErr.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, respErr.Error.Message)
+		go postConsumeAmount(consumeCtx,
+			&ConsumeWaitGroup,
+			postGroupConsume,
+			respErr.StatusCode,
+			c.Request.URL.Path,
+			usage,
+			meta,
+			price,
+			completionPrice,
+			respErr.String(),
+		)
 		return respErr
 	}
 	// post-consume amount
 	ConsumeWaitGroup.Add(1)
-	go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsume, resp.StatusCode, c.Request.URL.Path, usage, meta, price, completionPrice, "")
+	go postConsumeAmount(consumeCtx,
+		&ConsumeWaitGroup,
+		postGroupConsume,
+		resp.StatusCode,
+		c.Request.URL.Path,
+		usage, meta, price, completionPrice, "",
+	)
 	return nil
 }
 
