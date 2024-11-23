@@ -66,12 +66,12 @@ func getPreConsumedAmount(textRequest *relaymodel.GeneralOpenAIRequest, promptTo
 		InexactFloat64()
 }
 
-func preCheckGroupBalance(ctx context.Context, textRequest *relaymodel.GeneralOpenAIRequest, promptTokens int, price float64, meta *meta.Meta) (bool, balance.PostGroupConsumer, *relaymodel.ErrorWithStatusCode) {
+func preCheckGroupBalance(ctx context.Context, textRequest *relaymodel.GeneralOpenAIRequest, promptTokens int, price float64, meta *meta.Meta) (bool, balance.PostGroupConsumer, error) {
 	preConsumedAmount := getPreConsumedAmount(textRequest, promptTokens, price)
 
 	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
 	if err != nil {
-		return false, nil, openai.ErrorWrapper(err, "get_group_quota_failed", http.StatusInternalServerError)
+		return false, nil, err
 	}
 	if groupRemainBalance < preConsumedAmount {
 		return false, nil, nil

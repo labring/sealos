@@ -389,9 +389,10 @@ func GetSubscription(c *gin.Context) {
 	group := c.GetString(ctxkey.Group)
 	b, _, err := balance.Default.GetGroupRemainBalance(c, group)
 	if err != nil {
+		logger.Errorf(c, "get group (%s) balance failed: %s", group, err)
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": err.Error(),
+			"message": fmt.Sprintf("get group (%s) balance failed", group),
 		})
 		return
 	}

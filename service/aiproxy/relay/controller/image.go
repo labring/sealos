@@ -144,19 +144,28 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 
 	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
 	if err != nil {
-		return openai.ErrorWrapper(err, "get_group_remain_balance_failed", http.StatusInternalServerError)
+		logger.Errorf(ctx, "get group (%s) balance failed: %s", meta.Group, err)
+		return openai.ErrorWrapper(
+			fmt.Errorf("get group (%s) balance failed", meta.Group),
+			"get_group_remain_balance_failed",
+			http.StatusInternalServerError,
+		)
 	}
 
 	amount := decimal.NewFromFloat(imageCostPrice).Mul(decimal.NewFromInt(int64(imageRequest.N))).InexactFloat64()
 
 	if groupRemainBalance-amount < 0 {
-		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
+		return openai.ErrorWrapper(
+			errors.New("group balance is not enough"),
+			"insufficient_group_balance",
+			http.StatusForbidden,
+		)
 	}
 
 	// do request
 	resp, err := adaptor.DoRequest(c, meta, requestBody)
 	if err != nil {
-		logger.Errorf(ctx, "DoRequest failed: %s", err.Error())
+		logger.Errorf(ctx, "do request failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
 

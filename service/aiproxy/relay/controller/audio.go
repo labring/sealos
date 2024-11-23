@@ -16,6 +16,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -78,7 +79,12 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 
 	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), group)
 	if err != nil {
-		return openai.ErrorWrapper(err, "get_group_balance_failed", http.StatusInternalServerError)
+		logger.Errorf(c, "get group (%s) balance failed: %s", group, err)
+		return openai.ErrorWrapper(
+			fmt.Errorf("get group (%s) balance failed", group),
+			"get_group_balance_failed",
+			http.StatusInternalServerError,
+		)
 	}
 
 	preConsumedAmount := decimal.NewFromInt(int64(meta.PromptTokens)).
@@ -103,7 +109,7 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		go postConsumeAmount(consumeCtx, &ConsumeWaitGroup, postGroupConsumer, resp.StatusCode, c.Request.URL.Path, &relaymodel.Usage{
 			PromptTokens:     0,
 			CompletionTokens: 0,
-		}, meta, price, completionPrice, err.Message)
+		}, meta, price, completionPrice, err.Error.Message)
 		return err
 	}
 

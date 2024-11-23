@@ -102,6 +102,8 @@ func cacheSetGroupBalance(ctx context.Context, group string, balance int64, user
 	if !common.RedisEnabled || !sealosRedisCacheEnable {
 		return nil
 	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	pipe := common.RDB.Pipeline()
 	pipe.HSet(ctx, fmt.Sprintf(sealosGroupBalanceKey, group), sealosCache{
 		Balance: balance,
@@ -117,6 +119,8 @@ func cacheGetGroupBalance(ctx context.Context, group string) (*sealosCache, erro
 	if !common.RedisEnabled || !sealosRedisCacheEnable {
 		return nil, redis.Nil
 	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var cache sealosCache
 	if err := common.RDB.HGetAll(ctx, fmt.Sprintf(sealosGroupBalanceKey, group)).Scan(&cache); err != nil {
 		return nil, err
@@ -164,9 +168,6 @@ func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (float
 		logger.Errorf(ctx, "get group (%s) balance cache failed: %s", group, err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
 	balance, userUID, err := s.fetchBalanceFromAPI(ctx, group)
 	if err != nil {
 		return 0, nil, err
@@ -181,6 +182,8 @@ func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (float
 }
 
 func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance int64, userUID string, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		fmt.Sprintf("%s/admin/v1alpha1/account-with-workspace?namespace=%s", s.accountURL, group), nil)
 	if err != nil {
@@ -200,8 +203,7 @@ func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance
 	}
 
 	if sealosResp.Error != "" {
-		logger.Errorf(ctx, "get group (%s) balance failed: %s", group, sealosResp.Error)
-		return 0, "", fmt.Errorf("get group (%s) balance failed", group)
+		return 0, "", errors.New(sealosResp.Error)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -276,19 +278,17 @@ func (s *SealosPostGroupConsumer) postConsume(ctx context.Context, amount int64,
 	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	resp, err := sealosHTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("post group (%s) consume failed: %w", s.group, err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	var sealosResp sealosPostGroupConsumeResp
 	if err := json.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
-		return fmt.Errorf("post group (%s) consume failed: %w", s.group, err)
+		return err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Errorf(ctx, "group (%s) consume failed with status code %d: %s",
-			s.group, resp.StatusCode, sealosResp.Error)
-		return fmt.Errorf("group (%s) consume failed with status code %d", s.group, resp.StatusCode)
+		return errors.New(sealosResp.Error)
 	}
 
 	return nil

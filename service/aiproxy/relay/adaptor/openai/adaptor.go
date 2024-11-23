@@ -50,8 +50,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		requestURL := strings.Split(meta.RequestURLPath, "?")[0]
 		requestURL = fmt.Sprintf("%s?api-version=%s", requestURL, meta.Config.APIVersion)
 		task := strings.TrimPrefix(requestURL, "/v1/")
-		model := meta.ActualModelName
-		model = strings.Replace(model, ".", "", -1)
+		model := strings.ReplaceAll(meta.ActualModelName, ".", "")
 		// https://github.com/labring/sealos/service/aiproxy/issues/1191
 		// {your endpoint}/openai/deployments/{your azure_model}/chat/completions?api-version={api_version}
 		requestURL = fmt.Sprintf("/openai/deployments/%s/%s", model, task)
