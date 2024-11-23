@@ -45,14 +45,8 @@ function Price() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   return (
-    <Box
-      w="full"
-      h="full"
-      display="inline-flex"
-      padding="0px 12px 12px 0px"
-      alignItems="center"
-      bg="white">
-      <Box w="full" h="full" padding="27px 32px 0px 32px">
+    <Box w="full" h="full" display="inline-flex" pt="4px" pb="12px" pr="12px" alignItems="center">
+      <Box w="full" h="full" padding="27px 32px 0px 32px" bg="white" borderRadius="12px">
         <Flex w="full" h="full" gap="32px" direction="column">
           <Text
             color="black"
@@ -148,6 +142,7 @@ function PriceTable() {
             fontWeight={500}
             lineHeight="16px"
             letterSpacing="0.5px"
+            whiteSpace="nowrap"
             onClick={() =>
               navigator.clipboard.writeText(modelName).then(
                 () => {

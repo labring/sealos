@@ -1,4 +1,3 @@
-'use client'
 import { Box, Flex } from '@chakra-ui/react'
 
 import SideBar from '@/components/user/Sidebar'
@@ -10,7 +9,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         <SideBar />
       </Box>
       {/* Main Content */}
-      <Box h="100vh" w="full" flex={1}>
+      <Box w="full" h="100vh" flex={1}>
         {children}
       </Box>
     </Flex>

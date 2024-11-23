@@ -1,10 +1,5 @@
 import { ApiResp } from '@/types/api'
-import axios, {
-  InternalAxiosRequestConfig,
-  AxiosHeaders,
-  AxiosResponse,
-  AxiosRequestConfig
-} from 'axios'
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosRequestConfig } from 'axios'
 import { getUserSession } from './user'
 
 const request = axios.create({
@@ -17,54 +12,65 @@ const request = axios.create({
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // auto append service prefix
-    if (config.url && !config.url?.startsWith('/api/')) {
-      config.url = '' + config.url
-    }
-    let _headers: AxiosHeaders = config.headers
-
-    //获取token，并将其添加至请求头中
-    _headers['Authorization'] = getUserSession()
-
-    if (!config.headers || config.headers['Content-Type'] === '') {
-      _headers['Content-Type'] = 'application/json'
+    if (config.url && !config.url.startsWith('/api/')) {
+      config.url = `/api${config.url}`
     }
 
-    config.headers = _headers
+    // ensure headers exists
+    config.headers = config.headers || {}
+
+    // append user session to Authorization header
+    const userSession = getUserSession()
+    if (userSession) {
+      config.headers['Authorization'] = userSession
+    }
+
+    // set default Content-Type
+    if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json'
+    }
+
     return config
   },
   (error: any) => {
-    error.data = {}
-    error.data.msg = '服务器异常，请联系管理员！'
-    return Promise.resolve(error)
+    // handle request interceptor error
+    console.error('Request Interceptor Error:', error)
+    error.data = {
+      msg: 'An error occurred while making the request. Please try again later.'
+    }
+    return Promise.reject(error) // use reject to catch error in subsequent process
   }
 )
 
-// response interceptor
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    const { status, data } = response
-    if (status < 200 || status >= 300) {
-      return Promise.reject(status + ', ' + typeof data === 'string' ? data : String(data))
-    }
-
-    const apiResp = data as ApiResp
-    if (apiResp.code < 200 || apiResp.code >= 400) {
-      return Promise.reject(apiResp.code + ':' + apiResp.message)
-    }
-
-    response.data = apiResp.data
-    return response.data
+    // only process status code 200
+    const { data } = response.data
+    return data
   },
   (error: any) => {
     if (axios.isCancel(error)) {
-      return Promise.reject('cancel request' + String(error))
-    } else {
-      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！'
+      return Promise.reject(new Error(`cancel request: ${error.message || error}`))
     }
+
+    const apiResponse = error?.response?.data as ApiResp
+    if (apiResponse?.error || apiResponse?.message) {
+      error.message = apiResponse.error || apiResponse.message
+    } else {
+      error.message = 'An unknown error occurred. Please try again later.'
+    }
+
     return Promise.reject(error)
   }
 )
 
+/**
+ * GET request
+ * @param url - request url
+ * @param data - request params (will be converted to query string)
+ * @param config - axios config
+ * @returns Promise<T>
+ */
 export function GET<T = any>(
   url: string,
   data?: { [key: string]: any },
@@ -76,6 +82,13 @@ export function GET<T = any>(
   })
 }
 
+/**
+ * POST request
+ * @param url - request url
+ * @param data - request body data
+ * @param config - axios config
+ * @returns Promise<T>
+ */
 export function POST<T = any>(
   url: string,
   data?: { [key: string]: any },
@@ -84,6 +97,13 @@ export function POST<T = any>(
   return request.post(url, data, config)
 }
 
+/**
+ * DELETE request
+ * @param url - request url
+ * @param data - request params (will be converted to query string)
+ * @param config - axios config
+ * @returns Promise<T>
+ */
 export function DELETE<T = any>(
   url: string,
   data?: { [key: string]: any },
@@ -93,4 +113,34 @@ export function DELETE<T = any>(
     params: data,
     ...config
   })
+}
+
+/**
+ * PATCH request
+ * @param url - request url
+ * @param data - request body data
+ * @param config - axios config
+ * @returns Promise<T>
+ */
+export function PATCH<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.patch(url, data, config)
+}
+
+/**
+ * PUT request
+ * @param url - request url
+ * @param data - request body data
+ * @param config - axios config
+ * @returns Promise<T>
+ */
+export function PUT<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.put(url, data, config)
 }

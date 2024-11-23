@@ -47,6 +47,7 @@ import { TokenInfo } from '@/types/getKeys'
 import SwitchPage from '@/components/common/SwitchPage'
 import { useBackendStore } from '@/store/backend'
 import { MyTooltip } from '@/components/common/MyTooltip'
+import { ApiResp } from '@/types/api'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()
@@ -86,6 +87,7 @@ export enum TableHeaderId {
   STATUS = 'key.status',
   ACTIONS = 'key.actions'
 }
+
 enum KeyStatus {
   ENABLED = 1,
   DISABLED = 2,
@@ -634,44 +636,48 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
                 fontSize="14px"
                 fontWeight={500}
                 lineHeight="20px"
+                whiteSpace="nowrap"
                 letterSpacing="0.1px">
                 API Endpoint:
               </Text>
-              <Text
-                color="var(--light-sealos-secondary-text, var(--Bright-Blue-600, #0884DD))"
-                fontFamily="PingFang SC"
-                fontSize="14px"
-                fontWeight={500}
-                lineHeight="20px"
-                letterSpacing="0.1px"
-                textDecoration="none"
-                _hover={{ textDecoration: 'underline' }}
-                cursor="pointer"
-                onClick={() => {
-                  const endpoint = aiproxyBackend
-                  navigator.clipboard.writeText(endpoint).then(
-                    () => {
-                      message({
-                        status: 'success',
-                        title: t('copySuccess'),
-                        isClosable: true,
-                        duration: 2000,
-                        position: 'top'
-                      })
-                    },
-                    (err) => {
-                      message({
-                        status: 'warning',
-                        title: t('copyFailed'),
-                        description: err?.message || t('copyFailed'),
-                        isClosable: true,
-                        position: 'top'
-                      })
-                    }
-                  )
-                }}>
-                <MyTooltip label={t('copy')}>{aiproxyBackend}</MyTooltip>
-              </Text>
+              <MyTooltip label={t('copy')}>
+                <Text
+                  color="var(--light-sealos-secondary-text, var(--Bright-Blue-600, #0884DD))"
+                  fontFamily="PingFang SC"
+                  fontSize="14px"
+                  fontWeight={500}
+                  lineHeight="20px"
+                  letterSpacing="0.1px"
+                  textDecoration="none"
+                  _hover={{ textDecoration: 'underline' }}
+                  cursor="pointer"
+                  whiteSpace="nowrap"
+                  onClick={() => {
+                    const endpoint = aiproxyBackend
+                    navigator.clipboard.writeText(endpoint).then(
+                      () => {
+                        message({
+                          status: 'success',
+                          title: t('copySuccess'),
+                          isClosable: true,
+                          duration: 2000,
+                          position: 'top'
+                        })
+                      },
+                      (err) => {
+                        message({
+                          status: 'warning',
+                          title: t('copyFailed'),
+                          description: err?.message || t('copyFailed'),
+                          isClosable: true,
+                          position: 'top'
+                        })
+                      }
+                    )
+                  }}>
+                  {aiproxyBackend}
+                </Text>
+              </MyTooltip>
             </Flex>
             <Button
               display="flex"
@@ -798,11 +804,12 @@ function CreateKeyModal({
       })
       onClose()
     },
-    onError(err: any) {
+    onError(err) {
+      console.error(err)
       message({
         status: 'warning',
         title: t('key.createFailed'),
-        description: err?.response?.data?.message || t('key.createFailed'),
+        description: err instanceof Error ? err.message : t('key.createFailed'),
         isClosable: true,
         position: 'top'
       })

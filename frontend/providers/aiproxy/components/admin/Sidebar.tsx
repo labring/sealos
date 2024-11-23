@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { useTranslationClientSide } from '@/app/i18n/client'
-import homeIcon from '@/ui/svg/icons/sidebar/home.svg'
-import homeIcon_a from '@/ui/svg/icons/sidebar/home_a.svg'
-import logsIcon from '@/ui/svg/icons/sidebar/logs.svg'
-import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg'
-import priceIcon from '@/ui/svg/icons/sidebar/price.svg'
-import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg'
+import homeIcon from '@/ui/svg/icons/admin-sidebar/home.svg'
+import homeIcon_a from '@/ui/svg/icons/admin-sidebar/home_a.svg'
+import logsIcon from '@/ui/svg/icons/admin-sidebar/logs.svg'
+import logsIcon_a from '@/ui/svg/icons/admin-sidebar/logs_a.svg'
+import configIcon from '@/ui/svg/icons/admin-sidebar/config.svg'
+import configIcon_a from '@/ui/svg/icons/admin-sidebar/config_a.svg'
+import nsManagerIcon from '@/ui/svg/icons/admin-sidebar/nsManager.svg'
+import nsManagerIcon_a from '@/ui/svg/icons/admin-sidebar/nsManager_a.svg'
 import { useI18n } from '@/providers/i18n/i18nContext'
 
 type Menu = {
@@ -48,16 +50,16 @@ const SideBar = (): JSX.Element => {
       id: 'global-configs',
       url: '/global-configs',
       value: t('Sidebar.GlobalConfigs'),
-      icon: priceIcon,
-      activeIcon: priceIcon_a,
+      icon: configIcon,
+      activeIcon: configIcon_a,
       display: true
     },
     {
       id: 'ns-manager',
       url: '/ns-manager',
       value: t('Sidebar.NsManager'),
-      icon: priceIcon,
-      activeIcon: priceIcon_a,
+      icon: nsManagerIcon,
+      activeIcon: nsManagerIcon_a,
       display: true
     }
   ]

@@ -91,5 +91,34 @@
   "glm": "智谱",
   "o": "OpenAI",
   "gpt": "OpenAI",
-  "createKey2": "新建 Key"
+  "createKey2": "新建 Key",
+  "dashboard": {
+    "title": "Ai 渠道",
+    "create": "新建",
+    "import": "导入",
+    "export": "全部导出"
+  },
+  "channelStatus": {
+    "autoDisabled": "系统禁用"
+  },
+  "channels": {
+    "name": "名字",
+    "type": "厂商",
+    "test": "测试",
+    "disable": "禁用",
+    "enable": "启用",
+    "edit": "编辑",
+    "export": "导出",
+    "create": "新建",
+    "name_required": "名称不合法",
+    "key_required": "Key 不合法"
+  },
+  "channelsForm": {
+    "name": "自定义名称",
+    "type": "厂商"
+  },
+  "channelsFormPlaceholder": {
+    "name": "自定义名称",
+    "type": "Open AI"
+  }
 }

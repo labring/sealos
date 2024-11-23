@@ -17,7 +17,7 @@ export async function parseJwtToken(headers: Headers): Promise<string> {
   try {
     const token = headers.get('authorization')
     if (!token) {
-      return Promise.reject('Token is missing')
+      return Promise.reject('Auth: Token is missing')
     }
 
     const decoded = jwt.verify(
@@ -26,14 +26,14 @@ export async function parseJwtToken(headers: Headers): Promise<string> {
     ) as AppTokenPayload
     const now = Math.floor(Date.now() / 1000)
     if (decoded.exp && decoded.exp < now) {
-      return Promise.reject('Token expired')
+      return Promise.reject('Auth: Token expired')
     }
     if (!decoded.workspaceId) {
-      return Promise.reject('Invalid token')
+      return Promise.reject('Auth: Invalid token')
     }
     return decoded.workspaceId
   } catch (error) {
-    console.error('Token parsing error:', error)
-    return Promise.reject('Invalid token')
+    console.error('Auth: Token parsing error:', error)
+    return Promise.reject('Auth: Invalid token')
   }
 }

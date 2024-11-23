@@ -133,16 +133,16 @@ export default function Home(): React.JSX.Element {
   })
 
   return (
-    <Flex w="full" h="full" flexDirection={'column'} pr={'8px'} pb={'8px'} overflow={'hidden'}>
+    <Flex w="full" h="full" flexDirection="column" pt="4px" pb="12px" pr="12px" overflow="hidden">
       <Flex
-        flexDirection={'column'}
+        flexDirection="column"
         flex={1}
-        h={'0'}
-        bg={'white'}
-        borderRadius={'12px'}
-        px={'32px'}
-        pt={'24px'}>
-        <Flex justifyContent={'space-between'} color={'black'} fontSize={'20px'} fontWeight={500}>
+        h="0"
+        bg="white"
+        borderRadius="12px"
+        px="32px"
+        pt="24px">
+        <Flex justifyContent="space-between" color="black" fontSize="20px" fontWeight={500}>
           <Text>{t('logs.call_log')}</Text>
           <Button
             border={'1px solid #DFE2EA'}
@@ -165,18 +165,18 @@ export default function Home(): React.JSX.Element {
           </Button>
         </Flex>
 
-        <Flex flexDirection={'column'} mb={'24px'} gap={4} mt={'16px'} flexWrap={'wrap'}>
-          <Flex flex={1} justifyContent={'space-between'} gap={'20px'}>
-            <Flex alignItems={'center'} flex={1}>
-              <Box flexShrink={0} w={'100px'}>
+        <Flex flexDirection="column" mb="24px" gap={4} mt="16px" flexWrap="wrap">
+          <Flex flex={1} justifyContent="space-between" gap="20px">
+            <Flex alignItems="center" flex={1}>
+              <Box flexShrink={0} w="100px">
                 {t('logs.name')}
               </Box>
               <MySelect
                 boxStyle={{
                   w: '100%'
                 }}
-                maxW={'500px'}
-                w={'100%'}
+                maxW="500px"
+                w="100%"
                 placeholder={t('logs.select_token_name')}
                 height="32px"
                 value={name}
@@ -200,8 +200,8 @@ export default function Home(): React.JSX.Element {
               />
             </Flex>
 
-            <Flex alignItems={'center'} flex={1}>
-              <Box flexShrink={0} w={'100px'}>
+            <Flex alignItems="center" flex={1}>
+              <Box flexShrink={0} w="100px">
                 {t('logs.modal')}
               </Box>
               <MySelect
@@ -209,8 +209,8 @@ export default function Home(): React.JSX.Element {
                 boxStyle={{
                   w: '100%'
                 }}
-                maxW={'500px'}
-                w={'100%'}
+                maxW="500px"
+                w="100%"
                 height="32px"
                 value={modelName}
                 list={
@@ -230,8 +230,8 @@ export default function Home(): React.JSX.Element {
             </Flex>
           </Flex>
 
-          <Flex alignItems={'center'} maxW={'50%'} pr={'10px'}>
-            <Box flexShrink={0} w={'100px'}>
+          <Flex alignItems="center" maxW="50%" pr="10px">
+            <Box flexShrink={0} w="100px">
               {t('logs.time')}
             </Box>
             <SelectDateRange

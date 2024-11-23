@@ -8,7 +8,6 @@ export default function Home(): JSX.Element {
     <Flex pt="4px" pb="12px" pr="12px" gap="8px" h="100vh" w="full">
       <Flex
         flex={4.95}
-        flexShrink={0}
         display="inline-flex"
         p="24px 32px 167px 32px"
         flexDirection="column"

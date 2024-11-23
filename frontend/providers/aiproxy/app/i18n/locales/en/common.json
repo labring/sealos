@@ -91,5 +91,34 @@
   "glm": "Glm",
   "o": "OpenAI",
   "gpt": "OpenAI",
-  "createKey2": "Create Key"
+  "createKey2": "Create Key",
+  "dashboard": {
+    "title": "Channel",
+    "create": "New",
+    "import": "Import",
+    "export": "Export all"
+  },
+  "channelStatus": {
+    "autoDisabled": "System disabled"
+  },
+  "channels": {
+    "name": "Name",
+    "type": "Manufacturer",
+    "test": "test",
+    "disable": "Disable",
+    "enable": "Enable",
+    "edit": "Edit",
+    "export": "Export",
+    "create": "New",
+    "name_required": "The name is illegal",
+    "key_required": "Key is illegal"
+  },
+  "channelsForm": {
+    "name": "Custom name",
+    "type": "Manufacturer"
+  },
+  "channelsFormPlaceholder": {
+    "name": "Custom name",
+    "type": "Open AI"
+  }
 }

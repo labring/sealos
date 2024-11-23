@@ -116,6 +116,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
           fontWeight={500}
           lineHeight="16px"
           letterSpacing="0.5px"
+          whiteSpace="nowrap"
           onClick={() =>
             navigator.clipboard.writeText(modelName).then(
               () => {

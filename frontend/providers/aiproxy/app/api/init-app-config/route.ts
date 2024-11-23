@@ -4,6 +4,10 @@ import type { AppConfigType } from '@/types/appConfig'
 
 export const dynamic = 'force-dynamic'
 
+function getAdminNamespaces(): string[] {
+  return process.env.ADMIN_NAMESPACES?.split(',') || []
+}
+
 function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.APP_TOKEN_JWT_KEY) {
     appConfig.auth.appTokenJwtKey = process.env.APP_TOKEN_JWT_KEY
@@ -16,6 +20,9 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   }
   if (process.env.AI_PROXY_BACKEND_INTERNAL) {
     appConfig.backend.aiproxyInternal = process.env.AI_PROXY_BACKEND_INTERNAL
+  }
+  if (process.env.ADMIN_NAMESPACES) {
+    appConfig.adminNameSpace = getAdminNamespaces()
   }
   return appConfig
 }
@@ -30,13 +37,15 @@ function initAppConfig(): AppConfigType {
     backend: {
       aiproxy: '',
       aiproxyInternal: ''
-    }
+    },
+    adminNameSpace: []
   }
+
   if (!global.AppConfig) {
     try {
       global.AppConfig = getAppConfig(DefaultAppConfig)
     } catch (error) {
-      console.error('Config initialization error:', error)
+      console.error('init-app-config: Config initialization error:', error)
       global.AppConfig = DefaultAppConfig
     }
   }
