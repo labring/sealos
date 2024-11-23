@@ -13,9 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
-	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -166,38 +164,60 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	resp, err := adaptor.DoRequest(c, meta, requestBody)
 	if err != nil {
 		logger.Errorf(ctx, "do request failed: %s", err.Error())
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			http.StatusInternalServerError,
+			c.Request.URL.Path, nil, meta, imageCostPrice, 0, err.Error(),
+		)
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
 
-	defer func() {
-		if resp == nil || resp.StatusCode != http.StatusOK {
-			_ = model.RecordConsumeLog(ctx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, 0, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
-			return
-		}
-
-		consumeCtx := context.WithValue(context.Background(), helper.RequestIDKey, ctx.Value(helper.RequestIDKey))
-		_amount, err := postGroupConsumer.PostGroupConsume(consumeCtx, meta.TokenName, amount)
-		if err != nil {
-			logger.Error(ctx, "error consuming token remain balance: "+err.Error())
-			err = model.CreateConsumeError(meta.Group, meta.TokenName, imageRequest.Model, err.Error(), amount, meta.TokenID)
-			if err != nil {
-				logger.Error(ctx, "failed to create consume error: "+err.Error())
-			}
-		} else {
-			amount = _amount
-		}
-		err = model.BatchRecordConsume(consumeCtx, meta.Group, resp.StatusCode, meta.ChannelID, imageRequest.N, 0, imageRequest.Model, meta.TokenID, meta.TokenName, amount, imageCostPrice, 0, c.Request.URL.Path, imageRequest.Size)
-		if err != nil {
-			logger.Error(ctx, "failed to record consume log: "+err.Error())
-		}
-	}()
+	if isErrorHappened(meta, resp) {
+		err := RelayErrorHandler(resp)
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			resp.StatusCode,
+			c.Request.URL.Path,
+			nil,
+			meta,
+			imageCostPrice,
+			0,
+			err.String(),
+		)
+		return err
+	}
 
 	// do response
 	_, respErr := adaptor.DoResponse(c, resp, meta)
 	if respErr != nil {
-		logger.Errorf(ctx, "respErr is not nil: %+v", respErr)
+		logger.Errorf(ctx, "do response failed: %s", respErr)
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			respErr.StatusCode,
+			c.Request.URL.Path,
+			nil,
+			meta,
+			imageCostPrice,
+			0,
+			respErr.String(),
+		)
 		return respErr
 	}
+
+	ConsumeWaitGroup.Add(1)
+	go postConsumeAmount(context.Background(),
+		&ConsumeWaitGroup,
+		postGroupConsumer,
+		resp.StatusCode,
+		c.Request.URL.Path,
+		nil, meta, imageCostPrice, 0, imageRequest.Size,
+	)
 
 	return nil
 }

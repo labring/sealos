@@ -15,7 +15,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -98,23 +97,30 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 
 	resp, err := adaptor.DoRequest(c, meta, body)
 	if err != nil {
+		logger.Errorf(c, "do request failed: %s", err.Error())
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			http.StatusInternalServerError,
+			c.Request.URL.Path,
+			nil, meta, price, completionPrice, err.Error(),
+		)
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
 
-	consumeCtx := context.WithValue(context.Background(), helper.RequestIDKey, c.Value(helper.RequestIDKey))
-
-	if resp.StatusCode != http.StatusOK {
+	if isErrorHappened(meta, resp) {
 		err := RelayErrorHandler(resp)
 		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(consumeCtx,
+		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
 			postGroupConsumer,
 			resp.StatusCode,
 			c.Request.URL.Path,
-			&relaymodel.Usage{
-				PromptTokens:     0,
-				CompletionTokens: 0,
-			}, meta, price, completionPrice,
+			nil,
+			meta,
+			price,
+			completionPrice,
 			err.String(),
 		)
 		return err
@@ -122,11 +128,20 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 
 	usage, respErr := adaptor.DoResponse(c, resp, meta)
 	if respErr != nil {
+		logger.Errorf(c, "do response failed: %s", respErr)
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			respErr.StatusCode,
+			c.Request.URL.Path,
+			nil, meta, price, completionPrice, respErr.String(),
+		)
 		return respErr
 	}
 
 	ConsumeWaitGroup.Add(1)
-	go postConsumeAmount(consumeCtx,
+	go postConsumeAmount(context.Background(),
 		&ConsumeWaitGroup,
 		postGroupConsumer,
 		resp.StatusCode,

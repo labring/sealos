@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -47,7 +46,7 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	// pre-consume balance
 	promptTokens := getPromptTokens(textRequest, meta.Mode)
 	meta.PromptTokens = promptTokens
-	ok, postGroupConsume, err := preCheckGroupBalance(ctx, textRequest, promptTokens, price, meta)
+	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, textRequest, promptTokens, price, meta)
 	if err != nil {
 		logger.Errorf(ctx, "get group (%s) balance failed: %s", meta.Group, err)
 		return openai.ErrorWrapper(
@@ -78,15 +77,23 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	resp, err := adaptor.DoRequest(c, meta, requestBody)
 	if err != nil {
 		logger.Errorf(ctx, "do request failed: %s", err.Error())
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			postGroupConsumer,
+			http.StatusInternalServerError,
+			c.Request.URL.Path,
+			nil, meta, price, completionPrice, err.Error(),
+		)
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
-	consumeCtx := context.WithValue(context.Background(), helper.RequestIDKey, ctx.Value(helper.RequestIDKey))
+
 	if isErrorHappened(meta, resp) {
 		err := RelayErrorHandler(resp)
 		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(consumeCtx,
+		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
-			postGroupConsume,
+			postGroupConsumer,
 			resp.StatusCode,
 			c.Request.URL.Path,
 			nil,
@@ -103,9 +110,9 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if respErr != nil {
 		logger.Errorf(ctx, "do response failed: %s", respErr)
 		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(consumeCtx,
+		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
-			postGroupConsume,
+			postGroupConsumer,
 			respErr.StatusCode,
 			c.Request.URL.Path,
 			usage,
@@ -118,9 +125,9 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	}
 	// post-consume amount
 	ConsumeWaitGroup.Add(1)
-	go postConsumeAmount(consumeCtx,
+	go postConsumeAmount(context.Background(),
 		&ConsumeWaitGroup,
-		postGroupConsume,
+		postGroupConsumer,
 		resp.StatusCode,
 		c.Request.URL.Path,
 		usage, meta, price, completionPrice, "",
