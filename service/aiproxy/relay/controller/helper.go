@@ -54,20 +54,29 @@ func getPromptTokens(textRequest *relaymodel.GeneralOpenAIRequest, relayMode int
 	return 0
 }
 
-func getPreConsumedAmount(textRequest *relaymodel.GeneralOpenAIRequest, promptTokens int, price float64) float64 {
-	preConsumedTokens := int64(promptTokens)
-	if textRequest.MaxTokens != 0 {
-		preConsumedTokens += int64(textRequest.MaxTokens)
+type PreCheckGroupBalanceReq struct {
+	PromptTokens int
+	MaxTokens    int
+	Price        float64
+}
+
+func getPreConsumedAmount(req *PreCheckGroupBalanceReq) float64 {
+	if req.Price == 0 || (req.PromptTokens == 0 && req.MaxTokens == 0) {
+		return 0
+	}
+	preConsumedTokens := int64(req.PromptTokens)
+	if req.MaxTokens != 0 {
+		preConsumedTokens += int64(req.MaxTokens)
 	}
 	return decimal.
 		NewFromInt(preConsumedTokens).
-		Mul(decimal.NewFromFloat(price)).
+		Mul(decimal.NewFromFloat(req.Price)).
 		Div(decimal.NewFromInt(billingprice.PriceUnit)).
 		InexactFloat64()
 }
 
-func preCheckGroupBalance(ctx context.Context, textRequest *relaymodel.GeneralOpenAIRequest, promptTokens int, price float64, meta *meta.Meta) (bool, balance.PostGroupConsumer, error) {
-	preConsumedAmount := getPreConsumedAmount(textRequest, promptTokens, price)
+func preCheckGroupBalance(ctx context.Context, req *PreCheckGroupBalanceReq, meta *meta.Meta) (bool, balance.PostGroupConsumer, error) {
+	preConsumedAmount := getPreConsumedAmount(req)
 
 	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
 	if err != nil {

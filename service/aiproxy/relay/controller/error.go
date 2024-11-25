@@ -2,13 +2,17 @@ package controller
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 type GeneralErrorResponse struct {
@@ -52,7 +56,7 @@ func (e GeneralErrorResponse) ToMessage() string {
 	return ""
 }
 
-func RelayErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
+func RelayErrorHandler(resp *http.Response, relayMode int) *model.ErrorWithStatusCode {
 	if resp == nil {
 		return &model.ErrorWithStatusCode{
 			StatusCode: 500,
@@ -63,7 +67,49 @@ func RelayErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
 			},
 		}
 	}
+	switch relayMode {
+	case relaymode.Rerank:
+		return RerankErrorHandler(resp)
+	default:
+		return RelayDefaultErrorHanlder(resp)
+	}
+}
+
+func RerankErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
 	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &model.ErrorWithStatusCode{
+			StatusCode: resp.StatusCode,
+			Error: model.Error{
+				Message: err.Error(),
+				Type:    "upstream_error",
+				Code:    "bad_response",
+			},
+		}
+	}
+	trimmedRespBody := strings.Trim(conv.BytesToString(respBody), "\"")
+	return &model.ErrorWithStatusCode{
+		StatusCode: resp.StatusCode,
+		Error: model.Error{
+			Message: trimmedRespBody,
+			Type:    "upstream_error",
+			Code:    "bad_response",
+		},
+	}
+}
+
+func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &model.ErrorWithStatusCode{
+			StatusCode: resp.StatusCode,
+			Error: model.Error{
+				Message: err.Error(),
+			},
+		}
+	}
 
 	ErrorWithStatusCode := &model.ErrorWithStatusCode{
 		StatusCode: resp.StatusCode,
@@ -75,7 +121,7 @@ func RelayErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
 		},
 	}
 	var errResponse GeneralErrorResponse
-	err := json.NewDecoder(resp.Body).Decode(&errResponse)
+	err = json.Unmarshal(respBody, &errResponse)
 	if err != nil {
 		return ErrorWithStatusCode
 	}

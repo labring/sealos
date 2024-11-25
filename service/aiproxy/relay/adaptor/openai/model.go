@@ -73,6 +73,10 @@ type SlimTextResponse struct {
 	model.Usage `json:"usage"`
 }
 
+type SlimRerankResponse struct {
+	Meta model.RerankMeta `json:"meta"`
+}
+
 type TextResponseChoice struct {
 	FinishReason  string `json:"finish_reason"`
 	model.Message `json:"message"`

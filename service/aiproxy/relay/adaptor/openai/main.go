@@ -97,12 +97,13 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.E
 }
 
 func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
-	var textResponse SlimTextResponse
+	defer resp.Body.Close()
+
 	responseBody, err := io.ReadAll(resp.Body)
-	_ = resp.Body.Close()
 	if err != nil {
 		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
 	}
+	var textResponse SlimTextResponse
 	err = json.Unmarshal(responseBody, &textResponse)
 	if err != nil {
 		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
@@ -126,16 +127,47 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 		}
 	}
 
-	resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
-	defer resp.Body.Close()
-
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])
 	}
 	c.Writer.WriteHeader(resp.StatusCode)
 
-	_, _ = io.Copy(c.Writer, resp.Body)
+	_, _ = c.Writer.Write(responseBody)
 	return nil, &textResponse.Usage
+}
+
+func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+	}
+	var rerankResponse SlimRerankResponse
+	err = json.Unmarshal(responseBody, &rerankResponse)
+	if err != nil {
+		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+	}
+
+	c.Writer.WriteHeader(resp.StatusCode)
+
+	_, _ = c.Writer.Write(responseBody)
+
+	if rerankResponse.Meta.Tokens == nil {
+		return nil, &model.Usage{
+			PromptTokens:     promptTokens,
+			CompletionTokens: 0,
+			TotalTokens:      promptTokens,
+		}
+	}
+	if rerankResponse.Meta.Tokens.InputTokens <= 0 {
+		rerankResponse.Meta.Tokens.InputTokens = promptTokens
+	}
+	return nil, &model.Usage{
+		PromptTokens:     rerankResponse.Meta.Tokens.InputTokens,
+		CompletionTokens: rerankResponse.Meta.Tokens.OutputTokens,
+		TotalTokens:      rerankResponse.Meta.Tokens.InputTokens + rerankResponse.Meta.Tokens.OutputTokens,
+	}
 }
 
 func TTSHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {

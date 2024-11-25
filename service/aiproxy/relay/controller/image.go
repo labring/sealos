@@ -175,7 +175,7 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	}
 
 	if isErrorHappened(meta, resp) {
-		err := RelayErrorHandler(resp)
+		err := RelayErrorHandler(resp, meta.Mode)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
