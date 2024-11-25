@@ -58,8 +58,8 @@ export async function GET(req: NextRequest) {
       return jsonRes({ data: resp })
     }
 
-    // get ingresses and certificates and service
-    const [ingressesResponse, certificatesResponse, serviceResponse] = await Promise.all([
+    // get ingresses and service
+    const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sCustomObjects.listNamespacedCustomObject(
         'networking.k8s.io',
         'v1',
@@ -71,32 +71,24 @@ export async function GET(req: NextRequest) {
         undefined,
         `${devboxKey}=${devboxName}`
       ),
-      k8sCustomObjects.listNamespacedCustomObject(
-        'cert-manager.io',
-        'v1',
-        namespace,
-        'certificates',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `${devboxKey}=${devboxName}`
-      ),
       k8sCore.readNamespacedService(devboxName, namespace).catch(() => null)
     ])
     const ingresses: any = ingressesResponse.body
-    const certificates: any = certificatesResponse.body
     const service = serviceResponse?.body
 
-    const customDomain = certificates.items[0]?.spec.dnsNames[0]
-    const ingressList = ingresses.items.map((item: any) => ({
-      networkName: item.metadata.name,
-      port: item.spec.rules[0].http.paths[0].backend.service.port.number,
-      protocol: item.metadata.annotations['nginx.ingress.kubernetes.io/backend-protocol'],
-      openPublicDomain: !!item.metadata.labels[publicDomainKey],
-      publicDomain: item.spec.tls[0].hosts[0],
-      customDomain: customDomain || ''
-    }))
+    const ingressList = ingresses.items.map((item: any) => {
+      const defaultDomain = item.metadata.labels['cloud.sealos.io/app-deploy-manager-domain']
+      const tlsHost = item.spec.tls[0].hosts[0]
+
+      return {
+        networkName: item.metadata.name,
+        port: item.spec.rules[0].http.paths[0].backend.service.port.number,
+        protocol: item.metadata.annotations['nginx.ingress.kubernetes.io/backend-protocol'],
+        openPublicDomain: !!item.metadata.labels[publicDomainKey],
+        publicDomain: defaultDomain === tlsHost ? tlsHost : defaultDomain,
+        customDomain: defaultDomain === tlsHost ? '' : tlsHost
+      }
+    })
 
     resp.portInfos = devboxBody.spec.network.extraPorts.map((network: any) => {
       const matchingIngress = ingressList.find(
