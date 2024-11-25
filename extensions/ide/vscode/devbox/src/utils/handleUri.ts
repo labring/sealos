@@ -16,6 +16,12 @@ export class UriHandler {
       return
     }
 
+    if (uri.scheme === 'cursor') {
+      vscode.window.showInformationMessage(
+        "Cursor's Devbox is often not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referenced this [URI](https://www.cursor.com/how-to-install-extension)."
+      )
+    }
+
     const queryParams = new URLSearchParams(uri.query)
     const params = this.extractParams(queryParams)
 
