@@ -79,7 +79,7 @@ func ForceRateLimit(ctx context.Context, key string, maxRequestNum int, duration
 	return MemoryRateLimit(ctx, key, maxRequestNum, duration)
 }
 
-func MemoryRateLimit(ctx context.Context, key string, maxRequestNum int, duration time.Duration) bool {
+func MemoryRateLimit(_ context.Context, key string, maxRequestNum int, duration time.Duration) bool {
 	// It's safe to call multi times.
 	inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
 	return inMemoryRateLimiter.Request(key, maxRequestNum, duration)
