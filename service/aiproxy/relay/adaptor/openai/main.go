@@ -136,7 +136,7 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 	return nil, &textResponse.Usage
 }
 
-func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
+func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, _ *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
