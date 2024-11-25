@@ -22,6 +22,10 @@ func Distribute(c *gin.Context) {
 		return
 	}
 	requestModel := c.GetString(ctxkey.RequestModel)
+	if requestModel == "" {
+		abortWithMessage(c, http.StatusBadRequest, "no model provided")
+		return
+	}
 	var channel *model.Channel
 	channelID, ok := c.Get(ctxkey.SpecificChannelID)
 	if ok {
