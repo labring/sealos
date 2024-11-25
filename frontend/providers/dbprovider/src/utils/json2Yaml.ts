@@ -1037,11 +1037,11 @@ export const json2NetworkService = ({
     mongodb: 27017,
     'apecloud-mysql': 3306,
     redis: 6379,
-    kafka: '',
+    kafka: 9092,
     qdrant: '',
     nebula: '',
     weaviate: '',
-    milvus: ''
+    milvus: 19530
   };
   const labelMap = {
     postgresql: {
@@ -1056,11 +1056,15 @@ export const json2NetworkService = ({
     redis: {
       'kubeblocks.io/role': 'primary'
     },
-    kafka: {},
+    kafka: {
+      'apps.kubeblocks.io/component-name': 'kafka-broker'
+    },
     qdrant: {},
     nebula: {},
     weaviate: {},
-    milvus: {}
+    milvus: {
+      'apps.kubeblocks.io/component-name': 'milvus'
+    }
   };
 
   const template = {
@@ -1070,7 +1074,9 @@ export const json2NetworkService = ({
       name: `${dbDetail.dbName}-export`,
       labels: {
         'app.kubernetes.io/instance': dbDetail.dbName,
-        'apps.kubeblocks.io/component-name': dbDetail.dbType
+        'app.kubernetes.io/managed-by': 'kubeblocks',
+        'apps.kubeblocks.io/component-name': dbDetail.dbType,
+        ...labelMap[dbDetail.dbType]
       },
       ownerReferences: [
         {
@@ -1094,6 +1100,7 @@ export const json2NetworkService = ({
       ],
       selector: {
         'app.kubernetes.io/instance': dbDetail.dbName,
+        'app.kubernetes.io/managed-by': 'kubeblocks',
         ...labelMap[dbDetail.dbType]
       },
       type: 'NodePort'

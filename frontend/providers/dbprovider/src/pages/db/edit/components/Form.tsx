@@ -330,6 +330,10 @@ const Form = ({
                       pattern: {
                         value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/g,
                         message: t('database_name_regex_error')
+                      },
+                      maxLength: {
+                        value: 30,
+                        message: t('database_name_max_length', { length: 30 })
                       }
                     })}
                   />

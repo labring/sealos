@@ -324,37 +324,34 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             >
               <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
-            {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
-              <>
-                <Center
-                  className="driver-detail-terminal-button"
-                  gap={'6px'}
-                  h="28px"
-                  fontSize={'12px'}
-                  bg="grayModern.150"
-                  borderRadius={'md'}
-                  px="8px"
-                  cursor={'pointer'}
-                  fontWeight={'bold'}
-                  onClick={() => onclickConnectDB()}
-                  _hover={{
-                    color: 'brightBlue.600'
-                  }}
-                >
-                  <MyIcon name="terminal" w="16px" h="16px" />
-                  {t('direct_connection')}
-                </Center>
-                <Center ml="auto">
-                  <Text color={'grayModern.900'}> {t('external_network')} </Text>
-                  <Switch
-                    ml="12px"
-                    size="md"
-                    isChecked={isChecked}
-                    onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
-                  />
-                </Center>
-              </>
-            )}
+
+            <Center
+              className="driver-detail-terminal-button"
+              gap={'6px'}
+              h="28px"
+              fontSize={'12px'}
+              bg="grayModern.150"
+              borderRadius={'md'}
+              px="8px"
+              cursor={'pointer'}
+              fontWeight={'bold'}
+              onClick={() => onclickConnectDB()}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
+            >
+              <MyIcon name="terminal" w="16px" h="16px" />
+              {t('direct_connection')}
+            </Center>
+            <Center ml="auto">
+              <Text color={'grayModern.900'}> {t('external_network')} </Text>
+              <Switch
+                ml="12px"
+                size="md"
+                isChecked={isChecked}
+                onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
+              />
+            </Center>
           </Flex>
           {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
             <Box
@@ -454,7 +451,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   {t('billing_standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
-                  <Text mr={'8px'}>{SOURCE_PRICE.nodeports}</Text>
+                  <Text mr={'8px'}>{SOURCE_PRICE.nodeports.toFixed(3)}</Text>
                   <CurrencySymbol
                     type={SystemEnv.CurrencySymbol}
                     shellCoin={{

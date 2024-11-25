@@ -316,5 +316,6 @@
   "within_1_hour": "一小时内",
   "within_5_minutes": "五分钟内",
   "yaml_file": "YAML 文件",
-  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！"
+  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
+  "database_name_max_length": "数据库名长度不能超过 {{length}} 个字符"
 }
