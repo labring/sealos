@@ -101,7 +101,7 @@ func testChannel(channel *model.Channel, request *relaymodel.GeneralOpenAIReques
 		return nil, err
 	}
 	if resp != nil && resp.StatusCode != http.StatusOK {
-		err := controller.RelayErrorHandler(resp)
+		err := controller.RelayErrorHandler(resp, meta.Mode)
 		return &err.Error, errors.New(err.Error.Message)
 	}
 	usage, respErr := adaptor.DoResponse(c, resp, meta)

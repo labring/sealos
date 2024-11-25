@@ -22,6 +22,8 @@ func GetByPath(path string) int {
 		return AudioTranscription
 	case strings.HasPrefix(path, "/v1/audio/translations"):
 		return AudioTranslation
+	case strings.HasPrefix(path, "/v1/rerank"):
+		return Rerank
 	default:
 		return Unknown
 	}

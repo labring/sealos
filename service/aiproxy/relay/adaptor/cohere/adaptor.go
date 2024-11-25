@@ -7,8 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 type Adaptor struct{}
@@ -53,7 +55,12 @@ func (a *Adaptor) ConvertTTSRequest(*model.TextToSpeechRequest) (any, error) {
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
 	if meta.IsStream {
 		err, usage = StreamHandler(c, resp)
-	} else {
+		return
+	}
+	switch meta.Mode {
+	case relaymode.Rerank:
+		err, usage = openai.RerankHandler(c, resp, meta.PromptTokens, meta)
+	default:
 		err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
 	}
 	return

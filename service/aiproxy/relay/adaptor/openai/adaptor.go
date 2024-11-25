@@ -185,17 +185,19 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 			usage.PromptTokens = meta.PromptTokens
 			usage.CompletionTokens = usage.TotalTokens - meta.PromptTokens
 		}
-	} else {
-		switch meta.Mode {
-		case relaymode.ImagesGenerations:
-			err, _ = ImageHandler(c, resp)
-		case relaymode.AudioTranscription:
-			err, usage = STTHandler(c, resp, meta, a.responseFormat)
-		case relaymode.AudioSpeech:
-			err, usage = TTSHandler(c, resp, meta)
-		default:
-			err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
-		}
+		return
+	}
+	switch meta.Mode {
+	case relaymode.ImagesGenerations:
+		err, _ = ImageHandler(c, resp)
+	case relaymode.AudioTranscription:
+		err, usage = STTHandler(c, resp, meta, a.responseFormat)
+	case relaymode.AudioSpeech:
+		err, usage = TTSHandler(c, resp, meta)
+	case relaymode.Rerank:
+		err, usage = RerankHandler(c, resp, meta.PromptTokens, meta)
+	default:
+		err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
 	}
 	return
 }

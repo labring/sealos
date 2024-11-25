@@ -7,34 +7,34 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
-func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
+func RerankHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	ctx := c.Request.Context()
 	meta := meta.GetByContext(c)
-	textRequest, err := getAndValidateTextRequest(c, meta.Mode)
+	rerankRequest, err := getRerankRequest(c)
 	if err != nil {
-		logger.Errorf(ctx, "get and validate text request failed: %s", err.Error())
-		return openai.ErrorWrapper(err, "invalid_text_request", http.StatusBadRequest)
+		logger.Errorf(ctx, "get rerank request failed: %s", err.Error())
+		return openai.ErrorWrapper(err, "invalid_rerank_request", http.StatusBadRequest)
 	}
-	meta.IsStream = textRequest.Stream
 
-	// map model name
-	meta.OriginModelName = textRequest.Model
-	textRequest.Model, _ = getMappedModelName(textRequest.Model, meta.ModelMapping)
-	meta.ActualModelName = textRequest.Model
+	meta.OriginModelName = rerankRequest.Model
+	rerankRequest.Model, _ = getMappedModelName(rerankRequest.Model, meta.ModelMapping)
+	meta.ActualModelName = rerankRequest.Model
 
-	// get model price
 	price, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName, meta.ChannelType)
 	if !ok {
 		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
@@ -43,12 +43,11 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if !ok {
 		return openai.ErrorWrapper(fmt.Errorf("completion price not found: %s", meta.OriginModelName), "completion_price_not_found", http.StatusInternalServerError)
 	}
-	// pre-consume balance
-	promptTokens := getPromptTokens(textRequest, meta.Mode)
-	meta.PromptTokens = promptTokens
+
+	meta.PromptTokens = rerankPromptTokens(rerankRequest)
+
 	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
-		PromptTokens: promptTokens,
-		MaxTokens:    textRequest.MaxTokens,
+		PromptTokens: meta.PromptTokens,
 		Price:        price,
 	}, meta)
 	if err != nil {
@@ -67,20 +66,16 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if adaptor == nil {
 		return openai.ErrorWrapper(fmt.Errorf("invalid api type: %d", meta.APIType), "invalid_api_type", http.StatusBadRequest)
 	}
-	adaptor.Init(meta)
 
-	// get request body
-	requestBody, err := getRequestBody(c, meta, textRequest, adaptor)
+	requestBody, err := getRerankRequestBody(c, meta, rerankRequest, adaptor)
 	if err != nil {
-		logger.Errorf(ctx, "get request body failed: %s", err.Error())
-		return openai.ErrorWrapper(err, "convert_request_failed", http.StatusInternalServerError)
+		logger.Errorf(ctx, "get rerank request body failed: %s", err.Error())
+		return openai.ErrorWrapper(err, "invalid_rerank_request", http.StatusBadRequest)
 	}
-	logger.Debugf(ctx, "converted request: \n%s", requestBody)
 
-	// do request
 	resp, err := adaptor.DoRequest(c, meta, requestBody)
 	if err != nil {
-		logger.Errorf(ctx, "do request failed: %s", err.Error())
+		logger.Errorf(ctx, "do rerank request failed: %s", err.Error())
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
@@ -93,7 +88,7 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	}
 
 	if isErrorHappened(meta, resp) {
-		err := RelayErrorHandler(resp, meta.Mode)
+		err := RelayErrorHandler(resp, relaymode.Rerank)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
@@ -109,44 +104,59 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		return err
 	}
 
-	// do response
 	usage, respErr := adaptor.DoResponse(c, resp, meta)
 	if respErr != nil {
-		logger.Errorf(ctx, "do response failed: %s", respErr)
+		logger.Errorf(ctx, "do rerank response failed: %+v", respErr)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
 			postGroupConsumer,
-			respErr.StatusCode,
+			http.StatusInternalServerError,
 			c.Request.URL.Path,
-			usage,
-			meta,
-			price,
-			completionPrice,
-			respErr.String(),
+			usage, meta, price, completionPrice, respErr.String(),
 		)
 		return respErr
 	}
-	// post-consume amount
+
 	ConsumeWaitGroup.Add(1)
 	go postConsumeAmount(context.Background(),
 		&ConsumeWaitGroup,
 		postGroupConsumer,
-		resp.StatusCode,
+		http.StatusOK,
 		c.Request.URL.Path,
 		usage, meta, price, completionPrice, "",
 	)
+
 	return nil
 }
 
-func getRequestBody(c *gin.Context, meta *meta.Meta, textRequest *model.GeneralOpenAIRequest, adaptor adaptor.Adaptor) (io.Reader, error) {
-	convertedRequest, err := adaptor.ConvertRequest(c, meta.Mode, textRequest)
+func getRerankRequest(c *gin.Context) (*relaymodel.RerankRequest, error) {
+	rerankRequest := &relaymodel.RerankRequest{}
+	err := common.UnmarshalBodyReusable(c, rerankRequest)
 	if err != nil {
 		return nil, err
 	}
-	jsonData, err := json.Marshal(convertedRequest)
+	if rerankRequest.Model == "" {
+		return nil, errors.New("model parameter must be provided")
+	}
+	if rerankRequest.Query == "" {
+		return nil, errors.New("query must not be empty")
+	}
+	if len(rerankRequest.Documents) == 0 {
+		return nil, errors.New("document list must not be empty")
+	}
+
+	return rerankRequest, nil
+}
+
+func getRerankRequestBody(_ *gin.Context, _ *meta.Meta, textRequest *relaymodel.RerankRequest, _ adaptor.Adaptor) (io.Reader, error) {
+	jsonData, err := json.Marshal(textRequest)
 	if err != nil {
 		return nil, err
 	}
 	return bytes.NewReader(jsonData), nil
+}
+
+func rerankPromptTokens(rerankRequest *relaymodel.RerankRequest) int {
+	return len(rerankRequest.Query) + len(strings.Join(rerankRequest.Documents, ""))
 }

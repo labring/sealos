@@ -26,8 +26,6 @@ func getRequestModel(c *gin.Context) (string, error) {
 	switch {
 	case strings.HasPrefix(path, "/v1/moderations"):
 		return "text-moderation-stable", nil
-	case strings.HasSuffix(path, "embeddings"):
-		return c.Param("model"), nil
 	case strings.HasPrefix(path, "/v1/images/generations"):
 		return "dall-e-2", nil
 	case strings.HasPrefix(path, "/v1/audio/transcriptions"), strings.HasPrefix(path, "/v1/audio/translations"):
