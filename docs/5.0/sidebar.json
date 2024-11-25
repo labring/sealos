@@ -44,6 +44,7 @@
             "user-guide/system-function/work-order/work-order"
           ]
         },
+        "user-guide/ai-proxy/ai-proxy",
         "user-guide/app-store/app-store",
         {
           "type": "category",
