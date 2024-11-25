@@ -92,7 +92,10 @@ func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) 
 		case corev1.PodPending:
 			return devboxv1alpha1.DevboxPhasePending
 		case corev1.PodRunning:
-			return devboxv1alpha1.DevboxPhaseRunning
+			if podList.Items[0].Status.ContainerStatuses[0].Ready && podList.Items[0].Status.ContainerStatuses[0].ContainerID != "" {
+				return devboxv1alpha1.DevboxPhaseRunning
+			}
+			return devboxv1alpha1.DevboxPhasePending
 		}
 	case devboxv1alpha1.DevboxStateStopped:
 		if len(podList.Items) == 0 {
@@ -144,7 +147,7 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) {
 	for i, c := range devbox.Status.CommitHistory {
 		if c.Pod == pod.Name {
-			devbox.Status.CommitHistory[i].PredicatedStatus = PodPhaseToCommitStatus(pod.Status.Phase)
+			devbox.Status.CommitHistory[i].PredicatedStatus = PredicateCommitStatus(pod)
 			break
 		}
 	}
@@ -178,7 +181,7 @@ func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateS
 	if !found {
 		newCommitHistory := &devboxv1alpha1.CommitHistory{
 			Pod:              pod.Name,
-			PredicatedStatus: PodPhaseToCommitStatus(pod.Status.Phase),
+			PredicatedStatus: PredicateCommitStatus(pod),
 		}
 		if len(pod.Status.ContainerStatuses) > 0 {
 			newCommitHistory.ContainerID = pod.Status.ContainerStatuses[0].ContainerID
@@ -191,14 +194,21 @@ func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateS
 	}
 }
 
-func PodPhaseToCommitStatus(podPhase corev1.PodPhase) devboxv1alpha1.CommitStatus {
-	switch podPhase {
-	case corev1.PodPending:
-		return devboxv1alpha1.CommitStatusPending
-	case corev1.PodRunning, corev1.PodFailed, corev1.PodSucceeded:
-		return devboxv1alpha1.CommitStatusSuccess
+func podContainerID(pod *corev1.Pod) string {
+	if len(pod.Status.ContainerStatuses) > 0 {
+		return pod.Status.ContainerStatuses[0].ContainerID
 	}
-	return devboxv1alpha1.CommitStatusUnknown
+	return ""
+}
+
+// PredicateCommitStatus returns the commit status of the pod
+// if the pod container id is empty, it means the pod is pending or has't started, we can assume the image has not been committed
+// otherwise, it means the pod has been started, we can assume the image has been committed
+func PredicateCommitStatus(pod *corev1.Pod) devboxv1alpha1.CommitStatus {
+	if podContainerID(pod) == "" {
+		return devboxv1alpha1.CommitStatusPending
+	}
+	return devboxv1alpha1.CommitStatusSuccess
 }
 
 func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
