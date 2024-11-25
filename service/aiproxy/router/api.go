@@ -29,6 +29,10 @@ func SetAPIRouter(router *gin.Engine) {
 		apiRouter.GET("/models/enabled/channel/price", controller.EnabledType2ModelsAndPrice)
 		apiRouter.GET("/models/enabled/default", controller.ChannelDefaultModels)
 		apiRouter.GET("/models/enabled/default/:type", controller.ChannelDefaultModelsByType)
+		apiRouter.GET("/models/enabled/mapping/default", controller.ChannelDefaultModelMapping)
+		apiRouter.GET("/models/enabled/mapping/default/:type", controller.ChannelDefaultModelMappingByType)
+		apiRouter.GET("/models/enabled/all/default", controller.ChannelDefaultModelsAndMapping)
+		apiRouter.GET("/models/enabled/all/default/:type", controller.ChannelDefaultModelsAndMappingByType)
 
 		groupsRoute := apiRouter.Group("/groups")
 		{

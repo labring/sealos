@@ -231,6 +231,76 @@ func ChannelDefaultModelsByType(c *gin.Context) {
 	})
 }
 
+func ChannelDefaultModelMapping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    config.GetDefaultChannelModelMapping(),
+	})
+}
+
+func ChannelDefaultModelMappingByType(c *gin.Context) {
+	channelType := c.Param("type")
+	if channelType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "type is required",
+		})
+		return
+	}
+	channelTypeInt, err := strconv.Atoi(channelType)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "invalid type",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    config.GetDefaultChannelModelMapping()[channelTypeInt],
+	})
+}
+
+func ChannelDefaultModelsAndMapping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"models":  config.GetDefaultChannelModels(),
+			"mapping": config.GetDefaultChannelModelMapping(),
+		},
+	})
+}
+
+func ChannelDefaultModelsAndMappingByType(c *gin.Context) {
+	channelType := c.Param("type")
+	if channelType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "type is required",
+		})
+		return
+	}
+	channelTypeInt, err := strconv.Atoi(channelType)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "invalid type",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"models":  config.GetDefaultChannelModels()[channelTypeInt],
+			"mapping": config.GetDefaultChannelModelMapping()[channelTypeInt],
+		},
+	})
+}
+
 func EnabledModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
