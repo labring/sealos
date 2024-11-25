@@ -17,14 +17,14 @@ var (
 // InitRedisClient This function is called after init()
 func InitRedisClient() (err error) {
 	if os.Getenv("REDIS_CONN_STRING") == "" {
-		logger.SysLog("REDIS_CONN_STRING not set, Redis is not enabled")
+		logger.SysLog("REDIS_CONN_STRING not set, redis is not enabled")
 		return nil
 	}
 	RedisEnabled = true
-	logger.SysLog("Redis is enabled")
+	logger.SysLog("redis is enabled")
 	opt, err := redis.ParseURL(os.Getenv("REDIS_CONN_STRING"))
 	if err != nil {
-		logger.FatalLog("failed to parse Redis connection string: " + err.Error())
+		logger.FatalLog("failed to parse redis connection string: " + err.Error())
 	}
 	RDB = redis.NewClient(opt)
 
@@ -33,7 +33,7 @@ func InitRedisClient() (err error) {
 
 	_, err = RDB.Ping(ctx).Result()
 	if err != nil {
-		logger.FatalLog("Redis ping test failed: " + err.Error())
+		logger.FatalLog("redis ping test failed: " + err.Error())
 	}
 	return err
 }

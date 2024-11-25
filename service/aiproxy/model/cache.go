@@ -122,7 +122,7 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 	}
 
 	if err := CacheSetToken(token); err != nil {
-		logger.SysError("Redis set token error: " + err.Error())
+		logger.SysError("redis set token error: " + err.Error())
 	}
 
 	return token.ToTokenCache(), nil
@@ -264,7 +264,7 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 	}
 
 	if err := CacheSetGroup(group); err != nil {
-		logger.SysError("Redis set group error: " + err.Error())
+		logger.SysError("redis set group error: " + err.Error())
 	}
 
 	return group.ToGroupCache(), nil
