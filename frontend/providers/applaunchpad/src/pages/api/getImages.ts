@@ -11,7 +11,7 @@ const PASSWORD = process.env.IMAGE_REPO_PASSWORD;
 const authHeader = 'Basic ' + Buffer.from(`${USERNAME}:${PASSWORD}`).toString('base64');
 
 export async function fetchCatalog() {
-  const response = await fetch(`${BASE_URL}/_catalog`, {
+  const response = await fetch(`${BASE_URL}/_catalog?n=1000`, {
     headers: {
       Authorization: authHeader
     }
