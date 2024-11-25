@@ -2,13 +2,13 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/logger"
 )
 
 var inMemoryRateLimiter common.InMemoryRateLimiter
@@ -61,9 +61,28 @@ func RateLimit(ctx context.Context, key string, maxRequestNum int, duration time
 	if common.RedisEnabled {
 		return redisRateLimitRequest(ctx, key, maxRequestNum, duration)
 	}
+	return MemoryRateLimit(ctx, key, maxRequestNum, duration), nil
+}
+
+// ignore redis error
+func ForceRateLimit(ctx context.Context, key string, maxRequestNum int, duration time.Duration) bool {
+	if maxRequestNum == 0 {
+		return true
+	}
+	if common.RedisEnabled {
+		ok, err := redisRateLimitRequest(ctx, key, maxRequestNum, duration)
+		if err == nil {
+			return ok
+		}
+		logger.Error(ctx, "rate limit error: "+err.Error())
+	}
+	return MemoryRateLimit(ctx, key, maxRequestNum, duration)
+}
+
+func MemoryRateLimit(_ context.Context, key string, maxRequestNum int, duration time.Duration) bool {
 	// It's safe to call multi times.
 	inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
-	return inMemoryRateLimiter.Request(key, maxRequestNum, duration), nil
+	return inMemoryRateLimiter.Request(key, maxRequestNum, duration)
 }
 
 func GlobalAPIRateLimit(c *gin.Context) {
@@ -72,13 +91,7 @@ func GlobalAPIRateLimit(c *gin.Context) {
 		c.Next()
 		return
 	}
-	ok, err := RateLimit(c.Request.Context(), "global_qpm", int(globalAPIRateLimitNum), time.Minute)
-	if err != nil {
-		fmt.Println(err.Error())
-		c.Status(http.StatusInternalServerError)
-		c.Abort()
-		return
-	}
+	ok := ForceRateLimit(c.Request.Context(), "global_qpm", int(globalAPIRateLimitNum), time.Minute)
 	if !ok {
 		c.Status(http.StatusTooManyRequests)
 		c.Abort()

@@ -93,11 +93,7 @@ func TokenAuth(c *gin.Context) {
 	}
 
 	if group.QPM > 0 {
-		ok, err := RateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
-		if err != nil {
-			abortWithMessage(c, http.StatusInternalServerError, err.Error())
-			return
-		}
+		ok := ForceRateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
 		if !ok {
 			abortWithMessage(c, http.StatusTooManyRequests,
 				group.ID+" is requesting too frequently",
