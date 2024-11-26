@@ -88,9 +88,8 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	}
 
 	// map model name
-	var isModelMapped bool
 	meta.OriginModelName = imageRequest.Model
-	imageRequest.Model, isModelMapped = getMappedModelName(imageRequest.Model, meta.ModelMapping)
+	imageRequest.Model, _ = getMappedModelName(imageRequest.Model, meta.ModelMapping)
 	meta.ActualModelName = imageRequest.Model
 
 	// model validation
@@ -129,15 +128,11 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 		}
 		requestBody = bytes.NewReader(jsonStr)
 	default:
-		if isModelMapped || meta.ChannelType == channeltype.Azure { // make Azure channel request body
-			jsonStr, err := json.Marshal(imageRequest)
-			if err != nil {
-				return openai.ErrorWrapper(err, "marshal_image_request_failed", http.StatusInternalServerError)
-			}
-			requestBody = bytes.NewReader(jsonStr)
-		} else {
-			requestBody = c.Request.Body
+		jsonStr, err := json.Marshal(imageRequest)
+		if err != nil {
+			return openai.ErrorWrapper(err, "marshal_image_request_failed", http.StatusInternalServerError)
 		}
+		requestBody = bytes.NewReader(jsonStr)
 	}
 
 	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
