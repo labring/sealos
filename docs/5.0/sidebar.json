@@ -88,8 +88,8 @@
           },
           "items": [
             "user-guide/devbox/quick-start",
+            "user-guide/devbox/use-jetbrains-ide",
             "user-guide/devbox/faq"
-
           ]
         }
       ]
