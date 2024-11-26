@@ -10,7 +10,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
-	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 )
 
 type Option struct {
@@ -24,16 +23,14 @@ func AllOption() ([]*Option, error) {
 	return options, err
 }
 
-func InitOptionMap() {
+func InitOptionMap() error {
 	config.OptionMapRWMutex.Lock()
 	config.OptionMap = make(map[string]string)
 	config.OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
 	config.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
 	config.OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
 	config.OptionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
-	config.OptionMap["BillingEnabled"] = strconv.FormatBool(billingprice.GetBillingEnabled())
-	config.OptionMap["ModelPrice"] = billingprice.ModelPrice2JSONString()
-	config.OptionMap["CompletionPrice"] = billingprice.CompletionPrice2JSONString()
+	config.OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	config.OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
 	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
 	config.OptionMap["DefaultGroupQPM"] = strconv.FormatInt(config.GetDefaultGroupQPM(), 10)
@@ -45,29 +42,32 @@ func InitOptionMap() {
 	config.OptionMap["GeminiVersion"] = config.GetGeminiVersion()
 	config.OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
 	config.OptionMapRWMutex.Unlock()
-	loadOptionsFromDatabase()
+	return loadOptionsFromDatabase()
 }
 
-func loadOptionsFromDatabase() {
-	options, _ := AllOption()
+func loadOptionsFromDatabase() error {
+	logger.SysDebug("syncing options from database")
+	options, err := AllOption()
+	if err != nil {
+		return err
+	}
 	for _, option := range options {
-		if option.Key == "ModelPrice" {
-			option.Value = billingprice.AddNewMissingPrice(option.Value)
-		}
 		err := updateOptionMap(option.Key, option.Value)
-		if err != nil {
-			logger.SysError("failed to update option map: " + err.Error())
+		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
+			logger.SysErrorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
 		}
 	}
 	logger.SysDebug("options synced from database")
+	return nil
 }
 
 func SyncOptions(frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 	for range ticker.C {
-		logger.SysDebug("syncing options from database")
-		loadOptionsFromDatabase()
+		if err := loadOptionsFromDatabase(); err != nil {
+			logger.SysErrorf("failed to sync options from database: %s", err.Error())
+		}
 	}
 }
 
@@ -122,7 +122,7 @@ func updateOptionMap(key string, value string) (err error) {
 	case "ApproximateTokenEnabled":
 		config.SetApproximateTokenEnabled(isTrue(value))
 	case "BillingEnabled":
-		billingprice.SetBillingEnabled(isTrue(value))
+		config.SetBillingEnabled(isTrue(value))
 	case "GroupMaxTokenNum":
 		groupMaxTokenNum, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
@@ -151,6 +151,20 @@ func updateOptionMap(key string, value string) (err error) {
 		if err != nil {
 			return err
 		}
+		// check model config exist
+		allModelsMap := make(map[string]struct{})
+		for _, models := range newModules {
+			for _, model := range models {
+				allModelsMap[model] = struct{}{}
+			}
+		}
+		allModels := make([]string, 0, len(allModelsMap))
+		for model := range allModelsMap {
+			allModels = append(allModels, model)
+		}
+		if err := CheckModelConfig(allModels); err != nil {
+			return err
+		}
 		config.SetDefaultChannelModels(newModules)
 	case "DefaultChannelModelMapping":
 		var newMapping map[int]map[string]string
@@ -165,10 +179,6 @@ func updateOptionMap(key string, value string) (err error) {
 			return err
 		}
 		config.SetRetryTimes(retryTimes)
-	case "ModelPrice":
-		err = billingprice.UpdateModelPriceByJSONString(value)
-	case "CompletionPrice":
-		err = billingprice.UpdateCompletionPriceByJSONString(value)
 	default:
 		return ErrUnknownOptionKey
 	}

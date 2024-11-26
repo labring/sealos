@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/model"
 	channelhelper "github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -56,9 +57,8 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 	return adaptor.DoResponse(c, resp, meta)
 }
 
-func (a *Adaptor) GetModelList() (models []string) {
-	models = modelList
-	return
+func (a *Adaptor) GetModelList() []*model.ModelConfigItem {
+	return modelList
 }
 
 func (a *Adaptor) GetChannelName() string {

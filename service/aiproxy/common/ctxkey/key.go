@@ -1,5 +1,6 @@
 package ctxkey
 
+//nolint:gosec
 const (
 	Config            = "config"
 	Status            = "status"

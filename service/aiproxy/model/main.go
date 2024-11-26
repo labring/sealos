@@ -129,6 +129,7 @@ func migrateDB() error {
 		&Token{},
 		&Group{},
 		&Option{},
+		&ModelConfigItem{},
 	)
 	if err != nil {
 		return err

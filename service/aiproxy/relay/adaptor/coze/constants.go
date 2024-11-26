@@ -1,3 +1,5 @@
 package coze
 
-var ModelList = []string{}
+import "github.com/labring/sealos/service/aiproxy/model"
+
+var ModelList = []*model.ModelConfigItem{}

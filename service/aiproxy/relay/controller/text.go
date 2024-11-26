@@ -35,13 +35,9 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	meta.ActualModelName = textRequest.Model
 
 	// get model price
-	price, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName, meta.ChannelType)
+	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
 	if !ok {
 		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
-	}
-	completionPrice, ok := billingprice.GetCompletionPrice(meta.OriginModelName, meta.ActualModelName, meta.ChannelType)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("completion price not found: %s", meta.OriginModelName), "completion_price_not_found", http.StatusInternalServerError)
 	}
 	// pre-consume balance
 	promptTokens := getPromptTokens(textRequest, meta.Mode)

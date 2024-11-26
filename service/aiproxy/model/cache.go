@@ -84,6 +84,7 @@ func CacheDeleteToken(key string) error {
 	return common.RedisDel(fmt.Sprintf(TokenCacheKey, key))
 }
 
+//nolint:gosec
 func CacheSetToken(token *Token) error {
 	if !common.RedisEnabled {
 		return nil
@@ -112,7 +113,7 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 	if err == nil && tokenCache.ID != 0 {
 		tokenCache.Key = key
 		return tokenCache, nil
-	} else if err != nil && err != redis.Nil {
+	} else if err != nil && !errors.Is(err, redis.Nil) {
 		logger.SysLogf("get token (%s) from redis error: %s", key, err.Error())
 	}
 
@@ -226,6 +227,7 @@ func CacheUpdateGroupStatus(id string, status int) error {
 	return updateGroupStatusScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, status).Err()
 }
 
+//nolint:gosec
 func CacheSetGroup(group *Group) error {
 	if !common.RedisEnabled {
 		return nil
@@ -294,10 +296,13 @@ func CacheGetModelsByType(channelType int) []string {
 	return CacheGetType2Models()[channelType]
 }
 
-func InitChannelCache() {
+func InitChannelCache() error {
 	newChannelID2channel := make(map[int]*Channel)
 	var channels []*Channel
-	DB.Where("status = ?", ChannelStatusEnabled).Find(&channels)
+	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
+	if err != nil {
+		return err
+	}
 	for _, channel := range channels {
 		if len(channel.Models) == 0 {
 			channel.Models = config.GetDefaultChannelModels()[channel.Type]
@@ -347,7 +352,7 @@ func InitChannelCache() {
 	type2Models = newType2Models
 	channelID2channel = newChannelID2channel
 	channelSyncLock.Unlock()
-	logger.SysDebug("channels synced from database")
+	return nil
 }
 
 func SyncChannelCache(frequency time.Duration) {
@@ -355,10 +360,16 @@ func SyncChannelCache(frequency time.Duration) {
 	defer ticker.Stop()
 	for range ticker.C {
 		logger.SysDebug("syncing channels from database")
-		InitChannelCache()
+		err := InitChannelCache()
+		if err != nil {
+			logger.SysError("failed to sync channels: " + err.Error())
+			continue
+		}
+		logger.SysDebug("channels synced from database")
 	}
 }
 
+//nolint:gosec
 func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 	channelSyncLock.RLock()
 	channels := model2channels[model]
@@ -396,4 +407,46 @@ func CacheGetChannelByID(id int) (*Channel, bool) {
 	channel, ok := channelID2channel[id]
 	channelSyncLock.RUnlock()
 	return channel, ok
+}
+
+var (
+	modelConfigSyncLock sync.RWMutex
+	modelConfigMap      map[string]*ModelConfig
+)
+
+func InitModelConfigCache() error {
+	modelConfigs, err := GetAllModelConfigs()
+	if err != nil {
+		return err
+	}
+	newModelConfigMap := make(map[string]*ModelConfig)
+	for _, modelConfig := range modelConfigs {
+		newModelConfigMap[modelConfig.Model] = modelConfig
+	}
+
+	modelConfigSyncLock.Lock()
+	modelConfigMap = newModelConfigMap
+	modelConfigSyncLock.Unlock()
+	return nil
+}
+
+func SyncModelConfigCache(frequency time.Duration) {
+	ticker := time.NewTicker(frequency)
+	defer ticker.Stop()
+	for range ticker.C {
+		logger.SysDebug("syncing model configs from database")
+		err := InitModelConfigCache()
+		if err != nil {
+			logger.SysError("failed to sync model configs: " + err.Error())
+			continue
+		}
+		logger.SysDebug("model configs synced from database")
+	}
+}
+
+func CacheGetModelConfig(model string) (*ModelConfig, bool) {
+	modelConfigSyncLock.RLock()
+	modelConfig, ok := modelConfigMap[model]
+	modelConfigSyncLock.RUnlock()
+	return modelConfig, ok
 }

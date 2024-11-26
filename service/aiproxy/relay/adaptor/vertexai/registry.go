@@ -4,10 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/model"
 	claude "github.com/labring/sealos/service/aiproxy/relay/adaptor/vertexai/claude"
 	gemini "github.com/labring/sealos/service/aiproxy/relay/adaptor/vertexai/gemini"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 type ModelType int
@@ -19,24 +20,24 @@ const (
 
 var (
 	modelMapping = map[string]ModelType{}
-	modelList    = []string{}
+	modelList    = []*model.ModelConfigItem{}
 )
 
 func init() {
-	modelList = append(modelList, claude.ModelList...)
 	for _, model := range claude.ModelList {
-		modelMapping[model] = VerterAIClaude
+		modelMapping[model.Model] = VerterAIClaude
+		modelList = append(modelList, model)
 	}
 
-	modelList = append(modelList, gemini.ModelList...)
 	for _, model := range gemini.ModelList {
-		modelMapping[model] = VerterAIGemini
+		modelMapping[model.Model] = VerterAIGemini
+		modelList = append(modelList, model)
 	}
 }
 
 type innerAIAdapter interface {
-	ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error)
-	DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode)
+	ConvertRequest(c *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error)
+	DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode)
 }
 
 func GetAdaptor(model string) innerAIAdapter {

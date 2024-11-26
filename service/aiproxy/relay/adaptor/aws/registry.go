@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"github.com/labring/sealos/service/aiproxy/model"
 	claude "github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/claude"
 	llama3 "github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/llama3"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
@@ -13,20 +14,25 @@ const (
 	AwsLlama3
 )
 
-var adaptors = map[string]ModelType{}
+type Model struct {
+	config *model.ModelConfigItem
+	_type  ModelType
+}
+
+var adaptors = map[string]Model{}
 
 func init() {
-	for model := range claude.AwsModelIDMap {
-		adaptors[model] = AwsClaude
+	for _, model := range claude.AwsModelIDMap {
+		adaptors[model.Model] = Model{config: &model.ModelConfigItem, _type: AwsClaude}
 	}
-	for model := range llama3.AwsModelIDMap {
-		adaptors[model] = AwsLlama3
+	for _, model := range llama3.AwsModelIDMap {
+		adaptors[model.Model] = Model{config: &model.ModelConfigItem, _type: AwsLlama3}
 	}
 }
 
 func GetAdaptor(model string) utils.AwsAdapter {
 	adaptorType := adaptors[model]
-	switch adaptorType {
+	switch adaptorType._type {
 	case AwsClaude:
 		return &claude.Adaptor{}
 	case AwsLlama3:

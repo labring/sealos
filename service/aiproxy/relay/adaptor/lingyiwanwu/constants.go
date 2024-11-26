@@ -1,9 +1,23 @@
 package lingyiwanwu
 
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
 // https://platform.lingyiwanwu.com/docs
 
-var ModelList = []string{
-	"yi-34b-chat-0205",
-	"yi-34b-chat-200k",
-	"yi-vl-plus",
+var ModelList = []*model.ModelConfigItem{
+	{
+		Model: "yi-34b-chat-0205",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "yi-34b-chat-200k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "yi-vl-plus",
+		Type:  relaymode.ChatCompletions,
+	},
 }
