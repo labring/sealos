@@ -1,27 +1,28 @@
 {
   "name": "devbox-aio",
-  "displayName": "Devbox",
-  "description": "help code for cloud devbox in sailos/sealos",
-  "version": "1.1.9",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.2.2024112203",
   "keywords": [
     "devbox",
     "remote development",
     "remote"
   ],
   "bugs": {
-    "url": "https://github.com/mlhiter/devbox/issues"
+    "url": "https://github.com/labring/sealos/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mlhiter/devbox"
+    "url": "https://github.com/labring/sealos"
   },
-  "homepage": "https://github.com/mlhiter/devbox/blob/master/README.md",
+  "homepage": "https://github.com/labring/sealos/blob/main/extensions/ide/vscode/devbox/README.md",
   "publisher": "labring",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.91.0"
   },
+  "l10n": "./l10n",
   "categories": [
     "Other"
   ],
@@ -37,11 +38,11 @@
     "commands": [
       {
         "command": "devbox.connectRemoteSSH",
-        "title": "Devbox: Connect to Remote SSH"
+        "title": "%devbox.connectRemoteSSH.title%"
       },
       {
         "command": "devboxDashboard.refresh",
-        "title": "Refresh Devbox",
+        "title": "%devbox.refresh.title%",
         "icon": {
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
@@ -49,7 +50,7 @@
       },
       {
         "command": "devboxDashboard.createDevbox",
-        "title": "Create Devbox",
+        "title": "%devbox.create.title%",
         "icon": {
           "light": "images/light/create.svg",
           "dark": "images/dark/create.svg"
@@ -57,7 +58,7 @@
       },
       {
         "command": "devboxDashboard.openDevbox",
-        "title": "Open Devbox",
+        "title": "%devbox.open.title%",
         "icon": {
           "light": "images/light/open.svg",
           "dark": "images/dark/open.svg"
@@ -65,7 +66,7 @@
       },
       {
         "command": "devboxDashboard.deleteDevbox",
-        "title": "Delete Devbox",
+        "title": "%devbox.delete.title%",
         "icon": {
           "light": "images/light/delete.svg",
           "dark": "images/dark/delete.svg"
@@ -73,11 +74,11 @@
       },
       {
         "command": "devbox.openExternalLink",
-        "title": "Devbox:Open in Browser"
+        "title": "%devbox.openInBrowser.title%"
       },
       {
         "command": "devbox.copy",
-        "title": "Copy Connection String",
+        "title": "%devbox.copy.title%",
         "icon": {
           "light": "images/light/copy.svg",
           "dark": "images/dark/copy.svg"
@@ -85,7 +86,7 @@
       },
       {
         "command": "devbox.refreshDatabase",
-        "title": "Refresh Database",
+        "title": "%devbox.refreshDatabase.title%",
         "icon": {
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
@@ -93,31 +94,15 @@
       },
       {
         "command": "devbox.refreshNetwork",
-        "title": "Refresh Network",
+        "title": "%devbox.refreshNetwork.title%",
         "icon": {
           "light": "images/light/refresh.svg",
           "dark": "images/dark/refresh.svg"
         }
       },
       {
-        "command": "devbox.openInIntegratedBrowser",
-        "title": "Open in Integrated Browser",
-        "icon": {
-          "light": "images/light/globe.svg",
-          "dark": "images/dark/globe.svg"
-        }
-      },
-      {
-        "command": "devbox.openInExternalBrowser",
-        "title": "Open in External Browser",
-        "icon": {
-          "light": "images/light/link-external.svg",
-          "dark": "images/dark/link-external.svg"
-        }
-      },
-      {
         "command": "devbox.gotoDatabaseWebPage",
-        "title": "Goto Database Web Page",
+        "title": "%devbox.gotoDatabaseWebPage.title%",
         "icon": {
           "light": "images/light/link-external.svg",
           "dark": "images/dark/link-external.svg"
@@ -128,23 +113,27 @@
       "devboxListView": [
         {
           "id": "devboxDashboard",
-          "name": "My Projects"
+          "name": "%devbox.myProjects.title%"
         },
         {
           "id": "devboxFeedback",
-          "name": "Feedback"
+          "name": "%devbox.feedback.title%"
         }
       ],
       "networkView": [
         {
           "id": "networkView",
-          "name": "Network"
+          "name": "%devbox.network.title%",
+          "type": "webview",
+          "when": "remoteName == ssh-remote"
         }
       ],
       "dbView": [
         {
+          "type": "webview",
           "id": "dbView",
-          "name": "Database"
+          "name": "%devbox.database.title%",
+          "when": "remoteName == ssh-remote"
         }
       ]
     },
@@ -152,19 +141,19 @@
       "activitybar": [
         {
           "id": "devboxListView",
-          "title": "Devbox",
+          "title": "%devbox.devbox.title%",
           "icon": "images/explorer.svg"
         }
       ],
       "panel": [
         {
           "id": "networkView",
-          "title": "Network",
+          "title": "%devbox.network.title%",
           "icon": "images/network.svg"
         },
         {
           "id": "dbView",
-          "title": "Database",
+          "title": "%devbox.database.title%",
           "icon": "images/database.svg"
         }
       ]
@@ -172,7 +161,7 @@
     "viewsWelcome": [
       {
         "view": "devboxDashboard",
-        "contents": "View and manage your devboxes,Now you can create a new devbox."
+        "contents": "%devbox.welcome.title%"
       }
     ],
     "menus": {
@@ -213,21 +202,6 @@
           "command": "devboxDashboard.deleteDevbox",
           "when": "view == devboxDashboard && viewItem == devbox",
           "group": "inline@2"
-        },
-        {
-          "command": "devbox.copy",
-          "when": "view == dbView && viewItem == database",
-          "group": "inline"
-        },
-        {
-          "command": "devbox.openInIntegratedBrowser",
-          "when": "view == networkView && viewItem == network",
-          "group": "inline@1"
-        },
-        {
-          "command": "devbox.openInExternalBrowser",
-          "when": "view == networkView && viewItem == network",
-          "group": "inline@2"
         }
       ]
     }
@@ -238,11 +212,12 @@
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
-    "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
+    "watch": "npm run copy-codicons && webpack --watch",
+    "package": "npm run copy-codicons && webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "copy-codicons": "mkdir -p resources/codicons && cp -r node_modules/@vscode/codicons/dist/* resources/codicons/",
     "lint": "eslint src",
     "test": "vscode-test"
   },
@@ -261,6 +236,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.36",
     "axios": "^1.7.5",
     "execa": "^9.5.1",
     "ssh-config": "^5.0.0"

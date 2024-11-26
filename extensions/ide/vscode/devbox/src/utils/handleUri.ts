@@ -1,16 +1,25 @@
 import * as vscode from 'vscode'
 import { GlobalStateManager } from './globalStateManager'
+import { Logger } from '../common/logger'
 
 export class UriHandler {
   constructor() {}
 
   public handle(uri: vscode.Uri): void {
+    Logger.info(`Handling URI: ${uri.toString()}`)
     if (
       uri.scheme !== 'vscode' &&
       uri.scheme !== 'cursor' &&
-      uri.scheme !== 'vscode-insiders'
+      uri.scheme !== 'vscode-insiders' &&
+      uri.scheme !== 'windsurf'
     ) {
       return
+    }
+
+    if (uri.scheme === 'cursor') {
+      vscode.window.showInformationMessage(
+        "Cursor's Devbox is often not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referenced this [URI](https://www.cursor.com/how-to-install-extension)."
+      )
     }
 
     const queryParams = new URLSearchParams(uri.query)

@@ -14,6 +14,7 @@ import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
+import { sealosApp } from 'sealos-desktop-sdk/app'
 
 const Header = ({
   refetchDevboxDetail,
@@ -98,6 +99,27 @@ const Header = ({
     },
     [setLoading, t, toast, refetchDevboxDetail]
   )
+  const handleGoToTerminal = useCallback(
+    async (devbox: DevboxDetailType) => {
+      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
+      try {
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-terminal',
+          query: {
+            defaultCommand
+          },
+          messageData: { type: 'new terminal', command: defaultCommand }
+        })
+      } catch (error: any) {
+        toast({
+          title: typeof error === 'string' ? error : error.message || t('jump_terminal_error'),
+          status: 'error'
+        })
+        console.error(error)
+      }
+    },
+    [t, toast]
+  )
   return (
     <Flex justify="space-between" align="center" pl={4} pt={2} flexWrap={'wrap'} gap={5}>
       {/* left back button and title */}
@@ -161,6 +183,19 @@ const Header = ({
             }}
           />
         </Box>
+        <Button
+          h={'40px'}
+          fontSize={'14px'}
+          bg={'white'}
+          color={'grayModern.600'}
+          _hover={{
+            color: 'brightBlue.600'
+          }}
+          borderWidth={1}
+          leftIcon={isBigButton ? <MyIcon name={'terminal'} w={'16px'} /> : undefined}
+          onClick={() => handleGoToTerminal(devboxDetail)}>
+          {isBigButton ? t('terminal') : <MyIcon name={'terminal'} w={'16px'} />}
+        </Button>
         {devboxDetail.status.value === 'Running' && (
           <Button
             h={'40px'}

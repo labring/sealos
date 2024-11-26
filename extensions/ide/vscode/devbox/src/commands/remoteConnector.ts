@@ -13,6 +13,7 @@ import {
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
+import { Logger } from '../common/logger'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -27,24 +28,34 @@ export class RemoteSSHConnector extends Disposable {
   }
 
   private replaceHomePathInConfig(content: string): string {
-    const includePattern = /Include ~\/.ssh\/sealos\/devbox_config/
-    const includePattern2 = new RegExp(
-      `Include ${os.homedir()}/.ssh/sealos/devbox_config`
+    const includePattern = new RegExp(
+      `Include ${os.homedir()}/.ssh/sealos/devbox_config`,
+      'g'
     )
-    const includeLine = `Include "${os.homedir()}/.ssh/sealos/devbox_config"`
+    const includePattern2 = new RegExp(
+      `Include "${os.homedir()}/.ssh/sealos/devbox_config"`,
+      'g'
+    )
+
+    const includeLine = `Include ~/.ssh/sealos/devbox_config`
 
     if (includePattern.test(content)) {
-      return content.replace(includePattern, includeLine)
-    } else if (includePattern2.test(content)) {
-      return content.replace(includePattern2, includeLine)
-    } else if (content.includes(includeLine)) {
-      return content
-    } else {
-      return `${includeLine}\n${content}`
+      return content.replace(includePattern, '')
     }
+
+    if (includePattern2.test(content)) {
+      return content.replace(includePattern2, '')
+    }
+
+    if (content.includes(includeLine)) {
+      return content
+    }
+
+    return `${includeLine}\n${content}`
   }
 
   private sshConfigPreProcess() {
+    Logger.info('SSH config pre-processing')
     // 1. ensure .ssh/config exists
     ensureFileExists(defaultSSHConfigPath, '.ssh')
     // 2. ensure .ssh/sealos/devbox_config exists
@@ -71,6 +82,8 @@ export class RemoteSSHConnector extends Disposable {
     }
     // 4. ensure sshConfig from version1 to version2
     convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+
+    Logger.info('SSH config pre-processing completed')
   }
 
   private handleDefaultSSHConfig() {
@@ -88,6 +101,8 @@ export class RemoteSSHConnector extends Disposable {
     sshHostLabel: string
     workingDir: string
   }) {
+    Logger.info(`Connecting to remote SSH: ${args.sshHostLabel}`)
+
     this.ensureRemoteSSHExtInstalled()
 
     const { sshDomain, sshPort, base64PrivateKey, sshHostLabel, workingDir } =
@@ -118,6 +133,8 @@ export class RemoteSSHConnector extends Disposable {
     this.sshConfigPreProcess()
 
     try {
+      Logger.info('Writing SSH config to .ssh/sealos/devbox_config')
+
       const existingDevboxConfigLines = fs
         .readFileSync(defaultDevboxSSHConfigPath, 'utf8')
         .split('\n')
@@ -158,7 +175,10 @@ export class RemoteSSHConnector extends Disposable {
 
       // 5. write new ssh config to .ssh/sealos/devbox_config
       fs.appendFileSync(defaultDevboxSSHConfigPath, `\n${sshConfigString}\n`)
+
+      Logger.info('SSH config written to .ssh/sealos/devbox_config')
     } catch (error) {
+      Logger.error(`Failed to write SSH configuration: ${error}`)
       vscode.window.showErrorMessage(
         `Failed to write SSH configuration: ${error}`
       )
@@ -166,14 +186,19 @@ export class RemoteSSHConnector extends Disposable {
 
     // 6. create sealos privateKey file in .ssh/sealos
     try {
+      Logger.info('Creating sealos privateKey file in .ssh/sealos')
       const sshKeyPath = defaultSSHKeyPath + `/${sshHostLabel}`
       fs.writeFileSync(sshKeyPath, normalPrivateKey)
       ensureFileAccessPermission(sshKeyPath)
+      Logger.info('Sealos privateKey file created in .ssh/sealos')
     } catch (error) {
+      Logger.error(`Failed to write SSH private key: ${error}`)
       vscode.window.showErrorMessage(
         `Failed to write SSH private key: ${error}`
       )
     }
+
+    Logger.info('Opening Devbox in VSCode')
 
     await vscode.commands.executeCommand(
       'vscode.openFolder',
@@ -184,6 +209,8 @@ export class RemoteSSHConnector extends Disposable {
         forceNewWindow: true,
       }
     )
+
+    Logger.info('Devbox opened in VSCode')
 
     // refresh devboxList
     await vscode.commands.executeCommand('devboxDashboard.refresh')
@@ -231,6 +258,8 @@ export class RemoteSSHConnector extends Disposable {
       'workbench.extensions.installExtension',
       'ms-vscode-remote.remote-ssh'
     )
+
+    Logger.info('"ms-vscode-remote.remote-ssh" extension is installed')
 
     return true
   }

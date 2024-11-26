@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { updateBaseUrl } from './api'
+import { Logger } from './common/logger'
 import { UriHandler } from './utils/handleUri'
 import { isDevelopment } from './constant/api'
 import { ToolCommands } from './commands/tools'
@@ -11,6 +12,9 @@ import { DBViewProvider } from './providers/DBViewProvider'
 import { GlobalStateManager } from './utils/globalStateManager'
 
 export async function activate(context: vscode.ExtensionContext) {
+  // Logger
+  Logger.init(context)
+
   // tools
   const tools = new ToolCommands(context)
   context.subscriptions.push(tools)
@@ -52,6 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
       handleUri: (uri) => uriHandler.handle(uri),
     })
   )
+  console.log('Your extension "devbox" is now active!')
 }
 
 export function deactivate() {}

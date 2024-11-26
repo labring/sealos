@@ -17,7 +17,7 @@ const DevboxStatusTag = ({
   w?: string
   h?: string
 }) => {
-  const label = status.label
+  const label = status?.label
   const t = useTranslations()
 
   return (

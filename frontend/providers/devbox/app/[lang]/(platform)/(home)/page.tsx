@@ -104,7 +104,7 @@ const EmptyPage = () => {
   )
 
   useEffect(() => {
-    router.prefetch('/devbox/detail')
+    // router.prefetch('/devbox/detail')
     router.prefetch('/devbox/create')
   }, [router])
 
