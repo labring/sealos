@@ -2,6 +2,8 @@ package model
 
 import (
 	"errors"
+	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -42,17 +44,17 @@ func InitOptionMap() error {
 	config.OptionMap["GeminiVersion"] = config.GetGeminiVersion()
 	config.OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
 	config.OptionMapRWMutex.Unlock()
-	return loadOptionsFromDatabase()
+	return loadOptionsFromDatabase(true)
 }
 
-func loadOptionsFromDatabase() error {
+func loadOptionsFromDatabase(isInit bool) error {
 	logger.SysDebug("syncing options from database")
 	options, err := AllOption()
 	if err != nil {
 		return err
 	}
 	for _, option := range options {
-		err := updateOptionMap(option.Key, option.Value)
+		err := updateOptionMap(option.Key, option.Value, isInit)
 		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
 			logger.SysErrorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
 		}
@@ -65,14 +67,14 @@ func SyncOptions(frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 	for range ticker.C {
-		if err := loadOptionsFromDatabase(); err != nil {
+		if err := loadOptionsFromDatabase(true); err != nil {
 			logger.SysErrorf("failed to sync options from database: %s", err.Error())
 		}
 	}
 }
 
 func UpdateOption(key string, value string) error {
-	err := updateOptionMap(key, value)
+	err := updateOptionMap(key, value, false)
 	if err != nil {
 		return err
 	}
@@ -108,7 +110,7 @@ func isTrue(value string) bool {
 	return result
 }
 
-func updateOptionMap(key string, value string) (err error) {
+func updateOptionMap(key string, value string, isInit bool) (err error) {
 	config.OptionMapRWMutex.Lock()
 	defer config.OptionMapRWMutex.Unlock()
 	config.OptionMap[key] = value
@@ -146,14 +148,14 @@ func updateOptionMap(key string, value string) (err error) {
 		}
 		config.SetDefaultGroupQPM(defaultGroupQPM)
 	case "DefaultChannelModels":
-		var newModules map[int][]string
-		err := json.Unmarshal(conv.StringToBytes(value), &newModules)
+		var newModels map[int][]string
+		err := json.Unmarshal(conv.StringToBytes(value), &newModels)
 		if err != nil {
 			return err
 		}
 		// check model config exist
 		allModelsMap := make(map[string]struct{})
-		for _, models := range newModules {
+		for _, models := range newModels {
 			for _, model := range models {
 				allModelsMap[model] = struct{}{}
 			}
@@ -162,10 +164,25 @@ func updateOptionMap(key string, value string) (err error) {
 		for model := range allModelsMap {
 			allModels = append(allModels, model)
 		}
-		if err := CheckModelConfig(allModels); err != nil {
+		foundModels, missingModels, err := CheckModelConfig(allModels)
+		if err != nil {
 			return err
 		}
-		config.SetDefaultChannelModels(newModules)
+		if !isInit && len(missingModels) > 0 {
+			return fmt.Errorf("model config not found: %v", missingModels)
+		}
+		if len(missingModels) > 0 {
+			logger.SysErrorf("model config not found: %v", missingModels)
+		}
+		allowedNewModels := make(map[int][]string)
+		for t, ms := range newModels {
+			for _, m := range ms {
+				if slices.Contains(foundModels, m) {
+					allowedNewModels[t] = append(allowedNewModels[t], m)
+				}
+			}
+		}
+		config.SetDefaultChannelModels(allowedNewModels)
 	case "DefaultChannelModelMapping":
 		var newMapping map[int]map[string]string
 		err := json.Unmarshal(conv.StringToBytes(value), &newMapping)

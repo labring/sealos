@@ -62,6 +62,10 @@ func main() {
 		logger.FatalLog("failed to initialize Redis: " + err.Error())
 	}
 
+	err = model.InitOptionMap()
+	if err != nil {
+		logger.FatalLog("failed to initialize option map: " + err.Error())
+	}
 	err = model.InitModelConfigCache()
 	if err != nil {
 		logger.FatalLog("failed to initialize model config cache: " + err.Error())
@@ -69,10 +73,6 @@ func main() {
 	err = model.InitChannelCache()
 	if err != nil {
 		logger.FatalLog("failed to initialize channel cache: " + err.Error())
-	}
-	err = model.InitOptionMap()
-	if err != nil {
-		logger.FatalLog("failed to initialize option map: " + err.Error())
 	}
 	go model.SyncOptions(time.Second * 5)
 	go model.SyncChannelCache(time.Second * 5)

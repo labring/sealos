@@ -1,14 +1,17 @@
 package model
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
 )
 
 //nolint:revive
 type ModelConfigItem struct {
-	Config map[string]any `gorm:"serializer:fastjson" json:"config,omitempty"`
+	Config map[string]any `gorm:"serializer:fastjson" json:"config"`
 	Model  string         `gorm:"primaryKey"          json:"model"`
 	// relaymode/define.go
 	Type        int     `json:"type"`
@@ -18,9 +21,9 @@ type ModelConfigItem struct {
 
 //nolint:revive
 type ModelConfig struct {
-	CreatedAt       time.Time `gorm:"index"`
-	UpdatedAt       time.Time `gorm:"index"`
-	ModelConfigItem `gorm:"embedded"`
+	CreatedAt        time.Time `gorm:"index"    json:"created_at"`
+	UpdatedAt        time.Time `gorm:"index"    json:"updated_at"`
+	*ModelConfigItem `gorm:"embedded"`
 }
 
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {
@@ -34,6 +37,22 @@ func (c *ModelConfig) MarshalJSON() ([]byte, error) {
 		CreatedAt: c.CreatedAt.UnixMilli(),
 		UpdatedAt: c.UpdatedAt.UnixMilli(),
 	})
+}
+
+func GetModelConfigs(startIdx int, num int, model string) (configs []*ModelConfig, total int64, err error) {
+	tx := DB.Model(&ModelConfig{})
+	if model != "" {
+		tx = tx.Where("model = ?", model)
+	}
+	err = tx.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	if total <= 0 {
+		return nil, 0, nil
+	}
+	err = tx.Order("created_at desc").Limit(num).Offset(startIdx).Find(&configs).Error
+	return configs, total, err
 }
 
 func GetAllModelConfigs() (configs []*ModelConfig, err error) {
@@ -54,23 +73,50 @@ func GetModelConfig(model string) (*ModelConfig, error) {
 	return config, HandleNotFound(err, ErrModelConfigNotFound)
 }
 
-func SearchModelConfigs(keyword string, startIdx int, num int) (configs []*ModelConfig, err error) {
+func SearchModelConfigs(keyword string, startIdx int, num int, model string) (configs []*ModelConfig, total int64, err error) {
 	tx := DB.Model(&ModelConfig{}).Where("model LIKE ?", "%"+keyword+"%")
+	if model != "" {
+		tx = tx.Where("model = ?", model)
+	}
+	if keyword != "" {
+		var conditions []string
+		var values []interface{}
+
+		if model == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "model ILIKE ?")
+			} else {
+				conditions = append(conditions, "model LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
+		}
+
+		if len(conditions) > 0 {
+			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
+		}
+	}
+	err = tx.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	if total <= 0 {
+		return nil, 0, nil
+	}
 	err = tx.Order("created_at desc").Limit(num).Offset(startIdx).Find(&configs).Error
-	return configs, err
+	return configs, total, err
 }
 
 func SaveModelConfig(config *ModelConfig) error {
-	return DB.Omit("created_at", "updated_at").Save(config).Error
+	return DB.Save(config).Error
 }
 
 func SaveModelConfigs(configs []*ModelConfig) error {
-	return DB.Omit("created_at", "updated_at").Save(configs).Error
+	return DB.Save(configs).Error
 }
 
 const ErrModelConfigNotFound = "model config"
 
-func DeleteModelConfigByModel(model string) error {
+func DeleteModelConfig(model string) error {
 	result := DB.Where("model = ?", model).Delete(&ModelConfig{})
 	return HandleUpdateResult(result, ErrModelConfigNotFound)
 }

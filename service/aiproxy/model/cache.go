@@ -340,6 +340,9 @@ func InitChannelCache() error {
 	}
 	newType2Models := make(map[int][]string)
 	for k, v := range newType2ModelsMap {
+		if len(v) == 0 {
+			continue
+		}
 		newType2Models[k] = make([]string, 0, len(v))
 		for model := range v {
 			newType2Models[k] = append(newType2Models[k], model)
