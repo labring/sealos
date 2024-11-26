@@ -8,7 +8,6 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"gorm.io/gorm"
@@ -54,52 +53,14 @@ func (c *Channel) BeforeCreate(tx *gorm.DB) (err error) {
 
 // check model config exist
 func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
-	models := c.Models
-	if len(models) == 0 {
-		models = config.GetDefaultChannelModels()[c.Type]
+	if len(c.Models) == 0 {
+		return nil
 	}
-	_, missingModels, err := CheckModelConfig(models)
-	if err != nil {
-		return err
-	}
+	_, missingModels := CacheCheckModelConfig(c.Models)
 	if len(missingModels) > 0 {
 		return fmt.Errorf("model config not found: %v", missingModels)
 	}
 	return nil
-}
-
-func CheckModelConfig(models []string) ([]string, []string, error) {
-	return checkModelConfig(DB, models)
-}
-
-func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) {
-	if len(models) == 0 {
-		return models, nil, nil
-	}
-
-	var modelconfigs []ModelConfig
-	if err := tx.Model(&ModelConfig{}).Where("model IN ?", models).Select("model").Find(&modelconfigs).Error; err != nil {
-		return nil, nil, err
-	}
-
-	if len(modelconfigs) == len(models) {
-		return models, nil, nil
-	}
-
-	foundModels := make([]string, 0, len(modelconfigs))
-	foundModelsMap := make(map[string]struct{})
-	for _, config := range modelconfigs {
-		foundModelsMap[config.Model] = struct{}{}
-		foundModels = append(foundModels, config.Model)
-	}
-
-	missingModels := make([]string, 0, len(models)-len(modelconfigs))
-	for _, model := range models {
-		if _, exists := foundModelsMap[model]; !exists {
-			missingModels = append(missingModels, model)
-		}
-	}
-	return foundModels, missingModels, nil
 }
 
 func (c *Channel) MarshalJSON() ([]byte, error) {

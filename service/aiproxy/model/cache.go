@@ -320,6 +320,12 @@ func InitChannelCache() error {
 	for _, channel := range channels {
 		if len(channel.Models) == 0 {
 			channel.Models = config.GetDefaultChannelModels()[channel.Type]
+		} else {
+			findedModels, missingModels := CacheCheckModelConfig(channel.Models)
+			if len(missingModels) > 0 {
+				logger.SysErrorf("model config not found: %v", missingModels)
+			}
+			channel.Models = findedModels
 		}
 		if len(channel.ModelMapping) == 0 {
 			channel.ModelMapping = config.GetDefaultChannelModelMapping()[channel.Type]
@@ -478,4 +484,20 @@ func CacheGetModelConfig(model string) (*ModelConfig, bool) {
 	modelConfig, ok := modelConfigMap[model]
 	modelConfigSyncLock.RUnlock()
 	return modelConfig, ok
+}
+
+func CacheCheckModelConfig(models []string) ([]string, []string) {
+	if len(models) == 0 {
+		return models, nil
+	}
+	founded := make([]string, 0)
+	missing := make([]string, 0)
+	for _, model := range models {
+		if _, ok := modelConfigMap[model]; ok {
+			founded = append(founded, model)
+		} else {
+			missing = append(missing, model)
+		}
+	}
+	return founded, missing
 }

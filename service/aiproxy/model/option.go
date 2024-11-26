@@ -164,10 +164,7 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		for model := range allModelsMap {
 			allModels = append(allModels, model)
 		}
-		foundModels, missingModels, err := CheckModelConfig(allModels)
-		if err != nil {
-			return err
-		}
+		foundModels, missingModels := CacheCheckModelConfig(allModels)
 		if !isInit && len(missingModels) > 0 {
 			return fmt.Errorf("model config not found: %v", missingModels)
 		}

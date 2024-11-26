@@ -67,18 +67,9 @@ func TokenAuth(c *gin.Context) {
 	c.Set(ctxkey.RequestModel, requestModel)
 	if len(token.Models) == 0 {
 		token.Models = model.CacheGetAllModels()
-		if requestModel != "" && len(token.Models) == 0 {
-			abortWithMessage(c,
-				http.StatusForbidden,
-				fmt.Sprintf("token (%s[%d]) has no permission to use any model",
-					token.Name, token.ID,
-				),
-			)
-			return
-		}
 	}
 	c.Set(ctxkey.AvailableModels, []string(token.Models))
-	if requestModel != "" && !slices.Contains(token.Models, requestModel) {
+	if requestModel != "" && (len(token.Models) == 0 || !slices.Contains(token.Models, requestModel)) {
 		abortWithMessage(c,
 			http.StatusForbidden,
 			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
