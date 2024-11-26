@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -41,6 +42,23 @@ func GetModelConfigs(c *gin.Context) {
 
 func GetAllModelConfigs(c *gin.Context) {
 	configs, err := model.GetAllModelConfigs()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    configs,
+	})
+}
+
+func GetModelConfigsByModelsContains(c *gin.Context) {
+	models := c.Query("models")
+	configs, err := model.GetModelConfigsByModels(strings.Split(models, ","))
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
