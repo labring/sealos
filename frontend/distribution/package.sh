@@ -4,7 +4,8 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-pip3 install pyinstaller flask apscheduler PyYAML
+pip3 install pyinstaller 
+python3 -m pip install flask apscheduler PyYAML
 
 pyinstaller --onefile app.py
 

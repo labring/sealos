@@ -8,6 +8,7 @@ import shutil
 import zipfile
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
+import requests
 
 app = Flask(__name__)
 
@@ -22,7 +23,7 @@ REGISTRY_PASS = os.getenv('REGISTRY_PASS')
 # 环境变量：文件保存路径
 SAVE_PATH = os.getenv('SAVE_PATH')
 # 环境变量：资源利用比例
-RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '20'
+RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
 
 # 辅助函数：执行shell命令
 def run_command(command):
@@ -277,8 +278,7 @@ def upload_app():
 
     deploy_response = upload_deploy_helper(new_workdir, namespace, appname, images)
 
-    # 返回成功响应
-    return jsonify({'message': 'Application uploaded and extracted successfully', 'metadata': metadata}), 200
+    return deploy_response
 
 # API端点：部署应用程序
 @app.route('/api/deployAppWithImage', methods=['POST'])
@@ -291,11 +291,16 @@ def deploy_app_with_image():
     if not ports:
         return jsonify({'error': 'Ports are required'}), 400
     namespace = request.args.get('namespace')
+    appname = request.args.get('appname')  # 获取新的appname参数
+    
     with open(os.path.join(file_path, 'metadata.json'), 'r') as file:
         metadata = json.load(file)
-    appname = metadata['name']
+    old_appname = metadata['name']  # 保存原始appname用于替换
     if not namespace:
         namespace = metadata['namespace']
+    if not appname:
+        appname = old_appname  # 如果没有提供新的appname，使用原来的
+        
     images = metadata['images']
     for image in images:
         image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
@@ -304,19 +309,48 @@ def deploy_app_with_image():
 
     new_yaml_contents = []
     for single_yaml in yaml.safe_load_all(yaml_content):
+        # 替换metadata.name
+        if single_yaml.get('metadata', {}).get('name') == old_appname:
+            single_yaml['metadata']['name'] = appname
+            
+        # 替换labels中的app名称
+        labels = single_yaml.get('metadata', {}).get('labels', {})
+        if labels.get('cloud.sealos.io/app-deploy-manager') == old_appname:
+            labels['cloud.sealos.io/app-deploy-manager'] = appname
+        if labels.get('app') == old_appname:
+            labels['app'] = appname
+            
+        # 替换selector中的app名称
+        if single_yaml.get('kind') == 'Service':
+            if 'selector' in single_yaml['spec']:
+                if single_yaml['spec']['selector'].get('app') == old_appname:
+                    single_yaml['spec']['selector']['app'] = appname
+                    
+        if single_yaml.get('kind') == 'Deployment':
+            # 替换deployment selector中的matchLabels
+            if 'selector' in single_yaml['spec']:
+                if single_yaml['spec']['selector'].get('matchLabels', {}).get('app') == old_appname:
+                    single_yaml['spec']['selector']['matchLabels']['app'] = appname
+            
+            # 替换template labels中的app名称
+            if 'template' in single_yaml['spec']:
+                template_labels = single_yaml['spec']['template'].get('metadata', {}).get('labels', {})
+                if template_labels.get('app') == old_appname:
+                    template_labels['app'] = appname
+        
+        # 处理NodePort和其他已有的逻辑
         if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
                     internal_port = str(single_yaml['spec']['ports'][port_index]['port'])
                     if internal_port not in ports.keys():
                         return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' is required'}), 400
-                    # check if ports[internal_port] is int
                     if not isinstance(ports[internal_port], int):
                         return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be int'}), 400
-                    # check if ports[internal_port] is 30000-32767
                     if ports[internal_port] < 30000 or ports[internal_port] > 32767:
                         return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be between 30000 and 32767'}), 400
                     single_yaml['spec']['ports'][port_index]['nodePort'] = ports[internal_port]
+                    
         if 'kind' in single_yaml and single_yaml['kind'] == 'Deployment':
             if 'spec' in single_yaml and 'template' in single_yaml['spec'] and 'spec' in single_yaml['spec']['template']:
                 if 'containers' in single_yaml['spec']['template']['spec']:
@@ -327,22 +361,12 @@ def deploy_app_with_image():
                                 container['image'] = 'library/' + container['image']
                             if not ':' in container['image']:
                                 container['image'] = container['image'] + ':latest'
+                                
         new_yaml_contents.append(single_yaml)
+        
     new_yaml_content = yaml.dump_all(new_yaml_contents)
 
-
     print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
-    # if not namespace:
-    #     return jsonify({'error': 'Namespace is required'}), 400
-    # appname = request.args.get('appname')
-    # if not appname:
-    #     return jsonify({'error': 'Appname is required'}), 400
-    # images = request.json.get('images')
-    # if not images:
-    #     return jsonify({'error': 'Images are required'}), 400
-    # yaml_content = request.json.get('yaml')
-    # if not yaml_content:
-    #     return jsonify({'error': 'YAML is required'}), 400
 
     # 加载和推送镜像
     for image in images:
@@ -590,10 +614,14 @@ def scale_high_priority_workloads():
                             namespace = workload['metadata']['namespace']
                             name = workload['metadata']['name']
                             
-                            # 将副本数设置为0
-                            scale_cmd = f"kubectl scale {workload_type} {name} -n {namespace} --replicas=0 --kubeconfig=/etc/kubernetes/admin.conf"
-                            subprocess.run(scale_cmd, shell=True, check=True)
-                            print(f"Scaled down {workload_type} {namespace}/{name} to 0 replicas")
+                            # 调用暂停应用的接口
+                            pause_url = f"http://{CLUSTER_DOMAIN}:32293/api/pauseApp?namespace={namespace}&&appName={name}&&isStop=none"
+                            response = requests.get(pause_url)
+                            
+                            if response.status_code == 200:
+                                print(f"Paused {workload_type} {namespace}/{name} successfully")
+                            else:
+                                print(f"Failed to pause {workload_type} {namespace}/{name}: {response.text}")
                     except ValueError:
                         continue
     except Exception as e:

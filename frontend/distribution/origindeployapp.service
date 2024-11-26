@@ -4,6 +4,7 @@ Description=Deploy App
 [Service]
 Environment=CLUSTER_DOMAIN=FLAG_SEALOS_DOMAIN
 Environment=SAVE_PATH="/root/.mxapps"
+Environment=RESOURCE_THRESHOLD=70
 ExecStart=/usr/local/bin/app
 Restart=on-failure
 
