@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -120,6 +121,11 @@ func init() {
 		adaptor.Init(meta)
 		channelID2Models[i] = adaptor.GetModelList()
 	}
+	for _, models := range channelID2Models {
+		sort.Slice(models, func(i, j int) bool {
+			return models[i].Model < models[j].Model
+		})
+	}
 }
 
 func BuiltinModels(c *gin.Context) {
@@ -130,15 +136,7 @@ func BuiltinModels(c *gin.Context) {
 	})
 }
 
-func EnabledType2Models(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    model.CacheGetType2ModelsAndConfig(),
-	})
-}
-
-func EnabledType2ModelsByType(c *gin.Context) {
+func BuiltinModelsByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -158,7 +156,7 @@ func EnabledType2ModelsByType(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    model.CacheGetType2ModelsAndConfig()[channelTypeInt],
+		"data":    channelID2Models[channelTypeInt],
 	})
 }
 

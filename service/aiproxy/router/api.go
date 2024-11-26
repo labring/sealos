@@ -21,12 +21,11 @@ func SetAPIRouter(router *gin.Engine) {
 	apiRouter := api.Group("")
 	apiRouter.Use(middleware.AdminAuth)
 	{
-		apiRouter.GET("/models", controller.BuiltinModels)
+		apiRouter.GET("/models/builtin", controller.BuiltinModels)
+		apiRouter.GET("/models/builtin/:type", controller.BuiltinModelsByType)
 		apiRouter.GET("/models/enabled", controller.EnabledModels)
-		apiRouter.GET("/models/enabled/channel", controller.EnabledType2Models)
-		apiRouter.GET("/models/enabled/channel/:type", controller.EnabledType2ModelsByType)
-		apiRouter.GET("/models/enabled/default", controller.ChannelDefaultModelsAndMapping)
-		apiRouter.GET("/models/enabled/default/:type", controller.ChannelDefaultModelsAndMappingByType)
+		apiRouter.GET("/models/default", controller.ChannelDefaultModelsAndMapping)
+		apiRouter.GET("/models/default/:type", controller.ChannelDefaultModelsAndMappingByType)
 
 		groupsRoute := apiRouter.Group("/groups")
 		{

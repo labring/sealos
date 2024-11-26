@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -141,6 +142,9 @@ func GetDefaultChannelModels() map[int][]string {
 }
 
 func SetDefaultChannelModels(models map[int][]string) {
+	for _, ms := range models {
+		sort.Strings(ms)
+	}
 	defaultChannelModels.Store(models)
 }
 
