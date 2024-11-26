@@ -273,11 +273,13 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 }
 
 var (
-	model2channels    map[string][]*Channel
-	allModels         []string
-	type2Models       map[int][]string
-	channelID2channel map[int]*Channel
-	channelSyncLock   sync.RWMutex
+	model2channels       map[string][]*Channel
+	allModels            []string
+	allModelsAndConfig   []*ModelConfigItem
+	type2Models          map[int][]string
+	type2ModelsAndConfig map[int][]*ModelConfigItem
+	channelID2channel    map[int]*Channel
+	channelSyncLock      sync.RWMutex
 )
 
 func CacheGetAllModels() []string {
@@ -290,6 +292,18 @@ func CacheGetType2Models() map[int][]string {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
 	return type2Models
+}
+
+func CacheGetType2ModelsAndConfig() map[int][]*ModelConfigItem {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	return type2ModelsAndConfig
+}
+
+func CacheGetAllModelsAndConfig() []*ModelConfigItem {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	return allModelsAndConfig
 }
 
 func CacheGetModelsByType(channelType int) []string {
@@ -327,8 +341,13 @@ func InitChannelCache() error {
 	}
 
 	models := make([]string, 0, len(newModel2channels))
+	modelsAndConfig := make([]*ModelConfigItem, 0, len(newModel2channels))
 	for model := range newModel2channels {
-		models = append(models, model)
+		config, ok := CacheGetModelConfig(model)
+		if ok {
+			models = append(models, model)
+			modelsAndConfig = append(modelsAndConfig, config.ModelConfigItem)
+		}
 	}
 
 	newType2ModelsMap := make(map[int]map[string]struct{})
@@ -339,20 +358,27 @@ func InitChannelCache() error {
 		}
 	}
 	newType2Models := make(map[int][]string)
+	newType2ModelsAndConfig := make(map[int][]*ModelConfigItem)
 	for k, v := range newType2ModelsMap {
 		if len(v) == 0 {
 			continue
 		}
 		newType2Models[k] = make([]string, 0, len(v))
 		for model := range v {
-			newType2Models[k] = append(newType2Models[k], model)
+			config, ok := CacheGetModelConfig(model)
+			if ok {
+				newType2ModelsAndConfig[k] = append(newType2ModelsAndConfig[k], config.ModelConfigItem)
+				newType2Models[k] = append(newType2Models[k], model)
+			}
 		}
 	}
 
 	channelSyncLock.Lock()
 	model2channels = newModel2channels
 	allModels = models
+	allModelsAndConfig = modelsAndConfig
 	type2Models = newType2Models
+	type2ModelsAndConfig = newType2ModelsAndConfig
 	channelID2channel = newChannelID2channel
 	channelSyncLock.Unlock()
 	return nil

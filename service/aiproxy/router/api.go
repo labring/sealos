@@ -105,6 +105,7 @@ func SetAPIRouter(router *gin.Engine) {
 			modelConfigsRoute.GET("/", controller.GetModelConfigs)
 			modelConfigsRoute.GET("/search", controller.SearchModelConfigs)
 			modelConfigsRoute.GET("/all", controller.GetAllModelConfigs)
+			modelConfigsRoute.GET("/contains", controller.GetModelConfigsByModelsContains)
 		}
 		modelConfigRoute := apiRouter.Group("/model_config")
 		{
