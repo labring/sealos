@@ -16,7 +16,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
-	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 )
 
 // https://platform.openai.com/docs/api-reference/models/list
@@ -49,7 +48,7 @@ type OpenAIModels struct {
 var (
 	models           []OpenAIModels
 	modelsMap        map[string]OpenAIModels
-	channelID2Models map[int][]string
+	channelID2Models map[int][]*model.ModelConfigItem
 )
 
 func init() {
@@ -79,14 +78,14 @@ func init() {
 		})
 		channelName := adaptor.GetChannelName()
 		modelNames := adaptor.GetModelList()
-		for _, modelName := range modelNames {
+		for _, model := range modelNames {
 			models = append(models, OpenAIModels{
-				ID:         modelName,
+				ID:         model.Model,
 				Object:     "model",
 				Created:    1626777600,
 				OwnedBy:    channelName,
 				Permission: permission,
-				Root:       modelName,
+				Root:       model.Model,
 				Parent:     nil,
 			})
 		}
@@ -96,14 +95,14 @@ func init() {
 			continue
 		}
 		channelName, channelModelList := openai.GetCompatibleChannelMeta(channelType)
-		for _, modelName := range channelModelList {
+		for _, model := range channelModelList {
 			models = append(models, OpenAIModels{
-				ID:         modelName,
+				ID:         model.Model,
 				Object:     "model",
 				Created:    1626777600,
 				OwnedBy:    channelName,
 				Permission: permission,
-				Root:       modelName,
+				Root:       model.Model,
 				Parent:     nil,
 			})
 		}
@@ -112,7 +111,7 @@ func init() {
 	for _, model := range models {
 		modelsMap[model.ID] = model
 	}
-	channelID2Models = make(map[int][]string)
+	channelID2Models = make(map[int][]*model.ModelConfigItem)
 	for i := 1; i < channeltype.Dummy; i++ {
 		adaptor := relay.GetAdaptor(channeltype.ToAPIType(i))
 		meta := &meta.Meta{
@@ -131,32 +130,6 @@ func BuiltinModels(c *gin.Context) {
 	})
 }
 
-type modelPrice struct {
-	Prompt     float64 `json:"prompt"`
-	Completion float64 `json:"completion"`
-	Unset      bool    `json:"unset,omitempty"`
-}
-
-func ModelPrice(c *gin.Context) {
-	bill := make(map[string]*modelPrice)
-	modelPriceMap := billingprice.GetModelPriceMap()
-	completionPriceMap := billingprice.GetCompletionPriceMap()
-	for model, price := range modelPriceMap {
-		bill[model] = &modelPrice{
-			Prompt:     price,
-			Completion: price,
-		}
-		if completionPrice, ok := completionPriceMap[model]; ok {
-			bill[model].Completion = completionPrice
-		}
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    bill,
-	})
-}
-
 func EnabledType2Models(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -165,49 +138,7 @@ func EnabledType2Models(c *gin.Context) {
 	})
 }
 
-func EnabledType2ModelsAndPrice(c *gin.Context) {
-	type2Models := model.CacheGetType2Models()
-	result := make(map[int]map[string]*modelPrice)
-
-	modelPriceMap := billingprice.GetModelPriceMap()
-	completionPriceMap := billingprice.GetCompletionPriceMap()
-
-	for channelType, models := range type2Models {
-		m := make(map[string]*modelPrice)
-		result[channelType] = m
-		for _, modelName := range models {
-			if price, ok := modelPriceMap[modelName]; ok {
-				m[modelName] = &modelPrice{
-					Prompt:     price,
-					Completion: price,
-				}
-				if completionPrice, ok := completionPriceMap[modelName]; ok {
-					m[modelName].Completion = completionPrice
-				}
-			} else {
-				m[modelName] = &modelPrice{
-					Unset: true,
-				}
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    result,
-	})
-}
-
-func ChannelDefaultModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModels(),
-	})
-}
-
-func ChannelDefaultModelsByType(c *gin.Context) {
+func EnabledType2ModelsByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -227,39 +158,7 @@ func ChannelDefaultModelsByType(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    config.GetDefaultChannelModels()[channelTypeInt],
-	})
-}
-
-func ChannelDefaultModelMapping(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModelMapping(),
-	})
-}
-
-func ChannelDefaultModelMappingByType(c *gin.Context) {
-	channelType := c.Param("type")
-	if channelType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
-		return
-	}
-	channelTypeInt, err := strconv.Atoi(channelType)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModelMapping()[channelTypeInt],
+		"data":    model.CacheGetType2Models()[channelTypeInt],
 	})
 }
 
@@ -306,36 +205,6 @@ func EnabledModels(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data":    model.CacheGetAllModels(),
-	})
-}
-
-func EnabledModelsAndPrice(c *gin.Context) {
-	enabledModels := model.CacheGetAllModels()
-	result := make(map[string]*modelPrice)
-
-	modelPriceMap := billingprice.GetModelPriceMap()
-	completionPriceMap := billingprice.GetCompletionPriceMap()
-
-	for _, modelName := range enabledModels {
-		if price, ok := modelPriceMap[modelName]; ok {
-			result[modelName] = &modelPrice{
-				Prompt:     price,
-				Completion: price,
-			}
-			if completionPrice, ok := completionPriceMap[modelName]; ok {
-				result[modelName].Completion = completionPrice
-			}
-		} else {
-			result[modelName] = &modelPrice{
-				Unset: true,
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    result,
 	})
 }
 

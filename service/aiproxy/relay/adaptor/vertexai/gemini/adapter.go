@@ -5,22 +5,38 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/gemini"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-var ModelList = []string{
-	"gemini-1.5-pro-001", "gemini-1.5-flash-001", "gemini-pro", "gemini-pro-vision",
+var ModelList = []*model.ModelConfigItem{
+	{
+		Model: "gemini-1.5-pro-001",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "gemini-1.5-flash-001",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "gemini-pro",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "gemini-pro-vision",
+		Type:  relaymode.ChatCompletions,
+	},
 }
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, _ int, request *model.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(c *gin.Context, _ int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
@@ -31,7 +47,7 @@ func (a *Adaptor) ConvertRequest(c *gin.Context, _ int, request *model.GeneralOp
 	return geminiRequest, nil
 }
 
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
+func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	if meta.IsStream {
 		var responseText string
 		err, responseText = gemini.StreamHandler(c, resp)

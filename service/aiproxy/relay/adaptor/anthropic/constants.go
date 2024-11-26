@@ -1,13 +1,53 @@
 package anthropic
 
-var ModelList = []string{
-	"claude-instant-1.2", "claude-2.0", "claude-2.1",
-	"claude-3-haiku-20240307",
-	"claude-3-5-haiku-20241022",
-	"claude-3-sonnet-20240229",
-	"claude-3-opus-20240229",
-	"claude-3-5-sonnet-20240620",
-	"claude-3-5-sonnet-20241022",
-	"claude-3-5-sonnet-latest",
-	"claude-3-5-haiku-20241022",
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
+var ModelList = []*model.ModelConfigItem{
+	{
+		Model: "claude-instant-1.2",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-2.0",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-2.1",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-haiku-20240307",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-5-haiku-20241022",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-sonnet-20240229",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-opus-20240229",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-5-sonnet-20240620",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-5-sonnet-20241022",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-5-sonnet-latest",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "claude-3-5-haiku-20241022",
+		Type:  relaymode.ChatCompletions,
+	},
 }

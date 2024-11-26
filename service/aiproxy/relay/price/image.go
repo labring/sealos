@@ -1,5 +1,7 @@
 package price
 
+import "github.com/labring/sealos/service/aiproxy/common/config"
+
 // 单个图片的价格
 var imageSizePrices = map[string]map[string]float64{
 	"dall-e-2": {
@@ -71,7 +73,7 @@ func GetImageOriginModelName() map[string]string {
 }
 
 func IsValidImageSize(model string, size string) bool {
-	if !GetBillingEnabled() {
+	if !config.GetBillingEnabled() {
 		return true
 	}
 	if model == "cogview-3" || imageSizePrices[model] == nil {
@@ -82,7 +84,7 @@ func IsValidImageSize(model string, size string) bool {
 }
 
 func IsValidImagePromptLength(model string, promptLength int) bool {
-	if !GetBillingEnabled() {
+	if !config.GetBillingEnabled() {
 		return true
 	}
 	maxPromptLength, ok := imagePromptLengthLimitations[model]
@@ -90,7 +92,7 @@ func IsValidImagePromptLength(model string, promptLength int) bool {
 }
 
 func IsWithinRange(element string, value int) bool {
-	if !GetBillingEnabled() {
+	if !config.GetBillingEnabled() {
 		return true
 	}
 	amounts, ok := imageGenerationAmounts[element]
@@ -98,7 +100,7 @@ func IsWithinRange(element string, value int) bool {
 }
 
 func GetImageSizePrice(model string, size string) float64 {
-	if !GetBillingEnabled() {
+	if !config.GetBillingEnabled() {
 		return 0
 	}
 	if price, ok := imageSizePrices[model][size]; ok {

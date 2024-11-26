@@ -27,7 +27,6 @@ import (
 func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatusCode {
 	meta := meta.GetByContext(c)
 
-	channelType := c.GetInt(ctxkey.Channel)
 	group := c.GetString(ctxkey.Group)
 
 	adaptor := relay.GetAdaptor(meta.APIType)
@@ -38,11 +37,7 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 
 	meta.ActualModelName, _ = getMappedModelName(meta.OriginModelName, c.GetStringMapString(ctxkey.ModelMapping))
 
-	price, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName, channelType)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
-	}
-	completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName, channelType)
+	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
 	if !ok {
 		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
 	}

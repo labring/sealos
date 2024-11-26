@@ -98,6 +98,7 @@ type sealosCache struct {
 	Balance int64  `redis:"b"`
 }
 
+//nolint:gosec
 func cacheSetGroupBalance(ctx context.Context, group string, balance int64, userUID string) error {
 	if !common.RedisEnabled || !sealosRedisCacheEnable {
 		return nil

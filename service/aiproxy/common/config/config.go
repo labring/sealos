@@ -186,3 +186,17 @@ func GetGeminiVersion() string {
 func SetGeminiVersion(version string) {
 	geminiVersion.Store(version)
 }
+
+var billingEnabled atomic.Bool
+
+func init() {
+	billingEnabled.Store(true)
+}
+
+func GetBillingEnabled() bool {
+	return billingEnabled.Load()
+}
+
+func SetBillingEnabled(enabled bool) {
+	billingEnabled.Store(enabled)
+}

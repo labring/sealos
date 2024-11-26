@@ -1,11 +1,37 @@
 package ollama
 
-var ModelList = []string{
-	"codellama:7b-instruct",
-	"llama2:7b",
-	"llama2:latest",
-	"llama3:latest",
-	"phi3:latest",
-	"qwen:0.5b-chat",
-	"qwen:7b",
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
+var ModelList = []*model.ModelConfigItem{
+	{
+		Model: "codellama:7b-instruct",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "llama2:7b",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "llama2:latest",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "llama3:latest",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "phi3:latest",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "qwen:0.5b-chat",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "qwen:7b",
+		Type:  relaymode.ChatCompletions,
+	},
 }

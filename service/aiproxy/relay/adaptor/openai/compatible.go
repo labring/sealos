@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/ai360"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baichuan"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/deepseek"
@@ -34,7 +35,7 @@ var CompatibleChannels = []int{
 	channeltype.SiliconFlow,
 }
 
-func GetCompatibleChannelMeta(channelType int) (string, []string) {
+func GetCompatibleChannelMeta(channelType int) (string, []*model.ModelConfigItem) {
 	switch channelType {
 	case channeltype.Azure:
 		return "azure", ModelList

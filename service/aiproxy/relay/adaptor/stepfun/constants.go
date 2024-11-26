@@ -1,13 +1,45 @@
 package stepfun
 
-var ModelList = []string{
-	"step-1-8k",
-	"step-1-32k",
-	"step-1-128k",
-	"step-1-256k",
-	"step-1-flash",
-	"step-2-16k",
-	"step-1v-8k",
-	"step-1v-32k",
-	"step-1x-medium",
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
+var ModelList = []*model.ModelConfigItem{
+	{
+		Model: "step-1-8k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1-32k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1-128k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1-256k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1-flash",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-2-16k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1v-8k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1v-32k",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "step-1x-medium",
+		Type:  relaymode.ChatCompletions,
+	},
 }

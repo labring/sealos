@@ -1,20 +1,65 @@
 package baidu
 
-var ModelList = []string{
-	"ERNIE-4.0-8K",
-	"ERNIE-3.5-8K",
-	"ERNIE-3.5-8K-0205",
-	"ERNIE-3.5-8K-1222",
-	"ERNIE-Bot-8K",
-	"ERNIE-3.5-4K-0205",
-	"ERNIE-Speed-8K",
-	"ERNIE-Speed-128K",
-	"ERNIE-Lite-8K-0922",
-	"ERNIE-Lite-8K-0308",
-	"ERNIE-Tiny-8K",
-	"BLOOMZ-7B",
-	"Embedding-V1",
-	"bge-large-zh",
-	"bge-large-en",
-	"tao-8k",
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
+var ModelList = []*model.ModelConfigItem{
+	{
+		Model: "ERNIE-4.0-8K",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-3.5-8K",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-3.5-8K-0205",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-3.5-8K-1222",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-Bot-8K",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-Lite-8K-0308",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-Tiny-8K",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-Speed-8K",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "ERNIE-Speed-128K",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "BLOOMZ-7B",
+		Type:  relaymode.ChatCompletions,
+	},
+	{
+		Model: "Embedding-V1",
+		Type:  relaymode.Embeddings,
+	},
+	{
+		Model: "bge-large-zh",
+		Type:  relaymode.Embeddings,
+	},
+	{
+		Model: "bge-large-en",
+		Type:  relaymode.Embeddings,
+	},
+	{
+		Model: "tao-8k",
+		Type:  relaymode.Embeddings,
+	},
 }

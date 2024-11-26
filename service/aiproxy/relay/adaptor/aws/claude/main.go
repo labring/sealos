@@ -16,6 +16,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/anthropic"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -23,24 +24,30 @@ import (
 	"github.com/pkg/errors"
 )
 
+type awsModelItem struct {
+	ID string
+	model.ModelConfigItem
+}
+
 // AwsModelIDMap maps internal model identifiers to AWS model identifiers.
 // For more details, see: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
-var AwsModelIDMap = map[string]string{
-	"claude-instant-1.2":         "anthropic.claude-instant-v1",
-	"claude-2.0":                 "anthropic.claude-v2",
-	"claude-2.1":                 "anthropic.claude-v2:1",
-	"claude-3-haiku-20240307":    "anthropic.claude-3-haiku-20240307-v1:0",
-	"claude-3-sonnet-20240229":   "anthropic.claude-3-sonnet-20240229-v1:0",
-	"claude-3-opus-20240229":     "anthropic.claude-3-opus-20240229-v1:0",
-	"claude-3-5-sonnet-20240620": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-	"claude-3-5-sonnet-20241022": "anthropic.claude-3-5-sonnet-20241022-v2:0",
-	"claude-3-5-sonnet-latest":   "anthropic.claude-3-5-sonnet-20241022-v2:0",
-	"claude-3-5-haiku-20241022":  "anthropic.claude-3-5-haiku-20241022-v1:0",
+
+var AwsModelIDMap = map[string]awsModelItem{
+	"claude-instant-1.2":         {ModelConfigItem: model.ModelConfigItem{Model: "claude-instant-1.2"}, ID: "anthropic.claude-instant-v1"},
+	"claude-2.0":                 {ModelConfigItem: model.ModelConfigItem{Model: "claude-2.0"}, ID: "anthropic.claude-v2"},
+	"claude-2.1":                 {ModelConfigItem: model.ModelConfigItem{Model: "claude-2.1"}, ID: "anthropic.claude-v2:1"},
+	"claude-3-haiku-20240307":    {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-haiku-20240307"}, ID: "anthropic.claude-3-haiku-20240307-v1:0"},
+	"claude-3-sonnet-20240229":   {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-sonnet-20240229"}, ID: "anthropic.claude-3-sonnet-20240229-v1:0"},
+	"claude-3-opus-20240229":     {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-opus-20240229"}, ID: "anthropic.claude-3-opus-20240229-v1:0"},
+	"claude-3-5-sonnet-20240620": {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-sonnet-20240620"}, ID: "anthropic.claude-3-5-sonnet-20240620-v1:0"},
+	"claude-3-5-sonnet-20241022": {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-sonnet-20241022"}, ID: "anthropic.claude-3-5-sonnet-20241022-v2:0"},
+	"claude-3-5-sonnet-latest":   {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-sonnet-latest"}, ID: "anthropic.claude-3-5-sonnet-20241022-v2:0"},
+	"claude-3-5-haiku-20241022":  {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-haiku-20241022"}, ID: "anthropic.claude-3-5-haiku-20241022-v1:0"},
 }
 
 func awsModelID(requestModel string) (string, error) {
 	if awsModelID, ok := AwsModelIDMap[requestModel]; ok {
-		return awsModelID, nil
+		return awsModelID.ID, nil
 	}
 
 	return "", errors.Errorf("model %s not found", requestModel)
