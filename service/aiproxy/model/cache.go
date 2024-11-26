@@ -273,13 +273,11 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 }
 
 var (
-	model2channels       map[string][]*Channel
-	allModels            []string
-	allModelsAndConfig   []*ModelConfigItem
-	type2Models          map[int][]string
-	type2ModelsAndConfig map[int][]*ModelConfigItem
-	channelID2channel    map[int]*Channel
-	channelSyncLock      sync.RWMutex
+	model2channels     map[string][]*Channel
+	allModels          []string
+	allModelsAndConfig []*ModelConfigItem
+	channelID2channel  map[int]*Channel
+	channelSyncLock    sync.RWMutex
 )
 
 func CacheGetAllModels() []string {
@@ -288,26 +286,10 @@ func CacheGetAllModels() []string {
 	return allModels
 }
 
-func CacheGetType2Models() map[int][]string {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return type2Models
-}
-
-func CacheGetType2ModelsAndConfig() map[int][]*ModelConfigItem {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return type2ModelsAndConfig
-}
-
 func CacheGetAllModelsAndConfig() []*ModelConfigItem {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
 	return allModelsAndConfig
-}
-
-func CacheGetModelsByType(channelType int) []string {
-	return CacheGetType2Models()[channelType]
 }
 
 func InitChannelCache() error {
@@ -346,36 +328,44 @@ func InitChannelCache() error {
 		})
 	}
 
-	models := make([]string, 0, len(newModel2channels))
-	modelsAndConfig := make([]*ModelConfigItem, 0, len(newModel2channels))
-	for model := range newModel2channels {
-		config, ok := CacheGetModelConfig(model)
-		if ok {
-			models = append(models, model)
-			modelsAndConfig = append(modelsAndConfig, config.ModelConfigItem)
+	// models := make([]string, 0, len(newModel2channels))
+	// modelsAndConfig := make([]*ModelConfigItem, 0, len(newModel2channels))
+	// for model := range newModel2channels {
+	// 	config, ok := CacheGetModelConfig(model)
+	// 	if ok {
+	// 		models = append(models, model)
+	// 		modelsAndConfig = append(modelsAndConfig, config.ModelConfigItem)
+	// 	}
+	// }
+	// sort.Strings(models)
+	// sort.Slice(modelsAndConfig, func(i, j int) bool {
+	// 	return modelsAndConfig[i].Model < modelsAndConfig[j].Model
+	// })
+
+	newType2ModelsMap := make(map[int]map[string]*ModelConfigItem)
+	for _, channel := range channels {
+		if _, ok := newType2ModelsMap[channel.Type]; !ok {
+			newType2ModelsMap[channel.Type] = make(map[string]*ModelConfigItem)
+		}
+		for _, model := range channel.Models {
+			config, ok := CacheGetModelConfig(model)
+			if ok {
+				newType2ModelsMap[channel.Type][model] = config.ModelConfigItem
+			}
 		}
 	}
 
-	newType2ModelsMap := make(map[int]map[string]struct{})
-	for _, channel := range channels {
-		newType2ModelsMap[channel.Type] = make(map[string]struct{})
-		for _, model := range channel.Models {
-			newType2ModelsMap[channel.Type][model] = struct{}{}
-		}
-	}
-	newType2Models := make(map[int][]string)
-	newType2ModelsAndConfig := make(map[int][]*ModelConfigItem)
-	for k, v := range newType2ModelsMap {
-		if len(v) == 0 {
-			continue
-		}
-		newType2Models[k] = make([]string, 0, len(v))
-		for model := range v {
-			config, ok := CacheGetModelConfig(model)
-			if ok {
-				newType2ModelsAndConfig[k] = append(newType2ModelsAndConfig[k], config.ModelConfigItem)
-				newType2Models[k] = append(newType2Models[k], model)
+	models := make([]string, 0, len(newModel2channels))
+	modelsAndConfig := make([]*ModelConfigItem, 0, len(newModel2channels))
+	appended := make(map[string]struct{})
+	for _, _models := range newType2ModelsMap {
+		for _, model := range _models {
+			if _, ok := appended[model.Model]; ok {
+				continue
 			}
+			models = append(models, model.Model)
+			modelsAndConfig = append(modelsAndConfig, model)
+			appended[model.Model] = struct{}{}
 		}
 	}
 
@@ -383,8 +373,6 @@ func InitChannelCache() error {
 	model2channels = newModel2channels
 	allModels = models
 	allModelsAndConfig = modelsAndConfig
-	type2Models = newType2Models
-	type2ModelsAndConfig = newType2ModelsAndConfig
 	channelID2channel = newChannelID2channel
 	channelSyncLock.Unlock()
 	return nil
@@ -499,5 +487,7 @@ func CacheCheckModelConfig(models []string) ([]string, []string) {
 			missing = append(missing, model)
 		}
 	}
+	sort.Strings(founded)
+	sort.Strings(missing)
 	return founded, missing
 }
