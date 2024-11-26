@@ -579,11 +579,11 @@ def get_cluster_resources():
         cpu_usage_percent = (total_cpu_limits / total_cpu) * 100
         memory_usage_percent = (total_memory_limits / total_memory) * 100
         
-        print(f"Cluster resources - CPU: {cpu_usage_percent}%, Memory: {memory_usage_percent}%", flush=True)
+        print("Cluster resources - CPU: {}%, Memory: {}%".format(cpu_usage_percent, memory_usage_percent), flush=True)
         
         return cpu_usage_percent, memory_usage_percent
     except Exception as e:
-        print(f"Error getting cluster resources: {str(e)}")
+        print("Error getting cluster resources: {}".format(str(e)))
         return None, None
 
 def scale_high_priority_workloads():
@@ -595,12 +595,12 @@ def scale_high_priority_workloads():
         
         # 如果CPU或内存使用率超过RESOURCE_THRESHOLD
         if cpu_usage > float(RESOURCE_THRESHOLD) or memory_usage > float(RESOURCE_THRESHOLD):
-            print(f"Resource usage is high - CPU: {cpu_usage}%, Memory: {memory_usage}%")
+            print("Resource usage is high - CPU: {}%, Memory: {}%".format(cpu_usage, memory_usage))
             
             # 获取所有deployment和statefulset
             workload_types = ['deployment', 'statefulset']
             for workload_type in workload_types:
-                cmd = f"kubectl get {workload_type} --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf"
+                cmd = "kubectl get {} --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf".format(workload_type)
                 result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
                 workloads = json.loads(result.stdout)
                 
@@ -615,17 +615,17 @@ def scale_high_priority_workloads():
                             name = workload['metadata']['name']
                             
                             # 调用暂停应用的接口
-                            pause_url = f"http://{CLUSTER_DOMAIN}:32293/api/pauseApp?namespace={namespace}&&appName={name}&&isStop=none"
+                            pause_url = "http://{}:32293/api/pauseApp?namespace={}&&appName={}&&isStop=none".format(CLUSTER_DOMAIN, namespace, name)
                             response = requests.get(pause_url)
                             
                             if response.status_code == 200:
-                                print(f"Paused {workload_type} {namespace}/{name} successfully")
+                                print("Paused {} {}/{} successfully".format(workload_type, namespace, name))
                             else:
-                                print(f"Failed to pause {workload_type} {namespace}/{name}: {response.text}")
+                                print("Failed to pause {} {}/{}: {}".format(workload_type, namespace, name, response.text))
                     except ValueError:
                         continue
     except Exception as e:
-        print(f"Error in scale_high_priority_workloads: {str(e)}")
+        print("Error in scale_high_priority_workloads: {}".format(str(e)))
 
 # 创建定时任务调度器
 scheduler = BackgroundScheduler()
