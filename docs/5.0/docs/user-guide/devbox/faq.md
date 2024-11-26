@@ -58,3 +58,11 @@ upstream connect error or disconnect/reset before headers. retried and the lates
 ```
 
 First of all, you should understand that your current environment is a development environment. The URL you are connecting to is a test URL, which is only used in the development environment. This URL corresponds to the port of the development environment. In other words, you must run the development environment, such as `npm run dev` to run your program first, before you can see the content through the URL, otherwise this error will be reported.
+
+## 5. Click the link Cursor and enter the cursor interface, and an error message "Failed to fetch" is reported.
+
+Try to open Cursor's extension market. If the extension market cannot be loaded normally and the error `Error while fetching extensions.Failed to fetch` is reported, it is a network problem that cannot load Cursor's plug-in market. Please refer to the manual installation tutorial above to manually install the Devbox plug-in or try to change your network environment.
+
+## 6. The local localhost can open the project but the public network address cannot be opened.
+
+The exposed address in the code must be changed from `localhost` to `0.0.0.0` due to network reasons.

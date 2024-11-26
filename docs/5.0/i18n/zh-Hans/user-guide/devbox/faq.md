@@ -6,8 +6,7 @@ Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可�
 
 解决措施：手动安装 Devbox 插件。
 
-1. 从 VSCode 插件市场下载 [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) 插件的 vsix
-   文件。
+1. 从 VSCode 插件市场下载 [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) 插件的 vsix 文件。
 
 ![devbox-1](./images/faq-1.png)
 
@@ -19,15 +18,13 @@ Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可�
 
 ## 2、Cursor 和 VSCode 都无法连接
 
-首先明白 Devbox 插件的原理：即通过改动 ssh config 文件来添加远程环境信息，并通过 Remote-SSH 插件进行远程环境的连接。插件首先在
-`~/.ssh/config` 写入下面这行代码（一些老版本可能写入的其他类似的内容）：
+首先明白 Devbox 插件的原理：即通过改动 ssh config 文件来添加远程环境信息，并通过 Remote-SSH 插件进行远程环境的连接。插件首先在 `~/.ssh/config` 写入下面这行代码（一些老版本可能写入的其他类似的内容）：
 
 ```bash
 Include ~/.ssh/sealos/devbox_config
 ```
 
-这行代码的作用是将 `~/.ssh/sealos/devbox_config` 这个文件的内容导入到当前文件。而 `devbox_config` 里则是正常的 SSH
-配置内容，例如：
+这行代码的作用是将 `~/.ssh/sealos/devbox_config` 这个文件的内容导入到当前文件。而 `devbox_config` 里则是正常的 SSH 配置内容，例如：
 
 ```config
 Host usw.sailos.io_ns-rqtny6y6_devbox1234
@@ -60,5 +57,12 @@ Host usw.sailos.io_ns-rqtny6y6_devbox1234
 upstream connect error or disconnect/reset before headers. retried and the latest reset reason: remote connection failure, transport failure reason: delayed connect error: 111
 ```
 
-首先明白一下你此时的环境是开发环境，你现在连接的网址是测试网址，只用于开发环境，这个网址对应的是开发环境的端口。也就是说你必须运行开发环境，例如
-`npm run dev` 让你的程序先运行起来，才能通过网址看到内容，否则就会报这个错误。
+首先明白一下你此时的环境是开发环境，你现在连接的网址是测试网址，只用于开发环境，这个网址对应的是开发环境的端口。也就是说你必须运行开发环境，例如 `npm run dev` 让你的程序先运行起来，才能通过网址看到内容，否则就会报这个错误。
+
+## 5、点击链接 Cursor，进入 cursor 界面报错 “Failed to fetch”。
+
+尝试打开 Cursor 的扩展市场，如果扩展市场无法正常加载，报错 `Error while fetching extensions.Failed to fetch`，则是网络问题无法加载 Cursor 的插件市场。请参考上面的手动安装教程手动安装 Devbox 插件或者尝试更换您的网络环境。
+
+## 6、本地 localhost 能打开项目但是公网地址打不开。
+
+代码里暴露地址由于网络原因必须从 `localhost` 改为 `0.0.0.0`。
