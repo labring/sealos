@@ -66,21 +66,11 @@ export const restartDB = (data: { dbName: string; dbType: DBType }) => {
   return applyYamlList([yaml], 'update');
 };
 
-export const pauseDBByName = (data: { dbName: string; dbType: DBType }) => {
-  const yaml = json2StartOrStop({
-    ...data,
-    type: 'Stop'
-  });
-  return applyYamlList([yaml], 'update');
-};
+export const pauseDBByName = (data: { dbName: string; dbType: DBType }) =>
+  POST('/api/pauseDBByName', data);
 
-export const startDBByName = (data: { dbName: string; dbType: DBType }) => {
-  const yaml = json2StartOrStop({
-    ...data,
-    type: 'Start'
-  });
-  return applyYamlList([yaml], 'update');
-};
+export const startDBByName = (data: { dbName: string; dbType: DBType }) =>
+  POST('/api/startDBByName', data);
 
 export const getDBServiceByName = (name: string) =>
   GET<V1Service>(`/api/getServiceByName?name=${name}`);

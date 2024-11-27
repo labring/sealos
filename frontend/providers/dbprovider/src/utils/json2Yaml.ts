@@ -854,11 +854,13 @@ export const json2Upgrade = ({ dbName, dbVersion }: DBEditType) => {
 };
 
 export const json2StartOrStop = ({ dbName, type }: { dbName: string; type: 'Start' | 'Stop' }) => {
+  const nameType = type.toLocaleLowerCase();
+
   const template = {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
-      name: `ops-stop-${dayjs().format('YYYYMMDDHHmmss')}`,
+      name: `ops-${nameType}-${dayjs().format('YYYYMMDDHHmmss')}`,
       labels: {
         [crLabelKey]: dbName
       }
@@ -868,7 +870,10 @@ export const json2StartOrStop = ({ dbName, type }: { dbName: string; type: 'Star
       type
     }
   };
-  return yaml.dump(template);
+  return {
+    yaml: yaml.dump(template),
+    yamlObj: template
+  };
 };
 
 export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
