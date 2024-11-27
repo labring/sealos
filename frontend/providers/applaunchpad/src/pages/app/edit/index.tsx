@@ -201,8 +201,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice,
-      isGuided
+      refetchPrice
     ]
   );
 
@@ -322,7 +321,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         formHook.setValue('networks', completeNetworks);
       }
     } catch (error) {}
-  }, []);
+  }, [router.query]);
 
   return (
     <>

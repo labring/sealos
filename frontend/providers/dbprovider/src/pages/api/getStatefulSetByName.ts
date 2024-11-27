@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         key: 'redis'
       },
       [DBTypeEnum.kafka]: {
-        key: 'kafka'
+        key: 'kafka-broker'
       },
       [DBTypeEnum.qdrant]: {
         key: 'qdrant'
