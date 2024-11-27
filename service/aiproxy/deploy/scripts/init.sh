@@ -69,6 +69,18 @@ if grep "<sql-placeholder>" manifests/aiproxy-config.yaml >/dev/null 2>&1; then
     # Update config
     sed -i "s|<sql-placeholder>|${SQL_DSN}|g" manifests/aiproxy-config.yaml
     sed -i "s|<sql-log-placeholder>|${LOG_SQL_DSN}|g" manifests/aiproxy-config.yaml
+  elif grep "LOG_SQL_DSN: \"\"" manifests/aiproxy-config.yaml >/dev/null 2>&1; then
+    # Deploy PostgreSQL resources
+    kubectl apply -f manifests/pgsql.yaml -n aiproxy-system
+
+    # Wait for secrets
+    wait_for_secret "aiproxy-conn-credential"
+
+    # Build connection strings
+    SQL_DSN=$(build_postgres_dsn "aiproxy-conn-credential") || exit $?
+
+    # Update config
+    sed -i "s|<sql-placeholder>|${SQL_DSN}|g" manifests/aiproxy-config.yaml
   else
     echo "Error: LOG_SQL_DSN is not allowed to be passed alone, please provide both SQL_DSN and LOG_SQL_DSN or provide SQL_DSN only or neither."
     exit 1
