@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Create namespace
 kubectl create ns aiproxy-system || true
