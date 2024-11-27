@@ -21,11 +21,14 @@ func SetAPIRouter(router *gin.Engine) {
 	apiRouter := api.Group("")
 	apiRouter.Use(middleware.AdminAuth)
 	{
-		apiRouter.GET("/models/builtin", controller.BuiltinModels)
-		apiRouter.GET("/models/builtin/:type", controller.BuiltinModelsByType)
-		apiRouter.GET("/models/enabled", controller.EnabledModels)
-		apiRouter.GET("/models/default", controller.ChannelDefaultModelsAndMapping)
-		apiRouter.GET("/models/default/:type", controller.ChannelDefaultModelsAndMappingByType)
+		modelsRoute := apiRouter.Group("/models")
+		{
+			modelsRoute.GET("/builtin", controller.BuiltinModels)
+			modelsRoute.GET("/builtin/:type", controller.BuiltinModelsByType)
+			modelsRoute.GET("/enabled", controller.EnabledModels)
+			modelsRoute.GET("/default", controller.ChannelDefaultModelsAndMapping)
+			modelsRoute.GET("/default/:type", controller.ChannelDefaultModelsAndMappingByType)
+		}
 
 		groupsRoute := apiRouter.Group("/groups")
 		{
@@ -40,12 +43,14 @@ func SetAPIRouter(router *gin.Engine) {
 			groupRoute.POST("/:id/status", controller.UpdateGroupStatus)
 			groupRoute.POST("/:id/qpm", controller.UpdateGroupQPM)
 		}
+
 		optionRoute := apiRouter.Group("/option")
 		{
 			optionRoute.GET("/", controller.GetOptions)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.PUT("/batch", controller.UpdateOptions)
 		}
+
 		channelsRoute := apiRouter.Group("/channels")
 		{
 			channelsRoute.GET("/", controller.GetChannels)
@@ -65,6 +70,7 @@ func SetAPIRouter(router *gin.Engine) {
 			channelRoute.GET("/test/:id", controller.TestChannel)
 			channelRoute.GET("/update_balance/:id", controller.UpdateChannelBalance)
 		}
+
 		tokensRoute := apiRouter.Group("/tokens")
 		{
 			tokensRoute.GET("/", controller.GetTokens)
@@ -86,6 +92,7 @@ func SetAPIRouter(router *gin.Engine) {
 			tokenRoute.POST("/:group/:id/name", controller.UpdateGroupTokenName)
 			tokenRoute.DELETE("/:group/:id", controller.DeleteGroupToken)
 		}
+
 		logsRoute := apiRouter.Group("/logs")
 		{
 			logsRoute.GET("/", controller.GetLogs)
@@ -99,6 +106,7 @@ func SetAPIRouter(router *gin.Engine) {
 			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group", controller.GetGroupLogs)
 		}
+
 		modelConfigsRoute := apiRouter.Group("/model_configs")
 		{
 			modelConfigsRoute.GET("/", controller.GetModelConfigs)
