@@ -134,7 +134,7 @@
   "Pods List": "实例列表",
   "Number of Instances": "实例数",
   "Pod Name": "实例名",
-  "Restarts Num": "重启次数",
+  "Restarts Num": "实例重启次数",
   "Age": "启动时长",
   "Items": "个实例",
   "Mount Path Auth": "挂载路径需满足: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/",
