@@ -8,9 +8,9 @@ ENV cloudPort=""
 ENV certSecretName="wildcard-cert"
 
 ENV ADMIN_KEY=""
-ENV SEALOS_JWT_KEY=""
-ENV SQL_DSN=""
-ENV LOG_SQL_DSN=""
-ENV REDIS_CONN_STRING=""
+ENV SEALOS_JWT_KEY="<sealos-jwt-key-placeholder>"
+ENV SQL_DSN="<sql-placeholder>"
+ENV LOG_SQL_DSN="<sql-log-placeholder>"
+ENV REDIS_CONN_STRING="<redis-placeholder>"
 
 CMD ["bash scripts/init.sh"]
