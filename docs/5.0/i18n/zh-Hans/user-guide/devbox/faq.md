@@ -59,10 +59,12 @@ upstream connect error or disconnect/reset before headers. retried and the lates
 
 首先明白一下你此时的环境是开发环境，你现在连接的网址是测试网址，只用于开发环境，这个网址对应的是开发环境的端口。也就是说你必须运行开发环境，例如 `npm run dev` 让你的程序先运行起来，才能通过网址看到内容，否则就会报这个错误。
 
-## 5、点击链接 Cursor，进入 cursor 界面报错 “Failed to fetch”。
+另一种可能的情况是等待一段时间就可以了，可能网络比较卡顿。
+
+## 5、点击链接 Cursor，进入 cursor 界面报错 “Failed to fetch”
 
 尝试打开 Cursor 的扩展市场，如果扩展市场无法正常加载，报错 `Error while fetching extensions.Failed to fetch`，则是网络问题无法加载 Cursor 的插件市场。请参考上面的手动安装教程手动安装 Devbox 插件或者尝试更换您的网络环境。
 
-## 6、本地 localhost 能打开项目但是公网地址打不开。
+## 6、本地 localhost 能打开项目但是公网地址打不开
 
 代码里暴露地址由于网络原因必须从 `localhost` 改为 `0.0.0.0`。
