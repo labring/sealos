@@ -43,7 +43,7 @@ export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | '
   POST('/api/applyYamlList', { yamlList, type });
 
 export const getPodsByDBName = (name: string): Promise<PodDetailType[]> =>
-  GET('/api/pod/getPodsByDBName', { name }).then((res) => res.map(adaptPod));
+  GET('/api/pod/getPodsByDBName', { name });
 
 export const getPodLogs = (data: {
   dbName: string;

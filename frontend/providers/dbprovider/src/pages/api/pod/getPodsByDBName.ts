@@ -4,6 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KBBackupNameLabel } from '@/constants/db';
+import { adaptPod } from '@/utils/adapt';
 
 // get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -31,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     jsonRes(res, {
-      data: pods
+      data: pods.map((pod) => adaptPod(pod))
     });
   } catch (err: any) {
     // console.log(err, 'get metrics error')
