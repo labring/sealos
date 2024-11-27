@@ -45,6 +45,12 @@ build_redis_conn() {
   echo "redis://${username}:${password}@${host}:${port}"
 }
 
+# Handle JWT configuration
+if grep "<sealos-jwt-key-placeholder>" manifests/aiproxy-config.yaml >/dev/null 2>&1; then
+  JWT_SECRET=$(kubectl get cm -n account-system account-manager-env -o jsonpath="{.data.ACCOUNT_API_JWT_SECRET}") || exit $?
+  sed -i "s|<sealos-jwt-key-placeholder>|${JWT_SECRET}|g" manifests/aiproxy-config.yaml
+fi
+
 # Handle PostgreSQL configuration
 if grep "<sql-placeholder>" manifests/aiproxy-config.yaml >/dev/null 2>&1; then
   if grep "<sql-log-placeholder>" manifests/aiproxy-config.yaml >/dev/null 2>&1; then
