@@ -23,7 +23,7 @@ spec:
     - componentDefRef: redis
       monitor: true
       name: redis
-      replicas: 1
+      replicas: 3
       resources:
         limits:
           cpu: 1000m
@@ -46,7 +46,7 @@ spec:
     - componentDefRef: redis-sentinel
       monitor: true
       name: redis-sentinel
-      replicas: 1
+      replicas: 3
       resources:
         limits:
           cpu: 100m

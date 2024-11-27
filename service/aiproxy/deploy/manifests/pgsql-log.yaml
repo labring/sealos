@@ -23,7 +23,7 @@ spec:
     - componentDefRef: postgresql
       monitor: true
       name: postgresql
-      replicas: 1
+      replicas: 2
       resources:
         limits:
           cpu: 1000m
@@ -41,7 +41,7 @@ spec:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 3Gi
+                storage: 10Gi
   terminationPolicy: Delete
   tolerations: []
 
