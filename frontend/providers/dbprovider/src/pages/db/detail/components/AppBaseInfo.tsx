@@ -50,7 +50,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     );
   }, [db.dbType]);
 
-  const { data: dbStatefulSet } = useQuery(
+  const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
     () => getDBStatefulSetByName(db.dbName, db.dbType),
     {
@@ -59,7 +59,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   );
 
-  const { data: secret } = useQuery(
+  const { data: secret, refetch: refetchSecret } = useQuery(
     ['getDBSecret', db.dbName, db.dbType],
     () => (db.dbName ? getDBSecret({ dbName: db.dbName, dbType: db.dbType }) : null),
     {
@@ -67,7 +67,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   );
 
-  const { data: service, refetch } = useQuery(
+  const { data: service, refetch: refetchService } = useQuery(
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
@@ -92,6 +92,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
     if (db?.dbType === 'mongodb' || db?.dbType === 'postgresql') {
       connection += '/?directConnection=true';
+    }
+
+    if (db?.dbType === 'kafka' || db?.dbType === 'milvus') {
+      connection = host + ':' + port;
     }
 
     return {
@@ -168,6 +172,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     });
   }, [db.dbType, secret]);
 
+  const refetchAll = () => {
+    refetchDBStatefulSet();
+    refetchSecret();
+    refetchService();
+  };
+
   const openNetWorkService = async () => {
     try {
       console.log('openNetWorkService', dbStatefulSet, db);
@@ -181,7 +191,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       await applyYamlList([yaml], 'create');
       onClose();
       setIsChecked(true);
-      refetch();
+      refetchAll();
       toast({
         title: t('Success'),
         status: 'success'
@@ -325,24 +335,27 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
 
-            <Center
-              className="driver-detail-terminal-button"
-              gap={'6px'}
-              h="28px"
-              fontSize={'12px'}
-              bg="grayModern.150"
-              borderRadius={'md'}
-              px="8px"
-              cursor={'pointer'}
-              fontWeight={'bold'}
-              onClick={() => onclickConnectDB()}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-            >
-              <MyIcon name="terminal" w="16px" h="16px" />
-              {t('direct_connection')}
-            </Center>
+            {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
+              <Center
+                className="driver-detail-terminal-button"
+                gap={'6px'}
+                h="28px"
+                fontSize={'12px'}
+                bg="grayModern.150"
+                borderRadius={'md'}
+                px="8px"
+                cursor={'pointer'}
+                fontWeight={'bold'}
+                onClick={() => onclickConnectDB()}
+                _hover={{
+                  color: 'brightBlue.600'
+                }}
+              >
+                <MyIcon name="terminal" w="16px" h="16px" />
+                {t('direct_connection')}
+              </Center>
+            )}
+
             <Center ml="auto">
               <Text color={'grayModern.900'}> {t('external_network')} </Text>
               <Switch

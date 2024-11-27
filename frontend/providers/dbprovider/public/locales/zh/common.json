@@ -75,7 +75,7 @@
   "backup_database": "备份数据库",
   "backup_deleting": "删除中",
   "backup_failed": "备份失败",
-  "backup_list": "备份历史",
+  "backup_list": "数据备份",
   "backup_name": "备份名",
   "backup_name_cannot_empty": "备份名称不能为空",
   "backup_processing": "备份中",
