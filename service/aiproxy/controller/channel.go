@@ -234,20 +234,25 @@ func DeleteChannel(c *gin.Context) {
 	})
 }
 
-type UpdateChannelRequest struct {
-	AddChannelRequest
-	ID int `json:"id"`
-}
-
-func (r *UpdateChannelRequest) ToChannel() *model.Channel {
-	c := r.AddChannelRequest.ToChannel()
-	c.ID = r.ID
-	return c
-}
-
 func UpdateChannel(c *gin.Context) {
-	channel := UpdateChannelRequest{}
-	err := c.ShouldBindJSON(&channel)
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "id is required",
+		})
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	channel := AddChannelRequest{}
+	err = c.ShouldBindJSON(&channel)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -256,6 +261,7 @@ func UpdateChannel(c *gin.Context) {
 		return
 	}
 	ch := channel.ToChannel()
+	ch.ID = id
 	err = model.UpdateChannel(ch)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -267,20 +273,7 @@ func UpdateChannel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data": UpdateChannelRequest{
-			ID: ch.ID,
-			AddChannelRequest: AddChannelRequest{
-				Type:         ch.Type,
-				Name:         ch.Name,
-				Key:          ch.Key,
-				BaseURL:      ch.BaseURL,
-				Other:        ch.Other,
-				Models:       ch.Models,
-				ModelMapping: ch.ModelMapping,
-				Priority:     ch.Priority,
-				Config:       ch.Config,
-			},
-		},
+		"data":    ch,
 	})
 }
 
