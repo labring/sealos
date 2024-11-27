@@ -1174,3 +1174,80 @@ export const json2Reconfigure = (
 
   return yaml.dump(template);
 };
+
+export const json2ClusterOps = (
+  data: DBEditType,
+  type: 'VerticalScaling' | 'HorizontalScaling' | 'VolumeExpansion'
+) => {
+  const componentName =
+    data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType === 'kafka' ? 'broker' : data.dbType;
+
+  const getOpsName = () => {
+    const timeStr = dayjs().format('YYYYMMDDHHmmss');
+    return `ops-${type.toLowerCase()}-${timeStr}`;
+  };
+
+  const baseTemplate = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      name: getOpsName(),
+      labels: {
+        [crLabelKey]: data.dbName
+      }
+    },
+    spec: {
+      clusterRef: data.dbName,
+      type: type
+    }
+  };
+
+  const opsConfig = {
+    VerticalScaling: {
+      verticalScaling: [
+        {
+          componentName,
+          requests: {
+            cpu: `${Math.floor(str2Num(data.cpu) * 0.1)}m`,
+            memory: `${Math.floor(str2Num(data.memory) * 0.1)}Mi`
+          },
+          limits: {
+            cpu: `${str2Num(Math.floor(data.cpu))}m`,
+            memory: `${str2Num(data.memory)}Mi`
+          }
+        }
+      ]
+    },
+    HorizontalScaling: {
+      horizontalScaling: [
+        {
+          componentName,
+          replicas: data.replicas
+        }
+      ]
+    },
+    VolumeExpansion: {
+      volumeExpansion: [
+        {
+          componentName,
+          volumeClaimTemplates: [
+            {
+              name: 'data',
+              storage: `${data.storage}Gi`
+            }
+          ]
+        }
+      ]
+    }
+  };
+
+  const template = {
+    ...baseTemplate,
+    spec: {
+      ...baseTemplate.spec,
+      ...opsConfig[type]
+    }
+  };
+
+  return yaml.dump(template);
+};
