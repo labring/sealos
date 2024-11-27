@@ -96,7 +96,7 @@ func Authenticate(ns, kc string) error {
 		return fmt.Errorf("ping apiserver is no ok: %v", string(res))
 	}
 
-	if err := CheckResourceAccess(client, ns, "update", "pods"); err != nil {
+	if err := CheckResourceAccess(client, ns, "get", "pods"); err != nil {
 		// fmt.Println(err.Error())
 		return fmt.Errorf("check resource access error: %v", err)
 	}
