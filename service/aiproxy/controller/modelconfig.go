@@ -105,6 +105,29 @@ func SearchModelConfigs(c *gin.Context) {
 	})
 }
 
+func SaveModelConfigs(c *gin.Context) {
+	var configs []*model.ModelConfig
+	if err := c.ShouldBindJSON(&configs); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err := model.SaveModelConfigs(configs)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
+}
+
 func SaveModelConfig(c *gin.Context) {
 	var config model.ModelConfigItem
 	if err := c.ShouldBindJSON(&config); err != nil {

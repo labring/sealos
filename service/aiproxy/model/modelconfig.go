@@ -10,9 +10,19 @@ import (
 )
 
 //nolint:revive
+type ModelConfigKey string
+
+const (
+	ModelConfigMaxContextTokensKey ModelConfigKey = "max_context_tokens"
+	ModelConfigMaxOutputTokensKey  ModelConfigKey = "max_output_tokens"
+	ModelConfigToolChoiceKey       ModelConfigKey = "tool_choice"
+	ModelConfigFunctionCallingKey  ModelConfigKey = "function_calling"
+)
+
+//nolint:revive
 type ModelConfigItem struct {
-	Config map[string]any `gorm:"serializer:fastjson" json:"config"`
-	Model  string         `gorm:"primaryKey"          json:"model"`
+	Config map[ModelConfigKey]any `gorm:"serializer:fastjson" json:"config"`
+	Model  string                 `gorm:"primaryKey"          json:"model"`
 	// relaymode/define.go
 	Type        int     `json:"type"`
 	InputPrice  float64 `json:"input_price"`

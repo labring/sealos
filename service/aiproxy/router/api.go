@@ -59,7 +59,7 @@ func SetAPIRouter(router *gin.Engine) {
 		{
 			channelRoute.GET("/:id", controller.GetChannel)
 			channelRoute.POST("/", controller.AddChannel)
-			channelRoute.PUT("/", controller.UpdateChannel)
+			channelRoute.PUT("/:id", controller.UpdateChannel)
 			channelRoute.POST("/:id/status", controller.UpdateChannelStatus)
 			channelRoute.DELETE("/:id", controller.DeleteChannel)
 			channelRoute.GET("/test/:id", controller.TestChannel)
@@ -105,6 +105,7 @@ func SetAPIRouter(router *gin.Engine) {
 			modelConfigsRoute.GET("/search", controller.SearchModelConfigs)
 			modelConfigsRoute.GET("/all", controller.GetAllModelConfigs)
 			modelConfigsRoute.GET("/contains", controller.GetModelConfigsByModelsContains)
+			modelConfigsRoute.POST("/", controller.SaveModelConfigs)
 		}
 		modelConfigRoute := apiRouter.Group("/model_config")
 		{
