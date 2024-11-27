@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sort"
 	"strconv"
 	"time"
 
@@ -164,11 +165,16 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		for model := range allModelsMap {
 			allModels = append(allModels, model)
 		}
-		foundModels, missingModels := CacheCheckModelConfig(allModels)
+		foundModels, missingModels, err := CheckModelConfig(allModels)
+		if err != nil {
+			return err
+		}
 		if !isInit && len(missingModels) > 0 {
+			sort.Strings(missingModels)
 			return fmt.Errorf("model config not found: %v", missingModels)
 		}
 		if len(missingModels) > 0 {
+			sort.Strings(missingModels)
 			logger.SysErrorf("model config not found: %v", missingModels)
 		}
 		allowedNewModels := make(map[int][]string)

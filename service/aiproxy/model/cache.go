@@ -303,8 +303,13 @@ func InitChannelCache() error {
 		if len(channel.Models) == 0 {
 			channel.Models = config.GetDefaultChannelModels()[channel.Type]
 		} else {
-			findedModels, missingModels := CacheCheckModelConfig(channel.Models)
+			findedModels, missingModels, err := CheckModelConfig(channel.Models)
+			if err != nil {
+				return err
+			}
+			sort.Strings(channel.Models)
 			if len(missingModels) > 0 {
+				sort.Strings(missingModels)
 				logger.SysErrorf("model config not found: %v", missingModels)
 			}
 			channel.Models = findedModels
@@ -327,20 +332,6 @@ func InitChannelCache() error {
 			return channels[i].Priority > channels[j].Priority
 		})
 	}
-
-	// models := make([]string, 0, len(newModel2channels))
-	// modelsAndConfig := make([]*ModelConfigItem, 0, len(newModel2channels))
-	// for model := range newModel2channels {
-	// 	config, ok := CacheGetModelConfig(model)
-	// 	if ok {
-	// 		models = append(models, model)
-	// 		modelsAndConfig = append(modelsAndConfig, config.ModelConfigItem)
-	// 	}
-	// }
-	// sort.Strings(models)
-	// sort.Slice(modelsAndConfig, func(i, j int) bool {
-	// 	return modelsAndConfig[i].Model < modelsAndConfig[j].Model
-	// })
 
 	newType2ModelsMap := make(map[int]map[string]*ModelConfigItem)
 	for _, channel := range channels {

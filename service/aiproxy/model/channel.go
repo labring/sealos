@@ -56,11 +56,45 @@ func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
 	if len(c.Models) == 0 {
 		return nil
 	}
-	_, missingModels := CacheCheckModelConfig(c.Models)
+	_, missingModels, err := checkModelConfig(tx, c.Models)
+	if err != nil {
+		return err
+	}
 	if len(missingModels) > 0 {
 		return fmt.Errorf("model config not found: %v", missingModels)
 	}
 	return nil
+}
+
+func CheckModelConfig(models []string) ([]string, []string, error) {
+	return checkModelConfig(DB, models)
+}
+
+func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) {
+	if len(models) == 0 {
+		return models, nil, nil
+	}
+	var foundModels []string
+	if err := tx.Model(&ModelConfig{}).Where("model IN ?", models).Pluck("model", &foundModels).Error; err != nil {
+		return nil, nil, err
+	}
+	if len(foundModels) == len(models) {
+		return models, nil, nil
+	}
+	foundModelsMap := make(map[string]struct{}, len(foundModels))
+	for _, model := range foundModels {
+		foundModelsMap[model] = struct{}{}
+	}
+	if len(models)-len(foundModels) > 0 {
+		missingModels := make([]string, 0, len(models)-len(foundModels))
+		for _, model := range models {
+			if _, exists := foundModelsMap[model]; !exists {
+				missingModels = append(missingModels, model)
+			}
+		}
+		return foundModels, missingModels, nil
+	}
+	return foundModels, nil, nil
 }
 
 func (c *Channel) MarshalJSON() ([]byte, error) {
