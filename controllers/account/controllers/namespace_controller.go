@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/minio/madmin-go/v3"
@@ -42,6 +44,7 @@ import (
 	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 
 	"github.com/go-logr/logr"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -132,16 +135,16 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
+	// suspend kb cluster
 	// limit0 resource quota
 	// suspend pod: deploy pod && clone unmanaged pod
-	// delete infra cr
+	// suspend cronjob
 	pipelines := []func(context.Context, string) error{
 		r.suspendKBCluster,
 		r.suspendOrphanPod,
 		r.limitResourceQuotaCreate,
 		r.deleteControlledPod,
-		//TODO how to suspend infra cr or delete infra cr
-		//r.suspendInfraResources,
+		r.suspendCronJob,
 		r.suspendObjectStorage,
 	}
 	for _, fn := range pipelines {
@@ -484,4 +487,21 @@ func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 func (AnnotationChangedPredicate) Create(e event.CreateEvent) bool {
 	_, ok := e.Object.GetAnnotations()[v1.DebtNamespaceAnnoStatusKey]
 	return ok
+}
+
+func (r *NamespaceReconciler) suspendCronJob(ctx context.Context, namespace string) error {
+	cronJobList := batchv1.CronJobList{}
+	if err := r.Client.List(ctx, &cronJobList, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+	for _, cronJob := range cronJobList.Items {
+		if cronJob.Spec.Suspend != nil && *cronJob.Spec.Suspend {
+			continue
+		}
+		cronJob.Spec.Suspend = ptr.To(true)
+		if err := r.Client.Update(ctx, &cronJob); err != nil {
+			return fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err)
+		}
+	}
+	return nil
 }
