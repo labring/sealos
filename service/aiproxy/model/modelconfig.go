@@ -15,6 +15,7 @@ type ModelConfigKey string
 
 const (
 	ModelConfigMaxContextTokensKey ModelConfigKey = "max_context_tokens"
+	ModelConfigMaxInputTokensKey   ModelConfigKey = "max_input_tokens"
 	ModelConfigMaxOutputTokensKey  ModelConfigKey = "max_output_tokens"
 	ModelConfigToolChoiceKey       ModelConfigKey = "tool_choice"
 	ModelConfigFunctionCallingKey  ModelConfigKey = "function_calling"
@@ -22,10 +23,12 @@ const (
 
 //nolint:revive
 type ModelConfig struct {
-	CreatedAt time.Time              `gorm:"index;autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time              `gorm:"index;autoUpdateTime" json:"updated_at"`
-	Config    map[ModelConfigKey]any `gorm:"serializer:fastjson"  json:"config"`
-	Model     string                 `gorm:"primaryKey"           json:"model"`
+	CreatedAt         time.Time              `gorm:"index;autoCreateTime" json:"created_at"`
+	UpdatedAt         time.Time              `gorm:"index;autoUpdateTime" json:"updated_at"`
+	Config            map[ModelConfigKey]any `gorm:"serializer:fastjson"  json:"config,omitempty"`
+	ImagePrices       map[string]float64     `gorm:"serializer:fastjson"  json:"image_prices"`
+	Model             string                 `gorm:"primaryKey"           json:"model"`
+	ImageMaxBatchSize int                    `json:"image_batch_size"`
 	// relaymode/define.go
 	Type        int     `json:"type"`
 	InputPrice  float64 `json:"input_price"`

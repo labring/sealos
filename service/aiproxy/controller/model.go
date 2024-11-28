@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -46,10 +47,23 @@ type OpenAIModels struct {
 	Created    int                     `json:"created"`
 }
 
+type BuiltinModelConfig model.ModelConfig
+
+func (c *BuiltinModelConfig) MarshalJSON() ([]byte, error) {
+	type Alias BuiltinModelConfig
+	return json.Marshal(&struct {
+		*Alias
+		CreatedAt int64 `json:"created_at,omitempty"`
+		UpdatedAt int64 `json:"updated_at,omitempty"`
+	}{
+		Alias: (*Alias)(c),
+	})
+}
+
 var (
 	models                  []OpenAIModels
 	modelsMap               map[string]OpenAIModels
-	builtinChannelID2Models map[int][]*model.ModelConfig
+	builtinChannelID2Models map[int][]*BuiltinModelConfig
 )
 
 func init() {
@@ -112,14 +126,18 @@ func init() {
 	for _, model := range models {
 		modelsMap[model.ID] = model
 	}
-	builtinChannelID2Models = make(map[int][]*model.ModelConfig)
+	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
 	for i := 1; i < channeltype.Dummy; i++ {
 		adaptor := relay.GetAdaptor(channeltype.ToAPIType(i))
 		meta := &meta.Meta{
 			ChannelType: i,
 		}
 		adaptor.Init(meta)
-		builtinChannelID2Models[i] = adaptor.GetModelList()
+		modelList := adaptor.GetModelList()
+		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelList))
+		for idx, model := range modelList {
+			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(model)
+		}
 	}
 	for _, models := range builtinChannelID2Models {
 		sort.Slice(models, func(i, j int) bool {
