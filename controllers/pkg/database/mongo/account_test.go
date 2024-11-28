@@ -479,3 +479,23 @@ func Test_mongoDB_GetTimeObjBucketBucket(t *testing.T) {
 		t.Logf("bucket: %#+v", bucket)
 	}
 }
+
+func Test_mongoDB_GetTimeUsedOwnerList(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, "")
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	owners, err := m.GetTimeUsedNamespaceList(time.Now().UTC().Add(-time.Hour), time.Now().UTC())
+	if err != nil {
+		t.Fatalf("failed to get time used owner list: %v", err)
+	}
+	t.Logf("get time used owner list success: %v", owners)
+}

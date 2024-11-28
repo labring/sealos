@@ -149,6 +149,35 @@ func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type common.Type) (boo
 	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
 }
 
+func (m *mongoDB) GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{{Key: "time", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}}}}},
+		{{Key: "$group", Value: bson.D{{Key: "_id", Value: "$category"}}}},
+		{{Key: "$project", Value: bson.D{{Key: "_id", Value: 0}, {Key: "namespace", Value: "$_id"}}}},
+	}
+	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate error: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var namespaces []string
+	for cursor.Next(context.Background()) {
+		var result struct {
+			Namespace string `bson:"namespace"`
+		}
+		err := cursor.Decode(&result)
+		if err != nil {
+			return nil, fmt.Errorf("decode error: %v", err)
+		}
+		namespaces = append(namespaces, result.Namespace)
+	}
+	if err = cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return namespaces, nil
+}
+
 func (m *mongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error) {
 	filter := bson.M{
 		"owner": owner,

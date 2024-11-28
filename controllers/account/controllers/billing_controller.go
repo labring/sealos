@@ -22,24 +22,21 @@ import (
 	"strings"
 	"time"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	v12 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/labring/sealos/controllers/pkg/database"
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -60,48 +57,28 @@ type BillingReconciler struct {
 	Properties *resources.PropertyTypeLS
 }
 
-//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Billing object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
-func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("Reconcile Billing: ", "req.NamespacedName", req.NamespacedName)
-	ns := &corev1.Namespace{}
-	if err := r.Get(ctx, req.NamespacedName, ns); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if ns.DeletionTimestamp != nil {
-		r.Logger.V(1).Info("namespace is deleting", "namespace", ns)
-		return ctrl.Result{}, nil
-	}
-
-	owner := ns.Labels[v1.UserLabelOwnerKey]
-	nsList, err := getOwnNsList(r.Client, owner)
+func (r *BillingReconciler) ExecuteBillingTask() error {
+	ownerList, err := r.getRecentOwners()
 	if err != nil {
-		r.Logger.Error(err, "get own namespace list failed")
-		return ctrl.Result{Requeue: true}, err
+		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
+		return err
 	}
-	r.Logger.V(1).Info("own namespace list", "own", owner, "nsList", nsList)
 	now := time.Now()
+	for _, owner := range ownerList {
+		if err := r.reconcileOwner(owner, now); err != nil {
+			r.Logger.Error(err, "reconcile owner failed", "owner", owner)
+			continue
+		}
+	}
+	return nil
+}
+
+func (r *BillingReconciler) reconcileOwner(owner string, now time.Time) error {
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	queryTime := currentHourTime.Add(-1 * time.Hour)
-
-	// TODO r.处理Unsettle状态的账单
-
 	if exist, lastUpdateTime, _ := r.DBClient.GetBillingLastUpdateTime(owner, v12.Consumption); exist {
 		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
+			return nil
 		}
 		// 24小时内的数据，从上次更新时间开始计算，否则从当前时间起算
 		if lastUpdateTime.After(currentHourTime.Add(-24 * time.Hour)) {
@@ -113,9 +90,9 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	consumAmount := int64(0)
 	// 计算上次billing到当前的时间之间的整点，左开右闭
 	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		ids, amount, err := r.DBClient.GenerateBillingData(t.Add(-1*time.Hour), t, r.Properties, nsList, getUsername(owner))
+		ids, amount, err := r.DBClient.GenerateBillingData(t.Add(-1*time.Hour), t, r.Properties, nil, getUsername(owner))
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("generate billing data failed: %w", err)
+			return fmt.Errorf("generate billing data failed: %w", err)
 		}
 		orderList = append(orderList, ids...)
 		consumAmount += amount
@@ -127,11 +104,11 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					r.Logger.Error(err, "update billing status failed", "id", orderList[i])
 				}
 			}
-			return ctrl.Result{}, fmt.Errorf("recharge balance failed: %w", err)
+			return fmt.Errorf("recharge balance failed: %w", err)
 		}
 		r.Logger.V(1).Info("success recharge balance", "owner", owner, "amount", consumAmount)
 	}
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
+	return nil
 }
 
 func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err error) {
@@ -144,48 +121,69 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	return nil
 }
 
-func getOwnNsList(clt client.Client, user string) ([]string, error) {
-	nsList := &corev1.NamespaceList{}
-	if err := clt.List(context.Background(), nsList, client.MatchingLabels{v1.UserLabelOwnerKey: user}); err != nil {
-		return nil, fmt.Errorf("list namespace failed: %w", err)
+func (r *BillingReconciler) getRecentOwners() ([]string, error) {
+	now := time.Now()
+	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
+	startHourTime := endHourTime.Add(-1 * time.Hour)
+	namespaceList, err := r.DBClient.GetTimeUsedNamespaceList(startHourTime, endHourTime)
+	if err != nil {
+		return nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
-	nsListStr := make([]string, len(nsList.Items))
-	for i := range nsList.Items {
-		nsListStr[i] = nsList.Items[i].Name
+	nsToOwnerMap, err := r.getAllUser()
+	if err != nil {
+		return nil, fmt.Errorf("get all user failed: %w", err)
 	}
-	return nsListStr, nil
-}
-
-func (r *BillingReconciler) initDB() error {
-	return r.DBClient.CreateBillingIfNotExist()
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	r.Logger = ctrl.Log.WithName("controller").WithName("Billing")
-	if err := r.initDB(); err != nil {
-		r.Logger.Error(err, "init db failed")
+	ownerList := []string{}
+	for _, ns := range namespaceList {
+		if owner, ok := nsToOwnerMap[ns]; ok {
+			ownerList = append(ownerList, owner)
+		}
 	}
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
-			CreateFunc: func(createEvent event.CreateEvent) bool {
-				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
-				return ok && getUsername(createEvent.Object.GetName()) == own
-			},
-			UpdateFunc: func(_ event.UpdateEvent) bool {
-				return false
-			},
-			DeleteFunc: func(_ event.DeleteEvent) bool {
-				return false
-			},
-			GenericFunc: func(_ event.GenericEvent) bool {
-				return false
-			},
-		})).
-		WithOptions(rateOpts).
-		Complete(r)
+	return ownerList, nil
 }
 
 func getUsername(namespace string) string {
 	return strings.TrimPrefix(namespace, UserNamespacePrefix)
+}
+
+func (r *BillingReconciler) Init() error {
+	r.Logger = ctrl.Log.WithName("controller").WithName("Billing")
+	if err := r.DBClient.CreateBillingIfNotExist(); err != nil {
+		return fmt.Errorf("create billing collection failed: %w", err)
+	}
+	return nil
+}
+
+// map[namespace]owner
+func (r *BillingReconciler) getAllUser() (map[string]string, error) {
+	nsToOwnerMap := make(map[string]string)
+
+	listOpts := &client.ListOptions{
+		Limit: 1000,
+	}
+	for {
+		userMetaList := &metav1.PartialObjectMetadataList{}
+		userMetaList.SetGroupVersionKind(userv1.GroupVersion.WithKind("UserList"))
+
+		if err := r.Client.List(context.Background(), userMetaList, listOpts); err != nil {
+			return nil, fmt.Errorf("failed to list instances: %v", err)
+		}
+
+		fmt.Printf("Retrieved %d users\n", len(userMetaList.Items))
+
+		for _, user := range userMetaList.Items {
+			owner := user.Annotations[userv1.UserLabelOwnerKey]
+			if owner == "" {
+				continue
+			}
+			nsToOwnerMap["ns-"+user.Name] = owner
+		}
+
+		token := userMetaList.GetContinue()
+		if token == "" {
+			break
+		}
+		listOpts.Continue = token
+	}
+	return nsToOwnerMap, nil
 }

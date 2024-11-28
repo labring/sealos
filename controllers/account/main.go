@@ -218,14 +218,16 @@ func main() {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)
 	}
-	if err = (&controllers.BillingReconciler{
+	billingReconciler := controllers.BillingReconciler{
 		DBClient:   dbClient,
 		Properties: resources.DefaultPropertyTypeLS,
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 		AccountV2:  v2Account,
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Billing")
+	}
+	if err = billingReconciler.Init(); err != nil {
+		setupLog.Error(err, "unable to init billing reconciler")
+		os.Exit(1)
 	}
 
 	if err = (&controllers.PodReconciler{
@@ -278,7 +280,21 @@ func main() {
 			<-ticker.C
 		}
 	}()
+	go func() {
+		now := time.Now()
+		nextHour := now.Truncate(time.Hour).Add(time.Hour)
+		time.Sleep(nextHour.Sub(now))
 
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for {
+			setupLog.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+			if err := billingReconciler.ExecuteBillingTask(); err != nil {
+				setupLog.Error(err, "failed to execute billing task")
+			}
+			<-ticker.C
+		}
+	}()
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "fail to run manager")
