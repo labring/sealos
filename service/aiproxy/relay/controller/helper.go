@@ -125,6 +125,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 	}
 }
 
+//nolint:unparam
 func getMappedModelName(modelName string, mapping map[string]string) (string, bool) {
 	if mapping == nil {
 		return modelName, false

@@ -74,7 +74,7 @@ func StreamResponseCoze2OpenAI(cozeResponse *StreamResponse) (*openai.ChatComple
 	}
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
-	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	openaiResponse.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	openaiResponse.ID = cozeResponse.ConversationID
 	return &openaiResponse, response
 }
@@ -101,7 +101,7 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 		Model:   "coze-bot",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
@@ -131,7 +131,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var cozeResponse StreamResponse
 		err := json.Unmarshal(data, &cozeResponse)
 		if err != nil {
-			logger.SysErrorf("error unmarshalling stream response: %s, data: %s", err.Error(), conv.BytesToString(data))
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
 
@@ -148,12 +148,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)

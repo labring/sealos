@@ -146,7 +146,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	var usage relaymodel.Usage
 	var id string
-	var lastToolCallChoice openai.ChatCompletionsStreamResponseChoice
+	var lastToolCallChoice *openai.ChatCompletionsStreamResponseChoice
 
 	c.Stream(func(_ io.Writer) bool {
 		event, ok := <-stream.Events()
@@ -160,7 +160,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			claudeResp := anthropic.StreamResponse{}
 			err := json.Unmarshal(v.Value.Bytes, &claudeResp)
 			if err != nil {
-				logger.SysError("error unmarshalling stream response: " + err.Error())
+				logger.Error(c, "error unmarshalling stream response: "+err.Error())
 				return false
 			}
 
@@ -175,7 +175,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 					id = "chatcmpl-" + meta.ID
 					return true
 				}
-				if len(lastToolCallChoice.Delta.ToolCalls) > 0 {
+				if lastToolCallChoice != nil && len(lastToolCallChoice.Delta.ToolCalls) > 0 {
 					lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
 					if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
 						lastArgs.Arguments = "{}"
@@ -195,15 +195,15 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			}
 			err = render.ObjectData(c, response)
 			if err != nil {
-				logger.SysError("error stream response: " + err.Error())
+				logger.Error(c, "error stream response: "+err.Error())
 				return false
 			}
 			return true
 		case *types.UnknownUnionMember:
-			logger.SysErrorf("unknown tag: %s", v.Tag)
+			logger.Error(c, "unknown tag: "+v.Tag)
 			return false
 		default:
-			logger.SysErrorf("union is nil or unknown type: %v", v)
+			logger.Errorf(c, "union is nil or unknown type: %v", v)
 			return false
 		}
 	})

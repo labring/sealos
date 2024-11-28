@@ -173,7 +173,7 @@ func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *BatchEmbeddin
 }
 
 type ChatResponse struct {
-	Candidates     []ChatCandidate    `json:"candidates"`
+	Candidates     []*ChatCandidate   `json:"candidates"`
 	PromptFeedback ChatPromptFeedback `json:"promptFeedback"`
 }
 
@@ -203,8 +203,8 @@ type ChatPromptFeedback struct {
 	SafetyRatings []ChatSafetyRating `json:"safetyRatings"`
 }
 
-func getToolCalls(candidate *ChatCandidate) []model.Tool {
-	var toolCalls []model.Tool
+func getToolCalls(candidate *ChatCandidate) []*model.Tool {
+	var toolCalls []*model.Tool
 
 	item := candidate.Content.Parts[0]
 	if item.FunctionCall == nil {
@@ -223,7 +223,7 @@ func getToolCalls(candidate *ChatCandidate) []model.Tool {
 			Name:      item.FunctionCall.FunctionName,
 		},
 	}
-	toolCalls = append(toolCalls, toolCall)
+	toolCalls = append(toolCalls, &toolCall)
 	return toolCalls
 }
 
@@ -232,7 +232,7 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: make([]openai.TextResponseChoice, 0, len(response.Candidates)),
+		Choices: make([]*openai.TextResponseChoice, 0, len(response.Candidates)),
 	}
 	for i, candidate := range response.Candidates {
 		choice := openai.TextResponseChoice{
@@ -244,7 +244,7 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 		}
 		if len(candidate.Content.Parts) > 0 {
 			if candidate.Content.Parts[0].FunctionCall != nil {
-				choice.Message.ToolCalls = getToolCalls(&candidate)
+				choice.Message.ToolCalls = getToolCalls(candidate)
 			} else {
 				choice.Message.Content = candidate.Content.Parts[0].Text
 			}
@@ -252,7 +252,7 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 			choice.Message.Content = ""
 			choice.FinishReason = candidate.FinishReason
 		}
-		fullTextResponse.Choices = append(fullTextResponse.Choices, choice)
+		fullTextResponse.Choices = append(fullTextResponse.Choices, &choice)
 	}
 	return &fullTextResponse
 }
@@ -266,19 +266,19 @@ func streamResponseGeminiChat2OpenAI(geminiResponse *ChatResponse) *openai.ChatC
 	response.Created = helper.GetTimestamp()
 	response.Object = "chat.completion.chunk"
 	response.Model = "gemini"
-	response.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	response.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &response
 }
 
 func embeddingResponseGemini2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
-		Data:   make([]openai.EmbeddingResponseItem, 0, len(response.Embeddings)),
+		Data:   make([]*openai.EmbeddingResponseItem, 0, len(response.Embeddings)),
 		Model:  "gemini-embedding",
 		Usage:  model.Usage{TotalTokens: 0},
 	}
 	for _, item := range response.Embeddings {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, openai.EmbeddingResponseItem{
+		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
 			Object:    `embedding`,
 			Index:     0,
 			Embedding: item.Values,
@@ -310,7 +310,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var geminiResponse ChatResponse
 		err := json.Unmarshal(data, &geminiResponse)
 		if err != nil {
-			logger.SysErrorf("error unmarshalling stream response: %s, data: %s", err.Error(), conv.BytesToString(data))
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
 
@@ -323,12 +323,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)

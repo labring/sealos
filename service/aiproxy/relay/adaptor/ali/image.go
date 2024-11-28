@@ -34,7 +34,7 @@ func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.Er
 	}
 
 	if aliTaskResponse.Message != "" {
-		logger.SysErrorf("aliAsyncTask err: %s", responseBody)
+		logger.Error(c, "aliAsyncTask err: "+aliTaskResponse.Message)
 		return openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError), nil
 	}
 
@@ -55,7 +55,7 @@ func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.Er
 		}, nil
 	}
 
-	fullTextResponse := responseAli2OpenAIImage(aliResponse, responseFormat)
+	fullTextResponse := responseAli2OpenAIImage(c.Request.Context(), aliResponse, responseFormat)
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
@@ -81,7 +81,7 @@ func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, e
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.SysError("aliAsyncTask client.Do err: " + err.Error())
+		logger.Error(ctx, "aliAsyncTask client.Do err: "+err.Error())
 		return &aliResponse, err
 	}
 	defer resp.Body.Close()
@@ -89,7 +89,7 @@ func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, e
 	var response TaskResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		logger.SysError("aliAsyncTask NewDecoder err: " + err.Error())
+		logger.Error(ctx, "aliAsyncTask NewDecoder err: "+err.Error())
 		return &aliResponse, err
 	}
 
@@ -131,7 +131,7 @@ func asyncTaskWait(ctx context.Context, taskID string, key string) (*TaskRespons
 	return nil, errors.New("aliAsyncTaskWait timeout")
 }
 
-func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *openai.ImageResponse {
+func responseAli2OpenAIImage(ctx context.Context, response *TaskResponse, responseFormat string) *openai.ImageResponse {
 	imageResponse := openai.ImageResponse{
 		Created: helper.GetTimestamp(),
 	}
@@ -140,10 +140,10 @@ func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *ope
 		var b64Json string
 		if responseFormat == "b64_json" {
 			// 读取 data.Url 的图片数据并转存到 b64Json
-			imageData, err := getImageData(data.URL)
+			imageData, err := getImageData(ctx, data.URL)
 			if err != nil {
 				// 处理获取图片数据失败的情况
-				logger.SysError("getImageData Error getting image data: " + err.Error())
+				logger.Error(ctx, "getImageData Error getting image data: "+err.Error())
 				continue
 			}
 
@@ -154,7 +154,7 @@ func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *ope
 			b64Json = data.B64Image
 		}
 
-		imageResponse.Data = append(imageResponse.Data, openai.ImageData{
+		imageResponse.Data = append(imageResponse.Data, &openai.ImageData{
 			URL:           data.URL,
 			B64Json:       b64Json,
 			RevisedPrompt: "",
@@ -163,8 +163,8 @@ func responseAli2OpenAIImage(response *TaskResponse, responseFormat string) *ope
 	return &imageResponse
 }
 
-func getImageData(url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+func getImageData(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

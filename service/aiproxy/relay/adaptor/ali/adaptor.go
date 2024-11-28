@@ -37,10 +37,6 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
-	if meta.IsStream {
-		req.Header.Set("Accept", "text/event-stream")
-		req.Header.Set("X-Dashscope-Sse", "enable")
-	}
 	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
 
 	if meta.Mode == relaymode.ImagesGenerations {
@@ -71,7 +67,7 @@ func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, er
 		return nil, errors.New("request is nil")
 	}
 
-	aliRequest := ConvertImageRequest(*request)
+	aliRequest := ConvertImageRequest(request)
 	return aliRequest, nil
 }
 
@@ -88,16 +84,16 @@ func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error
 }
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	if meta.IsStream {
-		err, _, usage = openai.StreamHandler(c, resp, meta.Mode)
-	} else {
-		switch meta.Mode {
-		case relaymode.Embeddings:
-			err, usage = EmbeddingHandler(c, resp)
-		case relaymode.ImagesGenerations:
-			err, usage = ImageHandler(c, resp, meta.APIKey)
-		default:
-			err, usage = openai.Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+	switch meta.Mode {
+	case relaymode.Embeddings:
+		err, usage = EmbeddingHandler(c, resp)
+	case relaymode.ImagesGenerations:
+		err, usage = ImageHandler(c, resp, meta.APIKey)
+	default:
+		if meta.IsStream {
+			err, usage = openai.StreamHandler(c, resp, meta)
+		} else {
+			err, usage = openai.Handler(c, resp, meta)
 		}
 	}
 	return

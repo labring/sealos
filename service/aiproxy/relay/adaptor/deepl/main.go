@@ -39,7 +39,7 @@ func StreamResponseDeepL2OpenAI(deeplResponse *Response) *openai.ChatCompletions
 	openaiResponse := openai.ChatCompletionsStreamResponse{
 		Object:  constant.StreamObject,
 		Created: helper.GetTimestamp(),
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
 	return &openaiResponse
 }
@@ -61,7 +61,7 @@ func ResponseDeepL2OpenAI(deeplResponse *Response) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
 		Object:  constant.NonStreamObject,
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }

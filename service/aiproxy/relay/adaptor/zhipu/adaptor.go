@@ -111,9 +111,9 @@ func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error
 
 func (a *Adaptor) DoResponseV4(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	if meta.IsStream {
-		err, _, usage = openai.StreamHandler(c, resp, meta.Mode)
+		err, usage = openai.StreamHandler(c, resp, meta)
 	} else {
-		err, usage = openai.Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = openai.Handler(c, resp, meta)
 	}
 	return
 }

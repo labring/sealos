@@ -93,7 +93,7 @@ func responseZhipu2OpenAI(response *Response) *openai.TextResponse {
 		ID:      response.Data.TaskID,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: make([]openai.TextResponseChoice, 0, len(response.Data.Choices)),
+		Choices: make([]*openai.TextResponseChoice, 0, len(response.Data.Choices)),
 		Usage:   response.Data.Usage,
 	}
 	for i, choice := range response.Data.Choices {
@@ -101,14 +101,14 @@ func responseZhipu2OpenAI(response *Response) *openai.TextResponse {
 			Index: i,
 			Message: model.Message{
 				Role:    choice.Role,
-				Content: strings.Trim(choice.Content.(string), "\""),
+				Content: strings.Trim(choice.StringContent(), "\""),
 			},
 			FinishReason: "",
 		}
 		if i == len(response.Data.Choices)-1 {
 			openaiChoice.FinishReason = "stop"
 		}
-		fullTextResponse.Choices = append(fullTextResponse.Choices, openaiChoice)
+		fullTextResponse.Choices = append(fullTextResponse.Choices, &openaiChoice)
 	}
 	return &fullTextResponse
 }
@@ -120,7 +120,7 @@ func streamResponseZhipu2OpenAI(zhipuResponse string) *openai.ChatCompletionsStr
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "chatglm",
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
 	return &response
 }
@@ -134,7 +134,7 @@ func streamMetaResponseZhipu2OpenAI(zhipuResponse *StreamMetaResponse) (*openai.
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "chatglm",
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
 	return &response, &zhipuResponse.Usage
 }
@@ -174,20 +174,20 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 				response := streamResponseZhipu2OpenAI(dataSegment)
 				err := render.ObjectData(c, response)
 				if err != nil {
-					logger.SysError("error marshalling stream response: " + err.Error())
+					logger.Error(c, "error marshalling stream response: "+err.Error())
 				}
 			} else if strings.HasPrefix(line, "meta: ") {
 				metaSegment := line[6:]
 				var zhipuResponse StreamMetaResponse
 				err := json.Unmarshal(conv.StringToBytes(metaSegment), &zhipuResponse)
 				if err != nil {
-					logger.SysError("error unmarshalling stream response: " + err.Error())
+					logger.Error(c, "error unmarshalling stream response: "+err.Error())
 					continue
 				}
 				response, zhipuUsage := streamMetaResponseZhipu2OpenAI(&zhipuResponse)
 				err = render.ObjectData(c, response)
 				if err != nil {
-					logger.SysError("error marshalling stream response: " + err.Error())
+					logger.Error(c, "error marshalling stream response: "+err.Error())
 				}
 				usage = zhipuUsage
 			}
@@ -195,7 +195,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)
@@ -256,7 +256,7 @@ func EmbeddingsHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithSta
 func embeddingResponseZhipu2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
-		Data:   make([]openai.EmbeddingResponseItem, 0, len(response.Embeddings)),
+		Data:   make([]*openai.EmbeddingResponseItem, 0, len(response.Embeddings)),
 		Model:  response.Model,
 		Usage: model.Usage{
 			PromptTokens:     response.PromptTokens,
@@ -266,7 +266,7 @@ func embeddingResponseZhipu2OpenAI(response *EmbeddingResponse) *openai.Embeddin
 	}
 
 	for _, item := range response.Embeddings {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, openai.EmbeddingResponseItem{
+		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
 			Object:    `embedding`,
 			Index:     item.Index,
 			Embedding: item.Embedding,

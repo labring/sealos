@@ -36,16 +36,16 @@ type Message struct {
 }
 
 type ChatRequest struct {
-	Temperature     *float64        `json:"temperature,omitempty"`
-	TopP            *float64        `json:"top_p,omitempty"`
-	PenaltyScore    *float64        `json:"penalty_score,omitempty"`
-	System          string          `json:"system,omitempty"`
-	UserID          string          `json:"user_id,omitempty"`
-	Messages        []model.Message `json:"messages"`
-	MaxOutputTokens int             `json:"max_output_tokens,omitempty"`
-	Stream          bool            `json:"stream,omitempty"`
-	DisableSearch   bool            `json:"disable_search,omitempty"`
-	EnableCitation  bool            `json:"enable_citation,omitempty"`
+	Temperature     *float64         `json:"temperature,omitempty"`
+	TopP            *float64         `json:"top_p,omitempty"`
+	PenaltyScore    *float64         `json:"penalty_score,omitempty"`
+	System          string           `json:"system,omitempty"`
+	UserID          string           `json:"user_id,omitempty"`
+	Messages        []*model.Message `json:"messages"`
+	MaxOutputTokens int              `json:"max_output_tokens,omitempty"`
+	Stream          bool             `json:"stream,omitempty"`
+	DisableSearch   bool             `json:"disable_search,omitempty"`
+	EnableCitation  bool             `json:"enable_citation,omitempty"`
 }
 
 type Error struct {
@@ -56,6 +56,9 @@ type Error struct {
 var baiduTokenStore sync.Map
 
 func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
+	for _, message := range request.Messages {
+		message.ToStringContentMessage()
+	}
 	baiduRequest := ChatRequest{
 		Messages:        request.Messages,
 		Temperature:     request.Temperature,
@@ -103,8 +106,10 @@ func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
 		ID:      response.ID,
 		Object:  "chat.completion",
 		Created: response.Created,
-		Choices: []openai.TextResponseChoice{choice},
-		Usage:   response.Usage,
+		Choices: []*openai.TextResponseChoice{&choice},
+	}
+	if response.Usage != nil {
+		fullTextResponse.Usage = *response.Usage
 	}
 	return &fullTextResponse
 }
@@ -120,7 +125,8 @@ func streamResponseBaidu2OpenAI(baiduResponse *ChatStreamResponse) *openai.ChatC
 		Object:  "chat.completion.chunk",
 		Created: baiduResponse.Created,
 		Model:   "ernie-bot",
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
+		Usage:   baiduResponse.Usage,
 	}
 	return &response
 }
@@ -134,12 +140,12 @@ func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequ
 func embeddingResponseBaidu2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
-		Data:   make([]openai.EmbeddingResponseItem, 0, len(response.Data)),
+		Data:   make([]*openai.EmbeddingResponseItem, 0, len(response.Data)),
 		Model:  "baidu-embedding",
 		Usage:  response.Usage,
 	}
 	for _, item := range response.Data {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, openai.EmbeddingResponseItem{
+		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
 			Object:    item.Object,
 			Index:     item.Index,
 			Embedding: item.Embedding,
@@ -171,10 +177,10 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var baiduResponse ChatStreamResponse
 		err := json.Unmarshal(data, &baiduResponse)
 		if err != nil {
-			logger.SysErrorf("error unmarshalling stream response: %s, data: %s", err.Error(), conv.BytesToString(data))
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
-		if baiduResponse.Usage.TotalTokens != 0 {
+		if baiduResponse.Usage != nil {
 			usage.TotalTokens = baiduResponse.Usage.TotalTokens
 			usage.PromptTokens = baiduResponse.Usage.PromptTokens
 			usage.CompletionTokens = baiduResponse.Usage.TotalTokens - baiduResponse.Usage.PromptTokens
@@ -182,12 +188,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		response := streamResponseBaidu2OpenAI(&baiduResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)
