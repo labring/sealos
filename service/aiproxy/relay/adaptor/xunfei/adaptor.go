@@ -36,9 +36,6 @@ func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *relaymodel.Gene
 		return nil, err
 	}
 	request.Model = domain
-	for _, message := range request.Messages {
-		message.ToStringContentMessage()
-	}
 	return request, nil
 }
 
