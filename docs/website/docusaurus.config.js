@@ -151,7 +151,7 @@ const config = {
         },
         {
           position: "left",
-          to: "/blog",
+          to: "https://blog.sealos.run/blog",
           label: "Blog"
         },
         {
@@ -182,12 +182,8 @@ const config = {
           title: "Product",
           items: [
             {
-              label: "Laf",
-              to: "https://github.com/labring/laf",
-            },
-            {
-              label: "Sealfs",
-              to: "https://github.com/labring/sealfs",
+              label: "Devbox",
+              to: "/devbox",
             },
             {
               label: "FastGPT",
