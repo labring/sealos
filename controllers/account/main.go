@@ -229,6 +229,13 @@ func main() {
 		setupLog.Error(err, "unable to init billing reconciler")
 		os.Exit(1)
 	}
+	billingTaskRunner := &controllers.BillingTaskRunner{
+		BillingReconciler: &billingReconciler,
+	}
+	if err := mgr.Add(billingTaskRunner); err != nil {
+		setupLog.Error(err, "unable to add billing task runner")
+		os.Exit(1)
+	}
 
 	if err = (&controllers.PodReconciler{
 		Client: mgr.GetClient(),
@@ -280,21 +287,22 @@ func main() {
 			<-ticker.C
 		}
 	}()
-	go func() {
-		now := time.Now()
-		nextHour := now.Truncate(time.Hour).Add(time.Hour)
-		time.Sleep(nextHour.Sub(now))
+	//go func() {
+	//	now := time.Now()
+	//	nextHour := now.Truncate(time.Hour).Add(time.Hour)
+	//	time.Sleep(nextHour.Sub(now))
+	//
+	//	ticker := time.NewTicker(time.Hour)
+	//	defer ticker.Stop()
+	//	for {
+	//		setupLog.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+	//		if err := billingReconciler.ExecuteBillingTask(); err != nil {
+	//			setupLog.Error(err, "failed to execute billing task")
+	//		}
+	//		<-ticker.C
+	//	}
+	//}()
 
-		ticker := time.NewTicker(time.Hour)
-		defer ticker.Stop()
-		for {
-			setupLog.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
-			if err := billingReconciler.ExecuteBillingTask(); err != nil {
-				setupLog.Error(err, "failed to execute billing task")
-			}
-			<-ticker.C
-		}
-	}()
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "fail to run manager")

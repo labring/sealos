@@ -40,6 +40,31 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type BillingTaskRunner struct {
+	*BillingReconciler
+}
+
+func (r *BillingTaskRunner) Start(ctx context.Context) error {
+	now := time.Now()
+	nextHour := now.Truncate(time.Hour).Add(time.Hour)
+	r.Logger.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
+	time.Sleep(nextHour.Sub(now))
+
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+			if err := r.ExecuteBillingTask(); err != nil {
+				r.Logger.Error(err, "failed to execute billing task")
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
 const (
 	UserNamespacePrefix = "ns-"
 	ResourceQuotaPrefix = "quota-"
@@ -58,7 +83,7 @@ type BillingReconciler struct {
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
-	ownerList, err := r.getRecentOwners()
+	ownerList, err := r.getRecentUsedOwners()
 	if err != nil {
 		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
 		return err
@@ -121,7 +146,7 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	return nil
 }
 
-func (r *BillingReconciler) getRecentOwners() ([]string, error) {
+func (r *BillingReconciler) getRecentUsedOwners() ([]string, error) {
 	now := time.Now()
 	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	startHourTime := endHourTime.Add(-1 * time.Hour)
@@ -133,13 +158,15 @@ func (r *BillingReconciler) getRecentOwners() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get all user failed: %w", err)
 	}
-	ownerList := []string{}
+	usedOwnerList := []string{}
+	ownerUsedNSMap := make(map[string][]string)
 	for _, ns := range namespaceList {
 		if owner, ok := nsToOwnerMap[ns]; ok {
-			ownerList = append(ownerList, owner)
+			usedOwnerList = append(usedOwnerList, owner)
+			ownerUsedNSMap[owner] = append(ownerUsedNSMap[owner], ns)
 		}
 	}
-	return ownerList, nil
+	return usedOwnerList, nil
 }
 
 func getUsername(namespace string) string {
