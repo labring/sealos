@@ -11,6 +11,10 @@ var ModelList = []*model.ModelConfig{
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey:  64000,
+			model.ModelConfigMaxOutputTokensKey: 4096,
+		},
 	},
 	{
 		Model: "deepseek-coder",

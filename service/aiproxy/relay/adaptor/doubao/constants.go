@@ -9,12 +9,23 @@ import (
 
 var ModelList = []*model.ModelConfig{
 	{
+		Model:       "Doubao-pro-256k",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.0050,
+		OutputPrice: 0.0090,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 256000,
+			model.ModelConfigMaxOutputTokensKey:  4096,
+		},
+	},
+	{
 		Model:       "Doubao-pro-128k",
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.0050,
 		OutputPrice: 0.0090,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -23,7 +34,8 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.0008,
 		OutputPrice: 0.0020,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 32000,
+			model.ModelConfigMaxContextTokensKey: 32768,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -32,7 +44,8 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.0008,
 		OutputPrice: 0.0020,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 4000,
+			model.ModelConfigMaxContextTokensKey: 4096,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -42,6 +55,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.0010,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -50,7 +64,8 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 32000,
+			model.ModelConfigMaxContextTokensKey: 32768,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -59,7 +74,8 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 4000,
+			model.ModelConfigMaxContextTokensKey: 4096,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{

@@ -9,33 +9,57 @@ import (
 
 var ModelList = []*model.ModelConfig{
 	{
+		Model:       "abab7-chat-preview",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.001,
+		OutputPrice: 0.001,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 245760,
+		},
+	},
+	{
 		Model:       "abab6.5s-chat",
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.001,
-		OutputPrice: 0,
+		OutputPrice: 0.001,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 245760,
+		},
 	},
 	{
 		Model:       "abab6.5g-chat",
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.005,
-		OutputPrice: 0,
+		OutputPrice: 0.005,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
 		Model:       "abab6.5t-chat",
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.005,
-		OutputPrice: 0,
+		OutputPrice: 0.005,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
 		Model:       "abab5.5s-chat",
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.005,
-		OutputPrice: 0,
+		OutputPrice: 0.005,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
 		Model:       "abab5.5-chat",
 		Type:        relaymode.ChatCompletions,
 		InputPrice:  0.015,
-		OutputPrice: 0,
+		OutputPrice: 0.015,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 16384,
+		},
 	},
 }
