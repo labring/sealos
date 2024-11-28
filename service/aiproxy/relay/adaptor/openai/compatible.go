@@ -35,7 +35,7 @@ var CompatibleChannels = []int{
 	channeltype.SiliconFlow,
 }
 
-func GetCompatibleChannelMeta(channelType int) (string, []*model.ModelConfigItem) {
+func GetCompatibleChannelMeta(channelType int) (string, []*model.ModelConfig) {
 	switch channelType {
 	case channeltype.Azure:
 		return "azure", ModelList

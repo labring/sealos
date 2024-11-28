@@ -5,7 +5,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "chatglm_turbo",
 		Type:  relaymode.ChatCompletions,

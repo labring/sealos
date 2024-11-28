@@ -149,7 +149,7 @@ func ConvertEmbeddingRequest(request relaymodel.GeneralOpenAIRequest) (*Embeddin
 	}, nil
 }
 
-func (a *Adaptor) GetModelList() []*model.ModelConfigItem {
+func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
 }
 

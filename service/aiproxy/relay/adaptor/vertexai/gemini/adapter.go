@@ -15,7 +15,7 @@ import (
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "gemini-1.5-pro-001",
 		Type:  relaymode.ChatCompletions,

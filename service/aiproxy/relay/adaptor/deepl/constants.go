@@ -7,7 +7,7 @@ import (
 
 // https://developers.deepl.com/docs/api-reference/glossaries
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "deepl-zh",
 		Type:  relaymode.ChatCompletions,

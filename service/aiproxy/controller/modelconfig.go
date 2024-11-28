@@ -140,7 +140,7 @@ func SaveModelConfigs(c *gin.Context) {
 }
 
 func SaveModelConfig(c *gin.Context) {
-	var config model.ModelConfigItem
+	var config model.ModelConfig
 	if err := c.ShouldBindJSON(&config); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -148,7 +148,7 @@ func SaveModelConfig(c *gin.Context) {
 		})
 		return
 	}
-	err := model.SaveModelConfig(&model.ModelConfig{ModelConfigItem: &config})
+	err := model.SaveModelConfig(&config)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

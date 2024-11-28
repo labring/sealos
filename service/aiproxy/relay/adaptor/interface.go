@@ -20,6 +20,6 @@ type Adaptor interface {
 	ConvertTTSRequest(request *relaymodel.TextToSpeechRequest) (any, error)
 	DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error)
 	DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode)
-	GetModelList() []*model.ModelConfigItem
+	GetModelList() []*model.ModelConfig
 	GetChannelName() string
 }

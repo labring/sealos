@@ -47,9 +47,9 @@ type OpenAIModels struct {
 }
 
 var (
-	models           []OpenAIModels
-	modelsMap        map[string]OpenAIModels
-	channelID2Models map[int][]*model.ModelConfigItem
+	models                  []OpenAIModels
+	modelsMap               map[string]OpenAIModels
+	builtinChannelID2Models map[int][]*model.ModelConfig
 )
 
 func init() {
@@ -112,16 +112,16 @@ func init() {
 	for _, model := range models {
 		modelsMap[model.ID] = model
 	}
-	channelID2Models = make(map[int][]*model.ModelConfigItem)
+	builtinChannelID2Models = make(map[int][]*model.ModelConfig)
 	for i := 1; i < channeltype.Dummy; i++ {
 		adaptor := relay.GetAdaptor(channeltype.ToAPIType(i))
 		meta := &meta.Meta{
 			ChannelType: i,
 		}
 		adaptor.Init(meta)
-		channelID2Models[i] = adaptor.GetModelList()
+		builtinChannelID2Models[i] = adaptor.GetModelList()
 	}
-	for _, models := range channelID2Models {
+	for _, models := range builtinChannelID2Models {
 		sort.Slice(models, func(i, j int) bool {
 			return models[i].Model < models[j].Model
 		})
@@ -132,7 +132,7 @@ func BuiltinModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    channelID2Models,
+		"data":    builtinChannelID2Models,
 	})
 }
 
@@ -156,7 +156,7 @@ func BuiltinModelsByType(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    channelID2Models[channelTypeInt],
+		"data":    builtinChannelID2Models[channelTypeInt],
 	})
 }
 

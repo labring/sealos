@@ -26,23 +26,23 @@ import (
 
 type awsModelItem struct {
 	ID string
-	model.ModelConfigItem
+	model.ModelConfig
 }
 
 // AwsModelIDMap maps internal model identifiers to AWS model identifiers.
 // For more details, see: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
 
 var AwsModelIDMap = map[string]awsModelItem{
-	"claude-instant-1.2":         {ModelConfigItem: model.ModelConfigItem{Model: "claude-instant-1.2"}, ID: "anthropic.claude-instant-v1"},
-	"claude-2.0":                 {ModelConfigItem: model.ModelConfigItem{Model: "claude-2.0"}, ID: "anthropic.claude-v2"},
-	"claude-2.1":                 {ModelConfigItem: model.ModelConfigItem{Model: "claude-2.1"}, ID: "anthropic.claude-v2:1"},
-	"claude-3-haiku-20240307":    {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-haiku-20240307"}, ID: "anthropic.claude-3-haiku-20240307-v1:0"},
-	"claude-3-sonnet-20240229":   {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-sonnet-20240229"}, ID: "anthropic.claude-3-sonnet-20240229-v1:0"},
-	"claude-3-opus-20240229":     {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-opus-20240229"}, ID: "anthropic.claude-3-opus-20240229-v1:0"},
-	"claude-3-5-sonnet-20240620": {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-sonnet-20240620"}, ID: "anthropic.claude-3-5-sonnet-20240620-v1:0"},
-	"claude-3-5-sonnet-20241022": {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-sonnet-20241022"}, ID: "anthropic.claude-3-5-sonnet-20241022-v2:0"},
-	"claude-3-5-sonnet-latest":   {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-sonnet-latest"}, ID: "anthropic.claude-3-5-sonnet-20241022-v2:0"},
-	"claude-3-5-haiku-20241022":  {ModelConfigItem: model.ModelConfigItem{Model: "claude-3-5-haiku-20241022"}, ID: "anthropic.claude-3-5-haiku-20241022-v1:0"},
+	"claude-instant-1.2":         {ModelConfig: model.ModelConfig{Model: "claude-instant-1.2"}, ID: "anthropic.claude-instant-v1"},
+	"claude-2.0":                 {ModelConfig: model.ModelConfig{Model: "claude-2.0"}, ID: "anthropic.claude-v2"},
+	"claude-2.1":                 {ModelConfig: model.ModelConfig{Model: "claude-2.1"}, ID: "anthropic.claude-v2:1"},
+	"claude-3-haiku-20240307":    {ModelConfig: model.ModelConfig{Model: "claude-3-haiku-20240307"}, ID: "anthropic.claude-3-haiku-20240307-v1:0"},
+	"claude-3-sonnet-20240229":   {ModelConfig: model.ModelConfig{Model: "claude-3-sonnet-20240229"}, ID: "anthropic.claude-3-sonnet-20240229-v1:0"},
+	"claude-3-opus-20240229":     {ModelConfig: model.ModelConfig{Model: "claude-3-opus-20240229"}, ID: "anthropic.claude-3-opus-20240229-v1:0"},
+	"claude-3-5-sonnet-20240620": {ModelConfig: model.ModelConfig{Model: "claude-3-5-sonnet-20240620"}, ID: "anthropic.claude-3-5-sonnet-20240620-v1:0"},
+	"claude-3-5-sonnet-20241022": {ModelConfig: model.ModelConfig{Model: "claude-3-5-sonnet-20241022"}, ID: "anthropic.claude-3-5-sonnet-20241022-v2:0"},
+	"claude-3-5-sonnet-latest":   {ModelConfig: model.ModelConfig{Model: "claude-3-5-sonnet-latest"}, ID: "anthropic.claude-3-5-sonnet-20241022-v2:0"},
+	"claude-3-5-haiku-20241022":  {ModelConfig: model.ModelConfig{Model: "claude-3-5-haiku-20241022"}, ID: "anthropic.claude-3-5-haiku-20241022-v1:0"},
 }
 
 func awsModelID(requestModel string) (string, error) {

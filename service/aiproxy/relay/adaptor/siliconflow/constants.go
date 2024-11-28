@@ -7,7 +7,7 @@ import (
 
 // https://docs.siliconflow.cn/docs/getting-started
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "deepseek-ai/deepseek-llm-67b-chat",
 		Type:  relaymode.ChatCompletions,
