@@ -45,7 +45,6 @@ type BillingTaskRunner struct {
 }
 
 func (r *BillingTaskRunner) Start(ctx context.Context) error {
-	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
 	if err := r.ExecuteBillingTask(); err != nil {
 		r.Logger.Error(err, "failed to execute billing task")
 	}
@@ -62,7 +61,6 @@ func (r *BillingTaskRunner) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
 			if err := r.ExecuteBillingTask(); err != nil {
 				r.Logger.Error(err, "failed to execute billing task")
 			}
@@ -90,6 +88,7 @@ type BillingReconciler struct {
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
+	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
 	ownerList, ownerToNsMap, err := r.getRecentUsedOwners()
 	if err != nil {
 		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
@@ -102,6 +101,7 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 			continue
 		}
 	}
+	r.Logger.Info("finish billing reconcile", "time", time.Now().Format(time.RFC3339))
 	return nil
 }
 
