@@ -4,7 +4,7 @@
 
 Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可能会导致连接出现问题。
 
-解决措施：手动安装 Devbox 插件。
+解决措施：手动安装 Devbox 插件。在 Cursor 扩展市场里安装 Remote-SSH，注意版本暂时应该是 v0.113.x。（注意必须在 Cursor 里安装这个版本，在网页里下载 Remote-SSH 再导入到 Cursor 里大概率版本不对应导致不兼容。）
 
 1. 从 VSCode 插件市场下载 [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) 插件的 vsix 文件。
 
@@ -15,6 +15,10 @@ Cursor 由于插件版本同步 VSCode 比较缓慢，比较落后的版本可�
 3. 将下载的文件拖拽到扩展窗口中。
 
 ![devbox-2](./images/faq-2.png)
+
+4. 在 Cursor 里安装 Remote-SSH v0.113.x。
+
+![devbox-3](./images/faq-3.png)
 
 ## 2、Cursor 和 VSCode 都无法连接
 

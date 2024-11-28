@@ -4,7 +4,7 @@
 
 Cursor Since the plugin version synchronization with VSCode is slow, outdated versions may cause connection problems.
 
-Solution: Manually install the Devbox plugin.
+Solution: Manually install the Devbox plugin. Install Remote-SSH in the Cursor extension market. Note that the current version should be v0.113.x. (Note that this version must be installed in Cursor. If you download Remote-SSH from the webpage and then import it into Cursor, there is a high probability that the versions do not correspond and lead to incompatibility.)
 
 1. Download the vsix file of the [Devbox](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio) plugin from the VSCode plugin market.
 
@@ -15,6 +15,10 @@ Solution: Manually install the Devbox plugin.
 3. Drag the downloaded file into the extension window.
 
 ![devbox-2](./images/faq-2.png)
+
+4. Install Remote-SSH v0.113.x in Cursor.
+
+![devbox-3](./images/faq-3.png)
 
 ## 2. Cursor and VSCode cannot connect
 
