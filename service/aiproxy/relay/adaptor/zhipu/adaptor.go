@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"strings"
 
@@ -61,20 +60,6 @@ func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymo
 		baiduEmbeddingRequest, err := ConvertEmbeddingRequest(*request)
 		return baiduEmbeddingRequest, err
 	default:
-		// TopP (0.0, 1.0)
-		if request.TopP != nil {
-			*request.TopP = math.Min(0.99, *request.TopP)
-			*request.TopP = math.Max(0.01, *request.TopP)
-		}
-
-		// Temperature (0.0, 1.0)
-		if request.Temperature != nil {
-			*request.Temperature = math.Min(0.99, *request.Temperature)
-			*request.Temperature = math.Max(0.01, *request.Temperature)
-		}
-		if ModelIsV4(request.Model) {
-			return request, nil
-		}
 		return ConvertRequest(request), nil
 	}
 }

@@ -1,6 +1,7 @@
 package zhipu
 
 import (
+	"math"
 	"net/http"
 
 	json "github.com/json-iterator/go"
@@ -15,7 +16,21 @@ import (
 // https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_std/invoke
 // https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_std/sse-invoke
 
-func ConvertRequest(request *model.GeneralOpenAIRequest) *Request {
+func ConvertRequest(request *model.GeneralOpenAIRequest) any {
+	// TopP (0.0, 1.0)
+	if request.TopP != nil {
+		*request.TopP = math.Min(0.99, *request.TopP)
+		*request.TopP = math.Max(0.01, *request.TopP)
+	}
+
+	// Temperature (0.0, 1.0)
+	if request.Temperature != nil {
+		*request.Temperature = math.Min(0.99, *request.Temperature)
+		*request.Temperature = math.Max(0.01, *request.Temperature)
+	}
+	if ModelIsV4(request.Model) {
+		return request
+	}
 	return &Request{
 		Prompt:      request.Messages,
 		Temperature: request.Temperature,
