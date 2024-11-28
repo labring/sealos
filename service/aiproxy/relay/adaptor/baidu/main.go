@@ -56,9 +56,6 @@ type Error struct {
 var baiduTokenStore sync.Map
 
 func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
-	for _, message := range request.Messages {
-		message.ToStringContentMessage()
-	}
 	baiduRequest := ChatRequest{
 		Messages:        request.Messages,
 		Temperature:     request.Temperature,

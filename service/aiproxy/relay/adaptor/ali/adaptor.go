@@ -49,6 +49,10 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 }
 
 func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
+	return ConvertRequest(relayMode, request)
+}
+
+func ConvertRequest(relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
@@ -57,7 +61,7 @@ func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymo
 		aliEmbeddingRequest := ConvertEmbeddingRequest(request)
 		return aliEmbeddingRequest, nil
 	default:
-		aliRequest := ConvertRequest(request)
+		aliRequest := convertChatRequest(request)
 		return aliRequest, nil
 	}
 }

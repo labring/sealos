@@ -14,7 +14,7 @@ import (
 
 // https://help.aliyun.com/document_detail/613695.html?spm=a2c4g.2399480.0.0.1adb778fAdzP9w#341800c0f8w0r
 
-func ConvertRequest(request *relaymodel.GeneralOpenAIRequest) *relaymodel.GeneralOpenAIRequest {
+func convertChatRequest(request *relaymodel.GeneralOpenAIRequest) *relaymodel.GeneralOpenAIRequest {
 	if request.TopP != nil && *request.TopP >= 1 {
 		*request.TopP = 0.9999
 	}
@@ -23,11 +23,6 @@ func ConvertRequest(request *relaymodel.GeneralOpenAIRequest) *relaymodel.Genera
 			request.StreamOptions = &relaymodel.StreamOptions{}
 		}
 		request.StreamOptions.IncludeUsage = true
-	}
-	if !strings.HasPrefix(request.Model, "qwen-vl") {
-		for _, message := range request.Messages {
-			message.ToStringContentMessage()
-		}
 	}
 	return request
 }
