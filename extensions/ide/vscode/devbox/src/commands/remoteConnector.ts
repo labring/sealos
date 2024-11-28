@@ -1,19 +1,20 @@
 import * as os from 'os'
 import * as fs from 'fs'
+import dayjs from 'dayjs'
 import * as vscode from 'vscode'
 import SSHConfig from 'ssh-config'
 
-import { Disposable } from '../common/dispose'
-import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 import {
   defaultSSHConfigPath,
   defaultDevboxSSHConfigPath,
   defaultSSHKeyPath,
 } from '../constant/file'
-import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
-import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
-import { GlobalStateManager } from '../utils/globalStateManager'
 import { Logger } from '../common/logger'
+import { Disposable } from '../common/dispose'
+import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
+import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
+import { GlobalStateManager } from '../utils/globalStateManager'
+import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -84,6 +85,28 @@ export class RemoteSSHConnector extends Disposable {
     convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
 
     Logger.info('SSH config pre-processing completed')
+  }
+  // backup the devbox ssh config
+  private sshConfigPostProcess() {
+    Logger.info('SSH config post-processing')
+
+    try {
+      const devboxSSHConfig = fs.readFileSync(
+        defaultDevboxSSHConfigPath,
+        'utf8'
+      )
+      const backupFolderPath = defaultSSHKeyPath + '/backup/devbox_config'
+      if (!fs.existsSync(backupFolderPath)) {
+        fs.mkdirSync(backupFolderPath, { recursive: true })
+      }
+      const backFileName = dayjs().format('YYYY-MM-DD_HH-mm-ss')
+      const backupFilePath = `${backupFolderPath}/${backFileName}`
+
+      fs.writeFileSync(backupFilePath, devboxSSHConfig)
+      Logger.info(`SSH config backed up to ${backupFilePath}`)
+    } catch (error) {
+      Logger.error(`Failed to backup SSH config: ${error}`)
+    }
   }
 
   private handleDefaultSSHConfig() {
@@ -214,6 +237,8 @@ export class RemoteSSHConnector extends Disposable {
 
     // refresh devboxList
     await vscode.commands.executeCommand('devboxDashboard.refresh')
+
+    this.sshConfigPostProcess()
   }
 
   private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
