@@ -7,7 +7,7 @@ import (
 
 // https://docs.together.ai/docs/inference-models
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "meta-llama/Llama-3-70b-chat-hf",
 		Type:  relaymode.ChatCompletions,

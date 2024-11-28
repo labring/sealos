@@ -7,7 +7,7 @@ import (
 
 // https://novita.ai/llm-api
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "meta-llama/llama-3-8b-instruct",
 		Type:  relaymode.ChatCompletions,

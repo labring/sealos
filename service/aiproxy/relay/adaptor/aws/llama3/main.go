@@ -30,15 +30,15 @@ import (
 
 type awsModelItem struct {
 	ID string
-	model.ModelConfigItem
+	model.ModelConfig
 }
 
 // AwsModelIDMap maps internal model identifiers to AWS model identifiers.
 // It currently supports only llama-3-8b and llama-3-70b instruction models.
 // For more details, see: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
 var AwsModelIDMap = map[string]awsModelItem{
-	"llama3-8b-8192":  {ModelConfigItem: model.ModelConfigItem{Model: "llama3-8b-8192"}, ID: "meta.llama3-8b-instruct-v1:0"},
-	"llama3-70b-8192": {ModelConfigItem: model.ModelConfigItem{Model: "llama3-70b-8192"}, ID: "meta.llama3-70b-instruct-v1:0"},
+	"llama3-8b-8192":  {ModelConfig: model.ModelConfig{Model: "llama3-8b-8192"}, ID: "meta.llama3-8b-instruct-v1:0"},
+	"llama3-70b-8192": {ModelConfig: model.ModelConfig{Model: "llama3-70b-8192"}, ID: "meta.llama3-70b-instruct-v1:0"},
 }
 
 func awsModelID(requestModel string) (string, error) {

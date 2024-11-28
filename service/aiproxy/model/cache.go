@@ -275,8 +275,8 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 var (
 	model2channels            map[string][]*Channel
 	allModels                 []string
-	allModelsAndConfig        []*ModelConfigItem
-	allChannelModelsAndConfig map[int][]*ModelConfigItem
+	allModelsAndConfig        []*ModelConfig
+	allChannelModelsAndConfig map[int][]*ModelConfig
 	channelID2channel         map[int]*Channel
 	channelSyncLock           sync.RWMutex
 )
@@ -287,13 +287,13 @@ func CacheGetAllModels() []string {
 	return allModels
 }
 
-func CacheGetAllChannelModelsAndConfig() map[int][]*ModelConfigItem {
+func CacheGetAllChannelModelsAndConfig() map[int][]*ModelConfig {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
 	return allChannelModelsAndConfig
 }
 
-func CacheGetAllModelsAndConfig() []*ModelConfigItem {
+func CacheGetAllModelsAndConfig() []*ModelConfig {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
 	return allModelsAndConfig
@@ -340,16 +340,16 @@ func InitChannelCache() error {
 		})
 	}
 
-	newType2ModelsMap := make(map[int][]*ModelConfigItem)
+	newType2ModelsMap := make(map[int][]*ModelConfig)
 	for _, channel := range channels {
 		if _, ok := newType2ModelsMap[channel.Type]; !ok {
-			newType2ModelsMap[channel.Type] = make([]*ModelConfigItem, 0)
+			newType2ModelsMap[channel.Type] = make([]*ModelConfig, 0)
 		}
 		s := newType2ModelsMap[channel.Type]
 		for _, model := range channel.Models {
 			config, ok := CacheGetModelConfig(model)
 			if ok {
-				s = append(s, config.ModelConfigItem)
+				s = append(s, config)
 			}
 		}
 		sort.Slice(s, func(i, j int) bool {
@@ -359,7 +359,7 @@ func InitChannelCache() error {
 	}
 
 	models := make([]string, 0, len(newModel2channels))
-	modelsAndConfig := make([]*ModelConfigItem, 0, len(newModel2channels))
+	modelsAndConfig := make([]*ModelConfig, 0, len(newModel2channels))
 	appended := make(map[string]struct{})
 	for _, _models := range newType2ModelsMap {
 		for _, model := range _models {

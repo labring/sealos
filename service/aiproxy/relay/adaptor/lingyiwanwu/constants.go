@@ -7,7 +7,7 @@ import (
 
 // https://platform.lingyiwanwu.com/docs
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "yi-34b-chat-0205",
 		Type:  relaymode.ChatCompletions,

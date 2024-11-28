@@ -7,7 +7,7 @@ import (
 
 // https://console.volcengine.com/ark/region:ark+cn-beijing/model
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-pro-128k",
 		Type:        relaymode.ChatCompletions,

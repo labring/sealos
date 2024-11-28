@@ -20,7 +20,7 @@ const (
 
 var (
 	modelMapping = map[string]ModelType{}
-	modelList    = []*model.ModelConfigItem{}
+	modelList    = []*model.ModelConfig{}
 )
 
 func init() {

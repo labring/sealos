@@ -7,7 +7,7 @@ import (
 
 // https://ai.google.dev/models/gemini
 
-var ModelList = []*model.ModelConfigItem{
+var ModelList = []*model.ModelConfig{
 	{
 		Model: "gemini-pro",
 		Type:  relaymode.ChatCompletions,

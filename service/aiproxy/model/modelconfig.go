@@ -21,20 +21,15 @@ const (
 )
 
 //nolint:revive
-type ModelConfigItem struct {
-	Config map[ModelConfigKey]any `gorm:"serializer:fastjson" json:"config"`
-	Model  string                 `gorm:"primaryKey"          json:"model"`
+type ModelConfig struct {
+	CreatedAt time.Time              `gorm:"index;autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time              `gorm:"index;autoUpdateTime" json:"updated_at"`
+	Config    map[ModelConfigKey]any `gorm:"serializer:fastjson"  json:"config"`
+	Model     string                 `gorm:"primaryKey"           json:"model"`
 	// relaymode/define.go
 	Type        int     `json:"type"`
 	InputPrice  float64 `json:"input_price"`
 	OutputPrice float64 `json:"output_price"`
-}
-
-//nolint:revive
-type ModelConfig struct {
-	CreatedAt        time.Time `gorm:"index;autoCreateTime" json:"created_at"`
-	UpdatedAt        time.Time `gorm:"index;autoUpdateTime" json:"updated_at"`
-	*ModelConfigItem `gorm:"embedded"`
 }
 
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {
