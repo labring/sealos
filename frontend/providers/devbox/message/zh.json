@@ -69,7 +69,7 @@
   "edit_successful": "编辑成功",
   "edit_version_description": "编辑版本描述",
   "enter_devbox_name": "请输入项目名称",
-  "enter_version_description": "请输入版本描述",
+  "enter_version_description": "请输入版本描述...",
   "enter_version_number": "请输入版本号,例如：v1.0.0",
   "estimated_price": "预估价格",
   "event": "事件",
