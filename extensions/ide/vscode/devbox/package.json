@@ -238,6 +238,7 @@
   "dependencies": {
     "@vscode/codicons": "^0.0.36",
     "axios": "^1.7.5",
+    "dayjs": "^1.11.13",
     "execa": "^9.5.1",
     "ssh-config": "^5.0.0"
   }
