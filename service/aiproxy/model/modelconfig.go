@@ -7,6 +7,7 @@ import (
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"gorm.io/gorm"
 )
 
 //nolint:revive
@@ -121,7 +122,14 @@ func SaveModelConfig(config *ModelConfig) error {
 }
 
 func SaveModelConfigs(configs []*ModelConfig) error {
-	return DB.Save(configs).Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		for _, config := range configs {
+			if err := tx.Save(config).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 const ErrModelConfigNotFound = "model config"
