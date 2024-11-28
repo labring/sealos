@@ -20,7 +20,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"golang.org/x/sync/semaphore"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,9 +89,10 @@ type BillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	DBClient   database.Account
-	AccountV2  database.AccountV2
-	Properties *resources.PropertyTypeLS
+	DBClient        database.Account
+	AccountV2       database.AccountV2
+	Properties      *resources.PropertyTypeLS
+	concurrentLimit int64
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
@@ -97,13 +102,24 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
 		return err
 	}
+	sem := semaphore.NewWeighted(r.concurrentLimit)
+	wg := sync.WaitGroup{}
+	wg.Add(len(ownerList))
 	now := time.Now()
-	for _, owner := range ownerList {
-		if err := r.reconcileOwner(owner, ownerToNsMap[owner], now); err != nil {
-			r.Logger.Error(err, "reconcile owner failed", "owner", owner)
-			continue
-		}
+	for i := range ownerList {
+		go func(owner string) {
+			defer wg.Done()
+			if err := sem.Acquire(context.Background(), 1); err != nil {
+				fmt.Printf("Failed to acquire semaphore: %v\n", err)
+				return
+			}
+			defer sem.Release(1)
+			if err := r.reconcileOwner(owner, ownerToNsMap[owner], now); err != nil {
+				r.Logger.Error(err, "reconcile owner failed", "owner", owner)
+			}
+		}(ownerList[i])
 	}
+	wg.Wait()
 	r.Logger.Info("finish billing reconcile", "time", time.Now().Format(time.RFC3339))
 	return nil
 }
@@ -188,6 +204,7 @@ func (r *BillingReconciler) Init() error {
 	if err := r.DBClient.CreateBillingIfNotExist(); err != nil {
 		return fmt.Errorf("create billing collection failed: %w", err)
 	}
+	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 1000)
 	return nil
 }
 
