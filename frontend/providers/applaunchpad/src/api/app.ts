@@ -8,7 +8,7 @@ import {
   adaptEvents,
   sortAppListByTime
 } from '@/utils/adapt';
-import type { AppPatchPropsType } from '@/types/app';
+import type { AppPatchPropsType, PodDetailType } from '@/types/app';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { ExportAppPayload } from '@/pages/api/exportApp';
 import { NodeInfo } from '@/pages/api/getNodes';
@@ -86,9 +86,10 @@ export const getAppByName = (namespace: string, name: string) =>
   GET(`/api/getAppByAppName?namespace=${namespace}&&appName=${name}`).then(adaptAppDetail);
 
 export const getAppPodsByAppName = (namespace: string, name: string) =>
-  GET<V1Pod[]>(`/api/getAppPodsByAppName?namespace=${namespace}`, { name }).then((item) =>
-    item.map(adaptPod)
-  );
+  GET<PodDetailType[]>(`/api/getAppPodsByAppName?namespace=${namespace}`, { name });
+//  .then((item) =>
+//     item.map(adaptPod)
+//   );
 
 export const getPodsMetrics = (namespace: string, podsName: string[]) =>
   POST<SinglePodMetrics[]>(`/api/getPodsMetrics?namespace=${namespace}`, { podsName }).then(

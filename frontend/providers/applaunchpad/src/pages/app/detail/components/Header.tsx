@@ -45,7 +45,6 @@ const Header = ({
   } = useDisclosure();
 
   const { appDetail = MOCK_APP_DETAIL } = useAppStore();
-  console.log(appDetail, 'appDetail');
 
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Confirm to restart this application?'

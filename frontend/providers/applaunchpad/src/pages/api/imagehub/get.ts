@@ -76,7 +76,7 @@ export class ImageRegistryClient {
   }
 
   async getRepositories(): Promise<string[]> {
-    const result = await this.fetch<{ repositories: string[] }>('/_catalog');
+    const result = await this.fetch<{ repositories: string[] }>('/_catalog?n=1000');
     return result?.repositories || [];
   }
 
