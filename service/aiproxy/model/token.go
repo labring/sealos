@@ -463,7 +463,7 @@ func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
-func DeleteTokenByIDAndGroupID(id int, groupID string) (err error) {
+func DeleteGroupTokenByID(groupID string, id int) (err error) {
 	if id == 0 || groupID == "" {
 		return errors.New("id 或 group 为空！")
 	}
@@ -484,6 +484,34 @@ func DeleteTokenByIDAndGroupID(id int, groupID string) (err error) {
 		Where(token).
 		Delete(&token)
 	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func DeleteGroupTokensByIDs(groupID string, ids []int) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+	tokens := make([]Token, len(ids))
+	defer func() {
+		if err == nil {
+			for _, token := range tokens {
+				if err := CacheDeleteToken(token.Key); err != nil {
+					logger.SysError("delete token from cache failed: " + err.Error())
+				}
+			}
+		}
+	}()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Clauses(clause.Returning{
+				Columns: []clause.Column{
+					{Name: "key"},
+				},
+			}).
+			Where("group_id = ?", groupID).
+			Where("id IN (?)", ids).
+			Delete(&tokens).
+			Error
+	})
 }
 
 func DeleteTokenByID(id int) (err error) {
@@ -507,6 +535,33 @@ func DeleteTokenByID(id int) (err error) {
 		Where(token).
 		Delete(&token)
 	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func DeleteTokensByIDs(ids []int) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+	tokens := make([]Token, len(ids))
+	defer func() {
+		if err == nil {
+			for _, token := range tokens {
+				if err := CacheDeleteToken(token.Key); err != nil {
+					logger.SysError("delete token from cache failed: " + err.Error())
+				}
+			}
+		}
+	}()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Clauses(clause.Returning{
+				Columns: []clause.Column{
+					{Name: "key"},
+				},
+			}).
+			Where("id IN (?)", ids).
+			Delete(&tokens).
+			Error
+	})
 }
 
 func UpdateToken(token *Token) (err error) {

@@ -32,8 +32,8 @@ type ModelConfigItem struct {
 
 //nolint:revive
 type ModelConfig struct {
-	CreatedAt        time.Time `gorm:"index"    json:"created_at"`
-	UpdatedAt        time.Time `gorm:"index"    json:"updated_at"`
+	CreatedAt        time.Time `gorm:"index;autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time `gorm:"index;autoUpdateTime" json:"updated_at"`
 	*ModelConfigItem `gorm:"embedded"`
 }
 
@@ -137,4 +137,13 @@ const ErrModelConfigNotFound = "model config"
 func DeleteModelConfig(model string) error {
 	result := DB.Where("model = ?", model).Delete(&ModelConfig{})
 	return HandleUpdateResult(result, ErrModelConfigNotFound)
+}
+
+func DeleteModelConfigsByModels(models []string) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Where("model IN (?)", models).
+			Delete(&ModelConfig{}).
+			Error
+	})
 }

@@ -3,7 +3,6 @@ package controller
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -56,9 +55,21 @@ func GetAllModelConfigs(c *gin.Context) {
 	})
 }
 
+type GetModelConfigsByModelsContainsRequest struct {
+	Models []string `json:"models"`
+}
+
 func GetModelConfigsByModelsContains(c *gin.Context) {
-	models := c.Query("models")
-	configs, err := model.GetModelConfigsByModels(strings.Split(models, ","))
+	request := GetModelConfigsByModelsContainsRequest{}
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	configs, err := model.GetModelConfigsByModels(request.Models)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -154,6 +165,30 @@ func SaveModelConfig(c *gin.Context) {
 func DeleteModelConfig(c *gin.Context) {
 	_model := c.Param("model")
 	err := model.DeleteModelConfig(_model)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
+}
+
+func DeleteModelConfigs(c *gin.Context) {
+	models := []string{}
+	err := c.ShouldBindJSON(&models)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err = model.DeleteModelConfigsByModels(models)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
