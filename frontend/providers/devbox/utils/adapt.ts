@@ -201,6 +201,10 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
-    createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm')
+    createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    imageName:
+      app?.metadata?.annotations?.originImageName ||
+      app.spec?.template?.spec?.containers?.[0]?.image ||
+      ''
   }
 }

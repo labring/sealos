@@ -63,7 +63,8 @@ const map = {
   check: require('./icons/check.svg').default,
   empty: require('./icons/empty.svg').default,
   shutdown: require('./icons/shutdown.svg').default,
-  windsurf: require('./icons/windsurf.svg').default
+  windsurf: require('./icons/windsurf.svg').default,
+  rocket: require('./icons/rocket.svg').default
 }
 
 const MyIcon = ({

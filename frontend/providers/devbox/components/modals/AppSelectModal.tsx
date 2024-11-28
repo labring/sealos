@@ -7,7 +7,8 @@ import {
   ModalOverlay,
   Button,
   ModalHeader,
-  Text
+  Text,
+  Divider
 } from '@chakra-ui/react'
 import { useTranslations } from 'next-intl'
 import { useCallback } from 'react'
@@ -18,6 +19,7 @@ import { AppListItemType } from '@/types/app'
 
 import MyIcon from '../Icon'
 import MyTable from '../MyTable'
+import { useEnvStore } from '@/stores/env'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
 
@@ -44,15 +46,18 @@ interface DeployData {
 const AppSelectModal = ({
   apps,
   deployData,
+  devboxName,
   onSuccess,
   onClose
 }: {
   apps: AppListItemType[]
+  devboxName: string
   deployData: DeployData
   onSuccess: () => void
   onClose: () => void
 }) => {
   const t = useTranslations()
+  const { env } = useEnvStore()
 
   const handleCreate = useCallback(() => {
     const tempFormData = { ...deployData, appName: `${deployData.appName}-${nanoid()}` }
@@ -90,12 +95,34 @@ const AppSelectModal = ({
     title: string
     dataIndex?: keyof AppListItemType
     key: string
+    width?: string
     render?: (item: AppListItemType) => JSX.Element
   }[] = [
     {
       title: t('app_name'),
       dataIndex: 'name',
-      key: 'name'
+      key: 'name',
+      render: (item: AppListItemType) => {
+        return (
+          <Text ml={4} color={'grayModern.600'}>
+            {item.name}
+          </Text>
+        )
+      }
+    },
+    {
+      title: t('current_image_name'),
+      dataIndex: 'imageName',
+      key: 'imageName',
+      render: (item: AppListItemType) => {
+        // note: no same devbox matched image will be dealt.
+        const dealImageName = item.imageName.startsWith(
+          `${env.registryAddr}/${env.namespace}/${devboxName}`
+        )
+          ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
+          : '-'
+        return <Text color={'grayModern.600'}>{dealImageName}</Text>
+      }
     },
     {
       title: t('create_time'),
@@ -133,35 +160,34 @@ const AppSelectModal = ({
     <Box>
       <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
-        <ModalContent top={'30%'} maxWidth={'800px'} w={'600px'}>
+        <ModalContent top={'30%'} maxWidth={'800px'} w={'700px'}>
           <ModalHeader pl={10}>{t('deploy')}</ModalHeader>
           <ModalBody pb={4}>
             <Flex
               alignItems={'center'}
-              mb={6}
-              borderRadius={'4px'}
-              justifyContent={'space-between'}>
-              <Text>{t('create_directly')}</Text>
+              direction={'column'}
+              mb={2}
+              justifyContent={'space-between'}
+              p={4}>
+              <Text fontSize={'lg'} fontWeight={'medium'}>
+                {t('create_directly')}
+              </Text>
               <Button
                 onClick={handleCreate}
-                height={'27px'}
-                size={'sm'}
-                p={4}
-                borderWidth={1}
+                height={'36px'}
+                mt={4}
+                size={'md'}
+                px={8}
                 fontSize={'base'}
-                bg={'grayModern.150'}
-                color={'grayModern.900'}
-                _hover={{
-                  color: 'brightBlue.600'
-                }}>
-                {t('deploy_a_new_app')}
+                leftIcon={<MyIcon name="rocket" w={'15px'} h={'15px'} color={'white'} />}>
+                {t('deploy')}
               </Button>
             </Flex>
-            <Box>
-              <Flex alignItems={'center'} mb={4}>
-                <MyIcon name="list" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
-                <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
-                  {t('matched_apps')}
+            <Divider />
+            <Box mt={4}>
+              <Flex alignItems={'center'} mb={4} justifyContent={'center'}>
+                <Text fontSize={'lg'} fontWeight={'medium'}>
+                  {t('update_matched_apps_notes')}
                 </Text>
               </Flex>
               <MyTable columns={columns} data={apps} />

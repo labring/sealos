@@ -316,6 +316,7 @@ const Version = () => {
       {!!onOpenSelectApp && (
         <AppSelectModal
           apps={apps}
+          devboxName={devbox.name}
           deployData={deployData}
           onSuccess={() => setOnOpenSelectApp(false)}
           onClose={() => setOnOpenSelectApp(false)}
