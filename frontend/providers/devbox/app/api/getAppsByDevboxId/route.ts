@@ -5,6 +5,8 @@ import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const apps = await getApps(req)
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function getApps(req: NextRequest) {
+async function getApps(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const devboxId = searchParams.get('devboxId') as string
 
