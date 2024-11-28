@@ -1,8 +1,6 @@
 package zhipu
 
 import (
-	"time"
-
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -12,33 +10,6 @@ type Request struct {
 	RequestID   string           `json:"request_id,omitempty"`
 	Prompt      []*model.Message `json:"prompt"`
 	Incremental bool             `json:"incremental,omitempty"`
-}
-
-type ResponseData struct {
-	TaskID      string           `json:"task_id"`
-	RequestID   string           `json:"request_id"`
-	TaskStatus  string           `json:"task_status"`
-	Choices     []*model.Message `json:"choices"`
-	model.Usage `json:"usage"`
-}
-
-type Response struct {
-	Msg     string       `json:"msg"`
-	Data    ResponseData `json:"data"`
-	Code    int          `json:"code"`
-	Success bool         `json:"success"`
-}
-
-type StreamMetaResponse struct {
-	RequestID   string `json:"request_id"`
-	TaskID      string `json:"task_id"`
-	TaskStatus  string `json:"task_status"`
-	model.Usage `json:"usage"`
-}
-
-type tokenData struct {
-	ExpiryTime time.Time
-	Token      string
 }
 
 type EmbeddingRequest struct {
