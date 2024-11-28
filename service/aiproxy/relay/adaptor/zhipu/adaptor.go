@@ -18,18 +18,15 @@ import (
 )
 
 type Adaptor struct {
-	APIVersion string
+	meta *meta.Meta
 }
 
-func (a *Adaptor) Init(_ *meta.Meta) {
+func (a *Adaptor) Init(meta *meta.Meta) {
+	a.meta = meta
 }
 
-func (a *Adaptor) SetVersionByModeName(modelName string) {
-	if strings.HasPrefix(modelName, "glm-") {
-		a.APIVersion = "v4"
-	} else {
-		a.APIVersion = "v3"
-	}
+func ModelIsV4(modelName string) bool {
+	return strings.HasPrefix(modelName, "glm-")
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
@@ -39,8 +36,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.Embeddings:
 		return meta.BaseURL + "/api/paas/v4/embeddings", nil
 	}
-	a.SetVersionByModeName(meta.ActualModelName)
-	if a.APIVersion == "v4" {
+	if ModelIsV4(meta.ActualModelName) {
 		return meta.BaseURL + "/api/paas/v4/chat/completions", nil
 	}
 	method := "invoke"
@@ -52,8 +48,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
 	adaptor.SetupCommonRequestHeader(c, req, meta)
-	token := GetToken(meta.APIKey)
-	req.Header.Set("Authorization", token)
+	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
 	return nil
 }
 
@@ -77,8 +72,7 @@ func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymo
 			*request.Temperature = math.Min(0.99, *request.Temperature)
 			*request.Temperature = math.Max(0.01, *request.Temperature)
 		}
-		a.SetVersionByModeName(request.Model)
-		if a.APIVersion == "v4" {
+		if ModelIsV4(request.Model) {
 			return request, nil
 		}
 		return ConvertRequest(request), nil
@@ -126,19 +120,13 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 	case relaymode.ImagesGenerations:
 		err, usage = openai.ImageHandler(c, resp)
 		return
-	}
-	if a.APIVersion == "v4" {
-		return a.DoResponseV4(c, resp, meta)
-	}
-	if meta.IsStream {
-		err, usage = StreamHandler(c, resp)
-	} else {
-		if meta.Mode == relaymode.Embeddings {
-			err, usage = EmbeddingsHandler(c, resp)
-		} else {
-			err, usage = Handler(c, resp)
+	default:
+		if ModelIsV4(meta.ActualModelName) {
+			return a.DoResponseV4(c, resp, meta)
 		}
+		err, usage = openai.Handler(c, resp, meta)
 	}
+
 	return
 }
 
