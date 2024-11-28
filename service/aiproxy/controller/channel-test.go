@@ -31,9 +31,6 @@ import (
 )
 
 func buildTestRequest(model string) *relaymodel.GeneralOpenAIRequest {
-	if model == "" {
-		model = "gpt-3.5-turbo"
-	}
 	testRequest := &relaymodel.GeneralOpenAIRequest{
 		MaxTokens: 2,
 		Model:     model,

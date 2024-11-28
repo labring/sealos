@@ -298,6 +298,30 @@ func DeleteToken(c *gin.Context) {
 	})
 }
 
+func DeleteTokens(c *gin.Context) {
+	ids := []int{}
+	err := c.ShouldBindJSON(&ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err = model.DeleteTokensByIDs(ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
+}
+
 func DeleteGroupToken(c *gin.Context) {
 	group := c.Param("group")
 	id, err := strconv.Atoi(c.Param("id"))
@@ -308,7 +332,32 @@ func DeleteGroupToken(c *gin.Context) {
 		})
 		return
 	}
-	err = model.DeleteTokenByIDAndGroupID(id, group)
+	err = model.DeleteGroupTokenByID(group, id)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
+}
+
+func DeleteGroupTokens(c *gin.Context) {
+	group := c.Param("group")
+	ids := []int{}
+	err := c.ShouldBindJSON(&ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err = model.DeleteGroupTokensByIDs(group, ids)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

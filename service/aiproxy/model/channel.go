@@ -356,6 +356,15 @@ func DeleteChannelByID(id int) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
+func DeleteChannelsByIDs(ids []int) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Where("id IN (?)", ids).
+			Delete(&Channel{}).
+			Error
+	})
+}
+
 func UpdateChannelStatusByID(id int, status int) error {
 	result := DB.Model(&Channel{}).Where("id = ?", id).Update("status", status)
 	return HandleUpdateResult(result, ErrChannelNotFound)

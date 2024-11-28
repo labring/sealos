@@ -234,6 +234,25 @@ func DeleteChannel(c *gin.Context) {
 	})
 }
 
+func DeleteChannels(c *gin.Context) {
+	ids := []int{}
+	err := c.ShouldBindJSON(&ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err = model.DeleteChannelsByIDs(ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+	}
+}
+
 func UpdateChannel(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {

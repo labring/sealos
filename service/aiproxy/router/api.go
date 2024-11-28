@@ -34,6 +34,7 @@ func SetAPIRouter(router *gin.Engine) {
 		{
 			groupsRoute.GET("/", controller.GetGroups)
 			groupsRoute.GET("/search", controller.SearchGroups)
+			groupsRoute.POST("/batch_delete", controller.DeleteGroups)
 		}
 		groupRoute := apiRouter.Group("/group")
 		{
@@ -59,6 +60,7 @@ func SetAPIRouter(router *gin.Engine) {
 			channelsRoute.GET("/search", controller.SearchChannels)
 			channelsRoute.GET("/test", controller.TestChannels)
 			channelsRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
+			channelsRoute.POST("/batch_delete", controller.DeleteChannels)
 		}
 		channelRoute := apiRouter.Group("/channel")
 		{
@@ -67,8 +69,8 @@ func SetAPIRouter(router *gin.Engine) {
 			channelRoute.PUT("/:id", controller.UpdateChannel)
 			channelRoute.POST("/:id/status", controller.UpdateChannelStatus)
 			channelRoute.DELETE("/:id", controller.DeleteChannel)
-			channelRoute.GET("/test/:id", controller.TestChannel)
-			channelRoute.GET("/update_balance/:id", controller.UpdateChannelBalance)
+			channelRoute.GET("/:id/test", controller.TestChannel)
+			channelRoute.GET("/:id/update_balance", controller.UpdateChannelBalance)
 		}
 
 		tokensRoute := apiRouter.Group("/tokens")
@@ -80,10 +82,12 @@ func SetAPIRouter(router *gin.Engine) {
 			tokensRoute.POST("/:id/name", controller.UpdateTokenName)
 			tokensRoute.DELETE("/:id", controller.DeleteToken)
 			tokensRoute.GET("/search", controller.SearchTokens)
+			tokensRoute.POST("/batch_delete", controller.DeleteTokens)
 		}
 		tokenRoute := apiRouter.Group("/token")
 		{
 			tokenRoute.GET("/:group/search", controller.SearchGroupTokens)
+			tokenRoute.POST("/:group/batch_delete", controller.DeleteGroupTokens)
 			tokenRoute.GET("/:group", controller.GetGroupTokens)
 			tokenRoute.GET("/:group/:id", controller.GetGroupToken)
 			tokenRoute.POST("/:group", controller.AddToken)
@@ -112,8 +116,9 @@ func SetAPIRouter(router *gin.Engine) {
 			modelConfigsRoute.GET("/", controller.GetModelConfigs)
 			modelConfigsRoute.GET("/search", controller.SearchModelConfigs)
 			modelConfigsRoute.GET("/all", controller.GetAllModelConfigs)
-			modelConfigsRoute.GET("/contains", controller.GetModelConfigsByModelsContains)
+			modelConfigsRoute.POST("/contains", controller.GetModelConfigsByModelsContains)
 			modelConfigsRoute.POST("/", controller.SaveModelConfigs)
+			modelConfigsRoute.POST("/batch_delete", controller.DeleteModelConfigs)
 		}
 		modelConfigRoute := apiRouter.Group("/model_config")
 		{

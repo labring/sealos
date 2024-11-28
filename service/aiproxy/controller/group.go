@@ -219,6 +219,30 @@ func DeleteGroup(c *gin.Context) {
 	})
 }
 
+func DeleteGroups(c *gin.Context) {
+	ids := []string{}
+	err := c.ShouldBindJSON(&ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err = model.DeleteGroupsByIDs(ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
+}
+
 type CreateGroupRequest struct {
 	ID  string `json:"id"`
 	QPM int64  `json:"qpm"`

@@ -11,6 +11,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -117,18 +118,45 @@ func DeleteGroupByID(id string) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteGroup(id); err != nil {
-				logger.SysError("CacheDeleteGroup failed: " + err.Error())
+				logger.SysError("cache delete group failed: " + err.Error())
 			}
 			if _, err := DeleteGroupLogs(id); err != nil {
-				logger.SysError("DeleteGroupLogs failed: " + err.Error())
+				logger.SysError("delete group logs failed: " + err.Error())
 			}
 		}
 	}()
-	result := DB.
-		Delete(&Group{
-			ID: id,
-		})
+	result := DB.Delete(&Group{ID: id})
 	return HandleUpdateResult(result, ErrGroupNotFound)
+}
+
+func DeleteGroupsByIDs(ids []string) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+	groups := make([]Group, len(ids))
+	defer func() {
+		if err == nil {
+			for _, group := range groups {
+				if err := CacheDeleteGroup(group.ID); err != nil {
+					logger.SysError("cache delete group failed: " + err.Error())
+				}
+				if _, err := DeleteGroupLogs(group.ID); err != nil {
+					logger.SysError("delete group logs failed: " + err.Error())
+				}
+			}
+		}
+	}()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Clauses(clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+				},
+			}).
+			Where("id IN (?)", ids).
+			Delete(&groups).
+			Error
+	})
 }
 
 func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) error {
@@ -160,7 +188,7 @@ func UpdateGroupQPM(id string, qpm int64) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheUpdateGroupQPM(id, qpm); err != nil {
-				logger.SysError("CacheUpdateGroupQPM failed: " + err.Error())
+				logger.SysError("cache update group qpm failed: " + err.Error())
 			}
 		}
 	}()
@@ -172,7 +200,7 @@ func UpdateGroupStatus(id string, status int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheUpdateGroupStatus(id, status); err != nil {
-				logger.SysError("CacheUpdateGroupStatus failed: " + err.Error())
+				logger.SysError("cache update group status failed: " + err.Error())
 			}
 		}
 	}()
