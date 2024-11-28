@@ -7,27 +7,57 @@ import (
 
 var ModelList = []*model.ModelConfigItem{
 	{
-		Model: "SparkDesk-Lite",
-		Type:  relaymode.ChatCompletions,
+		Model:       "SparkDesk-4.0-Ultra",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.14,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 128000,
+		},
 	},
 	{
-		Model: "SparkDesk-Pro",
-		Type:  relaymode.ChatCompletions,
+		Model:       "SparkDesk-Lite",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.001,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 4000,
+		},
 	},
 	{
-		Model: "SparkDesk-Pro-128K",
-		Type:  relaymode.ChatCompletions,
+		Model:       "SparkDesk-Max",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.06,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 128000,
+		},
 	},
 	{
-		Model: "SparkDesk-Max",
-		Type:  relaymode.ChatCompletions,
+		Model:       "SparkDesk-Max-32k",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.09,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 32000,
+		},
 	},
 	{
-		Model: "SparkDesk-Max-32k",
-		Type:  relaymode.ChatCompletions,
+		Model:       "SparkDesk-Pro",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.014,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 128000,
+		},
 	},
 	{
-		Model: "SparkDesk-4.0-Ultra",
-		Type:  relaymode.ChatCompletions,
+		Model:       "SparkDesk-Pro-128K",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.026,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 128000,
+		},
 	},
 }

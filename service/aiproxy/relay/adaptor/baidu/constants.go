@@ -7,12 +7,22 @@ import (
 
 var ModelList = []*model.ModelConfigItem{
 	{
-		Model: "ERNIE-4.0-8K",
-		Type:  relaymode.ChatCompletions,
+		Model:       "ERNIE-4.0-8K",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.03,
+		OutputPrice: 0.09,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
-		Model: "ERNIE-3.5-8K",
-		Type:  relaymode.ChatCompletions,
+		Model:       "ERNIE-3.5-8K",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.0008,
+		OutputPrice: 0.002,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
 		Model: "ERNIE-3.5-8K-0205",
@@ -31,16 +41,31 @@ var ModelList = []*model.ModelConfigItem{
 		Type:  relaymode.ChatCompletions,
 	},
 	{
-		Model: "ERNIE-Tiny-8K",
-		Type:  relaymode.ChatCompletions,
+		Model:       "ERNIE-Tiny-8K",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.0001,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
-		Model: "ERNIE-Speed-8K",
-		Type:  relaymode.ChatCompletions,
+		Model:       "ERNIE-Speed-8K",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.0001,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+		},
 	},
 	{
-		Model: "ERNIE-Speed-128K",
-		Type:  relaymode.ChatCompletions,
+		Model:       "ERNIE-Speed-128K",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.0001,
+		OutputPrice: 0,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 131072,
+		},
 	},
 	{
 		Model: "BLOOMZ-7B",
