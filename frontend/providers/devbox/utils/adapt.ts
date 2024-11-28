@@ -14,9 +14,10 @@ import {
   DevboxVersionListItemType,
   PodDetailType
 } from '@/types/devbox'
-import { V1Ingress, V1Pod } from '@kubernetes/client-node'
+import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node'
 import { DBListItemType, KbPgClusterType } from '@/types/cluster'
 import { IngressListItemType } from '@/types/ingress'
+import { AppListItemType } from '@/types/app'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -187,12 +188,19 @@ export const adaptIngressListItem = (ingress: V1Ingress): IngressListItemType =>
   const firstRule = ingress.spec?.rules?.[0]
   const firstPath = firstRule?.http?.paths?.[0]
   const protocol = ingress.metadata?.annotations?.['nginx.ingress.kubernetes.io/backend-protocol']
-  console.log('ingress', ingress.spec)
   return {
     name: ingress.metadata?.name || '',
     namespace: ingress.metadata?.namespace || '',
     address: firstRule?.host || '',
     port: firstPath?.backend?.service?.port?.number || 0,
     protocol: protocol || 'http'
+  }
+}
+
+export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
+  return {
+    id: app.metadata?.uid || ``,
+    name: app.metadata?.name || 'app name',
+    createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm')
   }
 }

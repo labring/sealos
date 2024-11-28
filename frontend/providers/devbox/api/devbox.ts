@@ -1,4 +1,4 @@
-import { V1Pod } from '@kubernetes/client-node'
+import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node'
 
 import {
   DevboxEditType,
@@ -8,6 +8,7 @@ import {
   runtimeNamespaceMapType
 } from '@/types/devbox'
 import {
+  adaptAppListItem,
   adaptDevboxDetail,
   adaptDevboxListItem,
   adaptDevboxVersionListItem,
@@ -82,3 +83,8 @@ export const getDevboxMonitorData = (payload: {
 
 export const getSSHRuntimeInfo = (runtimeName: string) =>
   GET('/api/getSSHRuntimeInfo', { runtimeName })
+
+export const getAppsByDevboxId = (devboxId: string) =>
+  GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
+    res.map(adaptAppListItem)
+  )

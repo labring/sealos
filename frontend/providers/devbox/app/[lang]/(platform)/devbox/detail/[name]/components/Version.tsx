@@ -12,14 +12,16 @@ import ReleaseModal from '@/components/modals/releaseModal'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 
 import { DevboxVersionListItemType } from '@/types/devbox'
-import { DevboxReleaseStatusEnum } from '@/constants/devbox'
-import { delDevboxVersionByName, getSSHRuntimeInfo } from '@/api/devbox'
+import { DevboxReleaseStatusEnum, devboxIdKey } from '@/constants/devbox'
+import { delDevboxVersionByName, getAppsByDevboxId, getSSHRuntimeInfo } from '@/api/devbox'
 
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 
 import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import AppSelectModal from '@/components/modals/AppSelectModal'
+import { AppListItemType } from '@/types/app'
 
 const Version = () => {
   const t = useTranslations()
@@ -32,6 +34,9 @@ const Version = () => {
 
   const [initialized, setInitialized] = useState(false)
   const [onOpenRelease, setOnOpenRelease] = useState(false)
+  const [onOpenSelectApp, setOnOpenSelectApp] = useState(false)
+  const [apps, setApps] = useState<AppListItemType[]>([])
+  const [deployData, setDeployData] = useState<any>(null)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
 
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -55,6 +60,8 @@ const Version = () => {
 
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
+      const devboxId = devbox.id
+
       const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
       const { cpu, memory, networks, name } = devbox
       const newNetworks = networks.map((network) => {
@@ -65,12 +72,13 @@ const Version = () => {
           domain: env.ingressDomain
         }
       })
+      const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`
 
       const transformData = {
         appName: `${name}-release`,
         cpu: cpu,
         memory: memory,
-        imageName: `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`,
+        imageName: imageName,
         networks:
           newNetworks.length > 0
             ? newNetworks
@@ -83,20 +91,33 @@ const Version = () => {
                 }
               ],
         runCMD: releaseCommand,
-        cmdParam: releaseArgs
+        cmdParam: releaseArgs,
+        labels: {
+          [devboxIdKey]: devboxId
+        }
+      }
+      setDeployData(transformData)
+      const apps = await getAppsByDevboxId(devboxId)
+
+      // when: there is no app,create a new app
+      if (apps.length === 0) {
+        const tempFormDataStr = encodeURIComponent(JSON.stringify(transformData))
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-applaunchpad',
+          pathname: '/redirect',
+          query: { formData: tempFormDataStr },
+          messageData: {
+            type: 'InternalAppCall',
+            formData: tempFormDataStr
+          }
+        })
       }
 
-      const formData = encodeURIComponent(JSON.stringify(transformData))
-
-      sealosApp.runEvents('openDesktopApp', {
-        appKey: 'system-applaunchpad',
-        pathname: '/app/edit',
-        query: { formData },
-        messageData: {
-          type: 'InternalAppCall',
-          formData: formData
-        }
-      })
+      // when: there have apps,show the app select modal
+      if (apps.length >= 1) {
+        setApps(apps)
+        setOnOpenSelectApp(true)
+      }
     },
     [devbox, env.ingressDomain, env.namespace, env.registryAddr]
   )
@@ -228,6 +249,7 @@ const Version = () => {
       )
     }
   ]
+
   return (
     <Box
       borderWidth={1}
@@ -289,6 +311,14 @@ const Version = () => {
             setOnOpenRelease(false)
           }}
           devbox={{ ...devbox, sshPort: devbox.sshPort || 0 }}
+        />
+      )}
+      {!!onOpenSelectApp && (
+        <AppSelectModal
+          apps={apps}
+          deployData={deployData}
+          onSuccess={() => setOnOpenSelectApp(false)}
+          onClose={() => setOnOpenSelectApp(false)}
         />
       )}
       <ConfirmChild />

@@ -2,8 +2,9 @@ import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
 
 export const crLabelKey = 'sealos-devbox-cr'
 export const devboxKey = 'cloud.sealos.io/devbox-manager'
-export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
+export const devboxIdKey = 'cloud.sealos.io/app-devbox-id'
 export const ingressProtocolKey = 'nginx.ingress.kubernetes.io/backend-protocol'
+export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
 
 export enum LanguageTypeEnum {
   java = 'java',
