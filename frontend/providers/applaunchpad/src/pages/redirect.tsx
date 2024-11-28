@@ -11,13 +11,11 @@ const RedirectPage = () => {
     const handleRedirect = (formData?: string) => {
       if (formData) {
         const parsedData: Partial<AppEditSyncedFields> = JSON.parse(decodeURIComponent(formData));
-        console.log(parsedData, 'parsedData');
-
         const appName = parsedData?.appName;
+
         if (appName) {
           getAppByName(appName)
             .then((app) => {
-              console.log(app, 'app');
               if (app.isPause) {
                 router.replace({
                   pathname: '/app/detail',
