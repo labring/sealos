@@ -184,6 +184,7 @@ func (r *BillingReconciler) getRecentUsedOwners() ([]string, map[string][]string
 	if err != nil {
 		return nil, nil, fmt.Errorf("get all user failed: %w", err)
 	}
+	r.Logger.V(1).Info("get all user", "count", len(nsToOwnerMap))
 	usedOwnerList := []string{}
 	ownerUsedNSMap := make(map[string][]string)
 	for _, ns := range namespaceList {
