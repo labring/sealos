@@ -23,6 +23,9 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"golang.org/x/sync/semaphore"
 
@@ -211,6 +214,18 @@ func (r *BillingReconciler) Init() error {
 
 // map[namespace]owner
 func (r *BillingReconciler) getAllUser() (map[string]string, error) {
+	err := userv1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, fmt.Errorf("unable to add scheme: %v", err)
+	}
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("unable to build config: %v", err)
+	}
+	k8sClt, err := client.New(config, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create client: %v", err)
+	}
 	nsToOwnerMap := make(map[string]string)
 
 	listOpts := &client.ListOptions{
@@ -220,7 +235,7 @@ func (r *BillingReconciler) getAllUser() (map[string]string, error) {
 		userMetaList := &metav1.PartialObjectMetadataList{}
 		userMetaList.SetGroupVersionKind(userv1.GroupVersion.WithKind("UserList"))
 
-		if err := r.Client.List(context.Background(), userMetaList, listOpts); err != nil {
+		if err := k8sClt.List(context.Background(), userMetaList, listOpts); err != nil {
 			return nil, fmt.Errorf("failed to list instances: %v", err)
 		}
 
