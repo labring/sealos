@@ -29,7 +29,6 @@ import (
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
@@ -270,23 +269,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	go func() {
-		if cvmDBClient == nil {
-			setupLog.Info("CVM DB client is nil, skip billing cvm")
-			return
+	if cvmDBClient != nil {
+		cvmTaskRunner := &controllers.CVMTaskRunner{
+			DBClient:          cvmDBClient,
+			Logger:            ctrl.Log.WithName("CVMTaskRunner"),
+			AccountReconciler: accountReconciler,
 		}
-		ticker := time.NewTicker(env.GetDurationEnvWithDefault("BILLING_CVM_INTERVAL", 10*time.Minute))
-		defer ticker.Stop()
-		for {
-			setupLog.Info("start billing cvm", "time", time.Now().Format(time.RFC3339))
-			err := accountReconciler.BillingCVM()
-			if err != nil {
-				setupLog.Error(err, "fail to billing cvm")
-			}
-			setupLog.Info("end billing cvm", "time", time.Now().Format(time.RFC3339))
-			<-ticker.C
+		if err := mgr.Add(cvmTaskRunner); err != nil {
+			setupLog.Error(err, "unable to add cvm task runner")
+			os.Exit(1)
 		}
-	}()
+	}
 	//go func() {
 	//	now := time.Now()
 	//	nextHour := now.Truncate(time.Hour).Add(time.Hour)

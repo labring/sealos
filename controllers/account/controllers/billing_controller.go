@@ -49,8 +49,11 @@ func (r *BillingTaskRunner) Start(ctx context.Context) error {
 	if err := r.ExecuteBillingTask(); err != nil {
 		r.Logger.Error(err, "failed to execute billing task")
 	}
+	defer func() {
+		r.Logger.Info("stop billing reconcile", "time", time.Now().Format(time.RFC3339))
+	}()
 	now := time.Now()
-	nextHour := now.Truncate(time.Hour).Add(time.Hour)
+	nextHour := now.Truncate(time.Hour).Add(time.Hour).Add(5 * time.Minute)
 	r.Logger.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
 	time.Sleep(nextHour.Sub(now))
 
