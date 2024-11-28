@@ -7,8 +7,10 @@ import (
 
 var ModelList = []*model.ModelConfigItem{
 	{
-		Model: "deepseek-chat",
-		Type:  relaymode.ChatCompletions,
+		Model:       "deepseek-chat",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.001,
+		OutputPrice: 0.002,
 	},
 	{
 		Model: "deepseek-coder",

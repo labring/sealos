@@ -85,8 +85,10 @@ var ModelList = []*model.ModelConfigItem{
 		Type:  relaymode.Embeddings,
 	},
 	{
-		Model: "BAAI/bge-reranker-v2-m3",
-		Type:  relaymode.Rerank,
+		Model:       "BAAI/bge-reranker-v2-m3",
+		Type:        relaymode.Rerank,
+		InputPrice:  0.0009,
+		OutputPrice: 0,
 	},
 	{
 		Model: "Pro/Qwen/Qwen2-7B-Instruct",

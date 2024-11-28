@@ -74,8 +74,21 @@ func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) 
 	if len(models) == 0 {
 		return models, nil, nil
 	}
+
+	where := tx.Model(&ModelConfig{}).Where("model IN ?", models)
+	var count int64
+	if err := where.Count(&count).Error; err != nil {
+		return nil, nil, err
+	}
+	if count == 0 {
+		return nil, models, nil
+	}
+	if count == int64(len(models)) {
+		return models, nil, nil
+	}
+
 	var foundModels []string
-	if err := tx.Model(&ModelConfig{}).Where("model IN ?", models).Pluck("model", &foundModels).Error; err != nil {
+	if err := where.Pluck("model", &foundModels).Error; err != nil {
 		return nil, nil, err
 	}
 	if len(foundModels) == len(models) {

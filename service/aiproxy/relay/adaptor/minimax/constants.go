@@ -9,23 +9,33 @@ import (
 
 var ModelList = []*model.ModelConfigItem{
 	{
-		Model: "abab6.5s-chat",
-		Type:  relaymode.ChatCompletions,
+		Model:       "abab6.5s-chat",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.001,
+		OutputPrice: 0,
 	},
 	{
-		Model: "abab6.5g-chat",
-		Type:  relaymode.ChatCompletions,
+		Model:       "abab6.5g-chat",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.005,
+		OutputPrice: 0,
 	},
 	{
-		Model: "abab6.5t-chat",
-		Type:  relaymode.ChatCompletions,
+		Model:       "abab6.5t-chat",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.005,
+		OutputPrice: 0,
 	},
 	{
-		Model: "abab5.5s-chat",
-		Type:  relaymode.ChatCompletions,
+		Model:       "abab5.5s-chat",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.005,
+		OutputPrice: 0,
 	},
 	{
-		Model: "abab5.5-chat",
-		Type:  relaymode.ChatCompletions,
+		Model:       "abab5.5-chat",
+		Type:        relaymode.ChatCompletions,
+		InputPrice:  0.015,
+		OutputPrice: 0,
 	},
 }

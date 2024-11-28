@@ -206,6 +206,14 @@ func EnabledModels(c *gin.Context) {
 	})
 }
 
+func ChannelEnabledModels(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    model.CacheGetAllChannelModelsAndConfig(),
+	})
+}
+
 func ListModels(c *gin.Context) {
 	availableModels := c.GetStringSlice(ctxkey.AvailableModels)
 	availableOpenAIModels := make([]OpenAIModels, 0, len(availableModels))
