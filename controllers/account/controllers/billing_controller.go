@@ -45,6 +45,10 @@ type BillingTaskRunner struct {
 }
 
 func (r *BillingTaskRunner) Start(ctx context.Context) error {
+	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+	if err := r.ExecuteBillingTask(); err != nil {
+		r.Logger.Error(err, "failed to execute billing task")
+	}
 	now := time.Now()
 	nextHour := now.Truncate(time.Hour).Add(time.Hour)
 	r.Logger.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
@@ -83,14 +87,14 @@ type BillingReconciler struct {
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
-	ownerList, err := r.getRecentUsedOwners()
+	ownerList, ownerToNsMap, err := r.getRecentUsedOwners()
 	if err != nil {
 		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
 		return err
 	}
 	now := time.Now()
 	for _, owner := range ownerList {
-		if err := r.reconcileOwner(owner, now); err != nil {
+		if err := r.reconcileOwner(owner, ownerToNsMap[owner], now); err != nil {
 			r.Logger.Error(err, "reconcile owner failed", "owner", owner)
 			continue
 		}
@@ -98,7 +102,7 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 	return nil
 }
 
-func (r *BillingReconciler) reconcileOwner(owner string, now time.Time) error {
+func (r *BillingReconciler) reconcileOwner(owner string, nsList []string, now time.Time) error {
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	queryTime := currentHourTime.Add(-1 * time.Hour)
 	if exist, lastUpdateTime, _ := r.DBClient.GetBillingLastUpdateTime(owner, v12.Consumption); exist {
@@ -115,7 +119,7 @@ func (r *BillingReconciler) reconcileOwner(owner string, now time.Time) error {
 	consumAmount := int64(0)
 	// 计算上次billing到当前的时间之间的整点，左开右闭
 	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		ids, amount, err := r.DBClient.GenerateBillingData(t.Add(-1*time.Hour), t, r.Properties, nil, getUsername(owner))
+		ids, amount, err := r.DBClient.GenerateBillingData(t.Add(-1*time.Hour), t, r.Properties, nsList, getUsername(owner))
 		if err != nil {
 			return fmt.Errorf("generate billing data failed: %w", err)
 		}
@@ -146,17 +150,17 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	return nil
 }
 
-func (r *BillingReconciler) getRecentUsedOwners() ([]string, error) {
+func (r *BillingReconciler) getRecentUsedOwners() ([]string, map[string][]string, error) {
 	now := time.Now()
 	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	startHourTime := endHourTime.Add(-1 * time.Hour)
 	namespaceList, err := r.DBClient.GetTimeUsedNamespaceList(startHourTime, endHourTime)
 	if err != nil {
-		return nil, fmt.Errorf("get recent owners failed: %w", err)
+		return nil, nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
 	nsToOwnerMap, err := r.getAllUser()
 	if err != nil {
-		return nil, fmt.Errorf("get all user failed: %w", err)
+		return nil, nil, fmt.Errorf("get all user failed: %w", err)
 	}
 	usedOwnerList := []string{}
 	ownerUsedNSMap := make(map[string][]string)
@@ -166,7 +170,7 @@ func (r *BillingReconciler) getRecentUsedOwners() ([]string, error) {
 			ownerUsedNSMap[owner] = append(ownerUsedNSMap[owner], ns)
 		}
 	}
-	return usedOwnerList, nil
+	return usedOwnerList, ownerUsedNSMap, nil
 }
 
 func getUsername(namespace string) string {
