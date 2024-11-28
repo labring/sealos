@@ -15,6 +15,7 @@ import yaml from 'js-yaml';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
+  console.log(data, 'form');
 
   const metadata = {
     name: data.appName,
@@ -25,6 +26,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       [deployPVCResizeKey]: `${totalStorage}Gi`
     },
     labels: {
+      ...(data.labels || {}),
       [appDeployKey]: data.appName,
       app: data.appName
     }

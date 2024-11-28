@@ -382,8 +382,10 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'configMapList',
     'secret',
     'storeList',
-    'gpu'
+    'gpu',
+    'labels'
   ];
+
   const res: Record<string, any> = {};
 
   keys.forEach((key) => {

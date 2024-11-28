@@ -122,9 +122,13 @@ const App = ({ Component, pageProps }: AppProps) => {
   // record route
   useEffect(() => {
     return () => {
-      setLastRoute(router.asPath);
+      const currentPath = router.asPath;
+      if (router.isReady && !currentPath.includes('/redirect')) {
+        console.log(currentPath);
+        setLastRoute(currentPath);
+      }
     };
-  }, [router.pathname]);
+  }, [router.pathname, router.isReady, setLastRoute]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
