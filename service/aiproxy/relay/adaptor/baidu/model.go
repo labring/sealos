@@ -7,14 +7,14 @@ import (
 )
 
 type ChatResponse struct {
-	ID     string `json:"id"`
-	Object string `json:"object"`
-	Result string `json:"result"`
+	Usage  *model.Usage `json:"usage"`
+	ID     string       `json:"id"`
+	Object string       `json:"object"`
+	Result string       `json:"result"`
 	Error
-	Usage            model.Usage `json:"usage"`
-	Created          int64       `json:"created"`
-	IsTruncated      bool        `json:"is_truncated"`
-	NeedClearHistory bool        `json:"need_clear_history"`
+	Created          int64 `json:"created"`
+	IsTruncated      bool  `json:"is_truncated"`
+	NeedClearHistory bool  `json:"need_clear_history"`
 }
 
 type ChatStreamResponse struct {

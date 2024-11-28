@@ -107,7 +107,7 @@ func StreamResponseCohere2OpenAI(cohereResponse *StreamResponse) (*openai.ChatCo
 	}
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
-	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	openaiResponse.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &openaiResponse, response
 }
 
@@ -126,7 +126,7 @@ func ResponseCohere2OpenAI(cohereResponse *Response) *openai.TextResponse {
 		Model:   "model",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
@@ -148,7 +148,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var cohereResponse StreamResponse
 		err := json.Unmarshal(conv.StringToBytes(data), &cohereResponse)
 		if err != nil {
-			logger.SysError("error unmarshalling stream response: " + err.Error())
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
 
@@ -168,12 +168,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)

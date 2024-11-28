@@ -15,8 +15,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
@@ -95,26 +95,9 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	}
 	adaptor.Init(meta)
 
-	var requestBody io.Reader
-	switch meta.ChannelType {
-	case channeltype.Ali,
-		channeltype.Baidu,
-		channeltype.Zhipu:
-		finalRequest, err := adaptor.ConvertImageRequest(imageRequest)
-		if err != nil {
-			return openai.ErrorWrapper(err, "convert_image_request_failed", http.StatusInternalServerError)
-		}
-		jsonStr, err := json.Marshal(finalRequest)
-		if err != nil {
-			return openai.ErrorWrapper(err, "marshal_image_request_failed", http.StatusInternalServerError)
-		}
-		requestBody = bytes.NewReader(jsonStr)
-	default:
-		jsonStr, err := json.Marshal(imageRequest)
-		if err != nil {
-			return openai.ErrorWrapper(err, "marshal_image_request_failed", http.StatusInternalServerError)
-		}
-		requestBody = bytes.NewReader(jsonStr)
+	requestBody, err := getImageRequestBody(c, meta, imageRequest, adaptor)
+	if err != nil {
+		return openai.ErrorWrapper(err, "get_image_request_body_failed", http.StatusInternalServerError)
 	}
 
 	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
@@ -197,4 +180,16 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	)
 
 	return nil
+}
+
+func getImageRequestBody(_ *gin.Context, _ *meta.Meta, imageRequest *relaymodel.ImageRequest, adaptor adaptor.Adaptor) (io.Reader, error) {
+	convertedRequest, err := adaptor.ConvertImageRequest(imageRequest)
+	if err != nil {
+		return nil, err
+	}
+	jsonStr, err := json.Marshal(convertedRequest)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(jsonStr), nil
 }

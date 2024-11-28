@@ -73,7 +73,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 		Model:   response.Model,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 		Usage: model.Usage{
 			PromptTokens:     response.PromptEvalCount,
 			CompletionTokens: response.EvalCount,
@@ -95,7 +95,7 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   ollamaResponse.Model,
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
 	return &response
 }
@@ -129,7 +129,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var ollamaResponse ChatResponse
 		err := json.Unmarshal(conv.StringToBytes(data), &ollamaResponse)
 		if err != nil {
-			logger.SysError("error unmarshalling stream response: " + err.Error())
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
 
@@ -142,12 +142,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		response := streamResponseOllama2OpenAI(&ollamaResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)
@@ -204,13 +204,13 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStat
 func embeddingResponseOllama2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
-		Data:   make([]openai.EmbeddingResponseItem, 0, 1),
+		Data:   make([]*openai.EmbeddingResponseItem, 0, 1),
 		Model:  response.Model,
 		Usage:  model.Usage{TotalTokens: 0},
 	}
 
 	for i, embedding := range response.Embeddings {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, openai.EmbeddingResponseItem{
+		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
 			Object:    `embedding`,
 			Index:     i,
 			Embedding: embedding,

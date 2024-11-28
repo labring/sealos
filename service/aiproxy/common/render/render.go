@@ -10,6 +10,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
 
+var stdjson = json.ConfigCompatibleWithStandardLibrary
+
 func StringData(c *gin.Context, str string) {
 	str = strings.TrimPrefix(str, "data:")
 	// str = strings.TrimSuffix(str, "\r")
@@ -18,7 +20,7 @@ func StringData(c *gin.Context, str string) {
 }
 
 func ObjectData(c *gin.Context, object any) error {
-	jsonData, err := json.Marshal(object)
+	jsonData, err := stdjson.Marshal(object)
 	if err != nil {
 		return fmt.Errorf("error marshalling object: %w", err)
 	}

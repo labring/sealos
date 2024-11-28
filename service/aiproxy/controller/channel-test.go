@@ -39,7 +39,7 @@ func buildTestRequest(model string) *relaymodel.GeneralOpenAIRequest {
 		Role:    "user",
 		Content: "hi",
 	}
-	testRequest.Messages = append(testRequest.Messages, testMessage)
+	testRequest.Messages = append(testRequest.Messages, &testMessage)
 	return testRequest
 }
 

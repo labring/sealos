@@ -45,7 +45,7 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *ChatRequest {
 
 func responsePaLM2OpenAI(response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
-		Choices: make([]openai.TextResponseChoice, 0, len(response.Candidates)),
+		Choices: make([]*openai.TextResponseChoice, 0, len(response.Candidates)),
 	}
 	for i, candidate := range response.Candidates {
 		choice := openai.TextResponseChoice{
@@ -56,7 +56,7 @@ func responsePaLM2OpenAI(response *ChatResponse) *openai.TextResponse {
 			},
 			FinishReason: "stop",
 		}
-		fullTextResponse.Choices = append(fullTextResponse.Choices, choice)
+		fullTextResponse.Choices = append(fullTextResponse.Choices, &choice)
 	}
 	return &fullTextResponse
 }
@@ -70,7 +70,7 @@ func streamResponsePaLM2OpenAI(palmResponse *ChatResponse) *openai.ChatCompletio
 	var response openai.ChatCompletionsStreamResponse
 	response.Object = "chat.completion.chunk"
 	response.Model = "palm2"
-	response.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	response.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &response
 }
 
@@ -84,7 +84,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	var palmResponse ChatResponse
 	err := json.NewDecoder(resp.Body).Decode(&palmResponse)
 	if err != nil {
-		logger.SysError("error unmarshalling stream response: " + err.Error())
+		logger.Error(c, "error unmarshalling stream response: "+err.Error())
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), ""
 	}
 
@@ -99,7 +99,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 	err = render.ObjectData(c, fullTextResponse)
 	if err != nil {
-		logger.SysError("error stream response: " + err.Error())
+		logger.Error(c, "error stream response: "+err.Error())
 		return openai.ErrorWrapper(err, "stream_response_failed", http.StatusInternalServerError), ""
 	}
 

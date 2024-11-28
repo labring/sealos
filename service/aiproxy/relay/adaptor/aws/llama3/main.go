@@ -3,7 +3,6 @@ package aws
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"text/template"
@@ -55,9 +54,9 @@ const promptTemplate = `<|begin_of_text|>{{range .Messages}}<|start_header_id|>{
 
 var promptTpl = template.Must(template.New("llama3-chat").Parse(promptTemplate))
 
-func RenderPrompt(messages []relaymodel.Message) string {
+func RenderPrompt(messages []*relaymodel.Message) string {
 	var buf bytes.Buffer
-	err := promptTpl.Execute(&buf, struct{ Messages []relaymodel.Message }{messages})
+	err := promptTpl.Execute(&buf, struct{ Messages []*relaymodel.Message }{messages})
 	if err != nil {
 		logger.SysError("error rendering prompt messages: " + err.Error())
 	}
@@ -142,7 +141,7 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
@@ -191,7 +190,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			var llamaResp StreamResponse
 			err := json.Unmarshal(v.Value.Bytes, &llamaResp)
 			if err != nil {
-				logger.SysError("error unmarshalling stream response: " + err.Error())
+				logger.Error(c, "error unmarshalling stream response: "+err.Error())
 				return false
 			}
 
@@ -208,15 +207,15 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			response.Created = createdTime
 			err = render.ObjectData(c, response)
 			if err != nil {
-				logger.SysError("error stream response: " + err.Error())
+				logger.Error(c, "error stream response: "+err.Error())
 				return true
 			}
 			return true
 		case *types.UnknownUnionMember:
-			fmt.Println("unknown tag:", v.Tag)
+			logger.Error(c, "unknown tag: "+v.Tag)
 			return false
 		default:
-			fmt.Println("union is nil or unknown type")
+			logger.Errorf(c, "union is nil or unknown type: %v", v)
 			return false
 		}
 	})
@@ -234,6 +233,6 @@ func StreamResponseLlama2OpenAI(llamaResponse *StreamResponse) *openai.ChatCompl
 	}
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
-	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	openaiResponse.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &openaiResponse
 }

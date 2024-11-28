@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -35,6 +36,9 @@ func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *relaymodel.Gene
 		return nil, err
 	}
 	request.Model = domain
+	for _, message := range request.Messages {
+		message.ToStringContentMessage()
+	}
 	return request, nil
 }
 
@@ -61,9 +65,9 @@ func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	if meta.IsStream {
-		err, usage = StreamHandler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = openai.StreamHandler(c, resp, meta)
 	} else {
-		err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = openai.Handler(c, resp, meta)
 	}
 	return
 }

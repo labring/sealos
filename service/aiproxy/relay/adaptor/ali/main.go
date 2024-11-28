@@ -9,27 +9,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 // https://help.aliyun.com/document_detail/613695.html?spm=a2c4g.2399480.0.0.1adb778fAdzP9w#341800c0f8w0r
 
 const EnableSearchModelSuffix = "-internet"
 
-func ConvertRequest(request *model.GeneralOpenAIRequest) *model.GeneralOpenAIRequest {
+func ConvertRequest(request *relaymodel.GeneralOpenAIRequest) *relaymodel.GeneralOpenAIRequest {
 	if request.TopP != nil && *request.TopP >= 1 {
 		*request.TopP = 0.9999
 	}
 	if request.Stream {
 		if request.StreamOptions == nil {
-			request.StreamOptions = &model.StreamOptions{}
+			request.StreamOptions = &relaymodel.StreamOptions{}
 		}
 		request.StreamOptions.IncludeUsage = true
 	}
 	return request
 }
 
-func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequest {
+func ConvertEmbeddingRequest(request *relaymodel.GeneralOpenAIRequest) *EmbeddingRequest {
 	return &EmbeddingRequest{
 		Model: request.Model,
 		Input: struct {
@@ -40,7 +40,7 @@ func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequ
 	}
 }
 
-func ConvertImageRequest(request model.ImageRequest) *ImageRequest {
+func ConvertImageRequest(request *relaymodel.ImageRequest) *ImageRequest {
 	var imageRequest ImageRequest
 	imageRequest.Input.Prompt = request.Prompt
 	imageRequest.Model = request.Model
@@ -51,7 +51,7 @@ func ConvertImageRequest(request model.ImageRequest) *ImageRequest {
 	return &imageRequest
 }
 
-func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	var aliResponse EmbeddingResponse
 	err := json.NewDecoder(resp.Body).Decode(&aliResponse)
 	if err != nil {
@@ -64,8 +64,8 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStat
 	}
 
 	if aliResponse.Code != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
+		return &relaymodel.ErrorWithStatusCode{
+			Error: relaymodel.Error{
 				Message: aliResponse.Message,
 				Type:    aliResponse.Code,
 				Param:   aliResponse.RequestID,
@@ -90,13 +90,13 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStat
 func embeddingResponseAli2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
-		Data:   make([]openai.EmbeddingResponseItem, 0, len(response.Output.Embeddings)),
+		Data:   make([]*openai.EmbeddingResponseItem, 0, len(response.Output.Embeddings)),
 		Model:  "text-embedding-v1",
-		Usage:  model.Usage{TotalTokens: response.Usage.TotalTokens},
+		Usage:  relaymodel.Usage{TotalTokens: response.Usage.TotalTokens},
 	}
 
 	for _, item := range response.Output.Embeddings {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, openai.EmbeddingResponseItem{
+		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
 			Object:    `embedding`,
 			Index:     item.TextIndex,
 			Embedding: item.Embedding,

@@ -7,18 +7,18 @@ import (
 )
 
 type Request struct {
-	Temperature *float64        `json:"temperature,omitempty"`
-	TopP        *float64        `json:"top_p,omitempty"`
-	RequestID   string          `json:"request_id,omitempty"`
-	Prompt      []model.Message `json:"prompt"`
-	Incremental bool            `json:"incremental,omitempty"`
+	Temperature *float64         `json:"temperature,omitempty"`
+	TopP        *float64         `json:"top_p,omitempty"`
+	RequestID   string           `json:"request_id,omitempty"`
+	Prompt      []*model.Message `json:"prompt"`
+	Incremental bool             `json:"incremental,omitempty"`
 }
 
 type ResponseData struct {
-	TaskID      string          `json:"task_id"`
-	RequestID   string          `json:"request_id"`
-	TaskStatus  string          `json:"task_status"`
-	Choices     []model.Message `json:"choices"`
+	TaskID      string           `json:"task_id"`
+	RequestID   string           `json:"request_id"`
+	TaskStatus  string           `json:"task_status"`
+	Choices     []*model.Message `json:"choices"`
 	model.Usage `json:"usage"`
 }
 

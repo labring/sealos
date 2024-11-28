@@ -27,76 +27,102 @@ const (
 	dataPrefixLength = len(dataPrefix)
 )
 
-func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.ErrorWithStatusCode, string, *model.Usage) {
+var stdjson = json.ConfigCompatibleWithStandardLibrary
+
+type UsageAndChoicesResponse struct {
+	Usage   *model.Usage
+	Choices []*ChatCompletionsStreamResponseChoice
+}
+
+func StreamHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseText := ""
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
+
 	var usage *model.Usage
 
 	common.SetEventStreamHeaders(c)
 
-	doneRendered := false
 	for scanner.Scan() {
 		data := scanner.Text()
 		if len(data) < dataPrefixLength { // ignore blank line or wrong format
 			continue
 		}
-		if data[:dataPrefixLength] != dataPrefix && data[:dataPrefixLength] != done {
+		if data[:dataPrefixLength] != dataPrefix {
 			continue
 		}
-		if strings.HasPrefix(data[dataPrefixLength:], done) {
-			render.StringData(c, data)
-			doneRendered = true
-			continue
+		data = data[dataPrefixLength:]
+		if strings.HasPrefix(data, done) {
+			break
 		}
-		switch relayMode {
+		switch meta.Mode {
 		case relaymode.ChatCompletions:
-			var streamResponse ChatCompletionsStreamResponse
-			err := json.Unmarshal(conv.StringToBytes(data[dataPrefixLength:]), &streamResponse)
+			var streamResponse UsageAndChoicesResponse
+			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
 			if err != nil {
-				logger.SysError("error unmarshalling stream response: " + err.Error())
-				render.StringData(c, data) // if error happened, pass the data to client
-				continue                   // just ignore the error
+				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				continue // just ignore the error
 			}
 			if len(streamResponse.Choices) == 0 && streamResponse.Usage == nil {
 				// but for empty choice and no usage, we should not pass it to client, this is for azure
 				continue // just ignore empty choice
 			}
-			render.StringData(c, data)
-			for _, choice := range streamResponse.Choices {
-				responseText += conv.AsString(choice.Delta.Content)
-			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
 			}
-		case relaymode.Completions:
-			render.StringData(c, data)
-			var streamResponse CompletionsStreamResponse
-			err := json.Unmarshal(conv.StringToBytes(data[dataPrefixLength:]), &streamResponse)
+			for _, choice := range streamResponse.Choices {
+				responseText += choice.Delta.StringContent()
+			}
+			// streamResponse.Model = meta.ActualModelName
+			respMap := make(map[string]any)
+			err = json.Unmarshal(conv.StringToBytes(data), &respMap)
 			if err != nil {
-				logger.SysError("error unmarshalling stream response: " + err.Error())
+				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				continue
+			}
+			if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
+				respMap["model"] = meta.OriginModelName
+			}
+			err = render.ObjectData(c, respMap)
+			if err != nil {
+				logger.Error(c, "error rendering stream response: "+err.Error())
+				continue
+			}
+		case relaymode.Completions:
+			var streamResponse CompletionsStreamResponse
+			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
+			if err != nil {
+				logger.Error(c, "error unmarshalling stream response: "+err.Error())
 				continue
 			}
 			for _, choice := range streamResponse.Choices {
 				responseText += choice.Text
 			}
+			render.StringData(c, data)
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
-	if !doneRendered {
-		render.Done(c)
+	render.Done(c)
+
+	if usage == nil || (usage.TotalTokens == 0 && responseText != "") {
+		usage = ResponseText2Usage(responseText, meta.ActualModelName, meta.PromptTokens)
 	}
 
-	return nil, responseText, usage
+	if usage.TotalTokens != 0 && usage.PromptTokens == 0 { // some channels don't return prompt tokens & completion tokens
+		usage.PromptTokens = meta.PromptTokens
+		usage.CompletionTokens = usage.TotalTokens - meta.PromptTokens
+	}
+
+	return nil, usage
 }
 
-func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
@@ -118,21 +144,36 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
 		completionTokens := 0
 		for _, choice := range textResponse.Choices {
-			completionTokens += CountTokenText(choice.Message.StringContent(), modelName)
+			completionTokens += CountTokenText(choice.Message.StringContent(), meta.ActualModelName)
 		}
 		textResponse.Usage = model.Usage{
-			PromptTokens:     promptTokens,
+			PromptTokens:     meta.PromptTokens,
 			CompletionTokens: completionTokens,
-			TotalTokens:      promptTokens + completionTokens,
+			TotalTokens:      meta.PromptTokens + completionTokens,
 		}
 	}
 
-	for k, v := range resp.Header {
-		c.Writer.Header().Set(k, v[0])
+	var respMap map[string]any
+	err = json.Unmarshal(responseBody, &respMap)
+	if err != nil {
+		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
+
+	if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
+		respMap["model"] = meta.OriginModelName
+	}
+
+	newData, err := stdjson.Marshal(respMap)
+	if err != nil {
+		return ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+	}
+
 	c.Writer.WriteHeader(resp.StatusCode)
 
-	_, _ = c.Writer.Write(responseBody)
+	_, err = c.Writer.Write(newData)
+	if err != nil {
+		logger.Error(c, "write response body failed: "+err.Error())
+	}
 	return nil, &textResponse.Usage
 }
 
@@ -151,7 +192,10 @@ func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, _ *met
 
 	c.Writer.WriteHeader(resp.StatusCode)
 
-	_, _ = c.Writer.Write(responseBody)
+	_, err = c.Writer.Write(responseBody)
+	if err != nil {
+		logger.Error(c, "write response body failed: "+err.Error())
+	}
 
 	if rerankResponse.Meta.Tokens == nil {
 		return nil, &model.Usage{
@@ -177,7 +221,10 @@ func TTSHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.Er
 		c.Writer.Header().Set(k, v[0])
 	}
 
-	_, _ = io.Copy(c.Writer, resp.Body)
+	_, err := io.Copy(c.Writer, resp.Body)
+	if err != nil {
+		logger.Error(c, "write response body failed: "+err.Error())
+	}
 	return nil, &model.Usage{
 		PromptTokens:     meta.PromptTokens,
 		CompletionTokens: 0,
@@ -223,7 +270,10 @@ func STTHandler(c *gin.Context, resp *http.Response, meta *meta.Meta, responseFo
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])
 	}
-	_, _ = c.Writer.Write(responseBody)
+	_, err = c.Writer.Write(responseBody)
+	if err != nil {
+		logger.Error(c, "write response body failed: "+err.Error())
+	}
 
 	return nil, &model.Usage{
 		PromptTokens:     0,

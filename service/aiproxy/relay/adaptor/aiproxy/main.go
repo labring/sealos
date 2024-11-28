@@ -60,7 +60,7 @@ func responseAIProxyLibrary2OpenAI(response *LibraryResponse) *openai.TextRespon
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
@@ -74,7 +74,7 @@ func documentsAIProxyLibrary(documents []LibraryDocument) *openai.ChatCompletion
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   "",
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
 }
 
@@ -86,7 +86,7 @@ func streamResponseAIProxyLibrary2OpenAI(response *LibraryStreamResponse) *opena
 		Object:  "chat.completion.chunk",
 		Created: helper.GetTimestamp(),
 		Model:   response.Model,
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
 }
 
@@ -125,7 +125,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var AIProxyLibraryResponse LibraryStreamResponse
 		err := json.Unmarshal(data, &AIProxyLibraryResponse)
 		if err != nil {
-			logger.SysError("error unmarshalling stream response: " + err.Error())
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
 		if len(AIProxyLibraryResponse.Documents) != 0 {
@@ -134,18 +134,18 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		response := streamResponseAIProxyLibrary2OpenAI(&AIProxyLibraryResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	response := documentsAIProxyLibrary(documents)
 	err := render.ObjectData(c, response)
 	if err != nil {
-		logger.SysError(err.Error())
+		logger.Error(c, "error rendering stream response: "+err.Error())
 	}
 	render.Done(c)
 

@@ -45,7 +45,7 @@ func responseTencent2OpenAI(response *ChatResponse) *openai.TextResponse {
 			},
 			FinishReason: response.Choices[0].FinishReason,
 		}
-		fullTextResponse.Choices = append(fullTextResponse.Choices, choice)
+		fullTextResponse.Choices = append(fullTextResponse.Choices, &choice)
 	}
 	return &fullTextResponse
 }
@@ -63,7 +63,7 @@ func streamResponseTencent2OpenAI(tencentResponse *ChatResponse) *openai.ChatCom
 		if tencentResponse.Choices[0].FinishReason == "stop" {
 			choice.FinishReason = &constant.StopFinishReason
 		}
-		response.Choices = append(response.Choices, choice)
+		response.Choices = append(response.Choices, &choice)
 	}
 	return &response
 }
@@ -91,7 +91,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var tencentResponse ChatResponse
 		err := json.Unmarshal(data, &tencentResponse)
 		if err != nil {
-			logger.SysErrorf("error unmarshalling stream response: %s, data: %s", err.Error(), conv.BytesToString(data))
+			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
 
@@ -102,12 +102,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			logger.Error(c, "error rendering stream response: "+err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		logger.Error(c, "error reading stream: "+err.Error())
 	}
 
 	render.Done(c)

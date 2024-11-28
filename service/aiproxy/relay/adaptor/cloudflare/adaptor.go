@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -84,18 +85,18 @@ func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Read
 }
 
 func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	if meta.IsStream {
-		err, usage = StreamHandler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = openai.StreamHandler(c, resp, meta)
 	} else {
-		err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = openai.Handler(c, resp, meta)
 	}
 	return
 }
