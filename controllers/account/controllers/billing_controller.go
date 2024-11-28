@@ -100,7 +100,7 @@ type BillingReconciler struct {
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
 	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
-	ownerList, ownerToNsMap, err := r.getRecentUsedOwners()
+	ownerList, err := r.getRecentUsedOwners()
 	if err != nil {
 		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
 		return err
@@ -109,18 +109,18 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(ownerList))
 	now := time.Now()
-	for i := range ownerList {
-		go func(owner string) {
+	for _owner := range ownerList {
+		go func(owner string, nsList []string) {
 			defer wg.Done()
 			if err := sem.Acquire(context.Background(), 1); err != nil {
 				fmt.Printf("Failed to acquire semaphore: %v\n", err)
 				return
 			}
 			defer sem.Release(1)
-			if err := r.reconcileOwner(owner, ownerToNsMap[owner], now); err != nil {
+			if err := r.reconcileOwner(owner, nsList, now); err != nil {
 				r.Logger.Error(err, "reconcile owner failed", "owner", owner)
 			}
-		}(ownerList[i])
+		}(_owner, ownerList[_owner])
 	}
 	wg.Wait()
 	r.Logger.Info("finish billing reconcile", "time", time.Now().Format(time.RFC3339))
@@ -175,28 +175,29 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	return nil
 }
 
-func (r *BillingReconciler) getRecentUsedOwners() ([]string, map[string][]string, error) {
+func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 	now := time.Now()
 	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	startHourTime := endHourTime.Add(-1 * time.Hour)
 	namespaceList, err := r.DBClient.GetTimeUsedNamespaceList(startHourTime, endHourTime)
 	if err != nil {
-		return nil, nil, fmt.Errorf("get recent owners failed: %w", err)
+		return nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
 	nsToOwnerMap, err := r.getAllUser()
 	if err != nil {
-		return nil, nil, fmt.Errorf("get all user failed: %w", err)
+		return nil, fmt.Errorf("get all user failed: %w", err)
 	}
 	r.Logger.V(1).Info("get all user", "count", len(nsToOwnerMap))
-	usedOwnerList := []string{}
-	ownerUsedNSMap := make(map[string][]string)
+	usedOwnerList := make(map[string][]string)
 	for _, ns := range namespaceList {
 		if owner, ok := nsToOwnerMap[ns]; ok {
-			usedOwnerList = append(usedOwnerList, owner)
-			ownerUsedNSMap[owner] = append(ownerUsedNSMap[owner], ns)
+			if _, ok := usedOwnerList[owner]; !ok {
+				usedOwnerList[owner] = []string{}
+			}
+			usedOwnerList[owner] = append(usedOwnerList[owner], ns)
 		}
 	}
-	return usedOwnerList, ownerUsedNSMap, nil
+	return usedOwnerList, nil
 }
 
 func getUsername(namespace string) string {
@@ -208,7 +209,7 @@ func (r *BillingReconciler) Init() error {
 	if err := r.DBClient.CreateBillingIfNotExist(); err != nil {
 		return fmt.Errorf("create billing collection failed: %w", err)
 	}
-	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 1000)
+	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 100)
 	return nil
 }
 
