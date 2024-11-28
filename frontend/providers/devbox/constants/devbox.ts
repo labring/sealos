@@ -150,14 +150,14 @@ export const devboxReleaseStatusMap = {
   [DevboxReleaseStatusEnum.Pending]: {
     label: 'release_pending',
     value: DevboxReleaseStatusEnum.Pending,
-    color: '#787A90',
+    color: '#0884DD',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DevboxReleaseStatusEnum.Failed]: {
     label: 'release_failed',
     value: DevboxReleaseStatusEnum.Failed,
-    color: '#F04438',
+    color: '#D92D20',
     backgroundColor: '#FEF3F2',
     dotColor: '#F04438'
   }
