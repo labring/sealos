@@ -1,10 +1,12 @@
 import { getAppByName } from '@/api/app';
+import { useGlobalStore } from '@/store/global';
 import { AppEditSyncedFields } from '@/types/app';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 const RedirectPage = () => {
   const router = useRouter();
+  const { setLastRoute } = useGlobalStore();
 
   useEffect(() => {
     const handleRedirect = (formData?: string) => {
@@ -21,6 +23,7 @@ const RedirectPage = () => {
                   query: { name: appName }
                 });
               } else {
+                setLastRoute(`/app/detail?name=${appName}`);
                 router.replace({
                   pathname: '/app/edit',
                   query: { name: appName, formData }
@@ -28,6 +31,7 @@ const RedirectPage = () => {
               }
             })
             .catch((err) => {
+              setLastRoute('/');
               router.replace({
                 pathname: '/app/edit',
                 query: { formData }

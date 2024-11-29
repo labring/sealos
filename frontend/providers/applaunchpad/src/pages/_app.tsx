@@ -152,12 +152,12 @@ const App = ({ Component, pageProps }: AppProps) => {
             if (e.data?.type === 'InternalAppCall') {
               const { name, formData } = e.data;
               if (formData) {
-                router.push({
+                router.replace({
                   pathname: '/redirect',
                   query: { formData }
                 });
               } else if (name) {
-                router.push({
+                router.replace({
                   pathname: '/app/detail',
                   query: { name }
                 });
