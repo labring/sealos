@@ -89,6 +89,9 @@ export type KbPodType = {
   };
 };
 
+/**
+ * @deprecated
+ */
 export type KubeBlockBackupPolicyType = {
   metadata: {
     name: string;
