@@ -8,7 +8,8 @@ import useEnvStore from '@/store/env';
 export const json2CronJob = (data: CronJobEditType) => {
   const timeZone = getUserTimeZone();
   const kcHeader = encodeURIComponent(getUserKubeConfig());
-  const { applaunchpadUrl } = useEnvStore.getState().SystemEnv;
+  const { applaunchpadUrl, successfulJobsHistoryLimit, failedJobsHistoryLimit } =
+    useEnvStore.getState().SystemEnv;
 
   const metadata = {
     name: data.jobName,
@@ -111,8 +112,8 @@ export const json2CronJob = (data: CronJobEditType) => {
       schedule: data.schedule,
       concurrencyPolicy: 'Replace',
       startingDeadlineSeconds: 60,
-      successfulJobsHistoryLimit: Number(process.env.SUCCESSFUL_JOBS_HISTORY_LIMIT) || 3,
-      failedJobsHistoryLimit: Number(process.env.FAILED_JOBS_HISTORY_LIMIT) || 3,
+      successfulJobsHistoryLimit,
+      failedJobsHistoryLimit,
       timeZone: timeZone,
       jobTemplate: {
         activeDeadlineSeconds: 600,
