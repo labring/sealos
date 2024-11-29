@@ -68,9 +68,10 @@ const IDEButton = ({
           runtimeName: runtimeVersion
         })
         const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
+        const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
 
         setJetBrainsGuideData({
-          base64PrivateKey,
+          privateKey: sshPrivateKey,
           userName,
           token,
           workingDir,
