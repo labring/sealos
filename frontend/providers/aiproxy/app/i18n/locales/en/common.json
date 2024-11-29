@@ -111,14 +111,36 @@
     "export": "Export",
     "create": "New",
     "name_required": "The name is illegal",
-    "key_required": "Key is illegal"
+    "key_required": "Key is illegal",
+    "modelDefault": "Channel default model",
+    "createFailed": "Failed to create channel",
+    "createSuccess": "Channel created successfully",
+    "updateSuccess": "Update channel successful",
+    "updateFailed": "Update channel failed",
+    "id": "ID",
+    "requestCount": "Request Times",
+    "status": "Status"
   },
   "channelsForm": {
     "name": "Custom name",
-    "type": "Manufacturer"
+    "type": "Manufacturer",
+    "models": "Model",
+    "model_mapping": "Input Mode & Output Mode",
+    "add": "Add",
+    "key": "Key",
+    "base_url": "Proxy Address"
   },
   "channelsFormPlaceholder": {
     "name": "Custom name",
-    "type": "Open AI"
+    "type": "Open AI",
+    "model": "Enter selection",
+    "modelInput": "Enter custom model name",
+    "modelMappingInput": "Input model",
+    "modelMappingOutput": "Output model",
+    "key": "Please enter the channel key",
+    "base_url": "Please enter agent"
+  },
+  "common": {
+    "add": "Add"
   }
 }

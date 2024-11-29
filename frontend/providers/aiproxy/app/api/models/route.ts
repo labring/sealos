@@ -4,7 +4,9 @@ import { isAdmin } from '@/utils/backend/isAdmin'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { ModelType } from '@/types/models/model'
 
-type ModelMap = Partial<Record<ModelType, string[]>>
+export const dynamic = 'force-dynamic'
+
+type ModelMap = { [K in ModelType]?: string[] }
 
 type ModelsResponse = ApiProxyBackendResp<ModelMap>
 

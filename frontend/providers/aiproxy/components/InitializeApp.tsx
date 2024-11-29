@@ -9,6 +9,7 @@ import { useBackendStore } from '@/store/backend'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
+import { useSessionStore } from '@/store/session'
 
 export default function InitializeApp() {
   const router = useRouter()
@@ -88,18 +89,20 @@ export default function InitializeApp() {
 
   // init session
   const initSession = async () => {
+    const { setSession } = useSessionStore.getState()
+
     try {
-      const newSession = JSON.stringify(await sealosApp.getSession())
-      const oldSession = localStorage.getItem('session')
-      if (newSession && newSession !== oldSession) {
-        localStorage.setItem('session', newSession)
+      const newSession = await sealosApp.getSession()
+      // 只要有新 session 就更新
+      if (newSession) {
+        setSession(newSession)
         window.location.reload()
       }
       console.log('aiproxy: init session success')
     } catch (err) {
       console.log('aiproxy: app is not running in desktop')
       if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-        localStorage.removeItem('session')
+        setSession(null)
       }
     }
   }

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-// Token payload 类型定义
+// Token payload
 interface AppTokenPayload {
   workspaceUid: string
   workspaceId: string

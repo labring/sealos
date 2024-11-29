@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Flex,
+  FlexProps,
   Icon,
   Input,
   Popover,
@@ -25,8 +26,9 @@ export default function SelectDateRange({
   startTime,
   setStartTime,
   endTime,
-  setEndTime
-}: SelectDateRangeProps): JSX.Element {
+  setEndTime,
+  ...props
+}: SelectDateRangeProps & FlexProps): JSX.Element {
   const initState = { from: startTime, to: endTime }
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState)
@@ -180,7 +182,8 @@ export default function SelectDateRange({
       boxSizing={'border-box'}
       justify={'space-between'}
       border={'1px solid #DEE0E2'}
-      borderRadius="6px">
+      borderRadius="6px"
+      {...props}>
       <Popover onClose={onClose}>
         <PopoverTrigger>
           <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>

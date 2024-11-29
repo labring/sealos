@@ -7,7 +7,7 @@ import { CreateChannelRequest } from '@/types/admin/channels/channelInfo.d'
 
 export const dynamic = 'force-dynamic'
 
-type ChannelsSearchResponse = {
+type ApiProxyBackendChannelsSearchResponse = {
   data: {
     channels: ChannelInfo[]
     total: number
@@ -26,27 +26,26 @@ export type GetChannelsResponse = ApiResp<{
   total: number
 }>
 
-function validateParams(page: number, perPage: number): string | null {
-  if (page < 1) {
+function validateParams(queryParams: ChannelQueryParams): string | null {
+  if (queryParams.page < 1) {
     return 'Page number must be greater than 0'
   }
-  if (perPage < 1 || perPage > 100) {
+  if (queryParams.perPage < 1 || queryParams.perPage > 100) {
     return 'Per page must be between 1 and 100'
   }
   return null
 }
 
 async function fetchChannels(
-  page: number,
-  perPage: number
+  queryParams: ChannelQueryParams
 ): Promise<{ channels: ChannelInfo[]; total: number }> {
   try {
     const url = new URL(
       `/api/channels/search`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
-    url.searchParams.append('p', page.toString())
-    url.searchParams.append('per_page', perPage.toString())
+    url.searchParams.append('p', queryParams.page.toString())
+    url.searchParams.append('per_page', queryParams.perPage.toString())
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -59,12 +58,12 @@ async function fetchChannels(
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
     }
-    const result: ChannelsSearchResponse = await response.json()
+    const result: ApiProxyBackendChannelsSearchResponse = await response.json()
     if (!result.success) {
       throw new Error(result.message || 'admin channels api:ai proxy backend error')
     }
     return {
-      channels: result.data.channels.sort((a, b) => a.name.localeCompare(b.name)),
+      channels: result.data.channels,
       total: result.data.total
     }
   } catch (error) {
@@ -104,15 +103,19 @@ async function createChannel(channelData: CreateChannelRequest): Promise<void> {
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+// get channels
+export async function GET(request: NextRequest): Promise<NextResponse<GetChannelsResponse>> {
   try {
     const namespace = await parseJwtToken(request.headers)
     await isAdmin(namespace)
     const searchParams = request.nextUrl.searchParams
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const perPage = parseInt(searchParams.get('perPage') || '10', 10)
 
-    const validationError = validateParams(page, perPage)
+    const queryParams: ChannelQueryParams = {
+      page: parseInt(searchParams.get('page') || '1', 10),
+      perPage: parseInt(searchParams.get('perPage') || '10', 10)
+    }
+
+    const validationError = validateParams(queryParams)
     if (validationError) {
       return NextResponse.json(
         {
@@ -124,14 +127,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    const { channels, total } = await fetchChannels(page, perPage)
+    const { channels, total } = await fetchChannels(queryParams)
     return NextResponse.json({
       code: 200,
       data: {
         channels: channels,
         total: total
       }
-    })
+    } satisfies GetChannelsResponse)
   } catch (error) {
     console.error('admin channels api: get channels error:', error)
     return NextResponse.json(
@@ -139,13 +142,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
         error: error instanceof Error ? error.message : 'server error'
-      },
+      } satisfies GetChannelsResponse,
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+// create channel
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResp>> {
   try {
     const namespace = await parseJwtToken(request.headers)
     await isAdmin(namespace)
@@ -156,7 +160,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       code: 200,
       message: 'Channel created successfully'
-    })
+    } satisfies ApiResp)
   } catch (error) {
     console.error('admin channels api: create channel error:', error)
     return NextResponse.json(
@@ -164,7 +168,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         code: 500,
         message: error instanceof Error ? error.message : 'server error',
         error: error instanceof Error ? error.message : 'server error'
-      },
+      } satisfies ApiResp,
       { status: 500 }
     )
   }

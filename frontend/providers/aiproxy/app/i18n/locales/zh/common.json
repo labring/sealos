@@ -111,14 +111,36 @@
     "export": "导出",
     "create": "新建",
     "name_required": "名称不合法",
-    "key_required": "Key 不合法"
+    "key_required": "Key 不合法",
+    "modelDefault": "渠道默认模型",
+    "createFailed": "创建渠道失败",
+    "createSuccess": "成功创建渠道",
+    "updateSuccess": "更新渠道成功",
+    "updateFailed": "更新渠道失败",
+    "id": "ID",
+    "requestCount": "调用次数",
+    "status": "状态"
   },
   "channelsForm": {
     "name": "自定义名称",
-    "type": "厂商"
+    "type": "厂商",
+    "models": "模型",
+    "model_mapping": "输入 & 输出模型",
+    "add": "添加",
+    "key": "密钥",
+    "base_url": "代理"
   },
   "channelsFormPlaceholder": {
     "name": "自定义名称",
-    "type": "Open AI"
+    "type": "Open AI",
+    "model": "输入选择",
+    "modelInput": "输入自定义模型名称",
+    "modelMappingInput": "输入模型",
+    "modelMappingOutput": "输出模型",
+    "key": "请输入渠道对应的鉴权密钥",
+    "base_url": "请输入代理"
+  },
+  "common": {
+    "add": "填入"
   }
 }

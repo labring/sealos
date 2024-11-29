@@ -1,6 +1,6 @@
 import { ApiResp } from '@/types/api'
 import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosRequestConfig } from 'axios'
-import { getUserSession } from './user'
+import { getAppToken } from './user'
 
 const request = axios.create({
   baseURL: '/',
@@ -20,9 +20,9 @@ request.interceptors.request.use(
     config.headers = config.headers || {}
 
     // append user session to Authorization header
-    const userSession = getUserSession()
-    if (userSession) {
-      config.headers['Authorization'] = userSession
+    const appToken = getAppToken()
+    if (appToken) {
+      config.headers['Authorization'] = appToken
     }
 
     // set default Content-Type
