@@ -96,7 +96,7 @@
   "jetbrains_guide_step_2_2": "下载<blue>私钥</blue>。",
   "jetbrains_guide_step_2_3": "勾选 Specify private key，选择刚才下载的私钥的所在路径。点击 Check Connection and Continue 按钮，即可测试 SSH 连接。",
   "jetbrains_guide_step_3_1": "选择 IDE 版本：推荐选择 <blue>{ideVersion}</blue>。",
-  "jetbrains_guide_step_3_2": "选择项目路径：<blue>{projectPath}</blue>",
+  "jetbrains_guide_step_3_2": "选择项目路径：<blue>{projectPath}</blue>。",
   "jetbrains_guide_step_3_3": "点击 <blue>Download IDE and Connect</blue> 按钮，即可下载 IDE 和连接。",
   "jetbrains_guide_step_3_4": "等待 IDE 下载完毕。",
   "jetbrains_guide_step_3_5": "自动唤起本地的<blue>{ide}</blue>。",

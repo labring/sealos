@@ -94,7 +94,7 @@
   "jetbrains_guide_step_2_2": "Download <blue>Private Key</blue>.",
   "jetbrains_guide_step_2_3": "<blue>Check Specify private key</blue>, select the path <blue>where the downloaded private key is located</blue>. Click the <blue>Check Connection and Continue</blue> button to test the SSH connection.",
   "jetbrains_guide_step_3_1": "Select IDE version: It is recommended to choose <blue>{ideVersion}</blue>.",
-  "jetbrains_guide_step_3_2": "Select project path: <blue>{projectPath}</blue>",
+  "jetbrains_guide_step_3_2": "Select project path: <blue>{projectPath}</blue>.",
   "jetbrains_guide_step_3_3": "Click the <blue>Download IDE and Connect</blue> button to download the IDE and connect.",
   "jetbrains_guide_step_3_4": "Waiting for the IDE to finish downloading.",
   "jetbrains_guide_step_3_5": "Automatically invoke the local <blue>{ide}</blue>.",

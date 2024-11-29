@@ -298,7 +298,7 @@ const JetBrainsGuideModal = ({
                       <Circle size="6px" bg="#47B2FF" />
                       <Box fontSize={'14px'}>
                         {t.rich('jetbrains_guide_step_3_2', {
-                          projectPath: 'XXX',
+                          projectPath: jetbrainsGuideData.workingDir,
                           blue: (chunks) => (
                             <Text
                               fontWeight={'bold'}
