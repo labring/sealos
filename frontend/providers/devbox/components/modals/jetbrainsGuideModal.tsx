@@ -10,14 +10,10 @@ import {
   Button,
   Flex,
   Stepper,
-  useSteps,
   Step,
   StepIndicator,
   StepStatus,
-  StepIcon,
   StepNumber,
-  StepTitle,
-  StepDescription,
   StepSeparator,
   Grid,
   GridItem,
@@ -77,9 +73,15 @@ const JetBrainsGuideModal = ({
               <Text fontWeight={'bold'} fontSize={'lg'} mb={6}>
                 {t('jetbrains_guide_prepare')}
               </Text>
-              <Text fontSize={'14px'} mb={2}>
-                {t('jetbrains_guide_prepare_install')}
-              </Text>
+              <Box fontSize={'14px'} mb={2}>
+                {t.rich('jetbrains_guide_prepare_install', {
+                  blue: (chunks) => (
+                    <Text fontWeight={'bold'} display={'inline-block'} color={'brightBlue.600'}>
+                      {chunks}
+                    </Text>
+                  )
+                })}
+              </Box>
               <Button
                 leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
                 bg={'white'}
@@ -116,7 +118,16 @@ const JetBrainsGuideModal = ({
                   </StepIndicator>
                   <Box mt={1} ml={2} mb={5}>
                     <Text fontSize={'14px'} mb={2}>
-                      {t('jetbrains_guide_step_1')}
+                      {t.rich('jetbrains_guide_step_1', {
+                        blue: (chunks) => (
+                          <Text
+                            fontWeight={'bold'}
+                            display={'inline-block'}
+                            color={'brightBlue.600'}>
+                            {chunks}
+                          </Text>
+                        )
+                      })}
                     </Text>
                     <Image
                       src={'/images/jetbrains/step1.png'}
@@ -135,7 +146,18 @@ const JetBrainsGuideModal = ({
                     <Flex direction={'column'} gap={1}>
                       <Flex alignItems={'center'} gap={2} mb={2}>
                         <Circle size="6px" bg="#47B2FF" />
-                        <Text fontSize={'14px'}>{t('jetbrains_guide_step_2_1')}</Text>
+                        <Text fontSize={'14px'}>
+                          {t.rich('jetbrains_guide_step_2_1', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Text>
                       </Flex>
                       <Grid
                         bg={'grayModern.25'}
@@ -184,7 +206,18 @@ const JetBrainsGuideModal = ({
                     <Flex gap={1} direction={'column'}>
                       <Flex alignItems={'center'} gap={2} mb={2}>
                         <Circle size="6px" bg="#47B2FF" />
-                        <Text fontSize={'md'}>{t('jetbrains_guide_step_2_2')}</Text>
+                        <Text fontSize={'md'}>
+                          {t.rich('jetbrains_guide_step_2_2', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Text>
                       </Flex>
                       <Button
                         leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
@@ -208,7 +241,16 @@ const JetBrainsGuideModal = ({
                       <Flex alignItems={'center'} gap={2} mb={2} maxWidth={'600px'}>
                         <Circle size="6px" bg="#47B2FF" />
                         <Text fontSize={'md'} wordBreak={'break-word'}>
-                          {t('jetbrains_guide_step_2_3')}
+                          {t.rich('jetbrains_guide_step_2_3', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
                         </Text>
                       </Flex>
                       <Image
@@ -228,15 +270,50 @@ const JetBrainsGuideModal = ({
                   <Box mt={1} ml={2} mb={5}>
                     <Flex alignItems={'center'} gap={2} mb={2}>
                       <Circle size="6px" bg="#47B2FF" />
-                      <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_1')}</Text>
+                      <Text fontSize={'14px'}>
+                        {t.rich('jetbrains_guide_step_3_1', {
+                          ideVersion: 'IntelliJ IDEA',
+                          blue: (chunks) => (
+                            <Text
+                              fontWeight={'bold'}
+                              display={'inline-block'}
+                              color={'brightBlue.600'}>
+                              {chunks}
+                            </Text>
+                          )
+                        })}
+                      </Text>
                     </Flex>
                     <Flex alignItems={'center'} gap={2} mb={2}>
                       <Circle size="6px" bg="#47B2FF" />
-                      <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_2')}</Text>
+                      <Text fontSize={'14px'}>
+                        {t.rich('jetbrains_guide_step_3_2', {
+                          projectPath: 'XXX',
+                          blue: (chunks) => (
+                            <Text
+                              fontWeight={'bold'}
+                              display={'inline-block'}
+                              color={'brightBlue.600'}>
+                              {chunks}
+                            </Text>
+                          )
+                        })}
+                      </Text>
                     </Flex>
                     <Flex alignItems={'center'} gap={2} mb={2}>
                       <Circle size="6px" bg="#47B2FF" />
-                      <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_3')}</Text>
+                      <Text fontSize={'14px'}>
+                        {t.rich('jetbrains_guide_step_3_3', {
+                          blue: (chunks) => (
+                            <Text
+                              fontWeight={'bold'}
+                              display={'inline-block'}
+                              color={'brightBlue.600'}>
+                              {chunks}
+                            </Text>
+                          )
+                        })}
+                      </Text>
                     </Flex>
                     <Image
                       src={'/images/jetbrains/step3-3.png'}
@@ -256,7 +333,19 @@ const JetBrainsGuideModal = ({
                     />
                     <Flex alignItems={'center'} gap={2} mb={2}>
                       <Circle size="6px" bg="#47B2FF" />
-                      <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_5')}</Text>
+                      <Text fontSize={'14px'}>
+                        {t.rich('jetbrains_guide_step_3_5', {
+                          ide: 'IntelliJ IDEA',
+                          blue: (chunks) => (
+                            <Text
+                              fontWeight={'bold'}
+                              display={'inline-block'}
+                              color={'brightBlue.600'}>
+                              {chunks}
+                            </Text>
+                          )
+                        })}
+                      </Text>
                     </Flex>
                     <Image
                       src={'/images/jetbrains/step3-4.png'}
