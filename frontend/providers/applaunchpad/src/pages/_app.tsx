@@ -122,9 +122,12 @@ const App = ({ Component, pageProps }: AppProps) => {
   // record route
   useEffect(() => {
     return () => {
-      setLastRoute(router.asPath);
+      const currentPath = router.asPath;
+      if (router.isReady && !currentPath.includes('/redirect')) {
+        setLastRoute(currentPath);
+      }
     };
-  }, [router.pathname]);
+  }, [router.pathname, router.isReady, setLastRoute]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
@@ -148,19 +151,15 @@ const App = ({ Component, pageProps }: AppProps) => {
           try {
             if (e.data?.type === 'InternalAppCall') {
               const { name, formData } = e.data;
-              if (name) {
-                router.push({
-                  pathname: '/app/detail',
-                  query: {
-                    name: name
-                  }
+              if (formData) {
+                router.replace({
+                  pathname: '/redirect',
+                  query: { formData }
                 });
-              } else if (formData) {
-                router.push({
-                  pathname: '/app/edit',
-                  query: {
-                    formData: formData
-                  }
+              } else if (name) {
+                router.replace({
+                  pathname: '/app/detail',
+                  query: { name }
                 });
               }
             }

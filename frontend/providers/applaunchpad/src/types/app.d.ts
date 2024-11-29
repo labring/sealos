@@ -107,11 +107,20 @@ export interface AppEditType {
     path: string;
     value: number;
   }[];
+  labels: { [key: string]: string };
 }
 
 export type AppEditSyncedFields = Pick<
   AppEditType,
-  'imageName' | 'replicas' | 'cpu' | 'memory' | 'networks' | 'cmdParam' | 'runCMD' | 'appName'
+  | 'imageName'
+  | 'replicas'
+  | 'cpu'
+  | 'memory'
+  | 'networks'
+  | 'cmdParam'
+  | 'runCMD'
+  | 'appName'
+  | 'labels'
 >;
 
 export type TAppSourceType = 'app_store' | 'sealaf';
