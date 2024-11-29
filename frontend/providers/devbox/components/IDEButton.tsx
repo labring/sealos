@@ -19,6 +19,7 @@ import { useEnvStore } from '@/stores/env'
 import { useIDEStore, IDEType } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
 import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import JetBrainsGuideModal from './modals/jetbrainsGuideModal'
 
 interface Props {
   devboxName: string
@@ -43,18 +44,23 @@ const IDEButton = ({
 
   const { env } = useEnvStore()
   const { message: toast } = useMessage()
-  const [loading, setLoading] = useState(false)
   const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore()
+
+  const [loading, setLoading] = useState(false)
+  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<any>(null)
+  const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false)
   const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType
 
   const handleGotoIDE = useCallback(
     async (currentIDE: IDEType = 'cursor') => {
       setLoading(true)
 
-      toast({
-        title: t('opening_ide'),
-        status: 'info'
-      })
+      if (currentIDE !== 'jetbrains') {
+        toast({
+          title: t('opening_ide'),
+          status: 'info'
+        })
+      }
 
       try {
         const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
@@ -62,6 +68,20 @@ const IDEButton = ({
           runtimeName: runtimeVersion
         })
         const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
+
+        setJetBrainsGuideData({
+          base64PrivateKey,
+          userName,
+          token,
+          workingDir,
+          host: env.sealosDomain,
+          port: sshPort.toString()
+        })
+
+        if (currentIDE === 'jetbrains') {
+          setOnOpenJetbrainsModal(true)
+          return
+        }
 
         const idePrefix = ideObj[currentIDE].prefix
         const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
@@ -171,6 +191,13 @@ const IDEButton = ({
           ))}
         </MenuList>
       </Menu>
+      {!!onOpenJetbrainsModal && (
+        <JetBrainsGuideModal
+          onSuccess={() => {}}
+          onClose={() => setOnOpenJetbrainsModal(false)}
+          jetbrainsGuideData={jetbrainsGuideData}
+        />
+      )}
     </Flex>
   )
 }
@@ -203,6 +230,12 @@ export const ideObj = {
     icon: 'windsurf',
     prefix: 'windsurf://',
     value: 'windsurf'
+  },
+  jetbrains: {
+    label: 'JetBrains',
+    icon: 'jetbrains',
+    prefix: '-',
+    value: 'jetbrains'
   }
 }
 
