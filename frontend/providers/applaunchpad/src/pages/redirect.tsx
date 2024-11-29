@@ -1,5 +1,4 @@
 import { getAppByName } from '@/api/app';
-import { DESKTOP_DOMAIN } from '@/store/static';
 import { AppEditSyncedFields } from '@/types/app';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
@@ -47,37 +46,10 @@ const RedirectPage = () => {
       handleRedirect(formData);
     };
 
-    const handlePostMessage = (
-      e: MessageEvent<{
-        type?: string;
-        formData?: string;
-      }>
-    ) => {
-      const whitelist = [`https://${DESKTOP_DOMAIN}`];
-      if (!whitelist.includes(e.origin)) {
-        return;
-      }
-
-      try {
-        if (e.data?.type === 'InternalAppCall') {
-          const { formData } = e.data;
-          handleRedirect(formData);
-        }
-      } catch (error) {
-        console.log('app redirect error:', error);
-      }
-    };
-
-    window.addEventListener('message', handlePostMessage);
-
     if (router.isReady) {
       handleUrlParams();
     }
-
-    return () => {
-      window.removeEventListener('message', handlePostMessage);
-    };
-  }, [router.isReady, router.query]);
+  }, [router, router.isReady, router.query]);
 
   return null;
 };

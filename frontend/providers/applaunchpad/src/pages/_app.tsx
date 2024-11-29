@@ -141,6 +141,7 @@ const App = ({ Component, pageProps }: AppProps) => {
           e: MessageEvent<{
             type?: string;
             name?: string;
+            formData?: string;
           }>
         ) => {
           const whitelist = [`https://${DESKTOP_DOMAIN}`];
@@ -149,13 +150,16 @@ const App = ({ Component, pageProps }: AppProps) => {
           }
           try {
             if (e.data?.type === 'InternalAppCall') {
-              const { name } = e.data;
-              if (name) {
+              const { name, formData } = e.data;
+              if (formData) {
+                router.push({
+                  pathname: '/redirect',
+                  query: { formData }
+                });
+              } else if (name) {
                 router.push({
                   pathname: '/app/detail',
-                  query: {
-                    name: name
-                  }
+                  query: { name }
                 });
               }
             }
