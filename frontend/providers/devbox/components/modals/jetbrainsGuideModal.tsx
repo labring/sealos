@@ -176,9 +176,11 @@ const JetBrainsGuideModal = ({
                           {jetbrainsGuideData.userName}
                           <MyIcon
                             name="copy"
+                            cursor={'pointer'}
                             onClick={() => copyData(jetbrainsGuideData.userName)}
                             w={'16px'}
                             ml={2}
+                            _hover={{ color: '#219BF4' }}
                             color={'grayModern.600'}
                           />
                         </GridItem>
@@ -187,6 +189,8 @@ const JetBrainsGuideModal = ({
                           {jetbrainsGuideData.host}
                           <MyIcon
                             name="copy"
+                            _hover={{ color: '#219BF4' }}
+                            cursor={'pointer'}
                             onClick={() => copyData(jetbrainsGuideData.host)}
                             w={'16px'}
                             ml={2}
@@ -198,6 +202,8 @@ const JetBrainsGuideModal = ({
                           {jetbrainsGuideData.port}
                           <MyIcon
                             name="copy"
+                            _hover={{ color: '#219BF4' }}
+                            cursor={'pointer'}
                             onClick={() => copyData(jetbrainsGuideData.port)}
                             w={'16px'}
                             ml={2}
