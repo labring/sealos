@@ -111,8 +111,8 @@ export const json2CronJob = (data: CronJobEditType) => {
       schedule: data.schedule,
       concurrencyPolicy: 'Replace',
       startingDeadlineSeconds: 60,
-      successfulJobsHistoryLimit: 3,
-      failedJobsHistoryLimit: 3,
+      successfulJobsHistoryLimit: Number(process.env.SUCCESSFUL_JOBS_HISTORY_LIMIT) || 3,
+      failedJobsHistoryLimit: Number(process.env.FAILED_JOBS_HISTORY_LIMIT) || 3,
       timeZone: timeZone,
       jobTemplate: {
         activeDeadlineSeconds: 600,

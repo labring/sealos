@@ -41,6 +41,10 @@ spec:
               value: {{ .cloudDomain }}
             - name: APPLAUNCHPAD_URL
               value: applaunchpad.{{ .cloudDomain }}
+            - name: SUCCESSFUL_JOBS_HISTORY_LIMIT
+              value: {{ .successfulJobsHistoryLimit }}
+            - name: FAILED_JOBS_HISTORY_LIMIT
+              value: {{ .failedJobsHistoryLimit }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
