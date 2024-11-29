@@ -145,7 +145,7 @@ const JetBrainsGuideModal = ({
                   <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
                     <StepStatus incomplete={<StepNumber />} />
                   </StepIndicator>
-                  <Flex flexShrink="0" mt={1} ml={2} gap={4} direction={'column'} mb={5}>
+                  <Flex flexShrink="0" mt={1} ml={2} gap={8} direction={'column'} mb={5}>
                     <Flex direction={'column'} gap={1}>
                       <Flex alignItems={'center'} gap={2} mb={2}>
                         <Circle size="6px" bg="#47B2FF" />
@@ -277,7 +277,7 @@ const JetBrainsGuideModal = ({
                   <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
                     <StepStatus incomplete={<StepNumber />} />
                   </StepIndicator>
-                  <Box mt={1} ml={2} mb={5}>
+                  <Flex mt={1} ml={2} mb={5} direction={'column'} gap={8}>
                     <Flex alignItems={'center'} gap={2} mb={2}>
                       <Circle size="6px" bg="#47B2FF" />
                       <Box fontSize={'14px'}>
@@ -310,60 +310,66 @@ const JetBrainsGuideModal = ({
                         })}
                       </Box>
                     </Flex>
-                    <Flex alignItems={'center'} gap={2} mb={2}>
-                      <Circle size="6px" bg="#47B2FF" />
-                      <Box fontSize={'14px'}>
-                        {t.rich('jetbrains_guide_step_3_3', {
-                          blue: (chunks) => (
-                            <Text
-                              fontWeight={'bold'}
-                              display={'inline-block'}
-                              color={'brightBlue.600'}>
-                              {chunks}
-                            </Text>
-                          )
-                        })}
-                      </Box>
+                    <Flex gap={1} direction={'column'}>
+                      <Flex alignItems={'center'} gap={2} mb={2}>
+                        <Circle size="6px" bg="#47B2FF" />
+                        <Box fontSize={'14px'}>
+                          {t.rich('jetbrains_guide_step_3_3', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Box>
+                      </Flex>
+                      <Image
+                        src={'/images/jetbrains/step3-3.png'}
+                        alt="step1"
+                        width={600}
+                        height={100}
+                      />
                     </Flex>
-                    <Image
-                      src={'/images/jetbrains/step3-3.png'}
-                      alt="step1"
-                      width={600}
-                      height={100}
-                    />
-                    <Flex alignItems={'center'} gap={2} mb={2}>
-                      <Circle size="6px" bg="#47B2FF" />
-                      <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_4')}</Text>
+                    <Flex gap={1} direction={'column'}>
+                      <Flex alignItems={'center'} gap={2} mb={2}>
+                        <Circle size="6px" bg="#47B2FF" />
+                        <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_4')}</Text>
+                      </Flex>
+                      <Image
+                        src={'/images/jetbrains/step3-4.png'}
+                        alt="step1"
+                        width={600}
+                        height={100}
+                      />
                     </Flex>
-                    <Image
-                      src={'/images/jetbrains/step3-4.png'}
-                      alt="step1"
-                      width={600}
-                      height={100}
-                    />
-                    <Flex alignItems={'center'} gap={2} mb={2}>
-                      <Circle size="6px" bg="#47B2FF" />
-                      <Box fontSize={'14px'}>
-                        {t.rich('jetbrains_guide_step_3_5', {
-                          ide: 'IntelliJ IDEA',
-                          blue: (chunks) => (
-                            <Text
-                              fontWeight={'bold'}
-                              display={'inline-block'}
-                              color={'brightBlue.600'}>
-                              {chunks}
-                            </Text>
-                          )
-                        })}
-                      </Box>
+                    <Flex gap={1} direction={'column'}>
+                      <Flex alignItems={'center'} gap={2} mb={2}>
+                        <Circle size="6px" bg="#47B2FF" />
+                        <Box fontSize={'14px'}>
+                          {t.rich('jetbrains_guide_step_3_5', {
+                            ide: 'IntelliJ IDEA',
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Box>
+                      </Flex>
+                      <Image
+                        src={'/images/jetbrains/step3-4.png'}
+                        alt="step1"
+                        width={600}
+                        height={100}
+                      />
                     </Flex>
-                    <Image
-                      src={'/images/jetbrains/step3-4.png'}
-                      alt="step1"
-                      width={600}
-                      height={100}
-                    />
-                  </Box>
+                  </Flex>
                   <StepSeparator />
                 </Step>
                 {/* done */}
