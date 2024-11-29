@@ -27,7 +27,7 @@ import { useCopyData } from '@/utils/tools'
 import { useCallback } from 'react'
 
 interface JetBrainsGuideData {
-  base64PrivateKey: string
+  privateKey: string
   userName: string
   token: string
   workingDir: string
@@ -48,7 +48,7 @@ const JetBrainsGuideModal = ({
   const { copyData } = useCopyData()
 
   const handleDownloadPrivateKey = useCallback(async () => {
-    const privateKey = jetbrainsGuideData.base64PrivateKey
+    const privateKey = jetbrainsGuideData.privateKey
 
     const blob = new Blob([privateKey], { type: 'application/octet-stream' })
     const url = window.URL.createObjectURL(blob)
