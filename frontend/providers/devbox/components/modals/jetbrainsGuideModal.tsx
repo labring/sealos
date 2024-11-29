@@ -262,12 +262,47 @@ const JetBrainsGuideModal = ({
                           })}
                         </Box>
                       </Flex>
-                      <Image
-                        src={'/images/jetbrains/step2-3.png'}
-                        alt="step2-3"
-                        width={600}
-                        height={100}
-                      />
+                      <Box position="relative">
+                        <Image
+                          src={'/images/jetbrains/step2-3.png'}
+                          alt="step2-3"
+                          width={600}
+                          height={100}
+                        />
+                        <Box
+                          position="absolute"
+                          top="95px"
+                          left="55px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {jetbrainsGuideData.userName}
+                        </Box>
+                        <Box
+                          position="absolute"
+                          top="125px"
+                          left="55px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {jetbrainsGuideData.host}
+                        </Box>
+                        <Box
+                          position="absolute"
+                          top="150px"
+                          left="90px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {t('jetbrains_guide_download_private_key_path')}
+                        </Box>
+                      </Box>
                     </Flex>
                   </Flex>
                   <StepSeparator />
