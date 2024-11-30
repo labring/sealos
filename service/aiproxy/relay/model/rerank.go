@@ -15,9 +15,9 @@ type Document struct {
 }
 
 type RerankResult struct {
-	Document       Document `json:"document"`
-	Index          int      `json:"index"`
-	RelevanceScore float64  `json:"relevance_score"`
+	Document       *Document `json:"document,omitempty"`
+	Index          int       `json:"index"`
+	RelevanceScore float64   `json:"relevance_score"`
 }
 
 type RerankMetaTokens struct {
@@ -26,12 +26,12 @@ type RerankMetaTokens struct {
 }
 
 type RerankMeta struct {
-	Tokens *RerankMetaTokens `json:"tokens"`
-	Model  string            `json:"model"`
+	Tokens *RerankMetaTokens `json:"tokens,omitempty"`
+	Model  string            `json:"model,omitempty"`
 }
 
 type RerankResponse struct {
-	Meta   RerankMeta     `json:"meta"`
-	ID     string         `json:"id"`
-	Result []RerankResult `json:"result"`
+	Meta   RerankMeta      `json:"meta"`
+	ID     string          `json:"id"`
+	Result []*RerankResult `json:"result"`
 }

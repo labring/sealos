@@ -11,19 +11,19 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	var imageResponse ImageResponse
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		return ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
 	}
 	err = json.Unmarshal(responseBody, &imageResponse)
 	if err != nil {
-		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
@@ -35,11 +35,13 @@ func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Err
 
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
-		return ErrorWrapper(err, "copy_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "copy_response_body_failed", http.StatusInternalServerError)
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		return ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
 	}
-	return nil, nil
+	return &model.Usage{
+		PromptTokens: len(imageResponse.Data),
+	}, nil
 }

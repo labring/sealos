@@ -105,4 +105,13 @@ var ModelList = []*model.ModelConfig{
 			model.ModelConfigMaxOutputTokensKey:  6000,
 		},
 	},
+
+	{
+		Model: "gte-rerank",
+		Type:  relaymode.Rerank,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 4000,
+			model.ModelConfigMaxInputTokensKey:   4000,
+		},
+	},
 }

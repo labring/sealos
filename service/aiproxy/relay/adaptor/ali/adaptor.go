@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -32,17 +33,18 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return u + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
 	case relaymode.ImagesGenerations:
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
-	default:
+	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
+	case relaymode.Rerank:
+		return u + "/api/v1/services/rerank/text-rerank/text-rerank", nil
+	default:
+		return "", errors.New("unsupported mode")
 	}
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 
-	if meta.Mode == relaymode.ImagesGenerations {
-		req.Header.Set("X-Dashscope-Async", "enable")
-	}
 	if meta.Channel.Config.Plugin != "" {
 		req.Header.Set("X-Dashscope-Plugin", meta.Channel.Config.Plugin)
 	}
@@ -62,12 +64,45 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 		if err != nil {
 			return nil, nil, err
 		}
-		return nil, bytes.NewReader(data), nil
+		return http.Header{
+			"X-Dashscope-Async": {"enable"},
+		}, bytes.NewReader(data), nil
+	case relaymode.Rerank:
+		return ConvertRerankRequest(meta, req)
 	case relaymode.ChatCompletions:
 		return openai.ConvertRequest(meta, req)
 	default:
 		return nil, nil, errors.New("unsupported mode")
 	}
+}
+
+func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	reqMap := make(map[string]any)
+	err := common.UnmarshalBodyReusable(req, &reqMap)
+	if err != nil {
+		return nil, nil, err
+	}
+	reqMap["model"] = meta.ActualModelName
+	reqMap["input"] = map[string]any{
+		"query":     reqMap["query"],
+		"documents": reqMap["documents"],
+	}
+	delete(reqMap, "query")
+	delete(reqMap, "documents")
+	parameters := make(map[string]any)
+	for k, v := range reqMap {
+		if k == "model" || k == "input" {
+			continue
+		}
+		parameters[k] = v
+		delete(reqMap, k)
+	}
+	reqMap["parameters"] = parameters
+	jsonData, err := json.Marshal(reqMap)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nil, bytes.NewReader(jsonData), nil
 }
 
 func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
@@ -82,6 +117,8 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		err, usage = ImageHandler(meta, c, resp)
 	case relaymode.ChatCompletions:
 		usage, err = openai.DoResponse(meta, c, resp)
+	case relaymode.Rerank:
+		usage, err = RerankHandler(meta, c, resp)
 	default:
 		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
 	}

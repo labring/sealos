@@ -46,10 +46,6 @@ type Channel struct {
 	Priority         int32             `json:"priority"`
 }
 
-func (c *Channel) BeforeCreate(tx *gorm.DB) (err error) {
-	return c.BeforeSave(tx)
-}
-
 // check model config exist
 func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
 	if len(c.Models) == 0 {
