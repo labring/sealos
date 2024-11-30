@@ -281,6 +281,12 @@ var (
 	channelSyncLock           sync.RWMutex
 )
 
+func GetModel2Channels() map[string][]*Channel {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	return model2channels
+}
+
 func CacheGetAllModels() []string {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
@@ -398,9 +404,7 @@ func SyncChannelCache(frequency time.Duration) {
 
 //nolint:gosec
 func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
-	channelSyncLock.RLock()
-	channels := model2channels[model]
-	channelSyncLock.RUnlock()
+	channels := GetModel2Channels()[model]
 	if len(channels) == 0 {
 		return nil, errors.New("model not found")
 	}

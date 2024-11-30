@@ -9,7 +9,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 )
+
+func ChannelTypeNames(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    channeltype.ChannelNames,
+	})
+}
 
 func GetChannels(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))

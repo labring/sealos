@@ -3,14 +3,12 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -57,8 +55,7 @@ func (c *BuiltinModelConfig) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	models                  []OpenAIModels
-	modelsMap               map[string]OpenAIModels
+	modelsMap               map[string]*OpenAIModels
 	builtinChannelID2Models map[int][]*BuiltinModelConfig
 )
 
@@ -80,29 +77,25 @@ func init() {
 	})
 
 	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
+	modelsMap = make(map[string]*OpenAIModels)
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
 	for i, adaptor := range channeltype.ChannelAdaptor {
-		channelName := adaptor.GetChannelName()
 		modelNames := adaptor.GetModelList()
-		for _, model := range modelNames {
-			models = append(models, OpenAIModels{
-				ID:         model.Model,
-				Object:     "model",
-				Created:    1626777600,
-				OwnedBy:    channelName,
-				Permission: permission,
-				Root:       model.Model,
-				Parent:     nil,
-			})
-		}
 		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelNames))
 		for idx, model := range modelNames {
+			if _, ok := modelsMap[model.Model]; !ok {
+				modelsMap[model.Model] = &OpenAIModels{
+					ID:         model.Model,
+					Object:     "model",
+					Created:    1626777600,
+					OwnedBy:    adaptor.GetChannelName(),
+					Permission: permission,
+					Root:       model.Model,
+					Parent:     nil,
+				}
+			}
 			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(model)
 		}
-	}
-	modelsMap = make(map[string]OpenAIModels)
-	for _, model := range models {
-		modelsMap[model.ID] = model
 	}
 	for _, models := range builtinChannelID2Models {
 		sort.Slice(models, func(i, j int) bool {
@@ -222,20 +215,21 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 }
 
 func ListModels(c *gin.Context) {
-	channel := c.MustGet(ctxkey.Channel).(*model.Channel)
-	availableOpenAIModels := make([]OpenAIModels, 0, len(channel.Models))
+	models := model.CacheGetAllModelsAndConfig()
 
-	for _, modelName := range channel.Models {
-		if model, ok := modelsMap[modelName]; ok {
+	availableOpenAIModels := make([]*OpenAIModels, 0, len(models))
+
+	for _, model := range models {
+		if model, ok := modelsMap[model.Model]; ok {
 			availableOpenAIModels = append(availableOpenAIModels, model)
 			continue
 		}
-		availableOpenAIModels = append(availableOpenAIModels, OpenAIModels{
-			ID:      modelName,
+		availableOpenAIModels = append(availableOpenAIModels, &OpenAIModels{
+			ID:      model.Model,
 			Object:  "model",
 			Created: 1626777600,
 			OwnedBy: "custom",
-			Root:    modelName,
+			Root:    model.Model,
 			Parent:  nil,
 		})
 	}
@@ -247,13 +241,12 @@ func ListModels(c *gin.Context) {
 }
 
 func RetrieveModel(c *gin.Context) {
-	channel := c.MustGet(ctxkey.Channel).(*model.Channel)
-	modelID := c.Param("model")
-	model, ok := modelsMap[modelID]
-	if !ok || !slices.Contains(channel.Models, modelID) {
+	models := model.GetModel2Channels()
+	modelName := c.Param("model")
+	if _, ok := models[modelName]; !ok {
 		c.JSON(200, gin.H{
 			"error": relaymodel.Error{
-				Message: fmt.Sprintf("the model '%s' does not exist", modelID),
+				Message: fmt.Sprintf("the model '%s' does not exist", modelName),
 				Type:    "invalid_request_error",
 				Param:   "model",
 				Code:    "model_not_found",
@@ -261,5 +254,16 @@ func RetrieveModel(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(200, model)
+	if model, ok := modelsMap[modelName]; ok {
+		c.JSON(200, model)
+		return
+	}
+	c.JSON(200, &OpenAIModels{
+		ID:      modelName,
+		Object:  "model",
+		Created: 1626777600,
+		OwnedBy: "custom",
+		Root:    modelName,
+		Parent:  nil,
+	})
 }

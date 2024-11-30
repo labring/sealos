@@ -58,6 +58,7 @@ func SetAPIRouter(router *gin.Engine) {
 		{
 			channelsRoute.GET("/", controller.GetChannels)
 			channelsRoute.GET("/all", controller.GetAllChannels)
+			channelsRoute.GET("/type_names", controller.ChannelTypeNames)
 			channelsRoute.POST("/", controller.AddChannels)
 			channelsRoute.GET("/search", controller.SearchChannels)
 			channelsRoute.GET("/test", controller.TestChannels)
