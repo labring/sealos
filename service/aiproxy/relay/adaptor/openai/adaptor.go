@@ -2,17 +2,13 @@ package openai
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"io"
-	"mime/multipart"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -65,7 +61,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	case relaymode.Rerank:
 		return ConvertRerankRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported mode")
+		return nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 
@@ -137,102 +133,7 @@ func patchStreamOptions(reqMap map[string]any) error {
 	return nil
 }
 
-func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	textRequest := relaymodel.TextToSpeechRequest{}
-	err := common.UnmarshalBodyReusable(req, &textRequest)
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(textRequest.Input) > 4096 {
-		return nil, nil, errors.New("input is too long (over 4096 characters)")
-	}
-	reqMap := make(map[string]any)
-	err = common.UnmarshalBodyReusable(req, &reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	reqMap["model"] = meta.ActualModelName
-	jsonData, err := json.Marshal(reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	return nil, bytes.NewReader(jsonData), nil
-}
-
 const MetaResponseFormat = "response_format"
-
-func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
-	if request == nil {
-		return nil, nil, errors.New("request is nil")
-	}
-
-	err := request.ParseMultipartForm(1024 * 1024 * 4)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	multipartBody := &bytes.Buffer{}
-	multipartWriter := multipart.NewWriter(multipartBody)
-
-	for key, values := range request.MultipartForm.Value {
-		for _, value := range values {
-			if key == "model" {
-				err = multipartWriter.WriteField(key, meta.ActualModelName)
-				if err != nil {
-					return nil, nil, err
-				}
-				continue
-			}
-			if key == "response_format" {
-				meta.Set(MetaResponseFormat, value)
-				continue
-			}
-			err = multipartWriter.WriteField(key, value)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	}
-
-	for key, files := range request.MultipartForm.File {
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err != nil {
-				return nil, nil, err
-			}
-			w, err := multipartWriter.CreateFormFile(key, fileHeader.Filename)
-			if err != nil {
-				file.Close()
-				return nil, nil, err
-			}
-			_, err = io.Copy(w, file)
-			file.Close()
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	}
-
-	multipartWriter.Close()
-	ContentType := multipartWriter.FormDataContentType()
-	return http.Header{
-		"Content-Type": {ContentType},
-	}, multipartBody, nil
-}
-
-func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	reqMap := make(map[string]any)
-	err := common.UnmarshalBodyReusable(req, &reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	reqMap["model"] = meta.ActualModelName
-	jsonData, err := json.Marshal(reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	return nil, bytes.NewReader(jsonData), nil
-}
 
 func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
 	return utils.DoRequest(meta, c, req)
@@ -261,7 +162,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 			usage, err = Handler(meta, c, resp)
 		}
 	default:
-		return nil, ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
+		return nil, ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }
@@ -275,48 +176,5 @@ func (a *Adaptor) GetChannelName() string {
 }
 
 func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
-	u := channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	url := u + "/v1/dashboard/billing/subscription"
-
-	req1, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-	if err != nil {
-		return 0, err
-	}
-	req1.Header.Set("Authorization", "Bearer "+channel.Key)
-	res1, err := client.HTTPClient.Do(req1)
-	if err != nil {
-		return 0, err
-	}
-	defer res1.Body.Close()
-	subscription := SubscriptionResponse{}
-	err = json.NewDecoder(res1.Body).Decode(&subscription)
-	if err != nil {
-		return 0, err
-	}
-	now := time.Now()
-	startDate := now.Format("2006-01") + "-01"
-	endDate := now.Format("2006-01-02")
-	if !subscription.HasPaymentMethod {
-		startDate = now.AddDate(0, 0, -100).Format("2006-01-02")
-	}
-	url = u + "/v1/dashboard/billing/usage?start_date=" + startDate + "&end_date=" + endDate
-	req2, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-	if err != nil {
-		return 0, err
-	}
-	req2.Header.Set("Authorization", "Bearer "+channel.Key)
-	res2, err := client.HTTPClient.Do(req2)
-	if err != nil {
-		return 0, err
-	}
-	usage := UsageResponse{}
-	err = json.NewDecoder(res2.Body).Decode(&usage)
-	if err != nil {
-		return 0, err
-	}
-	balance := subscription.HardLimitUSD - usage.TotalUsage/100
-	return balance, nil
+	return GetBalance(channel)
 }

@@ -115,13 +115,13 @@ func AutomaticallyUpdateChannels(frequency int) {
 
 // subscription
 func GetSubscription(c *gin.Context) {
-	group := c.GetString(ctxkey.Group)
-	b, _, err := balance.Default.GetGroupRemainBalance(c, group)
+	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
+	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
 	if err != nil {
-		logger.Errorf(c, "get group (%s) balance failed: %s", group, err)
+		logger.Errorf(c, "get group (%s) balance failed: %s", group.ID, err)
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("get group (%s) balance failed", group),
+			"message": fmt.Sprintf("get group (%s) balance failed", group.ID),
 		})
 		return
 	}

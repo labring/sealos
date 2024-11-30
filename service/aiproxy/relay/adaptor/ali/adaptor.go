@@ -32,7 +32,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
-	case relaymode.AudioSpeech:
+	case relaymode.AudioSpeech, relaymode.AudioTranscription:
 		return u + "/api-ws/v1/inference", nil
 	case relaymode.Rerank:
 		return u + "/api/v1/services/rerank/text-rerank/text-rerank", nil
@@ -62,8 +62,10 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 		return openai.ConvertRequest(meta, req)
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
+	case relaymode.AudioTranscription:
+		return ConvertSTTRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported mode")
+		return nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 
@@ -71,6 +73,8 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) 
 	switch meta.Mode {
 	case relaymode.AudioSpeech:
 		return TTSDoRequest(meta, req)
+	case relaymode.AudioTranscription:
+		return STTDoRequest(meta, req)
 	default:
 		return utils.DoRequest(meta, c, req)
 	}
@@ -88,8 +92,10 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		usage, err = RerankHandler(meta, c, resp)
 	case relaymode.AudioSpeech:
 		usage, err = TTSDoResponse(meta, c, resp)
+	case relaymode.AudioTranscription:
+		usage, err = STTDoResponse(meta, c, resp)
 	default:
-		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
+		return nil, openai.ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

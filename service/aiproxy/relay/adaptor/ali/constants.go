@@ -512,6 +512,15 @@ var ModelList = []*model.ModelConfig{
 	},
 
 	{
+		Model: "paraformer-realtime-v2",
+		Type:  relaymode.AudioTranscription,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 10000,
+			model.ModelConfigSupportFormatsKey: []string{"pcm", "wav", "opus", "speex", "aac", "amr"},
+		},
+	},
+
+	{
 		Model: "gte-rerank",
 		Type:  relaymode.Rerank,
 		Config: map[model.ModelConfigKey]any{

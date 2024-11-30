@@ -177,7 +177,7 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 	usage = &relaymodel.Usage{}
 
 	for {
-		messageType, audioData, err := conn.ReadMessage()
+		messageType, data, err := conn.ReadMessage()
 		if err != nil {
 			return usage, openai.ErrorWrapperWithMessage("ali_wss_read_msg_failed", "ali_wss_read_msg_failed", http.StatusInternalServerError)
 		}
@@ -185,7 +185,7 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 		var msg TTSMessage
 		switch messageType {
 		case websocket.TextMessage:
-			err = json.Unmarshal(audioData, &msg)
+			err = json.Unmarshal(data, &msg)
 			if err != nil {
 				return usage, openai.ErrorWrapperWithMessage("ali_wss_read_msg_failed", "ali_wss_read_msg_failed", http.StatusInternalServerError)
 			}
@@ -202,7 +202,7 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 				return usage, openai.ErrorWrapperWithMessage(msg.Header.ErrorMessage, msg.Header.ErrorCode, http.StatusInternalServerError)
 			}
 		case websocket.BinaryMessage:
-			_, writeErr := c.Writer.Write(audioData)
+			_, writeErr := c.Writer.Write(data)
 			if writeErr != nil {
 				logger.Error(c, "write tts response chunk failed: "+writeErr.Error())
 			}

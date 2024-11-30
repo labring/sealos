@@ -240,7 +240,7 @@ func GetLogsStat(c *gin.Context) {
 }
 
 func GetLogsSelfStat(c *gin.Context) {
-	group := c.GetString(ctxkey.Group)
+	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 	tokenName := c.Query("token_name")
@@ -255,7 +255,7 @@ func GetLogsSelfStat(c *gin.Context) {
 	if endTimestamp != 0 {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
-	quotaNum := model.SumUsedQuota(startTimestampTime, endTimestampTime, modelName, group, tokenName, channel, endpoint)
+	quotaNum := model.SumUsedQuota(startTimestampTime, endTimestampTime, modelName, group.ID, tokenName, channel, endpoint)
 	// tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, tokenName)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
