@@ -235,7 +235,7 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
-	responseFormat := meta.MustGet(MetaResponseFormat).(string)
+	responseFormat := meta.GetString(MetaResponseFormat)
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
