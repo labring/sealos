@@ -65,3 +65,11 @@ func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
 	a, ok := ChannelAdaptor[channel]
 	return a, ok
 }
+
+var ChannelNames = map[int]string{}
+
+func init() {
+	for i, adaptor := range ChannelAdaptor {
+		ChannelNames[i] = adaptor.GetChannelName()
+	}
+}
