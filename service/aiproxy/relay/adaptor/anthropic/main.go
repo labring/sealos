@@ -262,7 +262,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	createdTime := helper.GetTimestamp()

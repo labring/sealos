@@ -38,7 +38,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return GetFullRequestURL(u, meta.RequestURLPath), nil
 }
 
-func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 	return nil
 }
