@@ -17,7 +17,7 @@ func RelayPanicRecover(c *gin.Context) {
 			logger.Errorf(ctx, "panic detected: %v", err)
 			logger.Errorf(ctx, "stacktrace from panic: %s", debug.Stack())
 			logger.Errorf(ctx, "request: %s %s", c.Request.Method, c.Request.URL.Path)
-			body, _ := common.GetRequestBody(c)
+			body, _ := common.GetRequestBody(c.Request)
 			logger.Errorf(ctx, "request body: %s", body)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{

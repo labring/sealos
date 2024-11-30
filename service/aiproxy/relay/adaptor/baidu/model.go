@@ -1,8 +1,6 @@
 package baidu
 
 import (
-	"time"
-
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -40,12 +38,4 @@ type EmbeddingResponse struct {
 	Error
 	Usage   model.Usage `json:"usage"`
 	Created int64       `json:"created"`
-}
-
-type AccessToken struct {
-	ExpiresAt        time.Time `json:"-"`
-	AccessToken      string    `json:"access_token"`
-	Error            string    `json:"error,omitempty"`
-	ErrorDescription string    `json:"error_description,omitempty"`
-	ExpiresIn        int64     `json:"expires_in,omitempty"`
 }

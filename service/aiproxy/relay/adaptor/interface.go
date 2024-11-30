@@ -11,15 +11,15 @@ import (
 )
 
 type Adaptor interface {
-	Init(meta *meta.Meta)
-	GetRequestURL(meta *meta.Meta) (string, error)
-	SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error
-	ConvertRequest(c *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error)
-	ConvertImageRequest(request *relaymodel.ImageRequest) (any, error)
-	ConvertSTTRequest(request *http.Request) (io.ReadCloser, error)
-	ConvertTTSRequest(request *relaymodel.TextToSpeechRequest) (any, error)
-	DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error)
-	DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode)
-	GetModelList() []*model.ModelConfig
 	GetChannelName() string
+	GetRequestURL(meta *meta.Meta) (string, error)
+	SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error
+	ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error)
+	DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error)
+	DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode)
+	GetModelList() []*model.ModelConfig
+}
+
+type GetBalance interface {
+	GetBalance(channel *model.Channel) (float64, error)
 }

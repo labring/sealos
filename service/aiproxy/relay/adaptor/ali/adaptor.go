@@ -1,104 +1,89 @@
 package ali
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 // https://help.aliyun.com/zh/dashscope/developer-reference/api-details
 
-type Adaptor struct {
-	meta *meta.Meta
-}
+type Adaptor struct{}
 
-func (a *Adaptor) Init(meta *meta.Meta) {
-	a.meta = meta
-}
+const baseURL = "https://dashscope.aliyuncs.com"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		return meta.BaseURL + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
+		return u + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
 	case relaymode.ImagesGenerations:
-		return meta.BaseURL + "/api/v1/services/aigc/text2image/image-synthesis", nil
+		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	default:
-		return meta.BaseURL + "/compatible-mode/v1/chat/completions", nil
+		return u + "/compatible-mode/v1/chat/completions", nil
 	}
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 
 	if meta.Mode == relaymode.ImagesGenerations {
 		req.Header.Set("X-Dashscope-Async", "enable")
 	}
-	if a.meta.Config.Plugin != "" {
-		req.Header.Set("X-Dashscope-Plugin", a.meta.Config.Plugin)
+	if meta.Channel.Config.Plugin != "" {
+		req.Header.Set("X-Dashscope-Plugin", meta.Channel.Config.Plugin)
 	}
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
-	return ConvertRequest(relayMode, request)
-}
-
-func ConvertRequest(relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	switch relayMode {
-	case relaymode.Embeddings:
-		aliEmbeddingRequest := ConvertEmbeddingRequest(request)
-		return aliEmbeddingRequest, nil
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	switch meta.Mode {
+	case relaymode.ImagesGenerations:
+		request, err := utils.UnmarshalImageRequest(req)
+		if err != nil {
+			return nil, nil, err
+		}
+		request.Model = meta.ActualModelName
+		converted := ConvertImageRequest(request)
+		data, err := json.Marshal(converted)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, bytes.NewReader(data), nil
+	case relaymode.ChatCompletions:
+		return openai.ConvertRequest(meta, req)
 	default:
-		aliRequest := convertChatRequest(request)
-		return aliRequest, nil
+		return nil, nil, errors.New("unsupported mode")
 	}
 }
 
-func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-
-	aliRequest := ConvertImageRequest(request)
-	return aliRequest, nil
+func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(meta, c, req)
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return adaptor.DoRequestHelper(a, c, meta, requestBody)
-}
-
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		err, usage = EmbeddingHandler(c, resp)
+		err, usage = EmbeddingHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
-		err, usage = ImageHandler(c, resp, meta.APIKey)
+		err, usage = ImageHandler(meta, c, resp)
+	case relaymode.ChatCompletions:
+		usage, err = openai.DoResponse(meta, c, resp)
 	default:
-		if meta.IsStream {
-			err, usage = openai.StreamHandler(c, resp, meta)
-		} else {
-			err, usage = openai.Handler(c, resp, meta)
-		}
+		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

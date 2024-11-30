@@ -1,6 +1,7 @@
 package vertexai
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	channelhelper "github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 var _ channelhelper.Adaptor = new(Adaptor)
@@ -20,31 +22,31 @@ const channelName = "vertexai"
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
+func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.Reader, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (a *Adaptor) Init(_ *meta.Meta) {
 }
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
 	if request == nil {
-		return nil, errors.New("request is nil")
+		return nil, nil, errors.New("request is nil")
 	}
 
-	adaptor := GetAdaptor(request.Model)
+	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
-		return nil, errors.New("adaptor not found")
+		return nil, nil, errors.New("adaptor not found")
 	}
 
-	return adaptor.ConvertRequest(c, relayMode, request)
+	return adaptor.ConvertRequest(meta, request)
 }
 
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
 		return nil, &relaymodel.ErrorWithStatusCode{
@@ -54,7 +56,7 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 			},
 		}
 	}
-	return adaptor.DoResponse(c, resp, meta)
+	return adaptor.DoResponse(meta, c, resp)
 }
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
@@ -68,42 +70,41 @@ func (a *Adaptor) GetChannelName() string {
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	var suffix string
 	if strings.HasPrefix(meta.ActualModelName, "gemini") {
-		if meta.IsStream {
+		if meta.GetBool("stream") {
 			suffix = "streamGenerateContent?alt=sse"
 		} else {
 			suffix = "generateContent"
 		}
 	} else {
-		if meta.IsStream {
+		if meta.GetBool("stream") {
 			suffix = "streamRawPredict?alt=sse"
 		} else {
 			suffix = "rawPredict"
 		}
 	}
 
-	if meta.BaseURL != "" {
+	if meta.Channel.BaseURL != "" {
 		return fmt.Sprintf(
 			"%s/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
-			meta.BaseURL,
-			meta.Config.VertexAIProjectID,
-			meta.Config.Region,
+			meta.Channel.BaseURL,
+			meta.Channel.Config.VertexAIProjectID,
+			meta.Channel.Config.Region,
 			meta.ActualModelName,
 			suffix,
 		), nil
 	}
 	return fmt.Sprintf(
 		"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
-		meta.Config.Region,
-		meta.Config.VertexAIProjectID,
-		meta.Config.Region,
+		meta.Channel.Config.Region,
+		meta.Channel.Config.VertexAIProjectID,
+		meta.Channel.Config.Region,
 		meta.ActualModelName,
 		suffix,
 	), nil
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	channelhelper.SetupCommonRequestHeader(c, req, meta)
-	token, err := getToken(c, meta.ChannelID, meta.Config.VertexAIADC)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+	token, err := getToken(context.Background(), meta.Channel.ID, meta.Channel.Config.VertexAIADC)
 	if err != nil {
 		return err
 	}
@@ -111,13 +112,6 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	return request, nil
-}
-
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return channelhelper.DoRequestHelper(a, c, meta, requestBody)
+func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(meta, c, req)
 }

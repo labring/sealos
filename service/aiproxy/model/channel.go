@@ -32,7 +32,6 @@ type Channel struct {
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text" json:"model_mapping"`
 	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text" json:"config"`
-	Other            string            `json:"other"`
 	Key              string            `gorm:"type:text;index"               json:"key"`
 	Name             string            `gorm:"index"                         json:"name"`
 	BaseURL          string            `gorm:"index"                         json:"base_url"`

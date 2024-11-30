@@ -5,9 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -18,48 +15,26 @@ import (
 
 var _ adaptor.Adaptor = new(Adaptor)
 
-type Adaptor struct {
-	awsAdapter utils.AwsAdapter
+type Adaptor struct{}
 
-	Meta      *meta.Meta
-	AwsClient *bedrockruntime.Client
-}
-
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) Init(meta *meta.Meta) {
-	a.Meta = meta
-	a.AwsClient = bedrockruntime.New(bedrockruntime.Options{
-		Region:      meta.Config.Region,
-		Credentials: aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(meta.Config.AK, meta.Config.SK, "")),
-	})
-}
-
-func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-
-	adaptor := GetAdaptor(request.Model)
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
-		return nil, errors.New("adaptor not found")
+		return nil, nil, errors.New("adaptor not found")
 	}
-
-	a.awsAdapter = adaptor
-	return adaptor.ConvertRequest(c, relayMode, request)
+	meta.Set("awsAdapter", adaptor)
+	return adaptor.ConvertRequest(meta, req)
 }
 
-func (a *Adaptor) DoResponse(c *gin.Context, _ *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	if a.awsAdapter == nil {
-		return nil, utils.WrapErr(errors.New("awsAdapter is nil"))
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	adaptor, ok := meta.Get("awsAdapter")
+	if !ok {
+		return nil, &relaymodel.ErrorWithStatusCode{
+			StatusCode: http.StatusInternalServerError,
+			Error:      relaymodel.Error{Message: "awsAdapter not found"},
+		}
 	}
-	return a.awsAdapter.DoResponse(c, a.AwsClient, meta)
+	return adaptor.(utils.AwsAdapter).DoResponse(meta, c)
 }
 
 func (a *Adaptor) GetModelList() (models []*model.ModelConfig) {
@@ -78,17 +53,10 @@ func (a *Adaptor) GetRequestURL(_ *meta.Meta) (string, error) {
 	return "", nil
 }
 
-func (a *Adaptor) SetupRequestHeader(_ *gin.Context, _ *http.Request, _ *meta.Meta) error {
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, _ *http.Request) error {
 	return nil
 }
 
-func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	return request, nil
-}
-
-func (a *Adaptor) DoRequest(_ *gin.Context, _ *meta.Meta, _ io.Reader) (*http.Response, error) {
+func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, _ *http.Request) (*http.Response, error) {
 	return nil, nil
 }

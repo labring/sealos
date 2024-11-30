@@ -24,15 +24,11 @@ func abortWithMessage(c *gin.Context, statusCode int, message string) {
 func getRequestModel(c *gin.Context) (string, error) {
 	path := c.Request.URL.Path
 	switch {
-	case strings.HasPrefix(path, "/v1/moderations"):
-		return "text-moderation-stable", nil
-	case strings.HasPrefix(path, "/v1/images/generations"):
-		return "dall-e-2", nil
 	case strings.HasPrefix(path, "/v1/audio/transcriptions"), strings.HasPrefix(path, "/v1/audio/translations"):
 		return c.Request.FormValue("model"), nil
 	default:
 		var modelRequest ModelRequest
-		err := common.UnmarshalBodyReusable(c, &modelRequest)
+		err := common.UnmarshalBodyReusable(c.Request, &modelRequest)
 		if err != nil {
 			return "", fmt.Errorf("get request model failed: %w", err)
 		}

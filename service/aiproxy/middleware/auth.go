@@ -3,7 +3,6 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -59,30 +58,12 @@ func TokenAuth(c *gin.Context) {
 		abortWithMessage(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	requestModel, err := getRequestModel(c)
-	if err != nil && shouldCheckModel(c) {
-		abortWithMessage(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	c.Set(ctxkey.RequestModel, requestModel)
 	if len(token.Models) == 0 {
 		token.Models = model.CacheGetAllModels()
 	}
-	c.Set(ctxkey.AvailableModels, []string(token.Models))
-	if requestModel != "" && (len(token.Models) == 0 || !slices.Contains(token.Models, requestModel)) {
-		abortWithMessage(c,
-			http.StatusForbidden,
-			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
-				token.Name, token.ID, requestModel,
-			),
-		)
-		return
-	}
-
 	if group.QPM <= 0 {
 		group.QPM = config.GetDefaultGroupQPM()
 	}
-
 	if group.QPM > 0 {
 		ok := ForceRateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
 		if !ok {
@@ -93,36 +74,8 @@ func TokenAuth(c *gin.Context) {
 		}
 	}
 
-	c.Set(ctxkey.Group, token.Group)
-	c.Set(ctxkey.GroupQPM, group.QPM)
-	c.Set(ctxkey.TokenID, token.ID)
-	c.Set(ctxkey.TokenName, token.Name)
-	c.Set(ctxkey.TokenUsedAmount, token.UsedAmount)
-	c.Set(ctxkey.TokenQuota, token.Quota)
-	// if len(parts) > 1 {
-	// 	c.Set(ctxkey.SpecificChannelId, parts[1])
-	// }
-
-	// set channel id for proxy relay
-	if channelID := c.Param("channelid"); channelID != "" {
-		c.Set(ctxkey.SpecificChannelID, channelID)
-	}
+	c.Set(ctxkey.Group, group)
+	c.Set(ctxkey.Token, token)
 
 	c.Next()
-}
-
-func shouldCheckModel(c *gin.Context) bool {
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/completions") {
-		return true
-	}
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/chat/completions") {
-		return true
-	}
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/images") {
-		return true
-	}
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/audio") {
-		return true
-	}
-	return false
 }

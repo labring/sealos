@@ -11,33 +11,27 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
-	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
+func RelaySTTHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	ctx := c.Request.Context()
-
-	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(c.Request)
-	if err != nil {
-		logger.Errorf(ctx, "get and validate text request failed: %s", err.Error())
-		return openai.ErrorWrapper(err, "invalid_text_request", http.StatusBadRequest)
-	}
 
 	meta := meta.GetByContext(c)
 
-	// get model price
+	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
+	if !ok {
+		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
+	}
+
 	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
 	if !ok {
 		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
 	}
-	// pre-consume balance
-	promptTokens := openai.GetPromptTokens(meta, textRequest)
-	meta.PromptTokens = promptTokens
+
 	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
-		PromptTokens: promptTokens,
-		MaxTokens:    textRequest.MaxTokens,
+		PromptTokens: meta.PromptTokens,
 		Price:        price,
 	}, meta)
 	if err != nil {
@@ -52,30 +46,20 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}
 
-	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
-	}
-
-	// do response
 	usage, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		logger.Errorf(ctx, "do response failed: %s", respErr)
+		logger.Errorf(c, "do response failed: %s", respErr)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
 			postGroupConsumer,
 			respErr.StatusCode,
 			c.Request.URL.Path,
-			usage,
-			meta,
-			price,
-			completionPrice,
-			respErr.String(),
+			nil, meta, price, completionPrice, respErr.String(),
 		)
 		return respErr
 	}
-	// post-consume amount
+
 	ConsumeWaitGroup.Add(1)
 	go postConsumeAmount(context.Background(),
 		&ConsumeWaitGroup,
@@ -84,5 +68,6 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		c.Request.URL.Path,
 		usage, meta, price, completionPrice, "",
 	)
+
 	return nil
 }

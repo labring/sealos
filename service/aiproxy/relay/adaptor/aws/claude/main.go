@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/common/render"
@@ -20,6 +19,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/anthropic"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/pkg/errors"
 )
@@ -53,8 +53,8 @@ func awsModelID(requestModel string) (string, error) {
 	return "", errors.Errorf("model %s not found", requestModel)
 }
 
-func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
+func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -65,7 +65,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 		ContentType: aws.String("application/json"),
 	}
 
-	convReq, ok := c.Get(ctxkey.ConvertedRequest)
+	convReq, ok := meta.Get(ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
@@ -82,7 +82,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := awsCli.InvokeModel(c.Request.Context(), awsReq)
+	awsResp, err := meta.AwsClient().InvokeModel(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModel")), nil
 	}
@@ -94,7 +94,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 	}
 
 	openaiResp := anthropic.ResponseClaude2OpenAI(claudeResponse)
-	openaiResp.Model = modelName
+	openaiResp.Model = meta.OriginModelName
 	usage := relaymodel.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,
@@ -106,9 +106,10 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 	return nil, &usage
 }
 
-func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	createdTime := helper.GetTimestamp()
-	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	originModelName := meta.OriginModelName
+	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -119,7 +120,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 		ContentType: aws.String("application/json"),
 	}
 
-	convReq, ok := c.Get(ctxkey.ConvertedRequest)
+	convReq, ok := meta.Get(ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
@@ -136,7 +137,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := awsCli.InvokeModelWithResponseStream(c.Request.Context(), awsReq)
+	awsResp, err := meta.AwsClient().InvokeModelWithResponseStream(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModelWithResponseStream")), nil
 	}
@@ -185,7 +186,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 				}
 			}
 			response.ID = id
-			response.Model = c.GetString(ctxkey.OriginalModel)
+			response.Model = originModelName
 			response.Created = createdTime
 
 			for _, choice := range response.Choices {

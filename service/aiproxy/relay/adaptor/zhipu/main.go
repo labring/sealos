@@ -1,10 +1,8 @@
 package zhipu
 
 import (
-	"math"
+	"encoding/json"
 	"net/http"
-
-	json "github.com/json-iterator/go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -15,29 +13,6 @@ import (
 // chatglm_std, chatglm_lite
 // https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_std/invoke
 // https://open.bigmodel.cn/api/paas/v3/model-api/chatglm_std/sse-invoke
-
-func ConvertRequest(request *model.GeneralOpenAIRequest) any {
-	// TopP (0.0, 1.0)
-	if request.TopP != nil {
-		*request.TopP = math.Min(0.99, *request.TopP)
-		*request.TopP = math.Max(0.01, *request.TopP)
-	}
-
-	// Temperature (0.0, 1.0)
-	if request.Temperature != nil {
-		*request.Temperature = math.Min(0.99, *request.Temperature)
-		*request.Temperature = math.Max(0.01, *request.Temperature)
-	}
-	if ModelIsV4(request.Model) {
-		return request
-	}
-	return &Request{
-		Prompt:      request.Messages,
-		Temperature: request.Temperature,
-		TopP:        request.TopP,
-		Incremental: false,
-	}
-}
 
 func EmbeddingsHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()

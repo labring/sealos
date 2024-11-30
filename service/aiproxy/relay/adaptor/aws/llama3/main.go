@@ -23,6 +23,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/pkg/errors"
 )
@@ -77,8 +78,8 @@ func ConvertRequest(textRequest *relaymodel.GeneralOpenAIRequest) *Request {
 	return &llamaRequest
 }
 
-func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
+func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -89,7 +90,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 		ContentType: aws.String("application/json"),
 	}
 
-	llamaReq, ok := c.Get(ctxkey.ConvertedRequest)
+	llamaReq, ok := meta.Get(ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
@@ -99,7 +100,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := awsCli.InvokeModel(c.Request.Context(), awsReq)
+	awsResp, err := meta.AwsClient().InvokeModel(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModel")), nil
 	}
@@ -111,7 +112,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 	}
 
 	openaiResp := ResponseLlama2OpenAI(&llamaResponse)
-	openaiResp.Model = modelName
+	openaiResp.Model = meta.OriginModelName
 	usage := relaymodel.Usage{
 		PromptTokens:     llamaResponse.PromptTokenCount,
 		CompletionTokens: llamaResponse.GenerationTokenCount,
@@ -146,9 +147,9 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	createdTime := helper.GetTimestamp()
-	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -159,7 +160,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 		ContentType: aws.String("application/json"),
 	}
 
-	llamaReq, ok := c.Get(ctxkey.ConvertedRequest)
+	llamaReq, ok := meta.Get(ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
@@ -169,7 +170,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := awsCli.InvokeModelWithResponseStream(c.Request.Context(), awsReq)
+	awsResp, err := meta.AwsClient().InvokeModelWithResponseStream(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModelWithResponseStream")), nil
 	}

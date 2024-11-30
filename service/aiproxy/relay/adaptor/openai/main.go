@@ -34,7 +34,7 @@ type UsageAndChoicesResponse struct {
 	Choices []*ChatCompletionsStreamResponseChoice
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseText := ""
@@ -122,7 +122,7 @@ func StreamHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model
 	return nil, usage
 }
 
-func Handler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
@@ -177,7 +177,7 @@ func Handler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.Error
 	return nil, &textResponse.Usage
 }
 
-func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, _ *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
+func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
@@ -199,13 +199,13 @@ func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, _ *met
 
 	if rerankResponse.Meta.Tokens == nil {
 		return nil, &model.Usage{
-			PromptTokens:     promptTokens,
+			PromptTokens:     meta.PromptTokens,
 			CompletionTokens: 0,
-			TotalTokens:      promptTokens,
+			TotalTokens:      meta.PromptTokens,
 		}
 	}
 	if rerankResponse.Meta.Tokens.InputTokens <= 0 {
-		rerankResponse.Meta.Tokens.InputTokens = promptTokens
+		rerankResponse.Meta.Tokens.InputTokens = meta.PromptTokens
 	}
 	return nil, &model.Usage{
 		PromptTokens:     rerankResponse.Meta.Tokens.InputTokens,
@@ -214,7 +214,7 @@ func RerankHandler(c *gin.Context, resp *http.Response, promptTokens int, _ *met
 	}
 }
 
-func TTSHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.ErrorWithStatusCode, *model.Usage) {
+func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	for k, v := range resp.Header {
@@ -232,7 +232,7 @@ func TTSHandler(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.Er
 	}
 }
 
-func STTHandler(c *gin.Context, resp *http.Response, meta *meta.Meta, responseFormat string) (*model.ErrorWithStatusCode, *model.Usage) {
+func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, responseFormat string) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)

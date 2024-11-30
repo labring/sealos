@@ -1,15 +1,41 @@
 package openai
 
-import "github.com/labring/sealos/service/aiproxy/relay/model"
+import (
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
 
-func ErrorWrapper(err error, code string, statusCode int) *model.ErrorWithStatusCode {
-	Error := model.Error{
-		Message: err.Error(),
-		Type:    "aiproxy_error",
-		Code:    code,
-	}
-	return &model.ErrorWithStatusCode{
-		Error:      Error,
+func ErrorWrapper(err error, code string, statusCode int) *relaymodel.ErrorWithStatusCode {
+	return &relaymodel.ErrorWithStatusCode{
+		Error: relaymodel.Error{
+			Message: err.Error(),
+			Type:    "aiproxy_error",
+			Code:    code,
+		},
 		StatusCode: statusCode,
 	}
+}
+
+func ErrorWrapperWithMessage(message string, code string, statusCode int) *relaymodel.ErrorWithStatusCode {
+	return &relaymodel.ErrorWithStatusCode{
+		Error: relaymodel.Error{
+			Message: message,
+			Type:    "aiproxy_error",
+			Code:    code,
+		},
+		StatusCode: statusCode,
+	}
+}
+
+func GetPromptTokens(meta *meta.Meta, textRequest *relaymodel.GeneralOpenAIRequest) int {
+	switch meta.Mode {
+	case relaymode.ChatCompletions:
+		return CountTokenMessages(textRequest.Messages, textRequest.Model)
+	case relaymode.Completions:
+		return CountTokenInput(textRequest.Prompt, textRequest.Model)
+	case relaymode.Moderations:
+		return CountTokenInput(textRequest.Input, textRequest.Model)
+	}
+	return 0
 }
