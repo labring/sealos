@@ -35,6 +35,8 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
+	case relaymode.AudioSpeech:
+		return u + "/api-ws/v1/inference", nil
 	case relaymode.Rerank:
 		return u + "/api/v1/services/rerank/text-rerank/text-rerank", nil
 	default:
@@ -71,6 +73,8 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 		return ConvertRerankRequest(meta, req)
 	case relaymode.ChatCompletions:
 		return openai.ConvertRequest(meta, req)
+	case relaymode.AudioSpeech:
+		return ConvertTTSRequest(meta, req)
 	default:
 		return nil, nil, errors.New("unsupported mode")
 	}
@@ -106,7 +110,12 @@ func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.R
 }
 
 func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
-	return utils.DoRequest(meta, c, req)
+	switch meta.Mode {
+	case relaymode.AudioSpeech:
+		return TTSDoRequest(meta, req)
+	default:
+		return utils.DoRequest(meta, c, req)
+	}
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
@@ -119,6 +128,8 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		usage, err = openai.DoResponse(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)
+	case relaymode.AudioSpeech:
+		usage, err = TTSDoResponse(meta, c, resp)
 	default:
 		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
 	}

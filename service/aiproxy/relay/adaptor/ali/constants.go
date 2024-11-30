@@ -107,6 +107,196 @@ var ModelList = []*model.ModelConfig{
 	},
 
 	{
+		Model: "stable-diffusion-xl",
+		Type:  relaymode.ImagesGenerations,
+	},
+	{
+		Model: "stable-diffusion-v1.5",
+		Type:  relaymode.ImagesGenerations,
+	},
+	{
+		Model: "stable-diffusion-3.5-large",
+		Type:  relaymode.ImagesGenerations,
+	},
+	{
+		Model: "stable-diffusion-3.5-large-turbo",
+		Type:  relaymode.ImagesGenerations,
+	},
+
+	{
+		Model: "sambert-zhinan-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiqi-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhichu-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhide-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhijia-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiru-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiqian-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhixiang-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiwei-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhihao-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhijing-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiming-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhimo-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhina-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhishu-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhistella-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiting-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhixiao-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiya-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiye-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiying-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiyuan-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhiyue-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhigui-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhishuo-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhimiao-emo-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhimao-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhilun-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhifei-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-zhida-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-camila-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-perla-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-indah-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-clara-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-hanna-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-beth-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-betty-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-cally-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-cindy-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-eva-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-donna-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-brian-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+	{
+		Model: "sambert-waan-v1",
+		Type:  relaymode.AudioSpeech,
+	},
+
+	{
 		Model: "gte-rerank",
 		Type:  relaymode.Rerank,
 		Config: map[model.ModelConfigKey]any{

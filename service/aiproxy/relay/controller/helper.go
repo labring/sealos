@@ -135,5 +135,18 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 		return nil, utils.RelayErrorHandler(meta, resp)
 	}
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
-	return a.DoResponse(meta, c, resp)
+	usage, relayErr := a.DoResponse(meta, c, resp)
+	if relayErr != nil {
+		return nil, relayErr
+	}
+	if usage == nil {
+		usage = &relaymodel.Usage{
+			PromptTokens: meta.PromptTokens,
+			TotalTokens:  meta.PromptTokens,
+		}
+	}
+	if usage.TotalTokens == 0 {
+		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+	}
+	return usage, nil
 }
