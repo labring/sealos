@@ -215,6 +215,9 @@ func CountTokenText(text string, model string) int {
 	if strings.HasPrefix(model, "tts") {
 		return utf8.RuneCountInString(text)
 	}
+	if strings.HasPrefix(model, "sambert-") {
+		return len(text)
+	}
 	tokenEncoder := getTokenEncoder(model)
 	return getTokenNum(tokenEncoder, text)
 }

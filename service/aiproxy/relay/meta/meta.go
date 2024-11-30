@@ -1,6 +1,8 @@
 package meta
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
@@ -31,6 +33,14 @@ func (m *Meta) Set(key string, value any) {
 func (m *Meta) Get(key string) (any, bool) {
 	v, ok := m.values[key]
 	return v, ok
+}
+
+func (m *Meta) MustGet(key string) any {
+	v, ok := m.Get(key)
+	if !ok {
+		panic(fmt.Sprintf("meta key %s not found", key))
+	}
+	return v
 }
 
 func (m *Meta) GetBool(key string) bool {
