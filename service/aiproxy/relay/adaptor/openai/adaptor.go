@@ -219,18 +219,18 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
-		err, _ = ImageHandler(meta, c, resp)
+		usage, err = ImageHandler(meta, c, resp)
 	case relaymode.AudioTranscription:
-		err, usage = STTHandler(meta, c, resp, "")
+		usage, err = STTHandler(meta, c, resp, "")
 	case relaymode.AudioSpeech:
-		err, usage = TTSHandler(meta, c, resp)
+		usage, err = TTSHandler(meta, c, resp)
 	case relaymode.Rerank:
-		err, usage = RerankHandler(meta, c, resp)
+		usage, err = RerankHandler(meta, c, resp)
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
-			err, usage = StreamHandler(meta, c, resp)
+			usage, err = StreamHandler(meta, c, resp)
 		} else {
-			err, usage = Handler(meta, c, resp)
+			usage, err = Handler(meta, c, resp)
 		}
 	default:
 		return nil, ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)

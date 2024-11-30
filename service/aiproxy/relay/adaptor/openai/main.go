@@ -34,7 +34,7 @@ type UsageAndChoicesResponse struct {
 	Choices []*ChatCompletionsStreamResponseChoice
 }
 
-func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	responseText := ""
@@ -119,26 +119,26 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		usage.CompletionTokens = usage.TotalTokens - meta.PromptTokens
 	}
 
-	return nil, usage
+	return usage, nil
 }
 
-func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var textResponse SlimTextResponse
 	err = json.Unmarshal(responseBody, &textResponse)
 	if err != nil {
-		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if textResponse.Error.Type != "" {
-		return &model.ErrorWithStatusCode{
+		return nil, &model.ErrorWithStatusCode{
 			Error:      textResponse.Error,
 			StatusCode: resp.StatusCode,
-		}, nil
+		}
 	}
 
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
@@ -156,7 +156,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	var respMap map[string]any
 	err = json.Unmarshal(responseBody, &respMap)
 	if err != nil {
-		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
@@ -165,7 +165,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 
 	newData, err := stdjson.Marshal(respMap)
 	if err != nil {
-		return ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	c.Writer.WriteHeader(resp.StatusCode)
@@ -174,20 +174,20 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	if err != nil {
 		logger.Error(c, "write response body failed: "+err.Error())
 	}
-	return nil, &textResponse.Usage
+	return &textResponse.Usage, nil
 }
 
-func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var rerankResponse SlimRerankResponse
 	err = json.Unmarshal(responseBody, &rerankResponse)
 	if err != nil {
-		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	c.Writer.WriteHeader(resp.StatusCode)
@@ -198,23 +198,23 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	}
 
 	if rerankResponse.Meta.Tokens == nil {
-		return nil, &model.Usage{
+		return &model.Usage{
 			PromptTokens:     meta.PromptTokens,
 			CompletionTokens: 0,
 			TotalTokens:      meta.PromptTokens,
-		}
+		}, nil
 	}
 	if rerankResponse.Meta.Tokens.InputTokens <= 0 {
 		rerankResponse.Meta.Tokens.InputTokens = meta.PromptTokens
 	}
-	return nil, &model.Usage{
+	return &model.Usage{
 		PromptTokens:     rerankResponse.Meta.Tokens.InputTokens,
 		CompletionTokens: rerankResponse.Meta.Tokens.OutputTokens,
 		TotalTokens:      rerankResponse.Meta.Tokens.InputTokens + rerankResponse.Meta.Tokens.OutputTokens,
-	}
+	}, nil
 }
 
-func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	for k, v := range resp.Header {
@@ -225,25 +225,25 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	if err != nil {
 		logger.Error(c, "write response body failed: "+err.Error())
 	}
-	return nil, &model.Usage{
+	return &model.Usage{
 		PromptTokens:     meta.PromptTokens,
 		CompletionTokens: 0,
 		TotalTokens:      meta.PromptTokens,
-	}
+	}, nil
 }
 
-func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, responseFormat string) (*model.ErrorWithStatusCode, *model.Usage) {
+func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, responseFormat string) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 
 	var openAIErr SlimTextResponse
 	if err = json.Unmarshal(responseBody, &openAIErr); err == nil {
 		if openAIErr.Error.Message != "" {
-			return ErrorWrapper(fmt.Errorf("type %s, code %v, message %s", openAIErr.Error.Type, openAIErr.Error.Code, openAIErr.Error.Message), "request_error", http.StatusInternalServerError), nil
+			return nil, ErrorWrapper(fmt.Errorf("type %s, code %v, message %s", openAIErr.Error.Type, openAIErr.Error.Code, openAIErr.Error.Message), "request_error", http.StatusInternalServerError)
 		}
 	}
 
@@ -263,7 +263,7 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, responseFo
 		text, err = getTextFromJSON(responseBody)
 	}
 	if err != nil {
-		return ErrorWrapper(err, "get_text_from_body_err", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "get_text_from_body_err", http.StatusInternalServerError)
 	}
 	completionTokens := CountTokenText(text, meta.ActualModelName)
 
@@ -275,11 +275,11 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, responseFo
 		logger.Error(c, "write response body failed: "+err.Error())
 	}
 
-	return nil, &model.Usage{
+	return &model.Usage{
 		PromptTokens:     0,
 		CompletionTokens: completionTokens,
 		TotalTokens:      completionTokens,
-	}
+	}, nil
 }
 
 func getTextFromVTT(body []byte) (string, error) {

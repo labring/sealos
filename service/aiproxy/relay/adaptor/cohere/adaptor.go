@@ -57,7 +57,7 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Rerank:
-		err, usage = openai.RerankHandler(meta, c, resp)
+		usage, err = openai.RerankHandler(meta, c, resp)
 	default:
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(c, resp)

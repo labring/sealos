@@ -1,12 +1,14 @@
 package ali
 
 import (
+	"io"
 	"net/http"
 	"strings"
 
 	json "github.com/json-iterator/go"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -77,4 +79,67 @@ func embeddingResponseAli2OpenAI(response *EmbeddingResponse) *openai.EmbeddingR
 		})
 	}
 	return &openAIEmbeddingResponse
+}
+
+type RerankResponse struct {
+	Usage     *RerankUsage `json:"usage"`
+	RequestID string       `json:"request_id"`
+	Output    RerankOutput `json:"output"`
+}
+type RerankOutput struct {
+	Results []*relaymodel.RerankResult `json:"results"`
+}
+type RerankUsage struct {
+	TotalTokens int `json:"total_tokens"`
+}
+
+func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
+	}
+	var rerankResponse RerankResponse
+	err = json.Unmarshal(responseBody, &rerankResponse)
+	if err != nil {
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
+	}
+
+	c.Writer.WriteHeader(resp.StatusCode)
+
+	rerankResp := relaymodel.RerankResponse{
+		Meta: relaymodel.RerankMeta{
+			Tokens: &relaymodel.RerankMetaTokens{
+				InputTokens:  rerankResponse.Usage.TotalTokens,
+				OutputTokens: 0,
+			},
+		},
+		Result: rerankResponse.Output.Results,
+		ID:     rerankResponse.RequestID,
+	}
+
+	var usage *relaymodel.Usage
+	if rerankResponse.Usage == nil {
+		usage = &relaymodel.Usage{
+			PromptTokens:     meta.PromptTokens,
+			CompletionTokens: 0,
+			TotalTokens:      meta.PromptTokens,
+		}
+	} else {
+		usage = &relaymodel.Usage{
+			PromptTokens: rerankResponse.Usage.TotalTokens,
+			TotalTokens:  rerankResponse.Usage.TotalTokens,
+		}
+	}
+
+	jsonResponse, err := json.Marshal(&rerankResp)
+	if err != nil {
+		return usage, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
+	}
+	_, err = c.Writer.Write(jsonResponse)
+	if err != nil {
+		logger.Error(c, "write response body failed: "+err.Error())
+	}
+	return usage, nil
 }
