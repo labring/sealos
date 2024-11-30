@@ -25,7 +25,7 @@ func getImageRequest(c *gin.Context) (*relaymodel.ImageRequest, error) {
 		imageRequest.N = 1
 	}
 	if imageRequest.Size == "" {
-		imageRequest.Size = "1024x1024"
+		return nil, errors.New("size is required")
 	}
 	return imageRequest, nil
 }
@@ -37,8 +37,8 @@ func validateImageRequest(imageRequest *relaymodel.ImageRequest) *relaymodel.Err
 	}
 
 	// Number of generated images validation
-	if !billingprice.ValidateImageMaxBatchSize(imageRequest.Model, imageRequest.N) {
-		return openai.ErrorWrapper(errors.New("invalid value of n"), "n_not_within_range", http.StatusBadRequest)
+	if err := billingprice.ValidateImageMaxBatchSize(imageRequest.Model, imageRequest.N); err != nil {
+		return openai.ErrorWrapper(err, "n_not_within_range", http.StatusBadRequest)
 	}
 	return nil
 }
@@ -52,14 +52,15 @@ func getImageCostPrice(modelName string, reqModel string, size string) (float64,
 }
 
 func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
+	meta := meta.GetByContext(c)
+
 	ctx := c.Request.Context()
+
 	imageRequest, err := getImageRequest(c)
 	if err != nil {
 		logger.Errorf(ctx, "getImageRequest failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "invalid_image_request", http.StatusBadRequest)
 	}
-
-	meta := meta.GetByContext(c)
 
 	meta.PromptTokens = imageRequest.N
 
@@ -72,8 +73,6 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	if err != nil {
 		return openai.ErrorWrapper(err, "get_image_cost_price_failed", http.StatusInternalServerError)
 	}
-
-	c.Set("response_format", imageRequest.ResponseFormat)
 
 	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
 	if !ok {

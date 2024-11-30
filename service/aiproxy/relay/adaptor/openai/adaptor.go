@@ -159,6 +159,8 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 	return nil, bytes.NewReader(jsonData), nil
 }
 
+const MetaResponseFormat = "response_format"
+
 func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
 	if request == nil {
 		return nil, nil, errors.New("request is nil")
@@ -182,6 +184,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 				continue
 			}
 			if key == "response_format" {
+				meta.Set(MetaResponseFormat, value)
 				continue
 			}
 			err = multipartWriter.WriteField(key, value)
@@ -217,20 +220,6 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 	}, multipartBody, nil
 }
 
-func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	reqMap := make(map[string]any)
-	err := common.UnmarshalBodyReusable(req, &reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	reqMap["model"] = meta.ActualModelName
-	jsonData, err := json.Marshal(reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	return nil, bytes.NewReader(jsonData), nil
-}
-
 func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
@@ -258,7 +247,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
 	case relaymode.AudioTranscription:
-		usage, err = STTHandler(meta, c, resp, "")
+		usage, err = STTHandler(meta, c, resp)
 	case relaymode.AudioSpeech:
 		usage, err = TTSHandler(meta, c, resp)
 	case relaymode.Rerank:

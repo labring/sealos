@@ -43,6 +43,15 @@ func (m *Meta) MustGet(key string) any {
 	return v
 }
 
+func (m *Meta) GetString(key string) string {
+	v, ok := m.Get(key)
+	if !ok {
+		return ""
+	}
+	s, _ := v.(string)
+	return s
+}
+
 func (m *Meta) GetBool(key string) bool {
 	if v, ok := m.Get(key); ok {
 		return v.(bool)

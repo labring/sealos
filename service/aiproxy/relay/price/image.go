@@ -1,6 +1,9 @@
 package price
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
@@ -23,17 +26,26 @@ func getImageSizePrice(modelName string, size string) (float64, bool) {
 	if !ok {
 		return 0, false
 	}
+	if len(modelConfig.ImagePrices) == 0 {
+		return 0, true
+	}
 	price, ok := modelConfig.ImagePrices[size]
 	return price, ok
 }
 
-func ValidateImageMaxBatchSize(modelName string, batchSize int) bool {
+func ValidateImageMaxBatchSize(modelName string, batchSize int) error {
 	if batchSize <= 1 {
-		return true
+		return nil
 	}
 	modelConfig, ok := model.CacheGetModelConfig(modelName)
 	if !ok {
-		return false
+		return errors.New("model not found")
 	}
-	return batchSize <= modelConfig.ImageMaxBatchSize
+	if modelConfig.ImageMaxBatchSize <= 0 {
+		return nil
+	}
+	if batchSize > modelConfig.ImageMaxBatchSize {
+		return fmt.Errorf("batch size %d is greater than the maximum batch size %d", batchSize, modelConfig.ImageMaxBatchSize)
+	}
+	return nil
 }

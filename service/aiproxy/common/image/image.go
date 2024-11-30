@@ -58,7 +58,7 @@ func GetImageSizeFromURL(url string) (width int, height int, err error) {
 	return img.Width, img.Height, nil
 }
 
-func GetImageFromURL(url string) (string, string, error) {
+func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	// Check if the URL is a data URL
 	matches := dataURLPattern.FindStringSubmatch(url)
 	if len(matches) == 3 {
@@ -66,7 +66,7 @@ func GetImageFromURL(url string) (string, string, error) {
 		return "image/" + matches[1], matches[2], nil
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", "", err
 	}
