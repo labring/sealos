@@ -1,11 +1,13 @@
 package ali
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +17,31 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
+
+func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	request, err := utils.UnmarshalImageRequest(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	request.Model = meta.ActualModelName
+
+	var imageRequest ImageRequest
+	imageRequest.Input.Prompt = request.Prompt
+	imageRequest.Model = request.Model
+	imageRequest.Parameters.Size = strings.ReplaceAll(request.Size, "x", "*")
+	imageRequest.Parameters.N = request.N
+	imageRequest.ResponseFormat = request.ResponseFormat
+
+	data, err := json.Marshal(&imageRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+	return http.Header{
+		"X-Dashscope-Async": {"enable"},
+	}, bytes.NewReader(data), nil
+}
 
 func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	responseFormat := c.GetString("response_format")
