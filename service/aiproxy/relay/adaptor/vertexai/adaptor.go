@@ -103,7 +103,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	), nil
 }
 
-func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
 	token, err := getToken(context.Background(), meta.Channel.ID, meta.Channel.Config.VertexAIADC)
 	if err != nil {
 		return err
