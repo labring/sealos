@@ -102,7 +102,7 @@ func Relay(c *gin.Context) {
 	}
 }
 
-func shouldRetry(c *gin.Context, statusCode int) bool {
+func shouldRetry(_ *gin.Context, statusCode int) bool {
 	if statusCode == http.StatusTooManyRequests {
 		return true
 	}

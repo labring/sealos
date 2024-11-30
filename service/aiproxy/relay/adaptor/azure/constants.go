@@ -49,7 +49,7 @@ func GetFullRequestURL(baseURL string, requestURL string) string {
 	return fullRequestURL
 }
 
-func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
 	req.Header.Set("Api-Key", meta.Channel.Key)
 	return nil
 }
