@@ -1,31 +1,23 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
-	"github.com/labring/sealos/service/aiproxy/relay"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
-	"github.com/shopspring/decimal"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func getImageRequest(c *gin.Context, _ int) (*relaymodel.ImageRequest, error) {
-	imageRequest := &relaymodel.ImageRequest{}
-	err := common.UnmarshalBodyReusable(c, imageRequest)
+func getImageRequest(c *gin.Context) (*relaymodel.ImageRequest, error) {
+	imageRequest, err := utils.UnmarshalImageRequest(c.Request)
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +27,10 @@ func getImageRequest(c *gin.Context, _ int) (*relaymodel.ImageRequest, error) {
 	if imageRequest.Size == "" {
 		imageRequest.Size = "1024x1024"
 	}
-	if imageRequest.Model == "" {
-		imageRequest.Model = "dall-e-2"
-	}
 	return imageRequest, nil
 }
 
-func validateImageRequest(imageRequest *relaymodel.ImageRequest, _ *meta.Meta) *relaymodel.ErrorWithStatusCode {
+func validateImageRequest(imageRequest *relaymodel.ImageRequest) *relaymodel.ErrorWithStatusCode {
 	// check prompt length
 	if imageRequest.Prompt == "" {
 		return openai.ErrorWrapper(errors.New("prompt is required"), "prompt_missing", http.StatusBadRequest)
@@ -64,20 +53,17 @@ func getImageCostPrice(modelName string, reqModel string, size string) (float64,
 
 func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	ctx := c.Request.Context()
-	meta := meta.GetByContext(c)
-	imageRequest, err := getImageRequest(c, meta.Mode)
+	imageRequest, err := getImageRequest(c)
 	if err != nil {
 		logger.Errorf(ctx, "getImageRequest failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "invalid_image_request", http.StatusBadRequest)
 	}
 
-	// map model name
-	meta.OriginModelName = imageRequest.Model
-	imageRequest.Model, _ = getMappedModelName(imageRequest.Model, meta.ModelMapping)
-	meta.ActualModelName = imageRequest.Model
+	meta := meta.GetByContext(c)
 
-	// model validation
-	bizErr := validateImageRequest(imageRequest, meta)
+	meta.PromptTokens = imageRequest.N
+
+	bizErr := validateImageRequest(imageRequest)
 	if bizErr != nil {
 		return bizErr
 	}
@@ -89,70 +75,29 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 
 	c.Set("response_format", imageRequest.ResponseFormat)
 
-	adaptor := relay.GetAdaptor(meta.APIType)
-	if adaptor == nil {
-		return openai.ErrorWrapper(fmt.Errorf("invalid api type: %d", meta.APIType), "invalid_api_type", http.StatusBadRequest)
-	}
-	adaptor.Init(meta)
-
-	requestBody, err := getImageRequestBody(c, meta, imageRequest, adaptor)
-	if err != nil {
-		return openai.ErrorWrapper(err, "get_image_request_body_failed", http.StatusInternalServerError)
+	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
+	if !ok {
+		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
 	}
 
-	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
+	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
+		PromptTokens: meta.PromptTokens,
+		Price:        imageCostPrice,
+	}, meta)
 	if err != nil {
-		logger.Errorf(ctx, "get group (%s) balance failed: %s", meta.Group, err)
+		logger.Errorf(ctx, "get group (%s) balance failed: %v", meta.Group.ID, err)
 		return openai.ErrorWrapper(
-			fmt.Errorf("get group (%s) balance failed", meta.Group),
-			"get_group_remain_balance_failed",
+			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
+			"get_group_quota_failed",
 			http.StatusInternalServerError,
 		)
 	}
-
-	amount := decimal.NewFromFloat(imageCostPrice).Mul(decimal.NewFromInt(int64(imageRequest.N))).InexactFloat64()
-
-	if groupRemainBalance-amount < 0 {
-		return openai.ErrorWrapper(
-			errors.New("group balance is not enough"),
-			"insufficient_group_balance",
-			http.StatusForbidden,
-		)
-	}
-
-	// do request
-	resp, err := adaptor.DoRequest(c, meta, requestBody)
-	if err != nil {
-		logger.Errorf(ctx, "do request failed: %s", err.Error())
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
-			postGroupConsumer,
-			http.StatusInternalServerError,
-			c.Request.URL.Path, nil, meta, imageCostPrice, 0, err.Error(),
-		)
-		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
-	}
-
-	if isErrorHappened(meta, resp) {
-		err := RelayErrorHandler(resp, meta.Mode)
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
-			postGroupConsumer,
-			resp.StatusCode,
-			c.Request.URL.Path,
-			nil,
-			meta,
-			imageCostPrice,
-			0,
-			err.String(),
-		)
-		return err
+	if !ok {
+		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}
 
 	// do response
-	_, respErr := adaptor.DoResponse(c, resp, meta)
+	usage, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
 		logger.Errorf(ctx, "do response failed: %s", respErr)
 		ConsumeWaitGroup.Add(1)
@@ -161,7 +106,7 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 			postGroupConsumer,
 			respErr.StatusCode,
 			c.Request.URL.Path,
-			nil,
+			usage,
 			meta,
 			imageCostPrice,
 			0,
@@ -174,22 +119,10 @@ func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
 	go postConsumeAmount(context.Background(),
 		&ConsumeWaitGroup,
 		postGroupConsumer,
-		resp.StatusCode,
+		http.StatusOK,
 		c.Request.URL.Path,
-		nil, meta, imageCostPrice, 0, imageRequest.Size,
+		usage, meta, imageCostPrice, 0, imageRequest.Size,
 	)
 
 	return nil
-}
-
-func getImageRequestBody(_ *gin.Context, _ *meta.Meta, imageRequest *relaymodel.ImageRequest, adaptor adaptor.Adaptor) (io.Reader, error) {
-	convertedRequest, err := adaptor.ConvertImageRequest(imageRequest)
-	if err != nil {
-		return nil, err
-	}
-	jsonStr, err := json.Marshal(convertedRequest)
-	if err != nil {
-		return nil, err
-	}
-	return bytes.NewReader(jsonStr), nil
 }

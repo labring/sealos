@@ -13,7 +13,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
-	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
@@ -29,11 +28,11 @@ func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
 	case relaymode.ImagesGenerations:
 		err = controller.RelayImageHelper(c, relayMode)
 	case relaymode.AudioSpeech:
-		fallthrough
+		err = controller.RelayTTSHelper(c)
 	case relaymode.AudioTranslation:
-		fallthrough
+		err = controller.RelaySTTHelper(c)
 	case relaymode.AudioTranscription:
-		err = controller.RelayAudioHelper(c, relayMode)
+		err = controller.RelaySTTHelper(c)
 	case relaymode.Rerank:
 		err = controller.RerankHelper(c)
 	default:
@@ -46,19 +45,19 @@ func Relay(c *gin.Context) {
 	ctx := c.Request.Context()
 	relayMode := relaymode.GetByPath(c.Request.URL.Path)
 	if config.DebugEnabled {
-		requestBody, _ := common.GetRequestBody(c)
+		requestBody, _ := common.GetRequestBody(c.Request)
 		logger.Debugf(ctx, "request body: %s", requestBody)
 	}
-	channelID := c.GetInt(ctxkey.ChannelID)
+	channel := c.MustGet(ctxkey.Channel).(*dbmodel.Channel)
 	bizErr := relayHelper(c, relayMode)
 	if bizErr == nil {
-		monitor.Emit(channelID, true)
+		monitor.Emit(channel.ID, true)
 		return
 	}
-	lastFailedChannelID := channelID
+	lastFailedChannelID := channel.ID
 	group := c.GetString(ctxkey.Group)
 	originalModel := c.GetString(ctxkey.OriginalModel)
-	go processChannelRelayError(ctx, group, channelID, bizErr)
+	go processChannelRelayError(ctx, group, channel.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
@@ -75,21 +74,20 @@ func Relay(c *gin.Context) {
 		if channel.ID == lastFailedChannelID {
 			continue
 		}
-		middleware.SetupContextForSelectedChannel(c, channel, originalModel)
-		requestBody, err := common.GetRequestBody(c)
+		requestBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			logger.Errorf(ctx, "GetRequestBody failed: %+v", err)
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
+		c.Set(ctxkey.Channel, channel)
 		bizErr = relayHelper(c, relayMode)
 		if bizErr == nil {
 			return
 		}
-		channelID := c.GetInt(ctxkey.ChannelID)
-		lastFailedChannelID = channelID
+		lastFailedChannelID = channel.ID
 		// BUG: bizErr is in race condition
-		go processChannelRelayError(ctx, group, channelID, bizErr)
+		go processChannelRelayError(ctx, group, channel.ID, bizErr)
 	}
 	if bizErr != nil {
 		if bizErr.StatusCode == http.StatusTooManyRequests {
@@ -105,9 +103,6 @@ func Relay(c *gin.Context) {
 }
 
 func shouldRetry(c *gin.Context, statusCode int) bool {
-	if _, ok := c.Get(ctxkey.SpecificChannelID); ok {
-		return false
-	}
 	if statusCode == http.StatusTooManyRequests {
 		return true
 	}

@@ -1,6 +1,7 @@
 package vertexai
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -36,8 +37,8 @@ func init() {
 }
 
 type innerAIAdapter interface {
-	ConvertRequest(c *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error)
-	DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode)
+	ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error)
+	DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode)
 }
 
 func GetAdaptor(model string) innerAIAdapter {

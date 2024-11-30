@@ -2,42 +2,47 @@ package common
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 )
 
-func GetRequestBody(c *gin.Context) ([]byte, error) {
-	requestBody, ok := c.Get(ctxkey.KeyRequestBody)
-	if ok {
+type RequestBodyKey struct{}
+
+func GetRequestBody(req *http.Request) ([]byte, error) {
+	requestBody := req.Context().Value(RequestBodyKey{})
+	if requestBody != nil {
 		return requestBody.([]byte), nil
 	}
 	var buf []byte
 	var err error
 	defer func() {
-		c.Request.Body.Close()
+		req.Body.Close()
 		if err == nil {
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(buf))
+			req.Body = io.NopCloser(bytes.NewBuffer(buf))
 		}
 	}()
-	if c.Request.ContentLength <= 0 || c.Request.Header.Get("Content-Type") != "application/json" {
-		buf, err = io.ReadAll(c.Request.Body)
+	if req.ContentLength <= 0 || req.Header.Get("Content-Type") != "application/json" {
+		buf, err = io.ReadAll(req.Body)
 	} else {
-		buf = make([]byte, c.Request.ContentLength)
-		_, err = io.ReadFull(c.Request.Body, buf)
+		buf = make([]byte, req.ContentLength)
+		_, err = io.ReadFull(req.Body, buf)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("request body read failed: %w", err)
 	}
-	c.Set(ctxkey.KeyRequestBody, buf)
+	ctx := req.Context()
+	bufCtx := context.WithValue(ctx, RequestBodyKey{}, buf)
+	*req = *req.WithContext(bufCtx)
 	return buf, nil
 }
 
-func UnmarshalBodyReusable(c *gin.Context, v any) error {
-	requestBody, err := GetRequestBody(c)
+func UnmarshalBodyReusable(req *http.Request, v any) error {
+	requestBody, err := GetRequestBody(req)
 	if err != nil {
 		return err
 	}

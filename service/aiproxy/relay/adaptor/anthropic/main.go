@@ -15,6 +15,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -38,7 +39,14 @@ func stopReasonClaude2OpenAI(reason *string) string {
 	}
 }
 
-func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
+	var textRequest model.GeneralOpenAIRequest
+	err := common.UnmarshalBodyReusable(req, &textRequest)
+	if err != nil {
+		return nil, err
+	}
+	textRequest.Model = meta.ActualModelName
+	meta.Set("stream", textRequest.Stream)
 	claudeTools := make([]Tool, 0, len(textRequest.Tools))
 
 	for _, tool := range textRequest.Tools {
@@ -146,7 +154,8 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
 		claudeMessage.Content = contents
 		claudeRequest.Messages = append(claudeRequest.Messages, claudeMessage)
 	}
-	return &claudeRequest
+
+	return &claudeRequest, nil
 }
 
 // https://docs.anthropic.com/claude/reference/messages-streaming
@@ -250,7 +259,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	createdTime := helper.GetTimestamp()
@@ -339,7 +348,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	var claudeResponse Response
@@ -359,7 +368,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 		}, nil
 	}
 	fullTextResponse := ResponseClaude2OpenAI(&claudeResponse)
-	fullTextResponse.Model = modelName
+	fullTextResponse.Model = meta.OriginModelName
 	usage := model.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,

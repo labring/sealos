@@ -1,42 +1,53 @@
 package coze
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-type Adaptor struct {
-	meta *meta.Meta
-}
+type Adaptor struct{}
 
-func (a *Adaptor) Init(meta *meta.Meta) {
-	a.meta = meta
-}
+const baseURL = "https://api.coze.com"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return meta.BaseURL + "/open_api/v2/chat", nil
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
+	return u + "/open_api/v2/chat", nil
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
+	if err != nil {
+		return nil, nil, err
 	}
-	request.User = a.meta.Config.UserID
-	return ConvertRequest(request), nil
+	request.User = meta.Channel.Config.UserID
+	request.Model = meta.ActualModelName
+	requestBody := ConvertRequest(request)
+	if requestBody == nil {
+		return nil, nil, errors.New("request body is nil")
+	}
+	data, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nil, bytes.NewReader(data), nil
 }
 
 func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
@@ -46,21 +57,13 @@ func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, er
 	return request, nil
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return adaptor.DoRequestHelper(a, c, meta, requestBody)
+func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(meta, c, req)
 }
 
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	var responseText *string
-	if meta.IsStream {
+	if utils.IsStreamResponse(resp) {
 		err, responseText = StreamHandler(c, resp)
 	} else {
 		err, responseText = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)

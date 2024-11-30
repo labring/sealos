@@ -1,27 +1,66 @@
 package baidu
 
 import (
-	"errors"
+	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 type Adaptor struct{}
 
-func (a *Adaptor) Init(_ *meta.Meta) {
-}
+const (
+	baseURL   = "https://aip.baidubce.com"
+	baseURLV2 = "https://qianfan.baidubce.com"
+)
+
+// func IsV2(modelName string) bool {
+// 	return strings.HasPrefix(strings.ToLower(modelName), "ernie-")
+// }
+
+// func (a *Adaptor) getRequestURLV2(_ *meta.Meta) string {
+// 	return baseURLV2 + "/v2/chat/completions"
+// }
+
+// var v2ModelMap = map[string]string{
+// 	"ERNIE-4.0-8K-Latest":        "ernie-4.0-8k-latest",
+// 	"ERNIE-4.0-8K-Preview":       "ernie-4.0-8k-preview",
+// 	"ERNIE-4.0-8K":               "ernie-4.0-8k",
+// 	"ERNIE-4.0-Turbo-8K-Latest":  "ernie-4.0-turbo-8k-latest",
+// 	"ERNIE-4.0-Turbo-8K-Preview": "ernie-4.0-turbo-8k-preview",
+// 	"ERNIE-4.0-Turbo-8K":         "ernie-4.0-turbo-8k",
+// 	"ERNIE-4.0-Turbo-128K":       "ernie-4.0-turbo-128k",
+// 	"ERNIE-3.5-8K-Preview":       "ernie-3.5-8k-preview",
+// 	"ERNIE-3.5-8K":               "ernie-3.5-8k",
+// 	"ERNIE-3.5-128K":             "ernie-3.5-128k",
+// 	"ERNIE-Speed-8K":             "ernie-speed-8k",
+// 	"ERNIE-Speed-128K":           "ernie-speed-128k",
+// 	"ERNIE-Speed-Pro-128K":       "ernie-speed-pro-128k",
+// 	"ERNIE-Lite-8K":              "ernie-lite-8k",
+// 	"ERNIE-Lite-Pro-128K":        "ernie-lite-pro-128k",
+// 	"ERNIE-Tiny-8K":              "ernie-tiny-8k",
+// 	"ERNIE-Character-8K":         "ernie-char-8k",
+// 	"ERNIE-Character-Fiction-8K": "ernie-char-fiction-8k",
+// 	"ERNIE-Novel-8K":             "ernie-novel-8k",
+// }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
+	// if IsV2(meta.ActualModelName) {
+	// 	return a.getRequestURLV2(meta), nil
+	// }
+
 	// https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
 	suffix := "chat/"
 	if strings.HasPrefix(meta.ActualModelName, "Embedding") ||
@@ -71,63 +110,70 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	default:
 		suffix += strings.ToLower(meta.ActualModelName)
 	}
-	fullRequestURL := fmt.Sprintf("%s/rpc/2.0/ai_custom/v1/wenxinworkshop/%s", meta.BaseURL, suffix)
-	var accessToken string
-	var err error
-	if accessToken, err = GetAccessToken(meta.APIKey); err != nil {
-		return "", err
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
 	}
-	fullRequestURL += "?access_token=" + accessToken
+	fullRequestURL := fmt.Sprintf("%s/rpc/2.0/ai_custom/v1/wenxinworkshop/%s", u, suffix)
 	return fullRequestURL, nil
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+	// if IsV2(meta.ActualModelName) {
+	// 	token, err := GetBearerToken(meta.APIKey)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	req.Header.Set("Authorization", "Bearer "+token.Token)
+	// 	return nil
+	// }
+	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
+	accessToken, err := GetAccessToken(context.Background(), meta.Channel.Key)
+	if err != nil {
+		return err
+	}
+	req.URL.RawQuery = "access_token=" + accessToken
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	switch relayMode {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	switch meta.Mode {
 	case relaymode.Embeddings:
-		baiduEmbeddingRequest := ConvertEmbeddingRequest(request)
-		return baiduEmbeddingRequest, nil
+		return openai.ConvertRequest(meta, req)
 	default:
+		// if IsV2(meta.ActualModelName) {
+		// 	return openai.ConvertRequest(meta, req)
+		// }
+		request, err := utils.UnmarshalGeneralOpenAIRequest(req)
+		if err != nil {
+			return nil, nil, err
+		}
+		request.Model = meta.ActualModelName
 		baiduRequest := ConvertRequest(request)
-		return baiduRequest, nil
+		data, err := json.Marshal(baiduRequest)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, bytes.NewReader(data), nil
 	}
 }
 
-func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	return request, nil
+func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(meta, c, req)
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return adaptor.DoRequestHelper(a, c, meta, requestBody)
-}
-
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	if meta.IsStream {
-		err, usage = StreamHandler(c, resp)
-	} else {
-		switch meta.Mode {
-		case relaymode.Embeddings:
-			err, usage = EmbeddingHandler(c, resp)
-		default:
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	switch meta.Mode {
+	case relaymode.Embeddings:
+		err, usage = EmbeddingHandler(c, resp)
+	default:
+		// if IsV2(meta.ActualModelName) {
+		// 	usage, err = openai.DoResponse(meta, c, resp)
+		// 	return
+		// }
+		if utils.IsStreamResponse(resp) {
+			err, usage = StreamHandler(c, resp)
+		} else {
 			err, usage = Handler(c, resp)
 		}
 	}

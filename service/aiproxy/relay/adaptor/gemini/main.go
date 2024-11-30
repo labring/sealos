@@ -16,7 +16,9 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +35,13 @@ var mimeTypeMap = map[string]string{
 }
 
 // Setting safety to the lowest possible values since Gemini is already powerless enough
-func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *ChatRequest {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (*ChatRequest, error) {
+	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	textRequest.Model = meta.ActualModelName
+	meta.Set("stream", textRequest.Stream)
 	safetySetting := config.GetGeminiSafetySetting()
 	geminiRequest := ChatRequest{
 		Contents: make([]ChatContent, 0, len(textRequest.Messages)),
@@ -146,7 +154,7 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *ChatRequest {
 		}
 	}
 
-	return &geminiRequest
+	return &geminiRequest, nil
 }
 
 func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *BatchEmbeddingRequest {

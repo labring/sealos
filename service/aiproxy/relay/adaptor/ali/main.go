@@ -5,51 +5,27 @@ import (
 	"strings"
 
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 // https://help.aliyun.com/document_detail/613695.html?spm=a2c4g.2399480.0.0.1adb778fAdzP9w#341800c0f8w0r
 
-func convertChatRequest(request *relaymodel.GeneralOpenAIRequest) *relaymodel.GeneralOpenAIRequest {
-	if request.TopP != nil && *request.TopP >= 1 {
-		*request.TopP = 0.9999
-	}
-	if request.Stream {
-		if request.StreamOptions == nil {
-			request.StreamOptions = &relaymodel.StreamOptions{}
-		}
-		request.StreamOptions.IncludeUsage = true
-	}
-	return request
-}
-
-func ConvertEmbeddingRequest(request *relaymodel.GeneralOpenAIRequest) *EmbeddingRequest {
-	return &EmbeddingRequest{
-		Model: request.Model,
-		Input: struct {
-			Texts []string `json:"texts"`
-		}{
-			Texts: request.ParseInput(),
-		},
-	}
-}
-
 func ConvertImageRequest(request *relaymodel.ImageRequest) *ImageRequest {
 	var imageRequest ImageRequest
 	imageRequest.Input.Prompt = request.Prompt
 	imageRequest.Model = request.Model
-	imageRequest.Parameters.Size = strings.Replace(request.Size, "x", "*", -1)
+	imageRequest.Parameters.Size = strings.ReplaceAll(request.Size, "x", "*")
 	imageRequest.Parameters.N = request.N
 	imageRequest.ResponseFormat = request.ResponseFormat
 
 	return &imageRequest
 }
 
-func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func EmbeddingHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	var aliResponse EmbeddingResponse
 	err := json.NewDecoder(resp.Body).Decode(&aliResponse)
 	if err != nil {
@@ -72,7 +48,7 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWit
 			StatusCode: resp.StatusCode,
 		}, nil
 	}
-	requestModel := c.GetString(ctxkey.RequestModel)
+	requestModel := meta.OriginModelName
 	fullTextResponse := embeddingResponseAli2OpenAI(&aliResponse)
 	fullTextResponse.Model = requestModel
 	jsonResponse, err := json.Marshal(fullTextResponse)

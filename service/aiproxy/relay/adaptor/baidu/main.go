@@ -2,13 +2,7 @@ package baidu
 
 import (
 	"bufio"
-	"context"
-	"errors"
-	"fmt"
 	"net/http"
-	"strings"
-	"sync"
-	"time"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -16,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
@@ -24,11 +17,6 @@ import (
 )
 
 // https://cloud.baidu.com/doc/WENXINWORKSHOP/s/flfmc9do2
-
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-}
 
 type Message struct {
 	Role    string `json:"role"`
@@ -52,8 +40,6 @@ type Error struct {
 	ErrorMsg  string `json:"error_msg"`
 	ErrorCode int    `json:"error_code"`
 }
-
-var baiduTokenStore sync.Map
 
 func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 	baiduRequest := ChatRequest{
@@ -257,64 +243,4 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStat
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
 	return nil, &fullTextResponse.Usage
-}
-
-func GetAccessToken(apiKey string) (string, error) {
-	if val, ok := baiduTokenStore.Load(apiKey); ok {
-		var accessToken AccessToken
-		if accessToken, ok = val.(AccessToken); ok {
-			// soon this will expire
-			if time.Now().Add(time.Hour).After(accessToken.ExpiresAt) {
-				go func() {
-					_, _ = getBaiduAccessTokenHelper(apiKey)
-				}()
-			}
-			return accessToken.AccessToken, nil
-		}
-	}
-	accessToken, err := getBaiduAccessTokenHelper(apiKey)
-	if err != nil {
-		return "", err
-	}
-	if accessToken == nil {
-		return "", errors.New("GetAccessToken return a nil token")
-	}
-	return accessToken.AccessToken, nil
-}
-
-func getBaiduAccessTokenHelper(apiKey string) (*AccessToken, error) {
-	parts := strings.Split(apiKey, "|")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid baidu apikey")
-	}
-	req, err := http.NewRequestWithContext(context.Background(),
-		http.MethodPost,
-		fmt.Sprintf("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s",
-			parts[0], parts[1]),
-		nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	res, err := client.ImpatientHTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	var accessToken AccessToken
-	err = json.NewDecoder(res.Body).Decode(&accessToken)
-	if err != nil {
-		return nil, err
-	}
-	if accessToken.Error != "" {
-		return nil, errors.New(accessToken.Error + ": " + accessToken.ErrorDescription)
-	}
-	if accessToken.AccessToken == "" {
-		return nil, errors.New("getBaiduAccessTokenHelper get empty access token")
-	}
-	accessToken.ExpiresAt = time.Now().Add(time.Duration(accessToken.ExpiresIn) * time.Second)
-	baiduTokenStore.Store(apiKey, accessToken)
-	return &accessToken, nil
 }

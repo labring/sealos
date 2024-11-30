@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -13,21 +12,16 @@ import (
 	"sync"
 	"time"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
-	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
-	relay "github.com/labring/sealos/service/aiproxy/relay"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
-	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 func buildTestRequest(model string) *relaymodel.GeneralOpenAIRequest {
@@ -69,39 +63,15 @@ func testChannel(channel *model.Channel, request *relaymodel.GeneralOpenAIReques
 	}
 	c.Request.Header.Set("Authorization", "Bearer "+channel.Key)
 	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set(ctxkey.Channel, channel.Type)
-	c.Set(ctxkey.BaseURL, channel.BaseURL)
-	c.Set(ctxkey.Config, channel.Config)
-	middleware.SetupContextForSelectedChannel(c, channel, "")
+	c.Set(ctxkey.Channel, channel)
 	meta := meta.GetByContext(c)
-	apiType := channeltype.ToAPIType(channel.Type)
-	adaptor := relay.GetAdaptor(apiType)
-	if adaptor == nil {
-		return nil, fmt.Errorf("invalid api type: %d, adaptor is nil", apiType)
+	adaptor, ok := channeltype.GetAdaptor(channel.Type)
+	if !ok {
+		return nil, fmt.Errorf("invalid api type: %d, adaptor is nil", channel.Type)
 	}
-	adaptor.Init(meta)
 	meta.OriginModelName, meta.ActualModelName = request.Model, modelName
 	request.Model = modelName
-	convertedRequest, err := adaptor.ConvertRequest(c, relaymode.ChatCompletions, request)
-	if err != nil {
-		return nil, err
-	}
-	jsonData, err := json.Marshal(convertedRequest)
-	if err != nil {
-		return nil, err
-	}
-	logger.SysLogf("testing channel #%d, request: \n%s", channel.ID, jsonData)
-	requestBody := bytes.NewBuffer(jsonData)
-	c.Request.Body = io.NopCloser(requestBody)
-	resp, err := adaptor.DoRequest(c, meta, requestBody)
-	if err != nil {
-		return nil, err
-	}
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		err := controller.RelayErrorHandler(resp, meta.Mode)
-		return &err.Error, errors.New(err.Error.Message)
-	}
-	usage, respErr := adaptor.DoResponse(c, resp, meta)
+	usage, respErr := controller.DoHelper(adaptor, c, meta)
 	if respErr != nil {
 		return &respErr.Error, errors.New(respErr.Error.Message)
 	}

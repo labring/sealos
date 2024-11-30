@@ -1,14 +1,17 @@
 package vertexai
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/gemini"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -36,19 +39,24 @@ var ModelList = []*model.ModelConfig{
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertRequest(c *gin.Context, _ int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
 	if request == nil {
-		return nil, errors.New("request is nil")
+		return nil, nil, errors.New("request is nil")
 	}
 
-	geminiRequest := gemini.ConvertRequest(request)
-	c.Set(ctxkey.RequestModel, request.Model)
-	c.Set(ctxkey.ConvertedRequest, geminiRequest)
-	return geminiRequest, nil
+	geminiRequest, err := gemini.ConvertRequest(meta, request)
+	if err != nil {
+		return nil, nil, err
+	}
+	data, err := json.Marshal(geminiRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nil, bytes.NewReader(data), nil
 }
 
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	if meta.IsStream {
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	if utils.IsStreamResponse(resp) {
 		var responseText string
 		err, responseText = gemini.StreamHandler(c, resp)
 		usage = openai.ResponseText2Usage(responseText, meta.ActualModelName, meta.PromptTokens)

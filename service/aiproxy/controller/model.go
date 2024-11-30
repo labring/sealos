@@ -12,11 +12,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/model"
-	relay "github.com/labring/sealos/service/aiproxy/relay"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/apitype"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
-	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -82,15 +78,10 @@ func init() {
 		Group:              nil,
 		IsBlocking:         false,
 	})
+
+	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
-	for i := 0; i < apitype.Dummy; i++ {
-		if i == apitype.AIProxyLibrary {
-			continue
-		}
-		adaptor := relay.GetAdaptor(i)
-		adaptor.Init(&meta.Meta{
-			ChannelType: i,
-		})
+	for i, adaptor := range channeltype.ChannelAdaptor {
 		channelName := adaptor.GetChannelName()
 		modelNames := adaptor.GetModelList()
 		for _, model := range modelNames {
@@ -104,40 +95,14 @@ func init() {
 				Parent:     nil,
 			})
 		}
-	}
-	for _, channelType := range openai.CompatibleChannels {
-		if channelType == channeltype.Azure {
-			continue
-		}
-		channelName, channelModelList := openai.GetCompatibleChannelMeta(channelType)
-		for _, model := range channelModelList {
-			models = append(models, OpenAIModels{
-				ID:         model.Model,
-				Object:     "model",
-				Created:    1626777600,
-				OwnedBy:    channelName,
-				Permission: permission,
-				Root:       model.Model,
-				Parent:     nil,
-			})
+		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelNames))
+		for idx, model := range modelNames {
+			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(model)
 		}
 	}
 	modelsMap = make(map[string]OpenAIModels)
 	for _, model := range models {
 		modelsMap[model.ID] = model
-	}
-	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
-	for i := 1; i < channeltype.Dummy; i++ {
-		adaptor := relay.GetAdaptor(channeltype.ToAPIType(i))
-		meta := &meta.Meta{
-			ChannelType: i,
-		}
-		adaptor.Init(meta)
-		modelList := adaptor.GetModelList()
-		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelList))
-		for idx, model := range modelList {
-			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(model)
-		}
 	}
 	for _, models := range builtinChannelID2Models {
 		sort.Slice(models, func(i, j int) bool {
@@ -257,10 +222,10 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 }
 
 func ListModels(c *gin.Context) {
-	availableModels := c.GetStringSlice(ctxkey.AvailableModels)
-	availableOpenAIModels := make([]OpenAIModels, 0, len(availableModels))
+	channel := c.MustGet(ctxkey.Channel).(*model.Channel)
+	availableOpenAIModels := make([]OpenAIModels, 0, len(channel.Models))
 
-	for _, modelName := range availableModels {
+	for _, modelName := range channel.Models {
 		if model, ok := modelsMap[modelName]; ok {
 			availableOpenAIModels = append(availableOpenAIModels, model)
 			continue
@@ -282,9 +247,10 @@ func ListModels(c *gin.Context) {
 }
 
 func RetrieveModel(c *gin.Context) {
+	channel := c.MustGet(ctxkey.Channel).(*model.Channel)
 	modelID := c.Param("model")
 	model, ok := modelsMap[modelID]
-	if !ok || !slices.Contains(c.GetStringSlice(ctxkey.AvailableModels), modelID) {
+	if !ok || !slices.Contains(channel.Models, modelID) {
 		c.JSON(200, gin.H{
 			"error": relaymodel.Error{
 				Message: fmt.Sprintf("the model '%s' does not exist", modelID),

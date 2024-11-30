@@ -1,4 +1,4 @@
-package controller
+package utils
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
@@ -56,7 +57,7 @@ func (e GeneralErrorResponse) ToMessage() string {
 	return ""
 }
 
-func RelayErrorHandler(resp *http.Response, relayMode int) *model.ErrorWithStatusCode {
+func RelayErrorHandler(meta *meta.Meta, resp *http.Response) *model.ErrorWithStatusCode {
 	if resp == nil {
 		return &model.ErrorWithStatusCode{
 			StatusCode: 500,
@@ -67,7 +68,7 @@ func RelayErrorHandler(resp *http.Response, relayMode int) *model.ErrorWithStatu
 			},
 		}
 	}
-	switch relayMode {
+	switch meta.Mode {
 	case relaymode.Rerank:
 		return RerankErrorHandler(resp)
 	default:

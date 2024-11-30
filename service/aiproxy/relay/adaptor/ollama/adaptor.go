@@ -1,79 +1,104 @@
 package ollama
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
+	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 type Adaptor struct{}
 
-func (a *Adaptor) Init(_ *meta.Meta) {
-}
+const baseURL = "http://localhost:11434"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	// https://github.com/ollama/ollama/blob/main/docs/api.md
-	fullRequestURL := meta.BaseURL + "/api/chat"
-	if meta.Mode == relaymode.Embeddings {
-		fullRequestURL = meta.BaseURL + "/api/embed"
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
 	}
-	return fullRequestURL, nil
+	switch meta.Mode {
+	case relaymode.Embeddings:
+		return u + "/api/embed", nil
+	case relaymode.ChatCompletions:
+		return u + "/api/chat", nil
+	default:
+		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
+	}
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *relaymodel.GeneralOpenAIRequest) (any, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
 	if request == nil {
-		return nil, errors.New("request is nil")
+		return nil, nil, errors.New("request is nil")
 	}
-	switch relayMode {
+	switch meta.Mode {
 	case relaymode.Embeddings:
-		ollamaEmbeddingRequest := ConvertEmbeddingRequest(request)
-		return ollamaEmbeddingRequest, nil
+		var req relaymodel.GeneralOpenAIRequest
+		err := common.UnmarshalBodyReusable(request, &req)
+		if err != nil {
+			return nil, nil, err
+		}
+		req.Model = meta.ActualModelName
+		ollamaEmbeddingRequest := ConvertEmbeddingRequest(&req)
+		data, err := json.Marshal(ollamaEmbeddingRequest)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, bytes.NewReader(data), nil
+	case relaymode.ChatCompletions:
+		var req relaymodel.GeneralOpenAIRequest
+		err := common.UnmarshalBodyReusable(request, &req)
+		if err != nil {
+			return nil, nil, err
+		}
+		req.Model = meta.ActualModelName
+		ollamaChatRequest := ConvertRequest(&req)
+		data, err := json.Marshal(ollamaChatRequest)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, bytes.NewReader(data), nil
 	default:
-		return ConvertRequest(request), nil
+		return nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
 	}
 }
 
-func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	return request, nil
+func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(meta, c, req)
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return adaptor.DoRequestHelper(a, c, meta, requestBody)
-}
-
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
+func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.Reader, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	if meta.IsStream {
-		err, usage = StreamHandler(c, resp)
-	} else {
-		switch meta.Mode {
-		case relaymode.Embeddings:
-			err, usage = EmbeddingHandler(c, resp)
-		default:
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	switch meta.Mode {
+	case relaymode.Embeddings:
+		err, usage = EmbeddingHandler(c, resp)
+	default:
+		if utils.IsStreamResponse(resp) {
+			err, usage = StreamHandler(c, resp)
+		} else {
 			err, usage = Handler(c, resp)
 		}
 	}

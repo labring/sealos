@@ -13,10 +13,11 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.ErrorWithStatusCode, *model.Usage) {
+func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	responseFormat := c.GetString("response_format")
 
 	var aliTaskResponse TaskResponse
@@ -38,7 +39,7 @@ func ImageHandler(c *gin.Context, resp *http.Response, apiKey string) (*model.Er
 		return openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError), nil
 	}
 
-	aliResponse, err := asyncTaskWait(c, aliTaskResponse.Output.TaskID, apiKey)
+	aliResponse, err := asyncTaskWait(c, aliTaskResponse.Output.TaskID, meta.Channel.Key)
 	if err != nil {
 		return openai.ErrorWrapper(err, "ali_async_task_wait_failed", http.StatusInternalServerError), nil
 	}

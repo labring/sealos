@@ -2,6 +2,7 @@ package togetherai
 
 import (
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
@@ -24,4 +25,12 @@ var ModelList = []*model.ModelConfig{
 		Model: "Qwen/Qwen1.5-72B-Chat",
 		Type:  relaymode.ChatCompletions,
 	},
+}
+
+type Adaptor struct {
+	openai.Adaptor
+}
+
+func (a *Adaptor) GetModelList() []*model.ModelConfig {
+	return ModelList
 }
