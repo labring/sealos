@@ -170,7 +170,7 @@ func TTSDoRequest(meta *meta.Meta, req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func TTSDoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	conn := meta.MustGet("ws_conn").(*websocket.Conn)
 	defer conn.Close()
 

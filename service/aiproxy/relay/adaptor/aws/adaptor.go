@@ -26,7 +26,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	return adaptor.ConvertRequest(meta, req)
 }
 
-func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	adaptor, ok := meta.Get("awsAdapter")
 	if !ok {
 		return nil, &relaymodel.ErrorWithStatusCode{
@@ -53,7 +53,7 @@ func (a *Adaptor) GetRequestURL(_ *meta.Meta) (string, error) {
 	return "", nil
 }
 
-func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, _ *http.Request) error {
+func (a *Adaptor) SetupRequestHeader(_ *meta.Meta, _ *gin.Context, _ *http.Request) error {
 	return nil
 }
 
