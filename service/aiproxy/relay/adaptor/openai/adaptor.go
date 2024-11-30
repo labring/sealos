@@ -53,7 +53,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		fallthrough
+		return ConvertEmbeddingsRequest(meta, req)
 	case relaymode.ChatCompletions:
 		return ConvertTextRequest(meta, req)
 	case relaymode.ImagesGenerations:
@@ -67,6 +67,21 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	default:
 		return nil, nil, errors.New("unsupported mode")
 	}
+}
+
+func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	reqMap := make(map[string]any)
+	err := common.UnmarshalBodyReusable(req, &reqMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reqMap["model"] = meta.ActualModelName
+	jsonData, err := json.Marshal(reqMap)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nil, bytes.NewReader(jsonData), nil
 }
 
 const DoNotPatchStreamOptionsIncludeUsageMetaKey = "do_not_patch_stream_options_include_usage"
@@ -248,6 +263,8 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 		usage, err = TTSHandler(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)
+	case relaymode.Embeddings:
+		fallthrough
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
 			usage, err = StreamHandler(meta, c, resp)

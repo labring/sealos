@@ -519,4 +519,26 @@ var ModelList = []*model.ModelConfig{
 			model.ModelConfigMaxInputTokensKey:   4000,
 		},
 	},
+
+	{
+		Model: "text-embedding-v1",
+		Type:  relaymode.Embeddings,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 2048,
+		},
+	},
+	{
+		Model: "text-embedding-v2",
+		Type:  relaymode.Embeddings,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 2048,
+		},
+	},
+	{
+		Model: "text-embedding-v3",
+		Type:  relaymode.Embeddings,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 8192,
+		},
+	},
 }
