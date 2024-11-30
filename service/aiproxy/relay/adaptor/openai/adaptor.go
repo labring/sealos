@@ -72,32 +72,54 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 const DoNotPatchStreamOptionsIncludeUsageMetaKey = "do_not_patch_stream_options_include_usage"
 
 func ConvertTextRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(req)
-	if err != nil {
-		return nil, nil, err
-	}
 	reqMap := make(map[string]any)
-	err = common.UnmarshalBodyReusable(req, &reqMap)
+	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
 		return nil, nil, err
 	}
-	if textRequest.Stream && !meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey) {
-		if reqMap["stream_options"] == nil {
-			reqMap["stream_options"] = map[string]any{
-				"include_usage": true,
-			}
-		} else if v, ok := reqMap["stream_options"].(map[string]any); ok {
-			v["include_usage"] = true
-		} else {
-			return nil, nil, errors.New("stream_options is not a map")
+
+	if !meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey) {
+		if err := patchStreamOptions(reqMap); err != nil {
+			return nil, nil, err
 		}
 	}
+
 	reqMap["model"] = meta.ActualModelName
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
 		return nil, nil, err
 	}
 	return nil, bytes.NewReader(jsonData), nil
+}
+
+func patchStreamOptions(reqMap map[string]any) error {
+	stream, ok := reqMap["stream"]
+	if !ok {
+		return nil
+	}
+
+	streamBool, ok := stream.(bool)
+	if !ok {
+		return errors.New("stream is not a boolean")
+	}
+
+	if !streamBool {
+		return nil
+	}
+
+	streamOptions, ok := reqMap["stream_options"].(map[string]any)
+	if !ok {
+		if reqMap["stream_options"] != nil {
+			return errors.New("stream_options is not a map")
+		}
+		reqMap["stream_options"] = map[string]any{
+			"include_usage": true,
+		}
+		return nil
+	}
+
+	streamOptions["include_usage"] = true
+	return nil
 }
 
 func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {

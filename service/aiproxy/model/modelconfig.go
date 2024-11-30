@@ -19,6 +19,7 @@ const (
 	ModelConfigMaxOutputTokensKey  ModelConfigKey = "max_output_tokens"
 	ModelConfigToolChoiceKey       ModelConfigKey = "tool_choice"
 	ModelConfigFunctionCallingKey  ModelConfigKey = "function_calling"
+	ModelConfigSupportFormatsKey   ModelConfigKey = "support_formats"
 )
 
 //nolint:revive
