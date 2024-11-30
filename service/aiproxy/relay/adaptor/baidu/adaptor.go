@@ -118,7 +118,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return fullRequestURL, nil
 }
 
-func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
 	// if IsV2(meta.ActualModelName) {
 	// 	token, err := GetBearerToken(meta.APIKey)
 	// 	if err != nil {
