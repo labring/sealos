@@ -20,6 +20,7 @@ const (
 	ModelConfigToolChoiceKey       ModelConfigKey = "tool_choice"
 	ModelConfigFunctionCallingKey  ModelConfigKey = "function_calling"
 	ModelConfigSupportFormatsKey   ModelConfigKey = "support_formats"
+	ModelConfigSupportVoicesKey    ModelConfigKey = "support_voices"
 )
 
 //nolint:revive

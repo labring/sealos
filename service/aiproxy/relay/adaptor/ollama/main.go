@@ -2,6 +2,8 @@ package ollama
 
 import (
 	"bufio"
+	"bytes"
+	"io"
 	"net/http"
 	"strings"
 
@@ -18,10 +20,18 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	var request relaymodel.GeneralOpenAIRequest
+	err := common.UnmarshalBodyReusable(req, &request)
+	if err != nil {
+		return nil, nil, err
+	}
+	request.Model = meta.ActualModelName
+
 	ollamaRequest := ChatRequest{
 		Model: request.Model,
 		Options: &Options{
@@ -41,10 +51,13 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 		var contentText string
 		for _, part := range openaiContent {
 			switch part.Type {
-			case model.ContentTypeText:
+			case relaymodel.ContentTypeText:
 				contentText = part.Text
-			case model.ContentTypeImageURL:
-				_, data, _ := image.GetImageFromURL(part.ImageURL.URL)
+			case relaymodel.ContentTypeImageURL:
+				_, data, err := image.GetImageFromURL(req.Context(), part.ImageURL.URL)
+				if err != nil {
+					return nil, nil, err
+				}
 				imageUrls = append(imageUrls, data)
 			}
 		}
@@ -54,13 +67,19 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 			Images:  imageUrls,
 		})
 	}
-	return &ollamaRequest
+
+	data, err := json.Marshal(ollamaRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return nil, bytes.NewReader(data), nil
 }
 
 func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 	choice := openai.TextResponseChoice{
 		Index: 0,
-		Message: model.Message{
+		Message: relaymodel.Message{
 			Role:    response.Message.Role,
 			Content: response.Message.Content,
 		},
@@ -74,7 +93,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
 		Choices: []*openai.TextResponseChoice{&choice},
-		Usage: model.Usage{
+		Usage: relaymodel.Usage{
 			PromptTokens:     response.PromptEvalCount,
 			CompletionTokens: response.EvalCount,
 			TotalTokens:      response.PromptEvalCount + response.EvalCount,
@@ -100,10 +119,10 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 	return &response
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
-	var usage model.Usage
+	var usage relaymodel.Usage
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {
@@ -155,7 +174,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequest {
+func ConvertEmbeddingRequest(request *relaymodel.GeneralOpenAIRequest) *EmbeddingRequest {
 	return &EmbeddingRequest{
 		Model: request.Model,
 		Input: request.ParseInput(),
@@ -169,7 +188,7 @@ func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequ
 	}
 }
 
-func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
 	var ollamaResponse EmbeddingResponse
@@ -179,8 +198,8 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStat
 	}
 
 	if ollamaResponse.Error != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
+		return &relaymodel.ErrorWithStatusCode{
+			Error: relaymodel.Error{
 				Message: ollamaResponse.Error,
 				Type:    "ollama_error",
 				Param:   "",
@@ -206,7 +225,7 @@ func embeddingResponseOllama2OpenAI(response *EmbeddingResponse) *openai.Embeddi
 		Object: "list",
 		Data:   make([]*openai.EmbeddingResponseItem, 0, 1),
 		Model:  response.Model,
-		Usage:  model.Usage{TotalTokens: 0},
+		Usage:  relaymodel.Usage{TotalTokens: 0},
 	}
 
 	for i, embedding := range response.Embeddings {
@@ -219,7 +238,7 @@ func embeddingResponseOllama2OpenAI(response *EmbeddingResponse) *openai.Embeddi
 	return &openAIEmbeddingResponse
 }
 
-func Handler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
 	var ollamaResponse ChatResponse
@@ -228,8 +247,8 @@ func Handler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
 	if ollamaResponse.Error != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
+		return &relaymodel.ErrorWithStatusCode{
+			Error: relaymodel.Error{
 				Message: ollamaResponse.Error,
 				Type:    "ollama_error",
 				Param:   "",

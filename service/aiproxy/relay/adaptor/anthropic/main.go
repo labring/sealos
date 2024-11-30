@@ -145,7 +145,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 				content.Source = &ImageSource{
 					Type: "base64",
 				}
-				mimeType, data, _ := image.GetImageFromURL(part.ImageURL.URL)
+				mimeType, data, err := image.GetImageFromURL(req.Context(), part.ImageURL.URL)
+				if err != nil {
+					return nil, err
+				}
 				content.Source.MediaType = mimeType
 				content.Source.Data = data
 			}

@@ -3,7 +3,6 @@ package ali
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"io"
 	"net/http"
@@ -13,12 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
+
+const MetaResponseFormat = "response_format"
 
 func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalImageRequest(req)
@@ -34,6 +36,8 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Re
 	imageRequest.Parameters.N = request.N
 	imageRequest.ResponseFormat = request.ResponseFormat
 
+	meta.Set(MetaResponseFormat, request.ResponseFormat)
+
 	data, err := json.Marshal(&imageRequest)
 	if err != nil {
 		return nil, nil, err
@@ -43,35 +47,35 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Re
 	}, bytes.NewReader(data), nil
 }
 
-func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
-	responseFormat := c.GetString("response_format")
+func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	responseFormat := meta.MustGet(MetaResponseFormat).(string)
 
 	var aliTaskResponse TaskResponse
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		return openai.ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
 	}
 	err = json.Unmarshal(responseBody, &aliTaskResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	if aliTaskResponse.Message != "" {
 		logger.Error(c, "aliAsyncTask err: "+aliTaskResponse.Message)
-		return openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError)
 	}
 
 	aliResponse, err := asyncTaskWait(c, aliTaskResponse.Output.TaskID, meta.Channel.Key)
 	if err != nil {
-		return openai.ErrorWrapper(err, "ali_async_task_wait_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "ali_async_task_wait_failed", http.StatusInternalServerError)
 	}
 
 	if aliResponse.Output.TaskStatus != "SUCCEEDED" {
-		return &model.ErrorWithStatusCode{
+		return nil, &model.ErrorWithStatusCode{
 			Error: model.Error{
 				Message: aliResponse.Output.Message,
 				Type:    "ali_error",
@@ -79,18 +83,21 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 				Code:    aliResponse.Output.Code,
 			},
 			StatusCode: resp.StatusCode,
-		}, nil
+		}
 	}
 
 	fullTextResponse := responseAli2OpenAIImage(c.Request.Context(), aliResponse, responseFormat)
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
-	_, _ = c.Writer.Write(jsonResponse)
-	return nil, nil
+	_, err = c.Writer.Write(jsonResponse)
+	if err != nil {
+		logger.Error(c, "aliImageHandler write response body failed: "+err.Error())
+	}
+	return &model.Usage{}, nil
 }
 
 func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, error) {
@@ -167,7 +174,7 @@ func responseAli2OpenAIImage(ctx context.Context, response *TaskResponse, respon
 		var b64Json string
 		if responseFormat == "b64_json" {
 			// 读取 data.Url 的图片数据并转存到 b64Json
-			imageData, err := getImageData(ctx, data.URL)
+			_, imageData, err := image.GetImageFromURL(ctx, data.URL)
 			if err != nil {
 				// 处理获取图片数据失败的情况
 				logger.Error(ctx, "getImageData Error getting image data: "+err.Error())
@@ -175,7 +182,7 @@ func responseAli2OpenAIImage(ctx context.Context, response *TaskResponse, respon
 			}
 
 			// 将图片数据转为 Base64 编码的字符串
-			b64Json = Base64Encode(imageData)
+			b64Json = imageData
 		} else {
 			// 如果 responseFormat 不是 "b64_json"，则直接使用 data.B64Image
 			b64Json = data.B64Image
@@ -188,28 +195,4 @@ func responseAli2OpenAIImage(ctx context.Context, response *TaskResponse, respon
 		})
 	}
 	return &imageResponse
-}
-
-func getImageData(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	imageData, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return imageData, nil
-}
-
-func Base64Encode(data []byte) string {
-	b64Json := base64.StdEncoding.EncodeToString(data)
-	return b64Json
 }

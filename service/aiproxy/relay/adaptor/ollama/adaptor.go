@@ -62,18 +62,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.H
 		}
 		return nil, bytes.NewReader(data), nil
 	case relaymode.ChatCompletions:
-		var req relaymodel.GeneralOpenAIRequest
-		err := common.UnmarshalBodyReusable(request, &req)
-		if err != nil {
-			return nil, nil, err
-		}
-		req.Model = meta.ActualModelName
-		ollamaChatRequest := ConvertRequest(&req)
-		data, err := json.Marshal(ollamaChatRequest)
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, bytes.NewReader(data), nil
+		return ConvertRequest(meta, request)
 	default:
 		return nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
 	}

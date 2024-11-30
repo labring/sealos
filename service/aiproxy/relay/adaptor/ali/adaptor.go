@@ -81,7 +81,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.Embeddings:
 		usage, err = EmbeddingsHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
-		err, usage = ImageHandler(meta, c, resp)
+		usage, err = ImageHandler(meta, c, resp)
 	case relaymode.ChatCompletions:
 		usage, err = openai.DoResponse(meta, c, resp)
 	case relaymode.Rerank:

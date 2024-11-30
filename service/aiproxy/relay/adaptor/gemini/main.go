@@ -118,7 +118,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*ChatRequest, error) {
 				if imageNum > VisionMaxImageNum {
 					continue
 				}
-				mimeType, data, _ := image.GetImageFromURL(part.ImageURL.URL)
+				mimeType, data, err := image.GetImageFromURL(req.Context(), part.ImageURL.URL)
+				if err != nil {
+					return nil, err
+				}
 				parts = append(parts, Part{
 					InlineData: &InlineData{
 						MimeType: mimeType,
