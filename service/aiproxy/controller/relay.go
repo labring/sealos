@@ -55,9 +55,9 @@ func Relay(c *gin.Context) {
 		return
 	}
 	lastFailedChannelID := channel.ID
-	group := c.GetString(ctxkey.Group)
+	group := c.MustGet(ctxkey.Group).(*dbmodel.GroupCache)
 	originalModel := c.GetString(ctxkey.OriginalModel)
-	go processChannelRelayError(ctx, group, channel.ID, bizErr)
+	go processChannelRelayError(ctx, group.ID, channel.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
@@ -87,7 +87,7 @@ func Relay(c *gin.Context) {
 		}
 		lastFailedChannelID = channel.ID
 		// BUG: bizErr is in race condition
-		go processChannelRelayError(ctx, group, channel.ID, bizErr)
+		go processChannelRelayError(ctx, group.ID, channel.ID, bizErr)
 	}
 	if bizErr != nil {
 		if bizErr.StatusCode == http.StatusTooManyRequests {
