@@ -11,7 +11,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
-	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -84,24 +83,24 @@ func init() {
 	for i, adaptor := range channeltype.ChannelAdaptor {
 		modelNames := adaptor.GetModelList()
 		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelNames))
-		for idx, model := range modelNames {
-			if model.Owner == "" {
-				model.Owner = dbmodel.ModelOwner(adaptor.GetChannelName())
+		for idx, _model := range modelNames {
+			if _model.Owner == "" {
+				_model.Owner = model.ModelOwner(adaptor.GetChannelName())
 			}
-			if v, ok := modelsMap[model.Model]; !ok {
-				modelsMap[model.Model] = &OpenAIModels{
-					ID:         model.Model,
+			if v, ok := modelsMap[_model.Model]; !ok {
+				modelsMap[_model.Model] = &OpenAIModels{
+					ID:         _model.Model,
 					Object:     "model",
 					Created:    1626777600,
-					OwnedBy:    string(model.Owner),
+					OwnedBy:    string(_model.Owner),
 					Permission: permission,
-					Root:       model.Model,
+					Root:       _model.Model,
 					Parent:     nil,
 				}
-			} else if v.OwnedBy != string(model.Owner) {
-				logger.FatalLog(fmt.Sprintf("model %s owner mismatch, expect %s, actual %s", model.Model, string(model.Owner), v.OwnedBy))
+			} else if v.OwnedBy != string(_model.Owner) {
+				logger.FatalLog(fmt.Sprintf("model %s owner mismatch, expect %s, actual %s", _model.Model, string(_model.Owner), v.OwnedBy))
 			}
-			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(model)
+			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(_model)
 		}
 	}
 	for _, models := range builtinChannelID2Models {
