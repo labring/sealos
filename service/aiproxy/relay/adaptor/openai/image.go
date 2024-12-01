@@ -35,11 +35,11 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 
 	responseFormat := meta.GetString(MetaResponseFormat)
 
-	var imageResponse ImageResponse
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
+	var imageResponse ImageResponse
 	err = json.Unmarshal(responseBody, &imageResponse)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
@@ -52,6 +52,9 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 
 	if responseFormat == "b64_json" {
 		for _, data := range imageResponse.Data {
+			if len(data.B64Json) > 0 {
+				continue
+			}
 			_, data.B64Json, err = image.GetImageFromURL(c.Request.Context(), data.URL)
 			if err != nil {
 				return usage, ErrorWrapper(err, "get_image_from_url_failed", http.StatusInternalServerError)
