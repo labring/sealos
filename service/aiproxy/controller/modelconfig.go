@@ -98,7 +98,8 @@ func SearchModelConfigs(c *gin.Context) {
 		perPage = 100
 	}
 	_model := c.Query("model")
-	configs, total, err := model.SearchModelConfigs(keyword, p*perPage, perPage, _model)
+	owner := c.Query("owner")
+	configs, total, err := model.SearchModelConfigs(keyword, p*perPage, perPage, _model, model.ModelOwner(owner))
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

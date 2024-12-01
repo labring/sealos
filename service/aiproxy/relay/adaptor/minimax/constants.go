@@ -11,6 +11,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "abab7-chat-preview",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
 		Config: map[model.ModelConfigKey]any{
@@ -20,6 +21,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "abab6.5s-chat",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
 		Config: map[model.ModelConfigKey]any{
@@ -29,6 +31,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "abab6.5g-chat",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
 		Config: map[model.ModelConfigKey]any{
@@ -38,6 +41,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "abab6.5t-chat",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
 		Config: map[model.ModelConfigKey]any{
@@ -47,6 +51,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "abab5.5s-chat",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
 		Config: map[model.ModelConfigKey]any{
@@ -56,6 +61,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "abab5.5-chat",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.015,
 		OutputPrice: 0.015,
 		Config: map[model.ModelConfigKey]any{
@@ -66,6 +72,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "speech-01-turbo",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerMiniMax,
 		InputPrice: 0.2,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigSupportVoicesKey: []string{

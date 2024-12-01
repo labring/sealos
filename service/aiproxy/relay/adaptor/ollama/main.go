@@ -22,6 +22,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
@@ -174,8 +175,13 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithSt
 	return nil, &usage
 }
 
-func ConvertEmbeddingRequest(request *relaymodel.GeneralOpenAIRequest) *EmbeddingRequest {
-	return &EmbeddingRequest{
+func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	request.Model = meta.ActualModelName
+	data, err := json.Marshal(&EmbeddingRequest{
 		Model: request.Model,
 		Input: request.ParseInput(),
 		Options: &Options{
@@ -185,7 +191,11 @@ func ConvertEmbeddingRequest(request *relaymodel.GeneralOpenAIRequest) *Embeddin
 			FrequencyPenalty: request.FrequencyPenalty,
 			PresencePenalty:  request.PresencePenalty,
 		},
+	})
+	if err != nil {
+		return nil, nil, err
 	}
+	return nil, bytes.NewReader(data), nil
 }
 
 func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {

@@ -9,21 +9,26 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "hunyuan-lite",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerTencent,
 	},
 	{
 		Model: "hunyuan-standard",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerTencent,
 	},
 	{
 		Model: "hunyuan-standard-256K",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerTencent,
 	},
 	{
 		Model: "hunyuan-pro",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerTencent,
 	},
 	{
 		Model: "hunyuan-vision",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerTencent,
 	},
 }
