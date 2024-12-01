@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 
@@ -55,8 +56,12 @@ func (c *BuiltinModelConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func SortBuiltinModelConfigsFunc(i, j *BuiltinModelConfig) int {
+	return model.SortModelConfigsFunc((*model.ModelConfig)(i), (*model.ModelConfig)(j))
+}
+
 var (
-	modelsMap               map[string]*OpenAIModels
+	builtinModelsMap        map[string]*OpenAIModels
 	builtinChannelID2Models map[int][]*BuiltinModelConfig
 )
 
@@ -78,7 +83,7 @@ func init() {
 	})
 
 	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
-	modelsMap = make(map[string]*OpenAIModels)
+	builtinModelsMap = make(map[string]*OpenAIModels)
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
 	for i, adaptor := range channeltype.ChannelAdaptor {
 		modelNames := adaptor.GetModelList()
@@ -87,8 +92,8 @@ func init() {
 			if _model.Owner == "" {
 				_model.Owner = model.ModelOwner(adaptor.GetChannelName())
 			}
-			if v, ok := modelsMap[_model.Model]; !ok {
-				modelsMap[_model.Model] = &OpenAIModels{
+			if v, ok := builtinModelsMap[_model.Model]; !ok {
+				builtinModelsMap[_model.Model] = &OpenAIModels{
 					ID:         _model.Model,
 					Object:     "model",
 					Created:    1626777600,
@@ -107,6 +112,7 @@ func init() {
 		sort.Slice(models, func(i, j int) bool {
 			return models[i].Model < models[j].Model
 		})
+		slices.SortStableFunc(models, SortBuiltinModelConfigsFunc)
 	}
 }
 
@@ -184,7 +190,7 @@ func EnabledModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    model.CacheGetAllModelsAndConfig(),
+		"data":    model.CacheGetEnabledModelConfigs(),
 	})
 }
 
@@ -192,7 +198,7 @@ func ChannelEnabledModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    model.CacheGetAllChannelModelsAndConfig(),
+		"data":    model.CacheGetChannelType2EnabledModelConfigs(),
 	})
 }
 
@@ -216,12 +222,12 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    model.CacheGetAllChannelModelsAndConfig()[channelTypeInt],
+		"data":    model.CacheGetChannelType2EnabledModelConfigs()[channelTypeInt],
 	})
 }
 
 func ListModels(c *gin.Context) {
-	models := model.CacheGetAllModelsAndConfig()
+	models := model.CacheGetEnabledModelConfigs()
 
 	availableOpenAIModels := make([]*OpenAIModels, 0, len(models))
 
@@ -244,7 +250,7 @@ func ListModels(c *gin.Context) {
 
 func RetrieveModel(c *gin.Context) {
 	modelName := c.Param("model")
-	enabledModels := model.GetModel2Channels()
+	enabledModels := model.GetEnabledModel2Channels()
 	model, ok := model.CacheGetModelConfig(modelName)
 
 	if _, exist := enabledModels[modelName]; !exist || !ok {
