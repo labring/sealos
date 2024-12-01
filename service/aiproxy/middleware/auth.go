@@ -59,7 +59,7 @@ func TokenAuth(c *gin.Context) {
 		return
 	}
 	if len(token.Models) == 0 {
-		token.Models = model.CacheGetAllModels()
+		token.Models = model.CacheGetEnabledModels()
 	}
 	if group.QPM <= 0 {
 		group.QPM = config.GetDefaultGroupQPM()
