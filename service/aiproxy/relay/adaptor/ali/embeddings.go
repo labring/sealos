@@ -56,7 +56,7 @@ func embeddingResponse2OpenAI(meta *meta.Meta, response *EmbeddingResponse) *ope
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
 		Data:   make([]*openai.EmbeddingResponseItem, 0, 1),
-		Model:  meta.ActualModelName,
+		Model:  meta.OriginModelName,
 		Usage:  response.Usage,
 	}
 

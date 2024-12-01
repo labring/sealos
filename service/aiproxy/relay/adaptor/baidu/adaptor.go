@@ -1,14 +1,12 @@
 package baidu
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -62,12 +60,16 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	// }
 
 	// https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
-	suffix := "chat/"
-	if strings.HasPrefix(meta.ActualModelName, "Embedding") ||
-		strings.HasPrefix(meta.ActualModelName, "bge-large") ||
-		strings.HasPrefix(meta.ActualModelName, "tao-8k") {
+	var suffix string
+	switch meta.Mode {
+	case relaymode.ChatCompletions:
+		suffix = "chat/"
+	case relaymode.Embeddings:
 		suffix = "embeddings/"
+	case relaymode.Rerank:
+		suffix = "reranker/"
 	}
+
 	switch meta.ActualModelName {
 	case "ERNIE-4.0-8K", "ERNIE-4.0", "ERNIE-Bot-4":
 		suffix += "completions_pro"
@@ -79,34 +81,24 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		suffix += "ernie_speed"
 	case "ERNIE-3.5-8K":
 		suffix += "completions"
-	case "ERNIE-3.5-8K-0205":
-		suffix += "ernie-3.5-8k-0205"
-	case "ERNIE-3.5-8K-1222":
-		suffix += "ernie-3.5-8k-1222"
 	case "ERNIE-Bot-8K":
 		suffix += "ernie_bot_8k"
-	case "ERNIE-3.5-4K-0205":
-		suffix += "ernie-3.5-4k-0205"
 	case "ERNIE-Speed-8K":
 		suffix += "ernie_speed"
-	case "ERNIE-Speed-128K":
-		suffix += "ernie-speed-128k"
 	case "ERNIE-Lite-8K-0922":
 		suffix += "eb-instant"
 	case "ERNIE-Lite-8K-0308":
 		suffix += "ernie-lite-8k"
-	case "ERNIE-Tiny-8K":
-		suffix += "ernie-tiny-8k"
 	case "BLOOMZ-7B":
 		suffix += "bloomz_7b1"
-	case "Embedding-V1":
-		suffix += "embedding-v1"
 	case "bge-large-zh":
 		suffix += "bge_large_zh"
 	case "bge-large-en":
 		suffix += "bge_large_en"
 	case "tao-8k":
 		suffix += "tao_8k"
+	case "bce-reranker-base_v1":
+		suffix += "bce_reranker_base"
 	default:
 		suffix += strings.ToLower(meta.ActualModelName)
 	}
@@ -139,22 +131,15 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
+		meta.Set(openai.MetaEmbeddingsPatchInputToSlices, true)
+		return openai.ConvertRequest(meta, req)
+	case relaymode.Rerank:
 		return openai.ConvertRequest(meta, req)
 	default:
 		// if IsV2(meta.ActualModelName) {
 		// 	return openai.ConvertRequest(meta, req)
 		// }
-		request, err := utils.UnmarshalGeneralOpenAIRequest(req)
-		if err != nil {
-			return nil, nil, err
-		}
-		request.Model = meta.ActualModelName
-		baiduRequest := ConvertRequest(request)
-		data, err := json.Marshal(baiduRequest)
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, bytes.NewReader(data), nil
+		return ConvertRequest(meta, req)
 	}
 }
 
@@ -165,7 +150,9 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		err, usage = EmbeddingHandler(c, resp)
+		usage, err = EmbeddingsHandler(meta, c, resp)
+	case relaymode.Rerank:
+		usage, err = RerankHandler(meta, c, resp)
 	default:
 		// if IsV2(meta.ActualModelName) {
 		// 	usage, err = openai.DoResponse(meta, c, resp)
@@ -174,7 +161,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(c, resp)
 		} else {
-			err, usage = Handler(c, resp)
+			usage, err = Handler(c, resp)
 		}
 	}
 	return

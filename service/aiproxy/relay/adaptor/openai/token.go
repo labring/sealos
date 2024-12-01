@@ -201,6 +201,12 @@ func CountTokenInput(input any, model string) int {
 	switch v := input.(type) {
 	case string:
 		return CountTokenText(v, model)
+	case []any:
+		num := 0
+		for _, s := range v {
+			num += CountTokenInput(s, model)
+		}
+		return num
 	case []string:
 		text := ""
 		for _, s := range v {
