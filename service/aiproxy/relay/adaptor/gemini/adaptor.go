@@ -1,14 +1,12 @@
 package gemini
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -51,27 +49,9 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		request, err := utils.UnmarshalGeneralOpenAIRequest(req)
-		if err != nil {
-			return nil, nil, err
-		}
-		request.Model = meta.ActualModelName
-		geminiEmbeddingRequest := ConvertEmbeddingRequest(request)
-		data, err := json.Marshal(geminiEmbeddingRequest)
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, bytes.NewReader(data), nil
+		return ConvertEmbeddingRequest(meta, req)
 	case relaymode.ChatCompletions:
-		data, err := ConvertRequest(meta, req)
-		if err != nil {
-			return nil, nil, err
-		}
-		data2, err := json.Marshal(data)
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, bytes.NewReader(data2), nil
+		return ConvertRequest(meta, req)
 	default:
 		return nil, nil, errors.New("unsupported mode")
 	}
@@ -84,14 +64,12 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		err, usage = EmbeddingHandler(c, resp)
+		usage, err = EmbeddingHandler(c, resp)
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
-			var responseText string
-			err, responseText = StreamHandler(c, resp)
-			usage = openai.ResponseText2Usage(responseText, meta.ActualModelName, meta.PromptTokens)
+			usage, err = StreamHandler(meta, c, resp)
 		} else {
-			err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+			usage, err = Handler(meta, c, resp)
 		}
 	default:
 		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)

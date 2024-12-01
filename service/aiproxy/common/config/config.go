@@ -172,7 +172,7 @@ var (
 
 func init() {
 	geminiSafetySetting.Store("BLOCK_NONE")
-	geminiVersion.Store("v1")
+	geminiVersion.Store("v1beta")
 }
 
 func GetGeminiSafetySetting() string {
