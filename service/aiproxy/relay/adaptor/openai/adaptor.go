@@ -54,7 +54,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 		return ConvertTextRequest(meta, req)
 	case relaymode.ImagesGenerations:
 		return ConvertImageRequest(meta, req)
-	case relaymode.AudioTranscription:
+	case relaymode.AudioTranscription, relaymode.AudioTranslation:
 		return ConvertSTTRequest(meta, req)
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
@@ -65,19 +65,28 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	}
 }
 
-func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	reqMap := make(map[string]any)
-	err := common.UnmarshalBodyReusable(req, &reqMap)
-	if err != nil {
-		return nil, nil, err
+func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	switch meta.Mode {
+	case relaymode.ImagesGenerations:
+		usage, err = ImageHandler(meta, c, resp)
+	case relaymode.AudioTranscription, relaymode.AudioTranslation:
+		usage, err = STTHandler(meta, c, resp)
+	case relaymode.AudioSpeech:
+		usage, err = TTSHandler(meta, c, resp)
+	case relaymode.Rerank:
+		usage, err = RerankHandler(meta, c, resp)
+	case relaymode.Embeddings:
+		fallthrough
+	case relaymode.ChatCompletions:
+		if utils.IsStreamResponse(resp) {
+			usage, err = StreamHandler(meta, c, resp)
+		} else {
+			usage, err = Handler(meta, c, resp)
+		}
+	default:
+		return nil, ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
 	}
-
-	reqMap["model"] = meta.ActualModelName
-	jsonData, err := json.Marshal(reqMap)
-	if err != nil {
-		return nil, nil, err
-	}
-	return nil, bytes.NewReader(jsonData), nil
+	return
 }
 
 const DoNotPatchStreamOptionsIncludeUsageMetaKey = "do_not_patch_stream_options_include_usage"
@@ -141,30 +150,6 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) 
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	return DoResponse(meta, c, resp)
-}
-
-func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	switch meta.Mode {
-	case relaymode.ImagesGenerations:
-		usage, err = ImageHandler(meta, c, resp)
-	case relaymode.AudioTranscription:
-		usage, err = STTHandler(meta, c, resp)
-	case relaymode.AudioSpeech:
-		usage, err = TTSHandler(meta, c, resp)
-	case relaymode.Rerank:
-		usage, err = RerankHandler(meta, c, resp)
-	case relaymode.Embeddings:
-		fallthrough
-	case relaymode.ChatCompletions:
-		if utils.IsStreamResponse(resp) {
-			usage, err = StreamHandler(meta, c, resp)
-		} else {
-			usage, err = Handler(meta, c, resp)
-		}
-	default:
-		return nil, ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
-	}
-	return
 }
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
