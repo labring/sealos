@@ -27,41 +27,45 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 	multipartWriter := multipart.NewWriter(multipartBody)
 
 	for key, values := range request.MultipartForm.Value {
-		for _, value := range values {
-			if key == "model" {
-				err = multipartWriter.WriteField(key, meta.ActualModelName)
-				if err != nil {
-					return nil, nil, err
-				}
-				continue
-			}
-			if key == "response_format" {
-				meta.Set(MetaResponseFormat, value)
-				continue
-			}
-			err = multipartWriter.WriteField(key, value)
+		if len(values) == 0 {
+			continue
+		}
+		value := values[0]
+		if key == "model" {
+			err = multipartWriter.WriteField(key, meta.ActualModelName)
 			if err != nil {
 				return nil, nil, err
 			}
+			continue
+		}
+		if key == "response_format" {
+			meta.Set(MetaResponseFormat, value)
+			continue
+		}
+		err = multipartWriter.WriteField(key, value)
+		if err != nil {
+			return nil, nil, err
 		}
 	}
 
 	for key, files := range request.MultipartForm.File {
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err != nil {
-				return nil, nil, err
-			}
-			w, err := multipartWriter.CreateFormFile(key, fileHeader.Filename)
-			if err != nil {
-				file.Close()
-				return nil, nil, err
-			}
-			_, err = io.Copy(w, file)
+		if len(files) == 0 {
+			continue
+		}
+		fileHeader := files[0]
+		file, err := fileHeader.Open()
+		if err != nil {
+			return nil, nil, err
+		}
+		w, err := multipartWriter.CreateFormFile(key, fileHeader.Filename)
+		if err != nil {
 			file.Close()
-			if err != nil {
-				return nil, nil, err
-			}
+			return nil, nil, err
+		}
+		_, err = io.Copy(w, file)
+		file.Close()
+		if err != nil {
+			return nil, nil, err
 		}
 	}
 

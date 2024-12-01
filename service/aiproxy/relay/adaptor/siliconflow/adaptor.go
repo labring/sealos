@@ -2,11 +2,12 @@ package siliconflow
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/client"

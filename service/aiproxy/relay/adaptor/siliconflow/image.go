@@ -2,9 +2,10 @@ package siliconflow
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"

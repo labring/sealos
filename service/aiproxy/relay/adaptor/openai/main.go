@@ -133,10 +133,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if textResponse.Error.Type != "" {
-		return nil, &model.ErrorWithStatusCode{
-			Error:      textResponse.Error,
-			StatusCode: resp.StatusCode,
-		}
+		return &textResponse.Usage, ErrorWrapperWithMessage(textResponse.Error.Message, textResponse.Error.Type, http.StatusBadRequest)
 	}
 
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
@@ -154,7 +151,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	var respMap map[string]any
 	err = json.Unmarshal(responseBody, &respMap)
 	if err != nil {
-		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
+		return &textResponse.Usage, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
@@ -163,7 +160,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 
 	newData, err := stdjson.Marshal(respMap)
 	if err != nil {
-		return nil, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
+		return &textResponse.Usage, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	c.Writer.WriteHeader(resp.StatusCode)

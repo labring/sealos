@@ -2,9 +2,10 @@ package vertexai
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"

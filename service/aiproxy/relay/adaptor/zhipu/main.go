@@ -1,8 +1,9 @@
 package zhipu
 
 import (
-	"encoding/json"
 	"net/http"
+
+	json "github.com/json-iterator/go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"

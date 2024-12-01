@@ -3,7 +3,6 @@ package ali
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -158,7 +157,6 @@ func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 			return usage, openai.ErrorWrapperWithMessage("expect text message, but got binary message", "ali_wss_read_msg_failed", http.StatusInternalServerError)
 		}
 
-		fmt.Println(string(data))
 		var msg STTMessage
 		err = json.Unmarshal(data, &msg)
 		if err != nil {
