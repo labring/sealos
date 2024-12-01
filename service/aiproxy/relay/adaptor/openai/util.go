@@ -6,7 +6,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
-func ErrorWrapper(err error, code string, statusCode int) *relaymodel.ErrorWithStatusCode {
+func ErrorWrapper(err error, code any, statusCode int) *relaymodel.ErrorWithStatusCode {
 	return &relaymodel.ErrorWithStatusCode{
 		Error: relaymodel.Error{
 			Message: err.Error(),
@@ -17,7 +17,7 @@ func ErrorWrapper(err error, code string, statusCode int) *relaymodel.ErrorWithS
 	}
 }
 
-func ErrorWrapperWithMessage(message string, code string, statusCode int) *relaymodel.ErrorWithStatusCode {
+func ErrorWrapperWithMessage(message string, code any, statusCode int) *relaymodel.ErrorWithStatusCode {
 	return &relaymodel.ErrorWithStatusCode{
 		Error: relaymodel.Error{
 			Message: message,

@@ -2,7 +2,12 @@ package gemini
 
 import (
 	"bufio"
+	"bytes"
+	"context"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -34,153 +39,200 @@ var mimeTypeMap = map[string]string{
 	"text":        "text/plain",
 }
 
-// Setting safety to the lowest possible values since Gemini is already powerless enough
-func ConvertRequest(meta *meta.Meta, req *http.Request) (*ChatRequest, error) {
-	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(req)
-	if err != nil {
-		return nil, err
-	}
-	textRequest.Model = meta.ActualModelName
-	meta.Set("stream", textRequest.Stream)
+type CountTokensResponse struct {
+	Error       *Error `json:"error,omitempty"`
+	TotalTokens int    `json:"totalTokens"`
+}
+
+func buildSafetySettings() []ChatSafetySettings {
 	safetySetting := config.GetGeminiSafetySetting()
-	geminiRequest := ChatRequest{
-		Contents: make([]ChatContent, 0, len(textRequest.Messages)),
-		SafetySettings: []ChatSafetySettings{
-			{
-				Category:  "HARM_CATEGORY_HARASSMENT",
-				Threshold: safetySetting,
-			},
-			{
-				Category:  "HARM_CATEGORY_HATE_SPEECH",
-				Threshold: safetySetting,
-			},
-			{
-				Category:  "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-				Threshold: safetySetting,
-			},
-			{
-				Category:  "HARM_CATEGORY_DANGEROUS_CONTENT",
-				Threshold: safetySetting,
-			},
-		},
-		GenerationConfig: ChatGenerationConfig{
-			Temperature:     textRequest.Temperature,
-			TopP:            textRequest.TopP,
-			MaxOutputTokens: textRequest.MaxTokens,
-		},
+	return []ChatSafetySettings{
+		{Category: "HARM_CATEGORY_HARASSMENT", Threshold: safetySetting},
+		{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: safetySetting},
+		{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: safetySetting},
+		{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: safetySetting},
 	}
+}
+
+func buildGenerationConfig(textRequest *model.GeneralOpenAIRequest) *ChatGenerationConfig {
+	config := ChatGenerationConfig{
+		Temperature:     textRequest.Temperature,
+		TopP:            textRequest.TopP,
+		MaxOutputTokens: textRequest.MaxTokens,
+	}
+
 	if textRequest.ResponseFormat != nil {
 		if mimeType, ok := mimeTypeMap[textRequest.ResponseFormat.Type]; ok {
-			geminiRequest.GenerationConfig.ResponseMimeType = mimeType
+			config.ResponseMimeType = mimeType
 		}
 		if textRequest.ResponseFormat.JSONSchema != nil {
-			geminiRequest.GenerationConfig.ResponseSchema = textRequest.ResponseFormat.JSONSchema.Schema
-			geminiRequest.GenerationConfig.ResponseMimeType = mimeTypeMap["json_object"]
+			config.ResponseSchema = textRequest.ResponseFormat.JSONSchema.Schema
+			config.ResponseMimeType = mimeTypeMap["json_object"]
 		}
 	}
+
+	return &config
+}
+
+func buildTools(textRequest *model.GeneralOpenAIRequest) []ChatTools {
 	if textRequest.Tools != nil {
 		functions := make([]model.Function, 0, len(textRequest.Tools))
 		for _, tool := range textRequest.Tools {
 			functions = append(functions, tool.Function)
 		}
-		geminiRequest.Tools = []ChatTools{
-			{
-				FunctionDeclarations: functions,
-			},
-		}
-	} else if textRequest.Functions != nil {
-		geminiRequest.Tools = []ChatTools{
-			{
-				FunctionDeclarations: textRequest.Functions,
-			},
-		}
+		return []ChatTools{{FunctionDeclarations: functions}}
 	}
+	if textRequest.Functions != nil {
+		return []ChatTools{{FunctionDeclarations: textRequest.Functions}}
+	}
+	return nil
+}
+
+func buildMessageParts(ctx context.Context, part model.MessageContent) ([]Part, error) {
+	if part.Type == model.ContentTypeText {
+		return []Part{{Text: part.Text}}, nil
+	}
+
+	if part.Type == model.ContentTypeImageURL {
+		mimeType, data, err := image.GetImageFromURL(ctx, part.ImageURL.URL)
+		if err != nil {
+			return nil, err
+		}
+		return []Part{{
+			InlineData: &InlineData{
+				MimeType: mimeType,
+				Data:     data,
+			},
+		}}, nil
+	}
+
+	return nil, nil
+}
+
+func buildContents(textRequest *model.GeneralOpenAIRequest, req *http.Request) ([]ChatContent, error) {
+	contents := make([]ChatContent, 0, len(textRequest.Messages))
 	shouldAddDummyModelMessage := false
+	imageNum := 0
+
 	for _, message := range textRequest.Messages {
 		content := ChatContent{
-			Role: message.Role,
-			Parts: []Part{
-				{
-					Text: message.StringContent(),
-				},
-			},
+			Role:  message.Role,
+			Parts: make([]Part, 0),
 		}
+
+		// Convert role names
+		switch content.Role {
+		case "assistant":
+			content.Role = "model"
+		case "system":
+			content.Role = "user"
+			shouldAddDummyModelMessage = true
+		}
+
+		// Process message content
 		openaiContent := message.ParseContent()
-		var parts []Part
-		imageNum := 0
 		for _, part := range openaiContent {
-			if part.Type == model.ContentTypeText {
-				parts = append(parts, Part{
-					Text: part.Text,
-				})
-			} else if part.Type == model.ContentTypeImageURL {
+			if part.Type == model.ContentTypeImageURL {
 				imageNum++
 				if imageNum > VisionMaxImageNum {
 					continue
 				}
-				mimeType, data, err := image.GetImageFromURL(req.Context(), part.ImageURL.URL)
-				if err != nil {
-					return nil, err
-				}
-				parts = append(parts, Part{
-					InlineData: &InlineData{
-						MimeType: mimeType,
-						Data:     data,
-					},
-				})
 			}
-		}
-		content.Parts = parts
 
-		// there's no assistant role in gemini and API shall vomit if Role is not user or model
-		if content.Role == "assistant" {
-			content.Role = "model"
+			parts, err := buildMessageParts(req.Context(), part)
+			if err != nil {
+				return nil, err
+			}
+			content.Parts = append(content.Parts, parts...)
 		}
-		// Converting system prompt to prompt from user for the same reason
-		if content.Role == "system" {
-			content.Role = "user"
-			shouldAddDummyModelMessage = true
-		}
-		geminiRequest.Contents = append(geminiRequest.Contents, content)
 
-		// If a system message is the last message, we need to add a dummy model message to make gemini happy
+		contents = append(contents, content)
+
+		// Add dummy model message after system message
 		if shouldAddDummyModelMessage {
-			geminiRequest.Contents = append(geminiRequest.Contents, ChatContent{
-				Role: "model",
-				Parts: []Part{
-					{
-						Text: "Okay",
-					},
-				},
+			contents = append(contents, ChatContent{
+				Role:  "model",
+				Parts: []Part{{Text: "Okay"}},
 			})
 			shouldAddDummyModelMessage = false
 		}
 	}
 
-	return &geminiRequest, nil
+	return contents, nil
 }
 
-func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *BatchEmbeddingRequest {
-	inputs := request.ParseInput()
-	requests := make([]EmbeddingRequest, len(inputs))
-	model := "models/" + request.Model
-
-	for i, input := range inputs {
-		requests[i] = EmbeddingRequest{
-			Model: model,
-			Content: ChatContent{
-				Parts: []Part{
-					{
-						Text: input,
-					},
-				},
-			},
-		}
+// Setting safety to the lowest possible values since Gemini is already powerless enough
+func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(req)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return &BatchEmbeddingRequest{
-		Requests: requests,
+	textRequest.Model = meta.ActualModelName
+	meta.Set("stream", textRequest.Stream)
+
+	contents, err := buildContents(textRequest, req)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	tokenCount, err := CountTokens(req.Context(), meta, contents)
+	if err != nil {
+		return nil, nil, err
+	}
+	meta.PromptTokens = tokenCount
+
+	// Build actual request
+	geminiRequest := ChatRequest{
+		Contents:         contents,
+		SafetySettings:   buildSafetySettings(),
+		GenerationConfig: buildGenerationConfig(textRequest),
+		Tools:            buildTools(textRequest),
+	}
+
+	data, err := json.Marshal(geminiRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return nil, bytes.NewReader(data), nil
+}
+
+func CountTokens(ctx context.Context, meta *meta.Meta, chat []ChatContent) (int, error) {
+	countReq := ChatRequest{
+		Contents: chat,
+	}
+	countData, err := json.Marshal(countReq)
+	if err != nil {
+		return 0, err
+	}
+	version := helper.AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
+	countURL := fmt.Sprintf("%s/%s/models/%s:countTokens", u, version, meta.ActualModelName)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, countURL, bytes.NewReader(countData))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Goog-Api-Key", meta.Channel.Key)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var tokenCount CountTokensResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenCount); err != nil {
+		return 0, err
+	}
+	if tokenCount.Error != nil {
+		return 0, fmt.Errorf("count tokens error: %s, code: %d, status: %s", tokenCount.Error.Message, tokenCount.Error.Code, resp.Status)
+	}
+	return tokenCount.TotalTokens, nil
 }
 
 type ChatResponse struct {
@@ -268,7 +320,7 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func streamResponseGeminiChat2OpenAI(geminiResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
+func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
 	var choice openai.ChatCompletionsStreamResponseChoice
 	choice.Delta.Content = geminiResponse.GetResponseText()
 	// choice.FinishReason = &constant.StopFinishReason
@@ -276,32 +328,16 @@ func streamResponseGeminiChat2OpenAI(geminiResponse *ChatResponse) *openai.ChatC
 	response.ID = "chatcmpl-" + random.GetUUID()
 	response.Created = helper.GetTimestamp()
 	response.Object = "chat.completion.chunk"
-	response.Model = "gemini"
+	response.Model = meta.OriginModelName
 	response.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &response
 }
 
-func embeddingResponseGemini2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
-	openAIEmbeddingResponse := openai.EmbeddingResponse{
-		Object: "list",
-		Data:   make([]*openai.EmbeddingResponseItem, 0, len(response.Embeddings)),
-		Model:  "gemini-embedding",
-		Usage:  model.Usage{TotalTokens: 0},
-	}
-	for _, item := range response.Embeddings {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
-			Object:    `embedding`,
-			Index:     0,
-			Embedding: item.Values,
-		})
-	}
-	return &openAIEmbeddingResponse
-}
-
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, string) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
-	responseText := ""
+	responseText := strings.Builder{}
+	respContent := []ChatContent{}
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
@@ -324,13 +360,15 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 			logger.Error(c, "error unmarshalling stream response: "+err.Error())
 			continue
 		}
-
-		response := streamResponseGeminiChat2OpenAI(&geminiResponse)
+		for _, candidate := range geminiResponse.Candidates {
+			respContent = append(respContent, candidate.Content)
+		}
+		response := streamResponseGeminiChat2OpenAI(meta, &geminiResponse)
 		if response == nil {
 			continue
 		}
 
-		responseText += response.Choices[0].Delta.StringContent()
+		responseText.WriteString(response.Choices[0].Delta.StringContent())
 
 		err = render.ObjectData(c, response)
 		if err != nil {
@@ -344,73 +382,57 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 	render.Done(c)
 
-	return nil, responseText
+	usage := model.Usage{
+		PromptTokens: meta.PromptTokens,
+	}
+
+	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
+	if err != nil {
+		logger.Error(c, "count tokens failed: "+err.Error())
+		usage.CompletionTokens = openai.CountTokenText(responseText.String(), meta.ActualModelName)
+	} else {
+		usage.CompletionTokens = tokenCount
+	}
+	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+	return &usage, nil
 }
 
-func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	var geminiResponse ChatResponse
 	err := json.NewDecoder(resp.Body).Decode(&geminiResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if len(geminiResponse.Candidates) == 0 {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: "No candidates returned",
-				Type:    "server_error",
-				Param:   "",
-				Code:    500,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+		return nil, openai.ErrorWrapperWithMessage("No candidates returned", "gemini_error", resp.StatusCode)
 	}
 	fullTextResponse := responseGeminiChat2OpenAI(&geminiResponse)
-	fullTextResponse.Model = modelName
-	completionTokens := openai.CountTokenText(geminiResponse.GetResponseText(), modelName)
-	usage := model.Usage{
-		PromptTokens:     promptTokens,
-		CompletionTokens: completionTokens,
-		TotalTokens:      promptTokens + completionTokens,
+	fullTextResponse.Model = meta.OriginModelName
+	respContent := []ChatContent{}
+	for _, candidate := range geminiResponse.Candidates {
+		respContent = append(respContent, candidate.Content)
 	}
+
+	usage := model.Usage{
+		PromptTokens: meta.PromptTokens,
+	}
+	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
+	if err != nil {
+		logger.Error(c, "count tokens failed: "+err.Error())
+		usage.CompletionTokens = openai.CountTokenText(geminiResponse.GetResponseText(), meta.ActualModelName)
+	} else {
+		usage.CompletionTokens = tokenCount
+	}
+	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	fullTextResponse.Usage = usage
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &usage
-}
-
-func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
-	defer resp.Body.Close()
-
-	var geminiEmbeddingResponse EmbeddingResponse
-	err := json.NewDecoder(resp.Body).Decode(&geminiEmbeddingResponse)
-	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	if geminiEmbeddingResponse.Error != nil {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: geminiEmbeddingResponse.Error.Message,
-				Type:    "gemini_error",
-				Param:   "",
-				Code:    geminiEmbeddingResponse.Error.Code,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
-	}
-	fullTextResponse := embeddingResponseGemini2OpenAI(&geminiEmbeddingResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
-	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	c.Writer.Header().Set("Content-Type", "application/json")
-	c.Writer.WriteHeader(resp.StatusCode)
-	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
+	return &usage, nil
 }
