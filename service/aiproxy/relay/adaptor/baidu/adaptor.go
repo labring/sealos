@@ -54,60 +54,57 @@ const (
 // 	"ERNIE-Novel-8K":             "ernie-novel-8k",
 // }
 
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	// if IsV2(meta.ActualModelName) {
-	// 	return a.getRequestURLV2(meta), nil
-	// }
+// Get model-specific endpoint using map
+var modelEndpointMap = map[string]string{
+	"ERNIE-4.0-8K":         "completions_pro",
+	"ERNIE-4.0":            "completions_pro",
+	"ERNIE-Bot-4":          "completions_pro",
+	"ERNIE-Bot":            "completions",
+	"ERNIE-Bot-turbo":      "eb-instant",
+	"ERNIE-Speed":          "ernie_speed",
+	"ERNIE-3.5-8K":         "completions",
+	"ERNIE-Bot-8K":         "ernie_bot_8k",
+	"ERNIE-Speed-8K":       "ernie_speed",
+	"ERNIE-Lite-8K-0922":   "eb-instant",
+	"ERNIE-Lite-8K-0308":   "ernie-lite-8k",
+	"BLOOMZ-7B":            "bloomz_7b1",
+	"bge-large-zh":         "bge_large_zh",
+	"bge-large-en":         "bge_large_en",
+	"tao-8k":               "tao_8k",
+	"bce-reranker-base_v1": "bce_reranker_base",
+	"Stable-Diffusion-XL":  "sd_xl",
+	"Fuyu-8B":              "fuyu_8b",
+}
 
-	// https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
-	var suffix string
+func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
+	// Build base URL
+	if meta.Channel.BaseURL == "" {
+		meta.Channel.BaseURL = baseURL
+	}
+
+	// Get API path suffix based on mode
+	var pathSuffix string
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		suffix = "chat/"
+		pathSuffix = "chat"
 	case relaymode.Embeddings:
-		suffix = "embeddings/"
+		pathSuffix = "embeddings"
 	case relaymode.Rerank:
-		suffix = "reranker/"
+		pathSuffix = "reranker"
+	case relaymode.ImagesGenerations:
+		pathSuffix = "text2image"
 	}
 
-	switch meta.ActualModelName {
-	case "ERNIE-4.0-8K", "ERNIE-4.0", "ERNIE-Bot-4":
-		suffix += "completions_pro"
-	case "ERNIE-Bot":
-		suffix += "completions"
-	case "ERNIE-Bot-turbo":
-		suffix += "eb-instant"
-	case "ERNIE-Speed":
-		suffix += "ernie_speed"
-	case "ERNIE-3.5-8K":
-		suffix += "completions"
-	case "ERNIE-Bot-8K":
-		suffix += "ernie_bot_8k"
-	case "ERNIE-Speed-8K":
-		suffix += "ernie_speed"
-	case "ERNIE-Lite-8K-0922":
-		suffix += "eb-instant"
-	case "ERNIE-Lite-8K-0308":
-		suffix += "ernie-lite-8k"
-	case "BLOOMZ-7B":
-		suffix += "bloomz_7b1"
-	case "bge-large-zh":
-		suffix += "bge_large_zh"
-	case "bge-large-en":
-		suffix += "bge_large_en"
-	case "tao-8k":
-		suffix += "tao_8k"
-	case "bce-reranker-base_v1":
-		suffix += "bce_reranker_base"
-	default:
-		suffix += strings.ToLower(meta.ActualModelName)
+	modelEndpoint, ok := modelEndpointMap[meta.ActualModelName]
+	if !ok {
+		modelEndpoint = strings.ToLower(meta.ActualModelName)
 	}
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	fullRequestURL := fmt.Sprintf("%s/rpc/2.0/ai_custom/v1/wenxinworkshop/%s", u, suffix)
-	return fullRequestURL, nil
+
+	// Construct full URL
+	fullURL := fmt.Sprintf("%s/rpc/2.0/ai_custom/v1/wenxinworkshop/%s/%s",
+		meta.Channel.BaseURL, pathSuffix, modelEndpoint)
+
+	return fullURL, nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
@@ -135,6 +132,8 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 		return openai.ConvertRequest(meta, req)
 	case relaymode.Rerank:
 		return openai.ConvertRequest(meta, req)
+	case relaymode.ImagesGenerations:
+		return openai.ConvertRequest(meta, req)
 	default:
 		// if IsV2(meta.ActualModelName) {
 		// 	return openai.ConvertRequest(meta, req)
@@ -153,6 +152,8 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		usage, err = EmbeddingsHandler(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)
+	case relaymode.ImagesGenerations:
+		usage, err = ImageHandler(meta, c, resp)
 	default:
 		// if IsV2(meta.ActualModelName) {
 		// 	usage, err = openai.DoResponse(meta, c, resp)

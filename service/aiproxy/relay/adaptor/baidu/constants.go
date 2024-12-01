@@ -90,4 +90,9 @@ var ModelList = []*model.ModelConfig{
 		Model: "bce-reranker-base_v1",
 		Type:  relaymode.Rerank,
 	},
+
+	{
+		Model: "Stable-Diffusion-XL",
+		Type:  relaymode.ImagesGenerations,
+	},
 }
