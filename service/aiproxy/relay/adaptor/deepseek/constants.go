@@ -9,6 +9,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "deepseek-chat",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDeepSeek,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
 		Config: map[model.ModelConfigKey]any{
@@ -19,5 +20,6 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "deepseek-coder",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerDeepSeek,
 	},
 }

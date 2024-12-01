@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	channelhelper "github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -22,22 +23,7 @@ const channelName = "vertexai"
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.Reader, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (a *Adaptor) Init(_ *meta.Meta) {
-}
-
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
-	if request == nil {
-		return nil, nil, errors.New("request is nil")
-	}
-
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
 		return nil, nil, errors.New("adaptor not found")
@@ -49,12 +35,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.H
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
-		return nil, &relaymodel.ErrorWithStatusCode{
-			StatusCode: http.StatusInternalServerError,
-			Error: relaymodel.Error{
-				Message: "adaptor not found",
-			},
-		}
+		return nil, openai.ErrorWrapperWithMessage(meta.ActualModelName+" adaptor not found", "adaptor not found", http.StatusInternalServerError)
 	}
 	return adaptor.DoResponse(meta, c, resp)
 }

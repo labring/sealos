@@ -9,6 +9,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-vl-max",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.02,
 		Config: map[model.ModelConfigKey]any{
@@ -20,6 +21,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-vl-plus",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.008,
 		OutputPrice: 0.008,
 		Config: map[model.ModelConfigKey]any{
@@ -31,6 +33,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-coder-turbo",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
 		Config: map[model.ModelConfigKey]any{
@@ -42,6 +45,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-coder-turbo-latest",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
 		Config: map[model.ModelConfigKey]any{
@@ -53,6 +57,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-max",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
 		Config: map[model.ModelConfigKey]any{
@@ -64,6 +69,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-plus",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
 		Config: map[model.ModelConfigKey]any{
@@ -75,6 +81,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-turbo",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
 		Config: map[model.ModelConfigKey]any{
@@ -86,6 +93,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-turbo-latest",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
 		Config: map[model.ModelConfigKey]any{
@@ -97,6 +105,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "qwen-long",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0005,
 		OutputPrice: 0.002,
 		Config: map[model.ModelConfigKey]any{
@@ -109,23 +118,28 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "stable-diffusion-xl",
 		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerAlibaba,
 	},
 	{
 		Model: "stable-diffusion-v1.5",
 		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerAlibaba,
 	},
 	{
 		Model: "stable-diffusion-3.5-large",
 		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerAlibaba,
 	},
 	{
 		Model: "stable-diffusion-3.5-large-turbo",
 		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerAlibaba,
 	},
 
 	{
 		Model:      "sambert-zhinan-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -135,6 +149,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiqi-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -144,6 +159,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhichu-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -153,6 +169,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhide-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -162,6 +179,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhijia-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -171,6 +189,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiru-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -180,6 +199,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiqian-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -189,6 +209,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhixiang-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -198,6 +219,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiwei-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -207,6 +229,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhihao-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -216,6 +239,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhijing-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -225,6 +249,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiming-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -234,6 +259,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhimo-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -243,6 +269,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhina-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -252,6 +279,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhishu-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -261,6 +289,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhistella-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -270,6 +299,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiting-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -279,6 +309,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhixiao-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -288,6 +319,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiya-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -297,6 +329,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiye-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -306,6 +339,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiying-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -315,6 +349,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiyuan-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -324,6 +359,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhiyue-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -333,6 +369,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhigui-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -342,6 +379,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhishuo-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -351,6 +389,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhimiao-emo-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -360,6 +399,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhimao-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -369,6 +409,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhilun-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -378,6 +419,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhifei-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -387,6 +429,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-zhida-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -396,6 +439,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-camila-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -405,6 +449,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-perla-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -414,6 +459,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-indah-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -423,6 +469,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-clara-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -432,6 +479,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-hanna-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -441,6 +489,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-beth-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -450,6 +499,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-betty-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -459,6 +509,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-cally-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -468,6 +519,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-cindy-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -477,6 +529,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-eva-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -486,6 +539,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-donna-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -495,6 +549,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-brian-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -504,6 +559,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "sambert-waan-v1",
 		Type:       relaymode.AudioSpeech,
+		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
@@ -514,6 +570,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "paraformer-realtime-v2",
 		Type:  relaymode.AudioTranscription,
+		Owner: model.ModelOwnerAlibaba,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 10000,
 			model.ModelConfigSupportFormatsKey: []string{"pcm", "wav", "opus", "speex", "aac", "amr"},
@@ -523,6 +580,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "gte-rerank",
 		Type:  relaymode.Rerank,
+		Owner: model.ModelOwnerAlibaba,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 4000,
 			model.ModelConfigMaxInputTokensKey:   4000,
@@ -532,6 +590,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "text-embedding-v1",
 		Type:  relaymode.Embeddings,
+		Owner: model.ModelOwnerAlibaba,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 2048,
 		},
@@ -539,6 +598,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "text-embedding-v2",
 		Type:  relaymode.Embeddings,
+		Owner: model.ModelOwnerAlibaba,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 2048,
 		},
@@ -546,6 +606,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "text-embedding-v3",
 		Type:  relaymode.Embeddings,
+		Owner: model.ModelOwnerAlibaba,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 8192,
 		},

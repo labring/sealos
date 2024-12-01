@@ -24,12 +24,48 @@ const (
 )
 
 //nolint:revive
+type ModelOwner string
+
+const (
+	ModelOwnerOpenAI      ModelOwner = "openai"
+	ModelOwnerAlibaba     ModelOwner = "alibaba"
+	ModelOwnerTencent     ModelOwner = "tencent"
+	ModelOwnerXunfei      ModelOwner = "xunfei"
+	ModelOwnerDeepSeek    ModelOwner = "deepseek"
+	ModelOwnerMoonshot    ModelOwner = "moonshot"
+	ModelOwnerMiniMax     ModelOwner = "minimax"
+	ModelOwnerBaidu       ModelOwner = "baidu"
+	ModelOwnerGoogle      ModelOwner = "google"
+	ModelOwnerBAAI        ModelOwner = "baai"
+	ModelOwnerFunAudioLLM ModelOwner = "funaudiollm"
+	ModelOwnerDoubao      ModelOwner = "doubao"
+	ModelOwnerFishAudio   ModelOwner = "fishaudio"
+	ModelOwnerChatGLM     ModelOwner = "chatglm"
+	ModelOwnerStabilityAI ModelOwner = "stabilityai"
+	ModelOwnerNetease     ModelOwner = "netease"
+	ModelOwnerAI360       ModelOwner = "ai360"
+	ModelOwnerAnthropic   ModelOwner = "anthropic"
+	ModelOwnerMeta        ModelOwner = "meta"
+	ModelOwnerBaichuan    ModelOwner = "baichuan"
+	ModelOwnerMistral     ModelOwner = "mistral"
+	ModelOwnerOpenChat    ModelOwner = "openchat"
+	ModelOwnerMicrosoft   ModelOwner = "microsoft"
+	ModelOwnerDefog       ModelOwner = "defog"
+	ModelOwnerNexusFlow   ModelOwner = "nexusflow"
+	ModelOwnerCohere      ModelOwner = "cohere"
+	ModelOwnerHuggingFace ModelOwner = "huggingface"
+	ModelOwnerLingyiWanwu ModelOwner = "lingyiwanwu"
+	ModelOwnerStepFun     ModelOwner = "stepfun"
+)
+
+//nolint:revive
 type ModelConfig struct {
-	CreatedAt         time.Time              `gorm:"index;autoCreateTime" json:"created_at"`
-	UpdatedAt         time.Time              `gorm:"index;autoUpdateTime" json:"updated_at"`
-	Config            map[ModelConfigKey]any `gorm:"serializer:fastjson"  json:"config,omitempty"`
-	ImagePrices       map[string]float64     `gorm:"serializer:fastjson"  json:"image_prices"`
-	Model             string                 `gorm:"primaryKey"           json:"model"`
+	CreatedAt         time.Time              `gorm:"index;autoCreateTime"    json:"created_at"`
+	UpdatedAt         time.Time              `gorm:"index;autoUpdateTime"    json:"updated_at"`
+	Config            map[ModelConfigKey]any `gorm:"serializer:fastjson"     json:"config,omitempty"`
+	ImagePrices       map[string]float64     `gorm:"serializer:fastjson"     json:"image_prices"`
+	Model             string                 `gorm:"primaryKey"              json:"model"`
+	Owner             ModelOwner             `gorm:"type:varchar(255);index" json:"owner"`
 	ImageMaxBatchSize int                    `json:"image_batch_size"`
 	// relaymode/define.go
 	Type        int     `json:"type"`
@@ -84,10 +120,13 @@ func GetModelConfig(model string) (*ModelConfig, error) {
 	return config, HandleNotFound(err, ErrModelConfigNotFound)
 }
 
-func SearchModelConfigs(keyword string, startIdx int, num int, model string) (configs []*ModelConfig, total int64, err error) {
+func SearchModelConfigs(keyword string, startIdx int, num int, model string, owner ModelOwner) (configs []*ModelConfig, total int64, err error) {
 	tx := DB.Model(&ModelConfig{}).Where("model LIKE ?", "%"+keyword+"%")
 	if model != "" {
 		tx = tx.Where("model = ?", model)
+	}
+	if owner != "" {
+		tx = tx.Where("owner = ?", owner)
 	}
 	if keyword != "" {
 		var conditions []string
@@ -100,6 +139,15 @@ func SearchModelConfigs(keyword string, startIdx int, num int, model string) (co
 				conditions = append(conditions, "model LIKE ?")
 			}
 			values = append(values, "%"+keyword+"%")
+		}
+
+		if owner != "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "owner ILIKE ?")
+			} else {
+				conditions = append(conditions, "owner LIKE ?")
+			}
+			values = append(values, "%"+string(owner)+"%")
 		}
 
 		if len(conditions) > 0 {

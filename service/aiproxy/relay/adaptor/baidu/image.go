@@ -24,7 +24,7 @@ type ImageResponse struct {
 	Created int64        `json:"created"`
 }
 
-func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)

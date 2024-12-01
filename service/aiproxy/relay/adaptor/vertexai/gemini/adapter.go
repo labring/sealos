@@ -23,18 +23,22 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "gemini-1.5-pro-001",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerGoogle,
 	},
 	{
 		Model: "gemini-1.5-flash-001",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerGoogle,
 	},
 	{
 		Model: "gemini-pro",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerGoogle,
 	},
 	{
 		Model: "gemini-pro-vision",
 		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerGoogle,
 	},
 }
 

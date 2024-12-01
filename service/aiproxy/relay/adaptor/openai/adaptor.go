@@ -17,10 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-var (
-	_ adaptor.Adaptor    = (*Adaptor)(nil)
-	_ adaptor.GetBalance = (*Adaptor)(nil)
-)
+var _ adaptor.Adaptor = (*Adaptor)(nil)
 
 type Adaptor struct{}
 
@@ -158,8 +155,4 @@ func (a *Adaptor) GetModelList() []*model.ModelConfig {
 
 func (a *Adaptor) GetChannelName() string {
 	return "openai"
-}
-
-func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
-	return GetBalance(channel)
 }

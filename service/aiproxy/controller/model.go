@@ -9,7 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
+	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -83,16 +85,21 @@ func init() {
 		modelNames := adaptor.GetModelList()
 		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelNames))
 		for idx, model := range modelNames {
-			if _, ok := modelsMap[model.Model]; !ok {
+			if model.Owner == "" {
+				model.Owner = dbmodel.ModelOwner(adaptor.GetChannelName())
+			}
+			if v, ok := modelsMap[model.Model]; !ok {
 				modelsMap[model.Model] = &OpenAIModels{
 					ID:         model.Model,
 					Object:     "model",
 					Created:    1626777600,
-					OwnedBy:    adaptor.GetChannelName(),
+					OwnedBy:    string(model.Owner),
 					Permission: permission,
 					Root:       model.Model,
 					Parent:     nil,
 				}
+			} else if v.OwnedBy != string(model.Owner) {
+				logger.FatalLog(fmt.Sprintf("model %s owner mismatch, expect %s, actual %s", model.Model, string(model.Owner), v.OwnedBy))
 			}
 			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(model)
 		}
@@ -220,15 +227,11 @@ func ListModels(c *gin.Context) {
 	availableOpenAIModels := make([]*OpenAIModels, 0, len(models))
 
 	for _, model := range models {
-		if model, ok := modelsMap[model.Model]; ok {
-			availableOpenAIModels = append(availableOpenAIModels, model)
-			continue
-		}
 		availableOpenAIModels = append(availableOpenAIModels, &OpenAIModels{
 			ID:      model.Model,
 			Object:  "model",
 			Created: 1626777600,
-			OwnedBy: "custom",
+			OwnedBy: string(model.Owner),
 			Root:    model.Model,
 			Parent:  nil,
 		})
@@ -241,9 +244,11 @@ func ListModels(c *gin.Context) {
 }
 
 func RetrieveModel(c *gin.Context) {
-	models := model.GetModel2Channels()
 	modelName := c.Param("model")
-	if _, ok := models[modelName]; !ok {
+	enabledModels := model.GetModel2Channels()
+	model, ok := model.CacheGetModelConfig(modelName)
+
+	if _, exist := enabledModels[modelName]; !exist || !ok {
 		c.JSON(200, gin.H{
 			"error": relaymodel.Error{
 				Message: fmt.Sprintf("the model '%s' does not exist", modelName),
@@ -254,16 +259,13 @@ func RetrieveModel(c *gin.Context) {
 		})
 		return
 	}
-	if model, ok := modelsMap[modelName]; ok {
-		c.JSON(200, model)
-		return
-	}
+
 	c.JSON(200, &OpenAIModels{
-		ID:      modelName,
+		ID:      model.Model,
 		Object:  "model",
 		Created: 1626777600,
-		OwnedBy: "custom",
-		Root:    modelName,
+		OwnedBy: string(model.Owner),
+		Root:    model.Model,
 		Parent:  nil,
 	})
 }

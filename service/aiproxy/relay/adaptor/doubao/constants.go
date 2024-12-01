@@ -11,6 +11,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-pro-256k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0050,
 		OutputPrice: 0.0090,
 		Config: map[model.ModelConfigKey]any{
@@ -21,6 +22,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-pro-128k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0050,
 		OutputPrice: 0.0090,
 		Config: map[model.ModelConfigKey]any{
@@ -31,6 +33,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-pro-32k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0008,
 		OutputPrice: 0.0020,
 		Config: map[model.ModelConfigKey]any{
@@ -41,6 +44,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-pro-4k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0008,
 		OutputPrice: 0.0020,
 		Config: map[model.ModelConfigKey]any{
@@ -51,6 +55,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-lite-128k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0008,
 		OutputPrice: 0.0010,
 		Config: map[model.ModelConfigKey]any{
@@ -61,6 +66,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-lite-32k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
 		Config: map[model.ModelConfigKey]any{
@@ -71,6 +77,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "Doubao-lite-4k",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
 		Config: map[model.ModelConfigKey]any{
@@ -81,5 +88,6 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "Doubao-embedding",
 		Type:  relaymode.Embeddings,
+		Owner: model.ModelOwnerDoubao,
 	},
 }

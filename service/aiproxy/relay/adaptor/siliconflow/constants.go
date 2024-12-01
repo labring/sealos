@@ -11,13 +11,21 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "BAAI/bge-reranker-v2-m3",
 		Type:        relaymode.Rerank,
+		Owner:       model.ModelOwnerBAAI,
 		InputPrice:  0.0009,
 		OutputPrice: 0,
 	},
 
 	{
+		Model: "BAAI/bge-large-zh-v1.5",
+		Type:  relaymode.Embeddings,
+		Owner: model.ModelOwnerBAAI,
+	},
+
+	{
 		Model:       "fishaudio/fish-speech-1.4",
 		Type:        relaymode.AudioSpeech,
+		Owner:       model.ModelOwnerFishAudio,
 		OutputPrice: 0.105,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigSupportVoicesKey: []string{
@@ -36,11 +44,13 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "FunAudioLLM/SenseVoiceSmall",
 		Type:  relaymode.AudioTranscription,
+		Owner: model.ModelOwnerFunAudioLLM,
 	},
 
 	{
 		Model: "stabilityai/stable-diffusion-3-5-large",
 		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerStabilityAI,
 		ImagePrices: map[string]float64{
 			"1024x1024": 0,
 			"512x1024":  0,
@@ -53,6 +63,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "stabilityai/stable-diffusion-3-5-large-turbo",
 		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerStabilityAI,
 		ImagePrices: map[string]float64{
 			"1024x1024": 0,
 			"512x1024":  0,

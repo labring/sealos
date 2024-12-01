@@ -1,14 +1,11 @@
 package ollama
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -49,18 +46,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.H
 	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		var req relaymodel.GeneralOpenAIRequest
-		err := common.UnmarshalBodyReusable(request, &req)
-		if err != nil {
-			return nil, nil, err
-		}
-		req.Model = meta.ActualModelName
-		ollamaEmbeddingRequest := ConvertEmbeddingRequest(&req)
-		data, err := json.Marshal(ollamaEmbeddingRequest)
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, bytes.NewReader(data), nil
+		return ConvertEmbeddingRequest(meta, request)
 	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, request)
 	default:

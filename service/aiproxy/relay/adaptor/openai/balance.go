@@ -8,7 +8,14 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )
+
+var _ adaptor.GetBalance = (*Adaptor)(nil)
+
+func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
+	return GetBalance(channel)
+}
 
 func GetBalance(channel *model.Channel) (float64, error) {
 	u := channel.BaseURL

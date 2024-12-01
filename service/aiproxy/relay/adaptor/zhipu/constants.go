@@ -7,8 +7,20 @@ import (
 
 var ModelList = []*model.ModelConfig{
 	{
+		Model:       "glm-3-turbo",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
+		InputPrice:  0.001,
+		OutputPrice: 0.001,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 128000,
+			model.ModelConfigMaxOutputTokensKey:  4095,
+		},
+	},
+	{
 		Model:       "glm-4",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.1,
 		OutputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
@@ -19,6 +31,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4-plus",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
 		Config: map[model.ModelConfigKey]any{
@@ -29,6 +42,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4-air",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
 		Config: map[model.ModelConfigKey]any{
@@ -39,6 +53,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4-airx",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
 		Config: map[model.ModelConfigKey]any{
@@ -49,6 +64,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4-long",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
 		Config: map[model.ModelConfigKey]any{
@@ -59,6 +75,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4-flashx",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
 		Config: map[model.ModelConfigKey]any{
@@ -69,6 +86,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4-flash",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
 		Config: map[model.ModelConfigKey]any{
@@ -79,6 +97,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4v",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
 		Config: map[model.ModelConfigKey]any{
@@ -88,6 +107,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:       "glm-4v-plus",
 		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
 		Config: map[model.ModelConfigKey]any{
@@ -97,6 +117,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:      "embedding-3",
 		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerChatGLM,
 		InputPrice: 0.0005,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 8192,
@@ -105,6 +126,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:             "cogview-3",
 		Type:              relaymode.ImagesGenerations,
+		Owner:             model.ModelOwnerChatGLM,
 		ImageMaxBatchSize: 1,
 		ImagePrices: map[string]float64{
 			"1024x1024": 0.1,
@@ -113,6 +135,7 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model:             "cogview-3-plus",
 		Type:              relaymode.ImagesGenerations,
+		Owner:             model.ModelOwnerChatGLM,
 		ImageMaxBatchSize: 1,
 		ImagePrices: map[string]float64{
 			"1024x1024": 0.06,
