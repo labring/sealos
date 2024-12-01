@@ -10,6 +10,9 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 )
 
+const MetaEmbeddingsPatchInputToSlices = "embeddings_input_to_slices"
+
+//nolint:gocritic
 func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
@@ -18,6 +21,14 @@ func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (http.Header, 
 	}
 
 	reqMap["model"] = meta.ActualModelName
+
+	if meta.GetBool(MetaEmbeddingsPatchInputToSlices) {
+		switch v := reqMap["input"].(type) {
+		case string:
+			reqMap["input"] = []string{v}
+		}
+	}
+
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
 		return nil, nil, err

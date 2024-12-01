@@ -68,6 +68,7 @@ var ModelList = []*model.ModelConfig{
 			model.ModelConfigMaxContextTokensKey: 4800,
 		},
 	},
+
 	{
 		Model: "Embedding-V1",
 		Type:  relaymode.Embeddings,
@@ -83,5 +84,10 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "tao-8k",
 		Type:  relaymode.Embeddings,
+	},
+
+	{
+		Model: "bce-reranker-base_v1",
+		Type:  relaymode.Rerank,
 	},
 }
