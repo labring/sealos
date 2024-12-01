@@ -191,7 +191,21 @@ const ModelList: React.FC = () => {
           </Badge>
         </Flex>
       </Flex>
-      <Flex flexDir="column" align="flex-start" gap="16px">
+      <Flex
+        flexDir="column"
+        align="flex-start"
+        gap="16px"
+        h="full"
+        maxH="full"
+        overflow="hidden"
+        overflowY="auto"
+        sx={{
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          },
+          '-ms-overflow-style': 'none',
+          scrollbarWidth: 'none'
+        }}>
         {isLoading ? (
           <Center>
             <Spinner size="md" color="grayModern.800" />

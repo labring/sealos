@@ -63,6 +63,7 @@ export const SingleSelectCombobox: <T>(props: {
           alignItems="center"
           h="20px"
           justifyContent="flex-start"
+          whiteSpace="nowrap"
           m={0}
           {...getLabelProps()}>
           {t('channelsForm.type')}

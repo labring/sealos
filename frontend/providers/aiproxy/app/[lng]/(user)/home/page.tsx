@@ -32,8 +32,7 @@ export default function Home(): JSX.Element {
         gap="22px"
         minW="260px"
         w="full"
-        h="full"
-        overflow="auto">
+        h="full">
         <ModelList />
       </Flex>
     </Flex>

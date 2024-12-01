@@ -142,5 +142,19 @@
   },
   "common": {
     "add": "Add"
+  },
+  "global_configs": {
+    "title": "Global configuration",
+    "export": "Export",
+    "import": "import"
+  },
+  "globalonfigs": {
+    "common_config": "Common configuration",
+    "model_config": "Model settings"
+  },
+  "globalConfigs": {
+    "defaultModel": "Default model",
+    "addDefaultModel": "New",
+    "saveDefaultModel": "Save"
   }
 }

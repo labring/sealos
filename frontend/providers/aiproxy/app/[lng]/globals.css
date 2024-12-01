@@ -107,7 +107,7 @@ textarea::placeholder {
 }
 
 ::-webkit-scrollbar-track {
-  margin: 12px 0;
+  margin: 24px 0;
   background: transparent !important;
   border-radius: 6px;
 }
@@ -127,7 +127,7 @@ div {
   }
 
   &::-webkit-scrollbar-track {
-    margin: 12px 0;
+    margin: 24px 0;
   }
 
   &:hover {

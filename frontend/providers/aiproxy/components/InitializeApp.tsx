@@ -93,8 +93,9 @@ export default function InitializeApp() {
 
     try {
       const newSession = await sealosApp.getSession()
-      // 只要有新 session 就更新
-      if (newSession) {
+      const currentSession = useSessionStore.getState().session
+      // Compare token from persisted session with new session token
+      if (newSession?.token !== currentSession?.token) {
         setSession(newSession)
         window.location.reload()
       }

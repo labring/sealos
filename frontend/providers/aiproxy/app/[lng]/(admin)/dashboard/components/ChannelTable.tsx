@@ -589,6 +589,7 @@ export default function ChannelTable() {
         </Table>
       </TableContainer>
       <SwitchPage
+        m="0"
         justifyContent={'flex-end'}
         currentPage={page}
         totalPage={Math.ceil(total / pageSize)}

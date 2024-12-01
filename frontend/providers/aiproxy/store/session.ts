@@ -11,7 +11,7 @@ interface SessionState {
 export const useSessionStore = create<SessionState>()(
   persist(
     immer((set) => ({
-      session: null,
+      session: null as SessionV1 | null,
       setSession: (session) =>
         set((state) => {
           state.session = session

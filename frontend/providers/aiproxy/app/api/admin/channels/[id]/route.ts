@@ -15,9 +15,14 @@ export type GetChannelsResponse = ApiResp<{
 async function updateChannel(channelData: CreateChannelRequest, id: string): Promise<void> {
   try {
     const url = new URL(
-      `/api/channel/${id}`,
+      `/api/channel`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
+
+    const updateChannelData = {
+      id: id,
+      ...channelData
+    }
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
       method: 'PUT',
@@ -25,7 +30,7 @@ async function updateChannel(channelData: CreateChannelRequest, id: string): Pro
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
-      body: JSON.stringify(channelData),
+      body: JSON.stringify(updateChannelData),
       cache: 'no-store'
     })
 

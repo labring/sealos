@@ -379,7 +379,6 @@ export const UpdateChannelModal = function ({
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors },
     control
   } = useForm<FormData>({
@@ -402,9 +401,6 @@ export const UpdateChannelModal = function ({
       setValue('id', channelInfo.id)
     }
   }, [channelInfo])
-
-  console.log('id:', id)
-  console.log('watch:', watch())
 
   const createChannelMutation = useMutation({
     mutationFn: createChannel,

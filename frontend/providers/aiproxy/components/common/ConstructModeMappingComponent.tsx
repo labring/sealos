@@ -316,6 +316,7 @@ export const ConstructModeMappingComponent = function ({
   return (
     <VStack w="full" align="stretch" alignItems="flex-start" spacing="8px">
       <FormLabel
+        whiteSpace="nowrap"
         color="grayModern.900"
         fontFamily="PingFang SC"
         fontSize="14px"

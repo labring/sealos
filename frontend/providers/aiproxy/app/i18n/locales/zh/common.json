@@ -142,5 +142,19 @@
   },
   "common": {
     "add": "填入"
+  },
+  "global_configs": {
+    "title": "全局配置",
+    "export": "导出",
+    "import": "导入"
+  },
+  "globalonfigs": {
+    "common_config": "通用配置",
+    "model_config": "模型设置"
+  },
+  "globalConfigs": {
+    "defaultModel": "默认模型",
+    "addDefaultModel": "新增模型",
+    "saveDefaultModel": "保存"
   }
 }

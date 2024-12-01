@@ -130,6 +130,7 @@ export const MultiSelectCombobox = function <T>({
           {...getLabelProps()}>
           <Flex gap="3.5px" alignItems="flex-start">
             <Text
+              whiteSpace="nowrap"
               color="grayModern.900"
               fontFamily="PingFang SC"
               fontSize="14px"
@@ -152,6 +153,7 @@ export const MultiSelectCombobox = function <T>({
           </Flex>
           {handleSetCustomSelectedItem && (
             <InputGroup
+              minW="0"
               w="270px"
               h="28px"
               alignItems="center"
@@ -225,6 +227,7 @@ export const MultiSelectCombobox = function <T>({
                   }
                 }}>
                 <Text
+                  whiteSpace="nowrap"
                   color="grayModern.600"
                   fontFamily="PingFang SC"
                   fontSize="12px"
