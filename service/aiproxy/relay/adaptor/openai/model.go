@@ -152,3 +152,7 @@ type UsageResponse struct {
 	// DailyCosts []OpenAIUsageDailyCost `json:"daily_costs"`
 	TotalUsage float64 `json:"total_usage"` // unit: 0.01 dollar
 }
+
+type ErrorResp struct {
+	Error model.Error `json:"error"`
+}

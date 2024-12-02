@@ -106,7 +106,7 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymod
 		return nil, openai.ErrorWrapper(err, "TTS_ERROR", http.StatusInternalServerError)
 	}
 	if result.BaseResp != nil && result.BaseResp.StatusCode != 0 {
-		return nil, openai.ErrorWrapperWithMessage(result.BaseResp.StatusMsg, "TTS_ERROR: "+strconv.Itoa(result.BaseResp.StatusCode), http.StatusInternalServerError)
+		return nil, openai.ErrorWrapperWithMessage(result.BaseResp.StatusMsg, "TTS_ERROR_"+strconv.Itoa(result.BaseResp.StatusCode), http.StatusInternalServerError)
 	}
 
 	audioBytes, err := hex.DecodeString(result.Data.Audio)
