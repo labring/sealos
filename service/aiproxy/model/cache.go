@@ -372,11 +372,11 @@ func initializeChannelModels(channel *Channel) {
 		return
 	}
 
-	sort.Strings(channel.Models)
 	if len(missingModels) > 0 {
-		sort.Strings(missingModels)
+		slices.Sort(missingModels)
 		logger.SysErrorf("model config not found: %v", missingModels)
 	}
+	slices.Sort(findedModels)
 	channel.Models = findedModels
 }
 
@@ -414,18 +414,26 @@ func sortChannelsByPriority(modelMap map[string][]*Channel) {
 
 func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConfig {
 	typeMap := make(map[int][]*ModelConfig)
+
 	for _, channel := range channels {
 		if _, ok := typeMap[channel.Type]; !ok {
-			typeMap[channel.Type] = make([]*ModelConfig, 0)
+			typeMap[channel.Type] = make([]*ModelConfig, 0, len(channel.Models))
 		}
 		configs := typeMap[channel.Type]
+
 		for _, model := range channel.Models {
 			if config, ok := CacheGetModelConfig(model); ok {
 				configs = append(configs, config)
 			}
 		}
-		slices.SortStableFunc(configs, SortModelConfigsFunc)
 		typeMap[channel.Type] = configs
+	}
+
+	for key, configs := range typeMap {
+		slices.SortStableFunc(configs, SortModelConfigsFunc)
+		typeMap[key] = slices.CompactFunc(configs, func(e1, e2 *ModelConfig) bool {
+			return e1.Model == e2.Model
+		})
 	}
 	return typeMap
 }
