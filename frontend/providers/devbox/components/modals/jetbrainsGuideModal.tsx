@@ -185,7 +185,7 @@ const JetBrainsGuideModal = ({
                   }
                 }}
                 onClick={() => {
-                  window.open('https://www.jetbrains.com/remote-development/gateway/', '_blank')
+                  window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank')
                 }}>
                 JetBrains Gateway
               </Button>
@@ -322,6 +322,7 @@ const JetBrainsGuideModal = ({
                         color={'grayModern.600'}
                         borderRadius={'5px'}
                         borderWidth={1}
+                        w={'fit-content'}
                         size={'sm'}
                         _hover={{
                           color: 'brightBlue.600',
@@ -329,7 +330,6 @@ const JetBrainsGuideModal = ({
                             color: 'brightBlue.600'
                           }
                         }}
-                        w={'70px'}
                         onClick={handleDownloadPrivateKey}>
                         {t('private_key')}
                       </Button>
