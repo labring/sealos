@@ -86,7 +86,7 @@
   "intranet_address": "内网地址",
   "jetbrains_guide_documentation": "使用文档",
   "jetbrains_guide_download_private_key_path": "你下载的私钥存储的位置",
-  "jetbrains_guide_four_steps": "（共 4 步）",
+  "jetbrains_guide_three_steps": "（共 3 步）",
   "jetbrains_guide_post_connection": "如何连接服务？后续使用可点击下方按钮进行查看。",
   "jetbrains_guide_post_use": "后续使用",
   "jetbrains_guide_prepare": "前置准备",
