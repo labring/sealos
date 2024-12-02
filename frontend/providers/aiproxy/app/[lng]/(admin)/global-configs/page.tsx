@@ -11,14 +11,14 @@ export default function GlobalConfigPage() {
   return (
     <Flex pt="4px" pb="12px" pr="12px" pl="0px" h="100vh" width="full">
       <Flex
+        h="calc(100vh - 16px)"
         bg="white"
         gap="36px"
         pt="24px"
-        px="32px"
         pb="12px"
+        px="32px"
         flexDirection="column"
         borderRadius="12px"
-        h="full"
         w="full"
         flex="1">
         {/* header */}
@@ -142,23 +142,24 @@ export default function GlobalConfigPage() {
           </Flex>
         </Flex>
         {/* header end */}
+
         {/* config */}
+        {/*
+        100vh - 16px (父元素上下padding: 4px + 12px)
+        24px (顶部padding: pt="24px")
+        12px (底部padding: pb="12px")
+        32px (header高度)
+        36px (flex gap间距)
+        */}
         <Flex
+          h="calc(100vh - 16px - 24px - 12px - 32px - 36px)"
           alignSelf="center"
-          h="full"
           w="full"
           maxWidth="690px"
           gap="36px"
           flexDirection="column"
           flex="1"
-          overflow="auto"
-          sx={{
-            '&::-webkit-scrollbar': {
-              display: 'none'
-            },
-            '-ms-overflow-style': 'none',
-            scrollbarWidth: 'none'
-          }}>
+          overflow="hidden">
           <CommonConfig />
           <Divider />
           <ModelConfig />

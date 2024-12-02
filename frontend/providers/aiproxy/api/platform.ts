@@ -8,6 +8,8 @@ import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
 import { ApiResp } from '@/types/api'
 import { GetModelsResponse } from '@/app/api/models/route'
 import { GetDefaultEnabledModelsResponse } from '@/app/api/models/enabled/default/route'
+import { GetOptionResponse } from '@/app/api/admin/option/route'
+import { BatchOptionData } from '@/types/admin/option'
 // user
 export const initAppConfig = () => GET<{ aiproxyBackend: string }>('/api/init-app-config')
 
@@ -43,3 +45,12 @@ export const getBuiltInSupportModels = () => GET<GetModelsResponse['data']>('/ap
 
 export const getDefaultEnabledModels = () =>
   GET<GetDefaultEnabledModelsResponse['data']>('/api/models/enabled/default')
+
+// option
+export const getOption = () => GET<GetOptionResponse['data']>('/api/admin/option')
+
+export const updateOption = (params: { key: string; value: string }) =>
+  PUT<ApiResp>(`/api/admin/option/`, params)
+
+export const batchOption = (params: BatchOptionData) =>
+  PUT<ApiResp>(`/api/admin/option/batch`, params)

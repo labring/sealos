@@ -43,3 +43,7 @@ export enum ModelType {
   VertextAI = '42',
   SiliconFlow = '43'
 }
+
+export type ModelMap = { [K in ModelType]?: string[] }
+
+export type ModelMappingMap = { [K in ModelType]?: {} }

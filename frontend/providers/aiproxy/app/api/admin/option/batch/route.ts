@@ -1,28 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ChannelInfo } from '@/types/admin/channels/channelInfo'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { CreateChannelRequest } from '@/types/admin/channels/channelInfo.d'
+import { BatchOptionData } from '@/types/admin/option'
 
 export const dynamic = 'force-dynamic'
 
-export type GetChannelsResponse = ApiResp<{
-  channels: ChannelInfo[]
-  total: number
-}>
-
-async function updateChannel(channelData: CreateChannelRequest, id: string): Promise<void> {
+async function batchOption(batchOptionData: BatchOptionData): Promise<string> {
   try {
     const url = new URL(
-      `/api/channel`,
+      `/api/option/batch`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
 
-    const updateChannelData = {
-      id: Number(id),
-      ...channelData
-    }
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
       method: 'PUT',
@@ -30,7 +20,7 @@ async function updateChannel(channelData: CreateChannelRequest, id: string): Pro
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
-      body: JSON.stringify(updateChannelData),
+      body: JSON.stringify(batchOptionData),
       cache: 'no-store'
     })
 
@@ -40,43 +30,51 @@ async function updateChannel(channelData: CreateChannelRequest, id: string): Pro
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'Failed to create channel')
+      throw new Error(result.message || 'Failed to batch option')
     }
+
+    return result.message
   } catch (error) {
-    console.error('admin channels api: create channel error:## ', error)
+    console.error('admin batch options api: update option error:', error)
     throw error
   }
 }
 
-// update channel
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse<ApiResp>> {
+function validateBatchOptionData(batchOptionData: BatchOptionData): boolean {
+  if (typeof batchOptionData.DefaultChannelModelMapping !== 'string') {
+    return false
+  }
+  if (typeof batchOptionData.DefaultChannelModels !== 'string') {
+    return false
+  }
+  return true
+}
+
+export async function PUT(request: NextRequest): Promise<NextResponse<ApiResp>> {
   try {
     const namespace = await parseJwtToken(request.headers)
     await isAdmin(namespace)
 
-    if (!params.id) {
+    const body = await request.json()
+    if (!validateBatchOptionData(body)) {
       return NextResponse.json(
         {
           code: 400,
-          message: 'Channel id is required',
-          error: 'Bad Request'
-        },
+          message: 'Invalid request body',
+          error: 'Invalid request body'
+        } satisfies ApiResp,
         { status: 400 }
       )
     }
 
-    const channelData: CreateChannelRequest = await request.json()
-    await updateChannel(channelData, params.id)
+    await batchOption(body)
 
     return NextResponse.json({
       code: 200,
-      message: 'Channel created successfully'
+      message: 'Option batch updated successfully'
     } satisfies ApiResp)
   } catch (error) {
-    console.error('admin channels api: create channel error:## ', error)
+    console.error('admin batch options api: put option error:', error)
     return NextResponse.json(
       {
         code: 500,

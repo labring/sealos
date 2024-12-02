@@ -10,13 +10,15 @@ export const CustomSelect = function <T>({
   handleSelectedItemChange,
   handleDropdownItemDisplay,
   handleSelectedItemDisplay,
-  placeholder
+  placeholder,
+  initSelectedItem
 }: {
   listItems: T[]
   handleSelectedItemChange: (selectedItem: T) => void
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
   handleSelectedItemDisplay: (selectedItem: T) => ReactNode
   placeholder?: string
+  initSelectedItem?: T
 }) {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
@@ -31,6 +33,7 @@ export const CustomSelect = function <T>({
     highlightedIndex
   } = useSelect({
     items: items,
+    initialSelectedItem: initSelectedItem,
     onSelectedItemChange: ({ selectedItem: newSelectedItem }) => {
       if (newSelectedItem === placeholder) {
         handleSelectedItemChange(null as T)

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { ModelType } from '@/types/models/model'
 import { isAdmin } from '@/utils/backend/isAdmin'
+import { ModelMap } from '@/types/models/model'
 
 export const dynamic = 'force-dynamic'
-
-type ModelMap = { [K in ModelType]?: string[] }
 
 type ApiProxyBackendDefaultEnabledModelsResponse = ApiProxyBackendResp<ModelMap>
 export type GetDefaultEnabledModelsResponse = ApiResp<ModelMap>

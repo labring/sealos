@@ -105,7 +105,7 @@ export const UpdateChannelModal = function ({
     successIconFill: 'white'
   })
 
-  const [modelTypes, setModelTypes] = useState<ModelTypeKey[]>([])
+  const [allSupportModelTypes, setAllSupportModelTypes] = useState<ModelTypeKey[]>([])
   const [selectedModelType, setSelectedModelType] = useState<ModelTypeKey | null>(null)
 
   const [models, setModels] = useState<Model[]>([])
@@ -121,9 +121,10 @@ export const UpdateChannelModal = function ({
 
       const types = Object.keys(data)
         .map((key) => getEnumKeyByValue(ModelType, key))
+        // Remove values that are not in ModelType
         .filter((key): key is ModelTypeKey => key !== undefined)
 
-      setModelTypes(types)
+      setAllSupportModelTypes(types)
     }
   })
 
@@ -160,6 +161,7 @@ export const UpdateChannelModal = function ({
 
     setModels(convertedModels)
     setSelectedModels([])
+    setModelMapping({})
   }, [selectedModelType, builtInSupportModels, defaultEnabledModels])
 
   // model type select combobox
@@ -398,9 +400,19 @@ export const UpdateChannelModal = function ({
 
   useEffect(() => {
     if (channelInfo) {
-      setValue('id', channelInfo.id)
+      const { id, type, name, key, base_url, models, model_mapping } = channelInfo
+      reset({ id, type, name, key, base_url, models, model_mapping })
     }
   }, [channelInfo])
+
+  const resetModalState = () => {
+    reset()
+    setAllSupportModelTypes([])
+    setSelectedModelType(null)
+    setModels([])
+    setSelectedModels([])
+    setModelMapping({})
+  }
 
   const createChannelMutation = useMutation({
     mutationFn: createChannel,
@@ -409,7 +421,6 @@ export const UpdateChannelModal = function ({
         title: t('channels.createSuccess'),
         status: 'success'
       })
-      onClose()
     }
   })
 
@@ -452,7 +463,8 @@ export const UpdateChannelModal = function ({
           break
       }
       queryClient.invalidateQueries({ queryKey: ['getChannels'] })
-      reset()
+      resetModalState()
+      onClose()
     } catch (error) {
       switch (operationType) {
         case 'create':
@@ -474,7 +486,9 @@ export const UpdateChannelModal = function ({
             isClosable: true,
             description: error instanceof Error ? error.message : t('channels.updateFailed')
           })
+          break
       }
+      resetModalState()
     }
   }
 
@@ -618,7 +632,7 @@ export const UpdateChannelModal = function ({
                       control={control}
                       render={({ field }) => (
                         <SingleSelectCombobox<ModelTypeKey>
-                          dropdownItems={modelTypes}
+                          dropdownItems={allSupportModelTypes}
                           setSelectedItem={(type) => {
                             if (type) {
                               field.onChange(Number(ModelType[type as keyof typeof ModelType]))

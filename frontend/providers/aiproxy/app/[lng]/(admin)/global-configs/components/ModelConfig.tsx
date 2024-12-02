@@ -49,46 +49,136 @@ import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
 import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent'
 import { FieldError, FieldErrors, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { object, z } from 'zod'
+import { getBuiltInSupportModels, getOption } from '@/api/platform'
+import { ModelMap, ModelMappingMap, ModelType } from '@/types/models/model'
+import { SetStateAction, Dispatch, useEffect, useState } from 'react'
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
+import { getEnumKeyByValue } from '@/utils/common'
+import ConstructMappingComponent from '@/components/common/ConstructMappingComponent'
+
 const ModelConfig = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
-  // form schema
-  const schema = z.object({
-    id: z.number().optional(),
-    type: z.number(),
-    name: z.string().min(1, { message: t('channels.name_required') }),
-    key: z.string().min(1, { message: t('channels.key_required') }),
-    base_url: z.string(),
-    models: z.array(z.string()).default([]),
-    model_mapping: z.record(z.string(), z.any()).default({})
+  type ModelTypeKey = keyof typeof ModelType
+
+  const [allSupportModelTypes, setAllSupportModelTypes] = useState<ModelTypeKey[]>([])
+  const [allSupportModel, setAllSupportModel] = useState<ModelMap>({})
+
+  const [defaultModel, setDefaultModel] = useState<Partial<Record<ModelType, string[]>>>({})
+  const [defaultModelMapping, setDefaultModelMapping] = useState<Partial<Record<ModelType, {}>>>({})
+
+  const { isLoading: isBuiltInSupportModelsLoading, data: builtInSupportModels } = useQuery({
+    queryKey: ['models'],
+    queryFn: () => getBuiltInSupportModels(),
+    onSuccess: (data) => {
+      if (!data) return
+
+      const types = Object.keys(data)
+        .map((key) => getEnumKeyByValue(ModelType, key))
+        .filter((key): key is ModelTypeKey => key !== undefined)
+
+      setAllSupportModelTypes(types)
+      setAllSupportModel(data)
+    }
   })
+
+  const { isLoading: isOptionLoading, data: optionData } = useQuery({
+    queryKey: ['option'],
+    queryFn: () => getOption(),
+    onSuccess: (data) => {
+      if (!data) return
+
+      const defaultModels: ModelMap = JSON.parse(data.DefaultChannelModels)
+      const defaultModelMappings: ModelMappingMap = JSON.parse(data.DefaultChannelModelMapping)
+
+      setDefaultModel(defaultModels)
+      setDefaultModelMapping(defaultModelMappings)
+    }
+  })
+
+  // form schema
+  const itemSchema = z.object({
+    type: z.number(),
+    defaultMode: z.array(z.string()),
+    defaultModeMapping: z.record(z.string(), z.any()).default({})
+  })
+
+  const schema = z.array(itemSchema)
+
+  type ConfigItem = z.infer<typeof itemSchema>
+  type FormData = ConfigItem[]
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
     control
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      id: undefined,
-      type: undefined,
-      name: '',
-      key: '',
-      base_url: '',
-      models: [],
-      model_mapping: {}
-    },
+    defaultValues: [],
     mode: 'onChange',
     reValidateMode: 'onChange'
   })
 
+  useEffect(() => {
+    // Only proceed if both defaultModel and defaultModelMapping are available
+    if (Object.keys(defaultModel).length === 0) return
+
+    // Transform the data into form format
+    const formData: FormData = Object.entries(defaultModel).map(([typeKey, modes]) => {
+      const modelType = Number(typeKey)
+      return {
+        type: modelType,
+        defaultMode: modes || [], // Using first mode as default
+        defaultModeMapping: defaultModelMapping[typeKey as ModelType] || {}
+      }
+    })
+
+    console.log('formData', formData)
+
+    // Reset form with the new values
+    reset(formData)
+  }, [defaultModel, defaultModelMapping, reset])
+
+  const handleAddDefaultModel = () => {
+    const newItem = {
+      type: undefined, // Default type value
+      defaultMode: [],
+      defaultModeMapping: {}
+    }
+
+    // Get current form values
+    const currentValues = watch()
+    // Create new array with new item at the beginning
+    const newValues = [newItem, ...Object.values(currentValues)]
+    console.log('newValues', newValues)
+    // Reset form with new values
+    reset(newValues)
+  }
+
+  // console.log('watch', watch())
+
+  const formValues = watch()
+
+  const formValuesArray: FormData = Array.isArray(formValues)
+    ? formValues
+    : Object.values(formValues)
+
+  console.log('formValuesArray', formValuesArray)
+
   return (
-    <Flex w="full" h="full" gap="8px" flexDirection="row" flex="1">
+    /*
+    顶级 Flex 容器的高度: calc(100vh - 16px - 24px - 12px - 32px - 36px)
+    ModelConfig 的高度: calc(100vh - 16px - 24px - 12px - 32px - 36px)- CommonConfig 的高度(152px) -两个 gap 的高度(36px × 2 = 72px)
+    = calc(100vh - 16px - 24px - 12px - 32px - 36px - 152px - 72px)
+    = calc(100vh - 344px)
+    */
+    <Flex w="full" gap="8px" flexDirection="row" flex="1" h="calc(100vh - 344px)">
       {/* title */}
       <Flex w="153px" pt="4px" alignItems="flex-start">
         <Text
@@ -106,7 +196,7 @@ const ModelConfig = () => {
       {/* -- title end */}
 
       {/* config */}
-      <Flex h="full" flexDirection="column" gap="12px" flex="1" minW="0">
+      <Flex h="full" flexDirection="column" gap="12px" flex="1" minW="0" overflow="hidden">
         {/* add default model */}
         <Flex justifyContent="space-between" alignItems="center" alignSelf="stretch" gap="16px">
           <Text
@@ -122,6 +212,7 @@ const ModelConfig = () => {
           </Text>
           <Flex justifyContent="flex-end" alignItems="center" gap="15px" minW="0">
             <Button
+              onClick={handleAddDefaultModel}
               variant="outline"
               display="flex"
               padding="8px 14px"
@@ -204,162 +295,183 @@ const ModelConfig = () => {
           gap="12px"
           alignSelf="stretch"
           alignItems="flex-start"
-          flexDirection="column">
-          <Flex
-            w="full"
-            padding="24px 36px"
-            alignSelf="stretch"
-            borderRadius="4px"
-            bg="grayModern.100">
-            <VStack
-              as="form"
-              w="full"
-              spacing="24px"
-              justifyContent="center"
-              alignItems="center"
-              align="stretch">
-              {/* <FormControl isInvalid={!!errors.type} isRequired> */}
-              <FormControl isRequired>
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <SingleSelectCombobox<any>
-                      dropdownItems={[]}
-                      setSelectedItem={(type) => {
-                        if (type) {
-                          field.onChange(null)
+          flexDirection="column"
+          minH="0"
+          // bg="red"
+          borderRadius="6px"
+          overflow="hidden"
+          overflowY="auto">
+          {formValuesArray &&
+            formValuesArray.length > 0 &&
+            formValuesArray.map((value, index) => (
+              <Flex
+                key={`${index}-${value.type}`}
+                w="full"
+                padding="24px 36px"
+                alignSelf="stretch"
+                borderRadius="4px"
+                bg="grayModern.100">
+                <VStack
+                  w="full"
+                  spacing="24px"
+                  justifyContent="center"
+                  alignItems="center"
+                  align="stretch">
+                  <FormControl isRequired>
+                    <Controller
+                      name={`${index}.type`}
+                      control={control}
+                      render={({ field }) => {
+                        // Get current form types
+                        const currentFormTypes = Object.values(formValues)
+                          .map((item) => item.type)
+                          .filter((type) => type !== undefined)
+                          .map((type) => getEnumKeyByValue(ModelType, type.toString()))
+                          .filter((key): key is keyof typeof ModelType => key !== undefined)
+
+                        // Filter available types
+                        const availableTypes = allSupportModelTypes.filter(
+                          (type) =>
+                            !currentFormTypes.includes(type) ||
+                            // 避免编辑时当前选中值"消失"的问题。
+                            (field.value &&
+                              getEnumKeyByValue(ModelType, field.value.toString()) === type)
+                        )
+                        // console.log('availableTypes', availableTypes)
+
+                        return (
+                          <SingleSelectCombobox<ModelTypeKey>
+                            dropdownItems={availableTypes}
+                            initSelectedItem={
+                              field.value
+                                ? getEnumKeyByValue(ModelType, field.value.toString())
+                                : undefined
+                            }
+                            setSelectedItem={(type) => {
+                              if (type) {
+                                const defaultModelField =
+                                  defaultModel[ModelType[type as keyof typeof ModelType]]
+                                const defaultModelMappingField =
+                                  defaultModelMapping[ModelType[type as keyof typeof ModelType]]
+
+                                field.onChange(Number(ModelType[type as keyof typeof ModelType]))
+                                setValue(`${index}.defaultMode`, defaultModelField || [])
+                                setValue(
+                                  `${index}.defaultModeMapping`,
+                                  defaultModelMappingField || {}
+                                )
+                              }
+                            }}
+                            handleDropdownItemFilter={(dropdownItems, inputValue) => {
+                              const lowerCasedInput = inputValue.toLowerCase()
+                              return dropdownItems.filter(
+                                (item) =>
+                                  !inputValue || item.toLowerCase().includes(lowerCasedInput)
+                              )
+                            }}
+                            handleDropdownItemDisplay={(item) => (
+                              <Text
+                                color="grayModern.600"
+                                fontFamily="PingFang SC"
+                                fontSize="12px"
+                                fontStyle="normal"
+                                fontWeight={400}
+                                lineHeight="16px"
+                                letterSpacing="0.048px">
+                                {item}
+                              </Text>
+                            )}
+                          />
+                        )
+                      }}
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <Controller
+                      name={`${index}.defaultMode`}
+                      control={control}
+                      render={({ field }) => {
+                        // Get the current type value from the form
+                        const currentType = watch(`${index}.type`)
+                        const dropdownItems = currentType
+                          ? allSupportModel[currentType.toString() as keyof typeof defaultModel] ||
+                            []
+                          : []
+
+                        const handleSetCustomModel = (
+                          selectedItems: ModelTypeKey[],
+                          setSelectedItems: Dispatch<SetStateAction<ModelTypeKey[]>>,
+                          customModeName: string,
+                          setCustomModeName: Dispatch<SetStateAction<string>>
+                        ) => {
+                          if (customModeName.trim()) {
+                            const exists = field.value.some(
+                              (item) => item === customModeName.trim()
+                            )
+
+                            if (!exists) {
+                              field.onChange([...field.value, customModeName.trim()])
+                              setCustomModeName('')
+                            }
+                          }
                         }
-                      }}
-                      handleDropdownItemFilter={() => {}}
-                      handleDropdownItemDisplay={() => {}}
-                    />
-                  )}
-                />
-                {/* {errors.type && <FormErrorMessage>{errors.type.message}</FormErrorMessage>} */}
-              </FormControl>
 
-              {/* <FormControl isInvalid={!!errors.models}> */}
-              <FormControl>
-                <Controller
-                  name="models"
-                  control={control}
-                  render={({ field }) => (
-                    <MultiSelectCombobox<Model>
-                      dropdownItems={[]}
-                      selectedItems={[]}
-                      setSelectedItems={(models) => {
-                        field.onChange(models)
-                      }}
-                      handleFilteredDropdownItems={() => []}
-                      handleDropdownItemDisplay={() => <></>}
-                      handleSelectedItemDisplay={() => <></>}
-                      handleSetCustomSelectedItem={() => {}}
-                    />
-                  )}
-                />
-                {/* {errors.models && <FormErrorMessage>{errors.models.message}</FormErrorMessage>} */}
-              </FormControl>
+                        const handleModelFilteredDropdownItems = (
+                          dropdownItems: ModelTypeKey[],
+                          selectedItems: ModelTypeKey[],
+                          inputValue: string
+                        ) => {
+                          const lowerCasedInputValue = inputValue.toLowerCase()
 
-              {/* <FormControl isInvalid={!!errors.model_mapping}> */}
-              <FormControl>
-                <Controller
-                  name="model_mapping"
-                  control={control}
-                  render={({ field }) => (
-                    <ConstructModeMappingComponent
-                      mapKeys={[]}
-                      mapData={field.value}
-                      setMapData={(mapping) => {
-                        field.onChange(mapping)
-                      }}
-                    />
-                  )}
-                />
-                {/* {errors.model_mapping?.message && (
-                  <FormErrorMessage>{errors.model_mapping.message.toString()}</FormErrorMessage>
-                )} */}
-              </FormControl>
-            </VStack>
-          </Flex>
-
-          <Flex
-            w="full"
-            padding="24px 36px"
-            alignSelf="stretch"
-            borderRadius="4px"
-            bg="grayModern.100">
-            <VStack
-              as="form"
-              w="full"
-              spacing="24px"
-              justifyContent="center"
-              alignItems="center"
-              align="stretch">
-              {/* <FormControl isInvalid={!!errors.type} isRequired> */}
-              <FormControl isRequired>
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <SingleSelectCombobox<any>
-                      dropdownItems={[]}
-                      setSelectedItem={(type) => {
-                        if (type) {
-                          field.onChange(null)
+                          return dropdownItems.filter(
+                            (item) =>
+                              !selectedItems.includes(item) &&
+                              item.toLowerCase().includes(lowerCasedInputValue)
+                          )
                         }
-                      }}
-                      handleDropdownItemFilter={() => {}}
-                      handleDropdownItemDisplay={() => {}}
-                    />
-                  )}
-                />
-                {/* {errors.type && <FormErrorMessage>{errors.type.message}</FormErrorMessage>} */}
-              </FormControl>
 
-              {/* <FormControl isInvalid={!!errors.models}> */}
-              <FormControl>
-                <Controller
-                  name="models"
-                  control={control}
-                  render={({ field }) => (
-                    <MultiSelectCombobox<Model>
-                      dropdownItems={[]}
-                      selectedItems={[]}
-                      setSelectedItems={(models) => {
-                        field.onChange(models)
+                        return (
+                          <MultiSelectCombobox<ModelTypeKey>
+                            dropdownItems={(dropdownItems as ModelTypeKey[]) || []}
+                            selectedItems={(field.value as ModelTypeKey[]) || []} // Use field.value for selected items
+                            setSelectedItems={(models) => {
+                              field.onChange(models)
+                            }}
+                            handleFilteredDropdownItems={handleModelFilteredDropdownItems}
+                            handleDropdownItemDisplay={(item) => <Text>{item}</Text>}
+                            handleSelectedItemDisplay={(item) => <Text>{item}</Text>}
+                            handleSetCustomSelectedItem={handleSetCustomModel}
+                          />
+                        )
                       }}
-                      handleFilteredDropdownItems={() => []}
-                      handleDropdownItemDisplay={() => <></>}
-                      handleSelectedItemDisplay={() => <></>}
-                      handleSetCustomSelectedItem={() => {}}
                     />
-                  )}
-                />
-                {/* {errors.models && <FormErrorMessage>{errors.models.message}</FormErrorMessage>} */}
-              </FormControl>
+                  </FormControl>
 
-              {/* <FormControl isInvalid={!!errors.model_mapping}> */}
-              <FormControl>
-                <Controller
-                  name="model_mapping"
-                  control={control}
-                  render={({ field }) => (
-                    <ConstructModeMappingComponent
-                      mapKeys={[]}
-                      mapData={field.value}
-                      setMapData={(mapping) => {
-                        field.onChange(mapping)
+                  {/* todo: 表单提交时空值检查 */}
+                  <FormControl>
+                    <Controller
+                      name={`${index}.defaultModeMapping`}
+                      control={control}
+                      render={({ field }) => {
+                        const defaultMode = watch(`${index}.defaultMode`)
+                        const defaultModeMapping = watch(`${index}.defaultModeMapping`)
+
+                        return (
+                          <ConstructMappingComponent
+                            mapKeys={defaultMode}
+                            mapData={defaultModeMapping}
+                            setMapData={(mapping) => {
+                              field.onChange(mapping)
+                            }}
+                          />
+                        )
                       }}
                     />
-                  )}
-                />
-                {/* {errors.model_mapping?.message && (
-                  <FormErrorMessage>{errors.model_mapping.message.toString()}</FormErrorMessage>
-                )} */}
-              </FormControl>
-            </VStack>
-          </Flex>
+                  </FormControl>
+                </VStack>
+              </Flex>
+            ))}
         </Flex>
       </Flex>
       {/* -- config end */}

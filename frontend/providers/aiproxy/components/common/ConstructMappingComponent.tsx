@@ -17,9 +17,13 @@ export const ConstructMappingComponent = function ({
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
-  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([
-    { key: '', value: '' }
-  ])
+  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>(() => {
+    const entries = Object.entries(mapData)
+    if (entries.length === 0) {
+      return [{ key: '', value: '' }]
+    }
+    return entries.map(([key, value]) => ({ key, value }))
+  })
 
   const handleDropdownItemDisplay = (dropdownItem: string) => {
     return dropdownItem
@@ -29,30 +33,25 @@ export const ConstructMappingComponent = function ({
     return selectedItem
   }
 
-  // Handling removed mappings when map keys change.
+  // Handling mapData and mapKeyValuePairs cleanup when map keys change.
   useEffect(() => {
-    // Find the keys that were removed
-    // The key of mapData must exist in mapKeys
-    const removedKeys = Object.keys(mapData).filter((key) => !mapKeys.includes(key))
-
-    if (removedKeys.length > 0) {
-      // If there are mappings with removed keys, delete them
+    // 1. Handle mapData cleanup
+    const removedKeysFromMapData = Object.keys(mapData).filter((key) => !mapKeys.includes(key))
+    if (removedKeysFromMapData.length > 0) {
       const newMapData = { ...mapData }
-      removedKeys.forEach((key) => {
+      removedKeysFromMapData.forEach((key) => {
         delete newMapData[key]
       })
       setMapData(newMapData)
+    }
 
-      // If there are rows with removed keys, delete them
+    // 2. Handle mapKeyValuePairs cleanup
+    const removedPairs = mapKeyValuePairs.filter((pair) => pair.key && !mapKeys.includes(pair.key))
+    if (removedPairs.length > 0) {
       const newMapKeyValuePairs = mapKeyValuePairs.filter(
-        (mapKeyValuePair) => !removedKeys.includes(mapKeyValuePair.key)
+        (pair) => !pair.key || mapKeys.includes(pair.key)
       )
-      if (newMapKeyValuePairs.length === 0) {
-        // If all rows are deleted, add an empty row
-        setMapkeyValuePairs([{ key: '', value: '' }])
-      } else {
-        setMapkeyValuePairs(newMapKeyValuePairs)
-      }
+      setMapkeyValuePairs(newMapKeyValuePairs)
     }
   }, [mapKeys])
 
@@ -122,7 +121,10 @@ export const ConstructMappingComponent = function ({
     const usedKeys = new Set(
       mapKeyValuePairs.map((mapKeyValuePair) => mapKeyValuePair.key).filter(Boolean)
     )
-    return mapKeys.some((mapKey) => !usedKeys.has(mapKey))
+    // Ensure mapKeyValuePairs length does not exceed mapKeys length
+    return (
+      mapKeyValuePairs.length < mapKeys.length && mapKeys.some((mapKey) => !usedKeys.has(mapKey))
+    )
   }, [mapKeys, mapKeyValuePairs])
 
   return (
@@ -144,9 +146,11 @@ export const ConstructMappingComponent = function ({
       </FormLabel>
 
       {mapKeyValuePairs.map((row, index) => (
-        <Flex key={index} gap="8px" w="full" alignItems="center">
+        <Flex key={`${index}-${row.key}`} gap="8px" w="full" alignItems="center">
           <CustomSelect<string>
             listItems={mapKeys.filter((key) => !getSelectedMapKeys(index).has(key))}
+            // when select placeholder, the row.key is null
+            initSelectedItem={row.key !== '' && row.key ? row.key : undefined}
             handleSelectedItemChange={(newSelectedItem) =>
               handleInputChange(index, 'key', newSelectedItem)
             }

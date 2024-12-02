@@ -10,6 +10,12 @@ const CommonConfig = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   return (
+    /*
+    h = 72px + 20px + 60px = 152px
+    EditableText (24px × 3) = 72px
+    Switch container (20px) = 20px
+    gap (20px × 3) = 60px
+    */
     <Flex gap="8px" flexDirection="row" w="full">
       {/* title */}
       <Flex w="153px" pt="4px" alignItems="flex-start">

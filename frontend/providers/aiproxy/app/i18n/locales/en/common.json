@@ -146,7 +146,11 @@
   "global_configs": {
     "title": "Global configuration",
     "export": "Export",
-    "import": "import"
+    "import": "import",
+    "qpm_limit": "Global QPM limits",
+    "pause_service": "Service Pause",
+    "retry_count": "Number of error retries",
+    "max_token": "Maximum number of tokens in the workspace"
   },
   "globalonfigs": {
     "common_config": "Common configuration",

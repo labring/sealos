@@ -146,7 +146,11 @@
   "global_configs": {
     "title": "全局配置",
     "export": "导出",
-    "import": "导入"
+    "import": "导入",
+    "qpm_limit": "全局QPM限制",
+    "pause_service": "暂停服务",
+    "retry_count": "错误重试次数",
+    "max_token": "工作空间最大 token 数"
   },
   "globalonfigs": {
     "common_config": "通用配置",

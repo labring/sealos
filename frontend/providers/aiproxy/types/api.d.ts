@@ -6,7 +6,7 @@ export type ApiResp<T = any> = {
 }
 
 export type ApiProxyBackendResp<T = any> = {
-  success: string
+  success: boolean
   message: string
   data?: T
 }

@@ -2,7 +2,7 @@
 import { Box, Button, InputGroup, Input, FormLabel, VStack, ListItem, List } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState, Dispatch, SetStateAction, ReactNode } from 'react'
+import { useState, Dispatch, SetStateAction, ReactNode, useEffect } from 'react'
 import { useCombobox, UseComboboxReturnValue } from 'downshift'
 
 export const SingleSelectCombobox: <T>(props: {
@@ -10,21 +10,26 @@ export const SingleSelectCombobox: <T>(props: {
   setSelectedItem: Dispatch<SetStateAction<T | null>>
   handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  initSelectedItem?: T
 }) => JSX.Element = function <T>({
   dropdownItems,
   setSelectedItem,
   handleDropdownItemFilter,
-  handleDropdownItemDisplay
+  handleDropdownItemDisplay,
+  initSelectedItem
 }: {
   dropdownItems: T[]
   setSelectedItem: Dispatch<SetStateAction<T | null>>
   handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
-  handleFromErrorDisplay?: () => ReactNode
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  initSelectedItem?: T
 }) {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems)
+  useEffect(() => {
+    setGetFilteredDropdownItems(dropdownItems)
+  }, [dropdownItems])
 
   const {
     isOpen: isComboboxOpen,
@@ -40,6 +45,8 @@ export const SingleSelectCombobox: <T>(props: {
     onInputValueChange: ({ inputValue }) => {
       setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue))
     },
+
+    initialSelectedItem: initSelectedItem || undefined,
 
     onSelectedItemChange: ({ selectedItem }) => {
       const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem)
