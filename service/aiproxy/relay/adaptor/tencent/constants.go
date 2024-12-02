@@ -88,4 +88,11 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.018,
 		OutputPrice: 0.018,
 	},
+
+	{
+		Model:      "hunyuan-embedding",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerTencent,
+		InputPrice: 0.0007,
+	},
 }
