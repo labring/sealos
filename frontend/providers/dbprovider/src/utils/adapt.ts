@@ -104,7 +104,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
     source: getDBSource(db),
-    autoBackup: adaptBackupByCluster(db)
+    autoBackup: adaptBackupByCluster(db),
+    terminationPolicy: db.spec?.terminationPolicy || 'Delete'
   };
 };
 
@@ -163,7 +164,8 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     replicas: 1,
     storage: 1,
     labels: 1,
-    autoBackup: 1
+    autoBackup: 1,
+    terminationPolicy: 1
   };
   const form: any = {};
 

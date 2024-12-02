@@ -652,6 +652,22 @@ const Form = ({
                       }}
                     />
                   </Flex>
+                  <Flex mt={7} alignItems={'center'}>
+                    <Box flex={'0 0 110px'}>{t('termination_policy')}</Box>
+                    <Switch
+                      isChecked={getValues('terminationPolicy') === 'Delete'}
+                      onChange={(e) => {
+                        setValue('terminationPolicy', e.target.checked ? 'Delete' : 'WipeOut');
+                      }}
+                    />
+                    <Tip
+                      ml={4}
+                      icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
+                      text={t('termination_policy_tip')}
+                      size="sm"
+                      borderRadius={'md'}
+                    />
+                  </Flex>
                 </Box>
               </Box>
             </Box>

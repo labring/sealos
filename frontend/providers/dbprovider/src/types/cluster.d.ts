@@ -20,10 +20,18 @@ export type KbPgClusterType = {
   status?: KubeBlockClusterStatus;
 };
 
+/**
+ * DoNotTerminate: The database deletion cannot be performed.
+ * Halt: deletes only database resources, but retains database disks.
+ * Delete: deletes only the database resource, but keeps the database backup.
+ * WipeOut: deletes all contents of the database.
+ */
+export type KubeBlockClusterTerminationPolicy = 'Delete' | 'WipeOut';
+
 export interface KubeBlockClusterSpec {
   clusterDefinitionRef: `${DBTypeEnum}`;
   clusterVersionRef: string;
-  terminationPolicy: string;
+  terminationPolicy: KubeBlockClusterTerminationPolicy;
   componentSpecs: {
     componentDefRef: `${DBTypeEnum}`;
     name: `${DBTypeEnum}`;

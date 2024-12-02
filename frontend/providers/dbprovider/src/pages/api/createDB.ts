@@ -9,6 +9,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import { convertBackupFormToSpec } from '@/utils/adapt';
+import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -44,7 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             'Gi',
             ''
           )
-        )
+        ),
+        terminationPolicy: body.spec.terminationPolicy
       };
 
       const opsRequests = [];
@@ -95,6 +97,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           k8sCustomObjects,
           namespace
         });
+
+        if (currentConfig.terminationPolicy !== dbForm.terminationPolicy) {
+          await updateTerminationPolicyApi({
+            dbName: dbForm.dbName,
+            terminationPolicy: dbForm.terminationPolicy,
+            k8sCustomObjects,
+            namespace
+          });
+        }
       }
 
       return jsonRes(res, {
@@ -145,4 +156,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       error: err
     });
   }
+}
+
+export async function updateTerminationPolicyApi({
+  dbName,
+  terminationPolicy,
+  k8sCustomObjects,
+  namespace
+}: {
+  dbName: string;
+  terminationPolicy: string;
+  k8sCustomObjects: CustomObjectsApi;
+  namespace: string;
+}) {
+  const group = 'apps.kubeblocks.io';
+  const version = 'v1alpha1';
+  const plural = 'clusters';
+
+  const patch = [
+    {
+      op: 'replace',
+      path: '/spec/terminationPolicy',
+      value: terminationPolicy
+    }
+  ];
+
+  const result = await k8sCustomObjects.patchNamespacedCustomObject(
+    group,
+    version,
+    namespace,
+    plural,
+    dbName,
+    patch,
+    undefined,
+    undefined,
+    undefined,
+    { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
+  );
+
+  return result;
 }

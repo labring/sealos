@@ -111,7 +111,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
               ]
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
@@ -154,7 +154,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
               ]
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
@@ -200,7 +200,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
               ]
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
@@ -281,7 +281,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
                 : {})
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }

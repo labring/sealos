@@ -305,6 +305,8 @@
   "successfully_closed_external_network_access": "已关闭外网访问",
   "table_locks": "表锁",
   "terminated_logs": "中断前",
+  "termination_policy": "删除策略",
+  "termination_policy_tip": "删除数据库时是否保留备份",
   "total_price": "总价",
   "total_price_tip": "预估费用不包括端口费用和流量费用,以实际使用为准",
   "turn_on": "开启",

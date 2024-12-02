@@ -280,7 +280,8 @@ export const defaultDBEditValue: DBEditType = {
     minute: '00',
     saveTime: 7,
     saveType: 'd'
-  }
+  },
+  terminationPolicy: 'Delete'
 };
 
 export const defaultDBDetail: DBDetailType = {
