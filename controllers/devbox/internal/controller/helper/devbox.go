@@ -36,6 +36,7 @@ import (
 
 const (
 	DevBoxPartOf = "devbox"
+	ProxyPod     = "proxy"
 )
 
 func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
@@ -55,6 +56,31 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Ru
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
 		PartOf:    DevBoxPartOf,
+	})
+	for k, v := range recLabels {
+		labels[k] = v
+	}
+	return labels
+}
+
+func GenerateProxyPodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
+	labels := make(map[string]string)
+
+	if runtime.Spec.Config.Labels != nil {
+		for k, v := range runtime.Spec.Config.Labels {
+			labels[k] = v
+		}
+	}
+	if devbox.Spec.ExtraLabels != nil {
+		for k, v := range devbox.Spec.ExtraLabels {
+			labels[k] = v
+		}
+	}
+	recLabels := label.RecommendedLabels(&label.Recommended{
+		Name:      devbox.Name,
+		ManagedBy: label.DefaultManagedBy,
+		PartOf:    DevBoxPartOf,
+		Component: ProxyPod,
 	})
 	for k, v := range recLabels {
 		labels[k] = v
@@ -398,10 +424,7 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox,
-	requestCPURate, requestMemoryRate float64,
-	requestEphemeralStorage, limitEphemeralStorage string,
-) corev1.ResourceRequirements {
+func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestCPURate, requestMemoryRate float64, requestEphemeralStorage, limitEphemeralStorage string) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: calculateResourceRequest(
 			corev1.ResourceList{
@@ -415,6 +438,19 @@ func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox,
 			corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
 			corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
 			corev1.ResourceEphemeralStorage: resource.MustParse(limitEphemeralStorage),
+		},
+	}
+}
+
+func GenerateProxyPodResourceRequirements() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
 		},
 	}
 }
