@@ -27,12 +27,100 @@ import { useCopyData } from '@/utils/tools'
 import { useCallback } from 'react'
 
 interface JetBrainsGuideData {
+  devboxName: string
+  runtimeType: string
   privateKey: string
   userName: string
   token: string
   workingDir: string
   host: string
   port: string
+}
+
+enum IDEType {
+  IntelliJ = 'IntelliJ IDEA',
+  PyCharm = 'PyCharm',
+  WebStorm = 'WebStorm',
+  Rider = 'Rider',
+  CLion = 'CLion',
+  GoLand = 'GoLand',
+  RubyMine = 'RubyMine',
+  PhpStorm = 'PhpStorm',
+  RustRover = 'RustRover'
+}
+
+const runtimeTypeToIDEType = (runtimeType: string) => {
+  switch (runtimeType) {
+    // Python
+    case 'python':
+    case 'django':
+    case 'flask':
+      return IDEType.PyCharm
+
+    // Go
+    case 'go':
+    case 'gin':
+    case 'echo':
+    case 'hertz':
+    case 'iris':
+    case 'chi':
+      return IDEType.GoLand
+
+    // Frontend and nodejs
+    case 'angular':
+    case 'ant-design':
+    case 'astro':
+    case 'chakra-ui':
+    case 'express.js':
+    case 'react':
+    case 'vue':
+    case 'react':
+    case 'hexo':
+    case 'hugo':
+    case 'sealaf':
+    case 'nuxt3':
+    case 'svelte':
+    case 'umi':
+    case 'vitepress':
+    case 'next.js':
+    case 'nest.js':
+    case 'node.js':
+    case 'docusaurus':
+      return IDEType.WebStorm
+
+    // C/C++
+    case 'c':
+    case 'cpp':
+      return IDEType.CLion
+
+    // Java
+    case 'java':
+    case 'quarkus':
+    case 'vert.x':
+    case 'spring-boot':
+      return IDEType.IntelliJ
+
+    // PHP
+    case 'php':
+    case 'laravel':
+      return IDEType.PhpStorm
+
+    // Ruby
+    case 'ruby':
+    case 'rails':
+      return IDEType.RubyMine
+
+    // Rust
+    case 'rust':
+    case 'rocket':
+      return IDEType.RustRover
+
+    // other
+    case 'debian-ssh':
+    case 'custom':
+    default:
+      return IDEType.IntelliJ
+  }
 }
 
 const JetBrainsGuideModal = ({
@@ -55,7 +143,7 @@ const JetBrainsGuideModal = ({
     const a = document.createElement('a')
     a.style.display = 'none'
     a.href = url
-    a.download = 'private_key' // TODO: change to devbox name
+    a.download = jetbrainsGuideData.devboxName
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
@@ -266,7 +354,7 @@ const JetBrainsGuideModal = ({
                         <Image
                           src={'/images/jetbrains/step2-3.png'}
                           alt="step2-3"
-                          width={600}
+                          width={578}
                           height={100}
                         />
                         <Box
@@ -317,7 +405,7 @@ const JetBrainsGuideModal = ({
                       <Circle size="6px" bg="#47B2FF" />
                       <Box fontSize={'14px'}>
                         {t.rich('jetbrains_guide_step_3_1', {
-                          ideVersion: 'IntelliJ IDEA',
+                          ideVersion: runtimeTypeToIDEType(jetbrainsGuideData.runtimeType),
                           blue: (chunks) => (
                             <Text
                               fontWeight={'bold'}
@@ -361,24 +449,72 @@ const JetBrainsGuideModal = ({
                           })}
                         </Box>
                       </Flex>
-                      <Image
-                        src={'/images/jetbrains/step3-3.png'}
-                        alt="step1"
-                        width={600}
-                        height={100}
-                      />
+                      <Box position="relative">
+                        <Image
+                          src={'/images/jetbrains/step3-3.png'}
+                          alt="step1"
+                          width={600}
+                          height={100}
+                        />
+                        <Box
+                          position="absolute"
+                          top="70px"
+                          left="65px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)}
+                        </Box>
+                        <Box
+                          position="absolute"
+                          top="105px"
+                          left="65px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {jetbrainsGuideData.workingDir}
+                        </Box>
+                      </Box>
                     </Flex>
                     <Flex gap={1} direction={'column'}>
                       <Flex alignItems={'center'} gap={2} mb={2}>
                         <Circle size="6px" bg="#47B2FF" />
                         <Text fontSize={'14px'}>{t('jetbrains_guide_step_3_4')}</Text>
                       </Flex>
-                      <Image
-                        src={'/images/jetbrains/step3-4.png'}
-                        alt="step1"
-                        width={600}
-                        height={100}
-                      />
+                      <Box position="relative">
+                        <Image
+                          src={'/images/jetbrains/step3-4.png'}
+                          alt="step1"
+                          width={600}
+                          height={100}
+                        />
+                        <Box
+                          position="absolute"
+                          top="70px"
+                          left="65px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)}
+                        </Box>
+                        <Box
+                          position="absolute"
+                          top="105px"
+                          left="65px"
+                          px={2}
+                          py={1}
+                          bg="blackAlpha.800"
+                          borderRadius="sm"
+                          color={'red'}>
+                          {jetbrainsGuideData.workingDir}
+                        </Box>
+                      </Box>
                     </Flex>
                     <Flex gap={1} direction={'column'}>
                       <Flex alignItems={'center'} gap={2} mb={2}>
@@ -398,7 +534,7 @@ const JetBrainsGuideModal = ({
                         </Box>
                       </Flex>
                       <Image
-                        src={'/images/jetbrains/step3-4.png'}
+                        src={'/images/jetbrains/step3-5.png'}
                         alt="step1"
                         width={600}
                         height={100}

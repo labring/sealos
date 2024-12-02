@@ -23,6 +23,7 @@ import JetBrainsGuideModal from './modals/jetbrainsGuideModal'
 interface Props {
   devboxName: string
   runtimeVersion: string
+  runtimeType: string
   sshPort: number
   status: DevboxStatusMapType
   isBigButton?: boolean
@@ -33,6 +34,7 @@ interface Props {
 const IDEButton = ({
   devboxName,
   runtimeVersion,
+  runtimeType,
   sshPort,
   status,
   isBigButton = true,
@@ -69,6 +71,8 @@ const IDEButton = ({
         const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
 
         setJetBrainsGuideData({
+          devboxName,
+          runtimeType,
           privateKey: sshPrivateKey,
           userName,
           token,
