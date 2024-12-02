@@ -602,7 +602,7 @@ const Form = ({
                       <MySelect
                         width={'120px'}
                         value={getValues('autoBackup.minute')}
-                        list={SelectTimeList.slice(0, 24).map((i) => ({
+                        list={SelectTimeList.map((i) => ({
                           value: i.id,
                           label: i.label
                         }))}
