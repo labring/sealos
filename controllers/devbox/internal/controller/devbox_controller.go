@@ -19,13 +19,17 @@ package controller
 import (
 	"context"
 	"fmt"
-	networkingv1 "k8s.io/api/networking/v1"
+	"strconv"
 	"time"
 
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
-	"github.com/labring/sealos/controllers/devbox/label"
+	appsv1 "k8s.io/api/apps/v1"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+
+	networkingv1 "k8s.io/api/networking/v1"
+
+	"github.com/golang-jwt/jwt/v5"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +38,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
+
+	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
+	"github.com/labring/sealos/controllers/devbox/label"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -52,7 +60,11 @@ type DevboxReconciler struct {
 	LimitEphemeralStorage   string
 	WebSocketImage          string
 	DebugMode               bool
-
+	WebsocketProxyDomain    string
+	IngressClass            string
+	EnableAutoShutdown      bool
+	ShutdownServerKey       string
+	ShutdownServerAddr      string
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -410,10 +422,10 @@ func (r *DevboxReconciler) getRuntime(ctx context.Context, devbox *devboxv1alpha
 	return runtimecr, nil
 }
 
-func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) getServicePort(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) ([]corev1.ServicePort, error) {
 	runtimecr, err := r.getRuntime(ctx, devbox)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var servicePorts []corev1.ServicePort
 	for _, port := range runtimecr.Spec.Config.Ports {
@@ -425,7 +437,6 @@ func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alph
 		})
 	}
 	if len(servicePorts) == 0 {
-		//use the default value
 		servicePorts = []corev1.ServicePort{
 			{
 				Name:       "devbox-ssh-port",
@@ -434,6 +445,14 @@ func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alph
 				Protocol:   corev1.ProtocolTCP,
 			},
 		}
+	}
+	return servicePorts, nil
+}
+
+func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+	servicePorts, err := r.getServicePort(ctx, devbox, recLabels)
+	if err != nil {
+		return err
 	}
 	switch devbox.Spec.NetworkSpec.Type {
 	case devboxv1alpha1.NetworkTypeNodePort:
@@ -445,6 +464,10 @@ func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alph
 }
 
 func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
+	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeWebSocket
+	if err := r.Status().Update(ctx, devbox); err != nil {
+		return err
+	}
 	if err := r.syncPodSvc(ctx, devbox, recLabels, servicePorts); err != nil {
 		return err
 	}
@@ -454,52 +477,66 @@ func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *dev
 	if err := r.syncProxySvc(ctx, devbox, recLabels, servicePorts); err != nil {
 		return err
 	}
-	if err := r.syncProxyIngress(ctx, devbox); err != nil {
+	if hostName, err := r.syncProxyIngress(ctx, devbox); err != nil {
 		return err
+	} else {
+		devbox.Status.Network.WebSocket = hostName
 	}
-	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeWebSocket
-	devbox.Status.Network.WebSocket = devbox.Name + "-proxy-ingress"
 	return r.Status().Update(ctx, devbox)
 }
 
-func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
-	wsIngress := &networkingv1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      devbox.Name + "-proxy-ingress",
-			Namespace: devbox.Namespace,
-		},
-		Spec: networkingv1.IngressSpec{
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: devbox.Name + ".sealoshzh.site",
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: []networkingv1.HTTPIngressPath{
-								{
-									Path:     "/",
-									PathType: new(networkingv1.PathType),
-									Backend: networkingv1.IngressBackend{
-										Service: &networkingv1.IngressServiceBackend{
-											Name: devbox.Name + "-proxy-svc",
-											Port: networkingv1.ServiceBackendPort{
-												Number: 22,
-											},
-										},
-									},
-								},
-							},
-						},
+func (r *DevboxReconciler) generateProxyIngressHost() string {
+	return rand.String(12) + "." + r.WebsocketProxyDomain
+}
+
+func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) (string, error) {
+	host := r.generateProxyIngressHost()
+
+	pathType := networkingv1.PathTypePrefix
+	ingressPath := []networkingv1.HTTPIngressPath{
+		{
+			Path:     "/",
+			PathType: &pathType,
+			Backend: networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: devbox.Name + "-proxy-svc",
+					Port: networkingv1.ServiceBackendPort{
+						Number: 80,
 					},
 				},
 			},
 		},
 	}
+
+	ingressSpec := networkingv1.IngressSpec{
+		IngressClassName: &r.IngressClass,
+		Rules: []networkingv1.IngressRule{
+			{
+				Host: host,
+				IngressRuleValue: networkingv1.IngressRuleValue{
+					HTTP: &networkingv1.HTTPIngressRuleValue{
+						Paths: ingressPath,
+					},
+				},
+			},
+		},
+	}
+
+	wsIngress := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-proxy-ingress",
+			Namespace: devbox.Namespace,
+		},
+		Spec: ingressSpec,
+	}
+
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsIngress, func() error {
 		return controllerutil.SetControllerReference(devbox, wsIngress, r.Scheme)
 	}); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+
+	return host, nil
 }
 
 func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
@@ -507,11 +544,18 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 	if err != nil {
 		return err
 	}
-
+	servicePort := []corev1.ServicePort{
+		{
+			Name:       "devbox-ssh-port",
+			Port:       80,
+			TargetPort: intstr.FromInt32(80),
+			Protocol:   corev1.ProtocolTCP,
+		},
+	}
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: helper.GenerateProxyPodLabels(devbox, runtimecr),
 		Type:     corev1.ServiceTypeClusterIP,
-		Ports:    servicePorts,
+		Ports:    servicePort,
 	}
 	proxySvc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -519,20 +563,15 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 			Namespace: devbox.Namespace,
 			Labels:    helper.GenerateProxyPodLabels(devbox, runtimecr),
 		},
+		Spec: expectServiceSpec,
 	}
-
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, proxySvc, func() error {
-		// only update some specific fields
 		proxySvc.Spec.Selector = expectServiceSpec.Selector
 		proxySvc.Spec.Type = expectServiceSpec.Type
-		if len(proxySvc.Spec.Ports) == 0 {
-			proxySvc.Spec.Ports = expectServiceSpec.Ports
-		} else {
-			proxySvc.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
-			proxySvc.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
-			proxySvc.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
-			proxySvc.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
-		}
+		proxySvc.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
+		proxySvc.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
+		proxySvc.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
+		proxySvc.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
 		return controllerutil.SetControllerReference(devbox, proxySvc, r.Scheme)
 	}); err != nil {
 		return err
@@ -540,11 +579,62 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 	return nil
 }
 
-func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return err
+func (r *DevboxReconciler) generateProxyPodName(devbox *devboxv1alpha1.Devbox) string {
+	return devbox.Name + "-proxy-pod" + "-" + rand.String(5)
+}
+
+func (r *DevboxReconciler) generateProxyPodDeploymentName(devbox *devboxv1alpha1.Devbox) string {
+	return devbox.Name + "-proxy-deployment"
+}
+
+type DevboxClaims struct {
+	DevboxName string `json:"devbox_name"`
+	NameSpace  string `json:"namespace"`
+	jwt.RegisteredClaims
+}
+
+func (r *DevboxReconciler) generateProxyPodJWT(ctx context.Context, devbox *devboxv1alpha1.Devbox) (string, error) {
+	claims := DevboxClaims{
+		DevboxName: devbox.Name,
+		NameSpace:  devbox.Namespace,
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 7 * 24)),
+			Issuer:    "devbox-controller",
+		},
 	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(r.ShutdownServerKey))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+	return signedToken, nil
+}
+
+func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) ([]corev1.EnvVar, error) {
+	var envVars []corev1.EnvVar
+	autoShutdownEnabled := devbox.Spec.AutoShutdownSpec.Enable && r.EnableAutoShutdown
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "ENABLE_AUTO_SHUTDOWN",
+		Value: strconv.FormatBool(autoShutdownEnabled),
+	})
+
+	if autoShutdownEnabled {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "AUTO_SHUTDOWN_INTERVAL",
+			Value: devbox.Spec.AutoShutdownSpec.Time,
+		})
+	}
+
+	token, err := r.generateProxyPodJWT(ctx, devbox)
+	if err != nil {
+		return nil, err
+	}
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "JWT_TOKEN",
+		Value: token,
+	})
 
 	sshPort := "22"
 	for _, port := range servicePorts {
@@ -553,36 +643,96 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 			break
 		}
 	}
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "TARGET",
+		Value: fmt.Sprintf("%s-pod-svc:%s", devbox.Name, sshPort),
+	})
 
-	wsPod := &corev1.Pod{
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "LISTEN",
+		Value: "0.0.0.0:80",
+	})
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "AUTO_SHUTDOWN_SERVICE_URL",
+		Value: r.ShutdownServerAddr,
+	})
+
+	return envVars, nil
+}
+
+func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) (*appsv1.Deployment, error) {
+	runtimecr, err := r.getRuntime(ctx, devbox)
+	if err != nil {
+		return nil, err
+	}
+
+	podEnv, err := r.generateProxyPodEnv(ctx, devbox, servicePorts)
+	if err != nil {
+		return nil, err
+	}
+
+	podSpec := corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:      "ws-proxy",
+				Image:     r.WebSocketImage,
+				Env:       podEnv,
+				Resources: helper.GenerateProxyPodResourceRequirements(),
+			},
+		},
+	}
+
+	replicas := int32(1)
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        devbox.Name + "-proxy-pod",
+			Name:        r.generateProxyPodDeploymentName(devbox),
 			Namespace:   devbox.Namespace,
 			Labels:      helper.GenerateProxyPodLabels(devbox, runtimecr),
 			Annotations: helper.GeneratePodAnnotations(devbox, runtimecr),
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "ws-proxy",
-					Image: r.WebSocketImage,
-					Args: []string{
-						"server",
-						"--port=",
-						fmt.Sprintf("--port=%s", sshPort),
-						fmt.Sprintf("--proxy=%s", devbox.Name+"-pod-svc:22"),
-						"-v=true",
-					},
-					Resources: helper.GenerateProxyPodResourceRequirements(),
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: helper.GenerateProxyPodLabels(devbox, runtimecr),
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        r.generateProxyPodName(devbox),
+					Namespace:   devbox.Namespace,
+					Labels:      helper.GenerateProxyPodLabels(devbox, runtimecr),
+					Annotations: helper.GeneratePodAnnotations(devbox, runtimecr),
 				},
+				Spec: podSpec,
 			},
 		},
-	}
-	// if devbox is running, create the pod
+	}, nil
+}
+
+func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
+	wsDeployment := &appsv1.Deployment{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: r.generateProxyPodDeploymentName(devbox), Namespace: devbox.Namespace}, wsDeployment)
+
 	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
-		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsPod, func() error {
-			return controllerutil.SetControllerReference(devbox, wsPod, r.Scheme)
-		}); err != nil {
+		if errors.IsNotFound(err) {
+			wsDeployment, err = r.generateProxyPodDeployment(ctx, devbox, recLabels, servicePorts)
+			if err != nil {
+				return err
+			}
+			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsDeployment, func() error {
+				return controllerutil.SetControllerReference(devbox, wsDeployment, r.Scheme)
+			}); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+	} else {
+		if err == nil {
+			if err := r.Client.Delete(ctx, wsDeployment); err != nil {
+				return err
+			}
+		} else if !errors.IsNotFound(err) {
 			return err
 		}
 	}
@@ -796,5 +946,7 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&networkingv1.Ingress{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&appsv1.Deployment{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }
