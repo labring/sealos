@@ -41,3 +41,7 @@ func (a *Adaptor) GetModelList() []*model.ModelConfig {
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return GetRequestURL(meta)
 }
+
+func (a *Adaptor) GetChannelName() string {
+	return "doubao"
+}
