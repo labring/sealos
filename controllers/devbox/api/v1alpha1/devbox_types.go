@@ -48,8 +48,9 @@ const (
 type NetworkType string
 
 const (
-	NetworkTypeNodePort NetworkType = "NodePort"
-	NetworkTypeTailnet  NetworkType = "Tailnet"
+	NetworkTypeNodePort  NetworkType = "NodePort"
+	NetworkTypeTailnet   NetworkType = "Tailnet"
+	NetworkTypeWebSocket NetworkType = "WebSocket"
 )
 
 type ResourceList map[ResourceName]resource.Quantity
@@ -122,6 +123,9 @@ type NetworkStatus struct {
 
 	// +kubebuilder:validation:Optional
 	NodePort int32 `json:"nodePort"`
+
+	// +kubebuilder:validation:Optional
+	WebSocket string `json:"webSocket"`
 
 	// todo TailNet
 	// +kubebuilder:validation:Optional
