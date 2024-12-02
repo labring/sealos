@@ -217,6 +217,7 @@ const DevboxList = ({
         <Flex>
           <IDEButton
             devboxName={item.name}
+            runtimeType={item.runtimeType}
             runtimeVersion={item.runtimeVersion}
             sshPort={item.sshPort}
             status={item.status}
