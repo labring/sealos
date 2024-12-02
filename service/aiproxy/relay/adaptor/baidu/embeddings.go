@@ -35,7 +35,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 		fmt.Println(baiduResponse.Error.ErrorMsg)
 		fmt.Println(baiduResponse.Error.ErrorMsg)
 		fmt.Println(baiduResponse.Error.ErrorMsg)
-		return &baiduResponse.Usage, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error:"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
+		return &baiduResponse.Usage, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
 	}
 
 	respMap := make(map[string]any)

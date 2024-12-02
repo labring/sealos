@@ -30,7 +30,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if reRankResp.Error != nil && reRankResp.Error.ErrorCode != 0 {
-		return nil, openai.ErrorWrapperWithMessage(reRankResp.Error.ErrorMsg, "baidu_error:"+strconv.Itoa(reRankResp.Error.ErrorCode), http.StatusInternalServerError)
+		return nil, openai.ErrorWrapperWithMessage(reRankResp.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(reRankResp.Error.ErrorCode), http.StatusInternalServerError)
 	}
 	respMap := make(map[string]any)
 	err = json.Unmarshal(respBody, &respMap)
