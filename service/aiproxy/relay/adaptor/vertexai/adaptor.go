@@ -35,7 +35,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.H
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
-		return nil, openai.ErrorWrapperWithMessage(meta.ActualModelName+" adaptor not found", "adaptor not found", http.StatusInternalServerError)
+		return nil, openai.ErrorWrapperWithMessage(meta.ActualModelName+" adaptor not found", "adaptor_not_found", http.StatusInternalServerError)
 	}
 	return adaptor.DoResponse(meta, c, resp)
 }

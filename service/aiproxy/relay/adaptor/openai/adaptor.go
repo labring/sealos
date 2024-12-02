@@ -45,6 +45,9 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 		return nil, nil, errors.New("request is nil")
 	}
 	switch meta.Mode {
+	case relaymode.Moderations:
+		meta.Set(MetaEmbeddingsPatchInputToSlices, true)
+		return ConvertEmbeddingsRequest(meta, req)
 	case relaymode.Embeddings:
 		return ConvertEmbeddingsRequest(meta, req)
 	case relaymode.ChatCompletions:
@@ -72,6 +75,8 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 		usage, err = TTSHandler(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)
+	case relaymode.Moderations:
+		usage, err = ModerationsHandler(meta, c, resp)
 	case relaymode.Embeddings:
 		fallthrough
 	case relaymode.ChatCompletions:

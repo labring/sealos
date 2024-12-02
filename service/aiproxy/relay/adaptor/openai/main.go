@@ -133,7 +133,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if textResponse.Error.Type != "" {
-		return &textResponse.Usage, ErrorWrapperWithMessage(textResponse.Error.Message, textResponse.Error.Type, http.StatusBadRequest)
+		return nil, ErrorWrapperWithMessage(textResponse.Error.Message, textResponse.Error.Code, http.StatusBadRequest)
 	}
 
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
@@ -144,9 +144,9 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		textResponse.Usage = model.Usage{
 			PromptTokens:     meta.PromptTokens,
 			CompletionTokens: completionTokens,
-			TotalTokens:      meta.PromptTokens + completionTokens,
 		}
 	}
+	textResponse.Usage.TotalTokens = textResponse.Usage.PromptTokens + textResponse.Usage.CompletionTokens
 
 	var respMap map[string]any
 	err = json.Unmarshal(responseBody, &respMap)
@@ -162,8 +162,6 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if err != nil {
 		return &textResponse.Usage, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
-
-	c.Writer.WriteHeader(resp.StatusCode)
 
 	_, err = c.Writer.Write(newData)
 	if err != nil {
