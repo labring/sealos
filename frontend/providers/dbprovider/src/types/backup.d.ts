@@ -59,8 +59,8 @@ export interface BackupCRItemType {
 export type AutoBackupType = 'day' | 'hour' | 'week';
 
 export type AutoBackupFormType = {
-  start: boolean;
-  type: AutoType;
+  start: boolean; // enable auto backup
+  type: AutoBackupType;
   week: string[];
   hour: string;
   minute: string;

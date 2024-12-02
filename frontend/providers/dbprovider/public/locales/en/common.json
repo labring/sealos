@@ -80,6 +80,7 @@
   "backup_name_cannot_empty": "Must provide backup name",
   "backup_processing": "Saving Backup",
   "backup_running": "Saving Backup",
+  "backup_settings": "Backup settings",
   "backup_success_tip": "The backup task has been successfully created",
   "backup_time": "Backup Timestamp",
   "balance": "balance",
@@ -129,6 +130,7 @@
   "database_name": "Database Name",
   "database_name_cannot_empty": "Database name cannot be empty",
   "database_name_empty": "Application name is required",
+  "database_name_max_length": "Database name length cannot exceed {{length}} characters",
   "database_name_regex": "Start with a letter, only allow lowercase letters, numbers and -",
   "database_name_regex_error": "Database name can only contain lowercase letters, numbers, -, and must start with a letter.",
   "database_password_empty": "Please enter the database password",
@@ -201,6 +203,7 @@
   "guide_terminal_button": "Convenient terminal connection method improves data processing efficiency",
   "have_error": "Failed",
   "hits_ratio": "Hits Ratio",
+  "hour": "hour",
   "import_through_file": "Import via File",
   "important_tips_for_migrating": "Tip: Create a new database in sink DB if source_database and sink_database have overlapping data, to avoid conflicts",
   "innodb_buffer_pool": "InnoDB Buffer Pool",
@@ -289,6 +292,7 @@
   "start_hour": "Hour",
   "start_minute": "Minute",
   "start_success": "Database started. Please wait...",
+  "start_time": "start time",
   "status": "Status",
   "storage": "Storage",
   "storage_cannot_empty": "Please specify storage size",
@@ -316,6 +320,5 @@
   "within_1_hour": "Within 1 hour",
   "within_5_minutes": "Within 5 minutes",
   "yaml_file": "YAML",
-  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
-  "database_name_max_length": "Database name length cannot exceed {{length}} characters"
+  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!"
 }

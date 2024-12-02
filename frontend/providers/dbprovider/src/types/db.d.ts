@@ -13,6 +13,7 @@ import type {
   V1ContainerStatus
 } from '@kubernetes/client-node';
 import { I18nCommonKey } from './i18next';
+import { AutoBackupFormType } from './backup';
 
 export type DBType = `${DBTypeEnum}`;
 
@@ -68,6 +69,7 @@ export interface DBEditType {
   memory: number;
   storage: number;
   labels: { [key: string]: string };
+  autoBackup?: AutoBackupFormType;
 }
 
 export type DBSourceType = 'app_store' | 'sealaf';

@@ -1,12 +1,13 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
 import {
+  DBBackupMethodNameMap,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
   DBSourceConfigs,
   MigrationRemark,
   dbStatusMap
 } from '@/constants/db';
-import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
+import type { AutoBackupFormType, AutoBackupType, BackupCRItemType } from '@/types/backup';
 import type { KbPgClusterType, KubeBlockOpsRequestType } from '@/types/cluster';
 import type {
   DBDetailType,
@@ -102,7 +103,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
-    source: getDBSource(db)
+    source: getDBSource(db),
+    autoBackup: adaptBackupByCluster(db)
   };
 };
 
@@ -115,11 +117,40 @@ export const adaptBackupByCluster = (db: KbPgClusterType): AutoBackupFormType =>
           hour: '18',
           minute: '00',
           week: [],
-          type: 'day',
+          type: 'day' as AutoBackupType,
           saveTime: 7,
           saveType: 'd'
         };
   return backup;
+};
+
+export const convertBackupFormToSpec = (data: {
+  autoBackup?: AutoBackupFormType;
+  dbType: DBType;
+}): KbPgClusterType['spec']['backup'] => {
+  const cron = (() => {
+    if (data.autoBackup?.type === 'week') {
+      if (!data.autoBackup?.week?.length) {
+        throw new Error('Week is empty');
+      }
+      return `${data.autoBackup.minute} ${data.autoBackup.hour} * * ${data.autoBackup.week.join(
+        ','
+      )}`;
+    }
+    if (data.autoBackup?.type === 'day') {
+      return `${data.autoBackup.minute} ${data.autoBackup.hour} * * *`;
+    }
+    return `${data.autoBackup?.minute} * * * *`;
+  })();
+
+  return {
+    enabled: data.autoBackup?.start ?? false,
+    cronExpression: convertCronTime(cron, -8),
+    method: DBBackupMethodNameMap[data.dbType],
+    retentionPeriod: `${data.autoBackup?.saveTime}${data.autoBackup?.saveType}`,
+    repoName: '',
+    pitrEnabled: false
+  };
 };
 
 export const adaptDBForm = (db: DBDetailType): DBEditType => {
@@ -131,7 +162,8 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     memory: 1,
     replicas: 1,
     storage: 1,
-    labels: 1
+    labels: 1,
+    autoBackup: 1
   };
   const form: any = {};
 
@@ -231,7 +263,6 @@ export const adaptPolicy = (policy: KbPgClusterType['spec']['backup']): AutoBack
         type: 'week'
       };
     }
-    console.log(minuteField, hourField, weekField);
 
     // every day
     if (hourField !== '*') {
@@ -266,7 +297,7 @@ export const adaptPolicy = (policy: KbPgClusterType['spec']['backup']): AutoBack
 
   return {
     start: policy.enabled,
-    type,
+    type: type as AutoBackupType,
     week,
     hour,
     minute,

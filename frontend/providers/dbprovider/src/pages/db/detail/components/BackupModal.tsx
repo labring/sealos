@@ -1,6 +1,6 @@
 import { createBackup, updateBackupPolicy } from '@/api/backup';
 import Tip from '@/components/Tip';
-import { DBBackupMethodNameMap, DBTypeEnum } from '@/constants/db';
+import { DBBackupMethodNameMap, DBTypeEnum, SelectTimeList, WeekSelectList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
 import { I18nCommonKey } from '@/types/i18next';
@@ -82,31 +82,6 @@ const BackupModal = ({
   } = useForm<AutoBackupFormType>({
     defaultValues: defaultVal
   });
-
-  const selectTimeList = useRef<
-    {
-      id: string;
-      label: string;
-    }[]
-  >(
-    (() =>
-      new Array(60).fill(0).map((item, i) => {
-        const val = i < 10 ? `0${i}` : `${i}`;
-        return {
-          id: val,
-          label: val
-        };
-      }))()
-  );
-  const weekSelectList: MutableRefObject<{ label: I18nCommonKey; id: string }[]> = useRef([
-    { label: 'Monday', id: '1' },
-    { label: 'Tuesday', id: '2' },
-    { label: 'Wednesday', id: '3' },
-    { label: 'Thursday', id: '4' },
-    { label: 'Friday', id: '5' },
-    { label: 'Saturday', id: '6' },
-    { label: 'Sunday', id: '0' }
-  ]);
 
   const navStyle = useCallback(
     (nav: `${NavEnum}`) => ({
@@ -331,7 +306,7 @@ const BackupModal = ({
                       </Flex>
                       {getAutoValues('type') === 'week' && (
                         <Flex mt={4}>
-                          {weekSelectList.current.map((item) => (
+                          {WeekSelectList.map((item) => (
                             <Box key={item.id} _notLast={{ mr: 4 }}>
                               <Checkbox
                                 defaultChecked={getAutoValues('week').includes(item.id)}
@@ -360,9 +335,10 @@ const BackupModal = ({
                           <MySelect
                             width={'120px'}
                             value={getAutoValues('hour')}
-                            list={selectTimeList.current
-                              .slice(0, 24)
-                              .map((i) => ({ value: i.id, label: i.label }))}
+                            list={SelectTimeList.slice(0, 24).map((i) => ({
+                              value: i.id,
+                              label: i.label
+                            }))}
                             // icon={<TimeIcon color={'myGray.400'} />}
                             onchange={(val: any) => {
                               setAutoValue('hour', val);
@@ -376,7 +352,7 @@ const BackupModal = ({
                         <MySelect
                           width={'120px'}
                           value={getAutoValues('minute')}
-                          list={selectTimeList.current.map((i) => ({
+                          list={SelectTimeList.map((i) => ({
                             value: i.id,
                             label: i.label
                           }))}

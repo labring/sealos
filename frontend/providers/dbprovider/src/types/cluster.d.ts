@@ -54,7 +54,7 @@ export interface KubeBlockClusterSpec {
     enabled: boolean;
     cronExpression: string;
     method: string;
-    pitrEnabled: boolean;
+    pitrEnabled?: boolean;
     repoName: string;
     retentionPeriod: string;
   };
