@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,21 +13,22 @@ import (
 )
 
 type Log struct {
-	CreatedAt        time.Time `gorm:"index"             json:"created_at"`
-	TokenName        string    `gorm:"index"             json:"token_name"`
-	Endpoint         string    `gorm:"index"             json:"endpoint"`
-	Content          string    `gorm:"type:text"         json:"content"`
-	GroupID          string    `gorm:"index"             json:"group"`
-	Model            string    `gorm:"index"             json:"model"`
+	CreatedAt        time.Time `gorm:"index"                         json:"created_at"`
+	TokenName        string    `gorm:"index"                         json:"token_name"`
+	Endpoint         string    `gorm:"index"                         json:"endpoint"`
+	Content          string    `gorm:"type:text"                     json:"content"`
+	GroupID          string    `gorm:"index;index:idx_group_request" json:"group"`
+	Model            string    `gorm:"index"                         json:"model"`
+	RequestID        string    `gorm:"index;index:idx_group_request" json:"request_id"`
 	Price            float64   `json:"price"`
-	ID               int       `gorm:"primaryKey"        json:"id"`
+	ID               int       `gorm:"primaryKey"                    json:"id"`
 	CompletionPrice  float64   `json:"completion_price"`
-	TokenID          int       `gorm:"index"             json:"token_id"`
-	UsedAmount       float64   `gorm:"index"             json:"used_amount"`
+	TokenID          int       `gorm:"index"                         json:"token_id"`
+	UsedAmount       float64   `gorm:"index"                         json:"used_amount"`
 	PromptTokens     int       `json:"prompt_tokens"`
 	CompletionTokens int       `json:"completion_tokens"`
-	ChannelID        int       `gorm:"index"             json:"channel"`
-	Code             int       `gorm:"index"             json:"code"`
+	ChannelID        int       `gorm:"index"                         json:"channel"`
+	Code             int       `gorm:"index"                         json:"code"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
@@ -42,8 +42,9 @@ func (l *Log) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func RecordConsumeLog(_ context.Context, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
+func RecordConsumeLog(requestID string, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
 	log := &Log{
+		RequestID:        requestID,
 		GroupID:          group,
 		CreatedAt:        time.Now(),
 		Code:             code,
@@ -107,6 +108,10 @@ func getLogOrder(order string) string {
 		return "created_at asc"
 	case "created_at-desc":
 		return "created_at desc"
+	case "request_id":
+		return "request_id asc"
+	case "request_id-desc":
+		return "request_id desc"
 	case "id":
 		return "id asc"
 	default:
@@ -114,13 +119,16 @@ func getLogOrder(order string) string {
 	}
 }
 
-func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
+func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{})
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
 	}
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
+	}
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
@@ -158,10 +166,13 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 	return logs, total, err
 }
 
-func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
+func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{}).Where("group_id = ?", group)
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
+	}
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
@@ -199,7 +210,7 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 	return logs, total, err
 }
 
-func SearchLogs(keyword string, page int, perPage int, code int, endpoint string, groupID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
+func SearchLogs(keyword string, page int, perPage int, code int, endpoint string, groupID string, requestID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{})
 
 	// Handle exact match conditions for non-zero values
@@ -211,6 +222,9 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	}
 	if groupID != "" {
 		tx = tx.Where("group_id = ?", groupID)
+	}
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
@@ -263,6 +277,14 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 			}
 			values = append(values, "%"+keyword+"%")
 		}
+		if requestID == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "request_id ILIKE ?")
+			} else {
+				conditions = append(conditions, "request_id LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
+		}
 		if tokenName == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "token_name ILIKE ?")
@@ -309,7 +331,7 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	return logs, total, err
 }
 
-func SearchGroupLogs(group string, keyword string, page int, perPage int, code int, endpoint string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
+func SearchGroupLogs(group string, keyword string, page int, perPage int, code int, endpoint string, requestID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
 	if group == "" {
 		return nil, 0, errors.New("group is empty")
 	}
@@ -321,6 +343,9 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 	}
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
+	}
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
@@ -362,6 +387,14 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 				conditions = append(conditions, "endpoint ILIKE ?")
 			} else {
 				conditions = append(conditions, "endpoint LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
+		}
+		if requestID == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "request_id ILIKE ?")
+			} else {
+				conditions = append(conditions, "request_id LIKE ?")
 			}
 			values = append(values, "%"+keyword+"%")
 		}

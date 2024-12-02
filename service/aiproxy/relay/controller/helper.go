@@ -64,7 +64,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 		return
 	}
 	if usage == nil {
-		err := model.BatchRecordConsume(ctx, meta.Group.ID, code, meta.Channel.ID, 0, 0, meta.OriginModelName, meta.Token.ID, meta.Token.Name, 0, price, completionPrice, endpoint, content)
+		err := model.BatchRecordConsume(meta.RequestID, meta.Group.ID, code, meta.Channel.ID, 0, 0, meta.OriginModelName, meta.Token.ID, meta.Token.Name, 0, price, completionPrice, endpoint, content)
 		if err != nil {
 			logger.Error(ctx, "error batch record consume: "+err.Error())
 		}
@@ -83,7 +83,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 			_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.Token.Name, amount)
 			if err != nil {
 				logger.Error(ctx, "error consuming token remain amount: "+err.Error())
-				err = model.CreateConsumeError(meta.Group.ID, meta.Token.Name, meta.OriginModelName, err.Error(), amount, meta.Token.ID)
+				err = model.CreateConsumeError(meta.RequestID, meta.Group.ID, meta.Token.Name, meta.OriginModelName, err.Error(), amount, meta.Token.ID)
 				if err != nil {
 					logger.Error(ctx, "failed to create consume error: "+err.Error())
 				}
@@ -92,7 +92,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 			}
 		}
 	}
-	err := model.BatchRecordConsume(ctx, meta.Group.ID, code, meta.Channel.ID, promptTokens, completionTokens, meta.OriginModelName, meta.Token.ID, meta.Token.Name, amount, price, completionPrice, endpoint, content)
+	err := model.BatchRecordConsume(meta.RequestID, meta.Group.ID, code, meta.Channel.ID, promptTokens, completionTokens, meta.OriginModelName, meta.Token.ID, meta.Token.Name, amount, price, completionPrice, endpoint, content)
 	if err != nil {
 		logger.Error(ctx, "error batch record consume: "+err.Error())
 	}

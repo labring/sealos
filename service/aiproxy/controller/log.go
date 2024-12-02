@@ -41,9 +41,10 @@ func GetLogs(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
+	requestID := c.Query("request_id")
 	logs, total, err := model.GetLogs(
 		startTimestampTime, endTimestampTime,
-		code, modelName, group, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
+		code, modelName, group, requestID, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -92,9 +93,10 @@ func GetGroupLogs(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
+	requestID := c.Query("request_id")
 	logs, total, err := model.GetGroupLogs(group,
 		startTimestampTime, endTimestampTime,
-		code, modelName, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
+		code, modelName, requestID, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -140,7 +142,8 @@ func SearchLogs(c *gin.Context) {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchLogs(keyword, p, perPage, code, endpoint, groupID, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channel, order)
+	requestID := c.Query("request_id")
+	logs, total, err := model.SearchLogs(keyword, p, perPage, code, endpoint, groupID, requestID, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channel, order)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -186,7 +189,8 @@ func SearchGroupLogs(c *gin.Context) {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchGroupLogs(group, keyword, p, perPage, code, endpoint, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channelID, order)
+	requestID := c.Query("request_id")
+	logs, total, err := model.SearchGroupLogs(group, keyword, p, perPage, code, endpoint, requestID, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channelID, order)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -307,7 +311,8 @@ func SearchConsumeError(c *gin.Context) {
 		perPage = 100
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchConsumeError(keyword, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
+	requestID := c.Query("request_id")
+	logs, total, err := model.SearchConsumeError(keyword, requestID, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -41,9 +40,9 @@ func OnConflictDoNothing() *gorm.DB {
 	})
 }
 
-func BatchRecordConsume(ctx context.Context, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
+func BatchRecordConsume(requestID string, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
 	errs := []error{}
-	err := RecordConsumeLog(ctx, group, code, channelID, promptTokens, completionTokens, modelName, tokenID, tokenName, amount, price, completionPrice, endpoint, content)
+	err := RecordConsumeLog(requestID, group, code, channelID, promptTokens, completionTokens, modelName, tokenID, tokenName, amount, price, completionPrice, endpoint, content)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to record log: %w", err))
 	}
