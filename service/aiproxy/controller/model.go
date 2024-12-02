@@ -61,6 +61,7 @@ func SortBuiltinModelConfigsFunc(i, j *BuiltinModelConfig) int {
 }
 
 var (
+	builtinModels           []*BuiltinModelConfig
 	builtinModelsMap        map[string]*OpenAIModels
 	builtinChannelID2Models map[int][]*BuiltinModelConfig
 )
@@ -102,6 +103,7 @@ func init() {
 					Root:       _model.Model,
 					Parent:     nil,
 				}
+				builtinModels = append(builtinModels, (*BuiltinModelConfig)(_model))
 			} else if v.OwnedBy != string(_model.Owner) {
 				logger.FatalLog(fmt.Sprintf("model %s owner mismatch, expect %s, actual %s", _model.Model, string(_model.Owner), v.OwnedBy))
 			}
@@ -114,9 +116,18 @@ func init() {
 		})
 		slices.SortStableFunc(models, SortBuiltinModelConfigsFunc)
 	}
+	slices.SortStableFunc(builtinModels, SortBuiltinModelConfigsFunc)
 }
 
 func BuiltinModels(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    builtinModels,
+	})
+}
+
+func ChannelBuiltinModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -124,7 +135,7 @@ func BuiltinModels(c *gin.Context) {
 	})
 }
 
-func BuiltinModelsByType(c *gin.Context) {
+func ChannelBuiltinModelsByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{

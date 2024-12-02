@@ -24,7 +24,8 @@ func SetAPIRouter(router *gin.Engine) {
 		modelsRoute := apiRouter.Group("/models")
 		{
 			modelsRoute.GET("/builtin", controller.BuiltinModels)
-			modelsRoute.GET("/builtin/:type", controller.BuiltinModelsByType)
+			modelsRoute.GET("/builtin/channel", controller.ChannelBuiltinModels)
+			modelsRoute.GET("/builtin/channel/:type", controller.ChannelBuiltinModelsByType)
 			modelsRoute.GET("/enabled", controller.EnabledModels)
 			modelsRoute.GET("/enabled/channel", controller.ChannelEnabledModels)
 			modelsRoute.GET("/enabled/channel/:type", controller.ChannelEnabledModelsByType)
