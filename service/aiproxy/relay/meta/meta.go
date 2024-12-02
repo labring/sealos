@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
@@ -18,6 +19,7 @@ type Meta struct {
 	Group   *model.GroupCache
 	Token   *model.TokenCache
 
+	RequestID       string
 	OriginModelName string
 	ActualModelName string
 	RequestURLPath  string
@@ -74,6 +76,7 @@ func (m *Meta) AwsClient() *bedrockruntime.Client {
 func GetByContext(c *gin.Context) *Meta {
 	meta := Meta{
 		values:          make(map[string]any),
+		RequestID:       c.GetString(string(helper.RequestIDKey)),
 		Mode:            relaymode.GetByPath(c.Request.URL.Path),
 		RequestURLPath:  c.Request.URL.String(),
 		OriginModelName: c.GetString(ctxkey.OriginalModel),

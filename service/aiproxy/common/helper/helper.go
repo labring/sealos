@@ -3,13 +3,14 @@ package helper
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 )
 
 func GenRequestID() string {
-	return GetTimeString() + random.GetRandomNumberString(8)
+	return strconv.FormatInt(time.Now().UnixMilli(), 10) + random.GetRandomNumberString(4)
 }
 
 func GetResponseID(c *gin.Context) string {
