@@ -197,7 +197,7 @@ const JetBrainsGuideModal = ({
                   {t('jetbrains_guide_start_to_use')}
                 </Text>
                 <Text fontSize={'14px'} color={'grayModern.600'} fontWeight={'bold'}>
-                  {t('jetbrains_guide_four_steps')}
+                  {t('jetbrains_guide_three_steps')}
                 </Text>
               </Flex>
               <Stepper orientation="vertical" index={-1} mt={4} gap={0} position={'relative'}>
