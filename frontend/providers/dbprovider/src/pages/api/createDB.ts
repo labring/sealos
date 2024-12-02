@@ -19,8 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       backupInfo?: BackupItemType;
     };
 
-    console.log(req.body, 'req.body');
-
     const { k8sCustomObjects, namespace, applyYamlList, delYamlList } = await getK8s({
       kubeconfig: await authSession(req)
     });
