@@ -66,9 +66,8 @@ var (
 	builtinChannelID2Models map[int][]*BuiltinModelConfig
 )
 
-func init() {
-	var permission []OpenAIModelPermission
-	permission = append(permission, OpenAIModelPermission{
+var permission = []OpenAIModelPermission{
+	{
 		ID:                 "modelperm-LwHkVFn8AcMItP432fKKDIKJ",
 		Object:             "model_permission",
 		Created:            1626777600,
@@ -81,8 +80,10 @@ func init() {
 		Organization:       "*",
 		Group:              nil,
 		IsBlocking:         false,
-	})
+	},
+}
 
+func init() {
 	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
 	builtinModelsMap = make(map[string]*OpenAIModels)
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
@@ -240,17 +241,18 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 func ListModels(c *gin.Context) {
 	models := model.CacheGetEnabledModelConfigs()
 
-	availableOpenAIModels := make([]*OpenAIModels, 0, len(models))
+	availableOpenAIModels := make([]*OpenAIModels, len(models))
 
-	for _, model := range models {
-		availableOpenAIModels = append(availableOpenAIModels, &OpenAIModels{
-			ID:      model.Model,
-			Object:  "model",
-			Created: 1626777600,
-			OwnedBy: string(model.Owner),
-			Root:    model.Model,
-			Parent:  nil,
-		})
+	for idx, model := range models {
+		availableOpenAIModels[idx] = &OpenAIModels{
+			ID:         model.Model,
+			Object:     "model",
+			Created:    1626777600,
+			OwnedBy:    string(model.Owner),
+			Root:       model.Model,
+			Permission: permission,
+			Parent:     nil,
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -277,11 +279,12 @@ func RetrieveModel(c *gin.Context) {
 	}
 
 	c.JSON(200, &OpenAIModels{
-		ID:      model.Model,
-		Object:  "model",
-		Created: 1626777600,
-		OwnedBy: string(model.Owner),
-		Root:    model.Model,
-		Parent:  nil,
+		ID:         model.Model,
+		Object:     "model",
+		Created:    1626777600,
+		OwnedBy:    string(model.Owner),
+		Root:       model.Model,
+		Permission: permission,
+		Parent:     nil,
 	})
 }
