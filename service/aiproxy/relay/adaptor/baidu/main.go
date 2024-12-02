@@ -107,7 +107,7 @@ func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func streamResponseBaidu2OpenAI(baiduResponse *ChatStreamResponse) *openai.ChatCompletionsStreamResponse {
+func streamResponseBaidu2OpenAI(meta *meta.Meta, baiduResponse *ChatStreamResponse) *openai.ChatCompletionsStreamResponse {
 	var choice openai.ChatCompletionsStreamResponseChoice
 	choice.Delta.Content = baiduResponse.Result
 	if baiduResponse.IsEnd {
@@ -117,14 +117,14 @@ func streamResponseBaidu2OpenAI(baiduResponse *ChatStreamResponse) *openai.ChatC
 		ID:      baiduResponse.ID,
 		Object:  "chat.completion.chunk",
 		Created: baiduResponse.Created,
-		Model:   "ernie-bot",
+		Model:   meta.OriginModelName,
 		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 		Usage:   baiduResponse.Usage,
 	}
 	return &response
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	var usage model.Usage
@@ -155,7 +155,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 			usage.PromptTokens = baiduResponse.Usage.PromptTokens
 			usage.CompletionTokens = baiduResponse.Usage.TotalTokens - baiduResponse.Usage.PromptTokens
 		}
-		response := streamResponseBaidu2OpenAI(&baiduResponse)
+		response := streamResponseBaidu2OpenAI(meta, &baiduResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
 			logger.Error(c, "error rendering stream response: "+err.Error())
@@ -171,7 +171,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func Handler(c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	var baiduResponse ChatResponse
@@ -180,10 +180,10 @@ func Handler(c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWit
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if baiduResponse.Error != nil && baiduResponse.Error.ErrorCode != 0 {
-		return nil, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error:"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
+		return nil, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
 	}
 	fullTextResponse := responseBaidu2OpenAI(&baiduResponse)
-	fullTextResponse.Model = "ernie-bot"
+	fullTextResponse.Model = meta.OriginModelName
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
