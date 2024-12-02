@@ -160,9 +160,9 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		// 	return
 		// }
 		if utils.IsStreamResponse(resp) {
-			err, usage = StreamHandler(c, resp)
+			err, usage = StreamHandler(meta, c, resp)
 		} else {
-			usage, err = Handler(c, resp)
+			usage, err = Handler(meta, c, resp)
 		}
 	}
 	return
