@@ -210,7 +210,7 @@ const Form = ({
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
-                    color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
+                    color={activeNav === item.id ? 'grayModern.900' : 'grayModern.500'}
                   />
                   <Box>{t(item.label)}</Box>
                 </Flex>
