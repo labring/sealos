@@ -75,7 +75,6 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 	var amount float64
 	totalTokens := promptTokens + completionTokens
 	if totalTokens != 0 {
-		// amount = (float64(promptTokens)*price + float64(completionTokens)*completionPrice) / billingPrice.PriceUnit
 		promptAmount := decimal.NewFromInt(int64(promptTokens)).Mul(decimal.NewFromFloat(price)).Div(decimal.NewFromInt(billingprice.PriceUnit))
 		completionAmount := decimal.NewFromInt(int64(completionTokens)).Mul(decimal.NewFromFloat(completionPrice)).Div(decimal.NewFromInt(billingprice.PriceUnit))
 		amount = promptAmount.Add(completionAmount).InexactFloat64()

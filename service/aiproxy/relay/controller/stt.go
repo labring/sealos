@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -16,9 +15,7 @@ import (
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 )
 
-func RelaySTTHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
-	meta := c.MustGet(ctxkey.Meta).(*meta.Meta)
-
+func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	ctx := c.Request.Context()
 
 	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)

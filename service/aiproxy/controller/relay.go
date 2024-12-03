@@ -23,23 +23,21 @@ import (
 
 // https://platform.openai.com/docs/api-reference/chat
 
-func relayHelper(c *gin.Context) *model.ErrorWithStatusCode {
-	meta := meta.GetByContext(c)
-	c.Set(ctxkey.Meta, meta)
+func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	var err *model.ErrorWithStatusCode
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
-		err = controller.RelayImageHelper(c)
+		err = controller.RelayImageHelper(meta, c)
 	case relaymode.AudioSpeech:
-		err = controller.RelayTTSHelper(c)
+		err = controller.RelayTTSHelper(meta, c)
 	case relaymode.AudioTranslation:
-		err = controller.RelaySTTHelper(c)
+		err = controller.RelaySTTHelper(meta, c)
 	case relaymode.AudioTranscription:
-		err = controller.RelaySTTHelper(c)
+		err = controller.RelaySTTHelper(meta, c)
 	case relaymode.Rerank:
-		err = controller.RerankHelper(c)
+		err = controller.RerankHelper(meta, c)
 	default:
-		err = controller.RelayTextHelper(c)
+		err = controller.RelayTextHelper(meta, c)
 	}
 	return err
 }
@@ -51,7 +49,7 @@ func Relay(c *gin.Context) {
 		logger.Debugf(ctx, "request body: %s", requestBody)
 	}
 	channel := c.MustGet(ctxkey.Channel).(*dbmodel.Channel)
-	bizErr := relayHelper(c)
+	bizErr := relayHelper(meta.GetByContext(c), c)
 	if bizErr == nil {
 		monitor.Emit(channel.ID, true)
 		return
@@ -83,7 +81,7 @@ func Relay(c *gin.Context) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		c.Set(ctxkey.Channel, channel)
-		bizErr = relayHelper(c)
+		bizErr = relayHelper(meta.GetByContext(c), c)
 		if bizErr == nil {
 			return
 		}

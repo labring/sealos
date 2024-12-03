@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -17,9 +16,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
-	meta := c.MustGet(ctxkey.Meta).(*meta.Meta)
-
+func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	ctx := c.Request.Context()
 
 	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(c.Request)
