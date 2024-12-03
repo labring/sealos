@@ -570,7 +570,6 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					Image: r.WebSocketImage,
 					Args: []string{
 						"server",
-						"--port=",
 						fmt.Sprintf("--port=%s", sshPort),
 						fmt.Sprintf("--proxy=%s", devbox.Name+"-pod-svc:22"),
 						"-v=true",
