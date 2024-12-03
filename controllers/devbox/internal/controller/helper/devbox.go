@@ -77,7 +77,7 @@ func GenerateProxyPodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alph
 		}
 	}
 	recLabels := label.RecommendedLabels(&label.Recommended{
-		Name:      devbox.Name,
+		Name:      devbox.Name + "-proxy",
 		ManagedBy: label.DefaultManagedBy,
 		PartOf:    DevBoxPartOf,
 		Component: ProxyPod,
