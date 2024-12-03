@@ -583,7 +583,7 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					Args: []string{
 						"server",
 						"-v",
-						fmt.Sprintf("--port=%s", 8080),
+						fmt.Sprintf("--port=%d", 8080),
 						//should be changed ingress
 						fmt.Sprintf("--proxy=%s", "https://"+devbox.Name+"-pod-svc:22"),
 						"-v=true",
