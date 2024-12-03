@@ -94,7 +94,7 @@ func main() {
 	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
 	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
 	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
-	flag.StringVar(&WebSocketImage, "websocket-image", "jpillora/chisel", "The image name of devbox websocket proxy pod")
+	flag.StringVar(&WebSocketImage, "websocket-image", "bearslyricattack/chisel", "The image name of devbox websocket proxy pod")
 	opts := zap.Options{
 		Development: true,
 	}
