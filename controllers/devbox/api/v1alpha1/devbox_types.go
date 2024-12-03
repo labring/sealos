@@ -64,7 +64,7 @@ type RuntimeRef struct {
 
 type NetworkSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;WebSocket
 	Type NetworkType `json:"type"`
 	// +kubebuilder:validation:Optional
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
