@@ -69,61 +69,17 @@ func RecordConsumeLog(requestID string, requestAt time.Time, group string, code 
 
 //nolint:goconst
 func getLogOrder(order string) string {
+	prefix, suffix, _ := strings.Cut(order, "-")
 	switch order {
-	case "used_amount":
-		return "used_amount asc"
-	case "used_amount-desc":
-		return "used_amount desc"
-	case "price":
-		return "price asc"
-	case "price-desc":
-		return "price desc"
-	case "completion_price":
-		return "completion_price asc"
-	case "completion_price-desc":
-		return "completion_price desc"
-	case "token_id":
-		return "token_id asc"
-	case "token_id-desc":
-		return "token_id desc"
-	case "token_name":
-		return "token_name asc"
-	case "token_name-desc":
-		return "token_name desc"
-	case "prompt_tokens":
-		return "prompt_tokens asc"
-	case "prompt_tokens-desc":
-		return "prompt_tokens desc"
-	case "completion_tokens":
-		return "completion_tokens asc"
-	case "completion_tokens-desc":
-		return "completion_tokens desc"
-	case "endpoint":
-		return "endpoint asc"
-	case "endpoint-desc":
-		return "endpoint desc"
-	case "group":
-		return "group_id asc"
-	case "group-desc":
-		return "group_id desc"
-	case "request_id":
-		return "request_id asc"
-	case "request_id-desc":
-		return "request_id desc"
-	case "request_at":
-		return "request_at asc"
-	case "request_at-desc":
-		return "request_at desc"
-	case "id":
-		return "id asc"
-	case "id-desc":
-		return "id desc"
-	case "created_at":
-		return "created_at asc"
-	case "created_at-desc":
-		fallthrough
+	case "used_amount", "token_id", "token_name", "group", "request_id", "request_at", "id", "created_at":
+		switch suffix {
+		case "asc":
+			return prefix + " asc"
+		default:
+			return prefix + " desc"
+		}
 	default:
-		return "created_at desc"
+		return "request_at desc"
 	}
 }
 
