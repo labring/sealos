@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -17,6 +18,8 @@ import (
 )
 
 func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
+	meta := c.MustGet(ctxkey.Meta).(*meta.Meta)
+
 	ctx := c.Request.Context()
 
 	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(c.Request)
@@ -24,8 +27,6 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		logger.Errorf(ctx, "get and validate text request failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "invalid_text_request", http.StatusBadRequest)
 	}
-
-	meta := meta.GetByContext(c)
 
 	// get model price
 	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)

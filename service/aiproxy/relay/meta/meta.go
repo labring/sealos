@@ -80,13 +80,19 @@ func GetByContext(c *gin.Context) *Meta {
 		values:          make(map[string]any),
 		RequestAt:       time.Now(),
 		RequestID:       c.GetString(string(helper.RequestIDKey)),
-		Mode:            relaymode.GetByPath(c.Request.URL.Path),
 		RequestURLPath:  c.Request.URL.String(),
 		OriginModelName: c.GetString(ctxkey.OriginalModel),
+		IsChannelTest:   c.GetBool(ctxkey.ChannelTest),
 	}
 
 	meta.Channel = c.MustGet(ctxkey.Channel).(*model.Channel)
 	meta.ActualModelName, _ = GetMappedModelName(meta.OriginModelName, meta.Channel.ModelMapping)
+
+	if mode, ok := c.Get(ctxkey.Mode); ok {
+		meta.Mode = mode.(int)
+	} else {
+		meta.Mode = relaymode.GetByPath(c.Request.URL.Path)
+	}
 
 	if group, ok := c.Get(ctxkey.Group); ok {
 		meta.Group = group.(*model.GroupCache)

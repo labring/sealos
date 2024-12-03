@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -18,9 +19,9 @@ import (
 )
 
 func RerankHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
-	ctx := c.Request.Context()
+	meta := c.MustGet(ctxkey.Meta).(*meta.Meta)
 
-	meta := meta.GetByContext(c)
+	ctx := c.Request.Context()
 
 	rerankRequest, err := getRerankRequest(c)
 	if err != nil {

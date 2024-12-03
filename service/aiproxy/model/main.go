@@ -126,6 +126,7 @@ func InitDB() {
 func migrateDB() error {
 	err := DB.AutoMigrate(
 		&Channel{},
+		&ChannelTest{},
 		&Token{},
 		&Group{},
 		&Option{},

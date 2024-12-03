@@ -119,7 +119,11 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 		return nil, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
 	}
 	logger.Debugf(c.Request.Context(), "request url: %s", fullRequestURL)
-	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
+	contentType := req.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/json; charset=utf-8"
+	}
+	req.Header.Set("Content-Type", contentType)
 	for key, value := range header {
 		req.Header[key] = value
 	}

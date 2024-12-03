@@ -3,8 +3,10 @@ package openai
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -23,12 +25,45 @@ type Adaptor struct{}
 
 const baseURL = "https://api.openai.com"
 
+const MetaBaseURLNoV1 = "base_url_no_v1"
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
 	if u == "" {
 		u = baseURL
 	}
-	return GetFullRequestURL(u, meta.RequestURLPath), nil
+
+	var path string
+	switch meta.Mode {
+	case relaymode.ChatCompletions:
+		path = "/chat/completions"
+	case relaymode.Completions:
+		path = "/completions"
+	case relaymode.Embeddings:
+		path = "/embeddings"
+	case relaymode.Moderations:
+		path = "/moderations"
+	case relaymode.ImagesGenerations:
+		path = "/images/generations"
+	case relaymode.Edits:
+		path = "/edits"
+	case relaymode.AudioSpeech:
+		path = "/audio/speech"
+	case relaymode.AudioTranscription:
+		path = "/audio/transcriptions"
+	case relaymode.AudioTranslation:
+		path = "/audio/translations"
+	case relaymode.Rerank:
+		path = "/rerank"
+	default:
+		return "", errors.New("unsupported mode")
+	}
+
+	if meta.GetBool(MetaBaseURLNoV1) ||
+		(strings.HasPrefix(u, "https://gateway.ai.cloudflare.com") && strings.HasSuffix(u, "/openai")) {
+		return u + path, nil
+	}
+	return fmt.Sprintf("%s/v1%s", u, path), nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -51,8 +52,8 @@ func getImageCostPrice(modelName string, reqModel string, size string) (float64,
 	return imageCostPrice, nil
 }
 
-func RelayImageHelper(c *gin.Context, _ int) *relaymodel.ErrorWithStatusCode {
-	meta := meta.GetByContext(c)
+func RelayImageHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
+	meta := c.MustGet(ctxkey.Meta).(*meta.Meta)
 
 	ctx := c.Request.Context()
 
