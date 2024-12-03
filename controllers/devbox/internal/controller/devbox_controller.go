@@ -19,6 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"time"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -556,9 +558,18 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 		}
 	}
 
-	wsPod := &corev1.Pod{
+	podName := devbox.Name + "-proxy-pod"
+	wsPod := &corev1.Pod{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: podName, Namespace: devbox.Namespace}, wsPod)
+	if err == nil {
+		return nil
+	}
+	if !errors.IsNotFound(err) {
+		return err
+	}
+	wsPod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        devbox.Name + "-proxy-pod",
+			Name:        podName,
 			Namespace:   devbox.Namespace,
 			Labels:      helper.GenerateProxyPodLabels(devbox, runtimecr),
 			Annotations: helper.GeneratePodAnnotations(devbox, runtimecr),
@@ -580,7 +591,6 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 			},
 		},
 	}
-	// if devbox is running, create the pod
 	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsPod, func() error {
 			return controllerutil.SetControllerReference(devbox, wsPod, r.Scheme)
