@@ -31,12 +31,12 @@ jobs:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Download image-cri-shim
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: image-cri-shim-amd64
           path: /tmp/
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-amd64
           path: /tmp/
@@ -46,7 +46,7 @@ jobs:
           sudo mv /tmp/sealos /usr/bin/
           sudo sealos version
       - name: Download e2e test
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e.test
           path: /tmp/

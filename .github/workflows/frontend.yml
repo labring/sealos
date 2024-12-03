@@ -203,7 +203,7 @@ jobs:
           echo latest_cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:latest >> $GITHUB_OUTPUT
 
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos
           path: /tmp/
