@@ -9,6 +9,7 @@ common:
   guideEnabled: false
   apiEnabled: false
 launchpad:
+  pvcStorageMax: 100
   eventAnalyze:
     enabled: false
     fastGPTKey: ""
