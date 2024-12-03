@@ -27,7 +27,7 @@ import {
 import { useMessage } from '@sealos/ui'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChannelInfo, ChannelStatus } from '@/types/admin/channels/channelInfo.d'
+import { ChannelInfo, ChannelStatus } from '@/types/admin/channels/channelInfo'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { useState, useMemo } from 'react'
 import { getChannels } from '@/api/platform'
@@ -35,7 +35,7 @@ import SwitchPage from '@/components/common/SwitchPage'
 import UpdateChannelModal from './UpdateChannelModal'
 import { ModelType } from '@/types/models/model'
 import { getEnumKeyByValue } from '@/utils/common'
-import { QueryKey } from '@/types/queryKey'
+import { QueryKey } from '@/types/query-key'
 
 export default function ChannelTable() {
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -405,8 +405,8 @@ export default function ChannelTable() {
                     viewBox="0 0 16 16"
                     fill="none">
                     <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
                       d="M3.63017 4.57294C2.88892 5.5168 2.44686 6.70677 2.44686 8C2.44686 11.0669 4.9331 13.5532 8.00004 13.5532C9.29326 13.5532 10.4832 13.1111 11.4271 12.3699L3.63017 4.57294ZM4.57298 3.63013L12.3699 11.4271C13.1112 10.4832 13.5532 9.29322 13.5532 8C13.5532 4.93306 11.067 2.44681 8.00004 2.44681C6.70682 2.44681 5.51684 2.88887 4.57298 3.63013ZM1.11353 8C1.11353 4.19668 4.19672 1.11348 8.00004 1.11348C11.8034 1.11348 14.8866 4.19668 14.8866 8C14.8866 11.8033 11.8034 14.8865 8.00004 14.8865C4.19672 14.8865 1.11353 11.8033 1.11353 8Z"
                       fill="currentColor"
                     />
@@ -430,8 +430,8 @@ export default function ChannelTable() {
                     viewBox="0 0 16 16"
                     fill="none">
                     <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
                       d="M5.79427 11.5962L10.4323 8.98988C11.1347 8.59516 11.5697 8.34899 11.8659 8.1453C11.9632 8.07842 12.0235 8.03024 12.0586 8.00006C12.0235 7.96988 11.9632 7.92169 11.8659 7.85482C11.5697 7.65113 11.1347 7.40495 10.4323 7.01024L5.79426 4.4039C5.09214 4.00934 4.65523 3.76552 4.3252 3.61737C4.18814 3.55585 4.10581 3.52842 4.06506 3.51662C4.04193 3.52371 4.02176 3.53393 4.00487 3.5458C3.99613 3.58816 3.98409 3.6599 3.97362 3.771C3.94094 4.1177 3.93933 4.60263 3.93933 5.39372L3.93933 10.6064C3.93933 11.3975 3.94094 11.8824 3.97362 12.2291C3.98409 12.3402 3.99613 12.412 4.00487 12.4543C4.02176 12.4662 4.04193 12.4764 4.06506 12.4835C4.10581 12.4717 4.18814 12.4443 4.3252 12.3827C4.65523 12.2346 5.09214 11.9908 5.79427 11.5962ZM13.4344 7.32001C13.2073 6.82372 12.5309 6.44358 11.178 5.68331L6.53993 3.07697C5.18701 2.31669 4.51056 1.93656 3.95547 1.99334C3.4713 2.04287 3.03146 2.29004 2.74531 2.6734C2.41724 3.1129 2.41724 3.87317 2.41724 5.39372L2.41724 10.6064C2.41724 12.1269 2.41724 12.8872 2.74531 13.3267C3.03146 13.7101 3.4713 13.9572 3.95547 14.0068C4.51055 14.0636 5.18702 13.6834 6.53994 12.9231L11.178 10.3168C12.5309 9.55654 13.2073 9.1764 13.4344 8.68011C13.6324 8.24723 13.6324 7.75289 13.4344 7.32001Z"
                       fill="currentColor"
                     />
@@ -550,9 +550,10 @@ export default function ChannelTable() {
       h="full"
       display="flex"
       flexDirection="column"
-      gap="8px"
+      gap="24px"
+      overflow="hidden"
       id="channel-table-container">
-      <TableContainer w="full" flex="1" overflowY="auto">
+      <TableContainer w="full" flex="1 0 0" minHeight="0" overflowY="auto">
         <Table variant="simple" w="full" size="md">
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (

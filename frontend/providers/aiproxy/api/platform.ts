@@ -8,7 +8,7 @@ import { GetOptionResponse } from '@/app/api/admin/option/route'
 import { BatchOptionData } from '@/types/admin/option'
 import { GetEnabledModelsResponse } from '@/app/api/models/enabled/route'
 import { GetTokensQueryParams, GetTokensResponse } from '@/app/api/user/token/route'
-import { TokenInfo } from '@/types/getKeys'
+import { TokenInfo } from '@/types/user/token'
 import { UserLogSearchResponse } from '@/app/api/user/log/route'
 import { UserLogQueryParams } from '@/app/api/user/log/route'
 // user

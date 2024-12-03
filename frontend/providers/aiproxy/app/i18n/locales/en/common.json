@@ -33,7 +33,8 @@
     "unused": "Not use",
     "inputPrice": "Input price",
     "outputPrice": "Output price",
-    "createName": "Name"
+    "createName": "Name",
+    "modelType": "Type"
   },
   "logs": {
     "call_log": "Logs",
@@ -162,5 +163,18 @@
     "defaultModel": "Default model",
     "addDefaultModel": "New",
     "saveDefaultModel": "Save"
+  },
+  "modeType": {
+    "0": "Unknown",
+    "1": "Chat",
+    "2": "Text",
+    "3": "Embed",
+    "4": "Moderate",
+    "5": "Image",
+    "6": "Edit",
+    "7": "TTS",
+    "8": "STT",
+    "9": "Audio",
+    "10": "Rerank"
   }
 }

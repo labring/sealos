@@ -3,7 +3,7 @@ import { ChannelInfo } from '@/types/admin/channels/channelInfo'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { CreateChannelRequest } from '@/types/admin/channels/channelInfo.d'
+import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
 
 export const dynamic = 'force-dynamic'
 

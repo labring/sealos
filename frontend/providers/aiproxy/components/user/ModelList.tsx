@@ -1,6 +1,6 @@
 'use client'
 import { Badge, Center, Flex, Spinner, Text } from '@chakra-ui/react'
-import { ListIcon } from '@/ui/icons/home/Icons'
+import { ListIcon } from '@/ui/icons/index'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import Image, { StaticImageData } from 'next/image'
@@ -21,7 +21,7 @@ import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
 import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
 import { MyTooltip } from '@/components/common/MyTooltip'
 import { ModelIdentifier } from '@/types/front'
-import { QueryKey } from '@/types/queryKey'
+import { QueryKey } from '@/types/query-key'
 const getIdentifier = (modelName: string): ModelIdentifier => {
   return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
 }

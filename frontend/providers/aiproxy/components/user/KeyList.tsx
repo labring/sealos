@@ -41,14 +41,14 @@ import { createToken, deleteToken, getTokens, updateToken } from '@/api/platform
 
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChainIcon } from '@/ui/icons/home/Icons'
+import { ChainIcon } from '@/ui/icons/index'
 import { useMessage } from '@sealos/ui'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import { TokenInfo } from '@/types/getKeys'
+import { TokenInfo } from '@/types/user/token'
 import SwitchPage from '@/components/common/SwitchPage'
 import { useBackendStore } from '@/store/backend'
 import { MyTooltip } from '@/components/common/MyTooltip'
-import { QueryKey } from '@/types/queryKey'
+import { QueryKey } from '@/types/query-key'
 
 export function KeyList(): JSX.Element {
   const { lng } = useI18n()

@@ -30,7 +30,7 @@ import { MyTooltip } from '@/components/common/MyTooltip'
 import { useMessage } from '@sealos/ui'
 import { ModelConfig } from '@/types/models/model'
 import Image, { StaticImageData } from 'next/image'
-import { QueryKey } from '@/types/queryKey'
+import { QueryKey } from '@/types/query-key'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
 import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
@@ -43,6 +43,7 @@ import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
 import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
 import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
+import { getTranslationWithFallback } from '@/utils/common'
 
 function Price() {
   const { lng } = useI18n()
@@ -203,6 +204,35 @@ function PriceTable() {
         </Text>
       ),
       cell: (info) => <ModelComponent modelName={info.getValue()} />
+    }),
+    columnHelper.accessor((row) => row.type, {
+      id: 'type',
+      header: () => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {t('key.modelType')}
+        </Text>
+      ),
+      cell: (info) => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {getTranslationWithFallback(
+            `modeType.${String(info.getValue())}`,
+            'modeType.0',
+            t as any
+          )}
+        </Text>
+      )
     }),
     columnHelper.accessor((row) => row.input_price, {
       id: 'inputPrice',

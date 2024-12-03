@@ -33,7 +33,8 @@
     "unused": "未使用",
     "inputPrice": "输入单价",
     "outputPrice": "输出单价",
-    "createName": "名称"
+    "createName": "名称",
+    "modelType": "模型类型"
   },
   "logs": {
     "call_log": "调用日志",
@@ -162,5 +163,18 @@
     "defaultModel": "默认模型",
     "addDefaultModel": "新增模型",
     "saveDefaultModel": "保存"
+  },
+  "modeType": {
+    "0": "未知",
+    "1": "聊天补全",
+    "2": "文本补全",
+    "3": "文本嵌入",
+    "4": "内容审核",
+    "5": "图像生成",
+    "6": "文本编辑",
+    "7": "语音合成",
+    "8": "语音转录",
+    "9": "音频翻译",
+    "10": "重排序"
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import type { AppConfigType } from '@/types/appConfig'
+import type { AppConfigType } from '@/types/app-config'
 
 export const dynamic = 'force-dynamic'
 

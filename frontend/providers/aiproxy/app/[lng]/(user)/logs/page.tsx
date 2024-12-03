@@ -13,7 +13,7 @@ import { useI18n } from '@/providers/i18n/i18nContext'
 import { LogItem } from '@/types/user/logs'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { QueryKey } from '@/types/queryKey'
+import { QueryKey } from '@/types/query-key'
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
