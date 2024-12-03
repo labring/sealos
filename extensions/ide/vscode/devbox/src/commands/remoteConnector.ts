@@ -11,7 +11,6 @@ import {
 } from '../constant/file'
 import { Logger } from '../common/logger'
 import { Disposable } from '../common/dispose'
-import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
@@ -130,8 +129,6 @@ export class RemoteSSHConnector extends Disposable {
 
     const { sshDomain, sshPort, base64PrivateKey, sshHostLabel, workingDir } =
       args
-
-    modifiedRemoteSSHConfig(sshHostLabel)
 
     const sshUser = sshDomain.split('@')[0]
     const sshHost = sshDomain.split('@')[1]

@@ -25,6 +25,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       [deployPVCResizeKey]: `${totalStorage}Gi`
     },
     labels: {
+      ...(data.labels || {}),
       [appDeployKey]: data.appName,
       app: data.appName
     }
