@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,81 +12,54 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/monitor"
-	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
-	"github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func buildTestRequest(model string) *relaymodel.GeneralOpenAIRequest {
-	testRequest := &relaymodel.GeneralOpenAIRequest{
-		MaxTokens: 2,
-		Model:     model,
-	}
-	testMessage := relaymodel.Message{
-		Role:    "user",
-		Content: "hi",
-	}
-	testRequest.Messages = append(testRequest.Messages, &testMessage)
-	return testRequest
-}
-
-func testChannel(channel *model.Channel, request *relaymodel.GeneralOpenAIRequest) (openaiErr *relaymodel.Error, err error) {
-	if len(channel.Models) == 0 {
-		channel.Models = config.GetDefaultChannelModels()[channel.Type]
-		if len(channel.Models) == 0 {
-			return nil, errors.New("no models")
-		}
-	}
-	modelName := request.Model
-	if modelName == "" {
-		modelName = channel.Models[0]
-	} else if !slices.Contains(channel.Models, modelName) {
-		return nil, fmt.Errorf("model %s not supported", modelName)
-	}
-	if v, ok := channel.ModelMapping[modelName]; ok {
-		modelName = v
-	}
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = &http.Request{
-		Method: http.MethodPost,
-		URL:    &url.URL{Path: "/v1/chat/completions"},
-		Body:   nil,
-		Header: make(http.Header),
-	}
-	c.Request.Header.Set("Authorization", "Bearer "+channel.Key)
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set(ctxkey.Channel, channel)
-	meta := meta.GetByContext(c)
-	adaptor, ok := channeltype.GetAdaptor(channel.Type)
-	if !ok {
-		return nil, fmt.Errorf("invalid api type: %d, adaptor is nil", channel.Type)
-	}
-	meta.OriginModelName, meta.ActualModelName = request.Model, modelName
-	request.Model = modelName
-	usage, respErr := controller.DoHelper(adaptor, c, meta)
-	if respErr != nil {
-		return &respErr.Error, errors.New(respErr.Error.Message)
-	}
-	if usage == nil {
-		return nil, errors.New("usage is nil")
-	}
-	result := w.Result()
-	// print result.Body
-	respBody, err := io.ReadAll(result.Body)
+// testSingleModel tests a single model in the channel
+func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTest, error) {
+	body, mode, err := utils.BuildRequest(modelName)
 	if err != nil {
 		return nil, err
 	}
-	logger.SysLogf("testing channel #%d, response: \n%s", channel.ID, respBody)
-	return nil, nil
+
+	w := httptest.NewRecorder()
+	newc, _ := gin.CreateTestContext(w)
+	newc.Request = &http.Request{
+		Method: http.MethodPost,
+		URL:    &url.URL{Path: utils.BuildModeDefaultPath(mode)},
+		Body:   io.NopCloser(body),
+		Header: make(http.Header),
+	}
+
+	newc.Set(ctxkey.Mode, mode)
+	newc.Set(ctxkey.OriginalModel, modelName)
+	newc.Set(ctxkey.Channel, channel)
+	newc.Set(ctxkey.ChannelTest, true)
+
+	bizErr := relayHelper(newc)
+	var respStr string
+	if bizErr == nil {
+		respStr = w.Body.String()
+	} else {
+		respStr = bizErr.String()
+	}
+	meta := newc.MustGet(ctxkey.Meta).(*meta.Meta)
+
+	return channel.UpdateModelTest(
+		meta.RequestAt,
+		meta.OriginModelName,
+		meta.ActualModelName,
+		time.Since(meta.RequestAt).Seconds(),
+		bizErr == nil,
+		respStr,
+	)
 }
 
+//nolint:goconst
 func TestChannel(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -97,86 +69,56 @@ func TestChannel(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelByID(id, false)
-	if err != nil {
+
+	modelName := c.Param("model")
+	if modelName == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": err.Error(),
+			"message": "model is required",
 		})
 		return
 	}
-	model := c.Query("model")
-	testRequest := buildTestRequest(model)
-	tik := time.Now()
-	_, err = testChannel(channel, testRequest)
-	tok := time.Now()
-	milliseconds := tok.Sub(tik).Milliseconds()
-	if err != nil {
-		milliseconds = 0
-	}
-	go channel.UpdateResponseTime(milliseconds)
-	consumedTime := float64(milliseconds) / 1000.0
-	if err != nil {
+
+	channel, ok := model.CacheGetEnabledChannelByID(id)
+	if !ok {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": err.Error(),
-			"time":    consumedTime,
-			"model":   model,
+			"message": "channel not found",
 		})
 		return
 	}
+
+	if !slices.Contains(channel.Models, modelName) {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "model not supported by channel",
+		})
+		return
+	}
+
+	ct, err := testSingleModel(channel, modelName)
+	if err != nil {
+		logger.SysErrorf("failed to test channel model %s: %s", modelName, err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("failed to test model %s: %s", modelName, err.Error()),
+		})
+		return
+	}
+
+	if c.Query("success_body") != "true" {
+		ct.Response = ""
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "",
-		"time":    consumedTime,
-		"model":   model,
+		"data":    ct,
 	})
 }
 
-var (
-	testAllChannelsLock    sync.Mutex
-	testAllChannelsRunning = false
-)
-
-func testChannels(onlyDisabled bool) error {
-	testAllChannelsLock.Lock()
-	if testAllChannelsRunning {
-		testAllChannelsLock.Unlock()
-		return errors.New("测试已在运行中")
-	}
-	testAllChannelsRunning = true
-	testAllChannelsLock.Unlock()
-	channels, err := model.GetAllChannels(onlyDisabled, false)
-	if err != nil {
-		return err
-	}
-	go func() {
-		for _, channel := range channels {
-			isChannelEnabled := channel.Status == model.ChannelStatusEnabled
-			tik := time.Now()
-			testRequest := buildTestRequest("")
-			openaiErr, err := testChannel(channel, testRequest)
-			tok := time.Now()
-			milliseconds := tok.Sub(tik).Milliseconds()
-			if isChannelEnabled && monitor.ShouldDisableChannel(openaiErr, -1) {
-				_ = model.DisableChannelByID(channel.ID)
-			}
-			if !isChannelEnabled && monitor.ShouldEnableChannel(err, openaiErr) {
-				_ = model.EnableChannelByID(channel.ID)
-			}
-			channel.UpdateResponseTime(milliseconds)
-			time.Sleep(time.Second * 1)
-		}
-		testAllChannelsLock.Lock()
-		testAllChannelsRunning = false
-		testAllChannelsLock.Unlock()
-	}()
-	return nil
-}
-
-func TestChannels(c *gin.Context) {
-	onlyDisabled := c.Query("only_disabled") == "true"
-	err := testChannels(onlyDisabled)
+//nolint:goconst
+func TestChannelModels(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -184,20 +126,116 @@ func TestChannels(c *gin.Context) {
 		})
 		return
 	}
+
+	channel, ok := model.CacheGetEnabledChannelByID(id)
+	if !ok {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "channel not found",
+		})
+		return
+	}
+
+	returnSuccess := c.Query("return_success") == "true"
+	successResponseBody := c.Query("success_body") == "true"
+
+	results := make([]gin.H, 0, len(channel.Models))
+	resultsMutex := sync.Mutex{}
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 5)
+
+	for _, modelName := range channel.Models {
+		wg.Add(1)
+		semaphore <- struct{}{}
+
+		go func(model string) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+
+			ct, err := testSingleModel(channel, model)
+			result := gin.H{
+				"success": err == nil,
+			}
+			if err != nil {
+				result["message"] = fmt.Sprintf("failed to test model %s: %s", model, err.Error())
+			} else {
+				if !returnSuccess && ct.Success {
+					return
+				}
+				if !successResponseBody {
+					ct.Response = ""
+				}
+				result["data"] = ct
+			}
+			resultsMutex.Lock()
+			results = append(results, result)
+			resultsMutex.Unlock()
+		}(modelName)
+	}
+
+	wg.Wait()
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "",
+		"data":    results,
 	})
 }
 
-func AutomaticallyTestChannels(frequency int) {
-	for {
-		time.Sleep(time.Duration(frequency) * time.Minute)
-		logger.SysLog("testing all channels")
-		err := testChannels(false)
-		if err != nil {
-			logger.SysLog("testing all channels failed: " + err.Error())
+//nolint:goconst
+func TestAllChannels(c *gin.Context) {
+	channels := model.CacheGetEnabledChannels()
+
+	results := make(map[int]*[]gin.H)
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 10)
+
+	returnSuccess := c.Query("return_success") == "true"
+	successResponseBody := c.Query("success_body") == "true"
+
+	for _, channel := range channels {
+		tmpResults := make([]gin.H, 0, len(channel.Models))
+		tmpResultsMutex := sync.Mutex{}
+		results[channel.ID] = &tmpResults
+		for _, modelName := range channel.Models {
+			wg.Add(1)
+			semaphore <- struct{}{}
+
+			go func(results *[]gin.H, mu *sync.Mutex, model string, ch *model.Channel) {
+				defer wg.Done()
+				defer func() { <-semaphore }()
+
+				ct, err := testSingleModel(ch, model)
+				result := gin.H{
+					"success": err == nil,
+				}
+				if err != nil {
+					result["message"] = fmt.Sprintf("failed to test model %s: %s", model, err.Error())
+				} else {
+					if !returnSuccess && ct.Success {
+						return
+					}
+					if !successResponseBody {
+						ct.Response = ""
+					}
+					result["data"] = ct
+				}
+				mu.Lock()
+				*results = append(*results, result)
+				mu.Unlock()
+			}(&tmpResults, &tmpResultsMutex, modelName, channel)
 		}
-		logger.SysLog("channel test finished")
 	}
+
+	wg.Wait()
+
+	for channelID, r := range results {
+		if len(*r) != 0 {
+			continue
+		}
+		delete(results, channelID)
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    results,
+	})
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
-	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
@@ -77,13 +76,6 @@ func main() {
 	go model.SyncOptions(time.Second * 5)
 	go model.SyncChannelCache(time.Second * 5)
 	go model.SyncModelConfigCache(time.Second * 5)
-	if os.Getenv("CHANNEL_TEST_FREQUENCY") != "" {
-		frequency, err := strconv.Atoi(os.Getenv("CHANNEL_TEST_FREQUENCY"))
-		if err != nil {
-			logger.FatalLog("failed to parse CHANNEL_TEST_FREQUENCY: " + err.Error())
-		}
-		go controller.AutomaticallyTestChannels(frequency)
-	}
 	if config.EnableMetric {
 		logger.SysLog("metric enabled, will disable channel if too much request failed")
 	}

@@ -16,17 +16,20 @@ import (
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 // https://platform.openai.com/docs/api-reference/chat
 
-func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
+func relayHelper(c *gin.Context) *model.ErrorWithStatusCode {
+	meta := meta.GetByContext(c)
+	c.Set(ctxkey.Meta, meta)
 	var err *model.ErrorWithStatusCode
-	switch relayMode {
+	switch meta.Mode {
 	case relaymode.ImagesGenerations:
-		err = controller.RelayImageHelper(c, relayMode)
+		err = controller.RelayImageHelper(c)
 	case relaymode.AudioSpeech:
 		err = controller.RelayTTSHelper(c)
 	case relaymode.AudioTranslation:
@@ -43,13 +46,12 @@ func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
 
 func Relay(c *gin.Context) {
 	ctx := c.Request.Context()
-	relayMode := relaymode.GetByPath(c.Request.URL.Path)
 	if config.DebugEnabled {
 		requestBody, _ := common.GetRequestBody(c.Request)
 		logger.Debugf(ctx, "request body: %s", requestBody)
 	}
 	channel := c.MustGet(ctxkey.Channel).(*dbmodel.Channel)
-	bizErr := relayHelper(c, relayMode)
+	bizErr := relayHelper(c)
 	if bizErr == nil {
 		monitor.Emit(channel.ID, true)
 		return
@@ -81,7 +83,7 @@ func Relay(c *gin.Context) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		c.Set(ctxkey.Channel, channel)
-		bizErr = relayHelper(c, relayMode)
+		bizErr = relayHelper(c)
 		if bizErr == nil {
 			return
 		}

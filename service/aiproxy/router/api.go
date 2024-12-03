@@ -62,9 +62,9 @@ func SetAPIRouter(router *gin.Engine) {
 			channelsRoute.GET("/type_names", controller.ChannelTypeNames)
 			channelsRoute.POST("/", controller.AddChannels)
 			channelsRoute.GET("/search", controller.SearchChannels)
-			channelsRoute.GET("/test", controller.TestChannels)
 			channelsRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
 			channelsRoute.POST("/batch_delete", controller.DeleteChannels)
+			channelsRoute.GET("/test", controller.TestAllChannels)
 		}
 		channelRoute := apiRouter.Group("/channel")
 		{
@@ -73,7 +73,8 @@ func SetAPIRouter(router *gin.Engine) {
 			channelRoute.PUT("/:id", controller.UpdateChannel)
 			channelRoute.POST("/:id/status", controller.UpdateChannelStatus)
 			channelRoute.DELETE("/:id", controller.DeleteChannel)
-			channelRoute.GET("/:id/test", controller.TestChannel)
+			channelRoute.GET("/:id/test", controller.TestChannelModels)
+			channelRoute.GET("/:id/test/:model", controller.TestChannel)
 			channelRoute.GET("/:id/update_balance", controller.UpdateChannelBalance)
 		}
 

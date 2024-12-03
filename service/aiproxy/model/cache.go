@@ -275,6 +275,7 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 }
 
 var (
+	enabledChannels                 []*Channel
 	enabledModel2channels           map[string][]*Channel
 	enabledModels                   []string
 	enabledModelConfigs             []*ModelConfig
@@ -311,31 +312,45 @@ func CacheGetEnabledModelConfigs() []*ModelConfig {
 	return enabledModelConfigs
 }
 
+func CacheGetEnabledChannels() []*Channel {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	return enabledChannels
+}
+
+func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	channel, ok := channelID2channel[id]
+	return channel, ok
+}
+
 // InitChannelCache initializes the channel cache from database
 func InitChannelCache() error {
-	// Load enabled channels from database
-	channels, err := loadEnabledChannels()
+	// Load enabled newEnabledChannels from database
+	newEnabledChannels, err := loadEnabledChannels()
 	if err != nil {
 		return err
 	}
 
 	// Build channel ID to channel map
-	newChannelID2channel := buildChannelIDMap(channels)
+	newChannelID2channel := buildChannelIDMap(newEnabledChannels)
 
 	// Build model to channels map
-	newEnabledModel2channels := buildModelToChannelsMap(channels)
+	newEnabledModel2channels := buildModelToChannelsMap(newEnabledChannels)
 
 	// Sort channels by priority
 	sortChannelsByPriority(newEnabledModel2channels)
 
 	// Build channel type to model configs map
-	newChannelType2EnabledModelConfigs := buildChannelTypeToModelConfigsMap(channels)
+	newChannelType2EnabledModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels)
 
 	// Build enabled models and configs lists
 	newEnabledModels, newEnabledModelConfigs := buildEnabledModelsAndConfigs(newChannelType2EnabledModelConfigs)
 
 	// Update global cache atomically
 	updateGlobalCache(
+		newEnabledChannels,
 		newEnabledModel2channels,
 		newEnabledModels,
 		newEnabledModelConfigs,
@@ -483,6 +498,7 @@ func SortModelConfigsFunc(i, j *ModelConfig) int {
 }
 
 func updateGlobalCache(
+	newEnabledChannels []*Channel,
 	newEnabledModel2channels map[string][]*Channel,
 	newEnabledModels []string,
 	newEnabledModelConfigs []*ModelConfig,
@@ -491,6 +507,7 @@ func updateGlobalCache(
 ) {
 	channelSyncLock.Lock()
 	defer channelSyncLock.Unlock()
+	enabledChannels = newEnabledChannels
 	enabledModel2channels = newEnabledModel2channels
 	enabledModels = newEnabledModels
 	enabledModelConfigs = newEnabledModelConfigs
@@ -541,13 +558,6 @@ func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 	}
 
 	return channels[rand.IntN(len(channels))], nil
-}
-
-func CacheGetChannelByID(id int) (*Channel, bool) {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	channel, ok := channelID2channel[id]
-	return channel, ok
 }
 
 var (

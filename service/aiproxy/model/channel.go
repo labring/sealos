@@ -9,7 +9,6 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,24 +25,27 @@ const (
 )
 
 type Channel struct {
-	CreatedAt        time.Time         `gorm:"index"                         json:"created_at"`
+	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
 	AccessedAt       time.Time         `json:"accessed_at"`
-	TestAt           time.Time         `json:"test_at"`
+	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
-	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text" json:"model_mapping"`
-	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text" json:"config"`
-	Key              string            `gorm:"type:text;index"               json:"key"`
-	Name             string            `gorm:"index"                         json:"name"`
-	BaseURL          string            `gorm:"index"                         json:"base_url"`
-	Models           []string          `gorm:"serializer:fastjson;type:text" json:"models"`
+	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
+	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text"      json:"config"`
+	Key              string            `gorm:"type:text;index"                    json:"key"`
+	Name             string            `gorm:"index"                              json:"name"`
+	BaseURL          string            `gorm:"index"                              json:"base_url"`
+	Models           []string          `gorm:"serializer:fastjson;type:text"      json:"models"`
 	Balance          float64           `json:"balance"`
-	ResponseDuration int64             `gorm:"index"                         json:"response_duration"`
-	ID               int               `gorm:"primaryKey"                    json:"id"`
-	UsedAmount       float64           `gorm:"index"                         json:"used_amount"`
-	RequestCount     int               `gorm:"index"                         json:"request_count"`
-	Status           int               `gorm:"default:1;index"               json:"status"`
-	Type             int               `gorm:"default:0;index"               json:"type"`
+	ID               int               `gorm:"primaryKey"                         json:"id"`
+	UsedAmount       float64           `gorm:"index"                              json:"used_amount"`
+	RequestCount     int               `gorm:"index"                              json:"request_count"`
+	Status           int               `gorm:"default:1;index"                    json:"status"`
+	Type             int               `gorm:"default:0;index"                    json:"type"`
 	Priority         int32             `json:"priority"`
+}
+
+func (c *Channel) AfterDelete(tx *gorm.DB) (err error) {
+	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
 }
 
 // check model config exist
@@ -117,7 +119,6 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 		Alias:            (*Alias)(c),
 		CreatedAt:        c.CreatedAt.UnixMilli(),
 		AccessedAt:       c.AccessedAt.UnixMilli(),
-		TestAt:           c.TestAt.UnixMilli(),
 		BalanceUpdatedAt: c.BalanceUpdatedAt.UnixMilli(),
 	})
 }
@@ -283,10 +284,7 @@ func GetChannelByID(id int, omitKey bool) (*Channel, error) {
 	} else {
 		err = DB.First(&channel, "id = ?", id).Error
 	}
-	if err != nil {
-		return nil, err
-	}
-	return &channel, nil
+	return &channel, HandleNotFound(err, ErrChannelNotFound)
 }
 
 func BatchInsertChannels(channels []*Channel) error {
@@ -298,30 +296,33 @@ func BatchInsertChannels(channels []*Channel) error {
 func UpdateChannel(channel *Channel) error {
 	result := DB.
 		Model(channel).
-		Omit("accessed_at", "used_amount", "request_count", "balance_updated_at", "created_at", "balance", "test_at", "balance_updated_at").
+		Omit("accessed_at", "used_amount", "request_count", "created_at", "balance_updated_at", "balance").
 		Clauses(clause.Returning{}).
 		Updates(channel)
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func (c *Channel) UpdateResponseTime(responseTime int64) {
-	err := DB.Model(c).Select("test_at", "response_duration").Updates(Channel{
-		TestAt:           time.Now(),
-		ResponseDuration: responseTime,
-	}).Error
-	if err != nil {
-		logger.SysError("failed to update response time: " + err.Error())
+func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, took float64, success bool, response string) (*ChannelTest, error) {
+	ct := &ChannelTest{
+		ChannelID:   c.ID,
+		ChannelName: c.Name,
+		Model:       model,
+		ActualModel: actualModel,
+		TestAt:      testAt,
+		Took:        took,
+		Success:     success,
+		Response:    response,
 	}
+	result := DB.Save(&ct)
+	return ct, HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func (c *Channel) UpdateBalance(balance float64) {
-	err := DB.Model(c).Select("balance_updated_at", "balance").Updates(Channel{
+func (c *Channel) UpdateBalance(balance float64) error {
+	result := DB.Model(c).Select("balance_updated_at", "balance").Updates(Channel{
 		BalanceUpdatedAt: time.Now(),
 		Balance:          balance,
-	}).Error
-	if err != nil {
-		logger.SysError("failed to update balance: " + err.Error())
-	}
+	})
+	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
 func DeleteChannelByID(id int) error {
