@@ -29,7 +29,10 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		if err != nil {
 			return 0, err
 		}
-		channel.UpdateBalance(balance)
+		err = channel.UpdateBalance(balance)
+		if err != nil {
+			logger.SysErrorf("failed to update channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
+		}
 		return balance, nil
 	}
 	return 0, fmt.Errorf("channel type %d does not support get balance", channel.Type)
