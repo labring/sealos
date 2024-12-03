@@ -445,16 +445,6 @@ func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alph
 }
 
 func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
-
-	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeWebSocket
-	if devbox.Status.Network.WebSocket == "" {
-		// generate a random string as the subdomain.
-		// TODO: what if the subdomain is already used by other devboxes?...
-	}
-	if err := r.Status().Update(ctx, devbox); err != nil {
-		return err
-	}
-
 	if err := r.syncPodSvc(ctx, devbox, recLabels, servicePorts); err != nil {
 		return err
 	}
@@ -467,8 +457,9 @@ func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *dev
 	if err := r.syncProxyIngress(ctx, devbox); err != nil {
 		return err
 	}
-
-	return nil
+	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeWebSocket
+	devbox.Status.Network.WebSocket = devbox.Name + "-proxy-ingress"
+	return r.Status().Update(ctx, devbox)
 }
 
 func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
