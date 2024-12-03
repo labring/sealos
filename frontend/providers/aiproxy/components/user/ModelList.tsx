@@ -5,7 +5,7 @@ import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import Image, { StaticImageData } from 'next/image'
 import { useQuery } from '@tanstack/react-query'
-import { getModels } from '@/api/platform'
+import { getModelConfig } from '@/api/platform'
 import { useMessage } from '@sealos/ui'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
@@ -17,41 +17,17 @@ import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
 import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
-import { useMemo } from 'react'
+import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
+import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
 import { MyTooltip } from '@/components/common/MyTooltip'
 import { ModelIdentifier } from '@/types/front'
-
+import { QueryKey } from '@/types/queryKey'
 const getIdentifier = (modelName: string): ModelIdentifier => {
   return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
 }
 
-const sortModels = (models: string[]): string[] => {
-  // group by identifier
-  const groupMap = new Map<string, string[]>()
-
-  // group by identifier
-  models.forEach((model) => {
-    const identifier = getIdentifier(model)
-    // special handle gpt and o1, group them as 'openai'
-    const groupKey = identifier === 'gpt' || identifier === 'o' ? 'openai' : identifier
-    if (!groupMap.has(groupKey)) {
-      groupMap.set(groupKey, [])
-    }
-    groupMap.get(groupKey)?.push(model)
-  })
-
-  // sort by identifier and flatten the result
-  return Array.from(groupMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0])) // sort by identifier
-    .flatMap(([_, models]) => models.sort()) // flatten and keep the order in each group
-}
-
 const ModelComponent = ({ modelName }: { modelName: string }) => {
   const modelGroups = {
-    openai: {
-      icon: OpenAIIcon,
-      identifiers: ['gpt', 'o1']
-    },
     ernie: {
       icon: ErnieIcon,
       identifiers: ['ernie']
@@ -83,9 +59,20 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
     doubao: {
       icon: DoubaoIcon,
       identifiers: ['doubao']
+    },
+    baai: {
+      icon: BaaiIcon,
+      identifiers: ['bge']
+    },
+    hunyuan: {
+      icon: HunyuanIcon,
+      identifiers: ['hunyuan']
+    },
+    openai: {
+      icon: OpenAIIcon,
+      identifiers: ['gpt,o1']
     }
   }
-
   // get model icon
   const getModelIcon = (modelName: string): StaticImageData => {
     const identifier = getIdentifier(modelName)
@@ -152,9 +139,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
 const ModelList: React.FC = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const { isLoading, data } = useQuery(['getModels'], () => getModels())
-
-  const sortedData = useMemo(() => sortModels(data || []), [data])
+  const { isLoading, data } = useQuery([QueryKey.GetModelConfig], () => getModelConfig())
 
   return (
     <>
@@ -211,7 +196,9 @@ const ModelList: React.FC = () => {
             <Spinner size="md" color="grayModern.800" />
           </Center>
         ) : (
-          sortedData.map((model) => <ModelComponent key={model} modelName={model} />)
+          data?.map((modelConfig) => (
+            <ModelComponent key={modelConfig.model} modelName={modelConfig.model} />
+          ))
         )}
       </Flex>
     </>

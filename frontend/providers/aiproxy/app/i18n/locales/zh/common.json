@@ -91,6 +91,8 @@
   "glm": "智谱",
   "o": "OpenAI",
   "gpt": "OpenAI",
+  "bge": "智源研究院",
+  "hunyuan": "腾讯混元",
   "createKey2": "新建 Key",
   "dashboard": {
     "title": "Ai 渠道",

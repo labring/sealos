@@ -14,12 +14,3 @@ export interface LogItem {
   endpoint: string
   created_at: number
 }
-
-export interface LogResponse {
-  data: {
-    logs: LogItem[]
-    total: number
-  }
-  message: string
-  success: boolean
-}

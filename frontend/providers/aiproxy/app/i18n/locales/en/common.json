@@ -91,6 +91,8 @@
   "glm": "Glm",
   "o": "OpenAI",
   "gpt": "OpenAI",
+  "bge": "BAAI",
+  "hunyuan": "Hunyuan",
   "createKey2": "Create Key",
   "dashboard": {
     "title": "Channel",

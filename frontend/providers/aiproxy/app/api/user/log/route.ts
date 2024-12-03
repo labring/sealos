@@ -1,18 +1,20 @@
-import { LogItem } from '@/types/log'
+import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { LogItem } from '@/types/user/logs'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-export interface SearchResponse {
-  data: {
-    logs: LogItem[]
-    total: number
-  }
-  message: string
-  success: boolean
-}
+export type ApiProxyBackendUserLogSearchResponse = ApiProxyBackendResp<{
+  logs: LogItem[]
+  total: number
+}>
 
-export interface QueryParams {
+export type UserLogSearchResponse = ApiResp<{
+  logs: LogItem[]
+  total: number
+}>
+
+export interface UserLogQueryParams {
   token_name?: string
   model_name?: string
   code?: string
@@ -22,7 +24,7 @@ export interface QueryParams {
   perPage: number
 }
 
-function validateParams(params: QueryParams): string | null {
+function validateParams(params: UserLogQueryParams): string | null {
   if (params.page < 1) {
     return 'Page number must be greater than 0'
   }
@@ -38,7 +40,7 @@ function validateParams(params: QueryParams): string | null {
 }
 
 async function fetchLogs(
-  params: QueryParams,
+  params: UserLogQueryParams,
   group: string
 ): Promise<{ logs: LogItem[]; total: number }> {
   try {
@@ -81,14 +83,14 @@ async function fetchLogs(
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const result: SearchResponse = await response.json()
+    const result: ApiProxyBackendUserLogSearchResponse = await response.json()
     if (!result.success) {
       throw new Error(result.message || 'API request failed')
     }
 
     return {
-      logs: result.data.logs,
-      total: result.data.total
+      logs: result.data?.logs || [],
+      total: result.data?.total || 0
     }
   } catch (error) {
     console.error('Error fetching logs:', error)
@@ -96,12 +98,12 @@ async function fetchLogs(
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse<UserLogSearchResponse>> {
   try {
     const group = await parseJwtToken(request.headers)
     const searchParams = request.nextUrl.searchParams
 
-    const queryParams: QueryParams = {
+    const queryParams: UserLogQueryParams = {
       page: parseInt(searchParams.get('page') || '1', 10),
       perPage: parseInt(searchParams.get('perPage') || '10', 10),
       token_name: searchParams.get('token_name') || undefined,
@@ -131,7 +133,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         logs,
         total
       }
-    })
+    } satisfies UserLogSearchResponse)
   } catch (error) {
     console.error('Logs search error:', error)
     return NextResponse.json(

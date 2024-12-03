@@ -7,14 +7,10 @@ import { CreateChannelRequest } from '@/types/admin/channels/channelInfo.d'
 
 export const dynamic = 'force-dynamic'
 
-type ApiProxyBackendChannelsSearchResponse = {
-  data: {
-    channels: ChannelInfo[]
-    total: number
-  }
-  message: string
-  success: boolean
-}
+type ApiProxyBackendChannelsSearchResponse = ApiProxyBackendResp<{
+  channels: ChannelInfo[]
+  total: number
+}>
 
 export type ChannelQueryParams = {
   page: number
@@ -63,8 +59,8 @@ async function fetchChannels(
       throw new Error(result.message || 'admin channels api:ai proxy backend error')
     }
     return {
-      channels: result.data.channels,
-      total: result.data.total
+      channels: result?.data?.channels || [],
+      total: result?.data?.total || 0
     }
   } catch (error) {
     console.error('admin channels api: fetch channels from ai proxy backend error:', error)

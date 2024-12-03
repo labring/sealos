@@ -309,7 +309,7 @@ export default function Home(): React.JSX.Element {
         {/* -- header end */}
 
         {/* -- table */}
-        <Flex gap="8px" flexDirection="column" flex="1">
+        <Flex gap="24px" flexDirection="column" flex="1">
           <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             m="0"

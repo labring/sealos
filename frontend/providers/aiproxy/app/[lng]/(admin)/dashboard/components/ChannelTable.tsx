@@ -35,6 +35,7 @@ import SwitchPage from '@/components/common/SwitchPage'
 import UpdateChannelModal from './UpdateChannelModal'
 import { ModelType } from '@/types/models/model'
 import { getEnumKeyByValue } from '@/utils/common'
+import { QueryKey } from '@/types/queryKey'
 
 export default function ChannelTable() {
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -49,7 +50,7 @@ export default function ChannelTable() {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
 
   const { data, isLoading } = useQuery({
-    queryKey: ['getChannels', page, pageSize],
+    queryKey: [QueryKey.GetChannels, page, pageSize],
     queryFn: () => getChannels({ page, perPage: pageSize }),
     refetchOnReconnect: true,
     onSuccess(data) {

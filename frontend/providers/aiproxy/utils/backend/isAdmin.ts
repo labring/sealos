@@ -1,5 +1,7 @@
 export async function isAdmin(namespace: string): Promise<string> {
-  return namespace
+  if (!namespace) {
+    return Promise.reject('Admin: Invalid namespace')
+  }
   try {
     if (global.AppConfig?.adminNameSpace.includes(namespace)) {
       return namespace

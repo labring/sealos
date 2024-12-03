@@ -1,8 +1,4 @@
-import { KeysSearchResponse } from '@/app/api/get-keys/route'
-import { QueryParams, SearchResponse } from '@/app/api/get-logs/route'
-import { QueryParams as KeysQueryParams } from '@/app/api/get-keys/route'
 import { GET, POST, DELETE, PUT } from '@/utils/frontend/request'
-import { ModelPrice } from '@/types/backend'
 import { ChannelQueryParams, GetChannelsResponse } from '@/app/api/admin/channels/route'
 import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
 import { ApiResp } from '@/types/api'
@@ -10,23 +6,29 @@ import { GetModelsResponse } from '@/app/api/models/route'
 import { GetDefaultEnabledModelsResponse } from '@/app/api/models/enabled/default/route'
 import { GetOptionResponse } from '@/app/api/admin/option/route'
 import { BatchOptionData } from '@/types/admin/option'
+import { GetEnabledModelsResponse } from '@/app/api/models/enabled/route'
+import { GetTokensQueryParams, GetTokensResponse } from '@/app/api/user/token/route'
+import { TokenInfo } from '@/types/getKeys'
+import { UserLogSearchResponse } from '@/app/api/user/log/route'
+import { UserLogQueryParams } from '@/app/api/user/log/route'
 // user
 export const initAppConfig = () => GET<{ aiproxyBackend: string }>('/api/init-app-config')
 
-export const getModels = () => GET<string[]>('/api/get-models')
+export const getModelConfig = () => GET<GetEnabledModelsResponse['data']>('/api/models/enabled')
 
-export const getModelPrices = () => GET<ModelPrice[]>('/api/get-mode-price')
+export const getUserLogs = (params: UserLogQueryParams) =>
+  GET<UserLogSearchResponse['data']>('/api/user/log', params)
 
-export const getLogs = (params: QueryParams) => GET<SearchResponse['data']>('/api/get-logs', params)
+export const getTokens = (params: GetTokensQueryParams) =>
+  GET<GetTokensResponse['data']>('/api/user/token', params)
 
-export const getKeys = (params: KeysQueryParams) =>
-  GET<KeysSearchResponse['data']>('/api/get-keys', params)
+export const createToken = (name: string) =>
+  POST<ApiResp<TokenInfo>['data']>('/api/user/token', { name })
 
-export const createKey = (name: string) => POST('/api/create-key', { name })
+export const deleteToken = (id: number) => DELETE(`/api/user/token/${id}`)
 
-export const deleteKey = (id: number) => DELETE(`/api/delete-key/${id}`)
-
-export const updateKey = (id: number, status: number) => POST(`/api/update-key/${id}`, { status })
+export const updateToken = (id: number, status: number) =>
+  POST<ApiResp>(`/api/user/token/${id}`, { status: status })
 
 // ------------------------------------------------------------
 // admin

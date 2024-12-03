@@ -4,17 +4,16 @@ import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react'
 import { MySelect, MyTooltip, SealosCoin } from '@sealos/ui'
 import { useMemo, useState } from 'react'
 
-import { getKeys, getLogs, getModels } from '@/api/platform'
+import { getTokens, getUserLogs, getModelConfig } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import SelectDateRange from '@/components/common/SelectDateRange'
 import SwitchPage from '@/components/common/SwitchPage'
 import { BaseTable } from '@/components/table/BaseTable'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { LogItem } from '@/types/log'
+import { LogItem } from '@/types/user/logs'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-
-const mockStatus = ['all', 'success', 'failed']
+import { QueryKey } from '@/types/queryKey'
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
@@ -33,13 +32,15 @@ export default function Home(): React.JSX.Element {
   const [logData, setLogData] = useState<LogItem[]>([])
   const [total, setTotal] = useState(0)
 
-  const { data: models = [] } = useQuery(['getModels'], () => getModels())
-  const { data: tokenData } = useQuery(['getKeys'], () => getKeys({ page: 1, perPage: 100 }))
+  const { data: modelConfigs = [] } = useQuery([QueryKey.GetModelConfig], () => getModelConfig())
+  const { data: tokenData } = useQuery([QueryKey.GetTokens], () =>
+    getTokens({ page: 1, perPage: 100 })
+  )
 
   const { isLoading } = useQuery(
-    ['getLogs', page, pageSize, name, modelName, startTime, endTime],
+    [QueryKey.GetUserLogs, page, pageSize, name, modelName, startTime, endTime],
     () =>
-      getLogs({
+      getUserLogs({
         page,
         perPage: pageSize,
         token_name: name,
@@ -49,13 +50,13 @@ export default function Home(): React.JSX.Element {
       }),
     {
       onSuccess: (data) => {
-        if (!data.logs) {
+        if (!data?.logs) {
           setLogData([])
           setTotal(0)
           return
         }
-        setLogData(data.logs)
-        setTotal(data.total)
+        setLogData(data?.logs || [])
+        setTotal(data?.total || 0)
       }
     }
   )
@@ -260,12 +261,16 @@ export default function Home(): React.JSX.Element {
                   w="320px"
                   placeholder={t('logs.select_modal')}
                   value={modelName}
-                  list={
-                    ['all', ...models].map((item) => ({
-                      value: item,
-                      label: item
-                    })) || []
-                  }
+                  list={[
+                    {
+                      value: 'all',
+                      label: 'all'
+                    },
+                    ...modelConfigs.map((modelConfig) => ({
+                      value: modelConfig.model,
+                      label: modelConfig.model
+                    }))
+                  ]}
                   onchange={(val: string) => {
                     if (val === 'all') {
                       setModelName('')
@@ -307,7 +312,7 @@ export default function Home(): React.JSX.Element {
         {/* -- header end */}
 
         {/* -- table */}
-        <Flex gap="8px" flexDirection="column" flex="1">
+        <Flex gap="24px" flexDirection="column" flex="1">
           <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             m="0"

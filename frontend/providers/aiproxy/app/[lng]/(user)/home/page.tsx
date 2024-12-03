@@ -9,7 +9,7 @@ export default function Home(): JSX.Element {
       <Flex
         flex={4.95}
         display="inline-flex"
-        p="24px 32px 167px 32px"
+        p="24px 32px 8px 32px"
         flexDirection="column"
         alignItems="flex-start"
         gap="13px"

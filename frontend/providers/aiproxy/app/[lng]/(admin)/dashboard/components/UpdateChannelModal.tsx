@@ -72,6 +72,7 @@ import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
 import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
 import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent'
 import { createChannel, updateChannel } from '@/api/platform'
+import { QueryKey } from '@/types/queryKey'
 
 type ModelTypeKey = keyof typeof ModelType
 
@@ -462,7 +463,7 @@ export const UpdateChannelModal = function ({
           await updateChannelMutation.mutateAsync(data)
           break
       }
-      queryClient.invalidateQueries({ queryKey: ['getChannels'] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannels] })
       resetModalState()
       onClose()
     } catch (error) {

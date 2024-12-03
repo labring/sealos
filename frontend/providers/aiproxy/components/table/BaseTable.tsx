@@ -16,7 +16,7 @@ export function BaseTable<T extends unknown>({
   isLoading
 }: { table: ReactTable<T>; isLoading: boolean } & TableContainerProps) {
   return (
-    <TableContainer w="full" h="full" overflowY="auto">
+    <TableContainer w="full" h="full" overflowY="auto" flex="1 0 0" minHeight="0">
       <Table variant="simple" fontSize="12px" w="full" size="md">
         <Thead>
           {table.getHeaderGroups().map((headers) => {

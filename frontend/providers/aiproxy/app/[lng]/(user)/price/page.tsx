@@ -16,8 +16,7 @@ import {
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useQuery } from '@tanstack/react-query'
-import { ModelPrice } from '@/types/backend'
-import { getModelPrices } from '@/api/platform'
+import { getModelConfig } from '@/api/platform'
 import { useMemo } from 'react'
 import {
   createColumnHelper,
@@ -29,6 +28,9 @@ import { SealosCoin } from '@sealos/ui'
 import { ModelIdentifier } from '@/types/front'
 import { MyTooltip } from '@/components/common/MyTooltip'
 import { useMessage } from '@sealos/ui'
+import { ModelConfig } from '@/types/models/model'
+import Image, { StaticImageData } from 'next/image'
+import { QueryKey } from '@/types/queryKey'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
 import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
@@ -39,7 +41,8 @@ import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
 import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
-import Image, { StaticImageData } from 'next/image'
+import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
+import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
 
 function Price() {
   const { lng } = useI18n()
@@ -69,11 +72,10 @@ function Price() {
 function PriceTable() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const { isLoading, data } = useQuery({
-    queryKey: ['getModelPrices'],
-    queryFn: () => getModelPrices(),
-    refetchOnReconnect: true
-  })
+
+  const { isLoading, data: modelConfigs = [] } = useQuery([QueryKey.GetModelConfig], () =>
+    getModelConfig()
+  )
 
   const modelGroups = {
     ernie: {
@@ -107,6 +109,18 @@ function PriceTable() {
     doubao: {
       icon: DoubaoIcon,
       identifiers: ['doubao']
+    },
+    baai: {
+      icon: BaaiIcon,
+      identifiers: ['bge']
+    },
+    hunyuan: {
+      icon: HunyuanIcon,
+      identifiers: ['hunyuan']
+    },
+    openai: {
+      icon: OpenAIIcon,
+      identifiers: ['gpt,o1']
     }
   }
 
@@ -173,35 +187,10 @@ function PriceTable() {
     )
   }
 
-  const sortModelsByIdentifier = (models: ModelPrice[]): ModelPrice[] => {
-    const groupedModels = new Map<string, ModelPrice[]>()
-
-    // Group models by identifier
-    models.forEach((model) => {
-      const identifier = getIdentifier(model.name)
-      if (!groupedModels.has(identifier)) {
-        groupedModels.set(identifier, [])
-      }
-      groupedModels.get(identifier)!.push(model)
-    })
-
-    // Define order based on modelGroups
-    const orderMap = new Map(Object.keys(modelGroups).map((key, index) => [key, index]))
-
-    // Sort based on modelGroups order, unknown models go to the end
-    const sortedEntries = Array.from(groupedModels.entries()).sort((a, b) => {
-      const orderA = orderMap.has(a[0]) ? orderMap.get(a[0])! : Number.MAX_VALUE
-      const orderB = orderMap.has(b[0]) ? orderMap.get(b[0])! : Number.MAX_VALUE
-      return orderA - orderB
-    })
-
-    return sortedEntries.flatMap(([_, models]) => models)
-  }
-
-  const columnHelper = createColumnHelper<ModelPrice>()
+  const columnHelper = createColumnHelper<ModelConfig>()
   const columns = [
-    columnHelper.accessor((row) => row.name, {
-      id: 'name',
+    columnHelper.accessor((row) => row.model, {
+      id: 'model',
       header: () => (
         <Text
           color="grayModern.600"
@@ -215,7 +204,7 @@ function PriceTable() {
       ),
       cell: (info) => <ModelComponent modelName={info.getValue()} />
     }),
-    columnHelper.accessor((row) => row.prompt, {
+    columnHelper.accessor((row) => row.input_price, {
       id: 'inputPrice',
       header: () => {
         return (
@@ -257,7 +246,7 @@ function PriceTable() {
         </Text>
       )
     }),
-    columnHelper.accessor((row) => row.completion, {
+    columnHelper.accessor((row) => row.output_price, {
       id: 'outputPrice',
       header: () => (
         <Box position={'relative'}>
@@ -299,10 +288,10 @@ function PriceTable() {
     })
   ]
 
-  const sortedData = useMemo(() => sortModelsByIdentifier(data || []), [data])
+  const tableData = useMemo(() => modelConfigs, [modelConfigs])
 
   const table = useReactTable({
-    data: sortedData,
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel()
   })

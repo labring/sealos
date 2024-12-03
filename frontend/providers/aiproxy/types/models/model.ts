@@ -47,3 +47,15 @@ export enum ModelType {
 export type ModelMap = { [K in ModelType]?: string[] }
 
 export type ModelMappingMap = { [K in ModelType]?: {} }
+
+export interface ModelConfig {
+  image_prices: null
+  model: string
+  owner: string
+  image_batch_size: number
+  type: number
+  input_price: number
+  output_price: number
+  created_at: number
+  updated_at: number
+}
