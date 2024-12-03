@@ -305,6 +305,7 @@ func UpdateChannel(channel *Channel) error {
 func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, took float64, success bool, response string) (*ChannelTest, error) {
 	ct := &ChannelTest{
 		ChannelID:   c.ID,
+		ChannelType: c.Type,
 		ChannelName: c.Name,
 		Model:       model,
 		ActualModel: actualModel,

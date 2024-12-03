@@ -12,6 +12,7 @@ type ChannelTest struct {
 	ActualModel string    `json:"actual_model"`
 	Response    string    `gorm:"type:text"    json:"response"`
 	ChannelName string    `json:"channel_name"`
+	ChannelType int       `json:"channel_type"`
 	ChannelID   int       `gorm:"primaryKey"   json:"channel_id"`
 	Took        float64   `json:"took"`
 	Success     bool      `json:"success"`
