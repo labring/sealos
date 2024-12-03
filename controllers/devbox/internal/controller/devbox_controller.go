@@ -464,6 +464,7 @@ func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *dev
 }
 
 func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+	pathType := networkingv1.PathTypePrefix
 	wsIngress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devbox.Name + "-proxy-ingress",
@@ -478,7 +479,7 @@ func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv
 							Paths: []networkingv1.HTTPIngressPath{
 								{
 									Path:     "/",
-									PathType: new(networkingv1.PathType),
+									PathType: &pathType,
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
 											Name: devbox.Name + "-proxy-svc",
