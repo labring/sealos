@@ -46,13 +46,13 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
 	},
-	{
-		Model:       "hunyuan-standard-256K",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerTencent,
-		InputPrice:  0.0005,
-		OutputPrice: 0.002,
-	},
+	// {
+	// 	Model:       "hunyuan-standard-256K",
+	// 	Type:        relaymode.ChatCompletions,
+	// 	Owner:       model.ModelOwnerTencent,
+	// 	InputPrice:  0.0005,
+	// 	OutputPrice: 0.002,
+	// },
 	{
 		Model:       "hunyuan-role",
 		Type:        relaymode.ChatCompletions,

@@ -16,6 +16,7 @@ type ChannelTest struct {
 	ChannelID   int       `gorm:"primaryKey"   json:"channel_id"`
 	Took        float64   `json:"took"`
 	Success     bool      `json:"success"`
+	Mode        int       `json:"mode"`
 }
 
 func (ct *ChannelTest) MarshalJSON() ([]byte, error) {

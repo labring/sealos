@@ -61,6 +61,7 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		meta.RequestAt,
 		meta.OriginModelName,
 		meta.ActualModelName,
+		meta.Mode,
 		time.Since(meta.RequestAt).Seconds(),
 		bizErr == nil,
 		respStr,
@@ -124,6 +125,38 @@ func TestChannel(c *gin.Context) {
 	})
 }
 
+type testResult struct {
+	Data    *model.ChannelTest `json:"data,omitempty"`
+	Message string             `json:"message,omitempty"`
+	Success bool               `json:"success"`
+}
+
+func processTestResult(channel *model.Channel, modelName string, returnSuccess bool, successResponseBody bool) *testResult {
+	ct, err := testSingleModel(channel, modelName)
+	result := &testResult{
+		Success: err == nil,
+	}
+	if err != nil {
+		result.Message = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
+		return result
+	}
+
+	if !ct.Success {
+		result.Data = ct
+		return result
+	}
+
+	if !returnSuccess {
+		return nil
+	}
+
+	if !successResponseBody {
+		ct.Response = ""
+	}
+	result.Data = ct
+	return result
+}
+
 //nolint:goconst
 func TestChannelModels(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
@@ -146,12 +179,21 @@ func TestChannelModels(c *gin.Context) {
 
 	returnSuccess := c.Query("return_success") == "true"
 	successResponseBody := c.Query("success_body") == "true"
+	isStream := c.Query("stream") == "true"
 
-	results := make([]gin.H, 0, len(channel.Models))
-	resultsMutex := sync.Mutex{}
+	if isStream {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Transfer-Encoding", "chunked")
+	}
+
+	results := make([]*testResult, 0)
+	resultsChan := make(chan *testResult, len(channel.Models))
+	hasError := atomic.Bool{}
+
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 5)
-	hasError := atomic.Bool{}
 
 	for _, modelName := range channel.Models {
 		wg.Add(1)
@@ -161,32 +203,30 @@ func TestChannelModels(c *gin.Context) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
 
-			ct, err := testSingleModel(channel, model)
-			result := gin.H{
-				"success": err == nil,
+			result := processTestResult(channel, model, returnSuccess, successResponseBody)
+			if result == nil {
+				return
 			}
-			if err != nil {
-				result["message"] = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, model, err.Error())
+			if !result.Success || (result.Data != nil && !result.Data.Success) {
 				hasError.Store(true)
-			} else {
-				if !ct.Success {
-					hasError.Store(true)
-				}
-				if !returnSuccess && ct.Success {
-					return
-				}
-				if !successResponseBody && ct.Success {
-					ct.Response = ""
-				}
-				result["data"] = ct
 			}
-			resultsMutex.Lock()
-			results = append(results, result)
-			resultsMutex.Unlock()
+			resultsChan <- result
 		}(modelName)
 	}
 
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	for result := range resultsChan {
+		if isStream {
+			c.SSEvent("result", result)
+			c.Writer.Flush()
+		} else {
+			results = append(results, result)
+		}
+	}
 
 	if !hasError.Load() {
 		err := model.ClearLastTestErrorAt(channel.ID)
@@ -195,24 +235,34 @@ func TestChannelModels(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    results,
-	})
+	if !isStream {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    results,
+		})
+	}
 }
 
 //nolint:goconst
 func TestAllChannels(c *gin.Context) {
 	channels := model.CacheGetEnabledChannels()
-
-	results := make([]gin.H, 0)
-	resultsMutex := sync.Mutex{}
-	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 5)
-
 	returnSuccess := c.Query("return_success") == "true"
 	successResponseBody := c.Query("success_body") == "true"
+	isStream := c.Query("stream") == "true"
+
+	if isStream {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Transfer-Encoding", "chunked")
+	}
+
+	results := make([]*testResult, 0)
+	resultsChan := make(chan *testResult, len(channels)*10)
 	hasErrorMap := make(map[int]*atomic.Bool)
+
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 5)
 
 	for _, channel := range channels {
 		hasErrorMap[channel.ID] = &atomic.Bool{}
@@ -224,33 +274,31 @@ func TestAllChannels(c *gin.Context) {
 				defer wg.Done()
 				defer func() { <-semaphore }()
 
-				ct, err := testSingleModel(ch, model)
-				result := gin.H{
-					"success": err == nil,
+				result := processTestResult(ch, model, returnSuccess, successResponseBody)
+				if result == nil {
+					return
 				}
-				if err != nil {
-					result["message"] = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", ch.Name, ch.ID, model, err.Error())
+				if !result.Success || (result.Data != nil && !result.Data.Success) {
 					hasErrorMap[ch.ID].Store(true)
-				} else {
-					if !ct.Success {
-						hasErrorMap[ch.ID].Store(true)
-					}
-					if !returnSuccess && ct.Success {
-						return
-					}
-					if !successResponseBody && ct.Success {
-						ct.Response = ""
-					}
-					result["data"] = ct
 				}
-				resultsMutex.Lock()
-				results = append(results, result)
-				resultsMutex.Unlock()
+				resultsChan <- result
 			}(modelName, channel)
 		}
 	}
 
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	for result := range resultsChan {
+		if isStream {
+			c.SSEvent("result", result)
+			c.Writer.Flush()
+		} else {
+			results = append(results, result)
+		}
+	}
 
 	for id, hasError := range hasErrorMap {
 		if !hasError.Load() {
@@ -261,8 +309,10 @@ func TestAllChannels(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    results,
-	})
+	if !isStream {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    results,
+		})
+	}
 }
