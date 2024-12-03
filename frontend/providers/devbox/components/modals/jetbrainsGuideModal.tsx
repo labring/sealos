@@ -172,7 +172,7 @@ const JetBrainsGuideModal = ({
                 })}
               </Box>
               <Button
-                leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
+                leftIcon={<MyIcon name="upperRight" color={'grayModern.600'} w={'16px'} />}
                 bg={'white'}
                 color={'grayModern.600'}
                 borderRadius={'5px'}
