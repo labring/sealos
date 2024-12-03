@@ -573,6 +573,7 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 						fmt.Sprintf("--port=%s", sshPort),
 						fmt.Sprintf("--proxy=%s", "https://"+devbox.Name+"-pod-svc:22"),
 						"-v=true",
+						"--reverse",
 					},
 					Resources: helper.GenerateProxyPodResourceRequirements(),
 				},
