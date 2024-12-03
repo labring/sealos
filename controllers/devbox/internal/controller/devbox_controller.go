@@ -583,7 +583,7 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					Command: []string{
 						"sh",
 						"-c",
-						fmt.Sprintf(`server -v --port=%d --proxy=%s --reverse && client -v localhost:8080 R:2222:%s:%s`,
+						fmt.Sprintf(`chisel server -v --port=%d --proxy=%s --reverse &&chisel client -v localhost:8080 R:2222:%s:%s`,
 							8080,
 							"https://"+devbox.Name+"-pod-svc:22",
 							devbox.Name+"-pod-svc",
