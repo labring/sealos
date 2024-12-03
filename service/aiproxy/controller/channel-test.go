@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,15 +10,19 @@ import (
 	"slices"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
+
+const channelTestRequestID = "channel-test"
 
 // testSingleModel tests a single model in the channel
 func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTest, error) {
@@ -34,20 +39,23 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		Body:   io.NopCloser(body),
 		Header: make(http.Header),
 	}
+	newc.Set(string(helper.RequestIDKey), channelTestRequestID)
+	reqIDContext := context.WithValue(newc.Request.Context(), helper.RequestIDKey, channelTestRequestID)
+	newc.Request = newc.Request.WithContext(reqIDContext)
 
 	newc.Set(ctxkey.Mode, mode)
 	newc.Set(ctxkey.OriginalModel, modelName)
 	newc.Set(ctxkey.Channel, channel)
 	newc.Set(ctxkey.ChannelTest, true)
 
-	bizErr := relayHelper(newc)
+	meta := meta.GetByContext(newc)
+	bizErr := relayHelper(meta, newc)
 	var respStr string
 	if bizErr == nil {
 		respStr = w.Body.String()
 	} else {
 		respStr = bizErr.String()
 	}
-	meta := newc.MustGet(ctxkey.Meta).(*meta.Meta)
 
 	return channel.UpdateModelTest(
 		meta.RequestAt,
@@ -143,6 +151,7 @@ func TestChannelModels(c *gin.Context) {
 	resultsMutex := sync.Mutex{}
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 5)
+	hasError := atomic.Bool{}
 
 	for _, modelName := range channel.Models {
 		wg.Add(1)
@@ -158,7 +167,11 @@ func TestChannelModels(c *gin.Context) {
 			}
 			if err != nil {
 				result["message"] = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, model, err.Error())
+				hasError.Store(true)
 			} else {
+				if !ct.Success {
+					hasError.Store(true)
+				}
 				if !returnSuccess && ct.Success {
 					return
 				}
@@ -175,6 +188,13 @@ func TestChannelModels(c *gin.Context) {
 
 	wg.Wait()
 
+	if !hasError.Load() {
+		err := model.ClearLastTestErrorAt(channel.ID)
+		if err != nil {
+			logger.SysErrorf("failed to clear last test error at for channel %s(%d): %s", channel.Name, channel.ID, err.Error())
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    results,
@@ -188,12 +208,14 @@ func TestAllChannels(c *gin.Context) {
 	results := make([]gin.H, 0)
 	resultsMutex := sync.Mutex{}
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 10)
+	semaphore := make(chan struct{}, 5)
 
 	returnSuccess := c.Query("return_success") == "true"
 	successResponseBody := c.Query("success_body") == "true"
+	hasErrorMap := make(map[int]*atomic.Bool)
 
 	for _, channel := range channels {
+		hasErrorMap[channel.ID] = &atomic.Bool{}
 		for _, modelName := range channel.Models {
 			wg.Add(1)
 			semaphore <- struct{}{}
@@ -208,7 +230,11 @@ func TestAllChannels(c *gin.Context) {
 				}
 				if err != nil {
 					result["message"] = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", ch.Name, ch.ID, model, err.Error())
+					hasErrorMap[ch.ID].Store(true)
 				} else {
+					if !ct.Success {
+						hasErrorMap[ch.ID].Store(true)
+					}
 					if !returnSuccess && ct.Success {
 						return
 					}
@@ -225,6 +251,15 @@ func TestAllChannels(c *gin.Context) {
 	}
 
 	wg.Wait()
+
+	for id, hasError := range hasErrorMap {
+		if !hasError.Load() {
+			err := model.ClearLastTestErrorAt(id)
+			if err != nil {
+				logger.SysErrorf("failed to clear last test error at for channel %d: %s", id, err.Error())
+			}
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

@@ -27,6 +27,7 @@ const (
 type Channel struct {
 	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
 	AccessedAt       time.Time         `json:"accessed_at"`
+	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
 	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
@@ -113,13 +114,14 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 		*Alias
 		CreatedAt        int64 `json:"created_at"`
 		AccessedAt       int64 `json:"accessed_at"`
-		TestAt           int64 `json:"test_at"`
 		BalanceUpdatedAt int64 `json:"balance_updated_at"`
+		LastTestErrorAt  int64 `json:"last_test_error_at"`
 	}{
 		Alias:            (*Alias)(c),
 		CreatedAt:        c.CreatedAt.UnixMilli(),
 		AccessedAt:       c.AccessedAt.UnixMilli(),
 		BalanceUpdatedAt: c.BalanceUpdatedAt.UnixMilli(),
+		LastTestErrorAt:  c.LastTestErrorAt.UnixMilli(),
 	})
 }
 
@@ -302,20 +304,44 @@ func UpdateChannel(channel *Channel) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
+func ClearLastTestErrorAt(id int) error {
+	result := DB.Model(&Channel{}).Where("id = ?", id).Update("last_test_error_at", gorm.Expr("NULL"))
+	return HandleUpdateResult(result, ErrChannelNotFound)
+}
+
 func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, took float64, success bool, response string) (*ChannelTest, error) {
-	ct := &ChannelTest{
-		ChannelID:   c.ID,
-		ChannelType: c.Type,
-		ChannelName: c.Name,
-		Model:       model,
-		ActualModel: actualModel,
-		TestAt:      testAt,
-		Took:        took,
-		Success:     success,
-		Response:    response,
+	var ct *ChannelTest
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		if !success {
+			result := tx.Model(&Channel{}).Where("id = ?", c.ID).Update("last_test_error_at", testAt)
+			if err := HandleUpdateResult(result, ErrChannelNotFound); err != nil {
+				return err
+			}
+		}
+		if !c.LastTestErrorAt.IsZero() && time.Since(c.LastTestErrorAt) > time.Hour {
+			result := tx.Model(&Channel{}).Where("id = ?", c.ID).Update("last_test_error_at", gorm.Expr("NULL"))
+			if err := HandleUpdateResult(result, ErrChannelNotFound); err != nil {
+				return err
+			}
+		}
+		ct = &ChannelTest{
+			ChannelID:   c.ID,
+			ChannelType: c.Type,
+			ChannelName: c.Name,
+			Model:       model,
+			ActualModel: actualModel,
+			TestAt:      testAt,
+			Took:        took,
+			Success:     success,
+			Response:    response,
+		}
+		result := tx.Save(ct)
+		return HandleUpdateResult(result, ErrChannelNotFound)
+	})
+	if err != nil {
+		return nil, err
 	}
-	result := DB.Save(&ct)
-	return ct, HandleUpdateResult(result, ErrChannelNotFound)
+	return ct, nil
 }
 
 func (c *Channel) UpdateBalance(balance float64) error {
