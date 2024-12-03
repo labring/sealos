@@ -11,15 +11,16 @@ import (
 )
 
 type ConsumeError struct {
-	CreatedAt  time.Time       `gorm:"index"                                       json:"created_at"`
-	GroupID    string          `gorm:"index;index:idx_consume_error_group_request" json:"group_id"`
-	RequestID  string          `gorm:"index;index:idx_consume_error_group_request" json:"request_id"`
-	TokenName  EmptyNullString `gorm:"index;not null"                              json:"token_name"`
-	Model      string          `gorm:"index"                                       json:"model"`
-	Content    string          `gorm:"type:text"                                   json:"content"`
-	ID         int             `gorm:"primaryKey"                                  json:"id"`
-	UsedAmount float64         `gorm:"index"                                       json:"used_amount"`
-	TokenID    int             `gorm:"index"                                       json:"token_id"`
+	RequestAt  time.Time       `gorm:"index;index:idx_consume_error_group_reqat,priority:2" json:"request_at"`
+	CreatedAt  time.Time       `json:"created_at"`
+	GroupID    string          `gorm:"index;index:idx_consume_error_group_reqat,priority:1" json:"group_id"`
+	RequestID  string          `gorm:"index"                                                json:"request_id"`
+	TokenName  EmptyNullString `gorm:"not null"                                             json:"token_name"`
+	Model      string          `json:"model"`
+	Content    string          `gorm:"type:text"                                            json:"content"`
+	ID         int             `gorm:"primaryKey"                                           json:"id"`
+	UsedAmount float64         `json:"used_amount"`
+	TokenID    int             `json:"token_id"`
 }
 
 func (c *ConsumeError) MarshalJSON() ([]byte, error) {
@@ -27,15 +28,18 @@ func (c *ConsumeError) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at"`
+		RequestAt int64 `json:"request_at"`
 	}{
 		Alias:     (*Alias)(c),
 		CreatedAt: c.CreatedAt.UnixMilli(),
+		RequestAt: c.RequestAt.UnixMilli(),
 	})
 }
 
-func CreateConsumeError(requestID string, group string, tokenName string, model string, content string, usedAmount float64, tokenID int) error {
+func CreateConsumeError(requestID string, requestAt time.Time, group string, tokenName string, model string, content string, usedAmount float64, tokenID int) error {
 	return LogDB.Create(&ConsumeError{
 		RequestID:  requestID,
+		RequestAt:  requestAt,
 		GroupID:    group,
 		TokenName:  EmptyNullString(tokenName),
 		Model:      model,
