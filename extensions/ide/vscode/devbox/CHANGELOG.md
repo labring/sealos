@@ -6,6 +6,20 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-12-3
+
+### Added
+
+- Simple backup devbox ssh config.
+- UI style optimization and some little buttons of `Database` panel and `Network` panel.
+- I18n support.
+
+### Fixed
+
+### Changed
+
+- remove the `devbox` control of the `Remote-SSH` config.
+
 ## [1.0.0] - 2024-11-13
 
 ### Added
