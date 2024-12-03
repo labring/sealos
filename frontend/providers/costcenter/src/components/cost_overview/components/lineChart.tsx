@@ -44,8 +44,8 @@ export default function Trend({
   const series = data.map(([sourceRaw, seriesName]) => {
     const source = [
       // ['date', 'amount'],
-      ...sourceRaw
-        .toSorted((a, b) => a[0] - b[0])
+      ...[...sourceRaw]
+        .sort((a, b) => a[0] - b[0])
         .reduce<[Date, number][]>(
           (pre, [curDate, curVal]) => {
             const len = pre.length;

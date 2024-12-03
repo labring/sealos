@@ -5,7 +5,7 @@ import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
 import { KBDevboxType, KBRuntimeType } from '@/types/k8s'
-import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,13 +43,12 @@ export async function GET(req: NextRequest) {
       devboxBody.spec.runtimeRef.name
     )) as { body: KBRuntimeType }
 
-    // add runtimeType, runtimeVersion, runtimeNamespace, networks to devbox yaml
+    // add runtimeType, runtimeVersion, networks to devbox yaml
     let resp = {
       ...devboxBody,
       spec: {
         ...devboxBody.spec,
         runtimeType: runtimeBody.spec.classRef
-        // NOTE: where use runtimeNamespace
       },
       portInfos: []
     } as KBDevboxType & { portInfos: any[] }
@@ -58,8 +57,8 @@ export async function GET(req: NextRequest) {
       return jsonRes({ data: resp })
     }
 
-    // get ingresses and certificates and service
-    const [ingressesResponse, certificatesResponse, serviceResponse] = await Promise.all([
+    // get ingresses and service
+    const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sCustomObjects.listNamespacedCustomObject(
         'networking.k8s.io',
         'v1',
@@ -71,32 +70,25 @@ export async function GET(req: NextRequest) {
         undefined,
         `${devboxKey}=${devboxName}`
       ),
-      k8sCustomObjects.listNamespacedCustomObject(
-        'cert-manager.io',
-        'v1',
-        namespace,
-        'certificates',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `${devboxKey}=${devboxName}`
-      ),
       k8sCore.readNamespacedService(devboxName, namespace).catch(() => null)
     ])
-    const ingresses: any = ingressesResponse.body
-    const certificates: any = certificatesResponse.body
+
+    const ingresses: any = (ingressesResponse.body as { items: any[] }).items
     const service = serviceResponse?.body
 
-    const customDomain = certificates.items[0]?.spec.dnsNames[0]
-    const ingressList = ingresses.items.map((item: any) => ({
-      networkName: item.metadata.name,
-      port: item.spec.rules[0].http.paths[0].backend.service.port.number,
-      protocol: item.metadata.annotations['nginx.ingress.kubernetes.io/backend-protocol'],
-      openPublicDomain: !!item.metadata.labels[publicDomainKey],
-      publicDomain: item.spec.tls[0].hosts[0],
-      customDomain: customDomain || ''
-    }))
+    const ingressList = ingresses.map((item: any) => {
+      const defaultDomain = item.metadata.labels[publicDomainKey]
+      const tlsHost = item.spec.tls[0].hosts[0]
+
+      return {
+        networkName: item.metadata.name,
+        port: item.spec.rules[0].http.paths[0].backend.service.port.number,
+        protocol: item.metadata.annotations[ingressProtocolKey],
+        openPublicDomain: !!item.metadata.labels[publicDomainKey],
+        publicDomain: defaultDomain === tlsHost ? tlsHost : defaultDomain,
+        customDomain: defaultDomain === tlsHost ? '' : tlsHost
+      }
+    })
 
     resp.portInfos = devboxBody.spec.network.extraPorts.map((network: any) => {
       const matchingIngress = ingressList.find(

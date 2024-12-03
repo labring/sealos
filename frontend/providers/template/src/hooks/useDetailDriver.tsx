@@ -1,10 +1,12 @@
 import { checkUserTask, getPriceBonus, getUserTasks } from '@/api/platform';
 import MyIcon from '@/components/Icon';
+import { useSystemConfigStore } from '@/store/config';
 import { useGuideStore } from '@/store/guide';
 import { formatMoney } from '@/utils/tools';
 import { Center, Flex, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
-import { SealosCoin } from '@sealos/ui';
+import { CurrencySymbol } from '@sealos/ui';
+
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -40,6 +42,7 @@ export default function useDetailDriver() {
   const { t, i18n } = useTranslation();
   const [reward, setReward] = useState(5);
   const { detailCompleted, setDetailCompleted } = useGuideStore();
+  const { envs } = useSystemConfigStore();
 
   const [rechargeOptions, setRechargeOptions] = useState([
     { amount: 8, gift: 8 },
@@ -93,7 +96,7 @@ export default function useDetailDriver() {
                 >
                   {t('receive')}
                 </Text>
-                <SealosCoin />
+                <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
                 <Text mx="4px">{reward}</Text>
                 <Text fontSize={'14px'} fontWeight={500}>
                   {t('balance')}
@@ -130,7 +133,7 @@ export default function useDetailDriver() {
                     h={'72px'}
                     position={'relative'}
                   >
-                    <SealosCoin w="14px" />
+                    <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
                     <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
                       {item.amount}
                     </Text>
@@ -150,7 +153,7 @@ export default function useDetailDriver() {
                       height={'20px'}
                     >
                       <Text>{t('gift')}</Text>
-                      <SealosCoin w="10px" />
+                      <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
                       <Text>{item.gift}</Text>
                     </Flex>
                   </Center>

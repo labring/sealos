@@ -4,11 +4,12 @@ import { useGuideStore } from '@/store/guide';
 import { formatMoney } from '@/utils/tools';
 import { Center, Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { DriveStep, driver } from '@sealos/driver';
-import { SealosCoin } from '@sealos/ui';
+import { CurrencySymbol } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { DriverStarIcon } from './useDriver';
+import { CURRENCY } from '@/store/static';
 
 export default function useDetailDriver() {
   const { t, i18n } = useTranslation();
@@ -162,7 +163,7 @@ export default function useDetailDriver() {
                 >
                   {t('receive')}
                 </Text>
-                <SealosCoin />
+                <CurrencySymbol type={CURRENCY} />
                 <Text mx="4px">{reward}</Text>
                 <Text fontSize={'14px'} fontWeight={500}>
                   {t('Balance')}
@@ -199,7 +200,7 @@ export default function useDetailDriver() {
                     h={'72px'}
                     position={'relative'}
                   >
-                    <SealosCoin w="14px" />
+                    <CurrencySymbol type={CURRENCY} />
                     <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
                       {item.amount}
                     </Text>
@@ -219,7 +220,7 @@ export default function useDetailDriver() {
                       height={'20px'}
                     >
                       <Text>{t('gift')}</Text>
-                      <SealosCoin w="10px" />
+                      <CurrencySymbol type={CURRENCY} />
                       <Text>{item.gift}</Text>
                     </Flex>
                   </Center>
@@ -273,7 +274,7 @@ export default function useDetailDriver() {
     allowPreviousStep: false,
     isShowButtons: false,
     allowKeyboardControl: false,
-    steps: [...baseSteps, ...giftStep],
+    steps: [...baseSteps],
     onDestroyed: () => {
       console.log('onDestroyed Detail');
       setDetailCompleted(true);

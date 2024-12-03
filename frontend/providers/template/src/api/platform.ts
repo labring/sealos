@@ -7,8 +7,10 @@ import useSessionStore from '@/store/session';
 
 export const updateRepo = () => GET('/api/updateRepo');
 
-export const getTemplates = () =>
-  GET<{ templates: TemplateType[]; menuKeys: string }>('/api/listTemplate');
+export const getTemplates = (language?: string) =>
+  GET<{ templates: TemplateType[]; menuKeys: string }>('/api/listTemplate', {
+    language
+  });
 
 export const getPlatformEnv = () => GET<EnvResponse>('/api/platform/getEnv');
 

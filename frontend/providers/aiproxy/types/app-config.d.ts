@@ -8,6 +8,7 @@ export type AppConfigType = {
     aiproxyInternal: string
   }
   adminNameSpace: string[]
+  currencySymbol: 'shellCoin' | 'cny' | 'usd'
 }
 
 declare global {

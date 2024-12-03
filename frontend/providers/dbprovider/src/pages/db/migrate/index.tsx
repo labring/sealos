@@ -25,8 +25,9 @@ import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
-const defaultEdit = {
+const defaultEdit: MigrateForm = {
   ...defaultDBEditValue,
+  labels: {},
   sinkHost: '',
   sinkPort: '',
   sinkPassword: '',

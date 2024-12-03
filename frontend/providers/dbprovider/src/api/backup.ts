@@ -11,7 +11,7 @@ import type { Props as UpdatePolicyProps } from '@/pages/api/backup/updatePolicy
  * for the specific database in the cluster.
  *
  * To update the auto-backup policy, use the PATCH operation on the 'cluster spec backup' resource.
- *
+ * @deprecated
  * @param data - Object containing information about the database, including dbName and dbType.
  * @returns {Promise<AutoBackupFormType>} - A promise resolving to the auto-backup configuration form.
  */

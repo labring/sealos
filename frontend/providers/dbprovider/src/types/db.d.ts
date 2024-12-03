@@ -67,6 +67,7 @@ export interface DBEditType {
   cpu: number;
   memory: number;
   storage: number;
+  labels: { [key: string]: string };
 }
 
 export type DBSourceType = 'app_store' | 'sealaf';

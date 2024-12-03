@@ -19,7 +19,7 @@ import { useCallback, useState } from 'react'
 import { useEnvStore } from '@/stores/env'
 import { useConfirm } from '@/hooks/useConfirm'
 import { DevboxListItemType } from '@/types/devbox'
-import { pauseDevbox, releaseDevbox, restartDevbox } from '@/api/devbox'
+import { pauseDevbox, releaseDevbox, startDevbox } from '@/api/devbox'
 
 const ReleaseModal = ({
   onClose,
@@ -64,18 +64,22 @@ const ReleaseModal = ({
     async (enableRestartMachine: boolean) => {
       try {
         setLoading(true)
+        // 1.pause devbox
         if (devbox.status.value === 'Running') {
           await pauseDevbox({ devboxName: devbox.name })
+          // wait 3s
+          await new Promise((resolve) => setTimeout(resolve, 3000))
         }
+        // 2.release devbox
         await releaseDevbox({
           devboxName: devbox.name,
           tag,
           releaseDes,
           devboxUid: devbox.id
         })
-
+        // 3.start devbox
         if (enableRestartMachine) {
-          await restartDevbox({ devboxName: devbox.name })
+          await startDevbox({ devboxName: devbox.name })
         }
         toast({
           title: t('submit_release_successful'),

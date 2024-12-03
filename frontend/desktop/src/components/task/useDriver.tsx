@@ -38,12 +38,16 @@ export default function useDriver() {
       const allTasksCompleted = data.data.every((task) => task.isCompleted);
 
       if (!desktopTask?.isCompleted && desktopTask?.id) {
+        // setTaskComponentState('none');
+        // setDesktopGuide(true);
         setTaskComponentState('none');
-        setDesktopGuide(true);
+        setDesktopGuide(false); // Hide First Guides
+        driverObj.drive();
       } else if (allTasksCompleted) {
         setTaskComponentState('none');
       } else {
-        setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
+        setTaskComponentState('none'); // Hide task modal for all users
+        // setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
       }
     };
 
@@ -62,7 +66,7 @@ export default function useDriver() {
       const desktopTask = tasks.find((task) => task.taskType === 'DESKTOP');
       if (desktopTask) {
         await updateTask(desktopTask.id);
-        setTaskComponentState('modal');
+        // setTaskComponentState('modal'); //  disable task modal for all users
       }
     } catch (error) {}
   };

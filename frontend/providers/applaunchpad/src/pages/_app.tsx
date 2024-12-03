@@ -20,6 +20,7 @@ import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import { AppEditSyncedFields } from '@/types/app';
+import Script from 'next/script';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -121,9 +122,12 @@ const App = ({ Component, pageProps }: AppProps) => {
   // record route
   useEffect(() => {
     return () => {
-      setLastRoute(router.asPath);
+      const currentPath = router.asPath;
+      if (router.isReady && !currentPath.includes('/redirect')) {
+        setLastRoute(currentPath);
+      }
     };
-  }, [router.pathname]);
+  }, [router.pathname, router.isReady, setLastRoute]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
@@ -147,19 +151,15 @@ const App = ({ Component, pageProps }: AppProps) => {
           try {
             if (e.data?.type === 'InternalAppCall') {
               const { name, formData } = e.data;
-              if (name) {
-                router.push({
-                  pathname: '/app/detail',
-                  query: {
-                    name: name
-                  }
+              if (formData) {
+                router.replace({
+                  pathname: '/redirect',
+                  query: { formData }
                 });
-              } else if (formData) {
-                router.push({
-                  pathname: '/app/edit',
-                  query: {
-                    formData: formData
-                  }
+              } else if (name) {
+                router.replace({
+                  pathname: '/app/detail',
+                  query: { name }
                 });
               }
             }
@@ -184,7 +184,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          <button
+          {/* <button
             onClick={() => {
               const lastLang = getLangStore();
               let lang = lastLang === 'en' ? 'zh' : 'en';
@@ -196,7 +196,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             }}
           >
             changeLanguage
-          </button>
+          </button> */}
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />

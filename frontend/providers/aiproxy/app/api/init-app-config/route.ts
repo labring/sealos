@@ -24,6 +24,9 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.ADMIN_NAMESPACES) {
     appConfig.adminNameSpace = getAdminNamespaces()
   }
+  if (process.env.CURRENCY_SYMBOL) {
+    appConfig.currencySymbol = process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd'
+  }
   return appConfig
 }
 
@@ -38,7 +41,8 @@ function initAppConfig(): AppConfigType {
       aiproxy: '',
       aiproxyInternal: ''
     },
-    adminNameSpace: []
+    adminNameSpace: [],
+    currencySymbol: 'shellCoin'
   }
 
   if (!global.AppConfig) {
@@ -61,7 +65,8 @@ export async function GET(): Promise<NextResponse> {
       code: 200,
       message: 'Success',
       data: {
-        aiproxyBackend: config.backend.aiproxy
+        aiproxyBackend: config.backend.aiproxy,
+        currencySymbol: config.currencySymbol
       }
     })
   } catch (error) {

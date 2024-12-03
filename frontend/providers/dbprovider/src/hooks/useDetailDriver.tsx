@@ -4,7 +4,6 @@ import { useGuideStore } from '@/store/guide';
 import { formatMoney } from '@/utils/tools';
 import { Center, Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
-import { SealosCoin } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -86,134 +85,131 @@ export default function useDetailDriver() {
             </Flex>
           )
         }
-      },
-      {
-        popover: {
-          borderRadius: '12px 12px 12px 12px',
-          PopoverBody: (
-            <Flex flexDirection={'column'} alignItems={'center'} padding={'27px 40px'} w="540px">
-              <Flex
-                w="100%"
-                color={'#24282C'}
-                fontSize={'14px'}
-                fontWeight={500}
-                bg="#F6EEFA"
-                borderRadius={'8px'}
-                p={'16px'}
-                alignItems={'center'}
-              >
-                <DriverStarIcon />
-                <Text fontWeight={500} ml="8px">
-                  {t('you_have_successfully_deployed_database')}
-                </Text>
-                <Text
-                  ml="auto"
-                  mr={'12px'}
-                  color={'grayModern.900'}
-                  fontSize={'12px'}
-                  fontWeight={500}
-                >
-                  {t('receive')}
-                </Text>
-                <SealosCoin />
-                <Text mx="4px">{reward}</Text>
-                <Text fontSize={'14px'} fontWeight={500}>
-                  {t('balance')}
-                </Text>
-              </Flex>
-
-              <Flex
-                alignItems={'center'}
-                justifyContent={'center'}
-                color={'#24282C'}
-                fontSize={'14px'}
-                fontWeight={500}
-                mt="42px"
-              >
-                <MyIcon name="gift" w={'20px'} h={'20px'} />
-                <Text fontSize={'20px'} fontWeight={500} ml="8px" mr={'4px'}>
-                  {t('first_charge')}
-                </Text>
-              </Flex>
-
-              <Flex
-                justifyContent={'center'}
-                fontSize={i18n.language === 'en' ? '18px' : '24px'}
-                fontWeight={500}
-                mt="28px"
-                gap={'16px'}
-              >
-                {rechargeOptions.map((item, index) => (
-                  <Center
-                    key={index}
-                    bg="#F4F4F7"
-                    borderRadius="2px"
-                    w={'100px'}
-                    h={'72px'}
-                    position={'relative'}
-                  >
-                    <SealosCoin w="14px" />
-                    <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
-                      {item.amount}
-                    </Text>
-                    <Flex
-                      bg={'#F7E7FF'}
-                      position={'absolute'}
-                      top={0}
-                      right={'-15px'}
-                      borderRadius={'10px 10px 10px 0px'}
-                      color={'#9E53C1'}
-                      fontSize={'12px'}
-                      fontWeight={500}
-                      gap={'2px'}
-                      alignItems={'center'}
-                      justifyContent={'center'}
-                      w={'60px'}
-                      height={'20px'}
-                    >
-                      <Text>{t('gift')}</Text>
-                      <SealosCoin w="10px" />
-                      <Text>{item.gift}</Text>
-                    </Flex>
-                  </Center>
-                ))}
-              </Flex>
-
-              <Flex
-                mt={'40px'}
-                bg={'#111824'}
-                borderRadius={'6px'}
-                alignItems={'center'}
-                justifyContent={'center'}
-                w={'179px'}
-                h={'36px'}
-                color={'#FFF'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                onClick={() => {
-                  driverObj.destroy();
-                  openCostCenterApp();
-                }}
-              >
-                {t('go_to_recharge')}
-              </Flex>
-              <Text
-                mt="16px"
-                cursor={'pointer'}
-                color={'rgba(72, 82, 100, 1)'}
-                fontSize={'14px'}
-                fontWeight={500}
-                onClick={() => {
-                  driverObj.destroy();
-                }}
-              >
-                {t('let_me_think_again')}
-              </Text>
-            </Flex>
-          )
-        }
       }
+      // {
+      //   popover: {
+      //     borderRadius: '12px 12px 12px 12px',
+      //     PopoverBody: (
+      //       <Flex flexDirection={'column'} alignItems={'center'} padding={'27px 40px'} w="540px">
+      //         <Flex
+      //           w="100%"
+      //           color={'#24282C'}
+      //           fontSize={'14px'}
+      //           fontWeight={500}
+      //           bg="#F6EEFA"
+      //           borderRadius={'8px'}
+      //           p={'16px'}
+      //           alignItems={'center'}
+      //         >
+      //           <DriverStarIcon />
+      //           <Text fontWeight={500} ml="8px">
+      //             {t('you_have_successfully_deployed_database')}
+      //           </Text>
+      //           <Text
+      //             ml="auto"
+      //             mr={'12px'}
+      //             color={'grayModern.900'}
+      //             fontSize={'12px'}
+      //             fontWeight={500}
+      //           >
+      //             {t('receive')}
+      //           </Text>
+      //           <Text mx="4px">{reward}</Text>
+      //           <Text fontSize={'14px'} fontWeight={500}>
+      //             {t('balance')}
+      //           </Text>
+      //         </Flex>
+
+      //         <Flex
+      //           alignItems={'center'}
+      //           justifyContent={'center'}
+      //           color={'#24282C'}
+      //           fontSize={'14px'}
+      //           fontWeight={500}
+      //           mt="42px"
+      //         >
+      //           <MyIcon name="gift" w={'20px'} h={'20px'} />
+      //           <Text fontSize={'20px'} fontWeight={500} ml="8px" mr={'4px'}>
+      //             {t('first_charge')}
+      //           </Text>
+      //         </Flex>
+
+      //         <Flex
+      //           justifyContent={'center'}
+      //           fontSize={i18n.language === 'en' ? '18px' : '24px'}
+      //           fontWeight={500}
+      //           mt="28px"
+      //           gap={'16px'}
+      //         >
+      //           {rechargeOptions.map((item, index) => (
+      //             <Center
+      //               key={index}
+      //               bg="#F4F4F7"
+      //               borderRadius="2px"
+      //               w={'100px'}
+      //               h={'72px'}
+      //               position={'relative'}
+      //             >
+      //               <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
+      //                 {item.amount}
+      //               </Text>
+      //               <Flex
+      //                 bg={'#F7E7FF'}
+      //                 position={'absolute'}
+      //                 top={0}
+      //                 right={'-15px'}
+      //                 borderRadius={'10px 10px 10px 0px'}
+      //                 color={'#9E53C1'}
+      //                 fontSize={'12px'}
+      //                 fontWeight={500}
+      //                 gap={'2px'}
+      //                 alignItems={'center'}
+      //                 justifyContent={'center'}
+      //                 w={'60px'}
+      //                 height={'20px'}
+      //               >
+      //                 <Text>{t('gift')}</Text>
+      //                 <Text>{item.gift}</Text>
+      //               </Flex>
+      //             </Center>
+      //           ))}
+      //         </Flex>
+
+      //         <Flex
+      //           mt={'40px'}
+      //           bg={'#111824'}
+      //           borderRadius={'6px'}
+      //           alignItems={'center'}
+      //           justifyContent={'center'}
+      //           w={'179px'}
+      //           h={'36px'}
+      //           color={'#FFF'}
+      //           fontSize={'14px'}
+      //           fontWeight={500}
+      //           cursor={'pointer'}
+      //           onClick={() => {
+      //             driverObj.destroy();
+      //             openCostCenterApp();
+      //           }}
+      //         >
+      //           {t('go_to_recharge')}
+      //         </Flex>
+      //         <Text
+      //           mt="16px"
+      //           cursor={'pointer'}
+      //           color={'rgba(72, 82, 100, 1)'}
+      //           fontSize={'14px'}
+      //           fontWeight={500}
+      //           onClick={() => {
+      //             driverObj.destroy();
+      //           }}
+      //         >
+      //           {t('let_me_think_again')}
+      //         </Text>
+      //       </Flex>
+      //     )
+      //   }
+      // }
     ],
     onDestroyed: () => {
       console.log('onDestroyed Detail');
@@ -246,7 +242,8 @@ export default function useDetailDriver() {
         console.log(error);
       }
     };
-    handleUserGuide();
+    // hide guide
+    // handleUserGuide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

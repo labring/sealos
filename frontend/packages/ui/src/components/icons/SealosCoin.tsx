@@ -1,5 +1,8 @@
 import { Icon, IconProps } from '@chakra-ui/react';
 
+/**
+ * @deprecated
+ */
 export default function SealosCoin(props: IconProps) {
   return (
     <Icon

@@ -212,7 +212,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         <title>{layoutConfig?.meta.title}</title>
         <meta name="description" content={layoutConfig?.meta.description} />
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
-        <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />w{' '}
+        <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
       {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;

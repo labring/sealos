@@ -19,7 +19,7 @@ description: 了解Sealos系统应用的基本原理与实现，包括Kubernetes
 
 组成：前端系统+Kubernetes API
 
-用于管理用户自定义的应用，本质上是吧用户在 GUI 上的命令映射成yml文件（主要是deployment，service等文件），交给Kubernetes执行。
+用于管理用户自定义的应用，本质上是把用户在 GUI 上的命令映射成yml文件（主要是deployment，service等文件），交给Kubernetes执行。
 
 ## 费用中心
 

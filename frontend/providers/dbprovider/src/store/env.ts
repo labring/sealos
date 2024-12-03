@@ -20,7 +20,9 @@ const useEnvStore = create<EnvState>()(
       migrate_file_image: '',
       minio_url: '',
       BACKUP_ENABLED: false,
-      SHOW_DOCUMENT: true
+      SHOW_DOCUMENT: true,
+      CurrencySymbol: 'shellCoin',
+      STORAGE_MAX_SIZE: 300
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -104,7 +104,7 @@ const EmptyPage = () => {
   )
 
   useEffect(() => {
-    router.prefetch('/devbox/detail')
+    // router.prefetch('/devbox/detail')
     router.prefetch('/devbox/create')
   }, [router])
 

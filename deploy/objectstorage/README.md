@@ -10,6 +10,10 @@ log: fix minioKubeblocksPassword env error
 
 log: update controller and frontend image
 
+### date 2024.11.22
+
+log: add resourcequota/status role to objectstorage-manager-role clusterrole
+
 ## components
 
 1. minio

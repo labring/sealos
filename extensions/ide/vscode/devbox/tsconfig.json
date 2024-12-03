@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./out",
+    "sourceMap": true,
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "exactOptionalPropertyTypes": false,
+    "useUnknownInCatchVariables": false,
+    "alwaysStrict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "strict": true
+  },
+  "include": ["src/**/*", "src/types/icon.d.ts"]
+}

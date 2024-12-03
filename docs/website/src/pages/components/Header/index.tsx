@@ -24,7 +24,7 @@ const navbar = [
   {
     key: 'blog',
     label: <Translate>Blog</Translate>,
-    to: '/blog'
+    to: 'https://blog.sealos.run/blog'
   },
   {
     key: 'hosting',

@@ -6,7 +6,6 @@ import {
   Center,
   Flex,
   FormControl,
-  FormErrorMessage,
   Grid,
   IconButton,
   Image,
@@ -235,7 +234,7 @@ const Form = ({
                     h={'20px'}
                     color={activeNav === item.id ? 'myGray.400' : 'grayModern.600'}
                   />
-                  <Box>{item.label}</Box>
+                  <Box>{item?.label}</Box>
                 </Flex>
               </Box>
             ))}
@@ -377,6 +376,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -384,7 +386,7 @@ const Form = ({
                               }}
                               mt={'4px'}
                               textAlign={'center'}>
-                              {item.label}
+                              {item?.label}
                             </Text>
                           </Center>
                         )
@@ -455,6 +457,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -462,7 +467,7 @@ const Form = ({
                               }}
                               mt={'4px'}
                               textAlign={'center'}>
-                              {item.label}
+                              {item?.label}
                             </Text>
                           </Center>
                         )
@@ -533,6 +538,9 @@ const Form = ({
                               height={'32px'}
                               alt={item.id}
                               src={`/images/${item.id}.svg`}
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/custom.svg'
+                              }}
                             />
                             <Text
                               _firstLetter={{
@@ -540,7 +548,7 @@ const Form = ({
                               }}
                               mt={'4px'}
                               textAlign={'center'}>
-                              {item.label}
+                              {item?.label}
                             </Text>
                           </Center>
                         )
@@ -555,10 +563,12 @@ const Form = ({
                   <Input
                     opacity={0.5}
                     width={'200px'}
-                    defaultValue={getRuntimeDetailLabel(
-                      getValues('runtimeType'),
-                      getValues('runtimeVersion')
-                    )}
+                    value={
+                      getRuntimeDetailLabel(
+                        getValues('runtimeType'),
+                        getValues('runtimeVersion')
+                      ) || ''
+                    }
                     disabled
                   />
                 ) : (
@@ -768,7 +778,7 @@ const Form = ({
                             alignItems={'center'}
                             h={'32px'}
                             bg={'grayModern.50'}
-                            px={2}
+                            px={4}
                             border={theme.borders.base}
                             borderLeft={0}
                             borderTopRightRadius={'md'}
@@ -777,9 +787,11 @@ const Form = ({
                               {network.customDomain ? network.customDomain : network.publicDomain}
                             </Box>
                             <Box
+                              pl={4}
                               fontSize={'11px'}
                               color={'brightBlue.600'}
                               cursor={'pointer'}
+                              whiteSpace={'nowrap'}
                               onClick={() =>
                                 setCustomAccessModalData({
                                   publicDomain: network.publicDomain,

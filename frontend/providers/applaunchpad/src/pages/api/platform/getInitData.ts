@@ -37,6 +37,7 @@ export const defaultAppConfig: AppConfigType = {
     gpuEnabled: false
   },
   launchpad: {
+    currencySymbol: Coin.shellCoin,
     eventAnalyze: {
       enabled: false,
       fastGPTKey: ''
@@ -90,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
         guideEnabled: global.AppConfig.common.guideEnabled,
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
-        CURRENCY: Coin.shellCoin,
+        CURRENCY: global.AppConfig.launchpad.currencySymbol || Coin.shellCoin,
         SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
         DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain
       }

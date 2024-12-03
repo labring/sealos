@@ -5,6 +5,7 @@ import QuotaBox from '@/components/QuotaBox';
 import Tip from '@/components/Tip';
 import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
+import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import type { DBEditType } from '@/types/db';
@@ -46,7 +47,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-
+  const { SystemEnv } = useEnvStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -329,6 +330,10 @@ const Form = ({
                       pattern: {
                         value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/g,
                         message: t('database_name_regex_error')
+                      },
+                      maxLength: {
+                        value: 30,
+                        message: t('database_name_max_length', { length: 30 })
                       }
                     })}
                   />
@@ -432,10 +437,12 @@ const Form = ({
               <FormControl isInvalid={!!errors.storage} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('storage')}</Label>
-                  <MyTooltip label={`${t('storage_range')}${minStorage}~300 Gi`}>
+                  <MyTooltip
+                    label={`${t('storage_range')}${minStorage}~${SystemEnv.STORAGE_MAX_SIZE} Gi`}
+                  >
                     <NumberInput
                       w={'180px'}
-                      max={300}
+                      max={SystemEnv.STORAGE_MAX_SIZE}
                       min={minStorage}
                       step={1}
                       position={'relative'}
@@ -452,13 +459,13 @@ const Form = ({
                             message: `${t('storage_min')}${minStorage} Gi`
                           },
                           max: {
-                            value: 300,
-                            message: `${t('storage_max')}300 Gi`
+                            value: SystemEnv.STORAGE_MAX_SIZE,
+                            message: `${t('storage_max')}${SystemEnv.STORAGE_MAX_SIZE} Gi`
                           },
                           valueAsNumber: true
                         })}
                         min={minStorage}
-                        max={300}
+                        max={SystemEnv.STORAGE_MAX_SIZE}
                         borderRadius={'md'}
                         borderColor={'#E8EBF0'}
                         bg={'#F7F8FA'}

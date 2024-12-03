@@ -4,6 +4,7 @@ import throttle from 'lodash/throttle'
 import { useEffect, useState } from 'react'
 import { EVENT_NAME } from 'sealos-desktop-sdk'
 import { usePathname, useRouter } from '@/i18n'
+import { useSearchParams } from 'next/navigation'
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
 
 import { useLoading } from '@/hooks/useLoading'
@@ -25,6 +26,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { Loading } = useLoading()
   const { setEnv, env } = useEnvStore()
   const { setRuntime } = useRuntimeStore()
+  const searchParams = useSearchParams()
   const { setSourcePrice } = usePriceStore()
   const [refresh, setRefresh] = useState(false)
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore()
@@ -119,6 +121,15 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, pathname])
+
+  useEffect(() => {
+    const page = searchParams.get('page')
+    const runtime = searchParams.get('runtime')
+
+    const path = `${page ? `/devbox/${page}` : ''}${runtime ? `?runtime=${runtime}` : ''}`
+
+    router.push(path)
+  }, [router, searchParams])
 
   return (
     <ChakraProvider>

@@ -11,9 +11,13 @@ import { GetTokensQueryParams, GetTokensResponse } from '@/app/api/user/token/ro
 import { TokenInfo } from '@/types/user/token'
 import { UserLogSearchResponse } from '@/app/api/user/log/route'
 import { UserLogQueryParams } from '@/app/api/user/log/route'
-// user
-export const initAppConfig = () => GET<{ aiproxyBackend: string }>('/api/init-app-config')
 
+export const initAppConfig = () =>
+  GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
+    '/api/init-app-config'
+  )
+
+// user
 export const getModelConfig = () => GET<GetEnabledModelsResponse['data']>('/api/models/enabled')
 
 export const getUserLogs = (params: UserLogQueryParams) =>

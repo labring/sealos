@@ -20,6 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type I18nData struct {
+	Title       string `json:"title,omitempty"`
+	URL         string `json:"url,omitempty"`
+	GitRepo     string `json:"gitRepo,omitempty"`
+	Description string `json:"description,omitempty"`
+	Readme      string `json:"readme,omitempty"`
+	Icon        string `json:"icon,omitempty"`
+}
+
 type TemplateType string
 
 const (
@@ -57,18 +66,20 @@ type InputData struct {
 type Inputs map[string]InputData
 
 type TemplateData struct {
-	Title        string       `json:"title"`
-	URL          string       `json:"url,omitempty"`
-	GitRepo      string       `json:"gitRepo,omitempty"`
-	Author       string       `json:"author,omitempty"`
-	Description  string       `json:"description,omitempty"`
-	Readme       string       `json:"readme,omitempty"`
-	Icon         string       `json:"icon,omitempty"`
-	TemplateType TemplateType `json:"templateType"`
-	Draft        bool         `json:"draft,omitempty"`
-	Categories   []string     `json:"categories,omitempty"`
-	Defaults     Defaults     `json:"defaults,omitempty"`
-	Inputs       Inputs       `json:"inputs,omitempty"`
+	Title        string              `json:"title"`
+	URL          string              `json:"url,omitempty"`
+	GitRepo      string              `json:"gitRepo,omitempty"`
+	Author       string              `json:"author,omitempty"`
+	Description  string              `json:"description,omitempty"`
+	Readme       string              `json:"readme,omitempty"`
+	Icon         string              `json:"icon,omitempty"`
+	TemplateType TemplateType        `json:"templateType"`
+	Locale       string              `json:"locale,omitempty"`
+	I18n         map[string]I18nData `json:"i18n,omitempty"`
+	Draft        bool                `json:"draft,omitempty"`
+	Categories   []string            `json:"categories,omitempty"`
+	Defaults     Defaults            `json:"defaults,omitempty"`
+	Inputs       Inputs              `json:"inputs,omitempty"`
 }
 
 // TemplateSpec defines the desired state of Template

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aiproxy-env
+data:
+  DEBUG: "false"
+  DEBUG_SQL: "false"
+  ADMIN_KEY: "{{ .ADMIN_KEY }}"
+  SEALOS_JWT_KEY: "{{ .SEALOS_JWT_KEY }}"
+  SQL_DSN: "{{ .SQL_DSN }}"
+  LOG_SQL_DSN: "{{ .LOG_SQL_DSN }}"
+  REDIS_CONN_STRING: "{{ .REDIS_CONN_STRING }}"

@@ -272,9 +272,9 @@
   "first_charge_tip": "For some specifications, you can enjoy double the gift amount when you recharge for the first time.",
   "gift": "gift",
   "balance": "balance",
-  "guide_deploy_button": "Complete creation and get it now",
   "form": {
     "add_configmap": "Add Configmaps",
     "storage_path_placeholder": "For Example: /data"
-  }
+  },
+  "guide_deploy_button": "Complete creation"
 }

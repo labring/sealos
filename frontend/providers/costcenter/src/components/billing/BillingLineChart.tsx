@@ -1,15 +1,7 @@
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 // Import the echarts core module, which provides the necessary interfaces for using echarts.
-import * as echarts from 'echarts/core';
-import {
-  GridComponent,
-  VisualMapComponent,
-  MarkLineComponent,
-  TooltipComponent
-} from 'echarts/components';
-import { LineChart } from 'echarts/charts';
-import { UniversalTransition } from 'echarts/features';
-import { CanvasRenderer } from 'echarts/renderers';
+import useOverviewStore from '@/stores/overview';
+import { Cycle } from '@/types/cycle';
 import {
   addDays,
   addHours,
@@ -38,9 +30,17 @@ import {
   subWeeks,
   subYears
 } from 'date-fns';
+import { LineChart } from 'echarts/charts';
+import {
+  GridComponent,
+  MarkLineComponent,
+  TooltipComponent,
+  VisualMapComponent
+} from 'echarts/components';
+import * as echarts from 'echarts/core';
+import { UniversalTransition } from 'echarts/features';
+import { CanvasRenderer } from 'echarts/renderers';
 import { useTranslation } from 'next-i18next';
-import { Cycle } from '@/types/cycle';
-import useOverviewStore from '@/stores/overview';
 
 echarts.use([
   GridComponent,
@@ -76,8 +76,8 @@ export default function Trend({ data, cycle }: { data: [number, string][]; cycle
   const startOfTime = methods[1](startTime);
   const source = [
     // ['date', 'amount'],
-    ...data
-      .toSorted(([aD], [bD]) => aD - bD)
+    ...[...data]
+      .sort(([aD], [bD]) => aD - bD)
       .reduce<[Date, number][]>(
         (pre, [curDate, curVal]) => {
           const len = pre.length;

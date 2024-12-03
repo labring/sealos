@@ -171,7 +171,7 @@ const DevboxList = ({
       key: 'cpu',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
             <PodLineChart type="blue" data={item.usedCpu} />
             <Text
               color={'#0077A9'}
@@ -193,7 +193,7 @@ const DevboxList = ({
       key: 'storage',
       render: (item: DevboxListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
             <PodLineChart type="purple" data={item.usedMemory} />
             <Text
               color={'#6F5DD7'}

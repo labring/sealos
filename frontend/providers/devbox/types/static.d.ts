@@ -13,6 +13,7 @@ export interface Env {
   namespace: string
   rootRuntimeNamespace: string
   ingressDomain: string
+  currencySymbol: 'shellCoin' | 'cny' | 'usd'
 }
 
 export interface RuntimeTypeMap {

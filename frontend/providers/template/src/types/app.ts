@@ -37,6 +37,8 @@ export type TemplateType = {
         required: boolean;
       }
     >;
+    locale?: string;
+    i18n?: Record<string, { [key: string]: string }>;
   };
 };
 

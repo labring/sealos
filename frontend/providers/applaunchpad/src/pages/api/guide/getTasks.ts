@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const domain = global.AppConfig.cloud.desktopDomain;
+
     const response = await fetch(`https://${domain}/api/account/getTasks`, {
       method: 'GET',
       headers: {

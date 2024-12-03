@@ -1,10 +1,11 @@
 import { SOURCE_PRICE } from '@/store/static';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Flex, useTheme, Text, Center } from '@chakra-ui/react';
-import { MyTooltip, SealosCoin } from '@sealos/ui';
+import { CurrencySymbol, MyTooltip } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import MyIcon from '@/components/Icon';
+import useEnvStore from '@/store/env';
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -24,6 +25,8 @@ const PriceBox = ({
 }) => {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { SystemEnv } = useEnvStore();
+
   const priceList: {
     label: I18nCommonKey;
     color: string;
@@ -89,7 +92,7 @@ const PriceBox = ({
               :
             </Flex>
             <Flex alignItems={'center'} gap={'4px'}>
-              <SealosCoin />
+              <CurrencySymbol type={SystemEnv.CurrencySymbol} />
               {item.value}
             </Flex>
           </Flex>

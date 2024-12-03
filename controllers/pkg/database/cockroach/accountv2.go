@@ -222,40 +222,56 @@ func (c *Cockroach) getFirstRechargePayments(ops *types.UserQueryOpts) ([]types.
 }
 
 func (c *Cockroach) ProcessPendingTaskRewards() error {
-	userTasks, err := c.getPendingRewardUserTask()
-	if err != nil {
-		return fmt.Errorf("failed to get pending reward user task: %w", err)
-	}
-	tasks, err := c.getTask()
-	if err != nil {
-		return fmt.Errorf("failed to get tasks: %w", err)
-	}
-	for i := range userTasks {
-		err = c.DB.Transaction(func(tx *gorm.DB) error {
-			task := tasks[userTasks[i].TaskID]
+	for {
+		var userTask types.UserTask
+		err := c.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Clauses(clause.Locking{
+				Strength: "UPDATE",
+				Options:  "SKIP LOCKED",
+			}).Where(&types.UserTask{
+				Status:       types.TaskStatusCompleted,
+				RewardStatus: types.TaskStatusNotCompleted,
+			}).First(&userTask).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+				return fmt.Errorf("failed to get pending reward user task: %w", err)
+			}
+			tasks, err := c.getTask()
+			if err != nil {
+				return fmt.Errorf("failed to get tasks: %w", err)
+			}
+
+			task := tasks[userTask.TaskID]
 			if task.Reward == 0 {
-				fmt.Printf("usertask %v reward is 0, skip\n", userTasks[i])
+				fmt.Printf("usertask %v reward is 0, skip\n", userTask)
 				return nil
 			}
-			if err = c.updateBalanceRaw(tx, &types.UserQueryOpts{UID: userTasks[i].UserUID}, task.Reward, false, true, true); err != nil {
+			if err = c.updateBalanceRaw(tx, &types.UserQueryOpts{UID: userTask.UserUID}, task.Reward, false, true, true); err != nil {
 				return fmt.Errorf("failed to update balance: %w", err)
 			}
 			msg := fmt.Sprintf("task %s reward", task.Title)
 			transaction := types.AccountTransaction{
 				Balance:   task.Reward,
 				Type:      string(task.TaskType) + "_Reward",
-				UserUID:   userTasks[i].UserUID,
+				UserUID:   userTask.UserUID,
 				ID:        uuid.New(),
 				Message:   &msg,
-				BillingID: userTasks[i].ID,
+				BillingID: userTask.ID,
 			}
-			if err = tx.Save(&transaction).Error; err != nil {
+			if err = tx.Create(&transaction).Error; err != nil {
 				return fmt.Errorf("failed to save transaction: %w", err)
 			}
-			return c.completeRewardUserTask(tx, &userTasks[i])
+			if err = tx.Model(&userTask).Update("rewardStatus", types.TaskStatusCompleted).Error; err != nil {
+				return fmt.Errorf("failed to update user task status: %w", err)
+			}
+			return nil
 		})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			break
+		}
 		if err != nil {
-			return fmt.Errorf("failed to process reward pending user task %v rewards: %w", userTasks[i], err)
+			return err
 		}
 	}
 	return nil
@@ -274,17 +290,6 @@ func (c *Cockroach) getTask() (map[uuid.UUID]types.Task, error) {
 		c.tasks[tasks[i].ID] = tasks[i]
 	}
 	return c.tasks, nil
-}
-
-func (c *Cockroach) getPendingRewardUserTask() ([]types.UserTask, error) {
-	var userTasks []types.UserTask
-	return userTasks, c.DB.Where(&types.UserTask{Status: types.TaskStatusCompleted, RewardStatus: types.TaskStatusNotCompleted}).
-		Find(&userTasks).Error
-}
-
-func (c *Cockroach) completeRewardUserTask(tx *gorm.DB, userTask *types.UserTask) error {
-	userTask.RewardStatus = types.TaskStatusCompleted
-	return tx.Model(userTask).Update("rewardStatus", types.TaskStatusCompleted).Error
 }
 
 func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
@@ -309,6 +314,46 @@ func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, er
 		return nil, err
 	}
 	return &userCr, nil
+}
+
+func (c *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, error) {
+	if workspace == "" {
+		return nil, fmt.Errorf("empty workspace")
+	}
+	var userUIDString string
+	err := c.Localdb.Table("Workspace").
+		Select(`"UserCr"."userUid"`).
+		Joins(`JOIN "UserWorkspace" ON "Workspace".uid = "UserWorkspace"."workspaceUid"`).
+		Joins(`JOIN "UserCr" ON "UserWorkspace"."userCrUid" = "UserCr".uid`).
+		Where(`"Workspace".id = ?`, workspace).
+		Where(`"UserWorkspace".role = ?`, "OWNER").
+		Limit(1).
+		Scan(&userUIDString).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("not found user uid with workspace %s", workspace)
+		}
+		return nil, fmt.Errorf("failed to get user uid with workspace %s: %v", workspace, err)
+	}
+
+	userUID, err := uuid.Parse(userUIDString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse user uid %s: %v", userUIDString, err)
+	}
+	if userUID == uuid.Nil {
+		return nil, fmt.Errorf("empty user uid")
+	}
+
+	var account types.Account
+	err = c.DB.Where(&types.Account{UserUID: userUID}).First(&account).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("not found account with user uid %s", userUID)
+		}
+		return nil, fmt.Errorf("failed to get account with user uid %s: %v", userUID, err)
+	}
+	return &account, nil
 }
 
 func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
@@ -492,37 +537,33 @@ func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amou
 		}
 		ops.UID = user.UserUID
 	}
-	var account = &types.Account{}
-	if err := tx.Where(&types.Account{UserUID: ops.UID}).First(account).Error; err != nil {
-		// if not found, create a new account and retry
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("failed to get account: %w", err)
-		}
-		if account, err = c.NewAccount(ops); err != nil {
-			return fmt.Errorf("failed to create account: %v", err)
-		}
-	}
-	if err := c.updateWithAccount(isDeduction, add, account, amount); err != nil {
-		return err
-	}
-	if isActive {
-		account.ActivityBonus = account.ActivityBonus + amount
-	}
-	if err := tx.Save(account).Error; err != nil {
-		return fmt.Errorf("failed to update account balance: %w", err)
-	}
-	return nil
+	return c.updateWithAccount(ops.UID, isDeduction, add, isActive, amount, tx)
 }
 
-func (c *Cockroach) updateWithAccount(isDeduction bool, add bool, account *types.Account, amount int64) error {
-	balancePtr := &account.Balance
-	if isDeduction {
-		balancePtr = &account.DeductionBalance
-	}
+func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isActive bool, amount int64, db *gorm.DB) error {
+	exprs := map[string]interface{}{}
+	control := "-"
 	if add {
-		*balancePtr += amount
+		control = "+"
+	}
+	if isDeduction {
+		exprs["deduction_balance"] = gorm.Expr("deduction_balance "+control+" ?", amount)
 	} else {
-		*balancePtr -= amount
+		exprs["balance"] = gorm.Expr("balance "+control+" ?", amount)
+	}
+	if isActive {
+		exprs[`"activityBonus"`] = gorm.Expr(`"activityBonus" + ?`, amount)
+	}
+	result := db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs)
+	return HandleUpdateResult(result, types.Account{}.TableName())
+}
+
+func HandleUpdateResult(result *gorm.DB, entityName string) error {
+	if result.Error != nil {
+		return fmt.Errorf("failed to update %s: %w", entityName, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no %s updated", entityName)
 	}
 	return nil
 }
@@ -555,6 +596,10 @@ func (c *Cockroach) AddDeductionBalance(ops *types.UserQueryOpts, amount int64) 
 	return c.DB.Transaction(func(tx *gorm.DB) error {
 		return c.updateBalance(tx, ops, amount, true, true)
 	})
+}
+
+func (c *Cockroach) AddDeductionBalanceWithDB(ops *types.UserQueryOpts, amount int64, tx *gorm.DB) error {
+	return c.updateBalance(tx, ops, amount, true, true)
 }
 
 func (c *Cockroach) AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error {
@@ -996,14 +1041,24 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 		IgnoreRecordNotFoundError: true,
 		Colorful:                  true,
 	})
-	db, err := gorm.Open(postgres.Open(globalURI), &gorm.Config{
-		Logger: dbLogger,
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  globalURI,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{
+		Logger:         dbLogger,
+		PrepareStmt:    true,
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open global url %s : %v", globalURI, err)
 	}
-	localdb, err := gorm.Open(postgres.Open(localURI), &gorm.Config{
-		Logger: dbLogger,
+	localdb, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  localURI,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{
+		Logger:         dbLogger,
+		PrepareStmt:    true,
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open local url %s : %v", localURI, err)

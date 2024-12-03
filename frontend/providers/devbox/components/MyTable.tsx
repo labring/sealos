@@ -8,6 +8,7 @@ interface Props extends BoxProps {
     key: string
     render?: (item: any) => JSX.Element
     minWidth?: string
+    width?: string
   }[]
   data: any[]
   itemClass?: string
@@ -18,7 +19,7 @@ const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false }: 
   return (
     <>
       <Grid
-        templateColumns={`repeat(${columns.length}, 1fr)`}
+        templateColumns={columns.map((col) => col.width || '1fr').join(' ')}
         overflowX={'auto'}
         borderTopRadius={'md'}
         fontSize={'base'}
@@ -41,7 +42,7 @@ const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false }: 
       </Grid>
       {data.map((item: any, index1) => (
         <Grid
-          templateColumns={`repeat(${columns.length}, 1fr)`}
+          templateColumns={columns.map((col) => col.width || '1fr').join(' ')}
           overflowX={'auto'}
           key={index1}
           bg={alternateRowColors ? (index1 % 2 === 0 ? '#FBFBFC' : '#F4F4F7') : 'white'}

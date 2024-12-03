@@ -59,6 +59,7 @@ export interface KBDevboxSpec {
   network: {
     type: 'NodePort' | 'Tailnet'
     extraPorts: {
+      // NOTE: this object is deprecated, will be removed in the future
       containerPort: number
       hostPort?: number
       protocol?: string
@@ -128,6 +129,9 @@ export type KBRuntimeType = {
     namespace: string
     uid: string
     creationTimestamp: string
+    annotations: {
+      'devbox.sealos.io/defaultVersion': boolean
+    }
   }
   spec: {
     classRef: string

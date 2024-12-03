@@ -31,22 +31,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         undefined,
         `${appDeployKey}=${instanceName}`
       ), // delete Ingress
-      k8sCustomObjects.deleteNamespacedCustomObject(
-        // delete Issuer
-        'cert-manager.io',
-        'v1',
-        namespace,
-        'issuers',
-        instanceName
-      ),
-      k8sCustomObjects.deleteNamespacedCustomObject(
-        // delete Certificate
-        'cert-manager.io',
-        'v1',
-        namespace,
-        'certificates',
-        instanceName
-      ),
+      k8sCustomObjects
+        .listNamespacedCustomObject(
+          'cert-manager.io',
+          'v1',
+          namespace,
+          'issuers',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          `${appDeployKey}=${instanceName}`
+        )
+        .then(async (res: any) => {
+          const items = res.body.items || [];
+          console.log(items.map((item: any) => item.metadata.name));
+          return Promise.all(
+            items.map((item: any) =>
+              k8sCustomObjects.deleteNamespacedCustomObject(
+                'cert-manager.io',
+                'v1',
+                namespace,
+                'issuers',
+                item.metadata.name
+              )
+            )
+          );
+        }),
+      k8sCustomObjects
+        .listNamespacedCustomObject(
+          'cert-manager.io',
+          'v1',
+          namespace,
+          'certificates',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          `${appDeployKey}=${instanceName}`
+        )
+        .then(async (res: any) => {
+          const items = res.body.items || [];
+          return Promise.all(
+            items.map((item: any) =>
+              k8sCustomObjects.deleteNamespacedCustomObject(
+                'cert-manager.io',
+                'v1',
+                namespace,
+                'certificates',
+                item.metadata.name
+              )
+            )
+          );
+        }),
       k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
         // delete pvc
         namespace,

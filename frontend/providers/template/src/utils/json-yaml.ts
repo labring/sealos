@@ -62,7 +62,7 @@ export const parseTemplateString = (
 
   try {
     const replacedString = sourceString.replace(regex, (match: string, key: string) => {
-      const value = evaluateExpression(key, dataSource)
+      const value = evaluateExpression(key, dataSource);
       return value !== undefined ? value : '';
     });
     return replacedString;
@@ -139,7 +139,21 @@ export const handleTemplateToInstanceYaml = (
   instanceName: string
 ): TemplateInstanceType => {
   const {
-    spec: { gitRepo, templateType, template_type, categories, ...resetSpec }
+    spec: {
+      gitRepo,
+      templateType,
+      template_type,
+      categories,
+      author,
+      title,
+      url,
+      readme,
+      icon,
+      description,
+      draft,
+      defaults,
+      inputs
+    }
   } = template;
 
   return {
@@ -149,12 +163,18 @@ export const handleTemplateToInstanceYaml = (
       name: instanceName
     },
     spec: {
-      gitRepo: gitRepo,
+      gitRepo,
       templateType: templateType || template_type,
       categories: categories || [],
-      defaults: {},
-      inputs: {},
-      ...resetSpec
+      defaults: defaults || {},
+      inputs: inputs || {},
+      author: author || '',
+      title: title || '',
+      url: url || '',
+      readme: readme || '',
+      icon: icon || '',
+      description: description || '',
+      draft: draft || false
     }
   };
 };

@@ -51,6 +51,8 @@ import EditTabs from './EditTabs';
 import YamlCode from './YamlCode';
 import ProviderIcon from './icons/ProviderIcon';
 import WarnTriangeIcon from './icons/line/WarnTriange';
+import CurrencySymbol from './icons/CurrencySymbol';
+
 export { SealosMenu } from './Menu';
 export { Tabs } from './Tabs';
 export { MyRangeSlider } from './RangeSlider';
@@ -116,5 +118,6 @@ export {
   SortPolygonDownIcon,
   ProviderIcon,
   WebHostIcon,
-  WarnTriangeIcon
+  WarnTriangeIcon,
+  CurrencySymbol
 };

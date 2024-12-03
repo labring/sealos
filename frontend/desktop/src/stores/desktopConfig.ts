@@ -5,6 +5,8 @@ import { immer } from 'zustand/middleware/immer';
 type TaskComponentState = 'none' | 'modal' | 'button';
 
 type State = {
+  isServiceButtonOpen: boolean;
+  setServiceButtonOpen: (value: boolean) => void;
   canShowGuide: boolean;
   setCanShowGuide: (value: boolean) => void;
   isAppBar: boolean;
@@ -26,6 +28,12 @@ export const useDesktopConfigStore = create<State>()(
       isAnimationEnabled: true,
       taskComponentState: 'none',
       canShowGuide: false,
+      isServiceButtonOpen: true,
+      setServiceButtonOpen(value) {
+        set((state) => {
+          state.isServiceButtonOpen = value;
+        });
+      },
       setCanShowGuide(value) {
         set((state) => {
           state.canShowGuide = value;
