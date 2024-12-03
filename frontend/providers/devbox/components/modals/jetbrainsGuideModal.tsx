@@ -17,7 +17,8 @@ import {
   StepSeparator,
   Grid,
   GridItem,
-  Circle
+  Circle,
+  ModalCloseButton
 } from '@chakra-ui/react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
@@ -124,7 +125,6 @@ const runtimeTypeToIDEType = (runtimeType: string) => {
 }
 
 const JetBrainsGuideModal = ({
-  onSuccess,
   onClose,
   jetbrainsGuideData
 }: {
@@ -156,6 +156,7 @@ const JetBrainsGuideModal = ({
         <ModalOverlay />
         <ModalContent top={'5%'} maxWidth={'800px'} w={'700px'} h={'80%'} position={'relative'}>
           <ModalHeader pl={10}>{t('use_jetbrains')}</ModalHeader>
+          <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={6} overflowY={'auto'}>
             {/* prepare */}
             <Box pb={6}>
