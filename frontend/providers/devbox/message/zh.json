@@ -90,7 +90,7 @@
   "jetbrains_guide_post_connection": "如何连接服务？后续使用可点击下方按钮进行查看。",
   "jetbrains_guide_post_use": "后续使用",
   "jetbrains_guide_prepare": "前置准备",
-  "jetbrains_guide_prepare_install": "请提前下载好 <blue>JetBrains Gateway</blue> 应用。",
+  "jetbrains_guide_prepare_install": "打开 <blue>JetBrains Gateway</blue> 应用。",
   "jetbrains_guide_start_to_use": "开始使用",
   "jetbrains_guide_step_1": "在打开的 Jetbrains Gateway 窗口中，选择 <blue>New Connection</blue>。",
   "jetbrains_guide_step_2_1": "填写 <blue>Username</blue>、<blue>Host</blue> 和 <blue>Port</blue>。",

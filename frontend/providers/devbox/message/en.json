@@ -88,7 +88,7 @@
   "jetbrains_guide_post_connection": "Don't know how to connect to your service? Find out by clicking the button below for more information.",
   "jetbrains_guide_post_use": "What's next...",
   "jetbrains_guide_prepare": "Prerequiste(s)",
-  "jetbrains_guide_prepare_install": "Please install <blue>JetBrains Gateway</blue> first.",
+  "jetbrains_guide_prepare_install": "Open <blue>JetBrains Gateway</blue> app first.",
   "jetbrains_guide_start_to_use": "Start",
   "jetbrains_guide_step_1": "In the opened Jetbrains Gateway window, select <blue>New Connection</blue>.",
   "jetbrains_guide_step_2_1": "Fill in <blue>Username</blue>、<blue>Host</blue> and <blue>Port</blue>.",
