@@ -124,49 +124,15 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 
 //nolint:goconst
 func getChannelOrder(order string) string {
+	prefix, suffix, _ := strings.Cut(order, "-")
 	switch order {
-	case "name":
-		return "name asc"
-	case "name-desc":
-		return "name desc"
-	case "type":
-		return "type asc"
-	case "type-desc":
-		return "type desc"
-	case "created_at":
-		return "created_at asc"
-	case "created_at-desc":
-		return "created_at desc"
-	case "accessed_at":
-		return "accessed_at asc"
-	case "accessed_at-desc":
-		return "accessed_at desc"
-	case "status":
-		return "status asc"
-	case "status-desc":
-		return "status desc"
-	case "test_at":
-		return "test_at asc"
-	case "test_at-desc":
-		return "test_at desc"
-	case "balance_updated_at":
-		return "balance_updated_at asc"
-	case "balance_updated_at-desc":
-		return "balance_updated_at desc"
-	case "used_amount":
-		return "used_amount asc"
-	case "used_amount-desc":
-		return "used_amount desc"
-	case "request_count":
-		return "request_count asc"
-	case "request_count-desc":
-		return "request_count desc"
-	case "priority":
-		return "priority asc"
-	case "priority-desc":
-		return "priority desc"
-	case "id":
-		return "id asc"
+	case "name", "type", "created_at", "accessed_at", "status", "test_at", "balance_updated_at", "used_amount", "request_count", "priority", "id":
+		switch suffix {
+		case "asc":
+			return prefix + " asc"
+		default:
+			return prefix + " desc"
+		}
 	default:
 		return "id desc"
 	}

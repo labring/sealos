@@ -53,31 +53,15 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 
 //nolint:goconst
 func getGroupOrder(order string) string {
+	prefix, suffix, _ := strings.Cut(order, "-")
 	switch order {
-	case "id-desc":
-		return "id desc"
-	case "request_count":
-		return "request_count asc"
-	case "request_count-desc":
-		return "request_count desc"
-	case "accessed_at":
-		return "accessed_at asc"
-	case "accessed_at-desc":
-		return "accessed_at desc"
-	case "status":
-		return "status asc"
-	case "status-desc":
-		return "status desc"
-	case "created_at":
-		return "created_at asc"
-	case "created_at-desc":
-		return "created_at desc"
-	case "used_amount":
-		return "used_amount asc"
-	case "used_amount-desc":
-		return "used_amount desc"
-	case "id":
-		return "id asc"
+	case "id", "request_count", "accessed_at", "status", "created_at", "used_amount":
+		switch suffix {
+		case "asc":
+			return prefix + " asc"
+		default:
+			return prefix + " desc"
+		}
 	default:
 		return "id desc"
 	}
