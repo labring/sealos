@@ -641,8 +641,8 @@ const Form = ({
                       boxShadow={'none !important'}
                       borderColor={'myGray.200'}
                       list={[
-                        { value: 'd', label: 'Day' },
-                        { value: 'h', label: 'Hour' }
+                        { value: 'd', label: t('Day') },
+                        { value: 'h', label: t('Hour') }
                       ]}
                       h={'35px'}
                       borderTopLeftRadius={0}
@@ -652,21 +652,66 @@ const Form = ({
                       }}
                     />
                   </Flex>
-                  <Flex mt={7} alignItems={'center'}>
+                  <Flex mt={7} alignItems={'start'}>
                     <Box flex={'0 0 110px'}>{t('termination_policy')}</Box>
-                    <Switch
+                    {/* <Switch
                       isChecked={getValues('terminationPolicy') === 'Delete'}
                       onChange={(e) => {
                         setValue('terminationPolicy', e.target.checked ? 'Delete' : 'WipeOut');
                       }}
-                    />
-                    <Tip
-                      ml={4}
-                      icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
-                      text={t('termination_policy_tip')}
-                      size="sm"
-                      borderRadius={'md'}
-                    />
+                    /> */}
+                    <Flex gap={'12px'} flexDirection={'column'}>
+                      {['Delete', 'WipeOut'].map((item) => {
+                        const isChecked = getValues('terminationPolicy') === item;
+
+                        return (
+                          <Flex
+                            key={item}
+                            alignItems={'center'}
+                            justifyContent={'start'}
+                            minW={'300px'}
+                            p={'10px 12px'}
+                            gap={'8px'}
+                            bg={'grayModern.50'}
+                            border={'1px solid'}
+                            boxShadow={
+                              isChecked ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'
+                            }
+                            borderColor={isChecked ? 'brightBlue.500' : '#E8EBF0'}
+                            borderRadius={'md'}
+                            onClick={() => {
+                              setValue(
+                                'terminationPolicy',
+                                getValues('terminationPolicy') === 'Delete' ? 'WipeOut' : 'Delete'
+                              );
+                            }}
+                            cursor={'pointer'}
+                          >
+                            <Center
+                              boxSize={'14px'}
+                              borderRadius={'full'}
+                              border={'1px solid'}
+                              borderColor={isChecked ? 'brightBlue.500' : '#E8EBF0'}
+                              boxShadow={
+                                isChecked ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : '#C4CBD7'
+                              }
+                            >
+                              {isChecked && (
+                                <Box boxSize={'4px'} borderRadius={'full'} bg={'#219BF4'}></Box>
+                              )}
+                            </Center>
+                            <Box>
+                              <Text fontSize={'12px'} fontWeight={'bold'} color={'grayModern.900'}>
+                                {t(`${item.toLowerCase()}_backup_with_db` as I18nCommonKey)}
+                              </Text>
+                              <Text fontSize={'10px'} fontWeight={'bold'} color="grayModern.500">
+                                {t(`${item.toLowerCase()}_backup_with_db_tip` as I18nCommonKey)}
+                              </Text>
+                            </Box>
+                          </Flex>
+                        );
+                      })}
+                    </Flex>
                   </Flex>
                 </Box>
               </Box>
