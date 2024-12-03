@@ -13,22 +13,23 @@ import (
 )
 
 type Log struct {
-	CreatedAt        time.Time `gorm:"index"                         json:"created_at"`
-	TokenName        string    `gorm:"index"                         json:"token_name"`
-	Endpoint         string    `gorm:"index"                         json:"endpoint"`
-	Content          string    `gorm:"type:text"                     json:"content"`
-	GroupID          string    `gorm:"index;index:idx_group_request" json:"group"`
-	Model            string    `gorm:"index"                         json:"model"`
-	RequestID        string    `gorm:"index;index:idx_group_request" json:"request_id"`
+	RequestAt        time.Time `gorm:"index;index:idx_request_at_group_id,priority:2;index:idx_group_reqat_token,priority:2"                                  json:"request_at"`
+	CreatedAt        time.Time `gorm:"index"                                                                                                                  json:"created_at"`
+	TokenName        string    `gorm:"index;index:idx_group_token,priority:2;index:idx_group_reqat_token,priority:3"                                          json:"token_name"`
+	Endpoint         string    `gorm:"index"                                                                                                                  json:"endpoint"`
+	Content          string    `gorm:"type:text"                                                                                                              json:"content"`
+	GroupID          string    `gorm:"index;index:idx_group_token,priority:1;index:idx_request_at_group_id,priority:1;index:idx_group_reqat_token,priority:1" json:"group"`
+	Model            string    `gorm:"index"                                                                                                                  json:"model"`
+	RequestID        string    `gorm:"index"                                                                                                                  json:"request_id"`
 	Price            float64   `json:"price"`
-	ID               int       `gorm:"primaryKey"                    json:"id"`
+	ID               int       `gorm:"primaryKey"                                                                                                             json:"id"`
 	CompletionPrice  float64   `json:"completion_price"`
-	TokenID          int       `gorm:"index"                         json:"token_id"`
-	UsedAmount       float64   `gorm:"index"                         json:"used_amount"`
+	TokenID          int       `gorm:"index"                                                                                                                  json:"token_id"`
+	UsedAmount       float64   `gorm:"index"                                                                                                                  json:"used_amount"`
 	PromptTokens     int       `json:"prompt_tokens"`
 	CompletionTokens int       `json:"completion_tokens"`
-	ChannelID        int       `gorm:"index"                         json:"channel"`
-	Code             int       `gorm:"index"                         json:"code"`
+	ChannelID        int       `gorm:"index"                                                                                                                  json:"channel"`
+	Code             int       `gorm:"index"                                                                                                                  json:"code"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
@@ -36,15 +37,18 @@ func (l *Log) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at"`
+		RequestAt int64 `json:"request_at"`
 	}{
 		Alias:     (*Alias)(l),
 		CreatedAt: l.CreatedAt.UnixMilli(),
+		RequestAt: l.RequestAt.UnixMilli(),
 	})
 }
 
-func RecordConsumeLog(requestID string, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
+func RecordConsumeLog(requestID string, requestAt time.Time, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
 	log := &Log{
 		RequestID:        requestID,
+		RequestAt:        requestAt,
 		GroupID:          group,
 		CreatedAt:        time.Now(),
 		Code:             code,
@@ -66,8 +70,6 @@ func RecordConsumeLog(requestID string, group string, code int, channelID int, p
 //nolint:goconst
 func getLogOrder(order string) string {
 	switch order {
-	case "id-desc":
-		return "id desc"
 	case "used_amount":
 		return "used_amount asc"
 	case "used_amount-desc":
@@ -104,43 +106,49 @@ func getLogOrder(order string) string {
 		return "group_id asc"
 	case "group-desc":
 		return "group_id desc"
-	case "created_at":
-		return "created_at asc"
-	case "created_at-desc":
-		return "created_at desc"
 	case "request_id":
 		return "request_id asc"
 	case "request_id-desc":
 		return "request_id desc"
+	case "request_at":
+		return "request_at asc"
+	case "request_at-desc":
+		return "request_at desc"
 	case "id":
 		return "id asc"
-	default:
+	case "id-desc":
 		return "id desc"
+	case "created_at":
+		return "created_at asc"
+	case "created_at-desc":
+		fallthrough
+	default:
+		return "created_at desc"
 	}
 }
 
 func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{})
-	if modelName != "" {
-		tx = tx.Where("model = ?", modelName)
-	}
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
-	if requestID != "" {
-		tx = tx.Where("request_id = ?", requestID)
+	if !startTimestamp.IsZero() {
+		tx = tx.Where("request_at >= ?", startTimestamp)
 	}
-	if tokenID != 0 {
-		tx = tx.Where("token_id = ?", tokenID)
+	if !endTimestamp.IsZero() {
+		tx = tx.Where("request_at <= ?", endTimestamp)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
 	}
-	if !startTimestamp.IsZero() {
-		tx = tx.Where("created_at >= ?", startTimestamp)
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
 	}
-	if !endTimestamp.IsZero() {
-		tx = tx.Where("created_at <= ?", endTimestamp)
+	if modelName != "" {
+		tx = tx.Where("model = ?", modelName)
+	}
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
 	}
 	if channelID != 0 {
 		tx = tx.Where("channel_id = ?", channelID)
@@ -168,6 +176,15 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 
 func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{}).Where("group_id = ?", group)
+	if !startTimestamp.IsZero() {
+		tx = tx.Where("request_at >= ?", startTimestamp)
+	}
+	if !endTimestamp.IsZero() {
+		tx = tx.Where("request_at <= ?", endTimestamp)
+	}
+	if tokenName != "" {
+		tx = tx.Where("token_name = ?", tokenName)
+	}
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
 	}
@@ -176,15 +193,6 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
-	}
-	if tokenName != "" {
-		tx = tx.Where("token_name = ?", tokenName)
-	}
-	if !startTimestamp.IsZero() {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if !endTimestamp.IsZero() {
-		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
 	if channelID != 0 {
 		tx = tx.Where("channel_id = ?", channelID)
@@ -214,20 +222,14 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	tx := LogDB.Model(&Log{})
 
 	// Handle exact match conditions for non-zero values
-	if code != 0 {
-		tx = tx.Where("code = ?", code)
-	}
-	if endpoint != "" {
-		tx = tx.Where("endpoint = ?", endpoint)
-	}
 	if groupID != "" {
 		tx = tx.Where("group_id = ?", groupID)
 	}
-	if requestID != "" {
-		tx = tx.Where("request_id = ?", requestID)
+	if !startTimestamp.IsZero() {
+		tx = tx.Where("request_at >= ?", startTimestamp)
 	}
-	if tokenID != 0 {
-		tx = tx.Where("token_id = ?", tokenID)
+	if !endTimestamp.IsZero() {
+		tx = tx.Where("request_at <= ?", endTimestamp)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
@@ -235,14 +237,20 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
 	}
+	if tokenID != 0 {
+		tx = tx.Where("token_id = ?", tokenID)
+	}
+	if code != 0 {
+		tx = tx.Where("code = ?", code)
+	}
+	if endpoint != "" {
+		tx = tx.Where("endpoint = ?", endpoint)
+	}
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
+	}
 	if content != "" {
 		tx = tx.Where("content = ?", content)
-	}
-	if !startTimestamp.IsZero() {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if !endTimestamp.IsZero() {
-		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
 	if channelID != 0 {
 		tx = tx.Where("channel_id = ?", channelID)
@@ -338,6 +346,18 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 	tx := LogDB.Model(&Log{}).Where("group_id = ?", group)
 
 	// Handle exact match conditions for non-zero values
+	if !startTimestamp.IsZero() {
+		tx = tx.Where("request_at >= ?", startTimestamp)
+	}
+	if !endTimestamp.IsZero() {
+		tx = tx.Where("request_at <= ?", endTimestamp)
+	}
+	if tokenName != "" {
+		tx = tx.Where("token_name = ?", tokenName)
+	}
+	if modelName != "" {
+		tx = tx.Where("model = ?", modelName)
+	}
 	if code != 0 {
 		tx = tx.Where("code = ?", code)
 	}
@@ -350,20 +370,8 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
 	}
-	if tokenName != "" {
-		tx = tx.Where("token_name = ?", tokenName)
-	}
-	if modelName != "" {
-		tx = tx.Where("model = ?", modelName)
-	}
 	if content != "" {
 		tx = tx.Where("content = ?", content)
-	}
-	if !startTimestamp.IsZero() {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if !endTimestamp.IsZero() {
-		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
 	if channelID != 0 {
 		tx = tx.Where("channel_id = ?", channelID)
@@ -458,10 +466,10 @@ func SumUsedQuota(startTimestamp time.Time, endTimestamp time.Time, modelName st
 		tx = tx.Where("token_name = ?", tokenName)
 	}
 	if !startTimestamp.IsZero() {
-		tx = tx.Where("created_at >= ?", startTimestamp)
+		tx = tx.Where("request_at >= ?", startTimestamp)
 	}
 	if !endTimestamp.IsZero() {
-		tx = tx.Where("created_at <= ?", endTimestamp)
+		tx = tx.Where("request_at <= ?", endTimestamp)
 	}
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
@@ -489,10 +497,10 @@ func SumUsedToken(startTimestamp time.Time, endTimestamp time.Time, modelName st
 		tx = tx.Where("token_name = ?", tokenName)
 	}
 	if !startTimestamp.IsZero() {
-		tx = tx.Where("created_at >= ?", startTimestamp)
+		tx = tx.Where("request_at >= ?", startTimestamp)
 	}
 	if !endTimestamp.IsZero() {
-		tx = tx.Where("created_at <= ?", endTimestamp)
+		tx = tx.Where("request_at <= ?", endTimestamp)
 	}
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
@@ -505,7 +513,7 @@ func SumUsedToken(startTimestamp time.Time, endTimestamp time.Time, modelName st
 }
 
 func DeleteOldLog(timestamp time.Time) (int64, error) {
-	result := LogDB.Where("created_at < ?", timestamp).Delete(&Log{})
+	result := LogDB.Where("request_at < ?", timestamp).Delete(&Log{})
 	return result.RowsAffected, result.Error
 }
 

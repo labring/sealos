@@ -2,6 +2,7 @@ package meta
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -19,6 +20,7 @@ type Meta struct {
 	Group   *model.GroupCache
 	Token   *model.TokenCache
 
+	RequestAt       time.Time
 	RequestID       string
 	OriginModelName string
 	ActualModelName string
@@ -76,6 +78,7 @@ func (m *Meta) AwsClient() *bedrockruntime.Client {
 func GetByContext(c *gin.Context) *Meta {
 	meta := Meta{
 		values:          make(map[string]any),
+		RequestAt:       time.Now(),
 		RequestID:       c.GetString(string(helper.RequestIDKey)),
 		Mode:            relaymode.GetByPath(c.Request.URL.Path),
 		RequestURLPath:  c.Request.URL.String(),
