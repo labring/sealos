@@ -98,15 +98,15 @@ func TestChannel(c *gin.Context) {
 
 	ct, err := testSingleModel(channel, modelName)
 	if err != nil {
-		logger.SysErrorf("failed to test channel model %s: %s", modelName, err.Error())
+		logger.SysErrorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("failed to test model %s: %s", modelName, err.Error()),
+			"message": fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error()),
 		})
 		return
 	}
 
-	if c.Query("success_body") != "true" {
+	if c.Query("success_body") != "true" && ct.Success {
 		ct.Response = ""
 	}
 
@@ -157,12 +157,12 @@ func TestChannelModels(c *gin.Context) {
 				"success": err == nil,
 			}
 			if err != nil {
-				result["message"] = fmt.Sprintf("failed to test model %s: %s", model, err.Error())
+				result["message"] = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, model, err.Error())
 			} else {
 				if !returnSuccess && ct.Success {
 					return
 				}
-				if !successResponseBody {
+				if !successResponseBody && ct.Success {
 					ct.Response = ""
 				}
 				result["data"] = ct
@@ -185,7 +185,8 @@ func TestChannelModels(c *gin.Context) {
 func TestAllChannels(c *gin.Context) {
 	channels := model.CacheGetEnabledChannels()
 
-	results := make(map[int]*[]gin.H)
+	results := make([]gin.H, 0)
+	resultsMutex := sync.Mutex{}
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 10)
 
@@ -193,14 +194,11 @@ func TestAllChannels(c *gin.Context) {
 	successResponseBody := c.Query("success_body") == "true"
 
 	for _, channel := range channels {
-		tmpResults := make([]gin.H, 0, len(channel.Models))
-		tmpResultsMutex := sync.Mutex{}
-		results[channel.ID] = &tmpResults
 		for _, modelName := range channel.Models {
 			wg.Add(1)
 			semaphore <- struct{}{}
 
-			go func(results *[]gin.H, mu *sync.Mutex, model string, ch *model.Channel) {
+			go func(model string, ch *model.Channel) {
 				defer wg.Done()
 				defer func() { <-semaphore }()
 
@@ -209,31 +207,25 @@ func TestAllChannels(c *gin.Context) {
 					"success": err == nil,
 				}
 				if err != nil {
-					result["message"] = fmt.Sprintf("failed to test model %s: %s", model, err.Error())
+					result["message"] = fmt.Sprintf("failed to test channel %s(%d) model %s: %s", ch.Name, ch.ID, model, err.Error())
 				} else {
 					if !returnSuccess && ct.Success {
 						return
 					}
-					if !successResponseBody {
+					if !successResponseBody && ct.Success {
 						ct.Response = ""
 					}
 					result["data"] = ct
 				}
-				mu.Lock()
-				*results = append(*results, result)
-				mu.Unlock()
-			}(&tmpResults, &tmpResultsMutex, modelName, channel)
+				resultsMutex.Lock()
+				results = append(results, result)
+				resultsMutex.Unlock()
+			}(modelName, channel)
 		}
 	}
 
 	wg.Wait()
 
-	for channelID, r := range results {
-		if len(*r) != 0 {
-			continue
-		}
-		delete(results, channelID)
-	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    results,
