@@ -118,7 +118,7 @@ type DevboxSpec struct {
 
 type NetworkStatus struct {
 	// +kubebuilder:default=NodePort
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;WebSocket
 	Type NetworkType `json:"type"`
 
 	// +kubebuilder:validation:Optional
