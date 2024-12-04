@@ -85,9 +85,23 @@ var ModelList = []*model.ModelConfig{
 			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
+
 	{
-		Model: "Doubao-embedding",
-		Type:  relaymode.Embeddings,
-		Owner: model.ModelOwnerDoubao,
+		Model:      "Doubao-embedding",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerDoubao,
+		InputPrice: 0.0005,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 4096,
+		},
+	},
+	{
+		Model:      "Doubao-embedding-large",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerDoubao,
+		InputPrice: 0.0007,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 4096,
+		},
 	},
 }
