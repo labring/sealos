@@ -16,6 +16,11 @@ const message = {
   uploadFailed: vscode.l10n.t('Upload failed!'),
   downloadCompleted: vscode.l10n.t('Download completed!'),
   downloadFailed: vscode.l10n.t('Download failed!'),
+  overwriteDefaultFolder: vscode.l10n.t(
+    'Do you want to overwrite the default folder?'
+  ),
+  yes: vscode.l10n.t('Yes'),
+  no: vscode.l10n.t('No'),
 }
 
 export class ToolCommands extends Disposable {
@@ -31,7 +36,7 @@ export class ToolCommands extends Disposable {
       // download project folder from remote server
       this._register(
         vscode.commands.registerCommand('devbox.downloadProject', async () => {
-          Logger.info(message.downloadProject)
+          Logger.info('Downloading project from remote server...')
 
           // remote are source
           let remoteHost = ''
@@ -116,7 +121,7 @@ export class ToolCommands extends Disposable {
       // upload folder to remote server
       this._register(
         vscode.commands.registerCommand('devbox.uploadProject', async () => {
-          Logger.info(message.uploadProject)
+          Logger.info('Uploading project to remote server...')
 
           // remote are destination
           let remoteHost = ''
@@ -141,12 +146,37 @@ export class ToolCommands extends Disposable {
             canSelectFiles: true,
             canSelectFolders: true,
             canSelectMany: false,
-            title: 'Choose a folder to upload',
+            title: message.chooseFolderToUpload,
             defaultUri: vscode.Uri.file('/'),
           })
 
           if (!sourcePath || sourcePath.length === 0) {
             return
+          }
+
+          let sourcePathStr = sourcePath[0].fsPath
+
+          const overwrite = await vscode.window.showWarningMessage(
+            message.overwriteDefaultFolder,
+            message.yes,
+            message.no
+          )
+
+          if (overwrite === message.yes) {
+            const parentPath = remotePath.substring(
+              0,
+              remotePath.lastIndexOf('/')
+            )
+            const backupDir = `${parentPath}/backup_${new Date().getTime()}`
+
+            await execa('ssh', [
+              remoteHost,
+              `mkdir -p "${backupDir}" && ` +
+                `cp -r ${remotePath}/* "${backupDir}/" 2>/dev/null || true && ` +
+                `find ${remotePath} -mindepth 1 ! -name 'entrypoint.sh' -exec rm -rf {} +`,
+            ])
+
+            sourcePathStr = `${sourcePath[0].fsPath}/*`
           }
 
           await vscode.window.withProgress(
@@ -160,7 +190,7 @@ export class ToolCommands extends Disposable {
                 const rsync = new Rsync()
                   .shell('ssh')
                   .flags('avz')
-                  .source(sourcePath[0].fsPath)
+                  .source(sourcePathStr)
                   .destination(`${remoteHost}:${remotePath}`)
 
                 rsync.output(
