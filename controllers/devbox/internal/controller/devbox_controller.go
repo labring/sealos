@@ -597,7 +597,7 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					//	),
 					//},
 					Args: []string{
-						fmt.Sprintf("/app/bin server --port=%d --proxy=https://%s-pod-svc:%d -v=true",
+						fmt.Sprintf("/app/bin server --port=%s --proxy=https://%s-pod-svc:%s -v=true",
 							sshPort,
 							devbox.Name,
 							sshPort,
