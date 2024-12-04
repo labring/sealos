@@ -134,6 +134,8 @@ jobs:
           SEALOS_COMMENT_BODY: "/imagebuild_apps sealos latest"
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos
   build-on-cluster-patch-image:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:

@@ -145,6 +145,8 @@ jobs:
           cache-to: type=gha,mode=max
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-frontend
   cluster-image-build:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
     needs:

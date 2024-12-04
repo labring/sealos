@@ -23,6 +23,8 @@ env:
 jobs:
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-cloud
 
   release-controllers:
     if: ${{ github.event.inputs.build_offline_tar_only == false }}

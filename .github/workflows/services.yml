@@ -173,6 +173,8 @@ jobs:
 
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-services
   build-cluster-image:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
     needs:
