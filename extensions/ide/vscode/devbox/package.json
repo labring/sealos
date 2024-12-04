@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.2.1",
+  "version": "1.3.2024120402",
   "keywords": [
     "devbox",
     "remote development",
@@ -107,6 +107,14 @@
           "light": "images/light/link-external.svg",
           "dark": "images/dark/link-external.svg"
         }
+      },
+      {
+        "command": "devbox.downloadProject",
+        "title": "%devbox.downloadProject.title%"
+      },
+      {
+        "command": "devbox.uploadProject",
+        "title": "%devbox.uploadProject.title%"
       }
     ],
     "views": {
@@ -223,6 +231,7 @@
   },
   "devDependencies": {
     "@types/node": "20.x",
+    "@types/rsync": "^0.4.36",
     "@types/vscode": "^1.91.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.11.0",
@@ -240,6 +249,7 @@
     "axios": "^1.7.5",
     "dayjs": "^1.11.13",
     "execa": "^9.5.1",
+    "rsync": "^0.6.1",
     "ssh-config": "^5.0.0"
   }
 }

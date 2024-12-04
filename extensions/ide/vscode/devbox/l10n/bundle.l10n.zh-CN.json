@@ -18,5 +18,14 @@
   "Address": "地址",
   "Open in Browser": "在浏览器中打开",
   "Preview in Editor": "在编辑器中预览",
-  "Open Database Web Terminal": "打开数据库 Web 终端"
+  "Open Database Web Terminal": "打开数据库 Web 终端",
+  "Cursor's Devbox is often not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referenced this [URI](https://www.cursor.com/how-to-install-extension).": "Cursor 的 Devbox 通常不是最新的。如果有任何问题，请手动安装 [插件](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) 参考此 [URI](https://www.cursor.com/how-to-install-extension).",
+  "Downloading project from remote server...": "从远程服务器下载项目...",
+  "Uploading project to remote server...": "上传项目到远程服务器...",
+  "Download completed!": "下载完成！",
+  "Download failed!": "下载失败！",
+  "Upload completed!": "上传完成！",
+  "Upload failed!": "上传失败！",
+  "Choose a folder to store the downloaded folder": "选择一个文件夹来存储下载的文件夹",
+  "Choose a folder to upload": "选择一个文件夹来上传"
 }

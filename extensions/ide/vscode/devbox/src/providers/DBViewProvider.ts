@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
-import { getDBList, DBResponse } from '../api/db'
-import { Disposable } from '../common/dispose'
-import { GlobalStateManager } from '../utils/globalStateManager'
 import { Logger } from '../common/logger'
+import { Disposable } from '../common/dispose'
+import { getDBList, DBResponse } from '../api/db'
+import { GlobalStateManager } from '../utils/globalStateManager'
 
 enum DBTypeEnum {
   postgresql = 'postgresql',

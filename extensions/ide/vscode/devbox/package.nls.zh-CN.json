@@ -16,5 +16,7 @@
   "devbox.network.title": "网络",
   "devbox.database.title": "数据库",
   "devbox.devbox.title": "Devbox",
-  "devbox.welcome.title": "还没有Devbox，请创建一个新的Devbox。\n [创建Devbox](command:devboxDashboard.createDevbox)\n 要了解更多关于如何使用Devbox的信息，请访问[Devbox文档](https://sailos.io/docs/quick-start)。"
+  "devbox.welcome.title": "还没有Devbox，请创建一个新的Devbox。\n [创建Devbox](command:devboxDashboard.createDevbox)\n 要了解更多关于如何使用Devbox的信息，请访问[Devbox文档](https://sailos.io/docs/quick-start)。",
+  "devbox.downloadProject.title": "Devbox: 下载项目",
+  "devbox.uploadProject.title": "Devbox: 上传项目"
 }
