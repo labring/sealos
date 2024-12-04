@@ -468,12 +468,14 @@ func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *dev
 
 func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
 	pathType := networkingv1.PathTypePrefix
+	var className = "nginx"
 	wsIngress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devbox.Name + "-proxy-ingress",
 			Namespace: devbox.Namespace,
 		},
 		Spec: networkingv1.IngressSpec{
+			IngressClassName: &className, // 指定使用 nginx Ingress Controller
 			Rules: []networkingv1.IngressRule{
 				{
 					Host: devbox.Name + ".sealoshzh.site",
@@ -585,7 +587,7 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 						"-c",
 					},
 					Args: []string{
-						fmt.Sprintf("/app/bin server --port=%d --proxy=https://%s-pod-svc:%s -v=true --reverse & /app/bin client -v localhost:%d R:2222:%s-pod-svc:%s",
+						fmt.Sprintf("/app/bin server --port=%d --proxy=https://%s-pod-svc:%s -v=true --reverse & /app/bin client -v localhost:%d R:2222:%s-proxy-svc:%s",
 							8080,
 							devbox.Name,
 							sshPort,
