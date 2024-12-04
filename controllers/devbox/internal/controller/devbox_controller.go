@@ -551,13 +551,13 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 		return err
 	}
 
-	//sshPort := "22"
-	//for _, port := range servicePorts {
-	//	if port.Name == "devbox-ssh-port" {
-	//		sshPort = port.TargetPort.String()
-	//		break
-	//	}
-	//}
+	sshPort := "22"
+	for _, port := range servicePorts {
+		if port.Name == "devbox-ssh-port" {
+			sshPort = port.TargetPort.String()
+			break
+		}
+	}
 
 	podName := devbox.Name + "-proxy-pod"
 	wsPod := &corev1.Pod{}
@@ -578,17 +578,17 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:    "ws-proxy",
-					Image:   r.WebSocketImage,
+					Name:  "ws-proxy",
+					Image: r.WebSocketImage,
 					Command: []string{
-						//"sh",
-						//"-c",
-						//fmt.Sprintf(`chisel server -v --port=%d --proxy=%s --reverse &&chisel client -v localhost:8080 R:2222:%s:%s`,
-						//	8080,
-						//	"https://"+devbox.Name+"-pod-svc:22",
-						//	devbox.Name+"-pod-svc",
-						//	sshPort,
-						//),
+						"sh",
+						"-c",
+						fmt.Sprintf(`server -v --port=%d --proxy=%s --reverse &&client -v localhost:8080 R:2222:%s:%s`,
+							8080,
+							"https://"+devbox.Name+"-pod-svc:22",
+							devbox.Name+"-pod-svc",
+							sshPort,
+						),
 					},
 					Resources: helper.GenerateProxyPodResourceRequirements(),
 				},
