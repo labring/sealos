@@ -9,7 +9,6 @@ import (
 
 	json "github.com/json-iterator/go"
 
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -219,7 +218,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			}
 			response := StreamResponseLlama2OpenAI(&llamaResp)
 			response.ID = "chatcmpl-" + random.GetUUID()
-			response.Model = c.GetString(ctxkey.OriginalModel)
+			response.Model = meta.OriginModelName
 			response.Created = createdTime
 			err = render.ObjectData(c, response)
 			if err != nil {

@@ -6,7 +6,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/ali"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/anthropic"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor/azure"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baichuan"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baidu"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/cloudflare"
@@ -32,8 +31,8 @@ import (
 )
 
 var ChannelAdaptor = map[int]adaptor.Adaptor{
-	1:  &openai.Adaptor{},
-	3:  &azure.Adaptor{},
+	1: &openai.Adaptor{},
+	// 3:  &azure.Adaptor{},
 	14: &anthropic.Adaptor{},
 	15: &baidu.Adaptor{},
 	16: &zhipu.Adaptor{},

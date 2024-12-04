@@ -8,7 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 type ModelRequest struct {
@@ -52,4 +55,20 @@ func Distribute(c *gin.Context) {
 	c.Set(ctxkey.Channel, channel)
 
 	c.Next()
+}
+
+func NewMetaByContext(c *gin.Context) *meta.Meta {
+	channel := c.MustGet(ctxkey.Channel).(*model.Channel)
+	originalModel := c.GetString(ctxkey.OriginalModel)
+	requestID := c.GetString(string(helper.RequestIDKey))
+	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
+	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	return meta.NewMeta(
+		channel,
+		relaymode.GetByPath(c.Request.URL.Path),
+		originalModel,
+		meta.WithRequestID(requestID),
+		meta.WithGroup(group),
+		meta.WithToken(token),
+	)
 }
