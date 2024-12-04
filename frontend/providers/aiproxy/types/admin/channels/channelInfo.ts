@@ -35,3 +35,9 @@ export enum ChannelStatus {
   ChannelStatusDisabled = 2,
   ChannelStatusAutoDisabled = 3
 }
+
+export type ChannelType = `${number}`
+
+export type ChannelTypeMapName = {
+  [key in ChannelType]: string
+}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { VStack, Flex, FormLabel, Input, Button, Text } from '@chakra-ui/react'
+import { VStack, Flex, FormLabel, Input, Button, Text, Box } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { CustomSelect } from './Select'
 type MapKeyValuePair = { key: string; value: string }
 
+// mapKeys determines the available selection options
 export const ConstructMappingComponent = function ({
   mapKeys,
   mapData,
@@ -17,20 +18,83 @@ export const ConstructMappingComponent = function ({
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
-  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>(() => {
+  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([
+    { key: '', value: '' }
+  ])
+
+  useEffect(() => {
     const entries = Object.entries(mapData)
-    if (entries.length === 0) {
-      return [{ key: '', value: '' }]
+    if (entries.length > 0) {
+      setMapkeyValuePairs(entries.map(([key, value]) => ({ key, value })))
     }
-    return entries.map(([key, value]) => ({ key, value }))
-  })
+  }, [mapData])
 
   const handleDropdownItemDisplay = (dropdownItem: string) => {
-    return dropdownItem
+    if (dropdownItem === t('channelsFormPlaceholder.modelMappingInput')) {
+      return (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontStyle="normal"
+          fontWeight={400}
+          lineHeight="16px"
+          letterSpacing="0.048px">
+          {t('channelsFormPlaceholder.modelMappingInput')}
+        </Text>
+      )
+    }
+    return (
+      <Text
+        color="grayModern.600"
+        fontFamily="PingFang SC"
+        fontSize="12px"
+        fontStyle="normal"
+        fontWeight={400}
+        lineHeight="16px"
+        letterSpacing="0.048px">
+        {dropdownItem}
+      </Text>
+    )
   }
 
   const handleSeletedItemDisplay = (selectedItem: string) => {
-    return selectedItem
+    if (selectedItem === t('channelsFormPlaceholder.modelMappingInput')) {
+      return (
+        <Text
+          color="grayModern.900"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontStyle="normal"
+          fontWeight={400}
+          lineHeight="16px"
+          letterSpacing="0.048px">
+          {t('channelsFormPlaceholder.modelMappingInput')}
+        </Text>
+      )
+    }
+    return (
+      <Box
+        maxWidth="114px"
+        overflowX="auto" // overflowX needed for long text
+        whiteSpace="nowrap" // prevent text from wrapping
+        css={{
+          '&::-webkit-scrollbar': { display: 'none' },
+          '-ms-overflow-style': 'none',
+          scrollbarWidth: 'none'
+        }}>
+        <Text
+          color="grayModern.900"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontStyle="normal"
+          fontWeight={400}
+          lineHeight="16px"
+          letterSpacing="0.048px">
+          {selectedItem}
+        </Text>
+      </Box>
+    )
   }
 
   // Handling mapData and mapKeyValuePairs cleanup when map keys change.
@@ -149,8 +213,8 @@ export const ConstructMappingComponent = function ({
         <Flex key={`${index}-${row.key}`} gap="8px" w="full" alignItems="center">
           <CustomSelect<string>
             listItems={mapKeys.filter((key) => !getSelectedMapKeys(index).has(key))}
-            // when select placeholder, the row.key is null
             initSelectedItem={row.key !== '' && row.key ? row.key : undefined}
+            // when select placeholder, the newSelectedItem is null
             handleSelectedItemChange={(newSelectedItem) =>
               handleInputChange(index, 'key', newSelectedItem)
             }

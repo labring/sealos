@@ -162,7 +162,9 @@
   "globalConfigs": {
     "defaultModel": "默认模型",
     "addDefaultModel": "新增模型",
-    "saveDefaultModel": "保存"
+    "saveDefaultModel": "保存",
+    "saveDefaultModelFailed": "保存失败",
+    "saveDefaultModelSuccess": "保存成功"
   },
   "modeType": {
     "0": "未知",
@@ -176,5 +178,13 @@
     "8": "语音转录",
     "9": "音频翻译",
     "10": "重排序"
+  },
+  "GlobalLogs": {
+    "selectModel": "模型名称",
+    "select_token_name": "token 名字",
+    "selectGroupId": "工作空间",
+    "groupId": "工作空间",
+    "tokenName": "Token 名称",
+    "channel": "渠道 ID"
   }
 }

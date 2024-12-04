@@ -27,13 +27,12 @@ import {
 import { useMessage } from '@sealos/ui'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChannelInfo, ChannelStatus } from '@/types/admin/channels/channelInfo'
+import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { useState, useMemo } from 'react'
-import { getChannels } from '@/api/platform'
+import { getChannels, getChannelTypeNames } from '@/api/platform'
 import SwitchPage from '@/components/common/SwitchPage'
 import UpdateChannelModal from './UpdateChannelModal'
-import { ModelType } from '@/types/models/model'
 import { getEnumKeyByValue } from '@/utils/common'
 import { QueryKey } from '@/types/query-key'
 
@@ -48,6 +47,11 @@ export default function ChannelTable() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
+
+  const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
+    queryKey: [QueryKey.GetChannelTypeNames],
+    queryFn: () => getChannelTypeNames()
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: [QueryKey.GetChannels, page, pageSize],
@@ -205,7 +209,7 @@ export default function ChannelTable() {
           fontWeight={500}
           lineHeight="16px"
           letterSpacing="0.5px">
-          {getEnumKeyByValue(ModelType, info.getValue().toString())}
+          {channelTypeNames?.[String(info.getValue()) as ChannelType]}
         </Text>
       )
     }),
@@ -514,8 +518,8 @@ export default function ChannelTable() {
                 viewBox="0 0 16 16"
                 fill="none">
                 <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
                   d="M7.52851 1.52851C7.78886 1.26816 8.21097 1.26816 8.47132 1.52851L11.138 4.19518C11.3983 4.45553 11.3983 4.87764 11.138 5.13799C10.8776 5.39834 10.4555 5.39834 10.1952 5.13799L8.66659 3.60939V9.99992C8.66659 10.3681 8.36811 10.6666 7.99992 10.6666C7.63173 10.6666 7.33325 10.3681 7.33325 9.99992V3.60939L5.80466 5.13799C5.54431 5.39834 5.1222 5.39834 4.86185 5.13799C4.6015 4.87764 4.6015 4.45553 4.86185 4.19518L7.52851 1.52851ZM1.99992 7.33325C2.36811 7.33325 2.66659 7.63173 2.66659 7.99992V10.7999C2.66659 11.371 2.6671 11.7592 2.69162 12.0592C2.7155 12.3515 2.75878 12.501 2.81191 12.6052C2.93974 12.8561 3.14372 13.0601 3.3946 13.1879C3.49887 13.2411 3.64833 13.2843 3.94061 13.3082C4.24067 13.3327 4.62887 13.3333 5.19992 13.3333H10.7999C11.371 13.3333 11.7592 13.3327 12.0592 13.3082C12.3515 13.2843 12.501 13.2411 12.6052 13.1879C12.8561 13.0601 13.0601 12.8561 13.1879 12.6052C13.2411 12.501 13.2843 12.3515 13.3082 12.0592C13.3327 11.7592 13.3333 11.371 13.3333 10.7999V7.99992C13.3333 7.63173 13.6317 7.33325 13.9999 7.33325C14.3681 7.33325 14.6666 7.63173 14.6666 7.99992V10.8275C14.6666 11.3641 14.6666 11.807 14.6371 12.1678C14.6065 12.5425 14.5408 12.887 14.3759 13.2106C14.1203 13.7123 13.7123 14.1203 13.2106 14.3759C12.887 14.5408 12.5425 14.6065 12.1678 14.6371C11.807 14.6666 11.3641 14.6666 10.8275 14.6666H5.17237C4.63573 14.6666 4.19283 14.6666 3.83204 14.6371C3.4573 14.6065 3.11283 14.5408 2.78928 14.3759C2.28751 14.1203 1.87956 13.7123 1.6239 13.2106C1.45904 12.887 1.39333 12.5425 1.36271 12.1678C1.33324 11.807 1.33324 11.3641 1.33325 10.8275L1.33325 7.99992C1.33325 7.63173 1.63173 7.33325 1.99992 7.33325Z"
                   fill="currentColor"
                 />

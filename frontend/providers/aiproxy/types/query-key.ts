@@ -1,6 +1,13 @@
 export enum QueryKey {
+  // common
   GetTokens = 'getTokens',
   GetUserLogs = 'getUserLogs',
-  GetModelConfig = 'getModelConfig',
-  GetChannels = 'getChannels'
+  GetEnabledModels = 'getEnabledModels',
+  // admin
+  GetChannels = 'getChannels',
+  GetGlobalLogs = 'getGlobalLogs',
+  GetChannelTypeNames = 'getChannelTypeNames',
+  GetAllChannelModes = 'getAllChannelModes',
+  GetDefaultModelAndModeMapping = 'getDefaultModelAndModeMapping',
+  GetOption = 'getOption'
 }

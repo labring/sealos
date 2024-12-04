@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { ModelMap } from '@/types/models/model'
+import { ChannelWithDefaultModelAndDefaultModeMapping } from '@/types/models/model'
 
 export const dynamic = 'force-dynamic'
 
-type ApiProxyBackendDefaultEnabledModelsResponse = ApiProxyBackendResp<ModelMap>
-export type GetDefaultEnabledModelsResponse = ApiResp<ModelMap>
+type ApiProxyBackendDefaultModelAndModeMappingResponse =
+  ApiProxyBackendResp<ChannelWithDefaultModelAndDefaultModeMapping>
+export type GetDefaultModelAndModeMappingResponse =
+  ApiResp<ChannelWithDefaultModelAndDefaultModeMapping>
 
-async function fetchDefaultEnabledModels(): Promise<ModelMap> {
+async function fetchDefaultModeAndModeMapping(): Promise<
+  ChannelWithDefaultModelAndDefaultModeMapping | undefined
+> {
   try {
     const url = new URL(
-      '/api/models/enabled/default',
+      '/api/models/default',
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
     const response = await fetch(url.toString(), {
@@ -26,13 +30,13 @@ async function fetchDefaultEnabledModels(): Promise<ModelMap> {
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
     }
-    const result: ApiProxyBackendDefaultEnabledModelsResponse = await response.json()
+    const result: ApiProxyBackendDefaultModelAndModeMappingResponse = await response.json()
 
     if (!result.success) {
       throw new Error(result.message || 'default enabled models api: ai proxy backend error')
     }
 
-    return result.data || {}
+    return result?.data
   } catch (error) {
     console.error('default enabled models api: fetch enabled models error:', error)
     throw error
@@ -41,14 +45,14 @@ async function fetchDefaultEnabledModels(): Promise<ModelMap> {
 
 export async function GET(
   request: NextRequest
-): Promise<NextResponse<GetDefaultEnabledModelsResponse>> {
+): Promise<NextResponse<GetDefaultModelAndModeMappingResponse>> {
   try {
     const namespace = await parseJwtToken(request.headers)
     await isAdmin(namespace)
 
     return NextResponse.json({
       code: 200,
-      data: await fetchDefaultEnabledModels()
+      data: await fetchDefaultModeAndModeMapping()
     })
   } catch (error) {
     console.error('default enabled models api: get enabled models error:', error)

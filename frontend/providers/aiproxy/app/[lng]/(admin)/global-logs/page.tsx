@@ -1,24 +1,26 @@
 'use client'
 
-import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react'
-import { MySelect, MyTooltip, SealosCoin } from '@sealos/ui'
+import { Box, Flex, Text, Button, Icon, Input } from '@chakra-ui/react'
+import { CurrencySymbol, MyTooltip } from '@sealos/ui'
 import { useMemo, useState } from 'react'
 
-import { getKeys, getLogs, getModels } from '@/api/platform'
+import { getGlobalLogs, getEnabledMode } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import SelectDateRange from '@/components/common/SelectDateRange'
 import SwitchPage from '@/components/common/SwitchPage'
 import { BaseTable } from '@/components/table/BaseTable'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { LogItem } from '@/types/log'
+import { GlobalLogItem } from '@/types/user/logs'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-
-const mockStatus = ['all', 'success', 'failed']
+import { QueryKey } from '@/types/query-key'
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
+import { useBackendStore } from '@/store/backend'
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+  const { currencySymbol } = useBackendStore()
 
   const [startTime, setStartTime] = useState(() => {
     const currentDate = new Date()
@@ -26,49 +28,60 @@ export default function Home(): React.JSX.Element {
     return currentDate
   })
   const [endTime, setEndTime] = useState(new Date())
+  const [groupId, setGroupId] = useState('')
   const [name, setName] = useState('')
-  const [modelName, setModelName] = useState('')
+  const [modelName, setModelName] = useState<string>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [logData, setLogData] = useState<LogItem[]>([])
+  const [logData, setLogData] = useState<GlobalLogItem[]>([])
   const [total, setTotal] = useState(0)
 
-  const { data: models = [] } = useQuery(['getModels'], () => getModels())
-  const { data: tokenData } = useQuery(['getKeys'], () => getKeys({ page: 1, perPage: 100 }))
+  const { data: models = [] } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
+
+  console.log(modelName)
 
   const { isLoading } = useQuery(
-    ['getLogs', page, pageSize, name, modelName, startTime, endTime],
+    [QueryKey.GetGlobalLogs, page, pageSize, name, modelName, startTime, endTime, groupId],
     () =>
-      getLogs({
+      getGlobalLogs({
         page,
         perPage: pageSize,
         token_name: name,
         model_name: modelName,
         start_timestamp: startTime.getTime().toString(),
-        end_timestamp: endTime.getTime().toString()
+        end_timestamp: endTime.getTime().toString(),
+        group_id: groupId
       }),
     {
       onSuccess: (data) => {
-        if (!data.logs) {
+        if (!data?.logs) {
           setLogData([])
           setTotal(0)
           return
         }
-        setLogData(data.logs)
-        setTotal(data.total)
+        setLogData(data?.logs || [])
+        setTotal(data?.total || 0)
       }
     }
   )
 
-  const columns = useMemo<ColumnDef<LogItem>[]>(() => {
+  const columns = useMemo<ColumnDef<GlobalLogItem>[]>(() => {
     return [
       {
-        header: t('logs.name'),
+        header: t('GlobalLogs.groupId'),
+        accessorKey: 'group'
+      },
+      {
+        header: t('GlobalLogs.tokenName'),
         accessorKey: 'token_name'
       },
       {
         header: t('logs.model'),
         accessorKey: 'model'
+      },
+      {
+        header: t('GlobalLogs.channel'),
+        accessorKey: 'channel'
       },
       {
         header: t('logs.prompt_tokens'),
@@ -116,7 +129,7 @@ export default function Home(): React.JSX.Element {
               <MyTooltip placement="bottom-end" label={t('logs.total_price_tip')}>
                 <Flex alignItems={'center'} gap={'4px'}>
                   {t('logs.total_price')}
-                  <SealosCoin />
+                  <CurrencySymbol type={currencySymbol} />
                 </Flex>
               </MyTooltip>
             </Box>
@@ -216,27 +229,30 @@ export default function Home(): React.JSX.Element {
                   letterSpacing="0.5px">
                   {t('logs.name')}
                 </Text>
-                <MySelect
+                <Input
                   w="500px"
-                  placeholder={t('logs.select_token_name')}
-                  value={name}
-                  list={[
-                    {
-                      value: 'all',
-                      label: 'all'
-                    },
-                    ...(tokenData?.tokens?.map((item) => ({
-                      value: item.name,
-                      label: item.name
-                    })) || [])
-                  ]}
-                  onchange={(val: string) => {
-                    if (val === 'all') {
-                      setName('')
-                    } else {
-                      setName(val)
-                    }
+                  py="6px"
+                  px="12px"
+                  alignItems="center"
+                  borderRadius="4px"
+                  border="1px solid"
+                  borderColor="grayModern.200"
+                  bgColor="grayModern.50"
+                  _hover={{ borderColor: 'grayModern.300' }}
+                  _focus={{ borderColor: 'grayModern.300' }}
+                  _focusVisible={{ borderColor: 'grayModern.300' }}
+                  _active={{ borderColor: 'grayModern.300' }}
+                  placeholder={t('GlobalLogs.select_token_name')}
+                  _placeholder={{
+                    color: 'grayModern.500',
+                    fontFamily: 'PingFang SC',
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    lineHeight: '16px',
+                    letterSpacing: '0.048px'
                   }}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </Flex>
 
@@ -252,23 +268,38 @@ export default function Home(): React.JSX.Element {
                   letterSpacing="0.5px">
                   {t('logs.modal')}
                 </Text>
-                <MySelect
-                  w="500px"
-                  placeholder={t('logs.select_modal')}
-                  value={modelName}
-                  list={
-                    ['all', ...models].map((item) => ({
-                      value: item,
-                      label: item
-                    })) || []
-                  }
-                  onchange={(val: string) => {
-                    if (val === 'all') {
+
+                <SingleSelectComboboxUnstyle<string>
+                  dropdownItems={['all', ...models.map((item) => item.model)]}
+                  setSelectedItem={(value) => {
+                    if (value === 'all') {
                       setModelName('')
                     } else {
-                      setModelName(val)
+                      setModelName(value)
                     }
                   }}
+                  handleDropdownItemFilter={(dropdownItems, inputValue) => {
+                    const lowerCasedInput = inputValue.toLowerCase()
+                    return dropdownItems.filter(
+                      (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
+                    )
+                  }}
+                  handleDropdownItemDisplay={(dropdownItem) => {
+                    return (
+                      <Text
+                        color="grayModern.600"
+                        fontFamily="PingFang SC"
+                        fontSize="12px"
+                        fontStyle="normal"
+                        fontWeight={400}
+                        lineHeight="16px"
+                        letterSpacing="0.048px">
+                        {dropdownItem}
+                      </Text>
+                    )
+                  }}
+                  flexProps={{ w: '500px' }}
+                  placeholder={t('GlobalLogs.selectModel')}
                 />
               </Flex>
             </Flex>
@@ -281,6 +312,45 @@ export default function Home(): React.JSX.Element {
               justifyContent="space-between"
               gap="160px"
               alignSelf="stretch">
+              <Flex h="32px" gap="8px" alignItems="center" flex="1" justifyContent="space-between">
+                <Text
+                  whiteSpace="nowrap"
+                  color="grayModern.900"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontStyle="normal"
+                  fontWeight="500"
+                  lineHeight="16px"
+                  letterSpacing="0.5px">
+                  {t('logs.name')}
+                </Text>
+                <Input
+                  w="500px"
+                  py="6px"
+                  px="12px"
+                  alignItems="center"
+                  borderRadius="4px"
+                  border="1px solid"
+                  borderColor="grayModern.200"
+                  bgColor="grayModern.50"
+                  _hover={{ borderColor: 'grayModern.300' }}
+                  _focus={{ borderColor: 'grayModern.300' }}
+                  _focusVisible={{ borderColor: 'grayModern.300' }}
+                  _active={{ borderColor: 'grayModern.300' }}
+                  placeholder={t('GlobalLogs.selectGroupId')}
+                  _placeholder={{
+                    color: 'grayModern.500',
+                    fontFamily: 'PingFang SC',
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    lineHeight: '16px',
+                    letterSpacing: '0.048px'
+                  }}
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
+                />
+              </Flex>
+
               <Flex h="32px" gap="8px" alignItems="center" flex={1} justifyContent="space-between">
                 <Text
                   whiteSpace="nowrap"
@@ -301,7 +371,6 @@ export default function Home(): React.JSX.Element {
                   setEndTime={setEndTime}
                 />
               </Flex>
-              <Flex h="32px" alignItems="center" flex={1} justifyContent="space-between"></Flex>
             </Flex>
             {/* -- the second row end */}
           </Flex>

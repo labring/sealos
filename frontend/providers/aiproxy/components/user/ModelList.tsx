@@ -5,7 +5,7 @@ import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import Image, { StaticImageData } from 'next/image'
 import { useQuery } from '@tanstack/react-query'
-import { getModelConfig } from '@/api/platform'
+import { getEnabledMode } from '@/api/platform'
 import { useMessage } from '@sealos/ui'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
@@ -139,7 +139,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
 const ModelList: React.FC = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const { isLoading, data } = useQuery([QueryKey.GetModelConfig], () => getModelConfig())
+  const { isLoading, data } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
 
   return (
     <>

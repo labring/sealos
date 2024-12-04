@@ -162,7 +162,9 @@
   "globalConfigs": {
     "defaultModel": "Default model",
     "addDefaultModel": "New",
-    "saveDefaultModel": "Save"
+    "saveDefaultModel": "Save",
+    "saveDefaultModelFailed": "Failed To Save",
+    "saveDefaultModelSuccess": "Saved successfully"
   },
   "modeType": {
     "0": "Unknown",
@@ -176,5 +178,13 @@
     "8": "STT",
     "9": "Audio",
     "10": "Rerank"
+  },
+  "GlobalLogs": {
+    "selectModel": "Model Name",
+    "select_token_name": "Token name",
+    "selectGroupId": "Workspace",
+    "groupId": "Workspace",
+    "tokenName": "Token Name",
+    "channel": "Channel ID"
   }
 }

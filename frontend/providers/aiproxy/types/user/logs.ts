@@ -1,4 +1,5 @@
 export interface LogItem {
+  id: number
   code: number
   content: string
   group: string
@@ -13,4 +14,9 @@ export interface LogItem {
   channel: number
   endpoint: string
   created_at: number
+}
+
+export interface GlobalLogItem extends LogItem {
+  request_id: string
+  request_at: number
 }

@@ -2,8 +2,6 @@ import { GET, POST, DELETE, PUT } from '@/utils/frontend/request'
 import { ChannelQueryParams, GetChannelsResponse } from '@/app/api/admin/channels/route'
 import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
 import { ApiResp } from '@/types/api'
-import { GetModelsResponse } from '@/app/api/models/route'
-import { GetDefaultEnabledModelsResponse } from '@/app/api/models/enabled/default/route'
 import { GetOptionResponse } from '@/app/api/admin/option/route'
 import { BatchOptionData } from '@/types/admin/option'
 import { GetEnabledModelsResponse } from '@/app/api/models/enabled/route'
@@ -11,6 +9,10 @@ import { GetTokensQueryParams, GetTokensResponse } from '@/app/api/user/token/ro
 import { TokenInfo } from '@/types/user/token'
 import { UserLogSearchResponse } from '@/app/api/user/log/route'
 import { UserLogQueryParams } from '@/app/api/user/log/route'
+import { GlobalLogQueryParams, GlobalLogSearchResponse } from '@/app/api/admin/log/route'
+import { GetAllChannelEnabledModelsResponse } from '@/app/api/models/builtin/channel/route'
+import { GetDefaultModelAndModeMappingResponse } from '@/app/api/models/default/route'
+import { GetChannelTypeNamesResponse } from '@/app/api/admin/channels/type-names/route'
 
 export const initAppConfig = () =>
   GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
@@ -18,11 +20,13 @@ export const initAppConfig = () =>
   )
 
 // user
-export const getModelConfig = () => GET<GetEnabledModelsResponse['data']>('/api/models/enabled')
+export const getEnabledMode = () => GET<GetEnabledModelsResponse['data']>('/api/models/enabled')
 
+// log
 export const getUserLogs = (params: UserLogQueryParams) =>
   GET<UserLogSearchResponse['data']>('/api/user/log', params)
 
+// token
 export const getTokens = (params: GetTokensQueryParams) =>
   GET<GetTokensResponse['data']>('/api/user/token', params)
 
@@ -47,10 +51,15 @@ export const createChannel = (params: CreateChannelRequest) =>
 export const updateChannel = (params: CreateChannelRequest, id: string) =>
   PUT<ApiResp>(`/api/admin/channels/${id}`, params)
 
-export const getBuiltInSupportModels = () => GET<GetModelsResponse['data']>('/api/models')
+export const getChannelTypeNames = () =>
+  GET<GetChannelTypeNamesResponse['data']>('/api/admin/channels/type-names')
 
-export const getDefaultEnabledModels = () =>
-  GET<GetDefaultEnabledModelsResponse['data']>('/api/models/enabled/default')
+// channel built-in support models and default model default mode mapping
+export const getChannelBuiltInSupportModels = () =>
+  GET<GetAllChannelEnabledModelsResponse['data']>('/api/models/builtin/channel')
+
+export const getChannelDefaultModelAndDefaultModeMapping = () =>
+  GET<GetDefaultModelAndModeMappingResponse['data']>('/api/models/default')
 
 // option
 export const getOption = () => GET<GetOptionResponse['data']>('/api/admin/option')
@@ -60,3 +69,7 @@ export const updateOption = (params: { key: string; value: string }) =>
 
 export const batchOption = (params: BatchOptionData) =>
   PUT<ApiResp>(`/api/admin/option/batch`, params)
+
+// log
+export const getGlobalLogs = (params: GlobalLogQueryParams) =>
+  GET<GlobalLogSearchResponse['data']>('/api/admin/log', params)

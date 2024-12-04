@@ -4,7 +4,7 @@ import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react'
 import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui'
 import { useMemo, useState } from 'react'
 
-import { getTokens, getUserLogs, getModelConfig } from '@/api/platform'
+import { getTokens, getUserLogs, getEnabledMode } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import SelectDateRange from '@/components/common/SelectDateRange'
 import SwitchPage from '@/components/common/SwitchPage'
@@ -19,6 +19,7 @@ import { useBackendStore } from '@/store/backend'
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+  const { currencySymbol } = useBackendStore()
 
   const [startTime, setStartTime] = useState(() => {
     const currentDate = new Date()
@@ -32,9 +33,8 @@ export default function Home(): React.JSX.Element {
   const [pageSize, setPageSize] = useState(10)
   const [logData, setLogData] = useState<LogItem[]>([])
   const [total, setTotal] = useState(0)
-  const { currencySymbol } = useBackendStore()
 
-  const { data: modelConfigs = [] } = useQuery([QueryKey.GetModelConfig], () => getModelConfig())
+  const { data: modelConfigs = [] } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
   const { data: tokenData } = useQuery([QueryKey.GetTokens], () =>
     getTokens({ page: 1, perPage: 100 })
   )

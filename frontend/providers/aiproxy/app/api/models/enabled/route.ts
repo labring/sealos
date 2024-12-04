@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
 import { ModelConfig } from '@/types/models/model'
 
 type ApiProxyBackendEnabledModelsResponse = ApiProxyBackendResp<ModelConfig[]>

@@ -2,12 +2,12 @@
 import { Box, Button, InputGroup, Input, FormLabel, VStack, ListItem, List } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState, Dispatch, SetStateAction, ReactNode, useEffect } from 'react'
+import { useState, ReactNode, useEffect } from 'react'
 import { useCombobox, UseComboboxReturnValue } from 'downshift'
 
 export const SingleSelectCombobox: <T>(props: {
   dropdownItems: T[]
-  setSelectedItem: Dispatch<SetStateAction<T | null>>
+  setSelectedItem: (value: T) => void
   handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
   initSelectedItem?: T
@@ -19,7 +19,7 @@ export const SingleSelectCombobox: <T>(props: {
   initSelectedItem
 }: {
   dropdownItems: T[]
-  setSelectedItem: Dispatch<SetStateAction<T | null>>
+  setSelectedItem: (value: T) => void
   handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
   initSelectedItem?: T

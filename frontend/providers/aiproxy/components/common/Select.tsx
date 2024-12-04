@@ -36,7 +36,7 @@ export const CustomSelect = function <T>({
     initialSelectedItem: initSelectedItem,
     onSelectedItemChange: ({ selectedItem: newSelectedItem }) => {
       if (newSelectedItem === placeholder) {
-        handleSelectedItemChange(null as T)
+        handleSelectedItemChange(undefined as T)
       } else {
         handleSelectedItemChange(newSelectedItem as T)
       }

@@ -50,6 +50,7 @@ export const MultiSelectCombobox = function <T>({
     [inputValue, selectedItems, dropdownItems, handleFilteredDropdownItems]
   )
 
+  // 对已经选中的项目 添加处理事件
   const { getSelectedItemProps, getDropdownProps, removeSelectedItem } = useMultipleSelection({
     selectedItems,
     onStateChange({ selectedItems: newSelectedItems, type }) {

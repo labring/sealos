@@ -16,7 +16,7 @@ import {
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useQuery } from '@tanstack/react-query'
-import { getModelConfig } from '@/api/platform'
+import { getEnabledMode } from '@/api/platform'
 import { useMemo } from 'react'
 import {
   createColumnHelper,
@@ -74,8 +74,8 @@ function Price() {
 function PriceTable() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const { isLoading, data: modelConfigs = [] } = useQuery([QueryKey.GetModelConfig], () =>
-    getModelConfig()
+  const { isLoading, data: modelConfigs = [] } = useQuery([QueryKey.GetEnabledModels], () =>
+    getEnabledMode()
   )
 
   const { currencySymbol } = useBackendStore()
@@ -335,7 +335,7 @@ function PriceTable() {
       <Spinner size="md" color="grayModern.800" />
     </Center>
   ) : (
-    <TableContainer w="full" h="full" maxH="full" overflowY="auto">
+    <TableContainer w="full" h="full" flex="1 0 0" minHeight="0" overflowY="auto">
       <Table variant="simple" w="full" size="md">
         <Thead position="sticky" top={0} zIndex={1} bg="white">
           {table.getHeaderGroups().map((headerGroup) => (

@@ -1,3 +1,5 @@
+import { ChannelType } from './channels/channelInfo'
+
 export interface BatchOptionData {
   DefaultChannelModelMapping: string
   DefaultChannelModels: string
@@ -19,4 +21,14 @@ export interface OptionData {
   GroupMaxTokenNum: string
   ModelPrice: string
   RetryTimes: string
+}
+
+export type DefaultChannelModel = {
+  [key in ChannelType]: string[]
+}
+
+export type DefaultChannelModelMapping = {
+  [key in ChannelType]: {
+    [modelKey: string]: string
+  }
 }

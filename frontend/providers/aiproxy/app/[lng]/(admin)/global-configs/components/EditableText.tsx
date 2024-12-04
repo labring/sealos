@@ -143,10 +143,9 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                       '100%': { transform: 'scale(0.92)' }
                     }
                   }}
-                  onClick={handleSubmit}>
-                  <CheckIcon />
+                  onClick={handleCancel}>
+                  <CloseIcon />
                 </Button>
-
                 <Button
                   h="24px"
                   w="32px"
@@ -172,8 +171,8 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
                       '100%': { transform: 'scale(0.92)' }
                     }
                   }}
-                  onClick={handleCancel}>
-                  <CloseIcon />
+                  onClick={handleSubmit}>
+                  <CheckIcon />
                 </Button>
               </HStack>
             </Flex>

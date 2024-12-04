@@ -1,108 +1,113 @@
 'use client'
-import {
-  Checkbox,
-  Box,
-  Button,
-  Flex,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tr,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  Input,
-  FormErrorMessage,
-  ModalFooter,
-  useDisclosure,
-  FormLabel,
-  HStack,
-  VStack,
-  Center,
-  Select,
-  ListItem,
-  List,
-  InputGroup,
-  Spinner,
-  Badge,
-  IconButton
-} from '@chakra-ui/react'
+import { Button, Flex, Text, FormControl, VStack, Skeleton } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { EditIcon } from '@chakra-ui/icons'
-import { Switch } from '@chakra-ui/react'
-import { EditableText } from './EditableText'
 import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
 import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
-import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent'
-import { FieldError, FieldErrors, useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, FieldErrors, FieldErrorsImpl, FieldError } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { object, z } from 'zod'
-import { getBuiltInSupportModels, getOption } from '@/api/platform'
-import { ModelMap, ModelMappingMap, ModelType } from '@/types/models/model'
+import { z } from 'zod'
+import {
+  batchOption,
+  getChannelBuiltInSupportModels,
+  getChannelTypeNames,
+  getOption
+} from '@/api/platform'
 import { SetStateAction, Dispatch, useEffect, useState } from 'react'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import { getEnumKeyByValue } from '@/utils/common'
 import ConstructMappingComponent from '@/components/common/ConstructMappingComponent'
+import { DefaultChannelModel, DefaultChannelModelMapping } from '@/types/admin/option'
+import { ChannelType } from '@/types/admin/channels/channelInfo'
+import { QueryKey } from '@/types/query-key'
+import { useMessage } from '@sealos/ui'
+import { BatchOptionData } from '@/types/admin/option'
 
 const ModelConfig = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+  const queryClient = useQueryClient()
 
-  type ModelTypeKey = keyof typeof ModelType
+  const { message } = useMessage({
+    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningIconFill: 'white',
 
-  const [allSupportModelTypes, setAllSupportModelTypes] = useState<ModelTypeKey[]>([])
-  const [allSupportModel, setAllSupportModel] = useState<ModelMap>({})
+    successBoxBg: 'var(--Green-50, #EDFBF3)',
+    successIconBg: 'var(--Green-600, #039855)',
+    successIconFill: 'white'
+  })
 
-  const [defaultModel, setDefaultModel] = useState<Partial<Record<ModelType, string[]>>>({})
-  const [defaultModelMapping, setDefaultModelMapping] = useState<Partial<Record<ModelType, {}>>>({})
+  const [allSupportChannel, setAllSupportChannel] = useState<string[]>([])
+  const [allSupportChannelWithMode, setAllSupportChannelWithMode] = useState<{
+    [key in ChannelType]: string[]
+  }>({})
+
+  const [defaultModel, setDefaultModel] = useState<DefaultChannelModel>({})
+  const [defaultModelMapping, setDefaultModelMapping] = useState<DefaultChannelModelMapping>({})
+
+  const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
+    queryKey: [QueryKey.GetChannelTypeNames],
+    queryFn: () => getChannelTypeNames()
+  })
 
   const { isLoading: isBuiltInSupportModelsLoading, data: builtInSupportModels } = useQuery({
-    queryKey: ['models'],
-    queryFn: () => getBuiltInSupportModels(),
-    onSuccess: (data) => {
-      if (!data) return
-
-      const types = Object.keys(data)
-        .map((key) => getEnumKeyByValue(ModelType, key))
-        .filter((key): key is ModelTypeKey => key !== undefined)
-
-      setAllSupportModelTypes(types)
-      setAllSupportModel(data)
-    }
+    queryKey: [QueryKey.GetAllChannelModes],
+    queryFn: () => getChannelBuiltInSupportModels()
   })
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
-    queryKey: ['option'],
+    queryKey: [QueryKey.GetOption],
     queryFn: () => getOption(),
     onSuccess: (data) => {
       if (!data) return
 
-      const defaultModels: ModelMap = JSON.parse(data.DefaultChannelModels)
-      const defaultModelMappings: ModelMappingMap = JSON.parse(data.DefaultChannelModelMapping)
+      const defaultModels: DefaultChannelModel = JSON.parse(data.DefaultChannelModels)
+      const defaultModelMappings: DefaultChannelModelMapping = JSON.parse(
+        data.DefaultChannelModelMapping
+      )
 
       setDefaultModel(defaultModels)
       setDefaultModelMapping(defaultModelMappings)
     }
   })
 
+  useEffect(() => {
+    if (!channelTypeNames || !builtInSupportModels) return
+
+    // 1. 处理 allSupportChannel
+    const supportedChannels = Object.entries(channelTypeNames)
+      .filter(([channel]) => channel in builtInSupportModels)
+      .map(([_, name]) => name)
+
+    setAllSupportChannel(supportedChannels)
+
+    // 2. 处理 allSupportChannelWithMode
+    const channelWithModes = Object.entries(channelTypeNames)
+      .filter(([channel]) => channel in builtInSupportModels)
+      .reduce((acc, [channel, name]) => {
+        const modelInfos = builtInSupportModels[channel as ChannelType] || []
+        const models = [...new Set(modelInfos.map((info) => info.model))]
+
+        return {
+          ...acc,
+          [name]: models
+        }
+      }, {} as { [key in ChannelType]: string[] })
+
+    setAllSupportChannelWithMode(channelWithModes)
+  }, [channelTypeNames, builtInSupportModels])
+
   // form schema
   const itemSchema = z.object({
     type: z.number(),
     defaultMode: z.array(z.string()),
-    defaultModeMapping: z.record(z.string(), z.any()).default({})
+    defaultModeMapping: z
+      .record(z.string(), z.string())
+      .refine((mapping) => {
+        // 检查所有值不能为空字符串
+        return Object.values(mapping).every((value) => value.trim() !== '')
+      })
+      .default({})
   })
 
   const schema = z.array(itemSchema)
@@ -126,20 +131,18 @@ const ModelConfig = () => {
   })
 
   useEffect(() => {
+    if (!defaultModel || !defaultModelMapping) return
     // Only proceed if both defaultModel and defaultModelMapping are available
     if (Object.keys(defaultModel).length === 0) return
 
     // Transform the data into form format
-    const formData: FormData = Object.entries(defaultModel).map(([typeKey, modes]) => {
-      const modelType = Number(typeKey)
+    const formData: FormData = Object.entries(defaultModel).map(([channelType, modes]) => {
       return {
-        type: modelType,
+        type: Number(channelType),
         defaultMode: modes || [], // Using first mode as default
-        defaultModeMapping: defaultModelMapping[typeKey as ModelType] || {}
+        defaultModeMapping: defaultModelMapping[channelType as ChannelType] || {}
       }
     })
-
-    console.log('formData', formData)
 
     // Reset form with the new values
     reset(formData)
@@ -161,8 +164,6 @@ const ModelConfig = () => {
     reset(newValues)
   }
 
-  // console.log('watch', watch())
-
   const formValues = watch()
 
   const formValuesArray: FormData = Array.isArray(formValues)
@@ -171,6 +172,126 @@ const ModelConfig = () => {
 
   console.log('formValuesArray', formValuesArray)
 
+  const batchOptionMutation = useMutation({
+    mutationFn: batchOption,
+    onSuccess: () => {
+      message({
+        title: t('channels.createSuccess'),
+        status: 'success'
+      })
+    }
+  })
+
+  const transformFormDataToConfig = (formData: FormData): BatchOptionData => {
+    // 初始化两个对象
+    const defaultChannelModelMapping: Record<string, Record<string, string>> = {}
+    const defaultChannelModels: Record<string, string[]> = {}
+
+    // 遍历 FormData
+    formData.forEach((item) => {
+      const type = item.type.toString()
+
+      // 处理 DefaultChannelModelMapping
+      if (Object.keys(item.defaultModeMapping).length > 0) {
+        defaultChannelModelMapping[type] = item.defaultModeMapping
+      }
+
+      // 处理 DefaultChannelModels
+      if (item.defaultMode.length > 0) {
+        defaultChannelModels[type] = item.defaultMode
+      }
+    })
+
+    return {
+      // 转换为 JSON 字符串
+      DefaultChannelModelMapping: JSON.stringify(defaultChannelModelMapping),
+      DefaultChannelModels: JSON.stringify(defaultChannelModels)
+    }
+  }
+
+  const resetForm = () => {
+    reset()
+  }
+
+  type FieldErrorType =
+    | FieldError
+    | FieldErrorsImpl<{
+        type: number
+        defaultMode: string[]
+        defaultModeMapping: Record<string, string>
+      }>
+
+  const getFirstErrorMessage = (errors: FieldErrors<FormData>): string => {
+    // Iterate through top-level errors
+    for (const index in errors) {
+      const fieldError = errors[index] as FieldErrorType
+      if (!fieldError) continue
+
+      // Check if error is an object
+      if (typeof fieldError === 'object') {
+        // If it has a direct message property
+        if ('message' in fieldError && fieldError.message) {
+          return `Item ${Number(index) + 1}: ${fieldError.message}`
+        }
+
+        // Iterate through nested field errors
+        const errorKeys = Object.keys(fieldError) as Array<keyof typeof fieldError>
+        for (const fieldName of errorKeys) {
+          const nestedError = fieldError[fieldName]
+          if (nestedError && typeof nestedError === 'object' && 'message' in nestedError) {
+            // Map field names to their display labels
+            const fieldLabel =
+              {
+                type: 'Type',
+                defaultMode: 'Default Mode',
+                defaultModeMapping: 'Model Mapping'
+              }[fieldName as string] || fieldName
+
+            return `Item ${Number(index) + 1} ${fieldLabel}: ${nestedError.message}`
+          }
+        }
+      }
+    }
+    return 'Form validation failed'
+  }
+
+  const onValidate = async (data: FormData) => {
+    try {
+      const batchOptionData: BatchOptionData = transformFormDataToConfig(data)
+      await batchOptionMutation.mutateAsync(batchOptionData)
+
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetOption] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannelTypeNames] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetAllChannelModes] })
+      resetForm()
+    } catch (error) {
+      message({
+        title: t('globalConfigs.saveDefaultModelFailed'),
+        status: 'error',
+        position: 'top',
+        duration: 2000,
+        isClosable: true,
+        description: error instanceof Error ? error.message : t('channels.createFailed')
+      })
+      console.error(error)
+    }
+  }
+
+  const onInvalid = (errors: FieldErrors<FormData>): void => {
+    console.log('errors', errors)
+
+    const errorMessage = getFirstErrorMessage(errors)
+
+    message({
+      title: errorMessage,
+      status: 'error',
+      position: 'top',
+      duration: 2000,
+      isClosable: true
+    })
+  }
+
+  const onSubmit = handleSubmit(onValidate, onInvalid)
   return (
     /*
     顶级 Flex 容器的高度: calc(100vh - 16px - 24px - 12px - 32px - 36px)
@@ -250,6 +371,9 @@ const ModelConfig = () => {
               </Text>
             </Button>
             <Button
+              onClick={onSubmit}
+              isDisabled={batchOptionMutation.isLoading}
+              isLoading={batchOptionMutation.isLoading}
               variant="outline"
               display="flex"
               padding="8px 14px"
@@ -290,6 +414,7 @@ const ModelConfig = () => {
         </Flex>
 
         {/* default model */}
+
         <Flex
           w="full"
           gap="12px"
@@ -297,12 +422,17 @@ const ModelConfig = () => {
           alignItems="flex-start"
           flexDirection="column"
           minH="0"
+          h="full"
           // bg="red"
           borderRadius="6px"
           overflow="hidden"
           overflowY="auto">
-          {formValuesArray &&
+          {isChannelTypeNamesLoading || isBuiltInSupportModelsLoading || isOptionLoading ? (
+            <Skeleton w="full" h="full" />
+          ) : (
+            formValuesArray &&
             formValuesArray.length > 0 &&
+            channelTypeNames &&
             formValuesArray.map((value, index) => (
               <Flex
                 key={`${index}-${value.type}`}
@@ -324,52 +454,61 @@ const ModelConfig = () => {
                       render={({ field }) => {
                         // Get current form types
                         const currentFormTypes = Object.values(formValues)
-                          .map((item) => item.type)
-                          .filter((type) => type !== undefined)
-                          .map((type) => getEnumKeyByValue(ModelType, type.toString()))
-                          .filter((key): key is keyof typeof ModelType => key !== undefined)
+                          .map((item) => String(item.type))
+                          .filter(
+                            (type): type is ChannelType =>
+                              type !== undefined && type in channelTypeNames
+                          )
+                          .map((type) => channelTypeNames[type])
 
                         // Filter available types
-                        const availableTypes = allSupportModelTypes.filter(
-                          (type) =>
-                            !currentFormTypes.includes(type) ||
-                            // 避免编辑时当前选中值"消失"的问题。
+                        const availableTypes = allSupportChannel.filter(
+                          (channelType) =>
+                            !currentFormTypes.includes(channelType) ||
+                            // 避免编辑时当前选中值"消失"的问题，即当前选择项也包含
                             (field.value &&
-                              getEnumKeyByValue(ModelType, field.value.toString()) === type)
+                              channelTypeNames[String(field.value) as ChannelType] === channelType)
                         )
-                        // console.log('availableTypes', availableTypes)
+
+                        const initSelectedItem = field.value
+                          ? channelTypeNames[String(field.value) as ChannelType]
+                          : undefined
 
                         return (
-                          <SingleSelectCombobox<ModelTypeKey>
+                          <SingleSelectCombobox<string>
                             dropdownItems={availableTypes}
-                            initSelectedItem={
-                              field.value
-                                ? getEnumKeyByValue(ModelType, field.value.toString())
-                                : undefined
-                            }
-                            setSelectedItem={(type) => {
-                              if (type) {
-                                const defaultModelField =
-                                  defaultModel[ModelType[type as keyof typeof ModelType]]
-                                const defaultModelMappingField =
-                                  defaultModelMapping[ModelType[type as keyof typeof ModelType]]
+                            initSelectedItem={initSelectedItem}
+                            setSelectedItem={(channelName: string) => {
+                              if (channelName) {
+                                const channelType = Object.entries(channelTypeNames).find(
+                                  ([_, name]) => name === channelName
+                                )?.[0]
 
-                                field.onChange(Number(ModelType[type as keyof typeof ModelType]))
-                                setValue(`${index}.defaultMode`, defaultModelField || [])
-                                setValue(
-                                  `${index}.defaultModeMapping`,
-                                  defaultModelMappingField || {}
-                                )
+                                if (channelType) {
+                                  const defaultModelField = defaultModel[channelType as ChannelType]
+                                  const defaultModelMappingField =
+                                    defaultModelMapping[channelType as ChannelType]
+
+                                  field.onChange(Number(channelType))
+                                  setValue(`${index}.defaultMode`, defaultModelField || [])
+                                  setValue(
+                                    `${index}.defaultModeMapping`,
+                                    defaultModelMappingField || {}
+                                  )
+                                }
                               }
                             }}
-                            handleDropdownItemFilter={(dropdownItems, inputValue) => {
+                            handleDropdownItemFilter={(
+                              dropdownItems: string[],
+                              inputValue: string
+                            ) => {
                               const lowerCasedInput = inputValue.toLowerCase()
                               return dropdownItems.filter(
                                 (item) =>
                                   !inputValue || item.toLowerCase().includes(lowerCasedInput)
                               )
                             }}
-                            handleDropdownItemDisplay={(item) => (
+                            handleDropdownItemDisplay={(item: string) => (
                               <Text
                                 color="grayModern.600"
                                 fontFamily="PingFang SC"
@@ -395,13 +534,12 @@ const ModelConfig = () => {
                         // Get the current type value from the form
                         const currentType = watch(`${index}.type`)
                         const dropdownItems = currentType
-                          ? allSupportModel[currentType.toString() as keyof typeof defaultModel] ||
-                            []
+                          ? allSupportChannelWithMode[String(currentType) as ChannelType] || []
                           : []
 
                         const handleSetCustomModel = (
-                          selectedItems: ModelTypeKey[],
-                          setSelectedItems: Dispatch<SetStateAction<ModelTypeKey[]>>,
+                          selectedItems: string[],
+                          setSelectedItems: Dispatch<SetStateAction<string[]>>,
                           customModeName: string,
                           setCustomModeName: Dispatch<SetStateAction<string>>
                         ) => {
@@ -418,8 +556,8 @@ const ModelConfig = () => {
                         }
 
                         const handleModelFilteredDropdownItems = (
-                          dropdownItems: ModelTypeKey[],
-                          selectedItems: ModelTypeKey[],
+                          dropdownItems: string[],
+                          selectedItems: string[],
                           inputValue: string
                         ) => {
                           const lowerCasedInputValue = inputValue.toLowerCase()
@@ -432,15 +570,36 @@ const ModelConfig = () => {
                         }
 
                         return (
-                          <MultiSelectCombobox<ModelTypeKey>
-                            dropdownItems={(dropdownItems as ModelTypeKey[]) || []}
-                            selectedItems={(field.value as ModelTypeKey[]) || []} // Use field.value for selected items
+                          <MultiSelectCombobox<string>
+                            dropdownItems={dropdownItems || []}
+                            selectedItems={field.value || []} // Use field.value for selected items
                             setSelectedItems={(models) => {
                               field.onChange(models)
                             }}
                             handleFilteredDropdownItems={handleModelFilteredDropdownItems}
-                            handleDropdownItemDisplay={(item) => <Text>{item}</Text>}
-                            handleSelectedItemDisplay={(item) => <Text>{item}</Text>}
+                            handleDropdownItemDisplay={(item) => (
+                              <Text
+                                color="grayModern.600"
+                                fontFamily="PingFang SC"
+                                fontSize="12px"
+                                fontWeight={500}
+                                lineHeight="16px"
+                                letterSpacing="0.5px">
+                                {item}
+                              </Text>
+                            )}
+                            handleSelectedItemDisplay={(item) => (
+                              <Text
+                                color="grayModern.900"
+                                fontFamily="PingFang SC"
+                                fontSize="14px"
+                                fontStyle="normal"
+                                fontWeight={400}
+                                lineHeight="20px"
+                                letterSpacing="0.25px">
+                                {item}
+                              </Text>
+                            )}
                             handleSetCustomSelectedItem={handleSetCustomModel}
                           />
                         )
@@ -471,7 +630,8 @@ const ModelConfig = () => {
                   </FormControl>
                 </VStack>
               </Flex>
-            ))}
+            ))
+          )}
         </Flex>
       </Flex>
       {/* -- config end */}

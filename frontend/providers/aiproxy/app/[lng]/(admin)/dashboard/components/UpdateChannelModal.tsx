@@ -1,21 +1,8 @@
 'use client'
 import {
-  Checkbox,
-  Box,
   Button,
   Flex,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -26,55 +13,31 @@ import {
   Input,
   FormErrorMessage,
   ModalFooter,
-  useDisclosure,
   FormLabel,
-  HStack,
   VStack,
   Center,
-  Select,
-  ListItem,
-  List,
-  InputGroup,
   Spinner,
-  Badge,
-  IconButton
+  Badge
 } from '@chakra-ui/react'
-import {
-  Column,
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable
-} from '@tanstack/react-table'
 import { useMessage } from '@sealos/ui'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChannelInfo, ChannelStatus } from '@/types/admin/channels/channelInfo'
+import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
+import { Dispatch, SetStateAction, useEffect } from 'react'
 import {
-  useCallback,
-  memo,
-  useState,
-  useRef,
-  useMemo,
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  ReactNode
-} from 'react'
-import { getBuiltInSupportModels, getDefaultEnabledModels } from '@/api/platform'
-import { FieldError, FieldErrors, useForm, Controller } from 'react-hook-form'
+  getChannelBuiltInSupportModels,
+  getChannelDefaultModelAndDefaultModeMapping,
+  getChannelTypeNames
+} from '@/api/platform'
+import { FieldErrors, useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ModelType } from '@/types/models/model'
-import { getEnumKeyByValue } from '@/utils/common'
 import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
 import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
 import ConstructModeMappingComponent from '@/components/common/ConstructModeMappingComponent'
 import { createChannel, updateChannel } from '@/api/platform'
 import { QueryKey } from '@/types/query-key'
-
-type ModelTypeKey = keyof typeof ModelType
 
 type Model = {
   name: string
@@ -106,67 +69,23 @@ export const UpdateChannelModal = function ({
     successIconFill: 'white'
   })
 
-  const [allSupportModelTypes, setAllSupportModelTypes] = useState<ModelTypeKey[]>([])
-  const [selectedModelType, setSelectedModelType] = useState<ModelTypeKey | null>(null)
-
-  const [models, setModels] = useState<Model[]>([])
-  const [selectedModels, setSelectedModels] = useState<Model[]>([])
-
-  const [modelMapping, setModelMapping] = useState<Record<string, string>>({})
+  const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
+    queryKey: [QueryKey.GetChannelTypeNames],
+    queryFn: () => getChannelTypeNames()
+  })
 
   const { isLoading: isBuiltInSupportModelsLoading, data: builtInSupportModels } = useQuery({
-    queryKey: ['models'],
-    queryFn: () => getBuiltInSupportModels(),
-    onSuccess: (data) => {
-      if (!data) return
-
-      const types = Object.keys(data)
-        .map((key) => getEnumKeyByValue(ModelType, key))
-        // Remove values that are not in ModelType
-        .filter((key): key is ModelTypeKey => key !== undefined)
-
-      setAllSupportModelTypes(types)
-    }
+    queryKey: [QueryKey.GetAllChannelModes],
+    queryFn: () => getChannelBuiltInSupportModels()
   })
 
   const { isLoading: isDefaultEnabledModelsLoading, data: defaultEnabledModels } = useQuery({
-    queryKey: ['defaultEnabledModels'],
-    queryFn: () => getDefaultEnabledModels()
+    queryKey: [QueryKey.GetDefaultModelAndModeMapping],
+    queryFn: () => getChannelDefaultModelAndDefaultModeMapping()
   })
 
-  useEffect(() => {
-    if (!builtInSupportModels || !defaultEnabledModels || !selectedModelType) return
-
-    // Retrieve the enum value corresponding to the selected type.
-    const modelTypeValue = ModelType[selectedModelType]
-
-    // Retrieve all supported models.
-    const supportModels = builtInSupportModels[modelTypeValue] || []
-    // Retrieve the default enabled models.
-    const enabledModels = defaultEnabledModels[modelTypeValue] || []
-
-    // Convert to Model[] type and sort them.
-    const convertedModels = supportModels
-      .map((modelName) => ({
-        name: modelName,
-        isDefault: enabledModels.includes(modelName)
-      }))
-      .sort((a, b) => {
-        // If isDefault is different, put the one with isDefault true in front.
-        if (a.isDefault !== b.isDefault) {
-          return a.isDefault ? -1 : 1
-        }
-        // If isDefault is the same, sort them alphabetically.
-        return a.name.localeCompare(b.name)
-      })
-
-    setModels(convertedModels)
-    setSelectedModels([])
-    setModelMapping({})
-  }, [selectedModelType, builtInSupportModels, defaultEnabledModels])
-
   // model type select combobox
-  const handleModelTypeDropdownItemFilter = (dropdownItems: ModelTypeKey[], inputValue: string) => {
+  const handleModelTypeDropdownItemFilter = (dropdownItems: string[], inputValue: string) => {
     const lowerCasedInput = inputValue.toLowerCase()
     return dropdownItems.filter(
       (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
@@ -382,6 +301,7 @@ export const UpdateChannelModal = function ({
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
     control
   } = useForm<FormData>({
@@ -408,11 +328,6 @@ export const UpdateChannelModal = function ({
 
   const resetModalState = () => {
     reset()
-    setAllSupportModelTypes([])
-    setSelectedModelType(null)
-    setModels([])
-    setSelectedModels([])
-    setModelMapping({})
   }
 
   const createChannelMutation = useMutation({
@@ -464,6 +379,9 @@ export const UpdateChannelModal = function ({
           break
       }
       queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannels] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetDefaultModelAndModeMapping] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannelTypeNames] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetAllChannelModes] })
       resetModalState()
       onClose()
     } catch (error) {
@@ -489,7 +407,6 @@ export const UpdateChannelModal = function ({
           })
           break
       }
-      resetModalState()
     }
   }
 
@@ -513,11 +430,55 @@ export const UpdateChannelModal = function ({
       {isOpen &&
         (isBuiltInSupportModelsLoading ||
         isDefaultEnabledModelsLoading ||
+        isChannelTypeNamesLoading ||
         !builtInSupportModels ||
-        !defaultEnabledModels ? (
-          <Center w="530px" h="768px">
-            <Spinner />
-          </Center>
+        !defaultEnabledModels ||
+        !channelTypeNames ? (
+          <>
+            <ModalOverlay />
+            <ModalContent w="530px" h="768px">
+              <ModalHeader
+                height="48px"
+                padding="10px 20px"
+                justifyContent="center"
+                alignItems="center"
+                flexShrink="0"
+                borderBottom="1px solid grayModern.100"
+                background="grayModern.25"
+                w="full">
+                <Flex w="full" justifyContent="space-between" alignItems="center">
+                  <Flex w="98px" alignItems="center" gap="10px" flexShrink={0}>
+                    <Text
+                      color="grayModern.900"
+                      fontFamily="PingFang SC"
+                      fontSize="16px"
+                      fontStyle="normal"
+                      fontWeight={500}
+                      lineHeight="24px"
+                      letterSpacing="0.15px">
+                      {operationType === 'create' ? t('channels.create') : t('channels.edit')}
+                    </Text>
+                  </Flex>
+                </Flex>
+              </ModalHeader>
+              <ModalCloseButton
+                display="flex"
+                width="28px"
+                height="28px"
+                padding="4px"
+                justifyContent="center"
+                alignItems="center"
+                gap="10px"
+                flexShrink={0}
+                borderRadius="4px"
+              />
+              <ModalBody w="full" h="full" m="0">
+                <Center w="full" h="full" alignSelf="center">
+                  <Spinner />
+                </Center>
+              </ModalBody>
+            </ModalContent>
+          </>
         ) : (
           <>
             <ModalOverlay />
@@ -631,19 +592,38 @@ export const UpdateChannelModal = function ({
                     <Controller
                       name="type"
                       control={control}
-                      render={({ field }) => (
-                        <SingleSelectCombobox<ModelTypeKey>
-                          dropdownItems={allSupportModelTypes}
-                          setSelectedItem={(type) => {
-                            if (type) {
-                              field.onChange(Number(ModelType[type as keyof typeof ModelType]))
-                              setSelectedModelType(type)
-                            }
-                          }}
-                          handleDropdownItemFilter={handleModelTypeDropdownItemFilter}
-                          handleDropdownItemDisplay={handleModelTypeDropdownItemDisplay}
-                        />
-                      )}
+                      render={({ field }) => {
+                        const availableChannels = Object.entries(channelTypeNames)
+                          .filter(([channel]) => channel in builtInSupportModels)
+                          .map(([_, name]) => name)
+
+                        const initSelectedItem = field.value
+                          ? channelTypeNames[String(field.value) as ChannelType]
+                          : undefined
+
+                        return (
+                          <SingleSelectCombobox<string>
+                            dropdownItems={availableChannels}
+                            initSelectedItem={initSelectedItem}
+                            setSelectedItem={(channelName: string) => {
+                              if (channelName) {
+                                const channelType = Object.entries(channelTypeNames).find(
+                                  ([_, name]) => name === channelName
+                                )?.[0]
+
+                                if (channelType) {
+                                  const numericChannel = Number(channelType)
+                                  field.onChange(numericChannel)
+                                  setValue('models', [])
+                                  setValue('model_mapping', {})
+                                }
+                              }
+                            }}
+                            handleDropdownItemFilter={handleModelTypeDropdownItemFilter}
+                            handleDropdownItemDisplay={handleModelTypeDropdownItemDisplay}
+                          />
+                        )
+                      }}
                     />
                     {errors.type && <FormErrorMessage>{errors.type.message}</FormErrorMessage>}
                   </FormControl>
@@ -652,20 +632,37 @@ export const UpdateChannelModal = function ({
                     <Controller
                       name="models"
                       control={control}
-                      render={({ field }) => (
-                        <MultiSelectCombobox<Model>
-                          dropdownItems={models}
-                          selectedItems={selectedModels}
-                          setSelectedItems={(models) => {
-                            setSelectedModels(models)
-                            field.onChange((models as Model[]).map((m) => m.name))
-                          }}
-                          handleFilteredDropdownItems={handleModelFilteredDropdownItems}
-                          handleDropdownItemDisplay={handleModelDropdownItemDisplay}
-                          handleSelectedItemDisplay={handleModelSelectedItemDisplay}
-                          handleSetCustomSelectedItem={handleSetCustomModel}
-                        />
-                      )}
+                      render={({ field }) => {
+                        const channelType = String(watch('type')) as ChannelType
+
+                        const builtInModes =
+                          builtInSupportModels[channelType]?.map((mode) => mode.model) || []
+                        const defaultModes = defaultEnabledModels.models[channelType] || []
+
+                        const allModes: Model[] = builtInModes.map((modeName) => ({
+                          name: modeName,
+                          isDefault: defaultModes.includes(modeName)
+                        }))
+
+                        const selectedModels: Model[] = field.value.map((modeName) => ({
+                          name: modeName,
+                          isDefault: defaultModes.includes(modeName)
+                        }))
+
+                        return (
+                          <MultiSelectCombobox<Model>
+                            dropdownItems={allModes}
+                            selectedItems={selectedModels}
+                            setSelectedItems={(models) => {
+                              field.onChange((models as Model[]).map((m) => m.name))
+                            }}
+                            handleFilteredDropdownItems={handleModelFilteredDropdownItems}
+                            handleDropdownItemDisplay={handleModelDropdownItemDisplay}
+                            handleSelectedItemDisplay={handleModelSelectedItemDisplay}
+                            handleSetCustomSelectedItem={handleSetCustomModel}
+                          />
+                        )
+                      }}
                     />
                     {errors.models && <FormErrorMessage>{errors.models.message}</FormErrorMessage>}
                   </FormControl>
@@ -674,16 +671,26 @@ export const UpdateChannelModal = function ({
                     <Controller
                       name="model_mapping"
                       control={control}
-                      render={({ field }) => (
-                        <ConstructModeMappingComponent
-                          mapKeys={selectedModels}
-                          mapData={field.value}
-                          setMapData={(mapping) => {
-                            field.onChange(mapping)
-                            setModelMapping(mapping)
-                          }}
-                        />
-                      )}
+                      render={({ field }) => {
+                        const channelType = String(watch('type')) as ChannelType
+
+                        const selectedModels = watch('models')
+                        const defaultModes = defaultEnabledModels.models[channelType] || []
+
+                        const covertedSelectedModels: Model[] = selectedModels.map((modeName) => ({
+                          name: modeName,
+                          isDefault: defaultModes.includes(modeName)
+                        }))
+                        return (
+                          <ConstructModeMappingComponent
+                            mapKeys={covertedSelectedModels}
+                            mapData={field.value}
+                            setMapData={(mapping) => {
+                              field.onChange(mapping)
+                            }}
+                          />
+                        )
+                      }}
                     />
                     {errors.model_mapping?.message && (
                       <FormErrorMessage>{errors.model_mapping.message.toString()}</FormErrorMessage>
@@ -813,8 +820,8 @@ export const UpdateChannelModal = function ({
                   boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
                   _hover={{ background: 'var(--Gray-Modern-800, #1F2937)' }}
                   onClick={onSubmit}
-                  isDisabled={createChannelMutation.isLoading}
-                  isLoading={createChannelMutation.isLoading}>
+                  isDisabled={createChannelMutation.isLoading || updateChannelMutation.isLoading}
+                  isLoading={createChannelMutation.isLoading || updateChannelMutation.isLoading}>
                   {t('confirm')}
                 </Button>
               </ModalFooter>
