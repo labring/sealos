@@ -14,6 +14,7 @@ import { Disposable } from '../common/dispose'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
 import { GlobalStateManager } from '../utils/globalStateManager'
 import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
+import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -132,6 +133,8 @@ export class RemoteSSHConnector extends Disposable {
 
     const sshUser = sshDomain.split('@')[0]
     const sshHost = sshDomain.split('@')[1]
+
+    await modifiedRemoteSSHConfig(sshHostLabel)
 
     // sshHostLabel: usw.sailos.io_ns-admin_devbox-1
 
