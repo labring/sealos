@@ -24,7 +24,7 @@ jobs:
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
     with:
-      artifact_name: sealos-cloud
+      artifact_name: sealos-cloud-release
 
   release-controllers:
     if: ${{ github.event.inputs.build_offline_tar_only == false }}
@@ -79,7 +79,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-cloud-release
           path: /tmp/
       - name: Verify sealos
         run: |
@@ -118,7 +118,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-cloud-release
           path: /tmp/
       - name: Verify sealos
         run: |

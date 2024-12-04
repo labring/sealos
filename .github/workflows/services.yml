@@ -212,7 +212,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-services
           path: /tmp/
       - name: Verify sealos
         run: |

@@ -235,7 +235,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-controllers
           path: /tmp/
       - name: Verify sealos
         run: |
