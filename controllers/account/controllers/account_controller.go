@@ -38,7 +38,6 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/go-logr/logr"
@@ -117,9 +116,9 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 	}
-	if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
-		r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
-	}
+	//if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
+	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
+	//}
 	if getUsername(userNamespace) != owner {
 		return nil, nil
 	}
@@ -146,22 +145,22 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 	return nil
 }
 
-func (r *AccountReconciler) adaptEphemeralStorageLimitRange(ctx context.Context, nsName string) error {
-	limit := resources.GetDefaultLimitRange(nsName, nsName)
-	return retry.Retry(10, 1*time.Second, func() error {
-		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, limit, func() error {
-			if len(limit.Spec.Limits) == 0 {
-				limit = resources.GetDefaultLimitRange(nsName, nsName)
-			}
-			limit.Spec.Limits[0].DefaultRequest[corev1.ResourceEphemeralStorage] = resources.LimitRangeDefault[corev1.ResourceEphemeralStorage]
-			limit.Spec.Limits[0].Default[corev1.ResourceEphemeralStorage] = resources.LimitRangeDefault[corev1.ResourceEphemeralStorage]
-			//if _, ok := limit.Spec.Limits[0].Default[corev1.ResourceEphemeralStorage]; !ok {
-			//}
-			return nil
-		})
-		return err
-	})
-}
+//func (r *AccountReconciler) adaptEphemeralStorageLimitRange(ctx context.Context, nsName string) error {
+//	limit := resources.GetDefaultLimitRange(nsName, nsName)
+//	return retry.Retry(10, 1*time.Second, func() error {
+//		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, limit, func() error {
+//			if len(limit.Spec.Limits) == 0 {
+//				limit = resources.GetDefaultLimitRange(nsName, nsName)
+//			}
+//			limit.Spec.Limits[0].DefaultRequest[corev1.ResourceEphemeralStorage] = resources.LimitRangeDefault[corev1.ResourceEphemeralStorage]
+//			limit.Spec.Limits[0].Default[corev1.ResourceEphemeralStorage] = resources.LimitRangeDefault[corev1.ResourceEphemeralStorage]
+//			//if _, ok := limit.Spec.Limits[0].Default[corev1.ResourceEphemeralStorage]; !ok {
+//			//}
+//			return nil
+//		})
+//		return err
+//	})
+//}
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
