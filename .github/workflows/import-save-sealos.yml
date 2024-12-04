@@ -16,3 +16,4 @@ jobs:
         with:
           name: sealos
           path: /usr/bin/sealos
+          overwrite: true
