@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.2.1] - 2024-12-4
+
+### Fixed
+
+- Fix the bug `devbox_config` not found when activating devbox list view.
+
+### Changed
+
+- Write file `Remote-ssh.remotePlatform` config by devbox.
+
 ## [1.2.0] - 2024-12-3
 
 ### Added
