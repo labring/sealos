@@ -7,16 +7,20 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
-	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
+
+type ChannelMeta struct {
+	Config  model.ChannelConfig
+	BaseURL string
+	Key     string
+	ID      int
+	Type    int
+}
 
 type Meta struct {
 	values  map[string]any
-	Channel *model.Channel
+	Channel *ChannelMeta
 	Group   *model.GroupCache
 	Token   *model.TokenCache
 
@@ -24,10 +28,74 @@ type Meta struct {
 	RequestID       string
 	OriginModelName string
 	ActualModelName string
-	RequestURLPath  string
 	Mode            int
 	PromptTokens    int
 	IsChannelTest   bool
+}
+
+type Option func(meta *Meta)
+
+func WithChannelTest(isChannelTest bool) Option {
+	return func(meta *Meta) {
+		meta.IsChannelTest = isChannelTest
+	}
+}
+
+func WithRequestID(requestID string) Option {
+	return func(meta *Meta) {
+		meta.RequestID = requestID
+	}
+}
+
+func WithRequestAt(requestAt time.Time) Option {
+	return func(meta *Meta) {
+		meta.RequestAt = requestAt
+	}
+}
+
+func WithGroup(group *model.GroupCache) Option {
+	return func(meta *Meta) {
+		meta.Group = group
+	}
+}
+
+func WithToken(token *model.TokenCache) Option {
+	return func(meta *Meta) {
+		meta.Token = token
+	}
+}
+
+func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option) *Meta {
+	meta := Meta{
+		values:          make(map[string]any),
+		Mode:            mode,
+		OriginModelName: modelName,
+		RequestAt:       time.Now(),
+	}
+
+	for _, opt := range opts {
+		opt(&meta)
+	}
+
+	meta.Reset(channel)
+
+	return &meta
+}
+
+func (m *Meta) Reset(channel *model.Channel) {
+	m.Channel = &ChannelMeta{
+		Config:  channel.Config,
+		BaseURL: channel.BaseURL,
+		Key:     channel.Key,
+		ID:      channel.ID,
+		Type:    channel.Type,
+	}
+	m.ActualModelName, _ = GetMappedModelName(m.OriginModelName, channel.ModelMapping)
+	m.ClearValues()
+}
+
+func (m *Meta) ClearValues() {
+	clear(m.values)
 }
 
 func (m *Meta) Set(key string, value any) {
@@ -37,6 +105,10 @@ func (m *Meta) Set(key string, value any) {
 func (m *Meta) Get(key string) (any, bool) {
 	v, ok := m.values[key]
 	return v, ok
+}
+
+func (m *Meta) Delete(key string) {
+	delete(m.values, key)
 }
 
 func (m *Meta) MustGet(key string) any {
@@ -73,35 +145,6 @@ func (m *Meta) AwsClient() *bedrockruntime.Client {
 	})
 	m.Set("awsClient", awsClient)
 	return awsClient
-}
-
-func GetByContext(c *gin.Context) *Meta {
-	meta := Meta{
-		values:          make(map[string]any),
-		RequestAt:       time.Now(),
-		RequestID:       c.GetString(string(helper.RequestIDKey)),
-		RequestURLPath:  c.Request.URL.String(),
-		OriginModelName: c.GetString(ctxkey.OriginalModel),
-		IsChannelTest:   c.GetBool(ctxkey.ChannelTest),
-	}
-
-	meta.Channel = c.MustGet(ctxkey.Channel).(*model.Channel)
-	meta.ActualModelName, _ = GetMappedModelName(meta.OriginModelName, meta.Channel.ModelMapping)
-
-	if mode, ok := c.Get(ctxkey.Mode); ok {
-		meta.Mode = mode.(int)
-	} else {
-		meta.Mode = relaymode.GetByPath(c.Request.URL.Path)
-	}
-
-	if group, ok := c.Get(ctxkey.Group); ok {
-		meta.Group = group.(*model.GroupCache)
-	}
-	if token, ok := c.Get(ctxkey.Token); ok {
-		meta.Token = token.(*model.TokenCache)
-	}
-
-	return &meta
 }
 
 //nolint:unparam

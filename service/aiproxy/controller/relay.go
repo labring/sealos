@@ -13,6 +13,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
@@ -48,16 +49,17 @@ func Relay(c *gin.Context) {
 		requestBody, _ := common.GetRequestBody(c.Request)
 		logger.Debugf(ctx, "request body: %s", requestBody)
 	}
-	channel := c.MustGet(ctxkey.Channel).(*dbmodel.Channel)
-	bizErr := relayHelper(meta.GetByContext(c), c)
+	// channel := c.MustGet(ctxkey.Channel).(*dbmodel.Channel)
+	// originalModel := c.GetString(ctxkey.OriginalModel)
+	meta := middleware.NewMetaByContext(c)
+	bizErr := relayHelper(meta, c)
 	if bizErr == nil {
-		monitor.Emit(channel.ID, true)
+		monitor.Emit(meta.Channel.ID, true)
 		return
 	}
-	lastFailedChannelID := channel.ID
+	lastFailedChannelID := meta.Channel.ID
 	group := c.MustGet(ctxkey.Group).(*dbmodel.GroupCache)
-	originalModel := c.GetString(ctxkey.OriginalModel)
-	go processChannelRelayError(ctx, group.ID, channel.ID, bizErr)
+	go processChannelRelayError(ctx, group.ID, meta.Channel.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
@@ -65,7 +67,7 @@ func Relay(c *gin.Context) {
 		retryTimes = 0
 	}
 	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(originalModel)
+		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName)
 		if err != nil {
 			logger.Errorf(ctx, "get random satisfied channel failed: %+v", err)
 			break
@@ -80,8 +82,8 @@ func Relay(c *gin.Context) {
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		c.Set(ctxkey.Channel, channel)
-		bizErr = relayHelper(meta.GetByContext(c), c)
+		meta.Reset(channel)
+		bizErr = relayHelper(meta, c)
 		if bizErr == nil {
 			return
 		}

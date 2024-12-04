@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -39,16 +38,16 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		Body:   io.NopCloser(body),
 		Header: make(http.Header),
 	}
-	newc.Set(string(helper.RequestIDKey), channelTestRequestID)
 	reqIDContext := context.WithValue(newc.Request.Context(), helper.RequestIDKey, channelTestRequestID)
 	newc.Request = newc.Request.WithContext(reqIDContext)
 
-	newc.Set(ctxkey.Mode, mode)
-	newc.Set(ctxkey.OriginalModel, modelName)
-	newc.Set(ctxkey.Channel, channel)
-	newc.Set(ctxkey.ChannelTest, true)
-
-	meta := meta.GetByContext(newc)
+	meta := meta.NewMeta(
+		channel,
+		mode,
+		modelName,
+		meta.WithRequestID(channelTestRequestID),
+		meta.WithChannelTest(true),
+	)
 	bizErr := relayHelper(meta, newc)
 	var respStr string
 	if bizErr == nil {
