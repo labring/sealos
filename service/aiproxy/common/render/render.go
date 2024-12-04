@@ -13,6 +13,9 @@ import (
 var stdjson = json.ConfigCompatibleWithStandardLibrary
 
 func StringData(c *gin.Context, str string) {
+	if c.IsAborted() {
+		return
+	}
 	str = strings.TrimPrefix(str, "data:")
 	// str = strings.TrimSuffix(str, "\r")
 	c.Render(-1, common.CustomEvent{Data: "data: " + strings.TrimSpace(str)})

@@ -15,8 +15,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -186,10 +188,7 @@ func TestChannelModels(c *gin.Context) {
 	isStream := c.Query("stream") == "true"
 
 	if isStream {
-		c.Header("Content-Type", "text/event-stream")
-		c.Header("Cache-Control", "no-cache")
-		c.Header("Connection", "keep-alive")
-		c.Header("Transfer-Encoding", "chunked")
+		common.SetEventStreamHeaders(c)
 	}
 
 	results := make([]*testResult, 0)
@@ -230,8 +229,10 @@ func TestChannelModels(c *gin.Context) {
 
 	for result := range resultsChan {
 		if isStream {
-			c.SSEvent("result", result)
-			c.Writer.Flush()
+			err := render.ObjectData(c, result)
+			if err != nil {
+				logger.SysErrorf("failed to render result: %s", err.Error())
+			}
 		} else {
 			results = append(results, result)
 		}
@@ -260,10 +261,7 @@ func TestAllChannels(c *gin.Context) {
 	isStream := c.Query("stream") == "true"
 
 	if isStream {
-		c.Header("Content-Type", "text/event-stream")
-		c.Header("Cache-Control", "no-cache")
-		c.Header("Connection", "keep-alive")
-		c.Header("Transfer-Encoding", "chunked")
+		common.SetEventStreamHeaders(c)
 	}
 
 	results := make([]*testResult, 0)
@@ -314,8 +312,10 @@ func TestAllChannels(c *gin.Context) {
 
 	for result := range resultsChan {
 		if isStream {
-			c.SSEvent("result", result)
-			c.Writer.Flush()
+			err := render.ObjectData(c, result)
+			if err != nil {
+				logger.SysErrorf("failed to render result: %s", err.Error())
+			}
 		} else {
 			results = append(results, result)
 		}
