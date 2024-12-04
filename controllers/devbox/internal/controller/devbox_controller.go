@@ -515,10 +515,18 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 		return err
 	}
 
+	servicePort := []corev1.ServicePort{
+		{
+			Name:       "devbox-ssh-port",
+			Port:       2222,
+			TargetPort: intstr.FromInt32(2222),
+			Protocol:   corev1.ProtocolTCP,
+		},
+	}
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: helper.GenerateProxyPodLabels(devbox, runtimecr),
 		Type:     corev1.ServiceTypeClusterIP,
-		Ports:    servicePorts,
+		Ports:    servicePort,
 	}
 	proxySvc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
