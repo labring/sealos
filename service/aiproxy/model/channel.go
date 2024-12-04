@@ -309,7 +309,7 @@ func ClearLastTestErrorAt(id int) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, mode int, took float64, success bool, response string) (*ChannelTest, error) {
+func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, mode int, took float64, success bool, response string, code int) (*ChannelTest, error) {
 	var ct *ChannelTest
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if !success {
@@ -335,6 +335,7 @@ func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, m
 			Took:        took,
 			Success:     success,
 			Response:    response,
+			Code:        code,
 		}
 		result := tx.Save(ct)
 		return HandleUpdateResult(result, ErrChannelNotFound)

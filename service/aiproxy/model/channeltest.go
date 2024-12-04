@@ -17,6 +17,7 @@ type ChannelTest struct {
 	Took        float64   `json:"took"`
 	Success     bool      `json:"success"`
 	Mode        int       `json:"mode"`
+	Code        int       `json:"code"`
 }
 
 func (ct *ChannelTest) MarshalJSON() ([]byte, error) {

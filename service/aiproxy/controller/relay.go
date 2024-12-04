@@ -25,22 +25,20 @@ import (
 // https://platform.openai.com/docs/api-reference/chat
 
 func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
-	var err *model.ErrorWithStatusCode
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
-		err = controller.RelayImageHelper(meta, c)
+		return controller.RelayImageHelper(meta, c)
 	case relaymode.AudioSpeech:
-		err = controller.RelayTTSHelper(meta, c)
+		return controller.RelayTTSHelper(meta, c)
 	case relaymode.AudioTranslation:
-		err = controller.RelaySTTHelper(meta, c)
+		return controller.RelaySTTHelper(meta, c)
 	case relaymode.AudioTranscription:
-		err = controller.RelaySTTHelper(meta, c)
+		return controller.RelaySTTHelper(meta, c)
 	case relaymode.Rerank:
-		err = controller.RerankHelper(meta, c)
+		return controller.RerankHelper(meta, c)
 	default:
-		err = controller.RelayTextHelper(meta, c)
+		return controller.RelayTextHelper(meta, c)
 	}
-	return err
 }
 
 func Relay(c *gin.Context) {
