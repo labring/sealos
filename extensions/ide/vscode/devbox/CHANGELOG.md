@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- Upload and download project by `rsync`.You can use `Devbox.uploadProject` and `Devbox.downloadProject` to upload and download your project.
+
 ## [1.2.1] - 2024-12-4
 
 ### Fixed
