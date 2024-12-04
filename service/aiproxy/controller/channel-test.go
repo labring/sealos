@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -50,10 +51,13 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 	)
 	bizErr := relayHelper(meta, newc)
 	var respStr string
+	var code int
 	if bizErr == nil {
 		respStr = w.Body.String()
+		code = w.Code
 	} else {
 		respStr = bizErr.String()
+		code = bizErr.StatusCode
 	}
 
 	return channel.UpdateModelTest(
@@ -64,6 +68,7 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		time.Since(meta.RequestAt).Seconds(),
 		bizErr == nil,
 		respStr,
+		code,
 	)
 }
 
@@ -194,7 +199,12 @@ func TestChannelModels(c *gin.Context) {
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 5)
 
-	for _, modelName := range channel.Models {
+	models := slices.Clone(channel.Models)
+	rand.Shuffle(len(models), func(i, j int) {
+		models[i], models[j] = models[j], models[i]
+	})
+
+	for _, modelName := range models {
 		wg.Add(1)
 		semaphore <- struct{}{}
 
@@ -263,13 +273,25 @@ func TestAllChannels(c *gin.Context) {
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 5)
 
-	for _, channel := range channels {
-		hasErrorMap[channel.ID] = &atomic.Bool{}
-		for _, modelName := range channel.Models {
+	newChannels := slices.Clone(channels)
+	rand.Shuffle(len(newChannels), func(i, j int) {
+		newChannels[i], newChannels[j] = newChannels[j], newChannels[i]
+	})
+
+	for _, channel := range newChannels {
+		channelHasError := &atomic.Bool{}
+		hasErrorMap[channel.ID] = channelHasError
+
+		models := slices.Clone(channel.Models)
+		rand.Shuffle(len(models), func(i, j int) {
+			models[i], models[j] = models[j], models[i]
+		})
+
+		for _, modelName := range models {
 			wg.Add(1)
 			semaphore <- struct{}{}
 
-			go func(model string, ch *model.Channel) {
+			go func(model string, ch *model.Channel, hasError *atomic.Bool) {
 				defer wg.Done()
 				defer func() { <-semaphore }()
 
@@ -278,10 +300,10 @@ func TestAllChannels(c *gin.Context) {
 					return
 				}
 				if !result.Success || (result.Data != nil && !result.Data.Success) {
-					hasErrorMap[ch.ID].Store(true)
+					hasError.Store(true)
 				}
 				resultsChan <- result
-			}(modelName, channel)
+			}(modelName, channel, channelHasError)
 		}
 	}
 

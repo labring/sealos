@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,105 +23,138 @@ import (
 	"github.com/labring/sealos/service/aiproxy/router"
 )
 
-func main() {
+func initializeServices() error {
 	common.Init()
 	logger.SetupLogger()
 
+	if err := initializeBalance(); err != nil {
+		return err
+	}
+
+	setupGinMode()
+
+	if err := initializeDatabases(); err != nil {
+		return err
+	}
+
+	if err := initializeCaches(); err != nil {
+		return err
+	}
+
+	client.Init()
+	return nil
+}
+
+func initializeBalance() error {
 	sealosJwtKey := os.Getenv("SEALOS_JWT_KEY")
 	if sealosJwtKey == "" {
 		logger.SysLog("SEALOS_JWT_KEY is not set, balance will not be enabled")
-	} else {
-		logger.SysLog("SEALOS_JWT_KEY is set, balance will be enabled")
-		err := balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL"))
-		if err != nil {
-			logger.FatalLog("failed to initialize sealos balance: " + err.Error())
-		}
+		return nil
 	}
 
+	logger.SysLog("SEALOS_JWT_KEY is set, balance will be enabled")
+	if err := balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL")); err != nil {
+		return err
+	}
+	return nil
+}
+
+func setupGinMode() {
 	if os.Getenv("GIN_MODE") != gin.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	if config.DebugEnabled {
 		logger.SysLog("running in debug mode")
 	}
+}
 
-	// Initialize SQL Database
+func initializeDatabases() error {
 	model.InitDB()
 	model.InitLogDB()
+	return common.InitRedisClient()
+}
 
-	defer func() {
-		err := model.CloseDB()
-		if err != nil {
-			logger.FatalLog("failed to close database: " + err.Error())
-		}
-	}()
+func initializeCaches() error {
+	if err := model.InitOptionMap(); err != nil {
+		return err
+	}
+	if err := model.InitModelConfigCache(); err != nil {
+		return err
+	}
+	if err := model.InitChannelCache(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	// Initialize Redis
-	err := common.InitRedisClient()
-	if err != nil {
-		logger.FatalLog("failed to initialize Redis: " + err.Error())
-	}
+func startSyncServices(ctx context.Context, wg *sync.WaitGroup) {
+	wg.Add(3)
+	go model.SyncOptions(ctx, wg, time.Second*5)
+	go model.SyncChannelCache(ctx, wg, time.Second*5)
+	go model.SyncModelConfigCache(ctx, wg, time.Second*5)
 
-	err = model.InitOptionMap()
-	if err != nil {
-		logger.FatalLog("failed to initialize option map: " + err.Error())
-	}
-	err = model.InitModelConfigCache()
-	if err != nil {
-		logger.FatalLog("failed to initialize model config cache: " + err.Error())
-	}
-	err = model.InitChannelCache()
-	if err != nil {
-		logger.FatalLog("failed to initialize channel cache: " + err.Error())
-	}
-	go model.SyncOptions(time.Second * 5)
-	go model.SyncChannelCache(time.Second * 5)
-	go model.SyncModelConfigCache(time.Second * 5)
 	if config.EnableMetric {
 		logger.SysLog("metric enabled, will disable channel if too much request failed")
 	}
-	client.Init()
+}
 
-	// Initialize HTTP server
+func setupHTTPServer() (*http.Server, *gin.Engine) {
 	server := gin.New()
 	server.Use(gin.Recovery())
 	server.Use(middleware.RequestID)
 	middleware.SetUpLogger(server)
-
 	router.SetRouter(server)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = strconv.Itoa(*common.Port)
 	}
 
-	// Create HTTP server
-	srv := &http.Server{
+	return &http.Server{
 		Addr:              ":" + port,
 		ReadHeaderTimeout: 10 * time.Second,
 		Handler:           server,
+	}, server
+}
+
+func main() {
+	if err := initializeServices(); err != nil {
+		logger.FatalLog("failed to initialize services: " + err.Error())
 	}
 
-	// Graceful shutdown setup
+	defer func() {
+		if err := model.CloseDB(); err != nil {
+			logger.FatalLog("failed to close database: " + err.Error())
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var wg sync.WaitGroup
+	startSyncServices(ctx, &wg)
+
+	srv, _ := setupHTTPServer()
+
 	go func() {
-		logger.SysLogf("server started on http://localhost:%s", port)
+		logger.SysLogf("server started on http://localhost:%s", srv.Addr[1:])
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.FatalLog("failed to start HTTP server: " + err.Error())
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
+	<-ctx.Done()
 	logger.SysLog("shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.SysError("server forced to shutdown: " + err.Error())
 	}
 
 	relaycontroller.ConsumeWaitGroup.Wait()
+	wg.Wait()
 
 	logger.SysLog("server exiting")
 }

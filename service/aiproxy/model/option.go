@@ -1,11 +1,13 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	json "github.com/json-iterator/go"
@@ -64,12 +66,19 @@ func loadOptionsFromDatabase(isInit bool) error {
 	return nil
 }
 
-func SyncOptions(frequency time.Duration) {
+func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
+	defer wg.Done()
+
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
-	for range ticker.C {
-		if err := loadOptionsFromDatabase(true); err != nil {
-			logger.SysErrorf("failed to sync options from database: %s", err.Error())
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := loadOptionsFromDatabase(true); err != nil {
+				logger.SysErrorf("failed to sync options from database: %s", err.Error())
+			}
 		}
 	}
 }

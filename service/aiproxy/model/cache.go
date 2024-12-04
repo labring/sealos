@@ -515,17 +515,24 @@ func updateGlobalCache(
 	channelType2EnabledModelConfigs = newChannelType2EnabledModelConfigs
 }
 
-func SyncChannelCache(frequency time.Duration) {
+func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
+	defer wg.Done()
+
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
-	for range ticker.C {
-		logger.SysDebug("syncing channels from database")
-		err := InitChannelCache()
-		if err != nil {
-			logger.SysError("failed to sync channels: " + err.Error())
-			continue
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			logger.SysDebug("syncing channels from database")
+			err := InitChannelCache()
+			if err != nil {
+				logger.SysError("failed to sync channels: " + err.Error())
+				continue
+			}
+			logger.SysDebug("channels synced from database")
 		}
-		logger.SysDebug("channels synced from database")
 	}
 }
 
@@ -581,17 +588,23 @@ func InitModelConfigCache() error {
 	return nil
 }
 
-func SyncModelConfigCache(frequency time.Duration) {
+func SyncModelConfigCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
+	defer wg.Done()
+
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
-	for range ticker.C {
-		logger.SysDebug("syncing model configs from database")
-		err := InitModelConfigCache()
-		if err != nil {
-			logger.SysError("failed to sync model configs: " + err.Error())
-			continue
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			logger.SysDebug("syncing model configs from database")
+			err := InitModelConfigCache()
+			if err != nil {
+				logger.SysError("failed to sync model configs: " + err.Error())
+			}
+			logger.SysDebug("model configs synced from database")
 		}
-		logger.SysDebug("model configs synced from database")
 	}
 }
 
