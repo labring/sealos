@@ -583,9 +583,12 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					Args: []string{
 						"server",
 						fmt.Sprintf("--port=%d", 8080),
-						fmt.Sprintf("--proxy=%s", "https://"+devbox.Name+"-pod-svc"+sshPort),
+						fmt.Sprintf("--proxy=%s", "https://"+devbox.Name+"-pod-svc:"+sshPort),
 						"-v=true",
 						"--reverse",
+					},
+					Command: []string{
+						"/app/bin client -v localhost:8080 R:2222:https://wpy-test-pod-svc:22",
 					},
 					Resources: helper.GenerateProxyPodResourceRequirements(),
 				},
