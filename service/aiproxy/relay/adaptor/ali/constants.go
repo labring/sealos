@@ -588,25 +588,28 @@ var ModelList = []*model.ModelConfig{
 	},
 
 	{
-		Model: "text-embedding-v1",
-		Type:  relaymode.Embeddings,
-		Owner: model.ModelOwnerAlibaba,
+		Model:      "text-embedding-v1",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerAlibaba,
+		InputPrice: 0.0007,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 2048,
 		},
 	},
 	{
-		Model: "text-embedding-v2",
-		Type:  relaymode.Embeddings,
-		Owner: model.ModelOwnerAlibaba,
+		Model:      "text-embedding-v2",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerAlibaba,
+		InputPrice: 0.0007,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 2048,
 		},
 	},
 	{
-		Model: "text-embedding-v3",
-		Type:  relaymode.Embeddings,
-		Owner: model.ModelOwnerAlibaba,
+		Model:      "text-embedding-v3",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerAlibaba,
+		InputPrice: 0.0007,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey: 8192,
 		},
