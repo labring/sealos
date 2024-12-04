@@ -2,6 +2,15 @@ import * as vscode from 'vscode'
 import { GlobalStateManager } from './globalStateManager'
 import { Logger } from '../common/logger'
 
+const message = {
+  cursorDevboxNotLatest: vscode.l10n.t(
+    "Cursor's Devbox is often not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referenced this [URI](https://www.cursor.com/how-to-install-extension)."
+  ),
+  sshPortNotCorrect: vscode.l10n.t(
+    `SSH Port is not correct,maybe your devbox's nodeport is over the limit`
+  ),
+}
+
 export class UriHandler {
   constructor() {}
 
@@ -17,9 +26,7 @@ export class UriHandler {
     }
 
     if (uri.scheme === 'cursor') {
-      vscode.window.showInformationMessage(
-        "Cursor's Devbox is often not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referenced this [URI](https://www.cursor.com/how-to-install-extension)."
-      )
+      vscode.window.showInformationMessage(message.cursorDevboxNotLatest)
     }
 
     const queryParams = new URLSearchParams(uri.query)
@@ -39,9 +46,7 @@ export class UriHandler {
     }
 
     if (params.sshPort === '0') {
-      vscode.window.showInformationMessage(
-        `SSH Port is not correct,maybe your devbox's nodeport is over the limit`
-      )
+      vscode.window.showInformationMessage(message.sshPortNotCorrect)
       return
     }
 
