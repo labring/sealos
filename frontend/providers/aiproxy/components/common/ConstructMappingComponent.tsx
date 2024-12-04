@@ -18,16 +18,21 @@ export const ConstructMappingComponent = function ({
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
-  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([
-    { key: '', value: '' }
-  ])
+  // const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([
+  //   { key: '', value: '' }
+  // ])
+  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>(
+    Object.entries(mapData).length > 0
+      ? Object.entries(mapData).map(([key, value]) => ({ key, value }))
+      : [{ key: '', value: '' }]
+  )
 
-  useEffect(() => {
-    const entries = Object.entries(mapData)
-    if (entries.length > 0) {
-      setMapkeyValuePairs(entries.map(([key, value]) => ({ key, value })))
-    }
-  }, [mapData])
+  // useEffect(() => {
+  //   const entries = Object.entries(mapData)
+  //   if (entries.length > 0) {
+  //     setMapkeyValuePairs(entries.map(([key, value]) => ({ key, value })))
+  //   }
+  // }, [mapData])
 
   const handleDropdownItemDisplay = (dropdownItem: string) => {
     if (dropdownItem === t('channelsFormPlaceholder.modelMappingInput')) {

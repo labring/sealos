@@ -164,7 +164,9 @@
     "addDefaultModel": "新增模型",
     "saveDefaultModel": "保存",
     "saveDefaultModelFailed": "保存失败",
-    "saveDefaultModelSuccess": "保存成功"
+    "saveDefaultModelSuccess": "保存成功",
+    "saveCommonConfigSuccess": "更新成功",
+    "saveCommonConfigFailed": "更新失败"
   },
   "modeType": {
     "0": "未知",

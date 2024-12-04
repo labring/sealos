@@ -67,7 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetOptionR
   }
 }
 
-async function updateOption(key: string): Promise<string> {
+async function updateOption(key: string, value: string): Promise<string> {
   try {
     const url = new URL(
       `/api/option`,
@@ -81,7 +81,7 @@ async function updateOption(key: string): Promise<string> {
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
-      body: JSON.stringify({ key: key }),
+      body: JSON.stringify({ key, value }),
       cache: 'no-store'
     })
 
@@ -118,7 +118,18 @@ export async function PUT(request: NextRequest): Promise<NextResponse<GetOptionR
       )
     }
 
-    await updateOption(body.key)
+    if (!body.value || typeof body.value !== 'string') {
+      return NextResponse.json(
+        {
+          code: 400,
+          message: 'Invalid request body: value is required and must be a string',
+          error: 'Invalid request parameters'
+        } satisfies GetOptionResponse,
+        { status: 400 }
+      )
+    }
+
+    await updateOption(body.key, body.value)
 
     return NextResponse.json({
       code: 200,

@@ -164,7 +164,9 @@
     "addDefaultModel": "New",
     "saveDefaultModel": "Save",
     "saveDefaultModelFailed": "Failed To Save",
-    "saveDefaultModelSuccess": "Saved successfully"
+    "saveDefaultModelSuccess": "Saved successfully",
+    "saveCommonConfigSuccess": "Update successful",
+    "saveCommonConfigFailed": "Update failed"
   },
   "modeType": {
     "0": "Unknown",
