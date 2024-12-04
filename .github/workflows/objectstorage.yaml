@@ -58,6 +58,8 @@ env:
 jobs:
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-objectstorage
 
   build-cluster-image:
     if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
@@ -87,7 +89,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-objectstorage
           path: /tmp/
       - name: Verify sealos
         run: |

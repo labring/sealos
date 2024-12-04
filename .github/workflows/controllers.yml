@@ -183,6 +183,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-controllers
   build-cluster-image:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
     needs:
@@ -233,7 +235,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-controllers
           path: /tmp/
       - name: Verify sealos
         run: |
