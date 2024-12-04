@@ -53,10 +53,7 @@ func initializeBalance() error {
 	}
 
 	logger.SysLog("SEALOS_JWT_KEY is set, balance will be enabled")
-	if err := balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL")); err != nil {
-		return err
-	}
-	return nil
+	return balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL"))
 }
 
 func setupGinMode() {
@@ -81,10 +78,7 @@ func initializeCaches() error {
 	if err := model.InitModelConfigCache(); err != nil {
 		return err
 	}
-	if err := model.InitChannelCache(); err != nil {
-		return err
-	}
-	return nil
+	return model.InitChannelCache()
 }
 
 func startSyncServices(ctx context.Context, wg *sync.WaitGroup) {
