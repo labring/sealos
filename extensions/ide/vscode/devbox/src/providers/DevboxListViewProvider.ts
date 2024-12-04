@@ -103,7 +103,9 @@ class ProjectTreeDataProvider
   private treeData: DevboxListItem[] = []
 
   constructor() {
-    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+    if (fs.existsSync(defaultDevboxSSHConfigPath)) {
+      convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+    }
     this.refreshData()
     setInterval(() => {
       this.refresh()
