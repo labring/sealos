@@ -192,7 +192,7 @@ func TestChannelModels(c *gin.Context) {
 	}
 
 	results := make([]*testResult, 0)
-	resultsChan := make(chan *testResult, len(channel.Models))
+	resultsMutex := sync.Mutex{}
 	hasError := atomic.Bool{}
 
 	var wg sync.WaitGroup
@@ -218,25 +218,20 @@ func TestChannelModels(c *gin.Context) {
 			if !result.Success || (result.Data != nil && !result.Data.Success) {
 				hasError.Store(true)
 			}
-			resultsChan <- result
+			resultsMutex.Lock()
+			if isStream {
+				err := render.ObjectData(c, result)
+				if err != nil {
+					logger.SysErrorf("failed to render result: %s", err.Error())
+				}
+			} else {
+				results = append(results, result)
+			}
+			resultsMutex.Unlock()
 		}(modelName)
 	}
 
-	go func() {
-		wg.Wait()
-		close(resultsChan)
-	}()
-
-	for result := range resultsChan {
-		if isStream {
-			err := render.ObjectData(c, result)
-			if err != nil {
-				logger.SysErrorf("failed to render result: %s", err.Error())
-			}
-		} else {
-			results = append(results, result)
-		}
-	}
+	wg.Wait()
 
 	if !hasError.Load() {
 		err := model.ClearLastTestErrorAt(channel.ID)
@@ -265,7 +260,7 @@ func TestAllChannels(c *gin.Context) {
 	}
 
 	results := make([]*testResult, 0)
-	resultsChan := make(chan *testResult, len(channels)*10)
+	resultsMutex := sync.Mutex{}
 	hasErrorMap := make(map[int]*atomic.Bool)
 
 	var wg sync.WaitGroup
@@ -300,26 +295,21 @@ func TestAllChannels(c *gin.Context) {
 				if !result.Success || (result.Data != nil && !result.Data.Success) {
 					hasError.Store(true)
 				}
-				resultsChan <- result
+				resultsMutex.Lock()
+				if isStream {
+					err := render.ObjectData(c, result)
+					if err != nil {
+						logger.SysErrorf("failed to render result: %s", err.Error())
+					}
+				} else {
+					results = append(results, result)
+				}
+				resultsMutex.Unlock()
 			}(modelName, channel, channelHasError)
 		}
 	}
 
-	go func() {
-		wg.Wait()
-		close(resultsChan)
-	}()
-
-	for result := range resultsChan {
-		if isStream {
-			err := render.ObjectData(c, result)
-			if err != nil {
-				logger.SysErrorf("failed to render result: %s", err.Error())
-			}
-		} else {
-			results = append(results, result)
-		}
-	}
+	wg.Wait()
 
 	for id, hasError := range hasErrorMap {
 		if !hasError.Load() {

@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,9 @@ import (
 var stdjson = json.ConfigCompatibleWithStandardLibrary
 
 func StringData(c *gin.Context, str string) {
+	if len(c.Errors) > 0 {
+		return
+	}
 	if c.IsAborted() {
 		return
 	}
@@ -23,6 +27,12 @@ func StringData(c *gin.Context, str string) {
 }
 
 func ObjectData(c *gin.Context, object any) error {
+	if len(c.Errors) > 0 {
+		return c.Errors.Last()
+	}
+	if c.IsAborted() {
+		return errors.New("context aborted")
+	}
 	jsonData, err := stdjson.Marshal(object)
 	if err != nil {
 		return fmt.Errorf("error marshalling object: %w", err)

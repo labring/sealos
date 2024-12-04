@@ -317,8 +317,7 @@ func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, m
 			if err := HandleUpdateResult(result, ErrChannelNotFound); err != nil {
 				return err
 			}
-		}
-		if !c.LastTestErrorAt.IsZero() && time.Since(c.LastTestErrorAt) > time.Hour {
+		} else if !c.LastTestErrorAt.IsZero() && time.Since(c.LastTestErrorAt) > time.Hour {
 			result := tx.Model(&Channel{}).Where("id = ?", c.ID).Update("last_test_error_at", gorm.Expr("NULL"))
 			if err := HandleUpdateResult(result, ErrChannelNotFound); err != nil {
 				return err
