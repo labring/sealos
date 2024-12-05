@@ -41,7 +41,6 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 
 func Relay(c *gin.Context) {
 	log := middleware.GetLogger(c)
-	ctx := c.Request.Context()
 	if config.DebugEnabled {
 		requestBody, _ := common.GetRequestBody(c.Request)
 		log.Debugf("request body: %s", requestBody)
@@ -55,7 +54,7 @@ func Relay(c *gin.Context) {
 	lastFailedChannelID := meta.Channel.ID
 	group := c.MustGet(ctxkey.Group).(*dbmodel.GroupCache)
 	log.Errorf("relay error (channel id %d, group: %s): %s", meta.Channel.ID, group.ID, bizErr)
-	go processChannelRelayError(ctx, group.ID, meta.Channel.ID, bizErr)
+	go processChannelRelayError(group.ID, meta.Channel.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
@@ -85,7 +84,7 @@ func Relay(c *gin.Context) {
 		}
 		lastFailedChannelID = channel.ID
 		log.Errorf("relay error (channel id %d, group: %s): %s", channel.ID, group.ID, bizErr)
-		go processChannelRelayError(ctx, group.ID, channel.ID, bizErr)
+		go processChannelRelayError(group.ID, channel.ID, bizErr)
 	}
 	if bizErr != nil {
 		message := bizErr.Message
