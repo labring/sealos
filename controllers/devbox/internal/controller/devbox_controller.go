@@ -196,7 +196,6 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 	// Secret not found, create a new one
 	publicKey, privateKey, err := helper.GenerateSSHKeyPair()
-	fmt.Println()
 	if err != nil {
 		return fmt.Errorf("failed to generate SSH key pair: %w", err)
 	}
