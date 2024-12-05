@@ -3,9 +3,10 @@ package monitor
 import (
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
-	"time"
 )
 
 func CockroachMonitor() {
