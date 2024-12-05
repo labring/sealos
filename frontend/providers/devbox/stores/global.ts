@@ -36,7 +36,7 @@ export const useGlobalStore = create<State>()(
           state.lastRoute = val
         })
       },
-      currentIDE: 'vscode',
+      currentIDE: 'cursor',
       setCurrentIDE(val: IDEType) {
         set((state) => {
           state.currentIDE = val

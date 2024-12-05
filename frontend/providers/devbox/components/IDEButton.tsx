@@ -46,7 +46,7 @@ const IDEButton = ({
   const { setCurrentIDE, currentIDE } = useGlobalStore()
 
   const handleGotoIDE = useCallback(
-    async (currentIDE: IDEType = 'vscode') => {
+    async (currentIDE: IDEType = 'cursor') => {
       setLoading(true)
 
       toast({
