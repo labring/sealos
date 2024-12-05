@@ -16,7 +16,7 @@ func SetUpLogger(server *gin.Engine) {
 		}
 		var modelName string
 		if param.Keys != nil {
-			modelName = param.Keys[string(ctxkey.OriginalModel)].(string)
+			modelName, _ = param.Keys[string(ctxkey.OriginalModel)].(string)
 		}
 		if modelName != "" {
 			return fmt.Sprintf("[GIN] %s | %s | %15s | %3d | %13v | %15s | %7s %s\n",
