@@ -34,7 +34,7 @@ type Group struct {
 	RequestCount int       `gorm:"index"              json:"request_count"`
 }
 
-func (g *Group) AfterDelete(tx *gorm.DB) (err error) {
+func (g *Group) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&Token{}).Where("group_id = ?", g.ID).Delete(&Token{}).Error
 }
 
