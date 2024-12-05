@@ -9,7 +9,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -102,10 +102,10 @@ func DeleteGroupByID(id string) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteGroup(id); err != nil {
-				logger.SysError("cache delete group failed: " + err.Error())
+				log.Error("cache delete group failed: " + err.Error())
 			}
 			if _, err := DeleteGroupLogs(id); err != nil {
-				logger.SysError("delete group logs failed: " + err.Error())
+				log.Error("delete group logs failed: " + err.Error())
 			}
 		}
 	}()
@@ -122,10 +122,10 @@ func DeleteGroupsByIDs(ids []string) (err error) {
 		if err == nil {
 			for _, group := range groups {
 				if err := CacheDeleteGroup(group.ID); err != nil {
-					logger.SysError("cache delete group failed: " + err.Error())
+					log.Error("cache delete group failed: " + err.Error())
 				}
 				if _, err := DeleteGroupLogs(group.ID); err != nil {
-					logger.SysError("delete group logs failed: " + err.Error())
+					log.Error("delete group logs failed: " + err.Error())
 				}
 			}
 		}
@@ -172,7 +172,7 @@ func UpdateGroupQPM(id string, qpm int64) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheUpdateGroupQPM(id, qpm); err != nil {
-				logger.SysError("cache update group qpm failed: " + err.Error())
+				log.Error("cache update group qpm failed: " + err.Error())
 			}
 		}
 	}()
@@ -184,7 +184,7 @@ func UpdateGroupStatus(id string, status int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheUpdateGroupStatus(id, status); err != nil {
-				logger.SysError("cache update group status failed: " + err.Error())
+				log.Error("cache update group status failed: " + err.Error())
 			}
 		}
 	}()

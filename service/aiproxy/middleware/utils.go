@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 )
 
 func abortWithMessage(c *gin.Context, statusCode int, message string) {
+	GetLogger(c).Error(message)
 	c.JSON(statusCode, gin.H{
 		"error": gin.H{
 			"message": helper.MessageWithRequestID(message, c.GetString(string(helper.RequestIDKey))),
@@ -18,7 +18,6 @@ func abortWithMessage(c *gin.Context, statusCode int, message string) {
 		},
 	})
 	c.Abort()
-	logger.Error(c.Request.Context(), message)
 }
 
 func getRequestModel(c *gin.Context) (string, error) {

@@ -13,11 +13,12 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const MetaResponseFormat = "response_format"
@@ -48,6 +49,8 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Re
 }
 
 func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	log := middleware.GetLogger(c)
+
 	responseFormat := meta.MustGet(MetaResponseFormat).(string)
 
 	var aliTaskResponse TaskResponse
@@ -65,7 +68,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 	}
 
 	if aliTaskResponse.Message != "" {
-		logger.Error(c, "aliAsyncTask err: "+aliTaskResponse.Message)
+		log.Error("aliAsyncTask err: " + aliTaskResponse.Message)
 		return nil, openai.ErrorWrapper(errors.New(aliTaskResponse.Message), "ali_async_task_failed", http.StatusInternalServerError)
 	}
 
@@ -95,7 +98,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, err = c.Writer.Write(jsonResponse)
 	if err != nil {
-		logger.Error(c, "aliImageHandler write response body failed: "+err.Error())
+		log.Error("aliImageHandler write response body failed: " + err.Error())
 	}
 	return &model.Usage{}, nil
 }
@@ -115,7 +118,6 @@ func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, e
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error(ctx, "aliAsyncTask client.Do err: "+err.Error())
 		return &aliResponse, err
 	}
 	defer resp.Body.Close()
@@ -123,7 +125,6 @@ func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, e
 	var response TaskResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		logger.Error(ctx, "aliAsyncTask NewDecoder err: "+err.Error())
 		return &aliResponse, err
 	}
 
@@ -177,7 +178,7 @@ func responseAli2OpenAIImage(ctx context.Context, response *TaskResponse, respon
 			_, imageData, err := image.GetImageFromURL(ctx, data.URL)
 			if err != nil {
 				// 处理获取图片数据失败的情况
-				logger.Error(ctx, "getImageData Error getting image data: "+err.Error())
+				log.Error("getImageData Error getting image data: " + err.Error())
 				continue
 			}
 

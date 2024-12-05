@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -171,6 +171,8 @@ func TTSDoRequest(meta *meta.Meta, req *http.Request) (*http.Response, error) {
 }
 
 func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	log := middleware.GetLogger(c)
+
 	conn := meta.MustGet("ws_conn").(*websocket.Conn)
 	defer conn.Close()
 
@@ -204,7 +206,7 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 		case websocket.BinaryMessage:
 			_, writeErr := c.Writer.Write(data)
 			if writeErr != nil {
-				logger.Error(c, "write tts response chunk failed: "+writeErr.Error())
+				log.Error("write tts response chunk failed: " + writeErr.Error())
 			}
 		}
 	}

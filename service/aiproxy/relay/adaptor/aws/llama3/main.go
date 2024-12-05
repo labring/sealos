@@ -11,6 +11,7 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -19,13 +20,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type awsModelItem struct {
@@ -73,7 +74,7 @@ func RenderPrompt(messages []*relaymodel.Message) string {
 	var buf bytes.Buffer
 	err := promptTpl.Execute(&buf, struct{ Messages []*relaymodel.Message }{messages})
 	if err != nil {
-		logger.SysError("error rendering prompt messages: " + err.Error())
+		log.Error("error rendering prompt messages: " + err.Error())
 	}
 	return buf.String()
 }
@@ -162,6 +163,8 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+	log := middleware.GetLogger(c)
+
 	createdTime := helper.GetTimestamp()
 	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
@@ -205,7 +208,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			var llamaResp StreamResponse
 			err := json.Unmarshal(v.Value.Bytes, &llamaResp)
 			if err != nil {
-				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				log.Error("error unmarshalling stream response: " + err.Error())
 				return false
 			}
 
@@ -222,15 +225,15 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			response.Created = createdTime
 			err = render.ObjectData(c, response)
 			if err != nil {
-				logger.Error(c, "error stream response: "+err.Error())
+				log.Error("error stream response: " + err.Error())
 				return true
 			}
 			return true
 		case *types.UnknownUnionMember:
-			logger.Error(c, "unknown tag: "+v.Tag)
+			log.Error("unknown tag: " + v.Tag)
 			return false
 		default:
-			logger.Errorf(c, "union is nil or unknown type: %v", v)
+			log.Errorf("union is nil or unknown type: %v", v)
 			return false
 		}
 	})

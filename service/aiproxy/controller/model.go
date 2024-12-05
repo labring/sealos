@@ -10,10 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	log "github.com/sirupsen/logrus"
 )
 
 // https://platform.openai.com/docs/api-reference/models/list
@@ -106,7 +106,7 @@ func init() {
 				}
 				builtinModels = append(builtinModels, (*BuiltinModelConfig)(_model))
 			} else if v.OwnedBy != string(_model.Owner) {
-				logger.FatalLog(fmt.Sprintf("model %s owner mismatch, expect %s, actual %s", _model.Model, string(_model.Owner), v.OwnedBy))
+				log.Fatalf("model %s owner mismatch, expect %s, actual %s", _model.Model, string(_model.Owner), v.OwnedBy)
 			}
 			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(_model)
 		}

@@ -10,6 +10,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/random"
@@ -17,7 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -123,6 +123,8 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	var usage relaymodel.Usage
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -149,7 +151,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithSt
 		var ollamaResponse ChatResponse
 		err := json.Unmarshal(conv.StringToBytes(data), &ollamaResponse)
 		if err != nil {
-			logger.Error(c, "error unmarshalling stream response: "+err.Error())
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 
@@ -162,12 +164,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithSt
 		response := streamResponseOllama2OpenAI(&ollamaResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.Error(c, "error rendering stream response: "+err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Error(c, "error reading stream: "+err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)

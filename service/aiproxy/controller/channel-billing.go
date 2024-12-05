@@ -8,11 +8,11 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,7 +31,7 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		}
 		err = channel.UpdateBalance(balance)
 		if err != nil {
-			logger.SysErrorf("failed to update channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
+			log.Errorf("failed to update channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
 		}
 		return balance, nil
 	}
@@ -110,9 +110,9 @@ func UpdateAllChannelsBalance(c *gin.Context) {
 func AutomaticallyUpdateChannels(frequency int) {
 	for {
 		time.Sleep(time.Duration(frequency) * time.Minute)
-		logger.SysLog("updating all channels")
+		log.Info("updating all channels")
 		_ = updateAllChannelsBalance()
-		logger.SysLog("channels update done")
+		log.Info("channels update done")
 	}
 }
 
@@ -121,7 +121,7 @@ func GetSubscription(c *gin.Context) {
 	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
 	if err != nil {
-		logger.Errorf(c, "get group (%s) balance failed: %s", group.ID, err)
+		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": fmt.Sprintf("get group (%s) balance failed", group.ID),

@@ -15,7 +15,6 @@ import (
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/client"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 )
 
 type AccessToken struct {
@@ -48,7 +47,6 @@ func GetAccessToken(ctx context.Context, apiKey string) (string, error) {
 	}
 	accessToken, err := getBaiduAccessTokenHelper(ctx, apiKey)
 	if err != nil {
-		logger.Error(ctx, "get baidu access token failed: "+err.Error())
 		return "", errors.New("get baidu access token failed")
 	}
 	if accessToken == nil {

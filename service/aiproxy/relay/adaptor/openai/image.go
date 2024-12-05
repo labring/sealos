@@ -9,7 +9,7 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -32,6 +32,8 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Re
 
 func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	responseFormat := meta.GetString(MetaResponseFormat)
 
@@ -69,7 +71,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 
 	_, err = c.Writer.Write(data)
 	if err != nil {
-		logger.Error(c.Request.Context(), "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 	return usage, nil
 }

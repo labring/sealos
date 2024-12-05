@@ -12,18 +12,19 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )
@@ -275,7 +276,7 @@ func getToolCalls(candidate *ChatCandidate) []*model.Tool {
 	}
 	argsBytes, err := json.Marshal(item.FunctionCall.Arguments)
 	if err != nil {
-		logger.FatalLog("getToolCalls failed: " + err.Error())
+		log.Error("getToolCalls failed: " + err.Error())
 		return toolCalls
 	}
 	toolCall := model.Tool{
@@ -336,6 +337,8 @@ func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatRespon
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	responseText := strings.Builder{}
 	respContent := []ChatContent{}
 	scanner := bufio.NewScanner(resp.Body)
@@ -357,7 +360,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		var geminiResponse ChatResponse
 		err := json.Unmarshal(data, &geminiResponse)
 		if err != nil {
-			logger.Error(c, "error unmarshalling stream response: "+err.Error())
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 		for _, candidate := range geminiResponse.Candidates {
@@ -372,12 +375,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.Error(c, "error rendering stream response: "+err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Error(c, "error reading stream: "+err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)
@@ -388,7 +391,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
 	if err != nil {
-		logger.Error(c, "count tokens failed: "+err.Error())
+		log.Error("count tokens failed: " + err.Error())
 		usage.CompletionTokens = openai.CountTokenText(responseText.String(), meta.ActualModelName)
 	} else {
 		usage.CompletionTokens = tokenCount
@@ -399,6 +402,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	var geminiResponse ChatResponse
 	err := json.NewDecoder(resp.Body).Decode(&geminiResponse)
@@ -420,7 +425,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	}
 	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
 	if err != nil {
-		logger.Error(c, "count tokens failed: "+err.Error())
+		log.Error("count tokens failed: " + err.Error())
 		usage.CompletionTokens = openai.CountTokenText(geminiResponse.GetResponseText(), meta.ActualModelName)
 	} else {
 		usage.CompletionTokens = tokenCount

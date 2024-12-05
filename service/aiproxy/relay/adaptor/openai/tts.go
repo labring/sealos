@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -39,13 +39,15 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])
 	}
 
 	_, err := io.Copy(c.Writer, resp.Body)
 	if err != nil {
-		logger.Error(c, "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 	return &relaymodel.Usage{
 		PromptTokens:     meta.PromptTokens,

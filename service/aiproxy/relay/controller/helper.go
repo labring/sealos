@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -16,6 +16,7 @@ import (
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	"github.com/shopspring/decimal"
+	log "github.com/sirupsen/logrus"
 )
 
 var ConsumeWaitGroup sync.WaitGroup
@@ -66,7 +67,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 	if usage == nil {
 		err := model.BatchRecordConsume(meta.RequestID, meta.RequestAt, meta.Group.ID, code, meta.Channel.ID, 0, 0, meta.OriginModelName, meta.Token.ID, meta.Token.Name, 0, price, completionPrice, endpoint, content)
 		if err != nil {
-			logger.Error(ctx, "error batch record consume: "+err.Error())
+			log.Error("error batch record consume: " + err.Error())
 		}
 		return
 	}
@@ -81,10 +82,10 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 		if amount > 0 {
 			_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.Token.Name, amount)
 			if err != nil {
-				logger.Error(ctx, "error consuming token remain amount: "+err.Error())
+				log.Error("error consuming token remain amount: " + err.Error())
 				err = model.CreateConsumeError(meta.RequestID, meta.RequestAt, meta.Group.ID, meta.Token.Name, meta.OriginModelName, err.Error(), amount, meta.Token.ID)
 				if err != nil {
-					logger.Error(ctx, "failed to create consume error: "+err.Error())
+					log.Error("failed to create consume error: " + err.Error())
 				}
 			} else {
 				amount = _amount
@@ -93,7 +94,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 	}
 	err := model.BatchRecordConsume(meta.RequestID, meta.RequestAt, meta.Group.ID, code, meta.Channel.ID, promptTokens, completionTokens, meta.OriginModelName, meta.Token.ID, meta.Token.Name, amount, price, completionPrice, endpoint, content)
 	if err != nil {
-		logger.Error(ctx, "error batch record consume: "+err.Error())
+		log.Error("error batch record consume: " + err.Error())
 	}
 }
 
@@ -105,6 +106,7 @@ func isErrorHappened(resp *http.Response) bool {
 }
 
 func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	log := middleware.GetLogger(c)
 	header, body, err := a.ConvertRequest(meta, c.Request)
 	if err != nil {
 		return nil, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
@@ -117,7 +119,7 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	if err != nil {
 		return nil, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
 	}
-	logger.Debugf(c.Request.Context(), "request url: %s", fullRequestURL)
+	log.Debugf("request url: %s", fullRequestURL)
 	contentType := req.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/json; charset=utf-8"

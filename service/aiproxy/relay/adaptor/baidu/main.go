@@ -10,10 +10,10 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -127,6 +127,8 @@ func streamResponseBaidu2OpenAI(meta *meta.Meta, baiduResponse *ChatStreamRespon
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	var usage model.Usage
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
@@ -147,7 +149,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		var baiduResponse ChatStreamResponse
 		err := json.Unmarshal(data, &baiduResponse)
 		if err != nil {
-			logger.Error(c, "error unmarshalling stream response: "+err.Error())
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 		if baiduResponse.Usage != nil {
@@ -158,12 +160,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		response := streamResponseBaidu2OpenAI(meta, &baiduResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.Error(c, "error rendering stream response: "+err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Error(c, "error reading stream: "+err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)

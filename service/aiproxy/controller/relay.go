@@ -12,7 +12,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
@@ -42,10 +41,11 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 }
 
 func Relay(c *gin.Context) {
+	log := middleware.GetLogger(c)
 	ctx := c.Request.Context()
 	if config.DebugEnabled {
 		requestBody, _ := common.GetRequestBody(c.Request)
-		logger.Debugf(ctx, "request body: %s", requestBody)
+		log.Debugf("request body: %s", requestBody)
 	}
 	meta := middleware.NewMetaByContext(c)
 	bizErr := relayHelper(meta, c)
@@ -55,26 +55,27 @@ func Relay(c *gin.Context) {
 	}
 	lastFailedChannelID := meta.Channel.ID
 	group := c.MustGet(ctxkey.Group).(*dbmodel.GroupCache)
+	log.Errorf("relay error (channel id %d, group: %s): %s", meta.Channel.ID, group.ID, bizErr)
 	go processChannelRelayError(ctx, group.ID, meta.Channel.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
-		logger.Errorf(ctx, "relay error happen, status code is %d, won't retry in this case", bizErr.StatusCode)
+		log.Errorf("relay error happen, status code is %d, won't retry in this case", bizErr.StatusCode)
 		retryTimes = 0
 	}
 	for i := retryTimes; i > 0; i-- {
 		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName)
 		if err != nil {
-			logger.Errorf(ctx, "get random satisfied channel failed: %+v", err)
+			log.Errorf("get random satisfied channel failed: %+v", err)
 			break
 		}
-		logger.Infof(ctx, "using channel #%d to retry (remain times %d)", channel.ID, i)
+		log.Infof("using channel #%d to retry (remain times %d)", channel.ID, i)
 		if channel.ID == lastFailedChannelID {
 			continue
 		}
 		requestBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
-			logger.Errorf(ctx, "GetRequestBody failed: %+v", err)
+			log.Errorf("GetRequestBody failed: %+v", err)
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
@@ -84,7 +85,7 @@ func Relay(c *gin.Context) {
 			return
 		}
 		lastFailedChannelID = channel.ID
-		// BUG: bizErr is in race condition
+		log.Errorf("relay error (channel id %d, group: %s): %s", channel.ID, group.ID, bizErr)
 		go processChannelRelayError(ctx, group.ID, channel.ID, bizErr)
 	}
 	if bizErr != nil {
@@ -115,7 +116,6 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 }
 
 func processChannelRelayError(ctx context.Context, group string, channelID int, err *model.ErrorWithStatusCode) {
-	logger.Errorf(ctx, "relay error (channel id %d, group: %s): %s", channelID, group, err)
 	// https://platform.openai.com/docs/guides/error-codes/api-errors
 	if monitor.ShouldDisableChannel(&err.Error, err.StatusCode) {
 		_ = dbmodel.DisableChannelByID(channelID)

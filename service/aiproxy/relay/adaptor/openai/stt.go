@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -79,6 +79,8 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	responseFormat := meta.GetString(MetaResponseFormat)
 
 	responseBody, err := io.ReadAll(resp.Body)
@@ -118,7 +120,7 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	}
 	_, err = c.Writer.Write(responseBody)
 	if err != nil {
-		logger.Error(c, "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 
 	return &model.Usage{

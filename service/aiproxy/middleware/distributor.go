@@ -25,6 +25,8 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
+	log := GetLogger(c)
+
 	requestModel, err := getRequestModel(c)
 	if err != nil {
 		abortWithMessage(c, http.StatusBadRequest, err.Error())
@@ -34,6 +36,8 @@ func Distribute(c *gin.Context) {
 		abortWithMessage(c, http.StatusBadRequest, "no model provided")
 		return
 	}
+
+	log.Data["model"] = requestModel
 
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {

@@ -13,5 +13,7 @@ func RequestID(c *gin.Context) {
 	ctx := context.WithValue(c.Request.Context(), helper.RequestIDKey, id)
 	c.Request = c.Request.WithContext(ctx)
 	c.Header(string(helper.RequestIDKey), id)
+	log := GetLogger(c)
+	log.Data["reqid"] = id
 	c.Next()
 }

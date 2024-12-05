@@ -17,11 +17,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const channelTestRequestID = "channel-test"
@@ -113,7 +113,7 @@ func TestChannel(c *gin.Context) {
 
 	ct, err := testSingleModel(channel, modelName)
 	if err != nil {
-		logger.SysErrorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
+		log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error()),
@@ -222,7 +222,7 @@ func TestChannelModels(c *gin.Context) {
 			if isStream {
 				err := render.ObjectData(c, result)
 				if err != nil {
-					logger.SysErrorf("failed to render result: %s", err.Error())
+					log.Errorf("failed to render result: %s", err.Error())
 				}
 			} else {
 				results = append(results, result)
@@ -236,7 +236,7 @@ func TestChannelModels(c *gin.Context) {
 	if !hasError.Load() {
 		err := model.ClearLastTestErrorAt(channel.ID)
 		if err != nil {
-			logger.SysErrorf("failed to clear last test error at for channel %s(%d): %s", channel.Name, channel.ID, err.Error())
+			log.Errorf("failed to clear last test error at for channel %s(%d): %s", channel.Name, channel.ID, err.Error())
 		}
 	}
 
@@ -299,7 +299,7 @@ func TestAllChannels(c *gin.Context) {
 				if isStream {
 					err := render.ObjectData(c, result)
 					if err != nil {
-						logger.SysErrorf("failed to render result: %s", err.Error())
+						log.Errorf("failed to render result: %s", err.Error())
 					}
 				} else {
 					results = append(results, result)
@@ -315,7 +315,7 @@ func TestAllChannels(c *gin.Context) {
 		if !hasError.Load() {
 			err := model.ClearLastTestErrorAt(id)
 			if err != nil {
-				logger.SysErrorf("failed to clear last test error at for channel %d: %s", id, err.Error())
+				log.Errorf("failed to clear last test error at for channel %d: %s", id, err.Error())
 			}
 		}
 	}

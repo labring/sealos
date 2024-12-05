@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -73,6 +73,8 @@ func embeddingResponse2OpenAI(meta *meta.Meta, response *EmbeddingResponse) *ope
 func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", resp.StatusCode)
@@ -92,7 +94,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 	}
 	_, err = c.Writer.Write(data)
 	if err != nil {
-		logger.Error(c, "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 	return &openaiResponse.Usage, nil
 }

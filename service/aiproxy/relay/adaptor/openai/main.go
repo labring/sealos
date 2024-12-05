@@ -9,11 +9,11 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -34,6 +34,8 @@ type UsageAndChoicesResponse struct {
 
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	responseText := ""
 	scanner := bufio.NewScanner(resp.Body)
@@ -60,7 +62,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			var streamResponse UsageAndChoicesResponse
 			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
 			if err != nil {
-				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				log.Error("error unmarshalling stream response: " + err.Error())
 				continue // just ignore the error
 			}
 			if len(streamResponse.Choices) == 0 && streamResponse.Usage == nil {
@@ -77,7 +79,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			respMap := make(map[string]any)
 			err = json.Unmarshal(conv.StringToBytes(data), &respMap)
 			if err != nil {
-				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
 			}
 			if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
@@ -85,14 +87,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			}
 			err = render.ObjectData(c, respMap)
 			if err != nil {
-				logger.Error(c, "error rendering stream response: "+err.Error())
+				log.Error("error rendering stream response: " + err.Error())
 				continue
 			}
 		case relaymode.Completions:
 			var streamResponse CompletionsStreamResponse
 			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
 			if err != nil {
-				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
 			}
 			for _, choice := range streamResponse.Choices {
@@ -103,7 +105,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Error(c, "error reading stream: "+err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)
@@ -122,6 +124,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -165,7 +169,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 
 	_, err = c.Writer.Write(newData)
 	if err != nil {
-		logger.Error(c, "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 	return &textResponse.Usage, nil
 }

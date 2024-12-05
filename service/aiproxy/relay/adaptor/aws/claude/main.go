@@ -13,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/anthropic"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
@@ -146,6 +146,7 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+	log := middleware.GetLogger(c)
 	createdTime := helper.GetTimestamp()
 	originModelName := meta.OriginModelName
 	awsModelID, err := awsModelID(meta.ActualModelName)
@@ -200,7 +201,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			claudeResp := anthropic.StreamResponse{}
 			err := json.Unmarshal(v.Value.Bytes, &claudeResp)
 			if err != nil {
-				logger.Error(c, "error unmarshalling stream response: "+err.Error())
+				log.Error("error unmarshalling stream response: " + err.Error())
 				return false
 			}
 
@@ -235,15 +236,15 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			}
 			err = render.ObjectData(c, response)
 			if err != nil {
-				logger.Error(c, "error stream response: "+err.Error())
+				log.Error("error stream response: " + err.Error())
 				return false
 			}
 			return true
 		case *types.UnknownUnionMember:
-			logger.Error(c, "unknown tag: "+v.Tag)
+			log.Error("unknown tag: " + v.Tag)
 			return false
 		default:
-			logger.Errorf(c, "union is nil or unknown type: %v", v)
+			log.Errorf("union is nil or unknown type: %v", v)
 			return false
 		}
 	})
