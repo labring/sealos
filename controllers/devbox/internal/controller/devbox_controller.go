@@ -478,7 +478,7 @@ func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv
 				Service: &networkingv1.IngressServiceBackend{
 					Name: devbox.Name + "-proxy-svc",
 					Port: networkingv1.ServiceBackendPort{
-						Number: 80,
+						Number: 8080,
 					},
 				},
 			},
@@ -523,8 +523,8 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 	servicePort := []corev1.ServicePort{
 		{
 			Name:       "devbox-ssh-port",
-			Port:       80,
-			TargetPort: intstr.FromInt32(80),
+			Port:       8080,
+			TargetPort: intstr.FromInt32(8080),
 			Protocol:   corev1.ProtocolTCP,
 		},
 	}
@@ -600,8 +600,8 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					},
 					Args: []string{
 						fmt.Sprintf("/app/bin server --port=%d  -v=true --reverse & /app/bin client -v localhost:%d R:2222:%s-pod-svc:%s",
-							80,
-							80,
+							8080,
+							8080,
 							devbox.Name,
 							sshPort,
 						),
