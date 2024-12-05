@@ -1,7 +1,6 @@
 package network
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -23,7 +22,7 @@ func isValidSubnet(subnet string) error {
 	return nil
 }
 
-func isIPInSubnet(ctx context.Context, ip string, subnet string) (bool, error) {
+func isIPInSubnet(ip string, subnet string) (bool, error) {
 	_, ipNet, err := net.ParseCIDR(subnet)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse subnet: %w", err)
@@ -40,9 +39,9 @@ func IsValidSubnets(subnets string) error {
 	return nil
 }
 
-func IsIPInSubnets(ctx context.Context, ip string, subnets string) (bool, error) {
+func IsIPInSubnets(ip string, subnets string) (bool, error) {
 	for _, subnet := range splitSubnets(subnets) {
-		if ok, err := isIPInSubnet(ctx, ip, subnet); err != nil {
+		if ok, err := isIPInSubnet(ip, subnet); err != nil {
 			return false, err
 		} else if ok {
 			return true, nil
