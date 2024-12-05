@@ -128,7 +128,7 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 //nolint:goconst
 func getChannelOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
-	switch order {
+	switch prefix {
 	case "name", "type", "created_at", "accessed_at", "status", "test_at", "balance_updated_at", "used_amount", "request_count", "priority", "id":
 		switch suffix {
 		case "asc":
