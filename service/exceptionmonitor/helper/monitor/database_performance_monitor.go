@@ -67,7 +67,7 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	if !debt {
 		return
 	}
-	notificationInfo.NotificationType = "exception"
+	notificationInfo.NotificationType = notification.ExceptionType
 	notificationInfo.ExceptionType = "阀值"
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:

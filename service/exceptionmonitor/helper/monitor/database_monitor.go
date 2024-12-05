@@ -225,7 +225,7 @@ func databaseQuotaExceptionFilter(databaseEvents string) bool {
 func prepareAlertMessage(notificationInfo *api.Info, maxUsage float64) string {
 	alertMessage := ""
 	notificationInfo.ExceptionType = "状态"
-	notificationInfo.NotificationType = "exception"
+	notificationInfo.NotificationType = notification.ExceptionType
 	if maxUsage < api.DatabaseExceptionMonitorThreshold {
 		//status == "Creating" || status == "Deleting" || status == "Stopping"
 		if notificationInfo.ExceptionStatus == "Creating" {
@@ -255,7 +255,7 @@ func sendAlert(alertMessage string, notificationInfo *api.Info) error {
 func notifyQuotaExceeded(notificationInfo *api.Info) error {
 	notificationInfo.ExceptionType = "状态"
 	notificationInfo.Reason = api.ExceededQuotaException
-	notificationInfo.NotificationType = "exception"
+	notificationInfo.NotificationType = notification.ExceptionType
 	notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLOther"]
 	alertMessage := notification.GetNotificationMessage(notificationInfo)
 	notification.CreateNotification(notificationInfo, api.ExceededQuotaException, "Quato满了")

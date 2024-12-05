@@ -169,7 +169,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("-------------------------------------------"),
+					"content": "-------------------------------------------",
 					"tag":     "lark_md",
 				},
 			},

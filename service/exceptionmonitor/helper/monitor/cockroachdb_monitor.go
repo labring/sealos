@@ -28,12 +28,12 @@ func CockroachMonitor() {
 func checkCockroachDB(CockroachConnection string) error {
 	db, err := sql.Open("postgres", CockroachConnection)
 	if err != nil {
-		return fmt.Errorf("Unable to open Cockroach connection: %v", err)
+		return fmt.Errorf("unable to open Cockroach connection: %w", err)
 	}
 	defer db.Close()
 
 	if err := db.Ping(); err != nil {
-		return fmt.Errorf("Unable to Connect Cockroach: %v", err)
+		return fmt.Errorf("unable to connect to Cockroach: %w", err)
 	}
 
 	return nil

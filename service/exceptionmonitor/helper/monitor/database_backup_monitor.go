@@ -96,11 +96,11 @@ func SendBackupNotification(backupName, namespace, status, startTimestamp string
 		ExceptionStatus:     status,
 		ExceptionType:       "备份",
 		PerformanceType:     "Backup",
-		NotificationType:    "exception",
+		NotificationType:    notification.ExceptionType,
 		FeishuWebHook:       api.FeishuWebhookURLMap["FeishuWebhookURLBackup"],
 	}
 	if _, ok := api.LastBackupStatusMap[backupName]; !ok {
-		message := notification.GetBackupMessage("exception", namespace, backupName, status, startTimestamp, "")
+		message := notification.GetBackupMessage(notification.ExceptionType, namespace, backupName, status, startTimestamp, "")
 		if err := notification.SendFeishuNotification(&notificationInfo, message); err != nil {
 			log.Printf("Error sending exception notification:%v", err)
 		}

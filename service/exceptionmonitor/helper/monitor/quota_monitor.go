@@ -45,7 +45,7 @@ func checkQuota() error {
 		notificationInfo := api.Info{
 			ExceptionType:    "Quota",
 			PerformanceType:  "Quota",
-			NotificationType: "exception",
+			NotificationType: notification.ExceptionType,
 		}
 		send := processQuota(quotaList, &nsQuota)
 		if send {
