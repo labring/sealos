@@ -164,7 +164,7 @@ const IDEButton = ({
                 borderRadius: 4
               }}>
               <Flex justifyContent="space-between" alignItems="center" width="100%">
-                {item?.label}
+                {item?.menuLabel}
                 {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
               </Flex>
             </MenuItem>
@@ -178,30 +178,34 @@ const IDEButton = ({
 export const ideObj = {
   vscode: {
     label: 'VSCode',
+    menuLabel: 'VSCode',
     icon: 'vscode',
     prefix: 'vscode://',
     value: 'vscode'
   },
   vscodeInsiders: {
     label: 'Insiders',
+    menuLabel: 'VSCode Insiders',
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
     value: 'vscodeInsiders'
   },
   cursor: {
     label: 'Cursor',
+    menuLabel: 'Cursor',
     icon: 'cursor',
     prefix: 'cursor://',
     value: 'cursor'
   },
   windsurf: {
     label: 'Windsurf',
+    menuLabel: 'Windsurf',
     icon: 'windsurf',
     prefix: 'windsurf://',
     value: 'windsurf'
   }
 }
 
-const menuItems = Object.values(ideObj).map(({ value, label }) => ({ value, label }))
+const menuItems = Object.values(ideObj).map(({ value, menuLabel }) => ({ value, menuLabel }))
 
 export default IDEButton
