@@ -26,6 +26,9 @@ func getRequestModel(c *gin.Context) (string, error) {
 	switch {
 	case strings.HasPrefix(path, "/v1/audio/transcriptions"), strings.HasPrefix(path, "/v1/audio/translations"):
 		return c.Request.FormValue("model"), nil
+	case strings.HasPrefix(path, "/v1/engines") && strings.HasSuffix(path, "/embeddings"):
+		// /engines/:model/embeddings
+		return c.Param("model"), nil
 	default:
 		var modelRequest ModelRequest
 		err := common.UnmarshalBodyReusable(c.Request, &modelRequest)
