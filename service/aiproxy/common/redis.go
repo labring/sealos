@@ -32,9 +32,6 @@ func InitRedisClient() (err error) {
 	defer cancel()
 
 	_, err = RDB.Ping(ctx).Result()
-	if err != nil {
-		log.Fatal("redis ping test failed: " + err.Error())
-	}
 	return err
 }
 
