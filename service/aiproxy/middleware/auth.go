@@ -41,7 +41,7 @@ func TokenAuth(c *gin.Context) {
 		return
 	}
 	if token.Subnet != "" {
-		if ok, err := network.IsIPInSubnets(ctx, c.ClientIP(), token.Subnet); err != nil {
+		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
 			abortWithMessage(c, http.StatusInternalServerError, err.Error())
 			return
 		} else if !ok {
