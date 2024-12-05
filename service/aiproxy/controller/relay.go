@@ -47,8 +47,6 @@ func Relay(c *gin.Context) {
 		requestBody, _ := common.GetRequestBody(c.Request)
 		logger.Debugf(ctx, "request body: %s", requestBody)
 	}
-	// channel := c.MustGet(ctxkey.Channel).(*dbmodel.Channel)
-	// originalModel := c.GetString(ctxkey.OriginalModel)
 	meta := middleware.NewMetaByContext(c)
 	bizErr := relayHelper(meta, c)
 	if bizErr == nil {
@@ -90,14 +88,12 @@ func Relay(c *gin.Context) {
 		go processChannelRelayError(ctx, group.ID, channel.ID, bizErr)
 	}
 	if bizErr != nil {
+		message := bizErr.Message
 		if bizErr.StatusCode == http.StatusTooManyRequests {
-			bizErr.Error.Message = "The upstream load of the current group is saturated, please try again later"
+			message = "The upstream load of the current group is saturated, please try again later"
 		}
-
-		// BUG: bizErr is in race condition
-		bizErr.Error.Message = helper.MessageWithRequestID(bizErr.Error.Message, requestID)
 		c.JSON(bizErr.StatusCode, gin.H{
-			"error": bizErr.Error,
+			"error": helper.MessageWithRequestID(message, requestID),
 		})
 	}
 }

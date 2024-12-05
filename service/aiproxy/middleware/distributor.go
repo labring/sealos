@@ -47,8 +47,7 @@ func Distribute(c *gin.Context) {
 	}
 	channel, err := model.CacheGetRandomSatisfiedChannel(requestModel)
 	if err != nil {
-		message := requestModel + " is not available"
-		abortWithMessage(c, http.StatusServiceUnavailable, message)
+		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
 		return
 	}
 
