@@ -61,7 +61,7 @@ func (t *Token) MarshalJSON() ([]byte, error) {
 //nolint:goconst
 func getTokenOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
-	switch order {
+	switch prefix {
 	case "name", "accessed_at", "expired_at", "group", "used_amount", "request_count", "id", "created_at":
 		switch suffix {
 		case "asc":

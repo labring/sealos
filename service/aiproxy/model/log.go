@@ -70,7 +70,7 @@ func RecordConsumeLog(requestID string, requestAt time.Time, group string, code 
 //nolint:goconst
 func getLogOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
-	switch order {
+	switch prefix {
 	case "used_amount", "token_id", "token_name", "group", "request_id", "request_at", "id", "created_at":
 		switch suffix {
 		case "asc":

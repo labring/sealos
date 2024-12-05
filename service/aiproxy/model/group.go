@@ -54,7 +54,7 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 //nolint:goconst
 func getGroupOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
-	switch order {
+	switch prefix {
 	case "id", "request_count", "accessed_at", "status", "created_at", "used_amount":
 		switch suffix {
 		case "asc":
