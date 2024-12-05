@@ -30,6 +30,7 @@ type Log struct {
 	CompletionTokens int       `json:"completion_tokens"`
 	ChannelID        int       `gorm:"index"                                                                                                                  json:"channel"`
 	Code             int       `gorm:"index"                                                                                                                  json:"code"`
+	Mode             int       `json:"mode"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
@@ -45,7 +46,7 @@ func (l *Log) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func RecordConsumeLog(requestID string, requestAt time.Time, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string) error {
+func RecordConsumeLog(requestID string, requestAt time.Time, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string, mode int) error {
 	log := &Log{
 		RequestID:        requestID,
 		RequestAt:        requestAt,
@@ -57,6 +58,7 @@ func RecordConsumeLog(requestID string, requestAt time.Time, group string, code 
 		TokenID:          tokenID,
 		TokenName:        tokenName,
 		Model:            modelName,
+		Mode:             mode,
 		UsedAmount:       amount,
 		Price:            price,
 		CompletionPrice:  completionPrice,
@@ -83,7 +85,7 @@ func getLogOrder(order string) string {
 	}
 }
 
-func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
+func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, group string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string, mode int) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -102,6 +104,9 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 	}
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
+	}
+	if mode != 0 {
+		tx = tx.Where("mode = ?", mode)
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
@@ -130,7 +135,7 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 	return logs, total, err
 }
 
-func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string) (logs []*Log, total int64, err error) {
+func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time, code int, modelName string, requestID string, tokenID int, tokenName string, startIdx int, num int, channelID int, endpoint string, content string, order string, mode int) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{}).Where("group_id = ?", group)
 	if !startTimestamp.IsZero() {
 		tx = tx.Where("request_at >= ?", startTimestamp)
@@ -143,6 +148,9 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 	}
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
+	}
+	if mode != 0 {
+		tx = tx.Where("mode = ?", mode)
 	}
 	if requestID != "" {
 		tx = tx.Where("request_id = ?", requestID)
@@ -174,7 +182,7 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 	return logs, total, err
 }
 
-func SearchLogs(keyword string, page int, perPage int, code int, endpoint string, groupID string, requestID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
+func SearchLogs(keyword string, page int, perPage int, code int, endpoint string, groupID string, requestID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string, mode int) (logs []*Log, total int64, err error) {
 	tx := LogDB.Model(&Log{})
 
 	// Handle exact match conditions for non-zero values
@@ -192,6 +200,9 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	}
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
+	}
+	if mode != 0 {
+		tx = tx.Where("mode = ?", mode)
 	}
 	if tokenID != 0 {
 		tx = tx.Where("token_id = ?", tokenID)
@@ -217,14 +228,21 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 		var conditions []string
 		var values []interface{}
 
-		if code == 0 {
-			conditions = append(conditions, "code = ?")
-			values = append(values, helper.String2Int(keyword))
+		if num := helper.String2Int(keyword); num != 0 {
+			if code == 0 {
+				conditions = append(conditions, "code = ?")
+				values = append(values, num)
+			}
+			if channelID == 0 {
+				conditions = append(conditions, "channel_id = ?")
+				values = append(values, num)
+			}
+			if mode != 0 {
+				conditions = append(conditions, "mode = ?")
+				values = append(values, num)
+			}
 		}
-		if channelID == 0 {
-			conditions = append(conditions, "channel_id = ?")
-			values = append(values, helper.String2Int(keyword))
-		}
+
 		if endpoint == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "endpoint ILIKE ?")
@@ -295,7 +313,7 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	return logs, total, err
 }
 
-func SearchGroupLogs(group string, keyword string, page int, perPage int, code int, endpoint string, requestID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string) (logs []*Log, total int64, err error) {
+func SearchGroupLogs(group string, keyword string, page int, perPage int, code int, endpoint string, requestID string, tokenID int, tokenName string, modelName string, content string, startTimestamp time.Time, endTimestamp time.Time, channelID int, order string, mode int) (logs []*Log, total int64, err error) {
 	if group == "" {
 		return nil, 0, errors.New("group is empty")
 	}
@@ -316,6 +334,9 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 	}
 	if code != 0 {
 		tx = tx.Where("code = ?", code)
+	}
+	if mode != 0 {
+		tx = tx.Where("mode = ?", mode)
 	}
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
@@ -338,13 +359,19 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 		var conditions []string
 		var values []interface{}
 
-		if code == 0 {
-			conditions = append(conditions, "code = ?")
-			values = append(values, helper.String2Int(keyword))
-		}
-		if channelID == 0 {
-			conditions = append(conditions, "channel_id = ?")
-			values = append(values, helper.String2Int(keyword))
+		if num := helper.String2Int(keyword); num != 0 {
+			if code == 0 {
+				conditions = append(conditions, "code = ?")
+				values = append(values, num)
+			}
+			if channelID == 0 {
+				conditions = append(conditions, "channel_id = ?")
+				values = append(values, num)
+			}
+			if mode != 0 {
+				conditions = append(conditions, "mode = ?")
+				values = append(values, num)
+			}
 		}
 		if endpoint == "" {
 			if common.UsingPostgreSQL {

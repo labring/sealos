@@ -23,6 +23,12 @@ import (
 // https://platform.openai.com/docs/api-reference/chat
 
 func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+	log := middleware.GetLogger(c)
+	log.Data["mode"] = meta.Mode
+	log.Data["model"] = meta.OriginModelName
+	log.Data["chname"] = meta.Channel.Name
+	log.Data["chid"] = meta.Channel.ID
+	log.Data["chtype"] = meta.Channel.Type
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
 		return controller.RelayImageHelper(meta, c)
