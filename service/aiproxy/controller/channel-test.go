@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"math/rand/v2"
@@ -18,6 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -41,8 +41,10 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		Body:   io.NopCloser(body),
 		Header: make(http.Header),
 	}
-	reqIDContext := context.WithValue(newc.Request.Context(), helper.RequestIDKey, channelTestRequestID)
-	newc.Request = newc.Request.WithContext(reqIDContext)
+	newc.Set(string(helper.RequestIDKey), channelTestRequestID)
+	log := middleware.GetLogger(newc)
+	log.Data["reqid"] = channelTestRequestID
+	log.Data["test"] = true
 
 	meta := meta.NewMeta(
 		channel,

@@ -12,6 +12,7 @@ import (
 
 type ChannelMeta struct {
 	Config  model.ChannelConfig
+	Name    string
 	BaseURL string
 	Key     string
 	ID      int
@@ -85,6 +86,7 @@ func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option)
 func (m *Meta) Reset(channel *model.Channel) {
 	m.Channel = &ChannelMeta{
 		Config:  channel.Config,
+		Name:    channel.Name,
 		BaseURL: channel.BaseURL,
 		Key:     channel.Key,
 		ID:      channel.ID,

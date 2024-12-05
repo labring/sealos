@@ -94,11 +94,13 @@ func formatter(param gin.LogFormatterParams) string {
 }
 
 func GetLogger(c *gin.Context) *logrus.Entry {
-	// return c.MustGet("log").(*logrus.Entry)
 	if log, ok := c.Get("log"); ok {
 		return log.(*logrus.Entry)
 	}
-	return &logrus.Entry{
+	entry := &logrus.Entry{
 		Logger: logrus.StandardLogger(),
+		Data:   fieldsPool.Get().(logrus.Fields),
 	}
+	c.Set("log", entry)
+	return entry
 }
