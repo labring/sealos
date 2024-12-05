@@ -1,12 +1,11 @@
 package client
 
 import (
-	"os"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
 )
 
 func InitClient() error {

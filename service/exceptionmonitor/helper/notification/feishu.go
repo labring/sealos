@@ -18,49 +18,6 @@ var (
 	feiShuClient *lark.Client
 )
 
-type Info struct {
-	// lastStatus、recoveryStatus、lastStatusTime、recoveryStatusTime、lastStatusInfo、recoveryStatusInfo
-	//todo 是否应该分几个状态，是否有状态不正确的地方
-	DatabaseClusterName string
-	Namespace           string
-	DebtLevel           string
-	DatabaseType        string
-	Events              string
-	Reason              string
-	NotificationType    string
-	DiskUsage           string
-	CPUUsage            string
-	MemUsage            string
-	PerformanceType     string
-	ExceptionType       string
-	ExceptionStatus     string
-	RecoveryStatus      string
-	ExceptionStatusTime string
-	RecoveryTime        string
-	DatabaseClusterUID  string
-	FeishuWebHook       string
-	//struct
-	FeishuInfo []map[string]interface{}
-}
-
-type NameSpaceQuota struct {
-	NameSpace             string
-	CPULimit              string
-	MemLimit              string
-	GPULimit              string
-	EphemeralStorageLimit string
-	ObjectStorageLimit    string
-	NodePortLimit         string
-	StorageLimit          string
-	CPUUsage              string
-	MemUsage              string
-	GPUUsage              string
-	EphemeralStorageUsage string
-	ObjectStorageUsage    string
-	NodePortUsage         string
-	StorageUsage          string
-}
-
 func InitFeishuClient() {
 	feiShuClient = lark.NewClient(api.APPID, api.APPSECRET)
 }
@@ -113,7 +70,7 @@ func GetCockroachMessage(errMessage, cockroachType string) string {
 	return string(databaseMessage)
 }
 
-func GetNotificationMessage(notificationInfo *Info) string {
+func GetNotificationMessage(notificationInfo *api.Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
 	usage := ""
@@ -273,7 +230,7 @@ func GetNotificationMessage(notificationInfo *Info) string {
 	return string(databaseMessage)
 }
 
-func SendFeishuNotification(notification *Info, message string) error {
+func SendFeishuNotification(notification *api.Info, message string) error {
 	if api.MonitorType != "all" {
 		notification.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
@@ -330,7 +287,7 @@ func updateFeishuNotification(messageID, message string) error {
 	return nil
 }
 
-func createFeishuNotification(notification *Info, message string, messageIDMap map[string]string) error {
+func createFeishuNotification(notification *api.Info, message string, messageIDMap map[string]string) error {
 	req := larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType("chat_id").
 		Body(larkim.NewCreateMessageReqBodyBuilder().
@@ -401,7 +358,7 @@ func createCard(headerTemplate, headerTitle string, elements []map[string]string
 	return card
 }
 
-func GetQuotaMessage(nsQuota *NameSpaceQuota) string {
+func GetQuotaMessage(nsQuota *api.NameSpaceQuota) string {
 	var card map[string]interface{}
 	elements := createQuotaElements(nsQuota)
 	card = createCard("red", "Quota阀值通知", elements)
@@ -414,7 +371,7 @@ func GetQuotaMessage(nsQuota *NameSpaceQuota) string {
 	return databaseMessage
 }
 
-func createQuotaElements(nsQuota *NameSpaceQuota) []map[string]string {
+func createQuotaElements(nsQuota *api.NameSpaceQuota) []map[string]string {
 	elements := []map[string]string{
 		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": nsQuota.NameSpace},
@@ -423,7 +380,7 @@ func createQuotaElements(nsQuota *NameSpaceQuota) []map[string]string {
 	return elements
 }
 
-func addNonEmptyFieldsToElements(nsQuota *NameSpaceQuota, elements *[]map[string]string) {
+func addNonEmptyFieldsToElements(nsQuota *api.NameSpaceQuota, elements *[]map[string]string) {
 	fields := map[string]string{
 		"CPULimit":              "CPU总量",
 		"CPUUsage":              "CPU使用率",

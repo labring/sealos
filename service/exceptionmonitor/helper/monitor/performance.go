@@ -3,7 +3,6 @@ package monitor
 import (
 	"context"
 	"encoding/json"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"io"
 	"net/http"
 	"net/url"
@@ -16,7 +15,7 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
-func checkPerformance(notificationInfo *notification.Info, checkType string) (float64, error) {
+func checkPerformance(notificationInfo *api.Info, checkType string) (float64, error) {
 	params := url.Values{}
 	params.Add("namespace", notificationInfo.Namespace)
 	params.Add("app", notificationInfo.DatabaseClusterName)

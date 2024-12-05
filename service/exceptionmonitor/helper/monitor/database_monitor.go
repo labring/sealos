@@ -60,7 +60,7 @@ func checkDeletedDatabases() {
 		//namespace, databaseClusterName := getNamespaceAndDatabaseClusterName(namespaceAndDatabaseClusterName)
 		cluster, err := api.DynamicClient.Resource(databaseClusterGVR).Namespace(notificationInfo.Namespace).Get(context.Background(), notificationInfo.DatabaseClusterName, metav1.GetOptions{})
 		if cluster == nil && errors.IsNotFound(err) {
-			//notificationInfo := notification.Info{
+			//notificationInfo := api.Info{
 			//	DatabaseClusterUID:  databaseClusterUID,
 			//	Namespace:           notificationInfo.Namespace,
 			//	DatabaseClusterName: databaseClusterName,
@@ -107,7 +107,7 @@ func checkDatabasesInNamespace(namespace string) error {
 
 func processCluster(cluster metav1unstructured.Unstructured) {
 	// todo 获取数据库信息抽成一个函数，封装在notificationInfo中
-	notificationInfo := notification.Info{}
+	notificationInfo := api.Info{}
 	getClusterDatabaseInfo(cluster, &notificationInfo)
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusRunning, api.StatusStopped:
@@ -138,7 +138,7 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	}
 }
 
-func handleClusterRecovery(notificationInfo *notification.Info) {
+func handleClusterRecovery(notificationInfo *api.Info) {
 	//if api.ExceptionDatabaseMap[notificationInfo.DatabaseClusterUID] {
 	notificationInfo.NotificationType = "recovery"
 	recoveryMessage := notification.GetNotificationMessage(notificationInfo)
@@ -158,7 +158,7 @@ func cleanClusterStatus(databaseClusterUID string) {
 	//delete(api.DatabaseNamespaceMap, databaseClusterUID)
 }
 
-func handleClusterException(notificationInfo *notification.Info) {
+func handleClusterException(notificationInfo *api.Info) {
 	if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && !api.DebtNamespaceMap[notificationInfo.Namespace] {
 		api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 		//api.LastDatabaseClusterStatus[notificationInfo.DatabaseClusterUID] = notificationInfo.ExceptionStatus
@@ -171,7 +171,7 @@ func handleClusterException(notificationInfo *notification.Info) {
 	}
 }
 
-func processClusterException(notificationInfo *notification.Info) error {
+func processClusterException(notificationInfo *api.Info) error {
 	debt, debtLevel, _ := checkDebt(notificationInfo.Namespace)
 	notificationInfo.DebtLevel = debtLevel
 	if debt {
@@ -202,7 +202,7 @@ func processClusterException(notificationInfo *notification.Info) error {
 	return nil
 }
 
-func getDatabaseClusterEvents(notificationInfo *notification.Info) (string, bool) {
+func getDatabaseClusterEvents(notificationInfo *api.Info) (string, bool) {
 	events, err := api.ClientSet.CoreV1().Events(notificationInfo.Namespace).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("involvedObject.name=%s", notificationInfo.DatabaseClusterName),
 	})
@@ -222,7 +222,7 @@ func databaseQuotaExceptionFilter(databaseEvents string) bool {
 	return !strings.Contains(databaseEvents, api.ExceededQuotaException)
 }
 
-func prepareAlertMessage(notificationInfo *notification.Info, maxUsage float64) string {
+func prepareAlertMessage(notificationInfo *api.Info, maxUsage float64) string {
 	alertMessage := ""
 	notificationInfo.ExceptionType = "状态"
 	notificationInfo.NotificationType = "exception"
@@ -247,12 +247,12 @@ func prepareAlertMessage(notificationInfo *notification.Info, maxUsage float64) 
 	return alertMessage
 }
 
-func sendAlert(alertMessage string, notificationInfo *notification.Info) error {
+func sendAlert(alertMessage string, notificationInfo *api.Info) error {
 	//api.FeishuWebHookMap[notificationInfo.DatabaseClusterUID] = feishuWebHook
 	return notification.SendFeishuNotification(notificationInfo, alertMessage)
 }
 
-func notifyQuotaExceeded(notificationInfo *notification.Info) error {
+func notifyQuotaExceeded(notificationInfo *api.Info) error {
 	notificationInfo.ExceptionType = "状态"
 	notificationInfo.Reason = api.ExceededQuotaException
 	notificationInfo.NotificationType = "exception"
@@ -262,7 +262,7 @@ func notifyQuotaExceeded(notificationInfo *notification.Info) error {
 	return notification.SendFeishuNotification(notificationInfo, alertMessage)
 }
 
-func getClusterDatabaseInfo(cluster metav1unstructured.Unstructured, notificationInfo *notification.Info) {
+func getClusterDatabaseInfo(cluster metav1unstructured.Unstructured, notificationInfo *api.Info) {
 	databaseClusterName, databaseType, namespace, databaseClusterUID := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
 	notificationInfo.DatabaseType = databaseType
 	notificationInfo.Namespace = namespace
@@ -271,7 +271,7 @@ func getClusterDatabaseInfo(cluster metav1unstructured.Unstructured, notificatio
 	notificationInfo.ExceptionStatus, notificationInfo.ExceptionStatusTime = getClusterDatabaseStatus(cluster, notificationInfo)
 }
 
-func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificationInfo *notification.Info) (string, string) {
+func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificationInfo *api.Info) (string, string) {
 	status, _, _ := metav1unstructured.NestedString(cluster.Object, "status", "phase")
 
 	databaseClusterStatus, _, _ := metav1unstructured.NestedMap(cluster.Object, "status")

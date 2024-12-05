@@ -27,7 +27,20 @@ const MainBody = () => {
     dataIndex?: keyof NetworkType
     key: string
     render?: (item: NetworkType) => JSX.Element
+    width?: string
   }[] = [
+    {
+      title: t('port'),
+      key: 'port',
+      render: (item: NetworkType) => {
+        return (
+          <Text pl={4} color={'grayModern.600'}>
+            {item.port}
+          </Text>
+        )
+      },
+      width: '0.5fr'
+    },
     {
       title: t('internal_address'),
       key: 'internalAddress',
@@ -47,7 +60,6 @@ const MainBody = () => {
               _hover={{
                 textDecoration: 'underline'
               }}
-              ml={4}
               color={'grayModern.600'}
               onClick={() =>
                 copyData(

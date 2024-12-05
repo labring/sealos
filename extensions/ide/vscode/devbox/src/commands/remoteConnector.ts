@@ -1,18 +1,20 @@
 import * as os from 'os'
 import * as fs from 'fs'
+import dayjs from 'dayjs'
 import * as vscode from 'vscode'
 import SSHConfig from 'ssh-config'
 
-import { Disposable } from '../common/dispose'
-import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 import {
   defaultSSHConfigPath,
   defaultDevboxSSHConfigPath,
   defaultSSHKeyPath,
 } from '../constant/file'
+import { Logger } from '../common/logger'
+import { Disposable } from '../common/dispose'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
-import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
 import { GlobalStateManager } from '../utils/globalStateManager'
+import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
+import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
@@ -27,24 +29,34 @@ export class RemoteSSHConnector extends Disposable {
   }
 
   private replaceHomePathInConfig(content: string): string {
-    const includePattern = /Include ~\/.ssh\/sealos\/devbox_config/
-    const includePattern2 = new RegExp(
-      `Include ${os.homedir()}/.ssh/sealos/devbox_config`
+    const includePattern = new RegExp(
+      `Include ${os.homedir()}/.ssh/sealos/devbox_config`,
+      'g'
     )
-    const includeLine = `Include "${os.homedir()}/.ssh/sealos/devbox_config"`
+    const includePattern2 = new RegExp(
+      `Include "${os.homedir()}/.ssh/sealos/devbox_config"`,
+      'g'
+    )
+
+    const includeLine = `Include ~/.ssh/sealos/devbox_config`
 
     if (includePattern.test(content)) {
-      return content.replace(includePattern, includeLine)
-    } else if (includePattern2.test(content)) {
-      return content.replace(includePattern2, includeLine)
-    } else if (content.includes(includeLine)) {
-      return content
-    } else {
-      return `${includeLine}\n${content}`
+      return content.replace(includePattern, '')
     }
+
+    if (includePattern2.test(content)) {
+      return content.replace(includePattern2, '')
+    }
+
+    if (content.includes(includeLine)) {
+      return content
+    }
+
+    return `${includeLine}\n${content}`
   }
 
   private sshConfigPreProcess() {
+    Logger.info('SSH config pre-processing')
     // 1. ensure .ssh/config exists
     ensureFileExists(defaultSSHConfigPath, '.ssh')
     // 2. ensure .ssh/sealos/devbox_config exists
@@ -71,6 +83,30 @@ export class RemoteSSHConnector extends Disposable {
     }
     // 4. ensure sshConfig from version1 to version2
     convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+
+    Logger.info('SSH config pre-processing completed')
+  }
+  // backup the devbox ssh config
+  private sshConfigPostProcess() {
+    Logger.info('SSH config post-processing')
+
+    try {
+      const devboxSSHConfig = fs.readFileSync(
+        defaultDevboxSSHConfigPath,
+        'utf8'
+      )
+      const backupFolderPath = defaultSSHKeyPath + '/backup/devbox_config'
+      if (!fs.existsSync(backupFolderPath)) {
+        fs.mkdirSync(backupFolderPath, { recursive: true })
+      }
+      const backFileName = dayjs().format('YYYY-MM-DD_HH-mm-ss')
+      const backupFilePath = `${backupFolderPath}/${backFileName}`
+
+      fs.writeFileSync(backupFilePath, devboxSSHConfig)
+      Logger.info(`SSH config backed up to ${backupFilePath}`)
+    } catch (error) {
+      Logger.error(`Failed to backup SSH config: ${error}`)
+    }
   }
 
   private handleDefaultSSHConfig() {
@@ -88,15 +124,17 @@ export class RemoteSSHConnector extends Disposable {
     sshHostLabel: string
     workingDir: string
   }) {
+    Logger.info(`Connecting to remote SSH: ${args.sshHostLabel}`)
+
     this.ensureRemoteSSHExtInstalled()
 
     const { sshDomain, sshPort, base64PrivateKey, sshHostLabel, workingDir } =
       args
 
-    modifiedRemoteSSHConfig(sshHostLabel)
-
     const sshUser = sshDomain.split('@')[0]
     const sshHost = sshDomain.split('@')[1]
+
+    await modifiedRemoteSSHConfig(sshHostLabel)
 
     // sshHostLabel: usw.sailos.io_ns-admin_devbox-1
 
@@ -118,6 +156,8 @@ export class RemoteSSHConnector extends Disposable {
     this.sshConfigPreProcess()
 
     try {
+      Logger.info('Writing SSH config to .ssh/sealos/devbox_config')
+
       const existingDevboxConfigLines = fs
         .readFileSync(defaultDevboxSSHConfigPath, 'utf8')
         .split('\n')
@@ -158,7 +198,10 @@ export class RemoteSSHConnector extends Disposable {
 
       // 5. write new ssh config to .ssh/sealos/devbox_config
       fs.appendFileSync(defaultDevboxSSHConfigPath, `\n${sshConfigString}\n`)
+
+      Logger.info('SSH config written to .ssh/sealos/devbox_config')
     } catch (error) {
+      Logger.error(`Failed to write SSH configuration: ${error}`)
       vscode.window.showErrorMessage(
         `Failed to write SSH configuration: ${error}`
       )
@@ -166,14 +209,19 @@ export class RemoteSSHConnector extends Disposable {
 
     // 6. create sealos privateKey file in .ssh/sealos
     try {
+      Logger.info('Creating sealos privateKey file in .ssh/sealos')
       const sshKeyPath = defaultSSHKeyPath + `/${sshHostLabel}`
       fs.writeFileSync(sshKeyPath, normalPrivateKey)
       ensureFileAccessPermission(sshKeyPath)
+      Logger.info('Sealos privateKey file created in .ssh/sealos')
     } catch (error) {
+      Logger.error(`Failed to write SSH private key: ${error}`)
       vscode.window.showErrorMessage(
         `Failed to write SSH private key: ${error}`
       )
     }
+
+    Logger.info('Opening Devbox in VSCode')
 
     await vscode.commands.executeCommand(
       'vscode.openFolder',
@@ -185,8 +233,12 @@ export class RemoteSSHConnector extends Disposable {
       }
     )
 
+    Logger.info('Devbox opened in VSCode')
+
     // refresh devboxList
     await vscode.commands.executeCommand('devboxDashboard.refresh')
+
+    this.sshConfigPostProcess()
   }
 
   private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
@@ -231,6 +283,8 @@ export class RemoteSSHConnector extends Disposable {
       'workbench.extensions.installExtension',
       'ms-vscode-remote.remote-ssh'
     )
+
+    Logger.info('"ms-vscode-remote.remote-ssh" extension is installed')
 
     return true
   }

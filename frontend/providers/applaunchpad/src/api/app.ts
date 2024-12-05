@@ -7,7 +7,7 @@ import {
   adaptMetrics,
   adaptEvents
 } from '@/utils/adapt';
-import type { AppPatchPropsType } from '@/types/app';
+import type { AppPatchPropsType, PodDetailType } from '@/types/app';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 
 export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
@@ -27,7 +27,7 @@ export const getAppByName = (name: string) =>
   GET(`/api/getAppByAppName?appName=${name}`).then(adaptAppDetail);
 
 export const getAppPodsByAppName = (name: string) =>
-  GET<V1Pod[]>('/api/getAppPodsByAppName', { name }).then((item) => item.map(adaptPod));
+  GET<PodDetailType[]>('/api/getAppPodsByAppName', { name });
 
 export const getPodsMetrics = (podsName: string[]) =>
   POST<SinglePodMetrics[]>('/api/getPodsMetrics', { podsName }).then((item) =>

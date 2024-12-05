@@ -58,11 +58,13 @@ const map = {
   list: require('./icons/list.svg').default,
   maximize: require('./icons/maximize.svg').default,
   chevronDown: require('./icons/chevronDown.svg').default,
-  vscodeInsider: require('./icons/vscodeInsider.svg').default,
+  vscodeInsiders: require('./icons/vscodeInsiders.svg').default,
   cursor: require('./icons/cursor.svg').default,
   check: require('./icons/check.svg').default,
   empty: require('./icons/empty.svg').default,
-  shutdown: require('./icons/shutdown.svg').default
+  shutdown: require('./icons/shutdown.svg').default,
+  windsurf: require('./icons/windsurf.svg').default,
+  rocket: require('./icons/rocket.svg').default
 }
 
 const MyIcon = ({

@@ -58,6 +58,8 @@ env:
 jobs:
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-cloud
 
   build-cluster-image:
     if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
@@ -85,9 +87,9 @@ jobs:
           bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"     
           echo repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud >> $GITHUB_OUTPUT
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-cloud
           path: /tmp/
       - name: Verify sealos
         run: |

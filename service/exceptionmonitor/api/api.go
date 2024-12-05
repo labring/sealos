@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"os"
 	"strconv"
 	"strings"
@@ -21,6 +20,49 @@ type QueryResult struct {
 			Value  []interface{}     `json:"value"`
 		} `json:"result"`
 	} `json:"data"`
+}
+
+type Info struct {
+	// lastStatus、recoveryStatus、lastStatusTime、recoveryStatusTime、lastStatusInfo、recoveryStatusInfo
+	//todo 是否应该分几个状态，是否有状态不正确的地方
+	DatabaseClusterName string
+	Namespace           string
+	DebtLevel           string
+	DatabaseType        string
+	Events              string
+	Reason              string
+	NotificationType    string
+	DiskUsage           string
+	CPUUsage            string
+	MemUsage            string
+	PerformanceType     string
+	ExceptionType       string
+	ExceptionStatus     string
+	RecoveryStatus      string
+	ExceptionStatusTime string
+	RecoveryTime        string
+	DatabaseClusterUID  string
+	FeishuWebHook       string
+	//struct
+	FeishuInfo []map[string]interface{}
+}
+
+type NameSpaceQuota struct {
+	NameSpace             string
+	CPULimit              string
+	MemLimit              string
+	GPULimit              string
+	EphemeralStorageLimit string
+	ObjectStorageLimit    string
+	NodePortLimit         string
+	StorageLimit          string
+	CPUUsage              string
+	MemUsage              string
+	GPUUsage              string
+	EphemeralStorageUsage string
+	ObjectStorageUsage    string
+	NodePortUsage         string
+	StorageUsage          string
 }
 
 const (
@@ -44,7 +86,7 @@ var (
 	MemMonitorNamespaceMap            = make(map[string]bool)
 	LastBackupStatusMap               = make(map[string]string)
 	IsSendBackupStatusMap             = make(map[string]string)
-	DatabaseNotificationInfoMap       = make(map[string]*notification.Info)
+	DatabaseNotificationInfoMap       = make(map[string]*Info)
 	ExceededQuotaException            = "exceeded quota"
 	DiskException                     = "Writing to log file failed"
 	OwnerLabel                        = "user.sealos.io/owner"

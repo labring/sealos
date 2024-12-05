@@ -56,7 +56,7 @@ func checkDatabasePerformanceInNamespace(namespace string) error {
 }
 
 func monitorCluster(cluster unstructured.Unstructured) {
-	notificationInfo := notification.Info{}
+	notificationInfo := api.Info{}
 	getClusterDatabaseInfo(cluster, &notificationInfo)
 	//notificationInfo.DatabaseClusterName, notificationInfo.DatabaseType, notificationInfo.Namespace, notificationInfo.DatabaseClusterUID = cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
 	//status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
@@ -82,7 +82,7 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	}
 }
 
-func handleCPUMemMonitor(notificationInfo *notification.Info) {
+func handleCPUMemMonitor(notificationInfo *api.Info) {
 	if cpuUsage, err := CPUMemMonitor(notificationInfo, "cpu"); err == nil {
 		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, "CPU", notificationInfo, api.CPUMonitorNamespaceMap)
 	} else {
@@ -95,7 +95,7 @@ func handleCPUMemMonitor(notificationInfo *notification.Info) {
 	}
 }
 
-func handleDiskMonitor(notificationInfo *notification.Info) {
+func handleDiskMonitor(notificationInfo *api.Info) {
 	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
 		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, "磁盘", notificationInfo, api.DiskMonitorNamespaceMap)
 	} else {
@@ -103,7 +103,7 @@ func handleDiskMonitor(notificationInfo *notification.Info) {
 	}
 }
 
-func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *notification.Info, monitorMap map[string]bool) {
+func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info, monitorMap map[string]bool) {
 	notificationInfo.PerformanceType = performanceType
 	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
 	if performanceType == "CPU" {
@@ -139,7 +139,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 	}
 }
 
-func CPUMemMonitor(notificationInfo *notification.Info, checkType string) (float64, error) {
+func CPUMemMonitor(notificationInfo *api.Info, checkType string) (float64, error) {
 	return checkPerformance(notificationInfo, checkType)
 }
 

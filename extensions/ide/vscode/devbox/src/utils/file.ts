@@ -2,25 +2,28 @@ import * as os from 'os'
 import path from 'path'
 import * as fs from 'fs'
 import { execa } from 'execa'
+import { Logger } from '../common/logger'
 
 // File access permission modification
 export const ensureFileAccessPermission = async (path: string) => {
+  Logger.info(`Ensuring file access permission for ${path}`)
   if (os.platform() === 'win32') {
     try {
       const username = os.userInfo().username
       if (!username) {
         throw new Error('can not get username')
       }
-      await execa('icacls', [path, '/inheritance:r'])
-      await execa('icacls', [path, '/grant:r', `${username}:F`])
-      await execa('icacls', [path, '/remove:g', 'everyone'])
+      // await execa('icacls', [path, '/inheritance:r'])
+      // await execa('icacls', [path, '/grant:r', `${username}:F`])
+      // await execa('icacls', [path, '/remove:g', 'everyone'])
     } catch (error) {
-      console.error('set file access permission failed:', error)
-      throw new Error(`set file access permission failed: ${error.message}`)
+      Logger.error(`Failed to set file access permission: ${error}`)
     }
   } else {
     await execa('chmod', ['600', path])
   }
+
+  Logger.info(`File access permission set for ${path}`)
 }
 
 export function ensureFileExists(filePath: string, parentDir: string) {

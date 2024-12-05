@@ -4,14 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
-	"math/big"
-	"time"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"log"
+	"math/big"
+	"time"
 )
 
 const (
@@ -31,7 +30,7 @@ func randString(n int) (string, error) {
 	return string(b), nil
 }
 
-func CreateNotification(notificationInfo *Info, notificationMessage, zhNotificationMessage string) {
+func CreateNotification(notificationInfo *api.Info, notificationMessage, zhNotificationMessage string) {
 	gvr := schema.GroupVersionResource{
 		Group:    "notification.sealos.io",
 		Version:  "v1",

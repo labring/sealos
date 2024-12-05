@@ -59,6 +59,7 @@ export interface KBDevboxSpec {
   network: {
     type: 'NodePort' | 'Tailnet'
     extraPorts: {
+      // NOTE: this object is deprecated, will be removed in the future
       containerPort: number
       hostPort?: number
       protocol?: string

@@ -90,7 +90,7 @@ func processBackup(backup unstructured.Unstructured) {
 }
 
 func SendBackupNotification(backupName, namespace, status, startTimestamp string) {
-	notificationInfo := notification.Info{
+	notificationInfo := api.Info{
 		DatabaseClusterName: backupName,
 		Namespace:           namespace,
 		ExceptionStatus:     status,
