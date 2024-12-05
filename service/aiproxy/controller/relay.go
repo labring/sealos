@@ -2,7 +2,6 @@ package controller
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -115,7 +114,7 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 	return true
 }
 
-func processChannelRelayError(ctx context.Context, group string, channelID int, err *model.ErrorWithStatusCode) {
+func processChannelRelayError(group string, channelID int, err *model.ErrorWithStatusCode) {
 	// https://platform.openai.com/docs/guides/error-codes/api-errors
 	if monitor.ShouldDisableChannel(&err.Error, err.StatusCode) {
 		_ = dbmodel.DisableChannelByID(channelID)
