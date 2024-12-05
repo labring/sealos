@@ -3,11 +3,19 @@ import MyIcon from '@/components/Icon';
 import PriceBox from '@/components/PriceBox';
 import QuotaBox from '@/components/QuotaBox';
 import Tip from '@/components/Tip';
-import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
+import {
+  BackupSupportedDBTypeList,
+  DBTypeEnum,
+  DBTypeList,
+  RedisHAConfig,
+  SelectTimeList,
+  WeekSelectList
+} from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
+import { AutoBackupType } from '@/types/backup';
 import type { DBEditType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
@@ -15,6 +23,8 @@ import {
   Box,
   Button,
   Center,
+  Checkbox,
+  Collapse,
   Flex,
   FormControl,
   Grid,
@@ -25,6 +35,7 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
+  Switch,
   Text,
   useDisclosure,
   useTheme
@@ -33,7 +44,7 @@ import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 
 const Form = ({
@@ -64,6 +75,11 @@ const Form = ({
       id: 'baseInfo',
       label: 'basic',
       icon: 'formInfo'
+    },
+    {
+      id: 'backupSettings',
+      label: 'backup_settings',
+      icon: 'backupSettings'
     }
   ];
 
@@ -194,7 +210,7 @@ const Form = ({
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
-                    color={activeNav === item.id ? 'grayModern.600' : 'myGray.400'}
+                    color={activeNav === item.id ? 'grayModern.900' : 'grayModern.500'}
                   />
                   <Box>{t(item.label)}</Box>
                 </Flex>
@@ -504,6 +520,203 @@ const Form = ({
               </FormControl>
             </Box>
           </Box>
+          {BackupSupportedDBTypeList.includes(getValues('dbType')) && (
+            <Box id={'backupSettings'} {...boxStyles}>
+              <Box {...headerStyles}>
+                <MyIcon name={'backupSettings'} mr={5} w={'20px'} color={'grayModern.600'} />
+                {t('backup_settings')}
+                <Switch
+                  ml={'20px'}
+                  isChecked={getValues('autoBackup.start')}
+                  onChange={(e) => {
+                    setValue('autoBackup.start', e.target.checked);
+                  }}
+                />
+              </Box>
+              <Box display={getValues('autoBackup.start') ? 'block' : 'none'}>
+                <Box px={'42px'} py={'24px'} flex={1} userSelect={'none'}>
+                  <Flex alignItems={'center'}>
+                    <Box flex={'0 0 110px'}>{t('CronExpression')}</Box>
+                    <Tabs
+                      w={'220px'}
+                      list={[
+                        { id: 'hour', label: t('Hour') },
+                        { id: 'day', label: t('Day') },
+                        { id: 'week', label: t('Week') }
+                      ]}
+                      activeId={getValues('autoBackup.type')}
+                      size={'sm'}
+                      borderColor={'myGray.200'}
+                      onChange={(e) => {
+                        setValue('autoBackup.type', e as AutoBackupType);
+                      }}
+                    />
+                  </Flex>
+                  {getValues('autoBackup.type') === 'week' && (
+                    <Flex mt={4}>
+                      <Box flex={'0 0 110px'} />
+                      {WeekSelectList.map((item) => (
+                        <Box key={item.id} _notLast={{ mr: 4 }}>
+                          <Checkbox
+                            defaultChecked={getValues('autoBackup.week').includes(item.id)}
+                            onChange={(e) => {
+                              const val = e.target.checked;
+                              const checkedList = [...getValues('autoBackup.week')];
+                              const index = checkedList.findIndex((week) => week === item.id);
+                              if (val && index === -1) {
+                                setValue('autoBackup.week', checkedList.concat(item.id));
+                              } else if (!val && index > -1) {
+                                checkedList.splice(index, 1);
+                                setValue('autoBackup.week', checkedList);
+                              }
+                            }}
+                          >
+                            {t(item.label)}
+                          </Checkbox>
+                        </Box>
+                      ))}
+                    </Flex>
+                  )}
+                  <Flex alignItems={'center'} mt={7}>
+                    <Box flex={'0 0 110px'}>{t('start_time')}</Box>
+                    {getValues('autoBackup.type') !== 'hour' && (
+                      <Flex alignItems={'center'}>
+                        <MySelect
+                          width={'120px'}
+                          value={getValues('autoBackup.hour')}
+                          list={SelectTimeList.slice(0, 24).map((i) => ({
+                            value: i.id,
+                            label: i.label
+                          }))}
+                          onchange={(val: any) => {
+                            setValue('autoBackup.hour', val);
+                          }}
+                        />
+                        <Box flex={'0 0 110px'} ml={'8px'} mr={'12px'}>
+                          {t('hour')}
+                        </Box>
+                      </Flex>
+                    )}
+
+                    <Flex alignItems={'center'}>
+                      <MySelect
+                        width={'120px'}
+                        value={getValues('autoBackup.minute')}
+                        list={SelectTimeList.map((i) => ({
+                          value: i.id,
+                          label: i.label
+                        }))}
+                        onchange={(val: any) => {
+                          setValue('autoBackup.minute', val);
+                        }}
+                      />
+                      <Box flex={'0 0 110px'} ml={'8px'}>
+                        {t('minute')}
+                      </Box>
+                    </Flex>
+                  </Flex>
+
+                  <Flex mt={7} alignItems={'center'}>
+                    <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
+                    <Input
+                      height={'35px'}
+                      maxW={'100px'}
+                      bg={'#F7F8FA'}
+                      borderTopRightRadius={0}
+                      borderBottomRightRadius={0}
+                      _focus={{
+                        boxShadow: 'none',
+                        borderColor: 'myGray.200',
+                        bg: 'white'
+                      }}
+                      {...register('autoBackup.saveTime', {
+                        min: 1,
+                        valueAsNumber: true
+                      })}
+                    />
+                    <MySelect
+                      width={'80px'}
+                      value={getValues('autoBackup.saveType').toString()}
+                      borderLeft={0}
+                      boxShadow={'none !important'}
+                      borderColor={'myGray.200'}
+                      list={[
+                        { value: 'd', label: t('Day') },
+                        { value: 'h', label: t('Hour') }
+                      ]}
+                      h={'35px'}
+                      borderTopLeftRadius={0}
+                      borderBottomLeftRadius={0}
+                      onchange={(val: any) => {
+                        setValue('autoBackup.saveType', val);
+                      }}
+                    />
+                  </Flex>
+                  <Flex mt={7} alignItems={'start'}>
+                    <Box flex={'0 0 110px'}>{t('termination_policy')}</Box>
+                    {/* <Switch
+                      isChecked={getValues('terminationPolicy') === 'Delete'}
+                      onChange={(e) => {
+                        setValue('terminationPolicy', e.target.checked ? 'Delete' : 'WipeOut');
+                      }}
+                    /> */}
+                    <Flex gap={'12px'} flexDirection={'column'}>
+                      {['Delete', 'WipeOut'].map((item) => {
+                        const isChecked = getValues('terminationPolicy') === item;
+
+                        return (
+                          <Flex
+                            key={item}
+                            alignItems={'center'}
+                            justifyContent={'start'}
+                            minW={'300px'}
+                            p={'10px 12px'}
+                            gap={'8px'}
+                            bg={'grayModern.50'}
+                            border={'1px solid'}
+                            boxShadow={
+                              isChecked ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'
+                            }
+                            borderColor={isChecked ? 'brightBlue.500' : '#E8EBF0'}
+                            borderRadius={'md'}
+                            onClick={() => {
+                              setValue(
+                                'terminationPolicy',
+                                getValues('terminationPolicy') === 'Delete' ? 'WipeOut' : 'Delete'
+                              );
+                            }}
+                            cursor={'pointer'}
+                          >
+                            <Center
+                              boxSize={'14px'}
+                              borderRadius={'full'}
+                              border={'1px solid'}
+                              borderColor={isChecked ? 'brightBlue.500' : '#E8EBF0'}
+                              boxShadow={
+                                isChecked ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : '#C4CBD7'
+                              }
+                            >
+                              {isChecked && (
+                                <Box boxSize={'4px'} borderRadius={'full'} bg={'#219BF4'}></Box>
+                              )}
+                            </Center>
+                            <Box>
+                              <Text fontSize={'12px'} fontWeight={'bold'} color={'grayModern.900'}>
+                                {t(`${item.toLowerCase()}_backup_with_db` as I18nCommonKey)}
+                              </Text>
+                              <Text fontSize={'10px'} fontWeight={'bold'} color="grayModern.500">
+                                {t(`${item.toLowerCase()}_backup_with_db_tip` as I18nCommonKey)}
+                              </Text>
+                            </Box>
+                          </Flex>
+                        );
+                      })}
+                    </Flex>
+                  </Flex>
+                </Box>
+              </Box>
+            </Box>
+          )}
         </Box>
       </Grid>
     </>

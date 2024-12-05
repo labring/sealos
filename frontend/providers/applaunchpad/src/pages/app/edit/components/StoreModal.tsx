@@ -22,6 +22,7 @@ import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { pathToNameFormat } from '@/utils/tools';
 import { MyTooltip } from '@sealos/ui';
+import { PVC_STORAGE_MAX } from '@/store/static';
 
 export type StoreType = {
   id?: string;
@@ -82,8 +83,8 @@ const StoreModal = ({
               <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
                 {t('capacity')}
               </Box>
-              <MyTooltip label={`${t('Storage Range')}: ${minVal}~20 Gi`}>
-                <NumberInput max={20} min={minVal} step={1} position={'relative'}>
+              <MyTooltip label={`${t('Storage Range')}: ${minVal}~${PVC_STORAGE_MAX} Gi`}>
+                <NumberInput max={PVC_STORAGE_MAX} min={minVal} step={1} position={'relative'}>
                   <Box
                     position={'absolute'}
                     right={10}
@@ -111,12 +112,12 @@ const StoreModal = ({
                         message: `${t('Min Storage Value')} ${minVal} Gi`
                       },
                       max: {
-                        value: 20,
-                        message: `${t('Max Storage Value')} 20 Gi`
+                        value: PVC_STORAGE_MAX,
+                        message: `${t('Max Storage Value')} ${PVC_STORAGE_MAX} Gi`
                       },
                       valueAsNumber: true
                     })}
-                    max={20}
+                    max={PVC_STORAGE_MAX}
                   />
                   <NumberInputStepper>
                     <NumberIncrementStepper />

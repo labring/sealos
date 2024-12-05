@@ -53,6 +53,7 @@ const map = {
   import: require('./icons/import.svg').default,
   file: require('./icons/file.svg').default,
   config: require('./icons/config.svg').default,
+  backupSettings: require('./icons/backupSettings.svg').default,
   monitor: require('./icons/monitor.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default

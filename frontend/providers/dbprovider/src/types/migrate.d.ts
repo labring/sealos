@@ -1,3 +1,4 @@
+import { KubeBlockClusterTerminationPolicy } from './cluster';
 import { DBType } from './db';
 
 export enum InternetMigrationTemplate {
@@ -113,6 +114,7 @@ export type MigrateForm = {
   isChecked: boolean;
   continued: boolean;
   remark?: string;
+  terminationPolicy: KubeBlockClusterTerminationPolicy;
 };
 
 export interface MigrateItemType {

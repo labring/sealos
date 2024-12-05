@@ -22,6 +22,7 @@ import ReconfigureTable from './components/Reconfigure/index';
 import useDetailDriver from '@/hooks/useDetailDriver';
 import ErrorLog from '@/pages/db/detail/components/ErrorLog';
 import MyIcon from '@/components/Icon';
+import { BackupSupportedDBTypeList } from '@/constants/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -52,9 +53,7 @@ const AppDetail = ({
   const { listNav } = useMemo(() => {
     const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
-    const BackupSupported =
-      ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType) &&
-      SystemEnv.BACKUP_ENABLED;
+    const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [
       {

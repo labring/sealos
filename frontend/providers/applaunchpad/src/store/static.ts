@@ -9,6 +9,7 @@ export let SHOW_EVENT_ANALYZE = false;
 export let CURRENCY = Coin.shellCoin;
 export let UPLOAD_LIMIT = 50;
 export let DOWNLOAD_LIMIT = 100;
+export let PVC_STORAGE_MAX = 20;
 
 export const loadInitData = async () => {
   try {
@@ -21,6 +22,7 @@ export const loadInitData = async () => {
     UPLOAD_LIMIT = res.fileMangerConfig.uploadLimit;
     DOWNLOAD_LIMIT = res.fileMangerConfig.downloadLimit;
     DESKTOP_DOMAIN = res.DESKTOP_DOMAIN;
+    PVC_STORAGE_MAX = res.PVC_STORAGE_MAX;
 
     return {
       SEALOS_DOMAIN,

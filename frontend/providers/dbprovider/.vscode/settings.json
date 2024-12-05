@@ -17,7 +17,6 @@
   "i18n-ally.pathMatcher": "{locale}/{namespaces}.json",
   "i18n-ally.extract.targetPickingStrategy": "most-similar-by-key",
   "i18n-ally.translate.engines": [
-    "deepl",
     "google",
   ]
 }

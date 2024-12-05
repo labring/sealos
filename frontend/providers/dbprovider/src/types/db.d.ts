@@ -13,6 +13,8 @@ import type {
   V1ContainerStatus
 } from '@kubernetes/client-node';
 import { I18nCommonKey } from './i18next';
+import { AutoBackupFormType } from './backup';
+import { KubeBlockClusterTerminationPolicy } from './cluster';
 
 export type DBType = `${DBTypeEnum}`;
 
@@ -68,6 +70,8 @@ export interface DBEditType {
   memory: number;
   storage: number;
   labels: { [key: string]: string };
+  terminationPolicy: KubeBlockClusterTerminationPolicy;
+  autoBackup?: AutoBackupFormType;
 }
 
 export type DBSourceType = 'app_store' | 'sealaf';
