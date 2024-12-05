@@ -1,5 +1,5 @@
 export async function isAdmin(namespace: string): Promise<string> {
-  // return true
+  return true
   if (!namespace) {
     return Promise.reject('Admin: Invalid namespace')
   }

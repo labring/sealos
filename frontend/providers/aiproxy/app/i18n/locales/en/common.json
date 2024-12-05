@@ -99,7 +99,8 @@
     "title": "Channel",
     "create": "New",
     "import": "Import",
-    "export": "Export all"
+    "export": "Export",
+    "exportAll": "Export All"
   },
   "channelStatus": {
     "autoDisabled": "System disabled"
@@ -107,7 +108,7 @@
   "channels": {
     "name": "Name",
     "type": "Manufacturer",
-    "test": "test",
+    "test": "Test",
     "disable": "Disable",
     "enable": "Enable",
     "edit": "Edit",
@@ -122,10 +123,12 @@
     "updateFailed": "Update channel failed",
     "id": "ID",
     "requestCount": "Request Times",
-    "status": "Status"
+    "status": "Status",
+    "action": "Operation",
+    "delete": "Delete"
   },
   "channelsForm": {
-    "name": "Custom name",
+    "name": "Custom Name",
     "type": "Manufacturer",
     "models": "Model",
     "model_mapping": "Input Mode & Output Mode",
@@ -134,14 +137,14 @@
     "base_url": "Proxy Address"
   },
   "channelsFormPlaceholder": {
-    "name": "Custom name",
+    "name": "Custom Name",
     "type": "Open AI",
-    "model": "Enter selection",
-    "modelInput": "Enter custom model name",
+    "model": "enter selection",
+    "modelInput": "enter custom model name",
     "modelMappingInput": "Input model",
     "modelMappingOutput": "Output model",
-    "key": "Please enter the channel key",
-    "base_url": "Please enter agent"
+    "key": "please enter the channel key",
+    "base_url": "please enter agent"
   },
   "common": {
     "add": "Add"
@@ -149,15 +152,11 @@
   "global_configs": {
     "title": "Global configuration",
     "export": "Export",
-    "import": "import",
+    "import": "Import",
     "qpm_limit": "Global QPM limits",
     "pause_service": "Service Pause",
     "retry_count": "Number of error retries",
     "max_token": "Maximum number of tokens in the workspace"
-  },
-  "globalonfigs": {
-    "common_config": "Common configuration",
-    "model_config": "Model settings"
   },
   "globalConfigs": {
     "defaultModel": "Default model",
@@ -166,7 +165,9 @@
     "saveDefaultModelFailed": "Failed To Save",
     "saveDefaultModelSuccess": "Saved successfully",
     "saveCommonConfigSuccess": "Update successful",
-    "saveCommonConfigFailed": "Update failed"
+    "saveCommonConfigFailed": "Update failed",
+    "common_config": "Common configuration",
+    "model_config": "Model settings"
   },
   "modeType": {
     "0": "Unknown",
@@ -188,5 +189,31 @@
     "groupId": "Workspace",
     "tokenName": "Token Name",
     "channel": "Channel ID"
+  },
+  "nsManager": {
+    "groupId": "Workspace",
+    "qpm": "QPM Restrictions",
+    "created_at": "Creation Time",
+    "accessed_at": "Last use time",
+    "used_amount": "Amount used",
+    "status": "State",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "request_count": "Number of uses",
+    "actions": "Operation",
+    "ns_manager": "NS Management",
+    "select_group_id": "fill in the workspace",
+    "updateGroupStatusSuccess": "Update status successful",
+    "updateGroupStatusFailed": "Update status failed",
+    "updateGroupQpmSuccess": "Update QPM successful",
+    "updateGroupQpmFailed": "Update QPM failed",
+    "deleteGroupSuccess": "Delete successfully",
+    "deleteGroupFailed": "Delete failed"
+  },
+  "channel": {
+    "updateSuccess": "Update status successful",
+    "updateFailed": "Update status failed",
+    "deleteSuccess": "Delete successfully",
+    "deleteFailed": "Delete failed"
   }
 }

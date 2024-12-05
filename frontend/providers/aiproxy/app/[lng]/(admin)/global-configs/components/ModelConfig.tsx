@@ -159,7 +159,6 @@ const ModelConfig = () => {
     const currentValues = watch()
     // Create new array with new item at the beginning
     const newValues = [newItem, ...Object.values(currentValues)]
-    console.log('newValues', newValues)
     // Reset form with new values
     reset(newValues)
   }
@@ -170,13 +169,11 @@ const ModelConfig = () => {
     ? formValues
     : Object.values(formValues)
 
-  console.log('formValuesArray', formValuesArray)
-
   const batchOptionMutation = useMutation({
     mutationFn: batchOption,
     onSuccess: () => {
       message({
-        title: t('channels.createSuccess'),
+        title: t('globalConfigs.saveDefaultModelSuccess'),
         status: 'success'
       })
     }
@@ -271,7 +268,8 @@ const ModelConfig = () => {
         position: 'top',
         duration: 2000,
         isClosable: true,
-        description: error instanceof Error ? error.message : t('channels.createFailed')
+        description:
+          error instanceof Error ? error.message : t('globalConfigs.saveDefaultModelFailed')
       })
       console.error(error)
     }
@@ -311,7 +309,7 @@ const ModelConfig = () => {
           fontWeight="500"
           lineHeight="24px"
           letterSpacing="0.15px">
-          {t('globalonfigs.model_config')}
+          {t('globalConfigs.model_config')}
         </Text>
       </Flex>
       {/* -- title end */}
@@ -427,214 +425,249 @@ const ModelConfig = () => {
           borderRadius="6px"
           overflow="hidden"
           overflowY="auto">
-          {isChannelTypeNamesLoading || isBuiltInSupportModelsLoading || isOptionLoading ? (
+          {isChannelTypeNamesLoading ||
+          isBuiltInSupportModelsLoading ||
+          isOptionLoading ||
+          formValuesArray?.length === 0 ? (
             <Skeleton w="full" h="full" />
           ) : (
             formValuesArray &&
             formValuesArray.length > 0 &&
             channelTypeNames &&
             formValuesArray.map((value, index) => {
-              if (true) {
-                return (
-                  <Flex
-                    key={`${index}-${value.type}`}
-                    w="full"
-                    padding="24px 36px"
-                    alignSelf="stretch"
+              return (
+                <Flex
+                  key={`${index}-${value.type}`}
+                  w="full"
+                  padding="24px 36px"
+                  alignSelf="stretch"
+                  borderRadius="4px"
+                  bg="grayModern.100"
+                  position="relative">
+                  <Button
+                    position="absolute"
+                    right="12px"
+                    top="12px"
+                    p="6px 4px"
+                    alignItems="center"
+                    size="sm"
                     borderRadius="4px"
-                    bg="grayModern.100">
-                    <VStack
-                      w="full"
-                      spacing="24px"
-                      justifyContent="center"
-                      alignItems="center"
-                      align="stretch">
-                      <FormControl isRequired>
-                        <Controller
-                          name={`${index}.type`}
-                          control={control}
-                          render={({ field }) => {
-                            // Get current form types
-                            const currentFormTypes = Object.values(formValues)
-                              .map((item) => String(item.type))
-                              .filter(
-                                (type): type is ChannelType =>
-                                  type !== undefined && type in channelTypeNames
-                              )
-                              .map((type) => channelTypeNames[type])
+                    variant="ghost"
+                    _hover={{
+                      bg: 'rgba(17, 24, 36, 0.05)',
+                      color: '#D92D20'
+                    }}
+                    onClick={() => {
+                      const currentValues = watch()
+                      const newValues = Object.values(currentValues).filter((_, i) => i !== index)
+                      reset(newValues)
+                    }}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 18 18"
+                      fill="none">
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M8.41781 1.32788H9.58222C9.9456 1.32787 10.2625 1.32785 10.5242 1.34924C10.8014 1.37189 11.082 1.42222 11.3535 1.56052C11.7551 1.76516 12.0816 2.09169 12.2863 2.49331C12.4246 2.76473 12.4749 3.04538 12.4975 3.32262C12.5156 3.54319 12.5184 3.80297 12.5188 4.09677H15.23C15.6442 4.09677 15.98 4.43256 15.98 4.84677C15.98 5.26098 15.6442 5.59677 15.23 5.59677H14.5956V12.6302C14.5956 13.1857 14.5956 13.6477 14.5648 14.0247C14.5327 14.4173 14.4635 14.7835 14.2875 15.1289C14.0165 15.6608 13.5841 16.0932 13.0522 16.3642C12.7067 16.5402 12.3406 16.6094 11.9479 16.6415C11.5709 16.6723 11.109 16.6723 10.5535 16.6723H7.4465C6.89102 16.6723 6.42911 16.6723 6.0521 16.6415C5.65943 16.6094 5.29331 16.5402 4.94785 16.3642C4.41598 16.0932 3.98355 15.6608 3.71255 15.1289C3.53653 14.7835 3.46733 14.4173 3.43525 14.0247C3.40444 13.6477 3.40445 13.1857 3.40446 12.6303L3.40446 5.59677H2.77002C2.35581 5.59677 2.02002 5.26098 2.02002 4.84677C2.02002 4.43256 2.35581 4.09677 2.77002 4.09677H5.4812C5.48164 3.80297 5.48446 3.54319 5.50248 3.32262C5.52513 3.04538 5.57547 2.76473 5.71377 2.49331C5.9184 2.09169 6.24493 1.76516 6.64655 1.56052C6.91798 1.42222 7.19862 1.37189 7.47586 1.34924C7.73755 1.32785 8.05442 1.32787 8.41781 1.32788ZM4.90446 5.59677V12.5997C4.90446 13.1935 4.90505 13.5939 4.93026 13.9025C4.95477 14.2024 4.99874 14.3492 5.04906 14.4479C5.17625 14.6976 5.37921 14.9005 5.62883 15.0277C5.72759 15.078 5.87434 15.122 6.17425 15.1465C6.48291 15.1717 6.88323 15.1723 7.47713 15.1723H10.5229C11.1168 15.1723 11.5171 15.1717 11.8258 15.1465C12.1257 15.122 12.2724 15.078 12.3712 15.0277C12.6208 14.9005 12.8238 14.6976 12.951 14.4479C13.0013 14.3492 13.0453 14.2024 13.0698 13.9025C13.095 13.5939 13.0956 13.1935 13.0956 12.5997V5.59677H4.90446ZM11.0188 4.09677H6.98126C6.98179 3.80602 6.98446 3.60435 6.9975 3.44477C7.01257 3.26029 7.03768 3.19902 7.05028 3.17429C7.1111 3.05492 7.20816 2.95786 7.32754 2.89703C7.35226 2.88444 7.41353 2.85933 7.59801 2.84425C7.79124 2.82847 8.04618 2.82788 8.44624 2.82788H9.55379C9.95385 2.82788 10.2088 2.82847 10.402 2.84425C10.5865 2.85933 10.6478 2.88444 10.6725 2.89703C10.7919 2.95786 10.8889 3.05492 10.9498 3.17429C10.9623 3.19902 10.9875 3.26029 11.0025 3.44477C11.0156 3.60435 11.0182 3.80602 11.0188 4.09677ZM7.61557 7.90399C8.02978 7.90399 8.36557 8.23977 8.36557 8.65399V12.1151C8.36557 12.5293 8.02978 12.8651 7.61557 12.8651C7.20136 12.8651 6.86557 12.5293 6.86557 12.1151V8.65399C6.86557 8.23977 7.20136 7.90399 7.61557 7.90399ZM10.3845 7.90399C10.7987 7.90399 11.1345 8.23977 11.1345 8.65399V12.1151C11.1345 12.5293 10.7987 12.8651 10.3845 12.8651C9.97024 12.8651 9.63446 12.5293 9.63446 12.1151V8.65399C9.63446 8.23977 9.97024 7.90399 10.3845 7.90399Z"
+                        fill="currentcolor"
+                      />
+                    </svg>
+                  </Button>
 
-                            // Filter available types
-                            const availableTypes = allSupportChannel.filter(
-                              (channelType) =>
-                                !currentFormTypes.includes(channelType) ||
-                                // 避免编辑时当前选中值"消失"的问题，即当前选择项也包含
-                                (field.value &&
-                                  channelTypeNames[String(field.value) as ChannelType] ===
-                                    channelType)
+                  <VStack
+                    w="full"
+                    spacing="24px"
+                    justifyContent="center"
+                    alignItems="center"
+                    align="stretch">
+                    <FormControl isRequired>
+                      <Controller
+                        name={`${index}.type`}
+                        control={control}
+                        render={({ field }) => {
+                          // Get current form types
+                          const currentFormTypes = Object.values(formValues)
+                            .map((item) => String(item.type))
+                            .filter(
+                              (type): type is ChannelType =>
+                                type !== undefined && type in channelTypeNames
                             )
+                            .map((type) => channelTypeNames[type])
 
-                            const initSelectedItem = field.value
-                              ? channelTypeNames[String(field.value) as ChannelType]
-                              : undefined
+                          // Filter available types
+                          const availableTypes = allSupportChannel.filter(
+                            (channelType) =>
+                              !currentFormTypes.includes(channelType) ||
+                              // 避免编辑时当前选中值"消失"的问题，即当前选择项也包含
+                              (field.value &&
+                                channelTypeNames[String(field.value) as ChannelType] ===
+                                  channelType)
+                          )
 
-                            return (
-                              <SingleSelectCombobox<string>
-                                dropdownItems={availableTypes}
-                                initSelectedItem={initSelectedItem}
-                                setSelectedItem={(channelName: string) => {
-                                  if (channelName) {
-                                    const channelType = Object.entries(channelTypeNames).find(
-                                      ([_, name]) => name === channelName
-                                    )?.[0]
+                          const initSelectedItem = field.value
+                            ? channelTypeNames[String(field.value) as ChannelType]
+                            : undefined
 
-                                    if (channelType) {
-                                      const defaultModelField =
-                                        defaultModel[channelType as ChannelType]
-                                      const defaultModelMappingField =
-                                        defaultModelMapping[channelType as ChannelType]
+                          return (
+                            <SingleSelectCombobox<string>
+                              dropdownItems={availableTypes}
+                              initSelectedItem={initSelectedItem}
+                              setSelectedItem={(channelName: string) => {
+                                if (channelName) {
+                                  const channelType = Object.entries(channelTypeNames).find(
+                                    ([_, name]) => name === channelName
+                                  )?.[0]
 
-                                      field.onChange(Number(channelType))
-                                      setValue(`${index}.defaultMode`, defaultModelField || [])
-                                      setValue(
-                                        `${index}.defaultModeMapping`,
-                                        defaultModelMappingField || {}
-                                      )
-                                    }
+                                  if (channelType) {
+                                    const defaultModelField =
+                                      defaultModel[channelType as ChannelType]
+                                    const defaultModelMappingField =
+                                      defaultModelMapping[channelType as ChannelType]
+
+                                    field.onChange(Number(channelType))
+                                    setValue(`${index}.defaultMode`, defaultModelField || [])
+                                    setValue(
+                                      `${index}.defaultModeMapping`,
+                                      defaultModelMappingField || {}
+                                    )
                                   }
-                                }}
-                                handleDropdownItemFilter={(
-                                  dropdownItems: string[],
-                                  inputValue: string
-                                ) => {
-                                  const lowerCasedInput = inputValue.toLowerCase()
-                                  return dropdownItems.filter(
-                                    (item) =>
-                                      !inputValue || item.toLowerCase().includes(lowerCasedInput)
-                                  )
-                                }}
-                                handleDropdownItemDisplay={(item: string) => (
-                                  <Text
-                                    color="grayModern.600"
-                                    fontFamily="PingFang SC"
-                                    fontSize="12px"
-                                    fontStyle="normal"
-                                    fontWeight={400}
-                                    lineHeight="16px"
-                                    letterSpacing="0.048px">
-                                    {item}
-                                  </Text>
-                                )}
-                              />
-                            )
-                          }}
-                        />
-                      </FormControl>
-
-                      <FormControl>
-                        <Controller
-                          name={`${index}.defaultMode`}
-                          control={control}
-                          render={({ field }) => {
-                            // Get the current type value from the form
-                            const currentType = watch(`${index}.type`)
-                            const dropdownItems = currentType
-                              ? allSupportChannelWithMode[String(currentType) as ChannelType] || []
-                              : []
-
-                            const handleSetCustomModel = (
-                              selectedItems: string[],
-                              setSelectedItems: Dispatch<SetStateAction<string[]>>,
-                              customModeName: string,
-                              setCustomModeName: Dispatch<SetStateAction<string>>
-                            ) => {
-                              if (customModeName.trim()) {
-                                const exists = field.value.some(
-                                  (item) => item === customModeName.trim()
-                                )
-
-                                if (!exists) {
-                                  field.onChange([...field.value, customModeName.trim()])
-                                  setCustomModeName('')
                                 }
+                              }}
+                              handleDropdownItemFilter={(
+                                dropdownItems: string[],
+                                inputValue: string
+                              ) => {
+                                const lowerCasedInput = inputValue.toLowerCase()
+                                return dropdownItems.filter(
+                                  (item) =>
+                                    !inputValue || item.toLowerCase().includes(lowerCasedInput)
+                                )
+                              }}
+                              handleDropdownItemDisplay={(item: string) => (
+                                <Text
+                                  color="grayModern.600"
+                                  fontFamily="PingFang SC"
+                                  fontSize="12px"
+                                  fontStyle="normal"
+                                  fontWeight={400}
+                                  lineHeight="16px"
+                                  letterSpacing="0.048px">
+                                  {item}
+                                </Text>
+                              )}
+                            />
+                          )
+                        }}
+                      />
+                    </FormControl>
+
+                    <FormControl>
+                      <Controller
+                        name={`${index}.defaultMode`}
+                        control={control}
+                        render={({ field }) => {
+                          // Get the current type value from the form
+                          const currentType = watch(`${index}.type`)
+                          const dropdownItems = currentType
+                            ? allSupportChannelWithMode[String(currentType) as ChannelType] || []
+                            : []
+
+                          const handleSetCustomModel = (
+                            selectedItems: string[],
+                            setSelectedItems: Dispatch<SetStateAction<string[]>>,
+                            customModeName: string,
+                            setCustomModeName: Dispatch<SetStateAction<string>>
+                          ) => {
+                            if (customModeName.trim()) {
+                              const exists = field.value.some(
+                                (item) => item === customModeName.trim()
+                              )
+
+                              if (!exists) {
+                                field.onChange([...field.value, customModeName.trim()])
+                                setCustomModeName('')
                               }
                             }
+                          }
 
-                            const handleModelFilteredDropdownItems = (
-                              dropdownItems: string[],
-                              selectedItems: string[],
-                              inputValue: string
-                            ) => {
-                              const lowerCasedInputValue = inputValue.toLowerCase()
+                          const handleModelFilteredDropdownItems = (
+                            dropdownItems: string[],
+                            selectedItems: string[],
+                            inputValue: string
+                          ) => {
+                            const lowerCasedInputValue = inputValue.toLowerCase()
 
-                              return dropdownItems.filter(
-                                (item) =>
-                                  !selectedItems.includes(item) &&
-                                  item.toLowerCase().includes(lowerCasedInputValue)
-                              )
-                            }
-
-                            return (
-                              <MultiSelectCombobox<string>
-                                dropdownItems={dropdownItems || []}
-                                selectedItems={field.value || []} // Use field.value for selected items
-                                setSelectedItems={(models) => {
-                                  field.onChange(models)
-                                }}
-                                handleFilteredDropdownItems={handleModelFilteredDropdownItems}
-                                handleDropdownItemDisplay={(item) => (
-                                  <Text
-                                    color="grayModern.600"
-                                    fontFamily="PingFang SC"
-                                    fontSize="12px"
-                                    fontWeight={500}
-                                    lineHeight="16px"
-                                    letterSpacing="0.5px">
-                                    {item}
-                                  </Text>
-                                )}
-                                handleSelectedItemDisplay={(item) => (
-                                  <Text
-                                    color="grayModern.900"
-                                    fontFamily="PingFang SC"
-                                    fontSize="14px"
-                                    fontStyle="normal"
-                                    fontWeight={400}
-                                    lineHeight="20px"
-                                    letterSpacing="0.25px">
-                                    {item}
-                                  </Text>
-                                )}
-                                handleSetCustomSelectedItem={handleSetCustomModel}
-                              />
+                            return dropdownItems.filter(
+                              (item) =>
+                                !selectedItems.includes(item) &&
+                                item.toLowerCase().includes(lowerCasedInputValue)
                             )
-                          }}
-                        />
-                      </FormControl>
+                          }
 
-                      <FormControl>
-                        <Controller
-                          name={`${index}.defaultModeMapping`}
-                          control={control}
-                          render={({ field }) => {
-                            const defaultMode = watch(`${index}.defaultMode`)
-                            const defaultModeMapping = watch(`${index}.defaultModeMapping`)
+                          return (
+                            <MultiSelectCombobox<string>
+                              dropdownItems={dropdownItems || []}
+                              selectedItems={field.value || []} // Use field.value for selected items
+                              setSelectedItems={(models) => {
+                                field.onChange(models)
+                              }}
+                              handleFilteredDropdownItems={handleModelFilteredDropdownItems}
+                              handleDropdownItemDisplay={(item) => (
+                                <Text
+                                  color="grayModern.600"
+                                  fontFamily="PingFang SC"
+                                  fontSize="12px"
+                                  fontWeight={500}
+                                  lineHeight="16px"
+                                  letterSpacing="0.5px">
+                                  {item}
+                                </Text>
+                              )}
+                              handleSelectedItemDisplay={(item) => (
+                                <Text
+                                  color="grayModern.900"
+                                  fontFamily="PingFang SC"
+                                  fontSize="14px"
+                                  fontStyle="normal"
+                                  fontWeight={400}
+                                  lineHeight="20px"
+                                  letterSpacing="0.25px">
+                                  {item}
+                                </Text>
+                              )}
+                              handleSetCustomSelectedItem={handleSetCustomModel}
+                            />
+                          )
+                        }}
+                      />
+                    </FormControl>
 
-                            return (
-                              <ConstructMappingComponent
-                                mapKeys={defaultMode}
-                                mapData={defaultModeMapping}
-                                setMapData={(mapping) => {
-                                  field.onChange(mapping)
-                                }}
-                              />
-                            )
-                          }}
-                        />
-                      </FormControl>
-                    </VStack>
-                  </Flex>
-                )
-              }
+                    <FormControl>
+                      <Controller
+                        name={`${index}.defaultModeMapping`}
+                        control={control}
+                        render={({ field }) => {
+                          const defaultMode = watch(`${index}.defaultMode`)
+                          const defaultModeMapping = watch(`${index}.defaultModeMapping`)
+
+                          return (
+                            <ConstructMappingComponent
+                              mapKeys={defaultMode}
+                              mapData={defaultModeMapping}
+                              setMapData={(mapping) => {
+                                field.onChange(mapping)
+                              }}
+                            />
+                          )
+                        }}
+                      />
+                    </FormControl>
+                  </VStack>
+                </Flex>
+              )
             })
           )}
         </Flex>

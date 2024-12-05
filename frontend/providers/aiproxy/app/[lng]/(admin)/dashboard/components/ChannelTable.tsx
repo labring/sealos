@@ -15,7 +15,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  useDisclosure
+  useDisclosure,
+  Spinner
 } from '@chakra-ui/react'
 import {
   Column,
@@ -24,66 +25,147 @@ import {
   getCoreRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { useMessage } from '@sealos/ui'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { ChannelInfo, ChannelStatus, ChannelType } from '@/types/admin/channels/channelInfo'
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
-import { getChannels, getChannelTypeNames } from '@/api/platform'
+import { useState, useMemo, useEffect } from 'react'
+import {
+  deleteChannel,
+  getChannels,
+  getChannelTypeNames,
+  updateChannelStatus
+} from '@/api/platform'
 import SwitchPage from '@/components/common/SwitchPage'
 import UpdateChannelModal from './UpdateChannelModal'
-import { getEnumKeyByValue } from '@/utils/common'
+import { useMessage } from '@sealos/ui'
 import { QueryKey } from '@/types/query-key'
+import { downloadJson } from '@/utils/common'
 
-export default function ChannelTable() {
+export default function ChannelTable({
+  exportData
+}: {
+  exportData: (data: ChannelInfo[]) => void
+}) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   const [operationType, setOperationType] = useState<'create' | 'update'>('update')
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | undefined>(undefined)
-  console.log('channelInfo:', channelInfo)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
+
+  const [selectedChannels, setSelectedChannels] = useState<ChannelInfo[]>([])
+
+  useEffect(() => {
+    exportData(selectedChannels)
+  }, [selectedChannels])
+
+  const { message } = useMessage({
+    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningIconFill: 'white',
+    successBoxBg: 'var(--Green-50, #EDFBF3)',
+    successIconBg: 'var(--Green-600, #039855)',
+    successIconFill: 'white'
+  })
+
+  const queryClient = useQueryClient()
 
   const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
     queryKey: [QueryKey.GetChannelTypeNames],
     queryFn: () => getChannelTypeNames()
   })
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: isChannelsLoading } = useQuery({
     queryKey: [QueryKey.GetChannels, page, pageSize],
     queryFn: () => getChannels({ page, perPage: pageSize }),
     refetchOnReconnect: true,
     onSuccess(data) {
       setTotal(data?.total || 0)
-      console.log('data:', data)
     }
   })
 
-  console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  const updateChannelStatusMutation = useMutation(
+    ({ id, status }: { id: string; status: number }) => updateChannelStatus(id, status),
+    {
+      onSuccess() {
+        message({
+          status: 'success',
+          title: t('channel.updateSuccess'),
+          isClosable: true,
+          duration: 2000,
+          position: 'top'
+        })
+        queryClient.invalidateQueries([QueryKey.GetChannels])
+        queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
+      },
+      onError(err: any) {
+        message({
+          status: 'warning',
+          title: t('channel.updateFailed'),
+          description: err?.message || t('channel.updateFailed'),
+          isClosable: true,
+          position: 'top'
+        })
+      }
+    }
+  )
+  const deleteChannelMutation = useMutation(({ id }: { id: string }) => deleteChannel(id), {
+    onSuccess() {
+      message({
+        status: 'success',
+        title: t('channel.deleteSuccess'),
+        isClosable: true,
+        duration: 2000,
+        position: 'top'
+      })
+      queryClient.invalidateQueries([QueryKey.GetChannels])
+      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
+    },
+    onError(err: any) {
+      message({
+        status: 'warning',
+        title: t('channel.deleteFailed'),
+        description: err?.message || t('channel.deleteFailed'),
+        isClosable: true,
+        position: 'top'
+      })
+    }
+  })
+
+  // Update the button click handlers in the table actions column:
+  const handleStatusUpdate = (id: string, currentStatus: number) => {
+    const newStatus =
+      currentStatus === ChannelStatus.ChannelStatusDisabled
+        ? ChannelStatus.ChannelStatusEnabled
+        : ChannelStatus.ChannelStatusDisabled
+    updateChannelStatusMutation.mutate({ id, status: newStatus })
+  }
 
   const columnHelper = createColumnHelper<ChannelInfo>()
 
   const handleHeaderCheckboxChange = (isChecked: boolean) => {
     if (isChecked) {
-      const currentPageIds = data?.channels.map((channel) => channel.id) || []
-      setSelectedRows(new Set(currentPageIds))
+      setSelectedChannels(data?.channels || [])
     } else {
-      setSelectedRows(new Set())
+      setSelectedChannels([])
     }
   }
 
-  const handleRowCheckboxChange = (id: number, isChecked: boolean) => {
-    const newSelected = new Set(selectedRows)
+  const handleRowCheckboxChange = (channel: ChannelInfo, isChecked: boolean) => {
     if (isChecked) {
-      newSelected.add(id)
+      setSelectedChannels([...selectedChannels, channel])
     } else {
-      newSelected.delete(id)
+      setSelectedChannels(selectedChannels.filter((c) => c.id !== channel.id))
     }
-    setSelectedRows(newSelected)
+  }
+
+  const handleExportRow = (channel: ChannelInfo) => {
+    const channels = [channel]
+    const filename = `channel_${channels[0].id}_${new Date().toISOString()}.json`
+    downloadJson(channels, filename)
   }
 
   const columns = [
@@ -99,7 +181,7 @@ export default function ChannelTable() {
             isChecked={
               data?.channels &&
               data.channels.length > 0 &&
-              selectedRows.size === data.channels.length
+              selectedChannels.length === data.channels.length
             }
             onChange={(e) => handleHeaderCheckboxChange(e.target.checked)}
             sx={{
@@ -135,8 +217,8 @@ export default function ChannelTable() {
             height="16px"
             borderRadius="4px"
             colorScheme="grayModern"
-            isChecked={selectedRows.has(info.getValue())}
-            onChange={(e) => handleRowCheckboxChange(info.getValue(), e.target.checked)}
+            isChecked={selectedChannels.some((c) => c.id === info.getValue())}
+            onChange={(e) => handleRowCheckboxChange(info.row.original, e.target.checked)}
             sx={{
               '.chakra-checkbox__control': {
                 width: '16px',
@@ -298,7 +380,7 @@ export default function ChannelTable() {
           fontWeight={500}
           lineHeight="16px"
           letterSpacing="0.5px">
-          Action
+          {t('channels.action')}
         </Text>
       ),
       cell: (info) => (
@@ -334,7 +416,7 @@ export default function ChannelTable() {
             bg="white"
             borderRadius="6px"
             boxShadow="0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)">
-            <MenuItem
+            {/* <MenuItem
               display="flex"
               p="6px 4px"
               alignItems="center"
@@ -383,7 +465,7 @@ export default function ChannelTable() {
                 letterSpacing="0.5px">
                 {t('channels.test')}
               </Text>
-            </MenuItem>
+            </MenuItem> */}
             <MenuItem
               display="flex"
               p="6px 4px"
@@ -399,7 +481,9 @@ export default function ChannelTable() {
                     ? '#D92D20'
                     : 'brightBlue.600'
               }}
-              onClick={() => console.log('Enable/Disable', info.row.original.id)}>
+              onClick={() =>
+                handleStatusUpdate(String(info.row.original.id), info.row.original.status)
+              }>
               {info.row.original.status === ChannelStatus.ChannelStatusEnabled ? (
                 <>
                   <svg
@@ -437,7 +521,7 @@ export default function ChannelTable() {
                       fillRule="evenodd"
                       clipRule="evenodd"
                       d="M5.79427 11.5962L10.4323 8.98988C11.1347 8.59516 11.5697 8.34899 11.8659 8.1453C11.9632 8.07842 12.0235 8.03024 12.0586 8.00006C12.0235 7.96988 11.9632 7.92169 11.8659 7.85482C11.5697 7.65113 11.1347 7.40495 10.4323 7.01024L5.79426 4.4039C5.09214 4.00934 4.65523 3.76552 4.3252 3.61737C4.18814 3.55585 4.10581 3.52842 4.06506 3.51662C4.04193 3.52371 4.02176 3.53393 4.00487 3.5458C3.99613 3.58816 3.98409 3.6599 3.97362 3.771C3.94094 4.1177 3.93933 4.60263 3.93933 5.39372L3.93933 10.6064C3.93933 11.3975 3.94094 11.8824 3.97362 12.2291C3.98409 12.3402 3.99613 12.412 4.00487 12.4543C4.02176 12.4662 4.04193 12.4764 4.06506 12.4835C4.10581 12.4717 4.18814 12.4443 4.3252 12.3827C4.65523 12.2346 5.09214 11.9908 5.79427 11.5962ZM13.4344 7.32001C13.2073 6.82372 12.5309 6.44358 11.178 5.68331L6.53993 3.07697C5.18701 2.31669 4.51056 1.93656 3.95547 1.99334C3.4713 2.04287 3.03146 2.29004 2.74531 2.6734C2.41724 3.1129 2.41724 3.87317 2.41724 5.39372L2.41724 10.6064C2.41724 12.1269 2.41724 12.8872 2.74531 13.3267C3.03146 13.7101 3.4713 13.9572 3.95547 14.0068C4.51055 14.0636 5.18702 13.6834 6.53994 12.9231L11.178 10.3168C12.5309 9.55654 13.2073 9.1764 13.4344 8.68011C13.6324 8.24723 13.6324 7.75289 13.4344 7.32001Z"
-                      fill="currentColor"
+                      fill="currentcolor"
                     />
                   </svg>
                   <Text
@@ -510,7 +594,7 @@ export default function ChannelTable() {
                 bg: 'rgba(17, 24, 36, 0.05)',
                 color: 'brightBlue.600'
               }}
-              onClick={() => console.log('Export', info.row.original.id)}>
+              onClick={() => handleExportRow(info.row.original)}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -532,6 +616,43 @@ export default function ChannelTable() {
                 lineHeight="16px"
                 letterSpacing="0.5px">
                 {t('channels.export')}
+              </Text>
+            </MenuItem>
+
+            <MenuItem
+              display="flex"
+              p="6px 4px"
+              alignItems="center"
+              gap="8px"
+              alignSelf="stretch"
+              borderRadius="4px"
+              color="grayModern.600"
+              _hover={{
+                bg: 'rgba(17, 24, 36, 0.05)',
+                color: '#D92D20'
+              }}
+              onClick={() => deleteChannelMutation.mutate({ id: String(info.row.original.id) })}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none">
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M7.48258 1.18025H8.51761C8.84062 1.18024 9.12229 1.18023 9.35489 1.19923C9.60133 1.21937 9.85079 1.26411 10.0921 1.38704C10.4491 1.56894 10.7393 1.85919 10.9212 2.21619C11.0441 2.45745 11.0889 2.70692 11.109 2.95335C11.125 3.14941 11.1275 3.38033 11.1279 3.64149H13.5379C13.9061 3.64149 14.2045 3.93996 14.2045 4.30815C14.2045 4.67634 13.9061 4.97482 13.5379 4.97482H12.9739V11.2268C12.9739 11.7206 12.9739 12.1312 12.9466 12.4663C12.918 12.8153 12.8565 13.1408 12.7001 13.4479C12.4592 13.9206 12.0748 14.305 11.602 14.5459C11.2949 14.7024 10.9695 14.7639 10.6205 14.7924C10.2853 14.8198 9.87475 14.8198 9.381 14.8197H6.61919C6.12544 14.8198 5.71484 14.8198 5.37973 14.7924C5.03069 14.7639 4.70525 14.7024 4.39817 14.5459C3.9254 14.305 3.54102 13.9206 3.30013 13.4479C3.14366 13.1408 3.08215 12.8153 3.05363 12.4663C3.02625 12.1312 3.02626 11.7206 3.02627 11.2268L3.02627 4.97482H2.46232C2.09413 4.97482 1.79565 4.67634 1.79565 4.30815C1.79565 3.93996 2.09413 3.64149 2.46232 3.64149H4.87226C4.87265 3.38033 4.87516 3.14941 4.89118 2.95335C4.91131 2.70692 4.95605 2.45745 5.07899 2.21619C5.26089 1.85919 5.55113 1.56894 5.90813 1.38704C6.1494 1.26411 6.39886 1.21937 6.64529 1.19923C6.8779 1.18023 7.15957 1.18024 7.48258 1.18025ZM4.3596 4.97482V11.1996C4.3596 11.7275 4.36012 12.0833 4.38254 12.3577C4.40432 12.6243 4.44341 12.7547 4.48814 12.8425C4.60119 13.0644 4.7816 13.2448 5.00349 13.3579C5.09128 13.4026 5.22172 13.4417 5.4883 13.4635C5.76267 13.4859 6.11851 13.4864 6.64642 13.4864H9.35377C9.88168 13.4864 10.2375 13.4859 10.5119 13.4635C10.7785 13.4417 10.9089 13.4026 10.9967 13.3579C11.2186 13.2448 11.399 13.0644 11.5121 12.8425C11.5568 12.7547 11.5959 12.6243 11.6176 12.3577C11.6401 12.0833 11.6406 11.7275 11.6406 11.1996V4.97482H4.3596ZM9.79454 3.64149H6.20564C6.20612 3.38305 6.20849 3.20378 6.22008 3.06193C6.23348 2.89795 6.2558 2.84348 6.267 2.82151C6.32106 2.71539 6.40734 2.62912 6.51345 2.57505C6.53543 2.56386 6.58989 2.54154 6.75387 2.52814C6.92563 2.51411 7.15224 2.51359 7.50785 2.51359H8.49234C8.84795 2.51359 9.07456 2.51411 9.24632 2.52814C9.4103 2.54154 9.46476 2.56386 9.48674 2.57505C9.59285 2.62912 9.67913 2.71539 9.73319 2.82151C9.74439 2.84348 9.76671 2.89795 9.78011 3.06193C9.7917 3.20378 9.79407 3.38305 9.79454 3.64149ZM6.76948 7.02568C7.13767 7.02568 7.43614 7.32416 7.43614 7.69235V10.7689C7.43614 11.1371 7.13767 11.4356 6.76948 11.4356C6.40129 11.4356 6.10281 11.1371 6.10281 10.7689V7.69235C6.10281 7.32416 6.40129 7.02568 6.76948 7.02568ZM9.23071 7.02568C9.5989 7.02568 9.89738 7.32416 9.89738 7.69235V10.7689C9.89738 11.1371 9.5989 11.4356 9.23071 11.4356C8.86252 11.4356 8.56404 11.1371 8.56404 10.7689V7.69235C8.56404 7.32416 8.86252 7.02568 9.23071 7.02568Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <Text
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontStyle="normal"
+                fontWeight="500"
+                lineHeight="16px"
+                letterSpacing="0.5px">
+                {t('channels.delete')}
               </Text>
             </MenuItem>
           </MenuList>
@@ -579,18 +700,33 @@ export default function ChannelTable() {
             ))}
           </Thead>
           <Tbody>
-            {table.getRowModel().rows.map((row) => (
-              <Tr
-                key={row.id}
-                height="48px"
-                alignSelf="stretch"
-                borderBottom="1px solid"
-                borderColor="grayModern.150">
-                {row.getVisibleCells().map((cell) => (
-                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-                ))}
+            {isChannelTypeNamesLoading || isChannelsLoading ? (
+              <Tr height="48px" alignSelf="stretch" border="none">
+                <Td
+                  h="300px"
+                  colSpan={table.getAllColumns().length}
+                  textAlign="center"
+                  py={4}
+                  border="none">
+                  <Spinner size="xl" />
+                </Td>
               </Tr>
-            ))}
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <Tr
+                  key={row.id}
+                  height="48px"
+                  alignSelf="stretch"
+                  borderBottom="1px solid"
+                  borderColor="grayModern.150">
+                  {row.getVisibleCells().map((cell) => (
+                    <Td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  ))}
+                </Tr>
+              ))
+            )}
           </Tbody>
         </Table>
       </TableContainer>

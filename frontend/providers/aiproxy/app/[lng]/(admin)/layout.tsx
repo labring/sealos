@@ -4,12 +4,12 @@ import SideBar from '@/components/admin/Sidebar'
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Flex height="100vh" width="100vw" direction="row">
-      <Box w="88px" h="100vh">
+    <Flex height="full" width="full" direction="row">
+      <Box w="88px" h="full" minW="88px">
         <SideBar />
       </Box>
       {/* Main Content */}
-      <Box w="full" h="100vh" flex={1}>
+      <Box w="full" h="full">
         {children}
       </Box>
     </Flex>

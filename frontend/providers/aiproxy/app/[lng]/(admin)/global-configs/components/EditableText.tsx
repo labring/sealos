@@ -24,7 +24,7 @@ interface EditableTextProps {
 }
 
 export const EditableText = ({ value, label, onSubmit, flexProps }: EditableTextProps) => {
-  const [editValue, setEditValue] = useState(value.toString())
+  const [editValue, setEditValue] = useState(String(value))
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const handleSubmit = () => {
@@ -33,7 +33,8 @@ export const EditableText = ({ value, label, onSubmit, flexProps }: EditableText
   }
 
   const handleCancel = () => {
-    setEditValue(value.toString())
+    // 关闭时 恢复到传递来的初始值
+    setEditValue(String(value))
     onClose()
   }
 

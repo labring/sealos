@@ -1,6 +1,6 @@
 import { GET, POST, DELETE, PUT } from '@/utils/frontend/request'
-import { ChannelQueryParams, GetChannelsResponse } from '@/app/api/admin/channels/route'
-import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
+import { ChannelQueryParams, GetChannelsResponse } from '@/app/api/admin/channel/route'
+import { ChannelStatus, CreateChannelRequest } from '@/types/admin/channels/channelInfo'
 import { ApiResp } from '@/types/api'
 import { GetOptionResponse } from '@/app/api/admin/option/route'
 import { BatchOptionData } from '@/types/admin/option'
@@ -12,7 +12,10 @@ import { UserLogQueryParams } from '@/app/api/user/log/route'
 import { GlobalLogQueryParams, GlobalLogSearchResponse } from '@/app/api/admin/log/route'
 import { GetAllChannelEnabledModelsResponse } from '@/app/api/models/builtin/channel/route'
 import { GetDefaultModelAndModeMappingResponse } from '@/app/api/models/default/route'
-import { GetChannelTypeNamesResponse } from '@/app/api/admin/channels/type-names/route'
+import { GetChannelTypeNamesResponse } from '@/app/api/admin/channel/type-name/route'
+import { GroupQueryParams, GroupStatus } from '@/types/admin/group'
+import { GroupSearchResponse } from '@/app/api/admin/group/route'
+import { GetAllChannelResponse } from '@/app/api/admin/channel/all/route'
 
 export const initAppConfig = () =>
   GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
@@ -42,17 +45,24 @@ export const updateToken = (id: number, status: number) =>
 // admin
 
 export const getChannels = (params: ChannelQueryParams) =>
-  GET<GetChannelsResponse['data']>('/api/admin/channels', params)
+  GET<GetChannelsResponse['data']>('/api/admin/channel', params)
 
 // channel
 export const createChannel = (params: CreateChannelRequest) =>
-  POST<ApiResp>('/api/admin/channels', params)
+  POST<ApiResp>('/api/admin/channel', params)
 
 export const updateChannel = (params: CreateChannelRequest, id: string) =>
-  PUT<ApiResp>(`/api/admin/channels/${id}`, params)
+  PUT<ApiResp>(`/api/admin/channel/${id}`, params)
+
+export const updateChannelStatus = (id: string, status: ChannelStatus) =>
+  POST<ApiResp>(`/api/admin/channel/${id}/status`, { status })
 
 export const getChannelTypeNames = () =>
-  GET<GetChannelTypeNamesResponse['data']>('/api/admin/channels/type-names')
+  GET<GetChannelTypeNamesResponse['data']>('/api/admin/channel/type-name')
+
+export const getAllChannels = () => GET<GetAllChannelResponse['data']>('/api/admin/channel/all')
+
+export const deleteChannel = (id: string) => DELETE(`/api/admin/channel/${id}`)
 
 // channel built-in support models and default model default mode mapping
 export const getChannelBuiltInSupportModels = () =>
@@ -73,3 +83,15 @@ export const batchOption = (params: BatchOptionData) =>
 // log
 export const getGlobalLogs = (params: GlobalLogQueryParams) =>
   GET<GlobalLogSearchResponse['data']>('/api/admin/log', params)
+
+// group
+export const getGroups = (params: GroupQueryParams) =>
+  GET<GroupSearchResponse['data']>('/api/admin/group', params)
+
+export const updateGroupStatus = (id: string, status: GroupStatus) =>
+  POST<ApiResp>(`/api/admin/group/${id}/status`, { status })
+
+export const updateGroupQpm = (id: string, qpm: number) =>
+  POST<ApiResp>(`/api/admin/group/${id}/qpm`, { qpm })
+
+export const deleteGroup = (id: string) => DELETE(`/api/admin/group/${id}`)

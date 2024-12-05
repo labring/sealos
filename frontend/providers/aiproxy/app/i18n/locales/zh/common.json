@@ -99,7 +99,8 @@
     "title": "Ai 渠道",
     "create": "新建",
     "import": "导入",
-    "export": "全部导出"
+    "export": "导出",
+    "exportAll": "全部导出"
   },
   "channelStatus": {
     "autoDisabled": "系统禁用"
@@ -122,7 +123,9 @@
     "updateFailed": "更新渠道失败",
     "id": "ID",
     "requestCount": "调用次数",
-    "status": "状态"
+    "status": "状态",
+    "action": "操作",
+    "delete": "删除"
   },
   "channelsForm": {
     "name": "自定义名称",
@@ -155,10 +158,6 @@
     "retry_count": "错误重试次数",
     "max_token": "工作空间最大 token 数"
   },
-  "globalonfigs": {
-    "common_config": "通用配置",
-    "model_config": "模型设置"
-  },
   "globalConfigs": {
     "defaultModel": "默认模型",
     "addDefaultModel": "新增模型",
@@ -166,7 +165,9 @@
     "saveDefaultModelFailed": "保存失败",
     "saveDefaultModelSuccess": "保存成功",
     "saveCommonConfigSuccess": "更新成功",
-    "saveCommonConfigFailed": "更新失败"
+    "saveCommonConfigFailed": "更新失败",
+    "common_config": "通用配置",
+    "model_config": "模型设置"
   },
   "modeType": {
     "0": "未知",
@@ -188,5 +189,31 @@
     "groupId": "工作空间",
     "tokenName": "Token 名称",
     "channel": "渠道 ID"
+  },
+  "nsManager": {
+    "groupId": "工作空间",
+    "qpm": "QPM 限制",
+    "created_at": "创建时间",
+    "accessed_at": "最后使用时间",
+    "used_amount": "使用金额",
+    "status": "状态",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "request_count": "使用次数",
+    "actions": "操作",
+    "ns_manager": "NS 管理",
+    "select_group_id": "填入工作空间",
+    "updateGroupStatusSuccess": "更新状态成功",
+    "updateGroupStatusFailed": "更新状态失败",
+    "updateGroupQpmSuccess": "更新 QPM 成功",
+    "updateGroupQpmFailed": "更新 QPM 失败",
+    "deleteGroupSuccess": "删除成功",
+    "deleteGroupFailed": "删除失败"
+  },
+  "channel": {
+    "updateSuccess": "更新状态成功",
+    "updateFailed": "更新状态失败",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败"
   }
 }

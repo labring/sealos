@@ -176,31 +176,40 @@ const ModelList: React.FC = () => {
           </Badge>
         </Flex>
       </Flex>
-      <Flex
-        flexDir="column"
-        align="flex-start"
-        gap="16px"
-        h="full"
-        maxH="full"
-        overflow="hidden"
-        overflowY="auto"
-        sx={{
-          '&::-webkit-scrollbar': {
-            display: 'none'
-          },
-          '-ms-overflow-style': 'none',
-          scrollbarWidth: 'none'
-        }}>
-        {isLoading ? (
-          <Center>
-            <Spinner size="md" color="grayModern.800" />
-          </Center>
-        ) : (
-          data?.map((modelConfig) => (
+
+      {isLoading ? (
+        <Center
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          w="100%"
+          h="100%"
+          zIndex={1}>
+          <Spinner size="md" color="grayModern.800" />
+        </Center>
+      ) : (
+        <Flex
+          flexDir="column"
+          align="flex-start"
+          gap="16px"
+          h="full"
+          maxH="full"
+          overflow="hidden"
+          overflowY="auto"
+          sx={{
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            },
+            '-ms-overflow-style': 'none',
+            scrollbarWidth: 'none'
+          }}>
+          {data?.map((modelConfig) => (
             <ModelComponent key={modelConfig.model} modelName={modelConfig.model} />
-          ))
-        )}
-      </Flex>
+          ))}
+        </Flex>
+      )}
     </>
   )
 }

@@ -1,32 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ChannelInfo } from '@/types/admin/channels/channelInfo'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { CreateChannelRequest } from '@/types/admin/channels/channelInfo'
+import { GroupStatus } from '@/types/admin/group'
 
 export const dynamic = 'force-dynamic'
 
-export type GetChannelsResponse = ApiResp<{
-  channels: ChannelInfo[]
-  total: number
-}>
-
-async function updateChannel(channelData: CreateChannelRequest, id: string): Promise<void> {
+async function updateGroup(status: GroupStatus, id: string): Promise<void> {
   try {
     const url = new URL(
-      `/api/channel/${id}`,
+      `/api/group/${id}/status`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
 
+    console.log('updateGroup status:## ', status)
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
-      body: JSON.stringify(channelData),
+      body: JSON.stringify({ status: status }),
       cache: 'no-store'
     })
 
@@ -36,16 +31,16 @@ async function updateChannel(channelData: CreateChannelRequest, id: string): Pro
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'Failed to create channel')
+      throw new Error(result.message || 'Failed to update group status')
     }
   } catch (error) {
-    console.error('admin channels api: create channel error:## ', error)
+    console.error('admin groups api: update group status error:## ', error)
     throw error
   }
 }
 
-// update channel
-export async function PUT(
+// update group status
+export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<ApiResp>> {
@@ -57,22 +52,22 @@ export async function PUT(
       return NextResponse.json(
         {
           code: 400,
-          message: 'Channel id is required',
+          message: 'Group id is required',
           error: 'Bad Request'
         },
         { status: 400 }
       )
     }
 
-    const channelData: CreateChannelRequest = await request.json()
-    await updateChannel(channelData, params.id)
+    const { status }: { status: GroupStatus } = await request.json()
+    await updateGroup(status, params.id)
 
     return NextResponse.json({
       code: 200,
-      message: 'Channel created successfully'
+      message: 'Group status updated successfully'
     } satisfies ApiResp)
   } catch (error) {
-    console.error('admin channels api: create channel error:## ', error)
+    console.error('admin groups api: update group status error:## ', error)
     return NextResponse.json(
       {
         code: 500,

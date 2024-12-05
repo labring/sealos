@@ -49,11 +49,10 @@ const CommonConfig = () => {
   })
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
-    queryKey: [QueryKey.GetOption],
+    queryKey: [QueryKey.GetCommonConfig],
     queryFn: () => getOption(),
     onSuccess: (data) => {
       if (!data) return
-      console.log('data', data)
 
       setCommonConfig(
         produce(commonConfig, (draft) => {
@@ -73,7 +72,7 @@ const CommonConfig = () => {
         title: t('globalConfigs.saveCommonConfigSuccess'),
         status: 'success'
       })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetOption] })
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetCommonConfig] })
     },
     onError: () => {
       message({
@@ -116,7 +115,7 @@ const CommonConfig = () => {
           fontWeight="500"
           lineHeight="24px"
           letterSpacing="0.15px">
-          {t('globalonfigs.common_config')}
+          {t('globalConfigs.common_config')}
         </Text>
       </Flex>
       {/* -- title end */}

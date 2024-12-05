@@ -1,18 +1,46 @@
 'use client'
 import { Button, Flex, Text, useDisclosure } from '@chakra-ui/react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import ChannelTable from './components/ChannelTable'
 import UpdateChannelModal from './components/UpdateChannelModal'
 import { useState } from 'react'
+import { ChannelInfo } from '@/types/admin/channels/channelInfo'
+import { getAllChannels, getChannels } from '@/api/platform'
+import { QueryKey } from '@/types/query-key'
+import { downloadJson } from '@/utils/common'
 
 export default function DashboardPage() {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [operationType, setOperationType] = useState<'create' | 'update'>('create')
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+  const [exportData, setExportData] = useState<ChannelInfo[]>([])
+
+  const {
+    data: allChannels,
+    isFetching: isAllChannelsFetching,
+    refetch
+  } = useQuery({
+    queryKey: [QueryKey.GetAllChannels],
+    queryFn: getAllChannels,
+    refetchOnReconnect: false,
+    enabled: false
+  })
+
+  const handleExport = async () => {
+    if (exportData.length === 0) {
+      const result = await refetch()
+      const dataToExport = result.data || []
+      downloadJson(dataToExport, 'channels')
+    } else {
+      downloadJson(exportData, 'channels')
+    }
+  }
+
   return (
-    <Flex pt="4px" pb="12px" pr="12px" h="100vh" width="full">
+    <Flex pt="4px" pb="12px" pr="12px" h="full" width="full">
       <Flex
         bg="white"
         gap="16px"
@@ -22,7 +50,6 @@ export default function DashboardPage() {
         pb="18px"
         flexDirection="column"
         borderRadius="12px"
-        h="full"
         w="full"
         flex="1">
         {/* header */}
@@ -140,6 +167,8 @@ export default function DashboardPage() {
               {t('dashboard.import')}
             </Button>
             <Button
+              onClick={handleExport}
+              isLoading={isAllChannelsFetching}
               display="flex"
               padding="8px 14px"
               justifyContent="center"
@@ -183,13 +212,13 @@ export default function DashboardPage() {
                   fill="white"
                 />
               </svg>
-              {t('dashboard.export')}
+              {exportData.length > 0 ? t('dashboard.export') : t('dashboard.exportAll')}
             </Button>
           </Flex>
         </Flex>
         {/* header end */}
         {/* table */}
-        <ChannelTable />
+        <ChannelTable exportData={setExportData} />
         {/* modal */}
         <UpdateChannelModal isOpen={isOpen} onClose={onClose} operationType={operationType} />
       </Flex>

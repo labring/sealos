@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { QueryKey } from '@/types/query-key'
 import { useBackendStore } from '@/store/backend'
+import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
@@ -118,7 +119,16 @@ export default function Home(): React.JSX.Element {
             <Box position={'relative'}>
               <MyTooltip placement="bottom-end" label={t('logs.total_price_tip')}>
                 <Flex alignItems={'center'} gap={'4px'}>
-                  {t('logs.total_price')}
+                  <Text
+                    noOfLines={1}
+                    color="grayModern.600"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px">
+                    {t('logs.total_price')}
+                  </Text>
                   <CurrencySymbol type={currencySymbol} />
                 </Flex>
               </MyTooltip>
@@ -174,6 +184,22 @@ export default function Home(): React.JSX.Element {
               {t('logs.call_log')}
             </Text>
             <Button
+              variant="outline"
+              _hover={{
+                transform: 'scale(1.05)',
+                transition: 'transform 0.2s ease'
+              }}
+              _active={{
+                transform: 'scale(0.92)',
+                animation: 'pulse 0.3s ease'
+              }}
+              sx={{
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(0.92)' },
+                  '50%': { transform: 'scale(0.96)' },
+                  '100%': { transform: 'scale(0.92)' }
+                }
+              }}
               display="flex"
               padding="8px"
               justifyContent="center"
@@ -202,12 +228,13 @@ export default function Home(): React.JSX.Element {
           </Flex>
           <Flex gap="16px" flexDirection="column" alignItems="flex-start" alignSelf="stretch">
             {/* -- the first row */}
-            <Flex alignItems="center" gap="8px" justifyContent="space-between" alignSelf="stretch">
-              <Flex
-                h="32px"
-                gap="24px"
-                alignItems="center"
-                style={{ transform: 'rotate(0.048deg)' }}>
+            <Flex
+              alignItems="center"
+              gap="8px"
+              justifyContent="space-between"
+              alignSelf="stretch"
+              flexWrap="wrap">
+              <Flex h="32px" gap="24px" alignItems="center">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -219,35 +246,41 @@ export default function Home(): React.JSX.Element {
                   letterSpacing="0.5px">
                   {t('logs.name')}
                 </Text>
-                <MySelect
-                  w="320px"
-                  placeholder={t('logs.select_token_name')}
-                  value={name}
-                  list={[
-                    {
-                      value: 'all',
-                      label: 'all'
-                    },
-                    ...(tokenData?.tokens?.map((item) => ({
-                      value: item.name,
-                      label: item.name
-                    })) || [])
-                  ]}
-                  onchange={(val: string) => {
-                    if (val === 'all') {
+                <SingleSelectComboboxUnstyle<string>
+                  dropdownItems={['all', ...(tokenData?.tokens?.map((item) => item.name) || [])]}
+                  setSelectedItem={(value) => {
+                    if (value === 'all') {
                       setName('')
                     } else {
-                      setName(val)
+                      setName(value)
                     }
                   }}
+                  handleDropdownItemFilter={(dropdownItems, inputValue) => {
+                    const lowerCasedInput = inputValue.toLowerCase()
+                    return dropdownItems.filter(
+                      (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
+                    )
+                  }}
+                  handleDropdownItemDisplay={(dropdownItem) => {
+                    return (
+                      <Text
+                        color="grayModern.600"
+                        fontFamily="PingFang SC"
+                        fontSize="12px"
+                        fontStyle="normal"
+                        fontWeight={400}
+                        lineHeight="16px"
+                        letterSpacing="0.048px">
+                        {dropdownItem}
+                      </Text>
+                    )
+                  }}
+                  flexProps={{ w: '320px' }}
+                  placeholder={t('logs.select_token_name')}
                 />
               </Flex>
 
-              <Flex
-                h="32px"
-                gap="24px"
-                alignItems="center"
-                style={{ transform: 'rotate(0.048deg)' }}>
+              <Flex h="32px" gap="24px" alignItems="center">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -259,35 +292,41 @@ export default function Home(): React.JSX.Element {
                   letterSpacing="0.5px">
                   {t('logs.modal')}
                 </Text>
-                <MySelect
-                  w="320px"
-                  placeholder={t('logs.select_modal')}
-                  value={modelName}
-                  list={[
-                    {
-                      value: 'all',
-                      label: 'all'
-                    },
-                    ...modelConfigs.map((modelConfig) => ({
-                      value: modelConfig.model,
-                      label: modelConfig.model
-                    }))
-                  ]}
-                  onchange={(val: string) => {
-                    if (val === 'all') {
+                <SingleSelectComboboxUnstyle<string>
+                  dropdownItems={['all', ...modelConfigs.map((item) => item.model)]}
+                  setSelectedItem={(value) => {
+                    if (value === 'all') {
                       setModelName('')
                     } else {
-                      setModelName(val)
+                      setModelName(value)
                     }
                   }}
+                  handleDropdownItemFilter={(dropdownItems, inputValue) => {
+                    const lowerCasedInput = inputValue.toLowerCase()
+                    return dropdownItems.filter(
+                      (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
+                    )
+                  }}
+                  handleDropdownItemDisplay={(dropdownItem) => {
+                    return (
+                      <Text
+                        color="grayModern.600"
+                        fontFamily="PingFang SC"
+                        fontSize="12px"
+                        fontStyle="normal"
+                        fontWeight={400}
+                        lineHeight="16px"
+                        letterSpacing="0.048px">
+                        {dropdownItem}
+                      </Text>
+                    )
+                  }}
+                  flexProps={{ w: '320px' }}
+                  placeholder={t('logs.select_modal')}
                 />
               </Flex>
 
-              <Flex
-                h="32px"
-                gap="24px"
-                alignItems="center"
-                style={{ transform: 'rotate(0.048deg)' }}>
+              <Flex h="32px" gap="24px" alignItems="center">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"

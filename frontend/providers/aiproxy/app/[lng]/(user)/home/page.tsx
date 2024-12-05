@@ -5,10 +5,10 @@ import ModelList from '@/components/user/ModelList'
 
 export default function Home(): JSX.Element {
   return (
-    <Flex pt="4px" pb="12px" pr="12px" gap="8px" h="100vh" w="full">
+    <Flex pt="4px" pb="12px" pr="12px" gap="8px" h="full" w="full">
       <Flex
-        flex={4.95}
-        display="inline-flex"
+        flexGrow="1"
+        flex="4.95"
         p="24px 32px 8px 32px"
         flexDirection="column"
         alignItems="flex-start"
@@ -16,12 +16,14 @@ export default function Home(): JSX.Element {
         bg="white"
         h="full"
         w="full"
+        minW="500px"
         borderRadius="12px">
         <KeyList />
       </Flex>
 
       <Flex
-        flex={1}
+        flexGrow="1"
+        flex="1"
         bg="white"
         borderRadius="12px"
         display="inline-flex"
@@ -32,7 +34,8 @@ export default function Home(): JSX.Element {
         gap="22px"
         minW="260px"
         w="full"
-        h="full">
+        h="full"
+        position="relative">
         <ModelList />
       </Flex>
     </Flex>

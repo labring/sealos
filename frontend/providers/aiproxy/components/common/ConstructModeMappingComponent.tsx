@@ -20,7 +20,6 @@ export const ConstructModeMappingComponent = function ({
   mapData: Record<string, string>
   setMapData: (mapping: Record<string, string>) => void
 }) {
-  console.log(mapData)
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
