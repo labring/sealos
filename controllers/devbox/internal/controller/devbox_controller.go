@@ -195,6 +195,7 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 	// Secret not found, create a new one
 	publicKey, privateKey, err := helper.GenerateSSHKeyPair()
+	fmt.Println()
 	if err != nil {
 		return fmt.Errorf("failed to generate SSH key pair: %w", err)
 	}
@@ -469,38 +470,43 @@ func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *dev
 func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
 	pathType := networkingv1.PathTypePrefix
 	var className = "nginx"
-	wsIngress := &networkingv1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      devbox.Name + "-proxy-ingress",
-			Namespace: devbox.Namespace,
-		},
-		Spec: networkingv1.IngressSpec{
-			IngressClassName: &className, // 指定使用 nginx Ingress Controller
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: devbox.Name + ".sealoshzh.site",
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: []networkingv1.HTTPIngressPath{
-								{
-									Path:     "/",
-									PathType: &pathType,
-									Backend: networkingv1.IngressBackend{
-										Service: &networkingv1.IngressServiceBackend{
-											Name: devbox.Name + "-proxy-svc",
-											Port: networkingv1.ServiceBackendPort{
-												Number: 22,
-											},
-										},
-									},
-								},
-							},
-						},
+	ingressPath := []networkingv1.HTTPIngressPath{
+		{
+			Path:     "/",
+			PathType: &pathType,
+			Backend: networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: devbox.Name + "-proxy-svc",
+					Port: networkingv1.ServiceBackendPort{
+						Number: 80,
 					},
 				},
 			},
 		},
 	}
+
+	ingressSpec := networkingv1.IngressSpec{
+		IngressClassName: &className,
+		Rules: []networkingv1.IngressRule{
+			{
+				Host: devbox.Name + ".sealoshzh.site",
+				IngressRuleValue: networkingv1.IngressRuleValue{
+					HTTP: &networkingv1.HTTPIngressRuleValue{
+						Paths: ingressPath,
+					},
+				},
+			},
+		},
+	}
+
+	wsIngress := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-proxy-ingress",
+			Namespace: devbox.Namespace,
+		},
+		Spec: ingressSpec,
+	}
+
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsIngress, func() error {
 		return controllerutil.SetControllerReference(devbox, wsIngress, r.Scheme)
 	}); err != nil {
@@ -514,12 +520,11 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 	if err != nil {
 		return err
 	}
-
 	servicePort := []corev1.ServicePort{
 		{
 			Name:       "devbox-ssh-port",
-			Port:       2222,
-			TargetPort: intstr.FromInt32(2222),
+			Port:       80,
+			TargetPort: intstr.FromInt32(80),
 			Protocol:   corev1.ProtocolTCP,
 		},
 	}
@@ -535,7 +540,6 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 			Labels:    helper.GenerateProxyPodLabels(devbox, runtimecr),
 		},
 	}
-
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, proxySvc, func() error {
 		// only update some specific fields
 		proxySvc.Spec.Selector = expectServiceSpec.Selector
@@ -596,8 +600,8 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 					},
 					Args: []string{
 						fmt.Sprintf("/app/bin server --port=%d  -v=true --reverse & /app/bin client -v localhost:%d R:2222:%s-pod-svc:%s",
-							8080,
-							8080,
+							80,
+							80,
 							devbox.Name,
 							sshPort,
 						),
