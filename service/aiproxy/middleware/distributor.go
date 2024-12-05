@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -51,7 +52,9 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
-	c.Set(ctxkey.OriginalModel, requestModel)
+	c.Set(string(ctxkey.OriginalModel), requestModel)
+	ctx := context.WithValue(c.Request.Context(), ctxkey.OriginalModel, requestModel)
+	c.Request = c.Request.WithContext(ctx)
 	c.Set(ctxkey.Channel, channel)
 
 	c.Next()
@@ -59,7 +62,7 @@ func Distribute(c *gin.Context) {
 
 func NewMetaByContext(c *gin.Context) *meta.Meta {
 	channel := c.MustGet(ctxkey.Channel).(*model.Channel)
-	originalModel := c.GetString(ctxkey.OriginalModel)
+	originalModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
