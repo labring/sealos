@@ -18,7 +18,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -116,7 +116,7 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 		tokenCache.Key = key
 		return tokenCache, nil
 	} else if err != nil && !errors.Is(err, redis.Nil) {
-		logger.SysLogf("get token (%s) from redis error: %s", key, err.Error())
+		log.Errorf("get token (%s) from redis error: %s", key, err.Error())
 	}
 
 	token, err := GetTokenByKey(key)
@@ -125,7 +125,7 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 	}
 
 	if err := CacheSetToken(token); err != nil {
-		logger.SysError("redis set token error: " + err.Error())
+		log.Error("redis set token error: " + err.Error())
 	}
 
 	return token.ToTokenCache(), nil
@@ -259,7 +259,7 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 		groupCache.ID = id
 		return groupCache, nil
 	} else if err != nil && !errors.Is(err, redis.Nil) {
-		logger.SysLogf("get group (%s) from redis error: %s", id, err.Error())
+		log.Errorf("get group (%s) from redis error: %s", id, err.Error())
 	}
 
 	group, err := GetGroupByID(id)
@@ -268,7 +268,7 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 	}
 
 	if err := CacheSetGroup(group); err != nil {
-		logger.SysError("redis set group error: " + err.Error())
+		log.Error("redis set group error: " + err.Error())
 	}
 
 	return group.ToGroupCache(), nil
@@ -389,7 +389,7 @@ func initializeChannelModels(channel *Channel) {
 
 	if len(missingModels) > 0 {
 		slices.Sort(missingModels)
-		logger.SysErrorf("model config not found: %v", missingModels)
+		log.Errorf("model config not found: %v", missingModels)
 	}
 	slices.Sort(findedModels)
 	channel.Models = findedModels
@@ -525,13 +525,11 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			logger.SysDebug("syncing channels from database")
 			err := InitChannelCache()
 			if err != nil {
-				logger.SysError("failed to sync channels: " + err.Error())
+				log.Error("failed to sync channels: " + err.Error())
 				continue
 			}
-			logger.SysDebug("channels synced from database")
 		}
 	}
 }
@@ -598,12 +596,10 @@ func SyncModelConfigCache(ctx context.Context, wg *sync.WaitGroup, frequency tim
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			logger.SysDebug("syncing model configs from database")
 			err := InitModelConfigCache()
 			if err != nil {
-				logger.SysError("failed to sync model configs: " + err.Error())
+				log.Error("failed to sync model configs: " + err.Error())
 			}
-			logger.SysDebug("model configs synced from database")
 		}
 	}
 }

@@ -14,7 +14,7 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 )
 
 type Option struct {
@@ -51,7 +51,6 @@ func InitOptionMap() error {
 }
 
 func loadOptionsFromDatabase(isInit bool) error {
-	logger.SysDebug("syncing options from database")
 	options, err := AllOption()
 	if err != nil {
 		return err
@@ -59,10 +58,9 @@ func loadOptionsFromDatabase(isInit bool) error {
 	for _, option := range options {
 		err := updateOptionMap(option.Key, option.Value, isInit)
 		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
-			logger.SysErrorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
+			log.Errorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
 		}
 	}
-	logger.SysDebug("options synced from database")
 	return nil
 }
 
@@ -77,7 +75,7 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 			return
 		case <-ticker.C:
 			if err := loadOptionsFromDatabase(true); err != nil {
-				logger.SysErrorf("failed to sync options from database: %s", err.Error())
+				log.Error("failed to sync options from database: " + err.Error())
 			}
 		}
 	}
@@ -184,7 +182,7 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		}
 		if len(missingModels) > 0 {
 			sort.Strings(missingModels)
-			logger.SysErrorf("model config not found: %v", missingModels)
+			log.Errorf("model config not found: %v", missingModels)
 		}
 		allowedNewModels := make(map[int][]string)
 		for t, ms := range newModels {

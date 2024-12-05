@@ -77,5 +77,18 @@ func TokenAuth(c *gin.Context) {
 	c.Set(ctxkey.Group, group)
 	c.Set(ctxkey.Token, token)
 
+	log := GetLogger(c)
+	log.Data["gid"] = group.ID
+	log.Data["tid"] = token.ID
+	log.Data["tname"] = token.Name
+	log.Data["key"] = maskTokenKey(key)
+
 	c.Next()
+}
+
+func maskTokenKey(key string) string {
+	if len(key) <= 8 {
+		return "*****"
+	}
+	return key[:4] + "*****" + key[len(key)-4:]
 }

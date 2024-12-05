@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
+	stdlog "log"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
@@ -16,22 +19,21 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/router"
+	log "github.com/sirupsen/logrus"
 )
 
 func initializeServices() error {
+	setLog(log.StandardLogger())
+
 	common.Init()
-	logger.SetupLogger()
 
 	if err := initializeBalance(); err != nil {
 		return err
 	}
-
-	setupGinMode()
 
 	if err := initializeDatabases(); err != nil {
 		return err
@@ -48,20 +50,51 @@ func initializeServices() error {
 func initializeBalance() error {
 	sealosJwtKey := os.Getenv("SEALOS_JWT_KEY")
 	if sealosJwtKey == "" {
-		logger.SysLog("SEALOS_JWT_KEY is not set, balance will not be enabled")
+		log.Info("SEALOS_JWT_KEY is not set, balance will not be enabled")
 		return nil
 	}
 
-	logger.SysLog("SEALOS_JWT_KEY is set, balance will be enabled")
+	log.Info("SEALOS_JWT_KEY is set, balance will be enabled")
 	return balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL"))
 }
 
-func setupGinMode() {
-	if os.Getenv("GIN_MODE") != gin.DebugMode {
+var logCallerIgnoreFuncs = map[string]struct{}{
+	"github.com/labring/sealos/service/aiproxy/middleware.logColor": {},
+}
+
+func setLog(l *log.Logger) {
+	gin.ForceConsoleColor()
+	if config.DebugEnabled {
+		l.SetLevel(log.DebugLevel)
+		l.SetReportCaller(true)
+		gin.SetMode(gin.DebugMode)
+	} else {
+		l.SetLevel(log.InfoLevel)
+		l.SetReportCaller(false)
 		gin.SetMode(gin.ReleaseMode)
 	}
-	if config.DebugEnabled {
-		logger.SysLog("running in debug mode")
+	l.SetOutput(os.Stdout)
+	stdlog.SetOutput(l.Writer())
+
+	log.SetFormatter(&log.TextFormatter{
+		ForceColors:      true,
+		DisableColors:    false,
+		ForceQuote:       config.DebugEnabled,
+		DisableQuote:     !config.DebugEnabled,
+		DisableSorting:   true,
+		FullTimestamp:    true,
+		TimestampFormat:  time.DateTime,
+		QuoteEmptyFields: true,
+		CallerPrettyfier: func(f *runtime.Frame) (function string, file string) {
+			if _, ok := logCallerIgnoreFuncs[f.Function]; ok {
+				return "", ""
+			}
+			return f.Function, fmt.Sprintf("%s:%d", f.File, f.Line)
+		},
+	})
+
+	if common.NeedColor() {
+		gin.ForceConsoleColor()
 	}
 }
 
@@ -88,15 +121,18 @@ func startSyncServices(ctx context.Context, wg *sync.WaitGroup) {
 	go model.SyncModelConfigCache(ctx, wg, time.Second*5)
 
 	if config.EnableMetric {
-		logger.SysLog("metric enabled, will disable channel if too much request failed")
+		log.Info("metric enabled, will disable channel if too much request failed")
 	}
 }
 
 func setupHTTPServer() (*http.Server, *gin.Engine) {
 	server := gin.New()
-	server.Use(gin.Recovery())
-	server.Use(middleware.RequestID)
-	middleware.SetUpLogger(server)
+
+	w := log.StandardLogger().Writer()
+	server.
+		Use(middleware.NewLog(log.StandardLogger())).
+		Use(gin.RecoveryWithWriter(w)).
+		Use(middleware.RequestID)
 	router.SetRouter(server)
 
 	port := os.Getenv("PORT")
@@ -113,12 +149,12 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 
 func main() {
 	if err := initializeServices(); err != nil {
-		logger.FatalLog("failed to initialize services: " + err.Error())
+		log.Fatal("failed to initialize services: " + err.Error())
 	}
 
 	defer func() {
 		if err := model.CloseDB(); err != nil {
-			logger.FatalLog("failed to close database: " + err.Error())
+			log.Fatal("failed to close database: " + err.Error())
 		}
 	}()
 
@@ -131,24 +167,24 @@ func main() {
 	srv, _ := setupHTTPServer()
 
 	go func() {
-		logger.SysLogf("server started on http://localhost:%s", srv.Addr[1:])
+		log.Infof("server started on http://localhost:%s", srv.Addr[1:])
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.FatalLog("failed to start HTTP server: " + err.Error())
+			log.Fatal("failed to start HTTP server: " + err.Error())
 		}
 	}()
 
 	<-ctx.Done()
-	logger.SysLog("shutting down server...")
+	log.Info("shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.SysError("server forced to shutdown: " + err.Error())
+		log.Error("server forced to shutdown: " + err.Error())
 	}
 
 	relaycontroller.ConsumeWaitGroup.Wait()
 	wg.Wait()
 
-	logger.SysLog("server exiting")
+	log.Info("server exiting")
 }

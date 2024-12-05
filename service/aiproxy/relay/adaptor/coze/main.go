@@ -7,12 +7,12 @@ import (
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze/constant/messagetype"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -109,6 +109,8 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *string) {
 	defer resp.Body.Close()
 
+	log := middleware.GetLogger(c)
+
 	var responseText string
 	createdTime := helper.GetTimestamp()
 	scanner := bufio.NewScanner(resp.Body)
@@ -131,7 +133,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var cozeResponse StreamResponse
 		err := json.Unmarshal(data, &cozeResponse)
 		if err != nil {
-			logger.Error(c, "error unmarshalling stream response: "+err.Error())
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 
@@ -148,12 +150,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.Error(c, "error rendering stream response: "+err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Error(c, "error reading stream: "+err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)
@@ -163,6 +165,8 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *string) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	var cozeResponse Response
 	err := json.NewDecoder(resp.Body).Decode(&cozeResponse)
@@ -186,7 +190,10 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
-	_, _ = c.Writer.Write(jsonResponse)
+	_, err = c.Writer.Write(jsonResponse)
+	if err != nil {
+		log.Error("write response body failed: " + err.Error())
+	}
 	var responseText string
 	if len(fullTextResponse.Choices) > 0 {
 		responseText = fullTextResponse.Choices[0].Message.StringContent()

@@ -24,7 +24,7 @@ func SetRelayRouter(router *gin.Engine) {
 		dashboardRouter.GET("/billing/usage", controller.GetUsage)
 	}
 	relayV1Router := router.Group("/v1")
-	relayV1Router.Use(middleware.RelayPanicRecover, middleware.TokenAuth, middleware.Distribute)
+	relayV1Router.Use(middleware.TokenAuth, middleware.Distribute)
 	{
 		relayV1Router.POST("/completions", controller.Relay)
 		relayV1Router.POST("/chat/completions", controller.Relay)

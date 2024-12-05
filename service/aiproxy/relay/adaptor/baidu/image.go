@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -26,6 +26,8 @@ type ImageResponse struct {
 
 func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -53,7 +55,7 @@ func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usa
 	}
 	_, err = c.Writer.Write(data)
 	if err != nil {
-		logger.Error(c, "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 	return usage, nil
 }

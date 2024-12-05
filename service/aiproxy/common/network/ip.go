@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 )
 
 func splitSubnets(subnets string) []string {
@@ -28,7 +28,7 @@ func isValidSubnet(subnet string) error {
 func isIPInSubnet(ctx context.Context, ip string, subnet string) bool {
 	_, ipNet, err := net.ParseCIDR(subnet)
 	if err != nil {
-		logger.Errorf(ctx, "failed to parse subnet: %s", err.Error())
+		log.Errorf("failed to parse subnet: %s", err.Error())
 		return false
 	}
 	return ipNet.Contains(net.ParseIP(ip))

@@ -2,11 +2,10 @@ package common
 
 import (
 	"flag"
-	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -32,6 +31,5 @@ func Init() {
 				log.Fatal(err)
 			}
 		}
-		logger.LogDir = *LogDir
 	}
 }

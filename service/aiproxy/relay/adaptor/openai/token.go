@@ -10,9 +10,9 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/pkoukk/tiktoken-go"
+	log "github.com/sirupsen/logrus"
 )
 
 // tokenEncoderMap won't grow after initialization
@@ -25,7 +25,7 @@ var (
 func init() {
 	gpt35TokenEncoder, err := tiktoken.EncodingForModel("gpt-3.5-turbo")
 	if err != nil {
-		logger.FatalLog("failed to get gpt-3.5-turbo token encoder: " + err.Error())
+		log.Fatal("failed to get gpt-3.5-turbo token encoder: " + err.Error())
 	}
 	defaultTokenEncoder = gpt35TokenEncoder
 }
@@ -41,7 +41,7 @@ func getTokenEncoder(model string) *tiktoken.Tiktoken {
 	if ok {
 		tokenEncoder, err := tiktoken.EncodingForModel(model)
 		if err != nil {
-			logger.SysError(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
+			log.Error(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
 			tokenEncoder = defaultTokenEncoder
 		}
 		tokenEncoderLock.Lock()
@@ -101,7 +101,7 @@ func CountTokenMessages(messages []*model.Message, model string) int {
 						}
 						imageTokens, err := countImageTokens(url, detail, model)
 						if err != nil {
-							logger.SysError("error counting image tokens: " + err.Error())
+							log.Error("error counting image tokens: " + err.Error())
 						} else {
 							tokenNum += imageTokens
 						}

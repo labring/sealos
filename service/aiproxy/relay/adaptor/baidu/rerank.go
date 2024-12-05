@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -20,6 +20,9 @@ type RerankResponse struct {
 
 func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
+
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
@@ -53,7 +56,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	}
 	_, err = c.Writer.Write(jsonData)
 	if err != nil {
-		logger.Error(c, "write response body failed: "+err.Error())
+		log.Error("write response body failed: " + err.Error())
 	}
 	return &reRankResp.Usage, nil
 }

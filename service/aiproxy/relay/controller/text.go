@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -17,11 +17,12 @@ import (
 )
 
 func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+	log := middleware.GetLogger(c)
 	ctx := c.Request.Context()
 
 	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(c.Request)
 	if err != nil {
-		logger.Errorf(ctx, "get and validate text request failed: %s", err.Error())
+		log.Errorf("get and validate text request failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "invalid_text_request", http.StatusBadRequest)
 	}
 
@@ -39,7 +40,7 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 		Price:        price,
 	}, meta)
 	if err != nil {
-		logger.Errorf(ctx, "get group (%s) balance failed: %v", meta.Group.ID, err)
+		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
 		return openai.ErrorWrapper(
 			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
 			"get_group_quota_failed",
@@ -58,7 +59,7 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 	// do response
 	usage, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		logger.Errorf(ctx, "do response failed: %s", respErr)
+		log.Errorf("do response failed: %s", respErr)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,

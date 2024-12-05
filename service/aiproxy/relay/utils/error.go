@@ -10,10 +10,10 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	log "github.com/sirupsen/logrus"
 )
 
 type GeneralErrorResponse struct {
@@ -127,7 +127,7 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 		return ErrorWithStatusCode
 	}
 	if config.DebugEnabled {
-		logger.SysLogf("error happened, status code: %d, response: \n%+v", resp.StatusCode, errResponse)
+		log.Infof("error happened, status code: %d, response: \n%+v", resp.StatusCode, errResponse)
 	}
 	if errResponse.Error.Message != "" {
 		// OpenAI format error, so we override the default one

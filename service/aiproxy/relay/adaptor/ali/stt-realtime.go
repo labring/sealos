@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -139,6 +139,8 @@ func STTDoRequest(meta *meta.Meta, req *http.Request) (*http.Response, error) {
 }
 
 func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	log := middleware.GetLogger(c)
+
 	audioData := meta.MustGet("audio_data").([]byte)
 	taskID := meta.MustGet("task_id").(string)
 
@@ -188,7 +190,7 @@ func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 			}
 		case "result-generated":
 			if msg.Payload.Output.Text != "" {
-				logger.Info(c, "STT result: "+msg.Payload.Output.Text)
+				log.Info("STT result: " + msg.Payload.Output.Text)
 			}
 			continue
 		case "task-finished":
