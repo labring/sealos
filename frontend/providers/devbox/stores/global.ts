@@ -2,8 +2,6 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
-export type IDEType = 'vscode' | 'cursor' | 'vscodeInsiders' | 'windsurf'
-
 type State = {
   screenWidth: number
   setScreenWidth: (e: number) => void
@@ -11,8 +9,6 @@ type State = {
   setLoading: (val: boolean) => void
   lastRoute: string
   setLastRoute: (val: string) => void
-  currentIDE: IDEType
-  setCurrentIDE: (val: IDEType) => void
 }
 
 export const useGlobalStore = create<State>()(
@@ -35,23 +31,7 @@ export const useGlobalStore = create<State>()(
         set((state) => {
           state.lastRoute = val
         })
-      },
-      currentIDE: 'cursor',
-      setCurrentIDE(val: IDEType) {
-        set((state) => {
-          state.currentIDE = val
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('currentIDE', val)
-          }
-        })
       }
     }))
   )
 )
-
-if (typeof window !== 'undefined') {
-  const storedIDE = localStorage.getItem('currentIDE') as IDEType
-  if (storedIDE) {
-    useGlobalStore.getState().setCurrentIDE(storedIDE)
-  }
-}

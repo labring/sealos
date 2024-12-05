@@ -15,8 +15,8 @@ import { useCallback, useState } from 'react'
 
 import MyIcon from './Icon'
 import { useEnvStore } from '@/stores/env'
+import { useIDEStore, IDEType } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
-import { IDEType, useGlobalStore } from '@/stores/global'
 import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
 
 interface Props {
@@ -43,7 +43,8 @@ const IDEButton = ({
   const { env } = useEnvStore()
   const { message: toast } = useMessage()
   const [loading, setLoading] = useState(false)
-  const { setCurrentIDE, currentIDE } = useGlobalStore()
+  const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore()
+  const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType
 
   const handleGotoIDE = useCallback(
     async (currentIDE: IDEType = 'cursor') => {
@@ -85,13 +86,13 @@ const IDEButton = ({
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
-          size={'sm'}
           fontSize={'base'}
           bg={'grayModern.150'}
           color={'grayModern.900'}
           _hover={{
             color: 'brightBlue.600'
           }}
+          size={'sm'}
           borderRightWidth={0}
           borderRightRadius={0}
           onClick={() => handleGotoIDE(currentIDE)}
@@ -142,7 +143,7 @@ const IDEButton = ({
               key={item.value}
               value={item.value}
               onClick={() => {
-                setCurrentIDE(item.value as IDEType)
+                updateDevboxIDE(item.value as IDEType, devboxName)
                 handleGotoIDE(item.value as IDEType)
               }}
               icon={<MyIcon name={item.value as IDEType} w={'16px'} />}
