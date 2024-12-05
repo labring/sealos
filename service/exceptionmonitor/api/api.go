@@ -29,7 +29,7 @@ const (
 	StatusStopping = "Stopping"
 	StatusStopped  = "Stopped"
 	StatusRunning  = "Running"
-	StatusUpdating = "Updating"
+	//StatusUpdating = "Updating"
 	StatusUnknown  = ""
 	MonitorTypeALL = "all"
 )
