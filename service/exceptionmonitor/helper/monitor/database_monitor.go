@@ -54,7 +54,6 @@ func DatabaseExceptionMonitor() {
 }
 
 func checkDeletedDatabases() {
-
 	//for databaseClusterUID, namespaceAndDatabaseClusterName := range api.DatabaseNamespaceMap {
 	for _, notificationInfo := range api.DatabaseNotificationInfoMap {
 		//namespace, databaseClusterName := getNamespaceAndDatabaseClusterName(namespaceAndDatabaseClusterName)
