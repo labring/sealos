@@ -41,7 +41,10 @@ func TokenAuth(c *gin.Context) {
 		return
 	}
 	if token.Subnet != "" {
-		if !network.IsIPInSubnets(ctx, c.ClientIP(), token.Subnet) {
+		if ok, err := network.IsIPInSubnets(ctx, c.ClientIP(), token.Subnet); err != nil {
+			abortWithMessage(c, http.StatusInternalServerError, err.Error())
+			return
+		} else if !ok {
 			abortWithMessage(c, http.StatusForbidden,
 				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnet: %s, current ip: %s",
 					token.Name,
