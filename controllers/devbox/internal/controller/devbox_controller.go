@@ -56,6 +56,7 @@ type DevboxReconciler struct {
 	LimitEphemeralStorage   string
 	WebSocketImage          string
 	DebugMode               bool
+	HostPath                string
 
 	client.Client
 	Scheme   *runtime.Scheme
@@ -430,7 +431,6 @@ func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alph
 		})
 	}
 	if len(servicePorts) == 0 {
-		//use the default value
 		servicePorts = []corev1.ServicePort{
 			{
 				Name:       "devbox-ssh-port",
@@ -489,7 +489,7 @@ func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv
 		IngressClassName: &className,
 		Rules: []networkingv1.IngressRule{
 			{
-				Host: devbox.Name + ".sealoshzh.site",
+				Host: devbox.Name + "." + r.HostPath,
 				IngressRuleValue: networkingv1.IngressRuleValue{
 					HTTP: &networkingv1.HTTPIngressRuleValue{
 						Paths: ingressPath,
@@ -828,5 +828,6 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&networkingv1.Ingress{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }

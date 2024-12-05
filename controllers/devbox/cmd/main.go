@@ -74,7 +74,9 @@ func main() {
 	var requestEphemeralStorage string
 	var limitEphemeralStorage string
 	var debugMode bool
-	var WebSocketImage string
+	var webSocketImage string
+	var hostPath string
+
 	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
 	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
 	flag.StringVar(&registryPassword, "registry-password", "passw0rd", "The password of the registry")
@@ -94,7 +96,9 @@ func main() {
 	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
 	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
 	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
-	flag.StringVar(&WebSocketImage, "websocket-image", "bearslyricattack/chisel:1.0", "The image name of devbox websocket proxy pod")
+	flag.StringVar(&webSocketImage, "websocket-image", "bearslyricattack/chisel:1.0", "The image name of devbox websocket proxy pod")
+	flag.StringVar(&hostPath, "host-path", "sealoshzh.site", "The host path of devbox ingress")
+
 	opts := zap.Options{
 		Development: true,
 	}
@@ -194,7 +198,8 @@ func main() {
 		RequestEphemeralStorage: requestEphemeralStorage,
 		LimitEphemeralStorage:   limitEphemeralStorage,
 		DebugMode:               debugMode,
-		WebSocketImage:          WebSocketImage,
+		WebSocketImage:          webSocketImage,
+		HostPath:                hostPath,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
