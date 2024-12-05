@@ -45,7 +45,7 @@ type Channel struct {
 	Priority         int32             `json:"priority"`
 }
 
-func (c *Channel) AfterDelete(tx *gorm.DB) (err error) {
+func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
 }
 
