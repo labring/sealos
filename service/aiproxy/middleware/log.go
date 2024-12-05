@@ -3,18 +3,32 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
+var fieldsPool = sync.Pool{
+	New: func() interface{} {
+		return make(logrus.Fields, 6)
+	},
+}
+
 func NewLog(l *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("log", &logrus.Entry{
+		fields := fieldsPool.Get().(logrus.Fields)
+		defer func() {
+			clear(fields)
+			fieldsPool.Put(fields)
+		}()
+
+		entry := &logrus.Entry{
 			Logger: l,
-			Data:   make(logrus.Fields),
-		})
+			Data:   fields,
+		}
+		c.Set("log", entry)
 
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -43,7 +57,7 @@ func NewLog(l *logrus.Logger) gin.HandlerFunc {
 
 		param.Path = path
 
-		logColor(c.MustGet("log").(*logrus.Entry), param)
+		logColor(entry, param)
 	}
 }
 
