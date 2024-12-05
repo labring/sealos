@@ -18,10 +18,12 @@ import { useEnvStore } from '@/stores/env'
 import { DevboxStatusMapType } from '@/types/devbox'
 import { IDEType, useGlobalStore } from '@/stores/global'
 import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import JetBrainsGuideModal from './modals/jetbrainsGuideModal'
 
 interface Props {
   devboxName: string
   runtimeVersion: string
+  runtimeType: string
   sshPort: number
   status: DevboxStatusMapType
   isBigButton?: boolean
@@ -32,6 +34,7 @@ interface Props {
 const IDEButton = ({
   devboxName,
   runtimeVersion,
+  runtimeType,
   sshPort,
   status,
   isBigButton = true,
@@ -42,17 +45,22 @@ const IDEButton = ({
 
   const { env } = useEnvStore()
   const { message: toast } = useMessage()
-  const [loading, setLoading] = useState(false)
   const { setCurrentIDE, currentIDE } = useGlobalStore()
+
+  const [loading, setLoading] = useState(false)
+  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<any>(null)
+  const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false)
 
   const handleGotoIDE = useCallback(
     async (currentIDE: IDEType = 'vscode') => {
       setLoading(true)
 
-      toast({
-        title: t('opening_ide'),
-        status: 'info'
-      })
+      if (currentIDE !== 'jetbrains') {
+        toast({
+          title: t('opening_ide'),
+          status: 'info'
+        })
+      }
 
       try {
         const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
@@ -60,6 +68,23 @@ const IDEButton = ({
           runtimeName: runtimeVersion
         })
         const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
+        const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
+
+        setJetBrainsGuideData({
+          devboxName,
+          runtimeType,
+          privateKey: sshPrivateKey,
+          userName,
+          token,
+          workingDir,
+          host: env.sealosDomain,
+          port: sshPort.toString()
+        })
+
+        if (currentIDE === 'jetbrains') {
+          setOnOpenJetbrainsModal(true)
+          return
+        }
 
         const idePrefix = ideObj[currentIDE].prefix
         const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
@@ -159,6 +184,13 @@ const IDEButton = ({
           ))}
         </MenuList>
       </Menu>
+      {!!onOpenJetbrainsModal && (
+        <JetBrainsGuideModal
+          onSuccess={() => {}}
+          onClose={() => setOnOpenJetbrainsModal(false)}
+          jetbrainsGuideData={jetbrainsGuideData}
+        />
+      )}
     </Flex>
   )
 }
@@ -187,6 +219,12 @@ export const ideObj = {
     icon: 'windsurf',
     prefix: 'windsurf://',
     value: 'windsurf'
+  },
+  jetbrains: {
+    label: 'JetBrains',
+    icon: 'jetbrains',
+    prefix: '-',
+    value: 'jetbrains'
   }
 }
 

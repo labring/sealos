@@ -202,6 +202,7 @@ const BasicInfo = () => {
                   <MyIcon
                     cursor={'pointer'}
                     name="download"
+                    color={'grayModern.600'}
                     w={'16px'}
                     h={'16px'}
                     onClick={() => handleDownloadConfig(devboxDetail?.sshConfig)}
