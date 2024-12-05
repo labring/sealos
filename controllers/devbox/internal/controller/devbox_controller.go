@@ -617,6 +617,12 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 		}); err != nil {
 			return err
 		}
+	} else {
+		// if devbox is stopped, delete the pod
+		err := r.Client.Delete(ctx, wsPod)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
