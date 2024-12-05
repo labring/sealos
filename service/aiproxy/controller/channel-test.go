@@ -164,6 +164,7 @@ func processTestResult(channel *model.Channel, modelName string, returnSuccess b
 }
 
 //nolint:goconst
+//nolint:gosec
 func TestChannelModels(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -249,6 +250,7 @@ func TestChannelModels(c *gin.Context) {
 }
 
 //nolint:goconst
+//nolint:gosec
 func TestAllChannels(c *gin.Context) {
 	channels := model.CacheGetEnabledChannels()
 	returnSuccess := c.Query("return_success") == "true"
