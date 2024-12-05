@@ -7,7 +7,8 @@ import {
   Tooltip,
   IconButton,
   MenuItem,
-  ButtonProps
+  ButtonProps,
+  Box
 } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
@@ -92,14 +93,21 @@ const IDEButton = ({
           _hover={{
             color: 'brightBlue.600'
           }}
-          size={'sm'}
           borderRightWidth={0}
           borderRightRadius={0}
           onClick={() => handleGotoIDE(currentIDE)}
-          leftIcon={isBigButton ? <MyIcon name={currentIDE} w={'16px'} /> : undefined}
           isDisabled={status.value !== 'Running' || loading}
           {...leftButtonProps}>
-          {!isBigButton ? <MyIcon name={currentIDE} w={'16px'} /> : ideObj[currentIDE]?.label}
+          {isBigButton ? (
+            <Flex alignItems={'center'} w={'100%'} justifyContent={'center'}>
+              <MyIcon name={currentIDE} w={'25%'} />
+              <Box w={'75%'} textAlign={'center'} pl={2}>
+                {ideObj[currentIDE]?.label}
+              </Box>
+            </Flex>
+          ) : (
+            <MyIcon name={currentIDE} w={'16px'} />
+          )}
         </Button>
       </Tooltip>
       <Menu placement="bottom-end" isLazy>
@@ -175,7 +183,7 @@ export const ideObj = {
     value: 'vscode'
   },
   vscodeInsiders: {
-    label: 'VSCode Insiders',
+    label: 'Insiders',
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
     value: 'vscodeInsiders'
