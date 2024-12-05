@@ -141,7 +141,10 @@ const IDEButton = ({
             <MenuItem
               key={item.value}
               value={item.value}
-              onClick={() => setCurrentIDE(item.value as IDEType)}
+              onClick={() => {
+                setCurrentIDE(item.value as IDEType)
+                handleGotoIDE(item.value as IDEType)
+              }}
               icon={<MyIcon name={item.value as IDEType} w={'16px'} />}
               _hover={{
                 bg: '#1118240D',
