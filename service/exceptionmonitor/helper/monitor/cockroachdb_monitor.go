@@ -10,7 +10,7 @@ import (
 )
 
 func CockroachMonitor() {
-	for {
+	for api.CockroachMonitor {
 		notificationInfo := &api.Info{
 			FeishuWebHook: api.FeishuWebhookURLMap["FeishuWebhookURLCockroachDB"],
 		}

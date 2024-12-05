@@ -103,6 +103,7 @@ var (
 	CPUMemMonitor                     bool
 	BackupMonitor                     bool
 	QuotaMonitor                      bool
+	CockroachMonitor                  bool
 	DatabaseDiskMonitorThreshold      float64
 	DatabaseExceptionMonitorThreshold float64
 	DatabaseCPUMonitorThreshold       float64
@@ -137,6 +138,7 @@ func GetENV() error {
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
 	BackupMonitor, _ = strconv.ParseBool(getEnvWithCheck("BackupMonitor", &missingEnvVars))
 	QuotaMonitor, _ = strconv.ParseBool(getEnvWithCheck("QuotaMonitor", &missingEnvVars))
+	CockroachMonitor, _ = strconv.ParseBool(getEnvWithCheck("CockroachMonitor", &missingEnvVars))
 	DatabaseDiskMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseDiskMonitorThreshold", &missingEnvVars), 64)
 	DatabaseExceptionMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseExceptionMonitorThreshold", &missingEnvVars), 64)
 	DatabaseCPUMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseCPUMonitorThreshold", &missingEnvVars), 64)
