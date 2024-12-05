@@ -540,7 +540,6 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, proxySvc, func() error {
-		// only update some specific fields
 		proxySvc.Spec.Selector = expectServiceSpec.Selector
 		proxySvc.Spec.Type = expectServiceSpec.Type
 		if len(proxySvc.Spec.Ports) == 0 {
