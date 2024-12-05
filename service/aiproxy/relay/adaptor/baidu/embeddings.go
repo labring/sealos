@@ -1,7 +1,6 @@
 package baidu
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -34,9 +33,6 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if baiduResponse.Error != nil && baiduResponse.Error.ErrorCode != 0 {
-		fmt.Println(baiduResponse.Error.ErrorMsg)
-		fmt.Println(baiduResponse.Error.ErrorMsg)
-		fmt.Println(baiduResponse.Error.ErrorMsg)
 		return &baiduResponse.Usage, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
 	}
 

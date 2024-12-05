@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -213,8 +212,6 @@ func AddChannel(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println(channel)
-	fmt.Println(channel.ToChannels())
 	err = model.BatchInsertChannels(channel.ToChannels())
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
