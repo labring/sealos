@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"os"
 	"strconv"
 	"strings"
@@ -34,13 +35,8 @@ const (
 )
 
 var (
-	ClientSet     *kubernetes.Clientset
-	DynamicClient *dynamic.DynamicClient
-	// records the last database status
-	LastDatabaseClusterStatus = make(map[string]string)
-	// record the debt ns
-	ExceptionDatabaseMap              = make(map[string]bool)
-	FeishuWebHookMap                  = make(map[string]string)
+	ClientSet                         *kubernetes.Clientset
+	DynamicClient                     *dynamic.DynamicClient
 	DebtNamespaceMap                  = make(map[string]bool)
 	DiskFullNamespaceMap              = make(map[string]bool)
 	DiskMonitorNamespaceMap           = make(map[string]bool)
@@ -48,7 +44,7 @@ var (
 	MemMonitorNamespaceMap            = make(map[string]bool)
 	LastBackupStatusMap               = make(map[string]string)
 	IsSendBackupStatusMap             = make(map[string]string)
-	DatabaseNamespaceMap              = make(map[string]string)
+	DatabaseNotificationInfoMap       = make(map[string]*notification.Info)
 	ExceededQuotaException            = "exceeded quota"
 	DiskException                     = "Writing to log file failed"
 	OwnerLabel                        = "user.sealos.io/owner"
@@ -72,6 +68,8 @@ var (
 	QuotaThreshold                    float64
 	APPID                             string
 	APPSECRET                         string
+	GlobalCockroachURI                string
+	LocalCockroachURI                 string
 	DatabaseStatusMessageIDMap        = make(map[string]string)
 	DatabaseDiskMessageIDMap          = make(map[string]string)
 	DatabaseCPUMessageIDMap           = make(map[string]string)
@@ -90,6 +88,8 @@ func GetENV() error {
 	MonitorType = getEnvWithCheck("MonitorType", &missingEnvVars)
 	clusterNS := getEnvWithCheck("ClusterNS", &missingEnvVars)
 	LOCALREGION = getEnvWithCheck("LOCALREGION", &missingEnvVars)
+	GlobalCockroachURI = getEnvWithCheck("GlobalCockroachURI", &missingEnvVars)
+	LocalCockroachURI = getEnvWithCheck("LocalCockroachURI", &missingEnvVars)
 	DatabaseMonitor, _ = strconv.ParseBool(getEnvWithCheck("DatabaseMonitor", &missingEnvVars))
 	DiskMonitor, _ = strconv.ParseBool(getEnvWithCheck("DiskMonitor", &missingEnvVars))
 	CPUMemMonitor, _ = strconv.ParseBool(getEnvWithCheck("CPUMemMonitor", &missingEnvVars))
@@ -119,6 +119,8 @@ func GetENV() error {
 		"FeishuWebhookURLBackup",
 		//Quota
 		"FeishuWebhookURLQuota",
+		//CockroachDB
+		"FeishuWebhookURLCockroachDB",
 	}, FeishuWebhookURLMap, &missingEnvVars)
 
 	// Get ClusterRegionMap

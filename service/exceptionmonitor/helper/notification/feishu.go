@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"regexp"
-	"time"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
+	"log"
+	"regexp"
 )
 
 const ExceptionType = "exception"
@@ -21,10 +19,12 @@ var (
 )
 
 type Info struct {
+	// lastStatus、recoveryStatus、lastStatusTime、recoveryStatusTime、lastStatusInfo、recoveryStatusInfo
+	//todo 是否应该分几个状态，是否有状态不正确的地方
 	DatabaseClusterName string
 	Namespace           string
-	Status              string
 	DebtLevel           string
+	DatabaseType        string
 	Events              string
 	Reason              string
 	NotificationType    string
@@ -33,6 +33,14 @@ type Info struct {
 	MemUsage            string
 	PerformanceType     string
 	ExceptionType       string
+	ExceptionStatus     string
+	RecoveryStatus      string
+	ExceptionStatusTime string
+	RecoveryTime        string
+	DatabaseClusterUID  string
+	FeishuWebHook       string
+	//struct
+	FeishuInfo []map[string]interface{}
 }
 
 type NameSpaceQuota struct {
@@ -57,7 +65,55 @@ func InitFeishuClient() {
 	feiShuClient = lark.NewClient(api.APPID, api.APPSECRET)
 }
 
-func GetNotificationMessage(notificationInfo Info) string {
+func GetCockroachMessage(errMessage, cockroachType string) string {
+	headerTemplate := "red"
+	titleContent := "小强数据库异常告警"
+	elements := []map[string]interface{}{
+		{
+			"tag": "div",
+			"text": map[string]string{
+				"content": fmt.Sprintf("集群环境：%s", api.ClusterName),
+				"tag":     "lark_md",
+			},
+		},
+		{
+			"tag": "div",
+			"text": map[string]string{
+				"content": fmt.Sprintf("数据库类型：%s", cockroachType),
+				"tag":     "lark_md",
+			},
+		},
+		{
+			"tag": "div",
+			"text": map[string]string{
+				"content": fmt.Sprintf("异常信息：%s", errMessage),
+				"tag":     "lark_md",
+			},
+		},
+	}
+	card := map[string]interface{}{
+		"config": map[string]bool{
+			"wide_screen_mode": true,
+		},
+		"elements": elements,
+		"header": map[string]interface{}{
+			"template": headerTemplate,
+			"title": map[string]string{
+				"content": titleContent,
+				"tag":     "plain_text",
+			},
+		},
+	}
+
+	databaseMessage, err := json.Marshal(card)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return ""
+	}
+	return string(databaseMessage)
+}
+
+func GetNotificationMessage(notificationInfo *Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
 	usage := ""
@@ -68,8 +124,8 @@ func GetNotificationMessage(notificationInfo Info) string {
 	} else if notificationInfo.PerformanceType == "磁盘" {
 		usage = notificationInfo.DiskUsage
 	}
-	var elements []map[string]interface{}
 
+	//公共部分，状态和阀值的异常、恢复过程都需要，需要判断是否首次发送信息，是的话，就用这里，不是的话，就跳过（在之前的内容上追加）
 	commonElements := []map[string]interface{}{
 		{
 			"tag": "div",
@@ -95,7 +151,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库状态：%s", notificationInfo.Status),
+				"content": fmt.Sprintf("数据库状态：%s", notificationInfo.ExceptionStatus),
 				"tag":     "lark_md",
 			},
 		},
@@ -103,7 +159,14 @@ func GetNotificationMessage(notificationInfo Info) string {
 
 	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
 		exceptionElements := []map[string]interface{}{
+			//这个异常时间需要给值
 			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("数据库异常时间：%s", notificationInfo.ExceptionStatusTime),
+					"tag":     "lark_md",
+				},
+			}, {
 				"tag": "div",
 				"text": map[string]string{
 					"content": fmt.Sprintf("欠费级别：%s", notificationInfo.DebtLevel),
@@ -125,7 +188,7 @@ func GetNotificationMessage(notificationInfo Info) string {
 				},
 			},
 		}
-		elements = append(commonElements, exceptionElements...)
+		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
 	} else if notificationInfo.ExceptionType == "阀值" {
 		exceptionElements := []map[string]interface{}{
 			{
@@ -136,16 +199,29 @@ func GetNotificationMessage(notificationInfo Info) string {
 				},
 			},
 		}
-		elements = append(commonElements, exceptionElements...)
+		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
 	}
 
 	if notificationInfo.NotificationType == "recovery" {
+		// todo 拿到之前的发送信息并加上，已做状态监控，未做阀值监控
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
 
-		elements = commonElements
+		//获取之前发送的飞书内容
+		separatorElements := []map[string]interface{}{
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("-------------------------------------------"),
+					"tag":     "lark_md",
+				},
+			},
+		}
+		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, separatorElements...)
+		//elements = commonElements
 		if notificationInfo.ExceptionType == "阀值" {
-			exceptionElements := []map[string]interface{}{
+			//todo 数据库阀值的恢复时间怎么跟其它统一起来，需要在数据库阀值恢复中增加恢复时间
+			usageRecoveryElements := []map[string]interface{}{
 				{
 					"tag": "div",
 					"text": map[string]string{
@@ -154,24 +230,32 @@ func GetNotificationMessage(notificationInfo Info) string {
 					},
 				},
 			}
-			elements = append(elements, exceptionElements...)
+			notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, usageRecoveryElements...)
 		}
-		exceptionElements := []map[string]interface{}{
+		recoveryTimeElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("数据库恢复时间：%s", time.Now().Add(8*time.Hour).Format("2006-01-02 15:04:05")),
+					"content": fmt.Sprintf("数据库状态：%s", notificationInfo.RecoveryStatus),
+					"tag":     "lark_md",
+				},
+			},
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": fmt.Sprintf("数据库恢复时间：%s", notificationInfo.RecoveryTime),
 					"tag":     "lark_md",
 				},
 			},
 		}
-		elements = append(elements, exceptionElements...)
+		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, recoveryTimeElements...)
 	}
 	card := map[string]interface{}{
 		"config": map[string]bool{
 			"wide_screen_mode": true,
 		},
-		"elements": elements,
+		//elements替换成notificationInfo.FeishuInfo
+		"elements": notificationInfo.FeishuInfo,
 		"header": map[string]interface{}{
 			"template": headerTemplate,
 			"title": map[string]string{
@@ -189,9 +273,9 @@ func GetNotificationMessage(notificationInfo Info) string {
 	return string(databaseMessage)
 }
 
-func SendFeishuNotification(notification Info, message, feishuWebHook string) error {
+func SendFeishuNotification(notification *Info, message string) error {
 	if api.MonitorType != "all" {
-		feishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+		notification.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	}
 
 	messageIDMap := getMessageIDMap(notification.PerformanceType)
@@ -202,7 +286,7 @@ func SendFeishuNotification(notification Info, message, feishuWebHook string) er
 		}
 		delete(messageIDMap, notification.DatabaseClusterName)
 	} else {
-		if err := createFeishuNotification(notification, message, feishuWebHook, messageIDMap); err != nil {
+		if err := createFeishuNotification(notification, message, messageIDMap); err != nil {
 			return err
 		}
 	}
@@ -246,11 +330,11 @@ func updateFeishuNotification(messageID, message string) error {
 	return nil
 }
 
-func createFeishuNotification(notification Info, message, feishuWebHook string, messageIDMap map[string]string) error {
+func createFeishuNotification(notification *Info, message string, messageIDMap map[string]string) error {
 	req := larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType("chat_id").
 		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(feishuWebHook).
+			ReceiveId(notification.FeishuWebHook).
 			MsgType("interactive").
 			Content(message).Build()).Build()
 

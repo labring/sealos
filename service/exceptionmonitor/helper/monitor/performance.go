@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"encoding/json"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,11 +16,11 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
-func checkPerformance(namespace, databaseClusterName, databaseType, checkType string) (float64, error) {
+func checkPerformance(notificationInfo *notification.Info, checkType string) (float64, error) {
 	params := url.Values{}
-	params.Add("namespace", namespace)
-	params.Add("app", databaseClusterName)
-	params.Add("type", databaseType)
+	params.Add("namespace", notificationInfo.Namespace)
+	params.Add("app", notificationInfo.DatabaseClusterName)
+	params.Add("type", notificationInfo.DatabaseType)
 	params.Add("query", checkType)
 
 	urlStr := api.BaseURL + "?" + params.Encode()
@@ -29,7 +30,7 @@ func checkPerformance(namespace, databaseClusterName, databaseType, checkType st
 		return 0.0, err
 	}
 
-	kubeconfig, err := getKubeConfig(namespace)
+	kubeconfig, err := getKubeConfig(notificationInfo.Namespace)
 	if err != nil {
 		return 0.0, err
 	}
