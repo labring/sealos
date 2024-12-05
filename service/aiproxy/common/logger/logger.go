@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 )
 
@@ -116,8 +117,13 @@ func logHelper(ctx context.Context, level string, msg string) {
 	if id == nil {
 		id = helper.GenRequestID()
 	}
+	modelName := ctx.Value(ctxkey.OriginalModel)
 	now := time.Now()
-	_, _ = fmt.Fprintf(writer, "[%s] %v | %s | %s \n", level, now.Format("2006/01/02 - 15:04:05"), id, msg)
+	if modelName != nil {
+		_, _ = fmt.Fprintf(writer, "[%s] %v | %s | %s | %s \n", level, now.Format("2006/01/02 - 15:04:05"), id, modelName, msg)
+	} else {
+		_, _ = fmt.Fprintf(writer, "[%s] %v | %s | %s \n", level, now.Format("2006/01/02 - 15:04:05"), id, msg)
+	}
 	SetupLogger()
 }
 
