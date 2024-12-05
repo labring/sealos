@@ -206,9 +206,6 @@
       ]
     }
   },
-  "extensionDependencies": [
-    "ms-vscode-remote.remote-ssh"
-  ],
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",

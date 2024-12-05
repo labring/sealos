@@ -126,7 +126,7 @@ export class RemoteSSHConnector extends Disposable {
   }) {
     Logger.info(`Connecting to remote SSH: ${args.sshHostLabel}`)
 
-    this.ensureRemoteSSHExtInstalled()
+    await this.ensureRemoteSSHExtInstalled()
 
     const { sshDomain, sshPort, base64PrivateKey, sshHostLabel, workingDir } =
       args
@@ -261,7 +261,7 @@ export class RemoteSSHConnector extends Disposable {
     const cancel = 'Cancel'
 
     const action = await vscode.window.showInformationMessage(
-      'Please install "Remote - SSH" extension to connect to a Gitpod workspace.',
+      'Please install "Remote - SSH" extension to connect to a devbox workspace.',
       { modal: true },
       install,
       cancel
