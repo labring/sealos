@@ -201,8 +201,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice,
-      isGuided
+      refetchPrice
     ]
   );
 
@@ -286,21 +285,18 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   useEffect(() => {
     try {
-      const query = router.query as { formData?: string };
+      console.log('edit page already', already, router.query);
+      if (!already) return;
+      const query = router.query as { formData?: string; name?: string };
       if (!query.formData) return;
+
       const parsedData: Partial<AppEditSyncedFields> = JSON.parse(
         decodeURIComponent(query.formData)
       );
 
-      const basicFields: (keyof AppEditSyncedFields)[] = [
-        'imageName',
-        'replicas',
-        'cpu',
-        'memory',
-        'cmdParam',
-        'runCMD',
-        'appName'
-      ];
+      const basicFields: (keyof AppEditSyncedFields)[] = router.query?.name
+        ? ['imageName', 'cpu', 'memory']
+        : ['imageName', 'replicas', 'cpu', 'memory', 'cmdParam', 'runCMD', 'appName', 'labels'];
 
       basicFields.forEach((field) => {
         if (parsedData[field] !== undefined) {
@@ -322,7 +318,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         formHook.setValue('networks', completeNetworks);
       }
     } catch (error) {}
-  }, []);
+  }, [router.query, already]);
 
   return (
     <>

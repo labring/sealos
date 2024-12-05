@@ -94,6 +94,8 @@ const buildConnectionInfo = (
   }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const { payload, token } = getPayloadWithoutVerification(req.headers)

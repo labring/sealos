@@ -315,5 +315,6 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
     }
   ],
   cmdParam: 'sleep 10',
-  runCMD: '/bin/bash -c'
+  runCMD: '/bin/bash -c',
+  labels: {}
 };

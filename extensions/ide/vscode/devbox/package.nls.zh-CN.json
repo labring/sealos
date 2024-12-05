@@ -1,0 +1,20 @@
+{
+  "displayName": "Devbox",
+  "description": "用于 sailos/sealos 中云Devbox的辅助工具",
+  "devbox.connectRemoteSSH.title": "Devbox: 连接远程 SSH",
+  "devbox.refresh.title": "Devbox: 刷新",
+  "devbox.create.title": "Devbox: 创建",
+  "devbox.open.title": "Devbox: 打开",
+  "devbox.delete.title": "Devbox: 删除",
+  "devbox.openInBrowser.title": "Devbox: 在浏览器中打开",
+  "devbox.copy.title": "Devbox: 复制",
+  "devbox.refreshDatabase.title": "Devbox: 刷新数据库",
+  "devbox.refreshNetwork.title": "Devbox: 刷新网络",
+  "devbox.gotoDatabaseWebPage.title": "Devbox: 打开数据库网页",
+  "devbox.myProjects.title": "我的项目",
+  "devbox.feedback.title": "反馈",
+  "devbox.network.title": "网络",
+  "devbox.database.title": "数据库",
+  "devbox.devbox.title": "Devbox",
+  "devbox.welcome.title": "还没有Devbox，请创建一个新的Devbox。\n [创建Devbox](command:devboxDashboard.createDevbox)\n 要了解更多关于如何使用Devbox的信息，请访问[Devbox文档](https://sailos.io/docs/quick-start)。"
+}

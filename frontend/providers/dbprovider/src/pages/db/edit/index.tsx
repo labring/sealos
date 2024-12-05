@@ -20,7 +20,7 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FieldErrors, useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
@@ -142,7 +142,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     setIsLoading(false);
   };
 
-  const submitError = useCallback(() => {
+  const submitError = (err: FieldErrors<DBEditType>) => {
     // deep search message
     const deepSearch = (obj: any): string => {
       if (!obj || typeof obj !== 'object') return t('submit_error');
@@ -152,13 +152,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       return deepSearch(Object.values(obj)[0]);
     };
     toast({
-      title: deepSearch(formHook.formState.errors),
+      title: deepSearch(err),
       status: 'error',
       position: 'top',
       duration: 3000,
       isClosable: true
     });
-  }, [formHook.formState.errors, t, toast]);
+  };
 
   useQuery(
     ['init'],
@@ -213,7 +213,10 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+            formHook.handleSubmit(
+              (data) => openConfirm(() => submitSuccess(data))(),
+              (err) => submitError(err)
+            )()
           }
         />
 

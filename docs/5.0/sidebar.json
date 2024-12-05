@@ -79,7 +79,19 @@
         "user-guide/objectstorage/objectstorage",
         "user-guide/cronjob/cronjob",
         "user-guide/terminal/terminal",
-        "user-guide/kubepanel/kubepanel"
+        "user-guide/kubepanel/kubepanel",
+        {
+          "type": "category",
+          "label": "Devbox",
+          "link": {
+            "type": "doc",
+            "id": "user-guide/devbox/devbox"
+          },
+          "items": [
+            "user-guide/devbox/quick-start",
+            "user-guide/devbox/faq"
+          ]
+        }
       ]
     },
     {

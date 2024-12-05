@@ -99,12 +99,12 @@ const DevboxCreatePage = () => {
       ? languageVersionMap[runtime as LanguageTypeEnum]?.[0]?.id ||
         frameworkVersionMap[runtime as FrameworkTypeEnum]?.[0]?.id ||
         osVersionMap[runtime as OSTypeEnum]?.[0]?.id
-      : languageVersionMap[LanguageTypeEnum.go][0].id,
+      : languageVersionMap[LanguageTypeEnum.go]?.[0]?.id,
     networks: (
       languageVersionMap[runtime as LanguageTypeEnum]?.[0]?.defaultPorts ||
       frameworkVersionMap[runtime as FrameworkTypeEnum]?.[0]?.defaultPorts ||
       osVersionMap[runtime as OSTypeEnum]?.[0]?.defaultPorts ||
-      languageVersionMap[LanguageTypeEnum.go][0].defaultPorts
+      languageVersionMap[LanguageTypeEnum.go]?.[0]?.defaultPorts
     ).map((port) => ({
       networkName: `${defaultDevboxEditValue.name}-${nanoid()}`,
       portName: nanoid(),

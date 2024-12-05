@@ -1,17 +1,37 @@
-import * as vscode from 'vscode'
 import fs from 'fs'
+import * as vscode from 'vscode'
 
+import { Logger } from '../common/logger'
 import { parseSSHConfig } from '../api/ssh'
 import { Disposable } from '../common/dispose'
 import { DevboxListItem } from '../types/devbox'
 import { getDevboxDetail } from '../api/devbox'
-import { GlobalStateManager } from '../utils/globalStateManager'
 import { convertSSHConfigToVersion2 } from '../utils/sshConfig'
+import { GlobalStateManager } from '../utils/globalStateManager'
 import { defaultDevboxSSHConfigPath, defaultSSHKeyPath } from '../constant/file'
+
+const messages = {
+  pleaseSelectARegion: vscode.l10n.t(
+    'Please select a region,RegionList are added by your each connection.'
+  ),
+  onlyDevboxCanBeOpened: vscode.l10n.t('Only Devbox can be opened.'),
+  areYouSureToDelete: vscode.l10n.t('Are you sure to delete?'),
+  deleteLocalConfigOnly: vscode.l10n.t(
+    'This action will only delete the devbox ssh config in the local environment.'
+  ),
+  deleteDevboxFailed: vscode.l10n.t('Delete Devbox failed.'),
+  feedbackInGitHub: vscode.l10n.t(
+    'Give us a feedback in our GitHub repository.'
+  ),
+  feedbackInHelpDesk: vscode.l10n.t(
+    'Give us a feedback in our help desk system.'
+  ),
+}
 
 export class DevboxListViewProvider extends Disposable {
   constructor(context: vscode.ExtensionContext) {
     super()
+    Logger.info('Initializing DevboxListViewProvider')
     if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
       // view
       const projectTreeDataProvider = new ProjectTreeDataProvider()
@@ -83,6 +103,9 @@ class ProjectTreeDataProvider
   private treeData: DevboxListItem[] = []
 
   constructor() {
+    if (fs.existsSync(defaultDevboxSSHConfigPath)) {
+      convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+    }
     this.refreshData()
     setInterval(() => {
       this.refresh()
@@ -94,7 +117,6 @@ class ProjectTreeDataProvider
   }
 
   private async refreshData(): Promise<void> {
-    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
     const data = (await parseSSHConfig(
       defaultDevboxSSHConfigPath
     )) as DevboxListItem[]
@@ -129,18 +151,18 @@ class ProjectTreeDataProvider
           }
         } catch (error) {
           console.error(`get devbox detail failed: ${error}`)
-          if (
-            error.toString().includes('500:secrets') &&
-            error.toString().includes('not found')
-          ) {
-            const hostParts = item.host.split('_')
-            const devboxName = hostParts.slice(2).join('_')
-            if (error.toString().includes(devboxName)) {
-              await this.delete(item.host, devboxName, true)
+          // if (
+          //   error.toString().includes('500:secrets') &&
+          //   error.toString().includes('not found')
+          // ) {
+          //   const hostParts = item.host.split('_')
+          //   const devboxName = hostParts.slice(2).join('_')
+          //   if (error.toString().includes(devboxName)) {
+          //     await this.delete(item.host, devboxName, true)
 
-              return
-            }
-          }
+          //     return
+          //   }
+          // }
           item.iconPath = new vscode.ThemeIcon('warning')
         }
       })
@@ -157,14 +179,12 @@ class ProjectTreeDataProvider
     const regions = GlobalStateManager.getApiRegionList()
 
     const selected = await vscode.window.showQuickPick(regions, {
-      placeHolder:
-        'Please select a region.RegionList are added by your each connection',
+      placeHolder: messages.pleaseSelectARegion,
     })
-
     if (selected) {
       const targetUrl = selected
       vscode.commands.executeCommand('devbox.openExternalLink', [
-        `${targetUrl}/?openapp=system-devbox?${encodeURIComponent(
+        `https://${targetUrl}/?openapp=system-devbox?${encodeURIComponent(
           'page=create'
         )}`,
       ])
@@ -173,7 +193,7 @@ class ProjectTreeDataProvider
 
   async open(item: ProjectTreeItem) {
     if (item.contextValue !== 'devbox') {
-      vscode.window.showInformationMessage('只能打开 Devbox 项目')
+      vscode.window.showInformationMessage(messages.onlyDevboxCanBeOpened)
       return
     }
 
@@ -195,7 +215,7 @@ class ProjectTreeDataProvider
   ) {
     if (!isDeletedByWeb) {
       const result = await vscode.window.showWarningMessage(
-        `Are you sure to delete ${devboxName}?\n(This action will only delete the devbox ssh config in the local environment.)`,
+        `${messages.areYouSureToDelete} ${devboxName}?\n(${messages.deleteLocalConfigOnly})`,
         { modal: true },
         'Yes',
         'No'
@@ -276,7 +296,9 @@ class ProjectTreeDataProvider
 
       this.refresh()
     } catch (error) {
-      vscode.window.showErrorMessage(`Delete devbox failed: ${error.message}`)
+      vscode.window.showErrorMessage(
+        `${messages.deleteDevboxFailed}: ${error.message}`
+      )
     }
   }
 
@@ -373,7 +395,7 @@ class FeedbackTreeDataProvider
   getChildren(element?: FeedbackTreeItem): Thenable<FeedbackTreeItem[]> {
     return Promise.resolve([
       new FeedbackTreeItem(
-        'Give us a feedback in our GitHub repository',
+        messages.feedbackInGitHub,
         vscode.TreeItemCollapsibleState.None,
         new vscode.ThemeIcon('github'),
         {
@@ -383,7 +405,7 @@ class FeedbackTreeDataProvider
         }
       ),
       new FeedbackTreeItem(
-        'Give us a feedback in our help desk system',
+        messages.feedbackInHelpDesk,
         vscode.TreeItemCollapsibleState.None,
         new vscode.ThemeIcon('comment'),
         {

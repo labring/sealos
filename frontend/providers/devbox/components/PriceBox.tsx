@@ -70,9 +70,9 @@ const PriceBox = ({
       </Flex>
       <Flex flexDirection={'column'} gap={'12px'} py={'16px'} px={'20px'}>
         {priceList.map((item) => (
-          <Flex key={item.label} alignItems={'center'}>
+          <Flex key={item?.label} alignItems={'center'}>
             <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-            <Box flex={'0 0 90px'}>{t(item.label)}:</Box>
+            <Box flex={'0 0 90px'}>{t(item?.label)}:</Box>
             <Flex alignItems={'center'} gap={'4px'}>
               <CurrencySymbol type={env.currencySymbol} />
               {item.value}
