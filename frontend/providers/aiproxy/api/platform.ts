@@ -64,6 +64,13 @@ export const getAllChannels = () => GET<GetAllChannelResponse['data']>('/api/adm
 
 export const deleteChannel = (id: string) => DELETE(`/api/admin/channel/${id}`)
 
+export const uploadChannels = (formData: FormData) =>
+  POST<ApiResp>('/api/admin/channel/upload', formData, {
+    headers: {
+      // Don't set Content-Type header here, it will be automatically set with the correct boundary
+    }
+  })
+
 // channel built-in support models and default model default mode mapping
 export const getChannelBuiltInSupportModels = () =>
   GET<GetAllChannelEnabledModelsResponse['data']>('/api/models/builtin/channel')
@@ -79,6 +86,13 @@ export const updateOption = (params: { key: string; value: string }) =>
 
 export const batchOption = (params: BatchOptionData) =>
   PUT<ApiResp>(`/api/admin/option/batch`, params)
+
+export const uploadOptions = (formData: FormData) =>
+  POST<ApiResp>('/api/admin/option/upload', formData, {
+    headers: {
+      // Don't set Content-Type header here, it will be automatically set with the correct boundary
+    }
+  })
 
 // log
 export const getGlobalLogs = (params: GlobalLogQueryParams) =>

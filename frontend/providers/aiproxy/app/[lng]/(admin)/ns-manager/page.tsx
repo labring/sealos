@@ -31,7 +31,7 @@ import { QueryKey } from '@/types/query-key'
 import { useBackendStore } from '@/store/backend'
 import { GroupInfo, GroupStatus } from '@/types/admin/group'
 import { useMessage } from '@sealos/ui'
-import { EditableTextNoLable } from '../global-configs/components/EditableTextNoLable'
+import { EditableTextNoLable } from '@/components/common/EditableTextNoLable'
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n()

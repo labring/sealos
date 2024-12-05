@@ -100,7 +100,9 @@
     "create": "New",
     "import": "Import",
     "export": "Export",
-    "exportAll": "Export All"
+    "exportAll": "Export All",
+    "importSuccess": "Import successful",
+    "importError": "Import failed"
   },
   "channelStatus": {
     "autoDisabled": "System disabled"
@@ -166,8 +168,8 @@
     "saveDefaultModelSuccess": "Saved successfully",
     "saveCommonConfigSuccess": "Update successful",
     "saveCommonConfigFailed": "Update failed",
-    "common_config": "Common configuration",
-    "model_config": "Model settings"
+    "common_config": "Common Configuration",
+    "model_config": "Model Settings"
   },
   "modeType": {
     "0": "Unknown",

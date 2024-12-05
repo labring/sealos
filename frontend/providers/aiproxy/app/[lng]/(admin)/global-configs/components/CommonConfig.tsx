@@ -105,9 +105,9 @@ const CommonConfig = () => {
     */
     <Flex gap="8px" flexDirection="row" w="full">
       {/* title */}
-      <Flex w="153px" pt="4px" alignItems="flex-start">
+      <Flex w="153px" alignItems="flex-start">
         <Text
-          whiteSpace="nowrap"
+          // whiteSpace="nowrap"
           color="black"
           fontFamily="PingFang SC"
           fontSize="16px"

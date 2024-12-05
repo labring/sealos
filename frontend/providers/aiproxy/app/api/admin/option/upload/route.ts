@@ -2,25 +2,47 @@ import { NextRequest, NextResponse } from 'next/server'
 import { parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
 import { isAdmin } from '@/utils/backend/isAdmin'
-import { GroupStatus } from '@/types/admin/group'
+import { OptionData } from '@/types/admin/option'
 
 export const dynamic = 'force-dynamic'
 
-async function updateGroup(status: GroupStatus, id: string): Promise<void> {
+async function parseFormData(req: NextRequest): Promise<OptionData> {
+  try {
+    const formData = await req.formData()
+    const file = formData.get('file')
+
+    if (!file || !(file instanceof File)) {
+      throw new Error('No file uploaded')
+    }
+
+    const fileContent = await file.text()
+    const optionData = JSON.parse(fileContent)
+
+    if (typeof optionData !== 'object' || optionData === null) {
+      throw new Error('Invalid file format: expected option data object')
+    }
+
+    return optionData
+  } catch (error) {
+    throw error
+  }
+}
+
+async function batchOption(batchOptionData: OptionData): Promise<string> {
   try {
     const url = new URL(
-      `/api/group/${id}/status`,
+      `/api/option/batch`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `${token}`
       },
-      body: JSON.stringify({ status: status }),
+      body: JSON.stringify(batchOptionData),
       cache: 'no-store'
     })
 
@@ -30,43 +52,31 @@ async function updateGroup(status: GroupStatus, id: string): Promise<void> {
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'Failed to update group status')
+      throw new Error(result.message || 'Failed to batch option')
     }
+
+    return result.message
   } catch (error) {
-    console.error('admin groups api: update group status error:## ', error)
+    console.error('admin batch options upload api: update option error:', error)
     throw error
   }
 }
 
-// update group status
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse<ApiResp>> {
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResp>> {
   try {
     const namespace = await parseJwtToken(request.headers)
     await isAdmin(namespace)
 
-    if (!params.id) {
-      return NextResponse.json(
-        {
-          code: 400,
-          message: 'Group id is required',
-          error: 'Bad Request'
-        },
-        { status: 400 }
-      )
-    }
+    const optionData = await parseFormData(request)
 
-    const { status }: { status: GroupStatus } = await request.json()
-    await updateGroup(status, params.id)
+    await batchOption(optionData)
 
     return NextResponse.json({
       code: 200,
-      message: 'Group status updated successfully'
+      message: 'Option batch uploaded successfully'
     } satisfies ApiResp)
   } catch (error) {
-    console.error('admin groups api: update group status error:## ', error)
+    console.error('admin batch options upload api: put option error:', error)
     return NextResponse.json(
       {
         code: 500,

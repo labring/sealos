@@ -30,6 +30,11 @@ request.interceptors.request.use(
       config.headers['Content-Type'] = 'application/json'
     }
 
+    // 如果是 FormData，删除 Content-Type，让浏览器自动设置
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
+
     return config
   },
   (error: any) => {

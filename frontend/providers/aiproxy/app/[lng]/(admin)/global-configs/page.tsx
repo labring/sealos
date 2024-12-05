@@ -4,10 +4,88 @@ import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import CommonConfig from './components/CommonConfig'
 import ModelConfig from './components/ModelConfig'
+import { getOption, uploadOptions } from '@/api/platform'
+import { QueryKey } from '@/types/query-key'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { useMessage } from '@sealos/ui/src/components'
+import { useRef } from 'react'
+import { downloadJson } from '@/utils/common'
 
 export default function GlobalConfigPage() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { message } = useMessage({
+    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningIconFill: 'white',
+
+    successBoxBg: 'var(--Green-50, #EDFBF3)',
+    successIconBg: 'var(--Green-600, #039855)',
+    successIconFill: 'white'
+  })
+
+  const queryClient = useQueryClient()
+
+  const {
+    isFetching: isOptionFetching,
+    data: optionData,
+    refetch
+  } = useQuery({
+    queryKey: [QueryKey.GetOption],
+    queryFn: () => getOption(),
+    refetchOnReconnect: false,
+    enabled: false
+  })
+
+  const uploadMutation = useMutation({
+    mutationFn: uploadOptions
+  })
+
+  const handleExport = async () => {
+    const result = await refetch()
+    const dataToExport = result.data || []
+    downloadJson(dataToExport, 'global_configs')
+  }
+
+  const handleImport = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      await uploadMutation.mutateAsync(formData)
+      message({
+        title: t('dashboard.importSuccess'),
+        status: 'success',
+        duration: 3000,
+        isClosable: true
+      })
+      queryClient.invalidateQueries([QueryKey.GetOption])
+      queryClient.invalidateQueries([QueryKey.GetCommonConfig])
+    } catch (error) {
+      console.error('Import error:', error)
+      message({
+        title: t('dashboard.importError'),
+        status: 'error',
+        duration: 3000,
+        isClosable: true
+      })
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
   return (
     <Flex pt="4px" pb="12px" pr="12px" pl="0px" h="100vh" width="full">
       <Flex
@@ -41,55 +119,68 @@ export default function GlobalConfigPage() {
           </Text>
 
           <Flex justifyContent="flex-end" alignContent="center" gap="12px">
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".json"
+                style={{ display: 'none' }}
+              />
+              <Button
+                onClick={handleImport}
+                isLoading={uploadMutation.isLoading}
+                display="flex"
+                padding="8px 14px"
+                justifyContent="center"
+                alignItems="center"
+                gap="6px"
+                borderRadius="6px"
+                bg="#111824"
+                boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+                color="white"
+                fontSize="12px"
+                fontFamily="PingFang SC"
+                fontWeight="500"
+                whiteSpace="nowrap"
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                _hover={{
+                  transform: 'scale(1.05)',
+                  transition: 'transform 0.2s ease'
+                }}
+                _active={{
+                  transform: 'scale(0.92)',
+                  animation: 'pulse 0.3s ease'
+                }}
+                sx={{
+                  '@keyframes pulse': {
+                    '0%': { transform: 'scale(0.92)' },
+                    '50%': { transform: 'scale(0.96)' },
+                    '100%': { transform: 'scale(0.92)' }
+                  }
+                }}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none">
+                  <path
+                    d="M4.67403 1.54568C4.67403 1.42836 4.57892 1.33325 4.4616 1.33325C2.77074 1.33325 1.40002 2.70397 1.40002 4.39483V11.605C1.40002 13.2959 2.77074 14.6666 4.4616 14.6666H11.6718C13.3626 14.6666 14.7334 13.2959 14.7334 11.605V4.39483C14.7334 2.70397 13.3626 1.33325 11.6718 1.33325H10.1347C9.76646 1.33325 9.46799 1.63173 9.46799 1.99992C9.46799 2.36811 9.76646 2.66659 10.1347 2.66659H11.6718C12.6263 2.66659 13.4 3.44035 13.4 4.39483V11.605C13.4 12.5595 12.6263 13.3333 11.6718 13.3333H4.4616C3.50712 13.3333 2.73336 12.5595 2.73336 11.605V4.39483C2.73336 3.44035 3.50712 2.66659 4.4616 2.66659C4.57892 2.66659 4.67403 2.57148 4.67403 2.45416V1.54568Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M7.44956 4.7593C7.34366 4.01775 7.12184 3.5521 6.74895 3.28889C5.86143 2.66241 5.20264 2.6666 5.10574 2.66722L5.09932 2.66725H4.43265V1.33392H5.09932C5.33405 1.33392 6.3067 1.34467 7.51785 2.1996C8.33657 2.77751 8.64402 3.69217 8.7695 4.5708C8.87184 5.28739 8.86613 6.09283 8.86087 6.83489C8.85974 6.99521 8.85862 7.15259 8.85862 7.30546C8.85862 7.73754 8.84937 8.14339 8.83572 8.50719L9.39676 7.94615C9.65711 7.6858 10.0792 7.6858 10.3396 7.94615C10.5999 8.2065 10.5999 8.6286 10.3396 8.88896L8.58245 10.6461C8.441 10.7875 8.25178 10.8521 8.06671 10.8399C7.88163 10.8521 7.69242 10.7875 7.55096 10.6461L5.79384 8.88896C5.53349 8.6286 5.53349 8.2065 5.79384 7.94615C6.05419 7.6858 6.4763 7.6858 6.73665 7.94615L7.41135 8.62084L7.49316 8.70266C7.51162 8.29469 7.52529 7.81909 7.52529 7.30546C7.52529 7.12915 7.52639 6.95576 7.52746 6.78545C7.53213 6.04759 7.53644 5.36763 7.44956 4.7593Z"
+                    fill="white"
+                  />
+                </svg>
+                {t('global_configs.import')}
+              </Button>
+            </>
             <Button
-              display="flex"
-              padding="8px 14px"
-              justifyContent="center"
-              alignItems="center"
-              gap="6px"
-              borderRadius="6px"
-              bg="#111824"
-              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-              color="white"
-              fontSize="12px"
-              fontFamily="PingFang SC"
-              fontWeight="500"
-              whiteSpace="nowrap"
-              lineHeight="16px"
-              letterSpacing="0.5px"
-              _hover={{
-                transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
-              }}
-              _active={{
-                transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
-              }}
-              sx={{
-                '@keyframes pulse': {
-                  '0%': { transform: 'scale(0.92)' },
-                  '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
-              }}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none">
-                <path
-                  d="M4.67403 1.54568C4.67403 1.42836 4.57892 1.33325 4.4616 1.33325C2.77074 1.33325 1.40002 2.70397 1.40002 4.39483V11.605C1.40002 13.2959 2.77074 14.6666 4.4616 14.6666H11.6718C13.3626 14.6666 14.7334 13.2959 14.7334 11.605V4.39483C14.7334 2.70397 13.3626 1.33325 11.6718 1.33325H10.1347C9.76646 1.33325 9.46799 1.63173 9.46799 1.99992C9.46799 2.36811 9.76646 2.66659 10.1347 2.66659H11.6718C12.6263 2.66659 13.4 3.44035 13.4 4.39483V11.605C13.4 12.5595 12.6263 13.3333 11.6718 13.3333H4.4616C3.50712 13.3333 2.73336 12.5595 2.73336 11.605V4.39483C2.73336 3.44035 3.50712 2.66659 4.4616 2.66659C4.57892 2.66659 4.67403 2.57148 4.67403 2.45416V1.54568Z"
-                  fill="white"
-                />
-                <path
-                  d="M7.44956 4.7593C7.34366 4.01775 7.12184 3.5521 6.74895 3.28889C5.86143 2.66241 5.20264 2.6666 5.10574 2.66722L5.09932 2.66725H4.43265V1.33392H5.09932C5.33405 1.33392 6.3067 1.34467 7.51785 2.1996C8.33657 2.77751 8.64402 3.69217 8.7695 4.5708C8.87184 5.28739 8.86613 6.09283 8.86087 6.83489C8.85974 6.99521 8.85862 7.15259 8.85862 7.30546C8.85862 7.73754 8.84937 8.14339 8.83572 8.50719L9.39676 7.94615C9.65711 7.6858 10.0792 7.6858 10.3396 7.94615C10.5999 8.2065 10.5999 8.6286 10.3396 8.88896L8.58245 10.6461C8.441 10.7875 8.25178 10.8521 8.06671 10.8399C7.88163 10.8521 7.69242 10.7875 7.55096 10.6461L5.79384 8.88896C5.53349 8.6286 5.53349 8.2065 5.79384 7.94615C6.05419 7.6858 6.4763 7.6858 6.73665 7.94615L7.41135 8.62084L7.49316 8.70266C7.51162 8.29469 7.52529 7.81909 7.52529 7.30546C7.52529 7.12915 7.52639 6.95576 7.52746 6.78545C7.53213 6.04759 7.53644 5.36763 7.44956 4.7593Z"
-                  fill="white"
-                />
-              </svg>
-              {t('global_configs.import')}
-            </Button>
-            <Button
+              onClick={handleExport}
+              isLoading={isOptionFetching}
               display="flex"
               padding="8px 14px"
               justifyContent="center"
@@ -120,9 +211,6 @@ export default function GlobalConfigPage() {
                   '50%': { transform: 'scale(0.96)' },
                   '100%': { transform: 'scale(0.92)' }
                 }
-              }}
-              onClick={() => {
-                console.log('export')
               }}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"

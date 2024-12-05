@@ -82,15 +82,17 @@ const ModelConfig = () => {
     setAllSupportChannel(supportedChannels)
 
     // 2. 处理 allSupportChannelWithMode
+    // 渠道类型可能出现在 channelTypeNames 中，但不在 builtInSupportModels 中，所以需要过滤
+    // 但在 builtInSupportModels 中，则一定在 channelTypeNames 中，所以 以 builtInSupportModels 为主
     const channelWithModes = Object.entries(channelTypeNames)
-      .filter(([channel]) => channel in builtInSupportModels)
-      .reduce((acc, [channel, name]) => {
-        const modelInfos = builtInSupportModels[channel as ChannelType] || []
+      .filter(([channelType, _]) => channelType in builtInSupportModels)
+      .reduce((acc, [channelType, channelName]) => {
+        const modelInfos = builtInSupportModels[channelType as ChannelType] || []
         const models = [...new Set(modelInfos.map((info) => info.model))]
 
         return {
           ...acc,
-          [name]: models
+          [channelType]: models
         }
       }, {} as { [key in ChannelType]: string[] })
 

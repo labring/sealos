@@ -18,22 +18,23 @@ export const ConstructMappingComponent = function ({
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
-  // const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([
-  //   { key: '', value: '' }
-  // ])
+  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>([])
 
-  // useEffect(() => {
-  //   const entries = Object.entries(mapData)
-  //   if (entries.length > 0) {
-  //     setMapkeyValuePairs(entries.map(([key, value]) => ({ key, value })))
-  //   }
-  // }, [mapData])
+  // 组件初步渲染时，isInternalUpdate 为 false，可以保证每次重新渲染时，mapData 变化时，mapKeyValuePairs 重新初始化
+  const [isInternalUpdate, setIsInternalUpdate] = useState(false)
 
-  const [mapKeyValuePairs, setMapkeyValuePairs] = useState<Array<MapKeyValuePair>>(
-    Object.entries(mapData).length > 0
-      ? Object.entries(mapData).map(([key, value]) => ({ key, value }))
-      : [{ key: '', value: '' }]
-  )
+  // 初始化并在 mapData 变化时更新 mapKeyValuePairs
+  useEffect(() => {
+    if (!isInternalUpdate) {
+      const entries = Object.entries(mapData)
+      setMapkeyValuePairs(
+        entries.length > 0
+          ? entries.map(([key, value]) => ({ key, value }))
+          : [{ key: '', value: '' }]
+      )
+    }
+    setIsInternalUpdate(false)
+  }, [mapData])
 
   const handleDropdownItemDisplay = (dropdownItem: string) => {
     if (dropdownItem === t('channelsFormPlaceholder.modelMappingInput')) {
@@ -112,6 +113,7 @@ export const ConstructMappingComponent = function ({
       removedKeysFromMapData.forEach((key) => {
         delete newMapData[key]
       })
+      setIsInternalUpdate(true)
       setMapData(newMapData)
     }
 
@@ -148,6 +150,7 @@ export const ConstructMappingComponent = function ({
     if (mapKeyValuePair.key) {
       delete newMapData[mapKeyValuePair.key]
     }
+    setIsInternalUpdate(true)
     setMapData(newMapData)
 
     const newMapKeyValuePairs = mapKeyValuePairs.filter((_, idx) => idx !== index)
@@ -179,6 +182,7 @@ export const ConstructMappingComponent = function ({
     }
 
     setMapkeyValuePairs(newMapKeyValuePairs)
+    setIsInternalUpdate(true)
     setMapData(newMapData)
   }
 
