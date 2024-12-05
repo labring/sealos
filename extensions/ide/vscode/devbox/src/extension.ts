@@ -30,14 +30,28 @@ export async function activate(context: vscode.ExtensionContext) {
   const devboxListViewProvider = new DevboxListViewProvider(context)
   context.subscriptions.push(devboxListViewProvider)
 
-  // update api base url
+  // update api base url and set auto save
   const workspaceFolders = vscode.workspace.workspaceFolders
   if (workspaceFolders && workspaceFolders.length > 0 && !isDevelopment) {
     const workspaceFolder = workspaceFolders[0]
     const remoteUri = workspaceFolder.uri.authority
-    const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
-    const region = GlobalStateManager.getRegion(devboxId)
-    updateBaseUrl(`http://devbox.${region}`)
+    if (remoteUri && remoteUri.startsWith('ssh-remote+')) {
+      const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devboxId = sshHostLabel
+      const region = GlobalStateManager.getRegion(devboxId)
+      updateBaseUrl(`http://devbox.${region}`)
+
+      Logger.info(`Update api base url to http://devbox.${region}`)
+
+      // only devbox workspace will be set
+      if (region) {
+        const config = vscode.workspace.getConfiguration()
+        await config.update(
+          'files.autoSave',
+          'afterDelay',
+          vscode.ConfigurationTarget.Workspace
+        )
+      }
+    }
   }
 
   // network view
