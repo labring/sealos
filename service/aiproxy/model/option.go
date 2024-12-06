@@ -22,7 +22,7 @@ type Option struct {
 	Value string `json:"value"`
 }
 
-func AllOption() ([]*Option, error) {
+func GetAllOption() ([]*Option, error) {
 	var options []*Option
 	err := DB.Find(&options).Error
 	return options, err
@@ -51,7 +51,7 @@ func InitOptionMap() error {
 }
 
 func loadOptionsFromDatabase(isInit bool) error {
-	options, err := AllOption()
+	options, err := GetAllOption()
 	if err != nil {
 		return err
 	}

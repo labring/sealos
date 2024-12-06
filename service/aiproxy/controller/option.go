@@ -5,19 +5,24 @@ import (
 
 	json "github.com/json-iterator/go"
 
-	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/model"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetOptions(c *gin.Context) {
-	options := make(map[string]string)
-	config.OptionMapRWMutex.RLock()
-	for k, v := range config.OptionMap {
-		options[k] = v
+	dbOptions, err := model.GetAllOption()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
 	}
-	config.OptionMapRWMutex.RUnlock()
+	options := make(map[string]string, len(dbOptions))
+	for _, option := range dbOptions {
+		options[option.Key] = option.Value
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
