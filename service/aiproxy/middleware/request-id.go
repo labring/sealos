@@ -10,6 +10,6 @@ func RequestID(c *gin.Context) {
 	c.Set(string(helper.RequestIDKey), id)
 	c.Header(string(helper.RequestIDKey), id)
 	log := GetLogger(c)
-	log.Data["reqid"] = id
+	SetLogRequestIDField(log.Data, id)
 	c.Next()
 }

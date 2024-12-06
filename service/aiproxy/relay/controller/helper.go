@@ -16,7 +16,6 @@ import (
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	"github.com/shopspring/decimal"
-	log "github.com/sirupsen/logrus"
 )
 
 var ConsumeWaitGroup sync.WaitGroup
@@ -64,6 +63,8 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 	if meta.IsChannelTest {
 		return
 	}
+	log := middleware.NewLogger()
+	middleware.SetLogFieldsFromMeta(meta, log.Data)
 	if usage == nil {
 		err := model.BatchRecordConsume(
 			meta.RequestID,

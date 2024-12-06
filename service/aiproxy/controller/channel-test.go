@@ -17,7 +17,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -42,9 +41,6 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		Header: make(http.Header),
 	}
 	newc.Set(string(helper.RequestIDKey), channelTestRequestID)
-	log := middleware.GetLogger(newc)
-	log.Data["reqid"] = channelTestRequestID
-	log.Data["test"] = true
 
 	meta := meta.NewMeta(
 		channel,

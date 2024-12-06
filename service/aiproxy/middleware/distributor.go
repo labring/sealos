@@ -37,7 +37,7 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
-	log.Data["model"] = requestModel
+	SetLogModelFields(log.Data, requestModel)
 
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
