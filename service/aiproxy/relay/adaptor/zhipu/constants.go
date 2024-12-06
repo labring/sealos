@@ -95,13 +95,25 @@ var ModelList = []*model.ModelConfig{
 		},
 	},
 	{
+		Model:       "glm-4v-flash",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
+		InputPrice:  0.0001,
+		OutputPrice: 0.0001,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey:  2048,
+			model.ModelConfigMaxOutputTokensKey: 1024,
+		},
+	},
+	{
 		Model:       "glm-4v",
 		Type:        relaymode.ChatCompletions,
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 2048,
+			model.ModelConfigMaxInputTokensKey:  2048,
+			model.ModelConfigMaxOutputTokensKey: 1024,
 		},
 	},
 	{
@@ -111,9 +123,11 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 8192,
+			model.ModelConfigMaxInputTokensKey:  8192,
+			model.ModelConfigMaxOutputTokensKey: 1024,
 		},
 	},
+
 	{
 		Model:      "embedding-3",
 		Type:       relaymode.Embeddings,
