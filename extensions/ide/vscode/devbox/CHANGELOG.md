@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Changed
+
+- Adjust `Remote-SSH` to install by code.
+
 ## [1.2.1] - 2024-12-4
 
 ### Fixed
