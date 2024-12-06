@@ -220,6 +220,9 @@ const DevboxList = ({
             runtimeVersion={item.runtimeVersion}
             sshPort={item.sshPort}
             status={item.status}
+            leftButtonProps={{
+              width: '95px'
+            }}
           />
           <Button
             mr={5}

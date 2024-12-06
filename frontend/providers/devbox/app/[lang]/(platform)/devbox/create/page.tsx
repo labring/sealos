@@ -23,6 +23,7 @@ import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 
 import { useEnvStore } from '@/stores/env'
+import { useIDEStore } from '@/stores/ide'
 import { useUserStore } from '@/stores/user'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
@@ -51,10 +52,11 @@ const DevboxCreatePage = () => {
   const { message: toast } = useMessage()
 
   const { env } = useEnvStore()
+  const { addDevboxIDE } = useIDEStore()
   const { checkQuotaAllow } = useUserStore()
+  const { setDevboxDetail, devboxList } = useDevboxStore()
   const { runtimeNamespaceMap, languageVersionMap, frameworkVersionMap, osVersionMap } =
     useRuntimeStore()
-  const { setDevboxDetail, devboxList } = useDevboxStore()
 
   const crOldYamls = useRef<DevboxKindsType[]>([])
   const formOldYamls = useRef<YamlItemType[]>([])
@@ -308,6 +310,7 @@ const DevboxCreatePage = () => {
       } else {
         await createDevbox({ devboxForm: formData, runtimeNamespaceMap })
       }
+      addDevboxIDE('cursor', formData.name)
       toast({
         title: t(applySuccess),
         status: 'success'

@@ -18,6 +18,7 @@ import { useCallback, useState } from 'react'
 
 import MyIcon from '@/components/Icon'
 import { delDevbox } from '@/api/devbox'
+import { useIDEStore } from '@/stores/ide'
 import { DevboxDetailType, DevboxListItemType } from '@/types/devbox'
 
 const DelModal = ({
@@ -31,6 +32,8 @@ const DelModal = ({
 }) => {
   const t = useTranslations()
   const { message: toast } = useMessage()
+  const { removeDevboxIDE } = useIDEStore()
+
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
 
@@ -38,6 +41,7 @@ const DelModal = ({
     try {
       setLoading(true)
       await delDevbox(devbox.name)
+      removeDevboxIDE(devbox.name)
       toast({
         title: t('delete_successful'),
         status: 'success'
@@ -52,7 +56,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.name, toast, t, onSuccess, onClose])
+  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>
