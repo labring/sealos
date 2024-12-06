@@ -3,17 +3,15 @@ package monitor
 import (
 	"context"
 	"fmt"
-	"log"
-	"strings"
-	"time"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"log"
+	"strings"
+	"time"
 )
 
 var (
@@ -281,9 +279,8 @@ func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificat
 	podsReadyTime, _, _ := metav1unstructured.NestedString(databaseClusterStatus, "components", podName, "podsReadyTime")
 
 	parsedTime, _ := time.Parse(time.RFC3339, podsReadyTime)
+	adjustedTime := parsedTime.Add(8 * time.Hour)
 
-	parsedTime.Add(8 * time.Hour)
-
-	formattedTime := parsedTime.Format("2006-01-02 15:04:05")
+	formattedTime := adjustedTime.Format("2006-01-02 15:04:05")
 	return status, formattedTime
 }
