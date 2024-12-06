@@ -270,9 +270,6 @@ func getClusterDatabaseInfo(cluster metav1unstructured.Unstructured, notificatio
 	notificationInfo.DatabaseClusterName = databaseClusterName
 	notificationInfo.DatabaseClusterUID = databaseClusterUID
 	notificationInfo.ExceptionStatus, notificationInfo.ExceptionStatusTime = getClusterDatabaseStatus(cluster, notificationInfo)
-	fmt.Println(111)
-	fmt.Println(notificationInfo)
-	fmt.Println(111)
 }
 
 func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificationInfo *api.Info) (string, string) {
@@ -280,13 +277,12 @@ func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificat
 
 	databaseClusterStatus, _, _ := metav1unstructured.NestedMap(cluster.Object, "status")
 
-	fmt.Println(222)
-	fmt.Println(notificationInfo.DatabaseType)
-	fmt.Println(222)
 	podName := databasePodNameMap[notificationInfo.DatabaseType]
 	podsReadyTime, _, _ := metav1unstructured.NestedString(databaseClusterStatus, "components", podName, "podsReadyTime")
 
 	parsedTime, _ := time.Parse(time.RFC3339, podsReadyTime)
+
+	parsedTime.Add(8 * time.Hour)
 
 	formattedTime := parsedTime.Format("2006-01-02 15:04:05")
 	return status, formattedTime

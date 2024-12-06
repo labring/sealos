@@ -11,17 +11,22 @@ import (
 
 func CockroachMonitor() {
 	for api.CockroachMonitor {
-		notificationInfo := &api.Info{
-			FeishuWebHook: api.FeishuWebhookURLMap["FeishuWebhookURLCockroachDB"],
-		}
-		message := ""
+		//notificationInfo := &api.Info{
+		//	FeishuWebHook: api.FeishuWebhookURLMap["FeishuWebhookURLCockroachDB"],
+		//}
+
 		if err := checkCockroachDB(api.GlobalCockroachURI); err != nil {
+			message := ""
 			message = notification.GetCockroachMessage(err.Error(), "Global")
+			fmt.Println(message)
+			//_ = notification.SendFeishuNotification(notificationInfo, message)
 		}
 		if err := checkCockroachDB(api.LocalCockroachURI); err != nil {
+			message := ""
 			message = notification.GetCockroachMessage(err.Error(), "Local")
+			fmt.Println(message)
+			//_ = notification.SendFeishuNotification(notificationInfo, message)
 		}
-		_ = notification.SendFeishuNotification(notificationInfo, message)
 		time.Sleep(5 * time.Minute)
 	}
 }
