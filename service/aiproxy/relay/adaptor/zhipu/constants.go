@@ -129,6 +129,15 @@ var ModelList = []*model.ModelConfig{
 	},
 
 	{
+		Model:      "embedding-2",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerChatGLM,
+		InputPrice: 0.0005,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxInputTokensKey: 8192,
+		},
+	},
+	{
 		Model:      "embedding-3",
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerChatGLM,
@@ -137,6 +146,7 @@ var ModelList = []*model.ModelConfig{
 			model.ModelConfigMaxInputTokensKey: 8192,
 		},
 	},
+
 	{
 		Model:             "cogview-3",
 		Type:              relaymode.ImagesGenerations,
