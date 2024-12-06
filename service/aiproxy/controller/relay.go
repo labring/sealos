@@ -13,7 +13,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -50,13 +49,11 @@ func Relay(c *gin.Context) {
 	meta := middleware.NewMetaByContext(c)
 	bizErr := relayHelper(meta, c)
 	if bizErr == nil {
-		monitor.Emit(meta.Channel.ID, true)
 		return
 	}
 	lastFailedChannelID := meta.Channel.ID
 	group := c.MustGet(ctxkey.Group).(*dbmodel.GroupCache)
 	log.Errorf("relay error (channel id %d, group: %s): %s", meta.Channel.ID, group.ID, bizErr)
-	go processChannelRelayError(meta.Channel.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
@@ -86,7 +83,6 @@ func Relay(c *gin.Context) {
 		}
 		lastFailedChannelID = channel.ID
 		log.Errorf("relay error (channel id %d, group: %s): %s", channel.ID, group.ID, bizErr)
-		go processChannelRelayError(channel.ID, bizErr)
 	}
 	if bizErr != nil {
 		message := bizErr.Message
@@ -113,15 +109,6 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 		return false
 	}
 	return true
-}
-
-func processChannelRelayError(channelID int, err *model.ErrorWithStatusCode) {
-	// https://platform.openai.com/docs/guides/error-codes/api-errors
-	if monitor.ShouldDisableChannel(&err.Error, err.StatusCode) {
-		_ = dbmodel.DisableChannelByID(channelID)
-	} else {
-		monitor.Emit(channelID, false)
-	}
 }
 
 func RelayNotImplemented(c *gin.Context) {
