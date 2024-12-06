@@ -14,7 +14,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.001,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -25,7 +25,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.1,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -36,7 +36,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.05,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -47,7 +47,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.001,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -58,7 +58,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.01,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 8192,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -69,7 +69,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.001,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 1000000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -80,7 +80,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.0001,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -91,7 +91,7 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.0001,
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4095,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 	{
@@ -101,7 +101,7 @@ var ModelList = []*model.ModelConfig{
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
 		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey:  2048,
+			model.ModelConfigMaxInputTokensKey:  8192,
 			model.ModelConfigMaxOutputTokensKey: 1024,
 		},
 	},
@@ -125,6 +125,40 @@ var ModelList = []*model.ModelConfig{
 		Config: map[model.ModelConfigKey]any{
 			model.ModelConfigMaxInputTokensKey:  8192,
 			model.ModelConfigMaxOutputTokensKey: 1024,
+		},
+	},
+
+	{
+		Model:       "charglm-3",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
+		InputPrice:  0.015,
+		OutputPrice: 0.015,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 4096,
+			model.ModelConfigMaxOutputTokensKey:  2048,
+		},
+	},
+	{
+		Model:       "emohaa",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
+		InputPrice:  0.015,
+		OutputPrice: 0.015,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 8192,
+			model.ModelConfigMaxOutputTokensKey:  4096,
+		},
+	},
+	{
+		Model:       "codegeex-4",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerChatGLM,
+		InputPrice:  0.0001,
+		OutputPrice: 0.0001,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxContextTokensKey: 128000,
+			model.ModelConfigMaxOutputTokensKey:  4096,
 		},
 	},
 
@@ -155,6 +189,9 @@ var ModelList = []*model.ModelConfig{
 		ImagePrices: map[string]float64{
 			"1024x1024": 0.1,
 		},
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxOutputTokensKey: 1024,
+		},
 	},
 	{
 		Model:             "cogview-3-plus",
@@ -169,6 +206,9 @@ var ModelList = []*model.ModelConfig{
 			"1152x864":  0.06,
 			"1440x720":  0.06,
 			"720x1440":  0.06,
+		},
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigMaxOutputTokensKey: 1024,
 		},
 	},
 }
