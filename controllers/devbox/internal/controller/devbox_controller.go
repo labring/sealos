@@ -594,6 +594,28 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 		}
 	}
 
+	podSpec := corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:  "ws-proxy",
+				Image: r.WebSocketImage,
+				Command: []string{
+					"sh",
+					"-c",
+				},
+				Args: []string{
+					fmt.Sprintf("/app/bin server --port=%d  -v --reverse & /app/bin client -v localhost:%d R:2222:%s-pod-svc:%s",
+						8080,
+						8080,
+						devbox.Name,
+						sshPort,
+					),
+				},
+				Resources: helper.GenerateProxyPodResourceRequirements(),
+			},
+		},
+	}
+
 	replicas := int32(1)
 
 	return &appsv1.Deployment{
@@ -615,27 +637,7 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 					Labels:      helper.GenerateProxyPodLabels(devbox, runtimecr),
 					Annotations: helper.GeneratePodAnnotations(devbox, runtimecr),
 				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "ws-proxy",
-							Image: r.WebSocketImage,
-							Command: []string{
-								"sh",
-								"-c",
-							},
-							Args: []string{
-								fmt.Sprintf("/app/bin server --port=%d  -v --reverse & /app/bin client -v localhost:%d R:2222:%s-pod-svc:%s",
-									8080,
-									8080,
-									devbox.Name,
-									sshPort,
-								),
-							},
-							Resources: helper.GenerateProxyPodResourceRequirements(),
-						},
-					},
-				},
+				Spec: podSpec,
 			},
 		},
 	}, nil
