@@ -90,7 +90,12 @@ func Relay(c *gin.Context) {
 			message = "The upstream load of the current group is saturated, please try again later"
 		}
 		c.JSON(bizErr.StatusCode, gin.H{
-			"error": helper.MessageWithRequestID(message, requestID),
+			"error": gin.H{
+				"message": helper.MessageWithRequestID(message, requestID),
+				"code":    bizErr.Code,
+				"param":   bizErr.Param,
+				"type":    bizErr.Type,
+			},
 		})
 	}
 }
