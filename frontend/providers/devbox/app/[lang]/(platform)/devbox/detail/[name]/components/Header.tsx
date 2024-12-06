@@ -5,7 +5,7 @@ import { Dispatch, useCallback, useMemo, useState } from 'react'
 
 import { useRouter } from '@/i18n'
 import { useDevboxStore } from '@/stores/devbox'
-import { IDEType, useGlobalStore } from '@/stores/global'
+import { useGlobalStore } from '@/stores/global'
 import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 
 import { DevboxDetailType } from '@/types/devbox'
@@ -29,9 +29,8 @@ const Header = ({
   const t = useTranslations()
   const { message: toast } = useMessage()
 
-  const { screenWidth } = useGlobalStore()
   const { devboxDetail } = useDevboxStore()
-  const { setLoading } = useGlobalStore()
+  const { screenWidth, setLoading } = useGlobalStore()
 
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
   const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
