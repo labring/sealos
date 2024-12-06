@@ -19,8 +19,8 @@
     "createdAt": "Creation time",
     "lastUsedAt": "Last use time",
     "status": "State",
-    "namePlaceholder": "Please enter name",
-    "nameRequired": "Please enter key name",
+    "namePlaceholder": "please enter name",
+    "nameRequired": "please enter key name",
     "nameMaxLength": "Key length is illegal",
     "nameOnlyLettersAndNumbers": "key name contains special characters",
     "createSuccess": "Created successfully",
@@ -45,8 +45,8 @@
     "prompt_tokens": "Input",
     "completion_tokens": "Output",
     "price": "Price",
-    "select_modal": "Please select model",
-    "select_token_name": "Please select name",
+    "select_modal": "please select model",
+    "select_token_name": "please select name",
     "model": "Model",
     "total_price": "Total amount",
     "total_price_tip": "(Number of input tokens × Input price) + (Number of output tokens × Output price)",
@@ -56,7 +56,7 @@
   "Page": "Page",
   "Total": "Total",
   "modelList": {
-    "title": "Supported models"
+    "title": "Supported Models"
   },
   "copy": "Copy",
   "createKey": "New",
@@ -96,7 +96,7 @@
   "hunyuan": "Hunyuan",
   "createKey2": "Create Key",
   "dashboard": {
-    "title": "Channel",
+    "title": "Channels",
     "create": "New",
     "import": "Import",
     "export": "Export",
@@ -139,12 +139,12 @@
     "base_url": "Proxy Address"
   },
   "channelsFormPlaceholder": {
-    "name": "Custom Name",
-    "type": "Open AI",
+    "name": "custom name",
+    "type": "open ai",
     "model": "enter selection",
     "modelInput": "enter custom model name",
-    "modelMappingInput": "Input model",
-    "modelMappingOutput": "Output model",
+    "modelMappingInput": "input model",
+    "modelMappingOutput": "output model",
     "key": "please enter the channel key",
     "base_url": "please enter agent"
   },
@@ -161,7 +161,7 @@
     "max_token": "Maximum number of tokens in the workspace"
   },
   "globalConfigs": {
-    "defaultModel": "Default model",
+    "defaultModel": "Default Model",
     "addDefaultModel": "New",
     "saveDefaultModel": "Save",
     "saveDefaultModelFailed": "Failed To Save",
@@ -185,9 +185,9 @@
     "10": "Rerank"
   },
   "GlobalLogs": {
-    "selectModel": "Model Name",
-    "select_token_name": "Token name",
-    "selectGroupId": "Workspace",
+    "selectModel": "model Name",
+    "select_token_name": "token name",
+    "selectGroupId": "workspace",
     "groupId": "Workspace",
     "tokenName": "Token Name",
     "channel": "Channel ID"

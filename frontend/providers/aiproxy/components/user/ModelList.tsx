@@ -7,82 +7,18 @@ import Image, { StaticImageData } from 'next/image'
 import { useQuery } from '@tanstack/react-query'
 import { getEnabledMode } from '@/api/platform'
 import { useMessage } from '@sealos/ui'
-// icons
-import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
-import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
-import ChatglmIcon from '@/ui/svg/icons/modelist/chatglm.svg'
-import DeepseekIcon from '@/ui/svg/icons/modelist/deepseek.svg'
-import MoonshotIcon from '@/ui/svg/icons/modelist/moonshot.svg'
-import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
-import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
-import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
-import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
-import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
-import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
 import { MyTooltip } from '@/components/common/MyTooltip'
 import { ModelIdentifier } from '@/types/front'
 import { QueryKey } from '@/types/query-key'
+import { modelIcons } from '@/ui/icons/mode-icons'
+
 const getIdentifier = (modelName: string): ModelIdentifier => {
   return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
 }
 
-const ModelComponent = ({ modelName }: { modelName: string }) => {
-  const modelGroups = {
-    ernie: {
-      icon: ErnieIcon,
-      identifiers: ['ernie']
-    },
-    qwen: {
-      icon: QwenIcon,
-      identifiers: ['qwen']
-    },
-    chatglm: {
-      icon: ChatglmIcon,
-      identifiers: ['chatglm', 'glm']
-    },
-    deepseek: {
-      icon: DeepseekIcon,
-      identifiers: ['deepseek']
-    },
-    moonshot: {
-      icon: MoonshotIcon,
-      identifiers: ['moonshot']
-    },
-    sparkdesk: {
-      icon: SparkdeskIcon,
-      identifiers: ['sparkdesk']
-    },
-    abab: {
-      icon: AbabIcon,
-      identifiers: ['abab']
-    },
-    doubao: {
-      icon: DoubaoIcon,
-      identifiers: ['doubao']
-    },
-    baai: {
-      icon: BaaiIcon,
-      identifiers: ['bge']
-    },
-    hunyuan: {
-      icon: HunyuanIcon,
-      identifiers: ['hunyuan']
-    },
-    openai: {
-      icon: OpenAIIcon,
-      identifiers: ['gpt,o1']
-    }
-  }
-  // get model icon
-  const getModelIcon = (modelName: string): StaticImageData => {
-    const identifier = getIdentifier(modelName)
-    const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
-    return group?.icon || OpenAIIcon
-  }
-
+const ModelComponent = ({ modelName, modelOwner }: { modelName: string; modelOwner: string }) => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const iconSrc = getModelIcon(modelName)
   const { message } = useMessage({
     warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
     warningIconBg: 'var(--Yellow-500, #F79009)',
@@ -91,6 +27,14 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
     successIconBg: 'var(--Green-600, #039855)',
     successIconFill: 'white'
   })
+
+  // get model icon
+  const getModelIcon = (modelOwner: string): StaticImageData => {
+    const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default']
+    return icon
+  }
+
+  const iconSrc = getModelIcon(modelOwner)
 
   return (
     <Flex align="center" gap="12px">
@@ -206,7 +150,11 @@ const ModelList: React.FC = () => {
             scrollbarWidth: 'none'
           }}>
           {data?.map((modelConfig) => (
-            <ModelComponent key={modelConfig.model} modelName={modelConfig.model} />
+            <ModelComponent
+              key={modelConfig.model}
+              modelName={modelConfig.model}
+              modelOwner={modelConfig.owner}
+            />
           ))}
         </Flex>
       )}

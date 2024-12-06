@@ -45,6 +45,16 @@ import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
 import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
 import { getTranslationWithFallback } from '@/utils/common'
 import { useBackendStore } from '@/store/backend'
+import { modelIcons } from '@/ui/icons/mode-icons'
+
+const getModelIcon = (modelOwner: string): StaticImageData => {
+  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default']
+  return icon
+}
+
+const getIdentifier = (modelName: string): ModelIdentifier => {
+  return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
+}
 
 function Price() {
   const { lng } = useI18n()
@@ -80,64 +90,7 @@ function PriceTable() {
 
   const { currencySymbol } = useBackendStore()
 
-  const modelGroups = {
-    ernie: {
-      icon: ErnieIcon,
-      identifiers: ['ernie']
-    },
-    qwen: {
-      icon: QwenIcon,
-      identifiers: ['qwen']
-    },
-    chatglm: {
-      icon: ChatglmIcon,
-      identifiers: ['chatglm', 'glm']
-    },
-    deepseek: {
-      icon: DeepseekIcon,
-      identifiers: ['deepseek']
-    },
-    moonshot: {
-      icon: MoonshotIcon,
-      identifiers: ['moonshot']
-    },
-    sparkdesk: {
-      icon: SparkdeskIcon,
-      identifiers: ['sparkdesk']
-    },
-    abab: {
-      icon: AbabIcon,
-      identifiers: ['abab']
-    },
-    doubao: {
-      icon: DoubaoIcon,
-      identifiers: ['doubao']
-    },
-    baai: {
-      icon: BaaiIcon,
-      identifiers: ['bge']
-    },
-    hunyuan: {
-      icon: HunyuanIcon,
-      identifiers: ['hunyuan']
-    },
-    openai: {
-      icon: OpenAIIcon,
-      identifiers: ['gpt,o1']
-    }
-  }
-
-  const getIdentifier = (modelName: string): ModelIdentifier => {
-    return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
-  }
-
-  const getModelIcon = (modelName: string): StaticImageData => {
-    const identifier = getIdentifier(modelName)
-    const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
-    return group?.icon || OpenAIIcon
-  }
-
-  const ModelComponent = ({ modelName }: { modelName: string }) => {
+  const ModelComponent = ({ modelName, modelOwner }: { modelName: string; modelOwner: string }) => {
     const { message } = useMessage({
       warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
       warningIconBg: 'var(--Yellow-500, #F79009)',
@@ -146,7 +99,8 @@ function PriceTable() {
       successIconBg: 'var(--Green-600, #039855)',
       successIconFill: 'white'
     })
-    const iconSrc = getModelIcon(modelName)
+
+    const iconSrc = getModelIcon(modelOwner)
 
     return (
       <Flex align="center" gap="12px">
@@ -205,7 +159,9 @@ function PriceTable() {
           {t('key.name')}
         </Text>
       ),
-      cell: (info) => <ModelComponent modelName={info.getValue()} />
+      cell: (info) => (
+        <ModelComponent modelName={info.getValue()} modelOwner={info.row.original.owner} />
+      )
     }),
     columnHelper.accessor((row) => row.type, {
       id: 'type',
