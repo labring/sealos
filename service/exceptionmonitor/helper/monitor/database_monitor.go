@@ -110,9 +110,11 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	getClusterDatabaseInfo(cluster, &notificationInfo)
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusRunning, api.StatusStopped:
-		recoveryNotificationInfo := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
-		recoveryNotificationInfo.RecoveryStatus, recoveryNotificationInfo.RecoveryTime = getClusterDatabaseStatus(cluster, recoveryNotificationInfo)
-		handleClusterRecovery(recoveryNotificationInfo)
+		if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+			recoveryNotificationInfo := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
+			recoveryNotificationInfo.RecoveryStatus, recoveryNotificationInfo.RecoveryTime = getClusterDatabaseStatus(cluster, recoveryNotificationInfo)
+			handleClusterRecovery(recoveryNotificationInfo)
+		}
 	case api.StatusDeleting, api.StatusStopping:
 		// nothing to do
 		break
