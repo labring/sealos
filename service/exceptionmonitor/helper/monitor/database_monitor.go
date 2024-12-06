@@ -275,6 +275,7 @@ func getClusterDatabaseStatus(cluster metav1unstructured.Unstructured, notificat
 
 	databaseClusterStatus, _, _ := metav1unstructured.NestedMap(cluster.Object, "status")
 
+	fmt.Println(notificationInfo.DatabaseType)
 	podName := databasePodNameMap[notificationInfo.DatabaseType]
 	podsReadyTime, _, _ := metav1unstructured.NestedString(databaseClusterStatus, "components", podName, "podsReadyTime")
 
