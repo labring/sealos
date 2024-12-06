@@ -10,7 +10,7 @@ RESET='\033[0m'
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v5.0.1"
 cloud_version="latest"
-#mongodb_version="mongodb-5.0"
+#mongodb_version="mongodb-6.0"
 #master_ips=
 #node_ips=
 #ssh_private_key=
@@ -71,7 +71,7 @@ PROMPTS_EN=(
 1. Hosts with AMD64 or AArch64 architecture;
 2. Linux kernel> = 4.19.57 or equivalent version (e.g., 4.18 on RHEL8)."
     ["optimizing_h2_buffer"]="Optimizing the size of the H2 flow control buffer."
-    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 6.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v6.0/administration/production-notes/"
     ["enable_acme"]="Do you want to enable ACME to automatically obtain certificates (Press n to use the self-signed certificate provided by Sealos)? (y/n): "
     ["acmedns_registration_failed"]="ACME DNS registration failed. Please check if the acmedns-host: '${GREEN}%s${RESET}' is correct."
     ["acme_cname_record"]="Please create a CNAME record for '${GREEN}_acme-challenge.%s${RESET}'\npointing to '${GREEN}%s${RESET}'."
@@ -90,7 +90,7 @@ Options:
   --kubeblocks-version              # Kubeblocks version (default: 0.8.2)
   --metrics-server-version          # Metrics Server version (default: 0.6.4)
   --cloud-version                   # Sealos Cloud version (default: latest)
-  --mongodb-version                 # MongoDB version (default: mongodb-5.0)
+  --mongodb-version                 # MongoDB version (default: mongodb-6.0)
   --master-ips                      # Master node IP list, separated by commas (no need to fill in for single node and current execution node)
   --node-ips                        # Node node IP list, separated by commas
   --ssh-private-key                 # SSH private key path (default: $HOME/.ssh/id_rsa)
@@ -140,7 +140,7 @@ PROMPTS_CN=(
 1.具有AMD64或AArch64架构的主机;
 2.Linux内核> = 4.19.57或等效版本 (例如, 在RHEL8上为4.18)."
     ["optimizing_h2_buffer"]="正在优化H2流控缓冲区大小."
-    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 6.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v6.0/administration/production-notes/"
     ["enable_acme"]="是否启用 ACME 自动获取证书（输入 n 使用 Sealos 提供的自签证书）? (y/n): "
     ["acmedns_registration_failed"]="注册 ACME DNS 失败, 请检查 acmedns-host: '${GREEN}%s${RESET}' 是否正确."
     ["acme_cname_record"]="请为 '${GREEN}_acme-challenge.%s${RESET}' 创建一条 CNAME 记录\n指向 '${GREEN}%s${RESET}'."
@@ -159,7 +159,7 @@ Options:
   --kubeblocks-version            # Kubeblocks版本 (默认: 0.8.2)
   --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
   --cloud-version                 # Sealos Cloud版本 (默认: latest)
-  --mongodb-version               # MongoDB版本 (默认: mongodb-5.0)
+  --mongodb-version               # MongoDB版本 (默认: mongodb-6.0)
   --master-ips                    # Master节点IP列表,使用英文逗号分割 (单节点且为当前执行节点可不填写)
   --node-ips                      # Node节点IP列表,使用英文逗号分割
   --ssh-private-key               # SSH私钥路径 (默认: $HOME/.ssh/id_rsa)
@@ -224,7 +224,7 @@ set_language() {
   fi
 }
 
-#TODO mongo 5.0 need avx support, if not support, change to 4.4
+#TODO mongo 6.0 need avx support, if not support, change to 4.4
 setMongoVersion() {
   set +e
   grep avx /proc/cpuinfo > /dev/null 2>&1
@@ -797,20 +797,20 @@ EOF
         sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
         --env cloudPort="${cloud_port:-443}"\
-        --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
+        --env mongodbVersion="${mongodb_version:-mongodb-6.0}"\
         --config-file $CLOUD_DIR/tls-secret.yaml
     elif [[ $acme == "y" ]]; then
         sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
         --env cloudPort="${cloud_port:-443}"\
-        --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
+        --env mongodbVersion="${mongodb_version:-mongodb-6.0}"\
         --env acmednsSecret="$(echo $acmednsSecret | base64 -w0)"\
         --env acmednsHost="$acmedns_host"
     else
         sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
         --env cloudPort="${cloud_port:-443}"\
-        --env mongodbVersion="${mongodb_version:-mongodb-5.0}"
+        --env mongodbVersion="${mongodb_version:-mongodb-6.0}"
     fi
     sealos cert --alt-names "$cloud_domain"
 }
