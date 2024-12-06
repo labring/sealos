@@ -6,7 +6,7 @@ export type IDEType = 'vscode' | 'cursor' | 'vscodeInsiders' | 'windsurf'
 
 type State = {
   devboxIDEList: { ide: IDEType; devboxName: string }[]
-  getDevboxIDEByDevboxName: (devboxName: string) => IDEType | undefined
+  getDevboxIDEByDevboxName: (devboxName: string) => IDEType
   addDevboxIDE: (ide: IDEType, devboxName: string) => void
   updateDevboxIDE: (ide: IDEType, devboxName: string) => void
   removeDevboxIDE: (devboxName: string) => void
@@ -18,7 +18,7 @@ export const useIDEStore = create<State>()(
       immer((set, get) => ({
         devboxIDEList: [],
         getDevboxIDEByDevboxName(devboxName: string) {
-          return get().devboxIDEList.find((item) => item.devboxName === devboxName)?.ide
+          return get().devboxIDEList.find((item) => item.devboxName === devboxName)?.ide || 'cursor'
         },
         addDevboxIDE(ide: IDEType, devboxName: string) {
           set((state) => {
@@ -30,6 +30,8 @@ export const useIDEStore = create<State>()(
             const item = state.devboxIDEList.find((item) => item.devboxName === devboxName)
             if (item) {
               item.ide = ide
+            } else {
+              state.devboxIDEList.push({ ide, devboxName })
             }
           })
         },
