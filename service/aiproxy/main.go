@@ -119,10 +119,6 @@ func startSyncServices(ctx context.Context, wg *sync.WaitGroup) {
 	go model.SyncOptions(ctx, wg, time.Second*5)
 	go model.SyncChannelCache(ctx, wg, time.Second*5)
 	go model.SyncModelConfigCache(ctx, wg, time.Second*5)
-
-	if config.EnableMetric {
-		log.Info("metric enabled, will disable channel if too much request failed")
-	}
 }
 
 func setupHTTPServer() (*http.Server, *gin.Engine) {
