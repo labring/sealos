@@ -31,7 +31,7 @@ func randString(n int) (string, error) {
 	return string(b), nil
 }
 
-func CreateNotification(namespace, name, status, notificationMessage, zhNotificationMessage string) {
+func CreateNotification(notificationInfo *api.Info, notificationMessage, zhNotificationMessage string) {
 	gvr := schema.GroupVersionResource{
 		Group:    "notification.sealos.io",
 		Version:  "v1",
@@ -40,14 +40,14 @@ func CreateNotification(namespace, name, status, notificationMessage, zhNotifica
 
 	randomSuffix, _ := randString(5)
 	now := time.Now().UTC().Unix()
-	message := fmt.Sprintf("Because %s , Database %s current status : %s , Please check in time.", notificationMessage, name, status)
-	zhMessage := fmt.Sprintf("因为 %s , 数据库 %s 当前状态 : %s , 请及时检查.", zhNotificationMessage, name, status)
+	message := fmt.Sprintf("Because %s , Database %s current status : %s , Please check in time.", notificationMessage, notificationInfo.DatabaseClusterName, notificationInfo.ExceptionStatus)
+	zhMessage := fmt.Sprintf("因为 %s , 数据库 %s 当前状态 : %s , 请及时检查.", zhNotificationMessage, notificationInfo.DatabaseClusterName, notificationInfo.ExceptionStatus)
 	notification := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "notification.sealos.io/v1",
 			"kind":       "Notification",
 			"metadata": map[string]interface{}{
-				"name": "database-exception" + name + randomSuffix,
+				"name": "database-exception" + notificationInfo.DatabaseClusterName + randomSuffix,
 			},
 			"spec": map[string]interface{}{
 				"title":        "Database Exception",
@@ -67,7 +67,7 @@ func CreateNotification(namespace, name, status, notificationMessage, zhNotifica
 		},
 	}
 
-	_, err := api.DynamicClient.Resource(gvr).Namespace(namespace).Create(context.TODO(), notification, metav1.CreateOptions{})
+	_, err := api.DynamicClient.Resource(gvr).Namespace(notificationInfo.Namespace).Create(context.TODO(), notification, metav1.CreateOptions{})
 	if err != nil {
 		log.Printf("Failed to send desktop notification: %v", err)
 	}
