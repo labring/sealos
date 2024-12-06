@@ -11,6 +11,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/network"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/sirupsen/logrus"
 )
 
 func AdminAuth(c *gin.Context) {
@@ -27,6 +29,7 @@ func AdminAuth(c *gin.Context) {
 }
 
 func TokenAuth(c *gin.Context) {
+	log := GetLogger(c)
 	ctx := c.Request.Context()
 	key := c.Request.Header.Get("Authorization")
 	key = strings.TrimPrefix(
@@ -40,6 +43,7 @@ func TokenAuth(c *gin.Context) {
 		abortWithMessage(c, http.StatusUnauthorized, err.Error())
 		return
 	}
+	SetLogTokenFields(log.Data, token)
 	if token.Subnet != "" {
 		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
 			abortWithMessage(c, http.StatusInternalServerError, err.Error())
@@ -61,6 +65,7 @@ func TokenAuth(c *gin.Context) {
 		abortWithMessage(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	SetLogGroupFields(log.Data, group)
 	if len(token.Models) == 0 {
 		token.Models = model.CacheGetEnabledModels()
 	}
@@ -80,13 +85,65 @@ func TokenAuth(c *gin.Context) {
 	c.Set(ctxkey.Group, group)
 	c.Set(ctxkey.Token, token)
 
-	log := GetLogger(c)
-	log.Data["gid"] = group.ID
-	log.Data["tid"] = token.ID
-	log.Data["tname"] = token.Name
-	log.Data["key"] = maskTokenKey(key)
-
 	c.Next()
+}
+
+func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {
+	SetLogRequestIDField(fields, m.RequestID)
+
+	SetLogModeField(fields, m.Mode)
+	SetLogModelFields(fields, m.OriginModelName)
+	SetLogActualModelFields(fields, m.ActualModelName)
+
+	if m.IsChannelTest {
+		SetLogIsChannelTestField(fields, true)
+	}
+
+	SetLogGroupFields(fields, m.Group)
+	SetLogTokenFields(fields, m.Token)
+	SetLogChannelFields(fields, m.Channel)
+}
+
+func SetLogModeField(fields logrus.Fields, mode int) {
+	fields["mode"] = mode
+}
+
+func SetLogIsChannelTestField(fields logrus.Fields, isChannelTest bool) {
+	fields["test"] = isChannelTest
+}
+
+func SetLogActualModelFields(fields logrus.Fields, actualModel string) {
+	fields["actmodel"] = actualModel
+}
+
+func SetLogModelFields(fields logrus.Fields, model string) {
+	fields["model"] = model
+}
+
+func SetLogChannelFields(fields logrus.Fields, channel *meta.ChannelMeta) {
+	if channel != nil {
+		fields["chid"] = channel.ID
+		fields["chname"] = channel.Name
+		fields["chtype"] = channel.Type
+	}
+}
+
+func SetLogRequestIDField(fields logrus.Fields, requestID string) {
+	fields["reqid"] = requestID
+}
+
+func SetLogGroupFields(fields logrus.Fields, group *model.GroupCache) {
+	if group != nil {
+		fields["gid"] = group.ID
+	}
+}
+
+func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache) {
+	if token != nil {
+		fields["tid"] = token.ID
+		fields["tname"] = token.Name
+		fields["key"] = maskTokenKey(token.Key)
+	}
 }
 
 func maskTokenKey(key string) string {

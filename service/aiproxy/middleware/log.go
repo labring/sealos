@@ -97,10 +97,14 @@ func GetLogger(c *gin.Context) *logrus.Entry {
 	if log, ok := c.Get("log"); ok {
 		return log.(*logrus.Entry)
 	}
-	entry := &logrus.Entry{
+	entry := NewLogger()
+	c.Set("log", entry)
+	return entry
+}
+
+func NewLogger() *logrus.Entry {
+	return &logrus.Entry{
 		Logger: logrus.StandardLogger(),
 		Data:   fieldsPool.Get().(logrus.Fields),
 	}
-	c.Set("log", entry)
-	return entry
 }
