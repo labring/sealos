@@ -39,18 +39,19 @@ func checkQuota() error {
 		if len(quotaList.Items) != 1 || quotaList.Items[0].Name != "quota-"+ns.Name {
 			continue
 		}
-		nsQuota := notification.NameSpaceQuota{
+		nsQuota := api.NameSpaceQuota{
 			NameSpace: ns.Name,
 		}
-		notificationInfo := notification.Info{
+		notificationInfo := api.Info{
 			ExceptionType:    "Quota",
 			PerformanceType:  "Quota",
-			NotificationType: "exception",
+			NotificationType: notification.ExceptionType,
 		}
 		send := processQuota(quotaList, &nsQuota)
 		if send {
 			message := notification.GetQuotaMessage(&nsQuota)
-			if err := notification.SendFeishuNotification(notificationInfo, message, api.FeishuWebhookURLMap["FeishuWebhookURLQuota"]); err != nil {
+			notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLQuota"]
+			if err := notification.SendFeishuNotification(&notificationInfo, message); err != nil {
 				log.Printf("Error sending exception notification:%v", err)
 			}
 		}
@@ -58,7 +59,7 @@ func checkQuota() error {
 	return nil
 }
 
-func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *notification.NameSpaceQuota) bool {
+func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *api.NameSpaceQuota) bool {
 	send := false
 	for resourceName, hardQuantity := range quotaList.Items[0].Status.Hard {
 		usedQuantity, exists := quotaList.Items[0].Status.Used[resourceName]

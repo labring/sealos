@@ -19,6 +19,7 @@ func main() {
 	go monitor.DatabasePerformanceMonitor()
 	go monitor.DatabaseBackupMonitor()
 	go monitor.QuotaMonitor()
+	go monitor.CockroachMonitor()
 	select {}
 }
 
