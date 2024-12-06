@@ -81,7 +81,7 @@ func setLog(l *log.Logger) {
 		DisableColors:    false,
 		ForceQuote:       config.DebugEnabled,
 		DisableQuote:     !config.DebugEnabled,
-		DisableSorting:   true,
+		DisableSorting:   false,
 		FullTimestamp:    true,
 		TimestampFormat:  time.DateTime,
 		QuoteEmptyFields: true,

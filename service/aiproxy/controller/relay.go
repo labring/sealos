@@ -26,6 +26,7 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	log := middleware.GetLogger(c)
 	log.Data["mode"] = meta.Mode
 	log.Data["model"] = meta.OriginModelName
+	log.Data["actmodel"] = meta.ActualModelName
 	log.Data["chname"] = meta.Channel.Name
 	log.Data["chid"] = meta.Channel.ID
 	log.Data["chtype"] = meta.Channel.Type
