@@ -10,7 +10,7 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -60,33 +60,15 @@ func (t *Token) MarshalJSON() ([]byte, error) {
 
 //nolint:goconst
 func getTokenOrder(order string) string {
-	switch order {
-	case "name":
-		return "name asc"
-	case "name-desc":
-		return "name desc"
-	case "accessed_at":
-		return "accessed_at asc"
-	case "accessed_at-desc":
-		return "accessed_at desc"
-	case "expired_at":
-		return "expired_at asc"
-	case "expired_at-desc":
-		return "expired_at desc"
-	case "group":
-		return "group_id asc"
-	case "group-desc":
-		return "group_id desc"
-	case "used_amount":
-		return "used_amount asc"
-	case "used_amount-desc":
-		return "used_amount desc"
-	case "request_count":
-		return "request_count asc"
-	case "request_count-desc":
-		return "request_count desc"
-	case "id":
-		return "id asc"
+	prefix, suffix, _ := strings.Cut(order, "-")
+	switch prefix {
+	case "name", "accessed_at", "expired_at", "group", "used_amount", "request_count", "id", "created_at":
+		switch suffix {
+		case "asc":
+			return prefix + " asc"
+		default:
+			return prefix + " desc"
+		}
 	default:
 		return "id desc"
 	}
@@ -309,7 +291,7 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	}
 	token, err = CacheGetTokenByKey(key)
 	if err != nil {
-		logger.SysError("get token from cache failed: " + err.Error())
+		log.Error("get token from cache failed: " + err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("invalid token")
 		}
@@ -327,7 +309,7 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	if !time.Time(token.ExpiredAt).IsZero() && time.Time(token.ExpiredAt).Before(time.Now()) {
 		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExpired)
 		if err != nil {
-			logger.SysError("failed to update token status" + err.Error())
+			log.Error("failed to update token status" + err.Error())
 		}
 		return nil, fmt.Errorf("token (%s[%d]) is expired", token.Name, token.ID)
 	}
@@ -335,7 +317,7 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 		// in this case, we can make sure the token is exhausted
 		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExhausted)
 		if err != nil {
-			logger.SysError("failed to update token status" + err.Error())
+			log.Error("failed to update token status" + err.Error())
 		}
 		return nil, fmt.Errorf("token (%s[%d]) quota is exhausted", token.Name, token.ID)
 	}
@@ -367,7 +349,7 @@ func UpdateTokenStatus(id int, status int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -392,7 +374,7 @@ func UpdateTokenStatusAndAccessedAt(id int, status int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -417,7 +399,7 @@ func UpdateGroupTokenStatusAndAccessedAt(group string, id int, status int) (err 
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -443,7 +425,7 @@ func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -463,7 +445,7 @@ func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
-func DeleteTokenByIDAndGroupID(id int, groupID string) (err error) {
+func DeleteGroupTokenByID(groupID string, id int) (err error) {
 	if id == 0 || groupID == "" {
 		return errors.New("id 或 group 为空！")
 	}
@@ -471,7 +453,7 @@ func DeleteTokenByIDAndGroupID(id int, groupID string) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -484,6 +466,34 @@ func DeleteTokenByIDAndGroupID(id int, groupID string) (err error) {
 		Where(token).
 		Delete(&token)
 	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func DeleteGroupTokensByIDs(groupID string, ids []int) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+	tokens := make([]Token, len(ids))
+	defer func() {
+		if err == nil {
+			for _, token := range tokens {
+				if err := CacheDeleteToken(token.Key); err != nil {
+					log.Error("delete token from cache failed: " + err.Error())
+				}
+			}
+		}
+	}()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Clauses(clause.Returning{
+				Columns: []clause.Column{
+					{Name: "key"},
+				},
+			}).
+			Where("group_id = ?", groupID).
+			Where("id IN (?)", ids).
+			Delete(&tokens).
+			Error
+	})
 }
 
 func DeleteTokenByID(id int) (err error) {
@@ -494,7 +504,7 @@ func DeleteTokenByID(id int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -509,11 +519,38 @@ func DeleteTokenByID(id int) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
+func DeleteTokensByIDs(ids []int) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+	tokens := make([]Token, len(ids))
+	defer func() {
+		if err == nil {
+			for _, token := range tokens {
+				if err := CacheDeleteToken(token.Key); err != nil {
+					log.Error("delete token from cache failed: " + err.Error())
+				}
+			}
+		}
+	}()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Clauses(clause.Returning{
+				Columns: []clause.Column{
+					{Name: "key"},
+				},
+			}).
+			Where("id IN (?)", ids).
+			Delete(&tokens).
+			Error
+	})
+}
+
 func UpdateToken(token *Token) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -531,7 +568,7 @@ func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error)
 	defer func() {
 		if amount > 0 && err == nil && token.Quota > 0 {
 			if err := CacheUpdateTokenUsedAmountOnlyIncrease(token.Key, token.UsedAmount); err != nil {
-				logger.SysError("update token used amount in cache failed: " + err.Error())
+				log.Error("update token used amount in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -560,7 +597,7 @@ func UpdateTokenName(id int, name string) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -584,7 +621,7 @@ func UpdateGroupTokenName(group string, id int, name string) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
-				logger.SysError("delete token from cache failed: " + err.Error())
+				log.Error("delete token from cache failed: " + err.Error())
 			}
 		}
 	}()

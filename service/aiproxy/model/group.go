@@ -9,8 +9,9 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -33,7 +34,7 @@ type Group struct {
 	RequestCount int       `gorm:"index"              json:"request_count"`
 }
 
-func (g *Group) AfterDelete(tx *gorm.DB) (err error) {
+func (g *Group) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&Token{}).Where("group_id = ?", g.ID).Delete(&Token{}).Error
 }
 
@@ -52,31 +53,15 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 
 //nolint:goconst
 func getGroupOrder(order string) string {
-	switch order {
-	case "id-desc":
-		return "id desc"
-	case "request_count":
-		return "request_count asc"
-	case "request_count-desc":
-		return "request_count desc"
-	case "accessed_at":
-		return "accessed_at asc"
-	case "accessed_at-desc":
-		return "accessed_at desc"
-	case "status":
-		return "status asc"
-	case "status-desc":
-		return "status desc"
-	case "created_at":
-		return "created_at asc"
-	case "created_at-desc":
-		return "created_at desc"
-	case "used_amount":
-		return "used_amount asc"
-	case "used_amount-desc":
-		return "used_amount desc"
-	case "id":
-		return "id asc"
+	prefix, suffix, _ := strings.Cut(order, "-")
+	switch prefix {
+	case "id", "request_count", "accessed_at", "status", "created_at", "used_amount":
+		switch suffix {
+		case "asc":
+			return prefix + " asc"
+		default:
+			return prefix + " desc"
+		}
 	default:
 		return "id desc"
 	}
@@ -117,18 +102,45 @@ func DeleteGroupByID(id string) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteGroup(id); err != nil {
-				logger.SysError("CacheDeleteGroup failed: " + err.Error())
+				log.Error("cache delete group failed: " + err.Error())
 			}
 			if _, err := DeleteGroupLogs(id); err != nil {
-				logger.SysError("DeleteGroupLogs failed: " + err.Error())
+				log.Error("delete group logs failed: " + err.Error())
 			}
 		}
 	}()
-	result := DB.
-		Delete(&Group{
-			ID: id,
-		})
+	result := DB.Delete(&Group{ID: id})
 	return HandleUpdateResult(result, ErrGroupNotFound)
+}
+
+func DeleteGroupsByIDs(ids []string) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+	groups := make([]Group, len(ids))
+	defer func() {
+		if err == nil {
+			for _, group := range groups {
+				if err := CacheDeleteGroup(group.ID); err != nil {
+					log.Error("cache delete group failed: " + err.Error())
+				}
+				if _, err := DeleteGroupLogs(group.ID); err != nil {
+					log.Error("delete group logs failed: " + err.Error())
+				}
+			}
+		}
+	}()
+	return DB.Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Clauses(clause.Returning{
+				Columns: []clause.Column{
+					{Name: "id"},
+				},
+			}).
+			Where("id IN (?)", ids).
+			Delete(&groups).
+			Error
+	})
 }
 
 func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) error {
@@ -160,7 +172,7 @@ func UpdateGroupQPM(id string, qpm int64) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheUpdateGroupQPM(id, qpm); err != nil {
-				logger.SysError("CacheUpdateGroupQPM failed: " + err.Error())
+				log.Error("cache update group qpm failed: " + err.Error())
 			}
 		}
 	}()
@@ -172,7 +184,7 @@ func UpdateGroupStatus(id string, status int) (err error) {
 	defer func() {
 		if err == nil {
 			if err := CacheUpdateGroupStatus(id, status); err != nil {
-				logger.SysError("CacheUpdateGroupStatus failed: " + err.Error())
+				log.Error("cache update group status failed: " + err.Error())
 			}
 		}
 	}()

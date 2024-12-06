@@ -9,7 +9,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 )
+
+func ChannelTypeNames(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    channeltype.ChannelNames,
+	})
+}
 
 func GetChannels(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
@@ -171,7 +180,6 @@ func (r *AddChannelRequest) ToChannel() *model.Channel {
 		Name:         r.Name,
 		Key:          r.Key,
 		BaseURL:      r.BaseURL,
-		Other:        r.Other,
 		Models:       slices.Clone(r.Models),
 		ModelMapping: maps.Clone(r.ModelMapping),
 		Config:       r.Config,
@@ -234,20 +242,44 @@ func DeleteChannel(c *gin.Context) {
 	})
 }
 
-type UpdateChannelRequest struct {
-	AddChannelRequest
-	ID int `json:"id"`
-}
-
-func (r *UpdateChannelRequest) ToChannel() *model.Channel {
-	c := r.AddChannelRequest.ToChannel()
-	c.ID = r.ID
-	return c
+func DeleteChannels(c *gin.Context) {
+	ids := []int{}
+	err := c.ShouldBindJSON(&ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	err = model.DeleteChannelsByIDs(ids)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+	}
 }
 
 func UpdateChannel(c *gin.Context) {
-	channel := UpdateChannelRequest{}
-	err := c.ShouldBindJSON(&channel)
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "id is required",
+		})
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	channel := AddChannelRequest{}
+	err = c.ShouldBindJSON(&channel)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -256,6 +288,7 @@ func UpdateChannel(c *gin.Context) {
 		return
 	}
 	ch := channel.ToChannel()
+	ch.ID = id
 	err = model.UpdateChannel(ch)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -267,20 +300,7 @@ func UpdateChannel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data": UpdateChannelRequest{
-			ID: ch.ID,
-			AddChannelRequest: AddChannelRequest{
-				Type:         ch.Type,
-				Name:         ch.Name,
-				Key:          ch.Key,
-				BaseURL:      ch.BaseURL,
-				Other:        ch.Other,
-				Models:       ch.Models,
-				ModelMapping: ch.ModelMapping,
-				Priority:     ch.Priority,
-				Config:       ch.Config,
-			},
-		},
+		"data":    ch,
 	})
 }
 

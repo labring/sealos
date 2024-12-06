@@ -41,9 +41,25 @@ func GetLogs(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
 	logs, total, err := model.GetLogs(
-		startTimestampTime, endTimestampTime,
-		code, modelName, group, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
+		startTimestampTime,
+		endTimestampTime,
+		code,
+		modelName,
+		group,
+		requestID,
+		tokenID,
+		tokenName,
+		p*perPage,
+		perPage,
+		channel,
+		endpoint,
+		content,
+		order,
+		mode,
+	)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -92,9 +108,25 @@ func GetGroupLogs(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
-	logs, total, err := model.GetGroupLogs(group,
-		startTimestampTime, endTimestampTime,
-		code, modelName, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	logs, total, err := model.GetGroupLogs(
+		group,
+		startTimestampTime,
+		endTimestampTime,
+		code,
+		modelName,
+		requestID,
+		tokenID,
+		tokenName,
+		p*perPage,
+		perPage,
+		channel,
+		endpoint,
+		content,
+		order,
+		mode,
+	)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -140,7 +172,26 @@ func SearchLogs(c *gin.Context) {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchLogs(keyword, p, perPage, code, endpoint, groupID, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channel, order)
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	logs, total, err := model.SearchLogs(
+		keyword,
+		p,
+		perPage,
+		code,
+		endpoint,
+		groupID,
+		requestID,
+		tokenID,
+		tokenName,
+		modelName,
+		content,
+		startTimestampTime,
+		endTimestampTime,
+		channel,
+		order,
+		mode,
+	)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -186,7 +237,26 @@ func SearchGroupLogs(c *gin.Context) {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchGroupLogs(group, keyword, p, perPage, code, endpoint, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channelID, order)
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	logs, total, err := model.SearchGroupLogs(
+		group,
+		keyword,
+		p,
+		perPage,
+		code,
+		endpoint,
+		requestID,
+		tokenID,
+		tokenName,
+		modelName,
+		content,
+		startTimestampTime,
+		endTimestampTime,
+		channelID,
+		order,
+		mode,
+	)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -240,7 +310,7 @@ func GetLogsStat(c *gin.Context) {
 }
 
 func GetLogsSelfStat(c *gin.Context) {
-	group := c.GetString(ctxkey.Group)
+	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 	tokenName := c.Query("token_name")
@@ -255,7 +325,7 @@ func GetLogsSelfStat(c *gin.Context) {
 	if endTimestamp != 0 {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
-	quotaNum := model.SumUsedQuota(startTimestampTime, endTimestampTime, modelName, group, tokenName, channel, endpoint)
+	quotaNum := model.SumUsedQuota(startTimestampTime, endTimestampTime, modelName, group.ID, tokenName, channel, endpoint)
 	// tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, tokenName)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -307,7 +377,8 @@ func SearchConsumeError(c *gin.Context) {
 		perPage = 100
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchConsumeError(keyword, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
+	requestID := c.Query("request_id")
+	logs, total, err := model.SearchConsumeError(keyword, requestID, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

@@ -10,9 +10,9 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/pkoukk/tiktoken-go"
+	log "github.com/sirupsen/logrus"
 )
 
 // tokenEncoderMap won't grow after initialization
@@ -25,7 +25,7 @@ var (
 func init() {
 	gpt35TokenEncoder, err := tiktoken.EncodingForModel("gpt-3.5-turbo")
 	if err != nil {
-		logger.FatalLog("failed to get gpt-3.5-turbo token encoder: " + err.Error())
+		log.Fatal("failed to get gpt-3.5-turbo token encoder: " + err.Error())
 	}
 	defaultTokenEncoder = gpt35TokenEncoder
 }
@@ -41,7 +41,7 @@ func getTokenEncoder(model string) *tiktoken.Tiktoken {
 	if ok {
 		tokenEncoder, err := tiktoken.EncodingForModel(model)
 		if err != nil {
-			logger.SysError(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
+			log.Error(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
 			tokenEncoder = defaultTokenEncoder
 		}
 		tokenEncoderLock.Lock()
@@ -59,7 +59,7 @@ func getTokenNum(tokenEncoder *tiktoken.Tiktoken, text string) int {
 	return len(tokenEncoder.Encode(text, nil, nil))
 }
 
-func CountTokenMessages(messages []model.Message, model string) int {
+func CountTokenMessages(messages []*model.Message, model string) int {
 	tokenEncoder := getTokenEncoder(model)
 	// Reference:
 	// https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
@@ -101,7 +101,7 @@ func CountTokenMessages(messages []model.Message, model string) int {
 						}
 						imageTokens, err := countImageTokens(url, detail, model)
 						if err != nil {
-							logger.SysError("error counting image tokens: " + err.Error())
+							log.Error("error counting image tokens: " + err.Error())
 						} else {
 							tokenNum += imageTokens
 						}
@@ -201,6 +201,12 @@ func CountTokenInput(input any, model string) int {
 	switch v := input.(type) {
 	case string:
 		return CountTokenText(v, model)
+	case []any:
+		num := 0
+		for _, s := range v {
+			num += CountTokenInput(s, model)
+		}
+		return num
 	case []string:
 		text := ""
 		for _, s := range v {
@@ -214,6 +220,9 @@ func CountTokenInput(input any, model string) int {
 func CountTokenText(text string, model string) int {
 	if strings.HasPrefix(model, "tts") {
 		return utf8.RuneCountInString(text)
+	}
+	if strings.HasPrefix(model, "sambert-") {
+		return len(text)
 	}
 	tokenEncoder := getTokenEncoder(model)
 	return getTokenNum(tokenEncoder, text)

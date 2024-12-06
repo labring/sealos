@@ -8,13 +8,14 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/image"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -38,7 +39,14 @@ func stopReasonClaude2OpenAI(reason *string) string {
 	}
 }
 
-func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
+	var textRequest model.GeneralOpenAIRequest
+	err := common.UnmarshalBodyReusable(req, &textRequest)
+	if err != nil {
+		return nil, err
+	}
+	textRequest.Model = meta.ActualModelName
+	meta.Set("stream", textRequest.Stream)
 	claudeTools := make([]Tool, 0, len(textRequest.Tools))
 
 	for _, tool := range textRequest.Tools {
@@ -137,7 +145,10 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
 				content.Source = &ImageSource{
 					Type: "base64",
 				}
-				mimeType, data, _ := image.GetImageFromURL(part.ImageURL.URL)
+				mimeType, data, err := image.GetImageFromURL(req.Context(), part.ImageURL.URL)
+				if err != nil {
+					return nil, err
+				}
 				content.Source.MediaType = mimeType
 				content.Source.Data = data
 			}
@@ -146,7 +157,8 @@ func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
 		claudeMessage.Content = contents
 		claudeRequest.Messages = append(claudeRequest.Messages, claudeMessage)
 	}
-	return &claudeRequest
+
+	return &claudeRequest, nil
 }
 
 // https://docs.anthropic.com/claude/reference/messages-streaming
@@ -154,7 +166,7 @@ func StreamResponseClaude2OpenAI(claudeResponse *StreamResponse) (*openai.ChatCo
 	var response *Response
 	var responseText string
 	var stopReason string
-	tools := make([]model.Tool, 0)
+	tools := make([]*model.Tool, 0)
 
 	switch claudeResponse.Type {
 	case "message_start":
@@ -163,7 +175,7 @@ func StreamResponseClaude2OpenAI(claudeResponse *StreamResponse) (*openai.ChatCo
 		if claudeResponse.ContentBlock != nil {
 			responseText = claudeResponse.ContentBlock.Text
 			if claudeResponse.ContentBlock.Type == toolUseType {
-				tools = append(tools, model.Tool{
+				tools = append(tools, &model.Tool{
 					ID:   claudeResponse.ContentBlock.ID,
 					Type: "function",
 					Function: model.Function{
@@ -177,7 +189,7 @@ func StreamResponseClaude2OpenAI(claudeResponse *StreamResponse) (*openai.ChatCo
 		if claudeResponse.Delta != nil {
 			responseText = claudeResponse.Delta.Text
 			if claudeResponse.Delta.Type == "input_json_delta" {
-				tools = append(tools, model.Tool{
+				tools = append(tools, &model.Tool{
 					Function: model.Function{
 						Arguments: claudeResponse.Delta.PartialJSON,
 					},
@@ -207,7 +219,7 @@ func StreamResponseClaude2OpenAI(claudeResponse *StreamResponse) (*openai.ChatCo
 	}
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
-	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	openaiResponse.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &openaiResponse, response
 }
 
@@ -216,11 +228,11 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 	if len(claudeResponse.Content) > 0 {
 		responseText = claudeResponse.Content[0].Text
 	}
-	tools := make([]model.Tool, 0)
+	tools := make([]*model.Tool, 0)
 	for _, v := range claudeResponse.Content {
 		if v.Type == toolUseType {
 			args, _ := json.Marshal(v.Input)
-			tools = append(tools, model.Tool{
+			tools = append(tools, &model.Tool{
 				ID:   v.ID,
 				Type: "function", // compatible with other OpenAI derivative applications
 				Function: model.Function{
@@ -245,13 +257,15 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 		Model:   claudeResponse.Model,
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	createdTime := helper.GetTimestamp()
 	scanner := bufio.NewScanner(resp.Body)
@@ -273,7 +287,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	var usage model.Usage
 	var modelName string
 	var id string
-	var lastToolCallChoice openai.ChatCompletionsStreamResponseChoice
+	var lastToolCallChoice *openai.ChatCompletionsStreamResponseChoice
 
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -289,7 +303,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var claudeResponse StreamResponse
 		err := json.Unmarshal(data, &claudeResponse)
 		if err != nil {
-			logger.SysErrorf("error unmarshalling stream response: %s, data: %s", err.Error(), conv.BytesToString(data))
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 
@@ -305,7 +319,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 				id = "chatcmpl-" + meta.ID
 				continue
 			}
-			if len(lastToolCallChoice.Delta.ToolCalls) > 0 {
+			if lastToolCallChoice != nil && len(lastToolCallChoice.Delta.ToolCalls) > 0 {
 				lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
 				if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
 					lastArgs.Arguments = "{}"
@@ -326,12 +340,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		}
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)
@@ -339,7 +353,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	var claudeResponse Response
@@ -359,7 +373,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 		}, nil
 	}
 	fullTextResponse := ResponseClaude2OpenAI(&claudeResponse)
-	fullTextResponse.Model = modelName
+	fullTextResponse.Model = meta.OriginModelName
 	usage := model.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,

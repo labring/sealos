@@ -52,8 +52,8 @@ type GeneralOpenAIRequest struct {
 	User                string          `json:"user,omitempty"`
 	Size                string          `json:"size,omitempty"`
 	Modalities          []string        `json:"modalities,omitempty"`
-	Messages            []Message       `json:"messages,omitempty"`
-	Tools               []Tool          `json:"tools,omitempty"`
+	Messages            []*Message      `json:"messages,omitempty"`
+	Tools               []*Tool         `json:"tools,omitempty"`
 	N                   int             `json:"n,omitempty"`
 	Dimensions          int             `json:"dimensions,omitempty"`
 	Seed                float64         `json:"seed,omitempty"`

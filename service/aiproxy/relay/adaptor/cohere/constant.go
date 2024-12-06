@@ -1,14 +1,39 @@
 package cohere
 
-var ModelList = []string{
-	"command", "command-nightly",
-	"command-light", "command-light-nightly",
-	"command-r", "command-r-plus",
-}
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
 
-func init() {
-	num := len(ModelList)
-	for i := 0; i < num; i++ {
-		ModelList = append(ModelList, ModelList[i]+"-internet")
-	}
+var ModelList = []*model.ModelConfig{
+	{
+		Model: "command",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerCohere,
+	},
+	{
+		Model: "command-nightly",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerCohere,
+	},
+	{
+		Model: "command-light",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerCohere,
+	},
+	{
+		Model: "command-light-nightly",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerCohere,
+	},
+	{
+		Model: "command-r",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerCohere,
+	},
+	{
+		Model: "command-r-plus",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerCohere,
+	},
 }
