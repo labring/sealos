@@ -238,18 +238,15 @@ export default function Home(): React.JSX.Element {
             <Flex
               alignItems="flex-start"
               justifyContent="space-between"
-              gap={['12px']}
               sx={{
                 '@media screen and (min-width: 1300px)': {
-                  gap: '160px',
                   flexWrap: 'nowrap'
                 }
               }}
-              // gap={['12px', '16px', '24px', '160px']}
-              // gap={['16px', '160px']}
+              gap="16px"
               alignSelf="stretch"
               flexWrap="wrap">
-              <Flex h="32px" gap="24px" alignItems="center" flex="1" justifyContent="space-between">
+              <Flex h="32px" gap="32px" alignItems="center" flex="0 0 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -288,7 +285,7 @@ export default function Home(): React.JSX.Element {
                 />
               </Flex>
 
-              <Flex h="32px" gap="24px" alignItems="center" flex={1} justifyContent="space-between">
+              <Flex h="32px" gap="32px" alignItems="center" flex="0 0 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -342,18 +339,16 @@ export default function Home(): React.JSX.Element {
             <Flex
               alignItems="flex-start"
               justifyContent="space-between"
-              gap={['12px']}
               sx={{
                 '@media screen and (min-width: 1300px)': {
                   gap: '160px',
                   flexWrap: 'nowrap'
                 }
               }}
-              // gap={['12px', '16px', '24px', '160px']}
-              // gap={['16px', '160px']}
+              gap="16px"
               alignSelf="stretch"
               flexWrap="wrap">
-              <Flex h="32px" gap="24px" alignItems="center" flex="1" justifyContent="space-between">
+              <Flex h="32px" gap="32px" alignItems="center" flex="0 0 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -392,7 +387,7 @@ export default function Home(): React.JSX.Element {
                 />
               </Flex>
 
-              <Flex h="32px" gap="24px" alignItems="center" flex={1} justifyContent="space-between">
+              <Flex h="32px" gap="32px" alignItems="center" flex="0 0 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"

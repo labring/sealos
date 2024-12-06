@@ -230,11 +230,16 @@ export default function Home(): React.JSX.Element {
             {/* -- the first row */}
             <Flex
               alignItems="center"
-              gap="8px"
               justifyContent="space-between"
               alignSelf="stretch"
-              flexWrap="wrap">
-              <Flex h="32px" gap="24px" alignItems="center">
+              flexWrap="wrap"
+              sx={{
+                gap: '16px',
+                '@media screen and (min-width: 1318px)': {
+                  gap: '24px'
+                }
+              }}>
+              <Flex h="32px" gap="24px" alignItems="center" flex="0 1 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -280,7 +285,7 @@ export default function Home(): React.JSX.Element {
                 />
               </Flex>
 
-              <Flex h="32px" gap="24px" alignItems="center">
+              <Flex h="32px" gap="24px" alignItems="center" flex="0 1 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
@@ -326,7 +331,7 @@ export default function Home(): React.JSX.Element {
                 />
               </Flex>
 
-              <Flex h="32px" gap="24px" alignItems="center">
+              <Flex h="32px" gap="24px" alignItems="center" flex="0 1 auto">
                 <Text
                   whiteSpace="nowrap"
                   color="grayModern.900"
