@@ -2,13 +2,14 @@ package monitor
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"time"
 )
 
 func CockroachMonitor() {
@@ -16,7 +17,6 @@ func CockroachMonitor() {
 		notificationInfo := &api.Info{
 			FeishuWebHook: api.FeishuWebhookURLMap["FeishuWebhookURLCockroachDB"],
 		}
-
 		monitorCockroachDB(api.GlobalCockroachURI, "Global", notificationInfo)
 		monitorCockroachDB(api.LocalCockroachURI, "Local", notificationInfo)
 
