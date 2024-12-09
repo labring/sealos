@@ -257,7 +257,7 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
 	usage, relayErr := a.DoResponse(meta, c, resp)
-	detail.ResponseBody = rw.body.String()
+	detail.ResponseBody = conv.BytesToString(rw.body.Bytes())
 	if relayErr != nil {
 		return nil, &detail, relayErr
 	}
