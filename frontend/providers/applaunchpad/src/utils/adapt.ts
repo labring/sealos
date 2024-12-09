@@ -335,8 +335,11 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
       ? {
           use: true,
           target:
-            (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
-              ?.name as HpaTarget) || 'cpu',
+            deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.pods?.metric?.name ===
+            'DCGM_FI_DEV_GPU_UTIL'
+              ? 'gpu'
+              : (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
+                  ?.name as HpaTarget) || 'cpu',
           value: deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
             ?.averageUtilization
             ? deployKindsMap.HorizontalPodAutoscaler.spec.metrics[0].resource.target

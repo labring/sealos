@@ -10,10 +10,12 @@ export let CURRENCY = Coin.shellCoin;
 export let UPLOAD_LIMIT = 50;
 export let DOWNLOAD_LIMIT = 100;
 export let PVC_STORAGE_MAX = 20;
+export let GPU_ENABLED = false;
 
 export const loadInitData = async () => {
   try {
     const res = await getInitData();
+
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
     SEALOS_USER_DOMAINS = res.SEALOS_USER_DOMAINS;
     DOMAIN_PORT = res.DOMAIN_PORT;
@@ -23,13 +25,15 @@ export const loadInitData = async () => {
     DOWNLOAD_LIMIT = res.fileMangerConfig.downloadLimit;
     DESKTOP_DOMAIN = res.DESKTOP_DOMAIN;
     PVC_STORAGE_MAX = res.PVC_STORAGE_MAX;
+    GPU_ENABLED = res.GPU_ENABLED;
 
     return {
       SEALOS_DOMAIN,
       DOMAIN_PORT,
       CURRENCY,
       FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG,
-      DESKTOP_DOMAIN: res.DESKTOP_DOMAIN
+      DESKTOP_DOMAIN: res.DESKTOP_DOMAIN,
+      GPU_ENABLED
     };
   } catch (error) {}
 
