@@ -11,13 +11,14 @@ import {
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
 import type { BackupItemType, DBDetailType, DBEditType, DBType } from '@/types/db';
-import { DumpForm, MigrateForm } from '@/types/migrate';
+import { MigrateForm } from '@/types/migrate';
 import { encodeToHex, formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
+
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
 /**
@@ -110,7 +111,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
               ]
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
@@ -153,7 +154,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
               ]
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
@@ -199,7 +200,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
               ]
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
@@ -280,7 +281,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
                 : {})
             }
           ],
-          terminationPolicy,
+          terminationPolicy: data.terminationPolicy,
           tolerations: []
         }
       }
