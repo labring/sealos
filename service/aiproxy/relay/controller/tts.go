@@ -52,16 +52,21 @@ func RelayTTSHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}
 
-	usage, respErr := DoHelper(adaptor, c, meta)
+	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		log.Errorf("do response failed: %s", respErr)
+		log.Errorf("do tts failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
 			postGroupConsumer,
 			respErr.StatusCode,
 			c.Request.URL.Path,
-			nil, meta, price, completionPrice, respErr.String(),
+			usage,
+			meta,
+			price,
+			completionPrice,
+			respErr.String(),
+			detail,
 		)
 		return respErr
 	}
@@ -72,7 +77,12 @@ func RelayTTSHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 		postGroupConsumer,
 		http.StatusOK,
 		c.Request.URL.Path,
-		usage, meta, price, completionPrice, "",
+		usage,
+		meta,
+		price,
+		completionPrice,
+		"",
+		nil,
 	)
 
 	return nil

@@ -31,6 +31,7 @@ func GetAllOption() ([]*Option, error) {
 func InitOptionMap() error {
 	config.OptionMapRWMutex.Lock()
 	config.OptionMap = make(map[string]string)
+	config.OptionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
 	config.OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
 	config.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
 	config.OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
@@ -47,7 +48,23 @@ func InitOptionMap() error {
 	config.OptionMap["GeminiVersion"] = config.GetGeminiVersion()
 	config.OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
 	config.OptionMapRWMutex.Unlock()
-	return loadOptionsFromDatabase(true)
+	err := loadOptionsFromDatabase(true)
+	if err != nil {
+		return err
+	}
+	return storeOptionMap()
+}
+
+func storeOptionMap() error {
+	config.OptionMapRWMutex.Lock()
+	defer config.OptionMapRWMutex.Unlock()
+	for key, value := range config.OptionMap {
+		err := saveOption(key, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func loadOptionsFromDatabase(isInit bool) error {
@@ -81,20 +98,20 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 	}
 }
 
+func saveOption(key string, value string) error {
+	option := Option{
+		Key:   key,
+		Value: value,
+	}
+	return DB.FirstOrCreate(&option).Error
+}
+
 func UpdateOption(key string, value string) error {
 	err := updateOptionMap(key, value, false)
 	if err != nil {
 		return err
 	}
-	// Save to database first
-	option := Option{
-		Key: key,
-	}
-	err = DB.Assign(Option{Key: key, Value: value}).FirstOrCreate(&option).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return saveOption(key, value)
 }
 
 func UpdateOptions(options map[string]string) error {
@@ -123,6 +140,12 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 	defer config.OptionMapRWMutex.Unlock()
 	config.OptionMap[key] = value
 	switch key {
+	case "LogDetailStorageHours":
+		logDetailStorageHours, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		config.SetLogDetailStorageHours(logDetailStorageHours)
 	case "DisableServe":
 		config.SetDisableServe(isTrue(value))
 	case "AutomaticDisableChannelEnabled":

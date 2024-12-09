@@ -55,16 +55,21 @@ func RerankHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCo
 		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
 	}
 
-	usage, respErr := DoHelper(adaptor, c, meta)
+	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		log.Errorf("do rerank response failed: %+v", respErr)
+		log.Errorf("do rerank failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
 			postGroupConsumer,
 			http.StatusInternalServerError,
 			c.Request.URL.Path,
-			usage, meta, price, completionPrice, respErr.String(),
+			usage,
+			meta,
+			price,
+			completionPrice,
+			respErr.String(),
+			detail,
 		)
 		return respErr
 	}
@@ -75,7 +80,12 @@ func RerankHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCo
 		postGroupConsumer,
 		http.StatusOK,
 		c.Request.URL.Path,
-		usage, meta, price, completionPrice, "",
+		usage,
+		meta,
+		price,
+		completionPrice,
+		"",
+		nil,
 	)
 
 	return nil

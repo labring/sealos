@@ -7,30 +7,41 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 )
 
+type RequestDetail struct {
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"-"`
+	RequestBody  string    `gorm:"type:text"      json:"request_body"`
+	ResponseBody string    `gorm:"type:text"      json:"response_body"`
+	ID           int       `json:"id"`
+	LogID        int       `json:"log_id"`
+}
+
 type Log struct {
-	RequestAt        time.Time `gorm:"index;index:idx_request_at_group_id,priority:2;index:idx_group_reqat_token,priority:2"                                  json:"request_at"`
-	CreatedAt        time.Time `gorm:"index"                                                                                                                  json:"created_at"`
-	TokenName        string    `gorm:"index;index:idx_group_token,priority:2;index:idx_group_reqat_token,priority:3"                                          json:"token_name"`
-	Endpoint         string    `gorm:"index"                                                                                                                  json:"endpoint"`
-	Content          string    `gorm:"type:text"                                                                                                              json:"content"`
-	GroupID          string    `gorm:"index;index:idx_group_token,priority:1;index:idx_request_at_group_id,priority:1;index:idx_group_reqat_token,priority:1" json:"group"`
-	Model            string    `gorm:"index"                                                                                                                  json:"model"`
-	RequestID        string    `gorm:"index"                                                                                                                  json:"request_id"`
-	Price            float64   `json:"price"`
-	ID               int       `gorm:"primaryKey"                                                                                                             json:"id"`
-	CompletionPrice  float64   `json:"completion_price"`
-	TokenID          int       `gorm:"index"                                                                                                                  json:"token_id"`
-	UsedAmount       float64   `gorm:"index"                                                                                                                  json:"used_amount"`
-	PromptTokens     int       `json:"prompt_tokens"`
-	CompletionTokens int       `json:"completion_tokens"`
-	ChannelID        int       `gorm:"index"                                                                                                                  json:"channel"`
-	Code             int       `gorm:"index"                                                                                                                  json:"code"`
-	Mode             int       `json:"mode"`
+	RequestDetail    *RequestDetail `gorm:"foreignKey:LogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"                                                         json:"request_detail,omitempty"`
+	RequestAt        time.Time      `gorm:"index;index:idx_request_at_group_id,priority:2;index:idx_group_reqat_token,priority:2"                                  json:"request_at"`
+	CreatedAt        time.Time      `gorm:"index"                                                                                                                  json:"created_at"`
+	TokenName        string         `gorm:"index;index:idx_group_token,priority:2;index:idx_group_reqat_token,priority:3"                                          json:"token_name"`
+	Endpoint         string         `gorm:"index"                                                                                                                  json:"endpoint"`
+	Content          string         `gorm:"type:text"                                                                                                              json:"content"`
+	GroupID          string         `gorm:"index;index:idx_group_token,priority:1;index:idx_request_at_group_id,priority:1;index:idx_group_reqat_token,priority:1" json:"group"`
+	Model            string         `gorm:"index"                                                                                                                  json:"model"`
+	RequestID        string         `gorm:"index"                                                                                                                  json:"request_id"`
+	Price            float64        `json:"price"`
+	ID               int            `gorm:"primaryKey"                                                                                                             json:"id"`
+	CompletionPrice  float64        `json:"completion_price"`
+	TokenID          int            `gorm:"index"                                                                                                                  json:"token_id"`
+	UsedAmount       float64        `gorm:"index"                                                                                                                  json:"used_amount"`
+	PromptTokens     int            `json:"prompt_tokens"`
+	CompletionTokens int            `json:"completion_tokens"`
+	ChannelID        int            `gorm:"index"                                                                                                                  json:"channel"`
+	Code             int            `gorm:"index"                                                                                                                  json:"code"`
+	Mode             int            `json:"mode"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
@@ -46,7 +57,37 @@ func (l *Log) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func RecordConsumeLog(requestID string, requestAt time.Time, group string, code int, channelID int, promptTokens int, completionTokens int, modelName string, tokenID int, tokenName string, amount float64, price float64, completionPrice float64, endpoint string, content string, mode int) error {
+func RecordConsumeLog(
+	requestID string,
+	requestAt time.Time,
+	group string,
+	code int,
+	channelID int,
+	promptTokens int,
+	completionTokens int,
+	modelName string,
+	tokenID int,
+	tokenName string,
+	amount float64,
+	price float64,
+	completionPrice float64,
+	endpoint string,
+	content string,
+	mode int,
+	requestDetail *RequestDetail,
+) error {
+	defer func() {
+		detailStorageHours := config.GetLogDetailStorageHours()
+		if detailStorageHours <= 0 {
+			return
+		}
+		err := LogDB.
+			Where("created_at < ?", time.Now().Add(-time.Duration(detailStorageHours)*time.Second)).
+			Delete(&RequestDetail{}).Error
+		if err != nil {
+			log.Errorf("delete request detail failed: %s", err)
+		}
+	}()
 	log := &Log{
 		RequestID:        requestID,
 		RequestAt:        requestAt,
@@ -65,6 +106,7 @@ func RecordConsumeLog(requestID string, requestAt time.Time, group string, code 
 		ChannelID:        channelID,
 		Endpoint:         endpoint,
 		Content:          content,
+		RequestDetail:    requestDetail,
 	}
 	return LogDB.Create(log).Error
 }
@@ -131,7 +173,12 @@ func GetLogs(startTimestamp time.Time, endTimestamp time.Time, code int, modelNa
 		return nil, 0, nil
 	}
 
-	err = tx.Order(getLogOrder(order)).Limit(num).Offset(startIdx).Find(&logs).Error
+	err = tx.
+		Preload("RequestDetail").
+		Order(getLogOrder(order)).
+		Limit(num).
+		Offset(startIdx).
+		Find(&logs).Error
 	return logs, total, err
 }
 
@@ -178,7 +225,12 @@ func GetGroupLogs(group string, startTimestamp time.Time, endTimestamp time.Time
 		return nil, 0, nil
 	}
 
-	err = tx.Order(getLogOrder(order)).Limit(num).Offset(startIdx).Omit("id").Find(&logs).Error
+	err = tx.
+		Preload("RequestDetail").
+		Order(getLogOrder(order)).
+		Limit(num).
+		Offset(startIdx).
+		Find(&logs).Error
 	return logs, total, err
 }
 
@@ -309,7 +361,12 @@ func SearchLogs(keyword string, page int, perPage int, code int, endpoint string
 	if page < 0 {
 		page = 0
 	}
-	err = tx.Order(getLogOrder(order)).Limit(perPage).Offset(page * perPage).Find(&logs).Error
+	err = tx.
+		Preload("RequestDetail").
+		Order(getLogOrder(order)).
+		Limit(perPage).
+		Offset(page * perPage).
+		Find(&logs).Error
 	return logs, total, err
 }
 
@@ -432,7 +489,12 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, code i
 		page = 0
 	}
 
-	err = tx.Order(getLogOrder(order)).Limit(perPage).Offset(page * perPage).Find(&logs).Error
+	err = tx.
+		Preload("RequestDetail").
+		Order(getLogOrder(order)).
+		Limit(perPage).
+		Offset(page * perPage).
+		Find(&logs).Error
 	return logs, total, err
 }
 
