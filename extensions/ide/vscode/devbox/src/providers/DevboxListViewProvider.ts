@@ -59,6 +59,13 @@ export class DevboxListViewProvider extends Disposable {
       )
       // commands
       this._register(
+        devboxDashboardView.onDidChangeVisibility(() => {
+          if (devboxDashboardView.visible) {
+            projectTreeDataProvider.refreshData()
+          }
+        })
+      )
+      this._register(
         vscode.commands.registerCommand('devboxDashboard.refresh', () => {
           projectTreeDataProvider.refreshData()
         })
@@ -109,7 +116,6 @@ class ProjectTreeDataProvider
     if (fs.existsSync(defaultDevboxSSHConfigPath)) {
       convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
     }
-    this.refreshData()
   }
 
   async refreshData(): Promise<void> {
