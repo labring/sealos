@@ -1,17 +1,14 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
 import {
+  DBBackupMethodNameMap,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
   DBSourceConfigs,
   MigrationRemark,
   dbStatusMap
 } from '@/constants/db';
-import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
-import type {
-  KbPgClusterType,
-  KubeBlockBackupPolicyType,
-  KubeBlockOpsRequestType
-} from '@/types/cluster';
+import type { AutoBackupFormType, AutoBackupType, BackupCRItemType } from '@/types/backup';
+import type { KbPgClusterType, KubeBlockOpsRequestType } from '@/types/cluster';
 import type {
   DBDetailType,
   DBEditType,
@@ -106,39 +103,55 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
-    source: getDBSource(db)
+    source: getDBSource(db),
+    autoBackup: adaptBackupByCluster(db),
+    terminationPolicy: db.spec?.terminationPolicy || 'Delete'
   };
 };
 
 export const adaptBackupByCluster = (db: KbPgClusterType): AutoBackupFormType => {
-  const backup = db.spec.backup
-    ? adaptPolicy({
-        metadata: {
-          name: db.metadata.name,
-          uid: db.metadata.uid
-        },
-        spec: {
-          retention: {
-            ttl: db.spec.backup.retentionPeriod
-          },
-          schedule: {
-            datafile: {
-              cronExpression: db.spec.backup.cronExpression,
-              enable: db.spec.backup.enabled
-            }
-          }
-        }
-      })
-    : {
-        start: false,
-        hour: '18',
-        minute: '00',
-        week: [],
-        type: 'day',
-        saveTime: 7,
-        saveType: 'd'
-      };
+  const backup =
+    db.spec?.backup && db.spec?.backup?.cronExpression
+      ? adaptPolicy(db.spec.backup)
+      : {
+          start: false,
+          hour: '18',
+          minute: '00',
+          week: [],
+          type: 'day' as AutoBackupType,
+          saveTime: 7,
+          saveType: 'd'
+        };
   return backup;
+};
+
+export const convertBackupFormToSpec = (data: {
+  autoBackup?: AutoBackupFormType;
+  dbType: DBType;
+}): KbPgClusterType['spec']['backup'] => {
+  const cron = (() => {
+    if (data.autoBackup?.type === 'week') {
+      if (!data.autoBackup?.week?.length) {
+        throw new Error('Week is empty');
+      }
+      return `${data.autoBackup.minute} ${data.autoBackup.hour} * * ${data.autoBackup.week.join(
+        ','
+      )}`;
+    }
+    if (data.autoBackup?.type === 'day') {
+      return `${data.autoBackup.minute} ${data.autoBackup.hour} * * *`;
+    }
+    return `${data.autoBackup?.minute} * * * *`;
+  })();
+
+  return {
+    enabled: data.autoBackup?.start ?? false,
+    cronExpression: convertCronTime(cron, -8),
+    method: DBBackupMethodNameMap[data.dbType],
+    retentionPeriod: `${data.autoBackup?.saveTime}${data.autoBackup?.saveType}`,
+    repoName: '',
+    pitrEnabled: false
+  };
 };
 
 export const adaptDBForm = (db: DBDetailType): DBEditType => {
@@ -150,7 +163,9 @@ export const adaptDBForm = (db: DBDetailType): DBEditType => {
     memory: 1,
     replicas: 1,
     storage: 1,
-    labels: 1
+    labels: 1,
+    autoBackup: 1,
+    terminationPolicy: 1
   };
   const form: any = {};
 
@@ -220,7 +235,7 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   };
 };
 
-export const adaptPolicy = (policy: KubeBlockBackupPolicyType): AutoBackupFormType => {
+export const adaptPolicy = (policy: KbPgClusterType['spec']['backup']): AutoBackupFormType => {
   function parseDate(str: string) {
     const regex = /(\d+)([a-zA-Z]+)/;
     const matches = str.match(regex);
@@ -234,6 +249,7 @@ export const adaptPolicy = (policy: KubeBlockBackupPolicyType): AutoBackupFormTy
 
     return { number: 7, unit: 'd' };
   }
+
   function parseCron(str: string) {
     const cronFields = convertCronTime(str, 8).split(' ');
     const minuteField = cronFields[0];
@@ -249,7 +265,6 @@ export const adaptPolicy = (policy: KubeBlockBackupPolicyType): AutoBackupFormTy
         type: 'week'
       };
     }
-    console.log(minuteField, hourField, weekField);
 
     // every day
     if (hourField !== '*') {
@@ -279,12 +294,12 @@ export const adaptPolicy = (policy: KubeBlockBackupPolicyType): AutoBackupFormTy
     };
   }
 
-  const { number: saveTime, unit: saveType } = parseDate(policy.spec.retention.ttl);
-  const { hour, minute, week, type } = parseCron(policy.spec.schedule.datafile.cronExpression);
+  const { number: saveTime, unit: saveType } = parseDate(policy.retentionPeriod);
+  const { hour, minute, week, type } = parseCron(policy?.cronExpression ?? '0 0 * * *');
 
   return {
-    start: policy.spec.schedule.datafile.enable,
-    type,
+    start: policy.enabled,
+    type: type as AutoBackupType,
     week,
     hour,
     minute,
