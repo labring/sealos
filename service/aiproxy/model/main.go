@@ -178,6 +178,7 @@ func InitLogDB() {
 func migrateLOGDB() error {
 	return LogDB.AutoMigrate(
 		&Log{},
+		&RequestDetail{},
 		&ConsumeError{},
 	)
 }

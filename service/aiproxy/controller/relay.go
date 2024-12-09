@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
@@ -52,12 +51,9 @@ func Relay(c *gin.Context) {
 		return
 	}
 	lastFailedChannelID := meta.Channel.ID
-	group := c.MustGet(ctxkey.Group).(*dbmodel.GroupCache)
-	log.Errorf("relay error (channel id %d, group: %s): %s", meta.Channel.ID, group.ID, bizErr)
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
-		log.Errorf("relay error happen, status code is %d, won't retry in this case", bizErr.StatusCode)
 		retryTimes = 0
 	}
 	for i := retryTimes; i > 0; i-- {
@@ -82,7 +78,6 @@ func Relay(c *gin.Context) {
 			return
 		}
 		lastFailedChannelID = channel.ID
-		log.Errorf("relay error (channel id %d, group: %s): %s", channel.ID, group.ID, bizErr)
 	}
 	if bizErr != nil {
 		message := bizErr.Message

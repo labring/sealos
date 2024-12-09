@@ -95,9 +95,9 @@ func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStat
 	}
 
 	// do response
-	usage, respErr := DoHelper(adaptor, c, meta)
+	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		log.Errorf("do response failed: %s", respErr)
+		log.Errorf("do image failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
@@ -109,6 +109,7 @@ func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStat
 			imageCostPrice,
 			0,
 			respErr.String(),
+			detail,
 		)
 		return respErr
 	}
@@ -119,7 +120,12 @@ func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStat
 		postGroupConsumer,
 		http.StatusOK,
 		c.Request.URL.Path,
-		usage, meta, imageCostPrice, 0, imageRequest.Size,
+		usage,
+		meta,
+		imageCostPrice,
+		0,
+		imageRequest.Size,
+		nil,
 	)
 
 	return nil

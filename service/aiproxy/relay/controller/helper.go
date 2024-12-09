@@ -1,12 +1,16 @@
 package controller
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -14,6 +18,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	"github.com/shopspring/decimal"
 )
@@ -58,7 +63,19 @@ func preCheckGroupBalance(ctx context.Context, req *PreCheckGroupBalanceReq, met
 	return true, postGroupConsumer, nil
 }
 
-func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, postGroupConsumer balance.PostGroupConsumer, code int, endpoint string, usage *relaymodel.Usage, meta *meta.Meta, price, completionPrice float64, content string) {
+func postConsumeAmount(
+	ctx context.Context,
+	consumeWaitGroup *sync.WaitGroup,
+	postGroupConsumer balance.PostGroupConsumer,
+	code int,
+	endpoint string,
+	usage *relaymodel.Usage,
+	meta *meta.Meta,
+	price,
+	completionPrice float64,
+	content string,
+	requestDetail *model.RequestDetail,
+) {
 	defer consumeWaitGroup.Done()
 	if meta.IsChannelTest {
 		return
@@ -83,6 +100,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 			endpoint,
 			content,
 			meta.Mode,
+			requestDetail,
 		)
 		if err != nil {
 			log.Error("error batch record consume: " + err.Error())
@@ -142,6 +160,7 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 		endpoint,
 		content,
 		meta.Mode,
+		requestDetail,
 	)
 	if err != nil {
 		log.Error("error batch record consume: " + err.Error())
@@ -155,21 +174,51 @@ func isErrorHappened(resp *http.Response) bool {
 	return resp.StatusCode != http.StatusOK
 }
 
-func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+type responseWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	rw.body.Write(b)
+	return rw.ResponseWriter.Write(b)
+}
+
+func (rw *responseWriter) WriteString(s string) (int, error) {
+	rw.body.WriteString(s)
+	return rw.ResponseWriter.WriteString(s)
+}
+
+func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *model.RequestDetail, *relaymodel.ErrorWithStatusCode) {
 	log := middleware.GetLogger(c)
+
+	detail := model.RequestDetail{}
+	switch meta.Mode {
+	case relaymode.AudioTranscription, relaymode.AudioTranslation:
+		break
+	default:
+		reqBody, err := common.GetRequestBody(c.Request)
+		if err != nil {
+			return nil, nil, openai.ErrorWrapperWithMessage("get request body failed: "+err.Error(), "get_request_body_failed", http.StatusBadRequest)
+		}
+		detail.RequestBody = conv.BytesToString(reqBody)
+	}
+
 	header, body, err := a.ConvertRequest(meta, c.Request)
 	if err != nil {
-		return nil, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
+		return nil, &detail, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
 	}
+
 	fullRequestURL, err := a.GetRequestURL(meta)
 	if err != nil {
-		return nil, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
+		return nil, &detail, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
 	}
 	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, fullRequestURL, body)
 	if err != nil {
-		return nil, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
+		return nil, &detail, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
 	}
 	log.Debugf("request url: %s", fullRequestURL)
+
 	contentType := req.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/json; charset=utf-8"
@@ -180,19 +229,37 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	}
 	err = a.SetupRequestHeader(meta, c, req)
 	if err != nil {
-		return nil, openai.ErrorWrapperWithMessage("setup request header failed: "+err.Error(), "setup_request_header_failed", http.StatusBadRequest)
+		return nil, &detail, openai.ErrorWrapperWithMessage("setup request header failed: "+err.Error(), "setup_request_header_failed", http.StatusBadRequest)
 	}
+
 	resp, err := a.DoRequest(meta, c, req)
 	if err != nil {
-		return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusBadRequest)
+		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusBadRequest)
 	}
+
 	if isErrorHappened(resp) {
-		return nil, utils.RelayErrorHandler(meta, resp)
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, &detail, openai.ErrorWrapperWithMessage("read response body failed: "+err.Error(), "read_response_body_failed", http.StatusBadRequest)
+		}
+		detail.ResponseBody = conv.BytesToString(respBody)
+		resp.Body = io.NopCloser(bytes.NewReader(respBody))
+		return nil, &detail, utils.RelayErrorHandler(meta, resp)
 	}
+
+	rw := &responseWriter{
+		ResponseWriter: c.Writer,
+		body:           bytes.NewBuffer(nil),
+	}
+	rawWriter := c.Writer
+	defer func() { c.Writer = rawWriter }()
+	c.Writer = rw
+
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
 	usage, relayErr := a.DoResponse(meta, c, resp)
+	detail.ResponseBody = rw.body.String()
 	if relayErr != nil {
-		return nil, relayErr
+		return nil, &detail, relayErr
 	}
 	if usage == nil {
 		usage = &relaymodel.Usage{
@@ -203,5 +270,5 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	if usage.TotalTokens == 0 {
 		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	}
-	return usage, nil
+	return usage, &detail, nil
 }

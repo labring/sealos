@@ -32,7 +32,17 @@ var (
 	retryTimes atomic.Int64
 	// 暂停服务
 	disableServe atomic.Bool
+	// log detail 存储时间(小时)
+	logDetailStorageHours int64 = 3
 )
+
+func GetLogDetailStorageHours() int64 {
+	return atomic.LoadInt64(&logDetailStorageHours)
+}
+
+func SetLogDetailStorageHours(hours int64) {
+	atomic.StoreInt64(&logDetailStorageHours, hours)
+}
 
 func GetDisableServe() bool {
 	return disableServe.Load()

@@ -57,9 +57,9 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 	}
 
 	// do response
-	usage, respErr := DoHelper(adaptor, c, meta)
+	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		log.Errorf("do response failed: %s", respErr)
+		log.Errorf("do text failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
@@ -71,6 +71,7 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 			price,
 			completionPrice,
 			respErr.String(),
+			detail,
 		)
 		return respErr
 	}
@@ -81,7 +82,12 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 		postGroupConsumer,
 		http.StatusOK,
 		c.Request.URL.Path,
-		usage, meta, price, completionPrice, "",
+		usage,
+		meta,
+		price,
+		completionPrice,
+		"",
+		nil,
 	)
 	return nil
 }
