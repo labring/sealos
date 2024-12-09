@@ -28,12 +28,19 @@ export type DevboxReleaseStatusValueType = `${DevboxReleaseStatusEnum}`
 export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`
 export type ProtocolType = 'HTTP' | 'GRPC' | 'WS'
 
+export type GpuType = {
+  manufacturers: string
+  type: string
+  amount: number
+}
+
 export interface DevboxEditType {
   name: string
   runtimeType: string
   runtimeVersion: string
   cpu: number
   memory: number
+  gpu?: GpuType
   networks: {
     networkName: string
     portName: string

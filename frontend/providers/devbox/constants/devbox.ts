@@ -1,5 +1,6 @@
 import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
 
+export const defaultSliderKey = 'default'
 export const crLabelKey = 'sealos-devbox-cr'
 export const devboxKey = 'cloud.sealos.io/devbox-manager'
 export const devboxIdKey = 'cloud.sealos.io/app-devbox-id'
@@ -263,3 +264,14 @@ export const podStatusMap = {
     message: ''
   }
 }
+
+export const GpuAmountMarkList = [
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
+  { label: '3', value: 3 },
+  { label: '4', value: 4 },
+  { label: '5', value: 5 },
+  { label: '6', value: 6 },
+  { label: '7', value: 7 },
+  { label: '8', value: 8 }
+]

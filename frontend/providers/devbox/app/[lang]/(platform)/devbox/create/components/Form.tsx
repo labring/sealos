@@ -17,10 +17,10 @@ import {
 import { throttle } from 'lodash'
 import dynamic from 'next/dynamic'
 import { customAlphabet } from 'nanoid'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
-import { MySelect, MySlider, Tabs, useMessage } from '@sealos/ui'
+import { MySelect, MySlider, MyTooltip, Tabs, useMessage } from '@sealos/ui'
 
 import { useRouter } from '@/i18n'
 import MyIcon from '@/components/Icon'
@@ -28,15 +28,20 @@ import PriceBox from '@/components/PriceBox'
 import QuotaBox from '@/components/QuotaBox'
 
 import { useEnvStore } from '@/stores/env'
+import { usePriceStore } from '@/stores/price'
 import { useDevboxStore } from '@/stores/devbox'
 import { useRuntimeStore } from '@/stores/runtime'
 
-import { ProtocolList } from '@/constants/devbox'
-import type { DevboxEditType } from '@/types/devbox'
 import { obj2Query } from '@/utils/tools'
+import { defaultSliderKey, GpuAmountMarkList, ProtocolList } from '@/constants/devbox'
+import type { DevboxEditType } from '@/types/devbox'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
+import { useGlobalStore } from '@/stores/global'
+import { sliderNumber2MarkList } from '@/utils/adapt'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
+
+const labelWidth = 120
 
 export type CustomAccessModalParams = {
   publicDomain: string
@@ -48,11 +53,15 @@ const CustomAccessModal = dynamic(() => import('@/components/modals/CustomAccess
 const Form = ({
   formHook,
   pxVal,
-  isEdit
+  isEdit,
+  already,
+  countGpuInventory
 }: {
   formHook: UseFormReturn<DevboxEditType, any>
   pxVal: number
+  already: boolean
   isEdit: boolean
+  countGpuInventory: (type: string) => number
 }) => {
   const theme = useTheme()
   const router = useRouter()
@@ -86,6 +95,8 @@ const Form = ({
     getRuntimeDetailLabel
   } = useRuntimeStore()
   const { env } = useEnvStore()
+  const { sourcePrice } = usePriceStore()
+  const { formSliderListConfig } = useGlobalStore()
 
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
   const navList: { id: string; label: string; icon: string }[] = [
@@ -130,6 +141,83 @@ const Form = ({
     }
     // eslint-disable-next-line
   }, [])
+
+  // add NoGPU select item
+  const gpuSelectList = useMemo(
+    () =>
+      sourcePrice?.gpu
+        ? [
+            {
+              label: t('No GPU'),
+              value: ''
+            },
+            ...sourcePrice.gpu.map((item) => ({
+              icon: 'nvidia',
+              label: (
+                <Flex>
+                  <Box color={'myGray.900'}>{item.alias}</Box>
+                  <Box mx={3} color={'grayModern.900'}>
+                    |
+                  </Box>
+                  <Box color={'grayModern.900'}>
+                    {t('vm')} : {Math.round(item.vm)}G
+                  </Box>
+                  <Box mx={3} color={'grayModern.900'}>
+                    |
+                  </Box>
+                  <Flex pr={3}>
+                    <Box color={'grayModern.900'}>{t('Inventory')}&ensp;:&ensp;</Box>
+                    <Box color={'#FB7C3C'}>{countGpuInventory(item.type)}</Box>
+                  </Flex>
+                </Flex>
+              ),
+              value: item.type
+            }))
+          ]
+        : [],
+    [countGpuInventory, t, sourcePrice?.gpu]
+  )
+  const selectedGpu = useMemo(() => {
+    const selected = sourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'))
+    if (!selected) return
+    return {
+      ...selected,
+      inventory: countGpuInventory(selected.type)
+    }
+  }, [sourcePrice?.gpu, countGpuInventory, getValues])
+
+  // cpu, memory have different sliderValue
+  const countSliderList = useCallback(() => {
+    const gpuType = getValues('gpu.type')
+    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : defaultSliderKey
+
+    const cpu = getValues('cpu')
+    const memory = getValues('memory')
+
+    const cpuList = formSliderListConfig[key].cpu
+    const memoryList = formSliderListConfig[key].memory
+
+    const sortedCpuList =
+      cpu !== undefined ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b) : cpuList
+
+    const sortedMemoryList =
+      memory !== undefined
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList
+
+    return {
+      cpu: sliderNumber2MarkList({
+        val: sortedCpuList,
+        type: 'cpu',
+        gpuAmount: getValues('gpu.amount')
+      }),
+      memory: sliderNumber2MarkList({
+        val: sortedMemoryList,
+        type: 'memory',
+        gpuAmount: getValues('gpu.amount')
+      })
+    }
+  }, [formSliderListConfig, getValues])
 
   if (!formHook) return null
 
@@ -576,7 +664,7 @@ const Form = ({
                     {...register('runtimeVersion', {
                       required: t('This runtime field is required')
                     })}
-                    width={'200px'}
+                    width={'300px'}
                     placeholder={`${t('runtime')} ${t('version')}`}
                     defaultValue={
                       getValues('runtimeVersion') ||
@@ -613,6 +701,81 @@ const Form = ({
                   />
                 )}
               </Flex>
+
+              {/* GPU */}
+              {!sourcePrice?.gpu && (
+                <Box mb={7}>
+                  <Flex alignItems={'center'}>
+                    <Label w={100}>GPU</Label>
+                    <MySelect
+                      width={'300px'}
+                      placeholder={t('No GPU') || ''}
+                      value={getValues('gpu.type')}
+                      list={gpuSelectList}
+                      onchange={(type: any) => {
+                        const selected = sourcePrice?.gpu?.find((item) => item.type === type)
+                        const inventory = countGpuInventory(type)
+                        if (type === '' || (selected && inventory > 0)) {
+                          setValue('gpu.type', type)
+                        }
+                      }}
+                    />
+                  </Flex>
+                  {!!getValues('gpu.type') && (
+                    <Box mt={4} pl={`${labelWidth}px`}>
+                      <Box mb={1}>{t('Amount')}</Box>
+                      <Flex alignItems={'center'}>
+                        {GpuAmountMarkList.map((item) => {
+                          const inventory = selectedGpu?.inventory || 0
+                          const hasInventory = item.value <= inventory
+
+                          return (
+                            <MyTooltip
+                              key={item.value}
+                              label={hasInventory ? '' : t('Under Stock')}>
+                              <Center
+                                mr={2}
+                                w={'32px'}
+                                h={'32px'}
+                                borderRadius={'md'}
+                                border={'1px solid'}
+                                bg={'white'}
+                                {...(getValues('gpu.amount') === item.value
+                                  ? {
+                                      borderColor: 'brightBlue.500',
+                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
+                                    }
+                                  : {
+                                      borderColor: 'grayModern.200',
+                                      bgColor: 'grayModern.100'
+                                    })}
+                                {...(hasInventory
+                                  ? {
+                                      cursor: 'pointer',
+                                      onClick: () => {
+                                        setValue('gpu.amount', item.value)
+                                        const sliderList = countSliderList()
+                                        setValue('cpu', sliderList.cpu[1].value)
+                                        setValue('memory', sliderList.memory[1].value)
+                                      }
+                                    }
+                                  : {
+                                      cursor: 'default',
+                                      opacity: 0.5
+                                    })}>
+                                {item.label}
+                              </Center>
+                            </MyTooltip>
+                          )
+                        })}
+                        <Box ml={3} color={'MyGray.500'}>
+                          / {t('Card')}
+                        </Box>
+                      </Flex>
+                    </Box>
+                  )}
+                </Box>
+              )}
               {/* CPU */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label w={100}>{t('cpu')}</Label>

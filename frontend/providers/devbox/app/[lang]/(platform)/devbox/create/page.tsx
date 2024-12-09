@@ -25,6 +25,7 @@ import { useLoading } from '@/hooks/useLoading'
 import { useEnvStore } from '@/stores/env'
 import { useIDEStore } from '@/stores/ide'
 import { useUserStore } from '@/stores/user'
+import { usePriceStore } from '@/stores/price'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
 import { useRuntimeStore } from '@/stores/runtime'
@@ -47,12 +48,14 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 const DevboxCreatePage = () => {
   const router = useRouter()
   const t = useTranslations()
+  const { Loading, setIsLoading } = useLoading()
 
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
 
   const { env } = useEnvStore()
   const { addDevboxIDE } = useIDEStore()
+  const { sourcePrice } = usePriceStore()
   const { checkQuotaAllow } = useUserStore()
   const { setDevboxDetail, devboxList } = useDevboxStore()
   const { runtimeNamespaceMap, languageVersionMap, frameworkVersionMap, osVersionMap } =
@@ -62,10 +65,15 @@ const DevboxCreatePage = () => {
   const formOldYamls = useRef<YamlItemType[]>([])
   const oldDevboxEditData = useRef<DevboxEditType>()
 
-  const { Loading, setIsLoading } = useLoading()
+  const [already, setAlready] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
+  const [defaultGpuSource, setDefaultGpuSource] = useState<DevboxEditType['gpu']>({
+    type: '',
+    amount: 0,
+    manufacturers: ''
+  })
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
@@ -191,6 +199,15 @@ const DevboxCreatePage = () => {
     []
   )
 
+  const countGpuInventory = useCallback(
+    (type?: string) => {
+      const inventory = sourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0
+      const defaultInventory = type === defaultGpuSource?.type ? defaultGpuSource?.amount || 0 : 0
+      return inventory + defaultInventory
+    },
+    [defaultGpuSource?.amount, defaultGpuSource?.type, sourcePrice?.gpu]
+  )
+
   // watch form change, compute new yaml
   formHook.watch((data) => {
     data && formOnchangeDebounce(data as DevboxEditType)
@@ -241,6 +258,8 @@ const DevboxCreatePage = () => {
         oldDevboxEditData.current = res
         formOldYamls.current = formData2Yamls(res)
         crOldYamls.current = generateYamlList(res) as DevboxKindsType[]
+        setDefaultGpuSource(res.gpu)
+        setAlready(true)
         formHook.reset(res)
       },
       onError(err) {
@@ -259,6 +278,18 @@ const DevboxCreatePage = () => {
     setIsLoading(true)
 
     try {
+      // gpu inventory check
+      if (formData.gpu?.type) {
+        const inventory = countGpuInventory(formData.gpu?.type)
+        if (formData.gpu?.amount > inventory) {
+          return toast({
+            status: 'warning',
+            title: t('Gpu under inventory Tip', {
+              gputype: formData.gpu.type
+            })
+          })
+        }
+      }
       // quote check
       const quoteCheckRes = checkQuotaAllow(
         { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & {
@@ -361,7 +392,13 @@ const DevboxCreatePage = () => {
         />
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} pxVal={pxVal} isEdit={isEdit} />
+            <Form
+              already={already}
+              formHook={formHook}
+              pxVal={pxVal}
+              isEdit={isEdit}
+              countGpuInventory={countGpuInventory}
+            />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}

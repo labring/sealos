@@ -1,3 +1,5 @@
+import { defaultSliderKey } from '@/constants/devbox'
+import { FormSliderListType } from '@/types'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -9,6 +11,7 @@ type State = {
   setLoading: (val: boolean) => void
   lastRoute: string
   setLastRoute: (val: string) => void
+  formSliderListConfig: FormSliderListType
 }
 
 export const useGlobalStore = create<State>()(
@@ -31,6 +34,12 @@ export const useGlobalStore = create<State>()(
         set((state) => {
           state.lastRoute = val
         })
+      },
+      formSliderListConfig: {
+        [defaultSliderKey]: {
+          cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
+          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+        }
       }
     }))
   )

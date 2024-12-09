@@ -208,3 +208,20 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
       ''
   }
 }
+
+export const sliderNumber2MarkList = ({
+  val,
+  type,
+  gpuAmount = 1
+}: {
+  val: number[]
+  type: 'cpu' | 'memory'
+  gpuAmount?: number
+}) => {
+  const newVal = val.map((item) => item * gpuAmount)
+
+  return newVal.map((item) => ({
+    label: type === 'memory' ? (item >= 1024 ? `${item / 1024} G` : `${item} M`) : `${item / 1000}`,
+    value: item
+  }))
+}
