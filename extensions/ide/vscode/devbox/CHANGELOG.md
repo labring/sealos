@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.2.2] - 2024-12-9
+
+### Fixed
+
+- Fix the refresh bug of devbox list view.
+
 ## [1.2.1] - 2024-12-4
 
 ### Fixed
