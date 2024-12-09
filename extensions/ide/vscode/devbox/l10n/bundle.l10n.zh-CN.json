@@ -20,5 +20,6 @@
   "Preview in Editor": "在编辑器中预览",
   "Open Database Web Terminal": "打开数据库 Web 终端",
   "Cursor's Devbox is often not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referenced this [URI](https://www.cursor.com/how-to-install-extension).": "Cursor 的 Devbox 通常不是最新的。如果有任何问题，请手动安装 [插件](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) 参考此 [URI](https://www.cursor.com/how-to-install-extension).",
-  "SSH Port is not correct,maybe your devbox's nodeport is over the limit": "SSH 端口不正确，可能您的 Devbox 的 nodeport 超过了限制"
+  "SSH Port is not correct,maybe your devbox's nodeport is over the limit": "SSH 端口不正确，可能您的 Devbox 的 nodeport 超过了限制",
+  "This Devbox has been deleted in the cloud.Now it cannot be opened. Do you want to delete its local ssh configuration?": "该 Devbox 已在云端删除，现在无法打开。请问是否删除本地 SSH 配置？"
 }
