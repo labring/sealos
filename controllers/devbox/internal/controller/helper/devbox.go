@@ -398,36 +398,22 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox,
-	requestCPURate, requestMemoryRate float64,
-	requestEphemeralStorage, limitEphemeralStorage string,
-) corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Requests: calculateResourceRequest(
-			corev1.ResourceList{
-				corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
-				corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
-				corev1.ResourceEphemeralStorage: resource.MustParse(requestEphemeralStorage),
-			},
-			requestCPURate, requestMemoryRate,
-		),
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
-			corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
-			corev1.ResourceEphemeralStorage: resource.MustParse(limitEphemeralStorage),
-		},
+func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestCPURate, requestMemoryRate float64, requestEphemeralStorage, limitEphemeralStorage string) corev1.ResourceRequirements {
+	res := corev1.ResourceRequirements{}
+	res.Limits = devbox.Spec.Resource
+	if limitEphemeralStorage != "" {
+		res.Limits[corev1.ResourceEphemeralStorage] = resource.MustParse(limitEphemeralStorage)
 	}
-}
-
-func IsExceededQuotaError(err error) bool {
-	return strings.Contains(err.Error(), "exceeded quota")
+	res.Requests = calculateResourceRequest(res.Limits, requestCPURate, requestMemoryRate)
+	if requestEphemeralStorage != "" {
+		res.Requests[corev1.ResourceEphemeralStorage] = resource.MustParse(requestEphemeralStorage)
+	}
+	return res
 }
 
 func calculateResourceRequest(limit corev1.ResourceList, requestCPURate, requestMemoryRate float64) corev1.ResourceList {
-	if limit == nil {
-		return nil
-	}
-	request := make(corev1.ResourceList)
+	// deep copy limit to request, only cpu and memory are calculated
+	request := limit.DeepCopy()
 	// Calculate CPU request
 	if cpu, ok := limit[corev1.ResourceCPU]; ok {
 		cpuValue := cpu.AsApproximateFloat64()
@@ -440,11 +426,6 @@ func calculateResourceRequest(limit corev1.ResourceList, requestCPURate, request
 		memoryRequest := memoryValue / requestMemoryRate
 		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
 	}
-
-	if ephemeralStorage, ok := limit[corev1.ResourceEphemeralStorage]; ok {
-		request[corev1.ResourceEphemeralStorage] = ephemeralStorage
-	}
-
 	return request
 }
 
@@ -470,4 +451,8 @@ func GenerateDevboxArgs(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.R
 		return devbox.Spec.Args
 	}
 	return runtime.Spec.Config.Args
+}
+
+func IsExceededQuotaError(err error) bool {
+	return strings.Contains(err.Error(), "exceeded quota")
 }

@@ -575,8 +575,11 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			Containers: containers,
 			Volumes:    volumes,
 
-			Tolerations: devbox.Spec.Tolerations,
-			Affinity:    devbox.Spec.Affinity,
+			RuntimeClassName: ptr.To(devbox.Spec.RuntimeClassName),
+
+			NodeSelector: devbox.Spec.NodeSelector,
+			Tolerations:  devbox.Spec.Tolerations,
+			Affinity:     devbox.Spec.Affinity,
 		},
 	}
 	// set controller reference and finalizer
