@@ -50,14 +50,14 @@ export class DevboxListViewProvider extends Disposable {
       this._register(
         devboxDashboardView.onDidChangeVisibility(() => {
           if (devboxDashboardView.visible) {
-            projectTreeDataProvider.refresh()
+            projectTreeDataProvider.refreshData()
           }
         })
       )
       // commands
       this._register(
         vscode.commands.registerCommand('devboxDashboard.refresh', () => {
-          projectTreeDataProvider.refresh()
+          projectTreeDataProvider.refreshData()
         })
       )
       this._register(
@@ -107,16 +107,9 @@ class ProjectTreeDataProvider
       convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
     }
     this.refreshData()
-    setInterval(() => {
-      this.refresh()
-    }, 3 * 1000)
   }
 
-  refresh(): void {
-    this.refreshData()
-  }
-
-  private async refreshData(): Promise<void> {
+  async refreshData(): Promise<void> {
     const data = (await parseSSHConfig(
       defaultDevboxSSHConfigPath
     )) as DevboxListItem[]
@@ -294,7 +287,7 @@ class ProjectTreeDataProvider
 
       // TODO： delete known_host public key
 
-      this.refresh()
+      this.refreshData()
     } catch (error) {
       vscode.window.showErrorMessage(
         `${messages.deleteDevboxFailed}: ${error.message}`
