@@ -8,6 +8,7 @@ use (
 	./exceptionmonitor
 	./launchpad
 	./pay
+	./devbox
 )
 
 replace (
