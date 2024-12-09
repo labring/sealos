@@ -82,7 +82,7 @@ func RecordConsumeLog(
 			return
 		}
 		err := LogDB.
-			Where("created_at < ?", time.Now().Add(-time.Duration(detailStorageHours)*time.Second)).
+			Where("created_at < ?", time.Now().Add(-time.Duration(detailStorageHours)*time.Hour)).
 			Delete(&RequestDetail{}).Error
 		if err != nil {
 			log.Errorf("delete request detail failed: %s", err)
