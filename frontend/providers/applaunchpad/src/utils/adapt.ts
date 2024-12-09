@@ -340,11 +340,15 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
               ? 'gpu'
               : (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
                   ?.name as HpaTarget) || 'cpu',
-          value: deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
-            ?.averageUtilization
-            ? deployKindsMap.HorizontalPodAutoscaler.spec.metrics[0].resource.target
-                .averageUtilization / 10
-            : 50,
+          value: (() => {
+            const metrics = deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0];
+            if (metrics?.pods?.metric?.name === 'DCGM_FI_DEV_GPU_UTIL') {
+              return Number(metrics.pods.target?.averageValue) || 50;
+            }
+            return metrics?.resource?.target?.averageUtilization
+              ? metrics.resource.target.averageUtilization / 10
+              : 50;
+          })(),
           minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.minReplicas || 3,
           maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.maxReplicas || 10
         }
