@@ -13,7 +13,7 @@ import type {
 } from '@kubernetes/client-node';
 import { MonitorDataResult } from './monitor';
 
-export type HpaTarget = 'cpu' | 'memory';
+export type HpaTarget = 'cpu' | 'memory' | 'gpu';
 
 export type DeployKindsType =
   | V1Deployment

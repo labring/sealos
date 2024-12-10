@@ -575,7 +575,8 @@ const Form = ({
                           value={getValues('hpa.target')}
                           list={[
                             { value: 'cpu', label: t('CPU') },
-                            { value: 'memory', label: t('Memory') }
+                            { value: 'memory', label: t('Memory') },
+                            ...(userSourcePrice?.gpu ? [{ label: 'GPU', value: 'gpu' }] : [])
                           ]}
                           onchange={(val: any) => setValue('hpa.target', val)}
                         />

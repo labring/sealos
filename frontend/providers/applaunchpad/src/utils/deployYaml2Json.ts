@@ -447,38 +447,56 @@ export const json2HPA = (data: AppEditType) => {
       },
       minReplicas: str2Num(data.hpa?.minReplicas),
       maxReplicas: str2Num(data.hpa?.maxReplicas),
-      metrics: [
-        {
-          type: 'Resource',
-          resource: {
-            name: data.hpa.target,
-            target: {
-              type: 'Utilization',
-              averageUtilization: str2Num(data.hpa.value * 10)
-            }
+      metrics:
+        data.hpa.target === 'gpu'
+          ? [
+              {
+                pods: {
+                  metric: {
+                    name: 'DCGM_FI_DEV_GPU_UTIL'
+                  },
+                  target: {
+                    averageValue: data.hpa.value.toString(),
+                    type: 'AverageValue'
+                  }
+                },
+                type: 'Pods'
+              }
+            ]
+          : [
+              {
+                type: 'Resource',
+                resource: {
+                  name: data.hpa.target,
+                  target: {
+                    type: 'Utilization',
+                    averageUtilization: str2Num(data.hpa.value * 10)
+                  }
+                }
+              }
+            ],
+      ...(data.hpa.target !== 'gpu' && {
+        behavior: {
+          scaleDown: {
+            policies: [
+              {
+                type: 'Pods',
+                value: 1,
+                periodSeconds: 60
+              }
+            ]
+          },
+          scaleUp: {
+            policies: [
+              {
+                type: 'Pods',
+                value: 1,
+                periodSeconds: 60
+              }
+            ]
           }
         }
-      ],
-      behavior: {
-        scaleDown: {
-          policies: [
-            {
-              type: 'Pods',
-              value: 1,
-              periodSeconds: 60
-            }
-          ]
-        },
-        scaleUp: {
-          policies: [
-            {
-              type: 'Pods',
-              value: 1,
-              periodSeconds: 60
-            }
-          ]
-        }
-      }
+      })
     }
   };
   return yaml.dump(template);
