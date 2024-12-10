@@ -33,7 +33,7 @@ var (
 	// 暂停服务
 	disableServe atomic.Bool
 	// log detail 存储时间(小时)
-	logDetailStorageHours int64 = 3
+	logDetailStorageHours int64 = 3 * 24
 )
 
 func GetLogDetailStorageHours() int64 {
