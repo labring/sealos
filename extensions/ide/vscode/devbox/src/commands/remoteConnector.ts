@@ -16,6 +16,16 @@ import { GlobalStateManager } from '../utils/globalStateManager'
 import { ensureFileAccessPermission, ensureFileExists } from '../utils/file'
 import { modifiedRemoteSSHConfig } from '../utils/remoteSSHConfig'
 
+const message = {
+  FailedToWriteSSHConfig: vscode.l10n.t('Failed to write SSH configuration'),
+  FailedToWriteSSHPrivateKey: vscode.l10n.t('Failed to write SSH private key'),
+  PleaseInstallRemoteSSH: vscode.l10n.t(
+    'Please install "Remote - SSH" extension to connect to a devbox workspace.'
+  ),
+  Install: vscode.l10n.t('Install'),
+  Cancel: vscode.l10n.t('Cancel'),
+}
+
 export class RemoteSSHConnector extends Disposable {
   constructor(context: vscode.ExtensionContext) {
     super()
@@ -126,7 +136,7 @@ export class RemoteSSHConnector extends Disposable {
   }) {
     Logger.info(`Connecting to remote SSH: ${args.sshHostLabel}`)
 
-    this.ensureRemoteSSHExtInstalled()
+    await this.ensureRemoteSSHExtInstalled()
 
     const { sshDomain, sshPort, base64PrivateKey, sshHostLabel, workingDir } =
       args
@@ -203,7 +213,7 @@ export class RemoteSSHConnector extends Disposable {
     } catch (error) {
       Logger.error(`Failed to write SSH configuration: ${error}`)
       vscode.window.showErrorMessage(
-        `Failed to write SSH configuration: ${error}`
+        `${message.FailedToWriteSSHConfig}: ${error}`
       )
     }
 
@@ -217,7 +227,7 @@ export class RemoteSSHConnector extends Disposable {
     } catch (error) {
       Logger.error(`Failed to write SSH private key: ${error}`)
       vscode.window.showErrorMessage(
-        `Failed to write SSH private key: ${error}`
+        `${message.FailedToWriteSSHPrivateKey}: ${error}`
       )
     }
 
@@ -257,11 +267,11 @@ export class RemoteSSHConnector extends Disposable {
       return true
     }
 
-    const install = 'Install'
-    const cancel = 'Cancel'
+    const install = message.Install
+    const cancel = message.Cancel
 
     const action = await vscode.window.showInformationMessage(
-      'Please install "Remote - SSH" extension to connect to a Gitpod workspace.',
+      message.PleaseInstallRemoteSSH,
       { modal: true },
       install,
       cancel
@@ -270,10 +280,6 @@ export class RemoteSSHConnector extends Disposable {
     if (action === cancel) {
       return false
     }
-
-    vscode.window.showInformationMessage(
-      'Installing "ms-vscode-remote.remote-ssh" extension'
-    )
 
     await vscode.commands.executeCommand(
       'extension.open',
