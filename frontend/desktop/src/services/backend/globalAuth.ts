@@ -137,7 +137,6 @@ async function checkDeductionBalanceAndCreateTasks(userUid: string) {
 async function createNewUserTasks(tx: TransactionClient, userUid: string) {
   const newUserTasks = await tx.task.findMany({
     where: {
-      isNewUserTask: true,
       isActive: true
     }
   });

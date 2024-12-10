@@ -41,7 +41,6 @@ export default function useDriver() {
 
       if (!desktopTask?.isCompleted && desktopTask?.id) {
         setTaskComponentState('none');
-        setDesktopGuide(true);
         driverObj.drive();
       } else if (allTasksCompleted) {
         setTaskComponentState('none');
