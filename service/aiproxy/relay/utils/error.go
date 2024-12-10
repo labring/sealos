@@ -55,14 +55,19 @@ func (e GeneralErrorResponse) ToMessage() string {
 	return ""
 }
 
+const (
+	ErrorTypeUpstream    = "upstream_error"
+	ErrorCodeBadResponse = "bad_response"
+)
+
 func RelayErrorHandler(meta *meta.Meta, resp *http.Response) *model.ErrorWithStatusCode {
 	if resp == nil {
 		return &model.ErrorWithStatusCode{
 			StatusCode: 500,
 			Error: model.Error{
 				Message: "resp is nil",
-				Type:    "upstream_error",
-				Code:    "bad_response",
+				Type:    ErrorTypeUpstream,
+				Code:    ErrorCodeBadResponse,
 			},
 		}
 	}
@@ -82,8 +87,8 @@ func RerankErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
 			StatusCode: resp.StatusCode,
 			Error: model.Error{
 				Message: err.Error(),
-				Type:    "upstream_error",
-				Code:    "bad_response",
+				Type:    ErrorTypeUpstream,
+				Code:    ErrorCodeBadResponse,
 			},
 		}
 	}
@@ -92,8 +97,8 @@ func RerankErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
 		StatusCode: resp.StatusCode,
 		Error: model.Error{
 			Message: trimmedRespBody,
-			Type:    "upstream_error",
-			Code:    "bad_response",
+			Type:    ErrorTypeUpstream,
+			Code:    ErrorCodeBadResponse,
 		},
 	}
 }
@@ -106,8 +111,8 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 			StatusCode: resp.StatusCode,
 			Error: model.Error{
 				Message: err.Error(),
-				Type:    "aiproxy_error",
-				Code:    "bad_response",
+				Type:    ErrorTypeUpstream,
+				Code:    ErrorCodeBadResponse,
 			},
 		}
 	}
@@ -116,8 +121,8 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 		StatusCode: resp.StatusCode,
 		Error: model.Error{
 			Message: "",
-			Type:    "upstream_error",
-			Code:    "bad_response_status_code",
+			Type:    ErrorTypeUpstream,
+			Code:    ErrorCodeBadResponse,
 			Param:   strconv.Itoa(resp.StatusCode),
 		},
 	}

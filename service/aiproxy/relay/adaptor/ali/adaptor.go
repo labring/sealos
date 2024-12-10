@@ -69,14 +69,14 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	}
 }
 
-func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
+func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
 	switch meta.Mode {
 	case relaymode.AudioSpeech:
 		return TTSDoRequest(meta, req)
 	case relaymode.AudioTranscription:
 		return STTDoRequest(meta, req)
 	default:
-		return utils.DoRequest(meta, c, req)
+		return utils.DoRequest(req)
 	}
 }
 

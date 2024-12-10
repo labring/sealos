@@ -2,7 +2,6 @@ package controller
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -114,23 +113,11 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 func RelayNotImplemented(c *gin.Context) {
 	err := model.Error{
 		Message: "API not implemented",
-		Type:    "aiproxy_error",
+		Type:    middleware.ErrorTypeAIPROXY,
 		Param:   "",
 		Code:    "api_not_implemented",
 	}
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": err,
-	})
-}
-
-func RelayNotFound(c *gin.Context) {
-	err := model.Error{
-		Message: fmt.Sprintf("Invalid URL (%s %s)", c.Request.Method, c.Request.URL.Path),
-		Type:    "invalid_request_error",
-		Param:   "",
-		Code:    "",
-	}
-	c.JSON(http.StatusNotFound, gin.H{
 		"error": err,
 	})
 }

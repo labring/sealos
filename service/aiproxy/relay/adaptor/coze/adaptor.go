@@ -57,8 +57,8 @@ func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, er
 	return request, nil
 }
 
-func (a *Adaptor) DoRequest(meta *meta.Meta, c *gin.Context, req *http.Request) (*http.Response, error) {
-	return utils.DoRequest(meta, c, req)
+func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(req)
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {

@@ -7,14 +7,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/relay/model"
+)
+
+const (
+	ErrorTypeAIPROXY = "aiproxy_error"
 )
 
 func abortWithMessage(c *gin.Context, statusCode int, message string) {
 	GetLogger(c).Error(message)
 	c.JSON(statusCode, gin.H{
-		"error": gin.H{
-			"message": helper.MessageWithRequestID(message, c.GetString(string(helper.RequestIDKey))),
-			"type":    "aiproxy_error",
+		"error": &model.Error{
+			Message: helper.MessageWithRequestID(message, c.GetString(string(helper.RequestIDKey))),
+			Type:    ErrorTypeAIPROXY,
 		},
 	})
 	c.Abort()

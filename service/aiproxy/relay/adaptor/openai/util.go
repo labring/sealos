@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -10,7 +11,7 @@ func ErrorWrapper(err error, code any, statusCode int) *relaymodel.ErrorWithStat
 	return &relaymodel.ErrorWithStatusCode{
 		Error: relaymodel.Error{
 			Message: err.Error(),
-			Type:    "aiproxy_error",
+			Type:    middleware.ErrorTypeAIPROXY,
 			Code:    code,
 		},
 		StatusCode: statusCode,
@@ -21,7 +22,7 @@ func ErrorWrapperWithMessage(message string, code any, statusCode int) *relaymod
 	return &relaymodel.ErrorWithStatusCode{
 		Error: relaymodel.Error{
 			Message: message,
-			Type:    "aiproxy_error",
+			Type:    middleware.ErrorTypeAIPROXY,
 			Code:    code,
 		},
 		StatusCode: statusCode,
