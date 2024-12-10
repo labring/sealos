@@ -23,6 +23,8 @@ import (
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,11 +46,12 @@ import (
 
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
-	CommitImageRegistry     string
-	RequestCPURate          float64
-	RequestMemoryRate       float64
-	RequestEphemeralStorage string
-	LimitEphemeralStorage   string
+	CommitImageRegistry string
+
+	RequestRate      resource.RequestRate
+	EphemeralStorage resource.EphemeralStorage
+
+	PodMatchers []matcher.PodMatcher
 
 	DebugMode bool
 
@@ -298,7 +301,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				logger.Info("pod has been deleted")
 				return r.handlePodDeleted(ctx, devbox, pod)
 			}
-			switch helper.PodMatchExpectations(expectPod, pod) {
+			switch matcher.PodMatchExpectations(expectPod, pod, r.PodMatchers...) {
 			case true:
 				// pod match expectations
 				logger.Info("pod match expectations")
@@ -557,7 +560,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			WorkingDir: helper.GenerateWorkingDir(devbox, runtime),
 			Command:    helper.GenerateCommand(devbox, runtime),
 			Args:       helper.GenerateDevboxArgs(devbox, runtime),
-			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestCPURate, r.RequestMemoryRate, r.RequestEphemeralStorage, r.LimitEphemeralStorage),
+			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage),
 		},
 	}
 
