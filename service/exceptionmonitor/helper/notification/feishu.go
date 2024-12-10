@@ -161,24 +161,23 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 	}
 
 	if notificationInfo.NotificationType == "recovery" {
-		// todo 拿到之前的发送信息并加上，已做状态监控，未做阀值监控
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
 
-		//获取之前发送的飞书内容
 		separatorElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": "-------------------------------------------",
+					"content": "------------------------------数据库恢复信息------------------------------",
 					"tag":     "lark_md",
 				},
 			},
 		}
 		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, separatorElements...)
-		//elements = commonElements
+		fmt.Println(1111)
+		fmt.Println(notificationInfo.FeishuInfo)
+		fmt.Println(1111)
 		if notificationInfo.ExceptionType == "阀值" {
-			//todo 数据库阀值的恢复时间怎么跟其它统一起来，需要在数据库阀值恢复中增加恢复时间
 			usageRecoveryElements := []map[string]interface{}{
 				{
 					"tag": "div",
@@ -188,8 +187,12 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 					},
 				},
 			}
+			fmt.Println(notificationInfo.FeishuInfo)
 			notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, usageRecoveryElements...)
 		}
+		fmt.Println(2222)
+		fmt.Println(notificationInfo.FeishuInfo)
+		fmt.Println(2222)
 		recoveryTimeElements := []map[string]interface{}{
 			{
 				"tag": "div",

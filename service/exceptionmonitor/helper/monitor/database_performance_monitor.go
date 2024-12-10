@@ -129,6 +129,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		}
 	} else if usage < threshold && monitorMap[notificationInfo.DatabaseClusterUID] {
 		notificationInfo.NotificationType = "recovery"
+		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
 		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
 		alertMessage := notification.GetNotificationMessage(notificationInfo)
 		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
