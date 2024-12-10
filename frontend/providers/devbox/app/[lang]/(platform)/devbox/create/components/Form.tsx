@@ -17,9 +17,9 @@ import {
 import { throttle } from 'lodash'
 import dynamic from 'next/dynamic'
 import { customAlphabet } from 'nanoid'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { UseFormReturn, useFieldArray } from 'react-hook-form'
+import { useEffect, useMemo, useState } from 'react'
 import { MySelect, MySlider, MyTooltip, Tabs, useMessage } from '@sealos/ui'
 
 import { useRouter } from '@/i18n'
@@ -33,15 +33,14 @@ import { useDevboxStore } from '@/stores/devbox'
 import { useRuntimeStore } from '@/stores/runtime'
 
 import { obj2Query } from '@/utils/tools'
-import { defaultSliderKey, GpuAmountMarkList, ProtocolList } from '@/constants/devbox'
+import { useGlobalStore } from '@/stores/global'
 import type { DevboxEditType } from '@/types/devbox'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
-import { useGlobalStore } from '@/stores/global'
-import { sliderNumber2MarkList } from '@/utils/adapt'
+import { GpuAmountMarkList, ProtocolList } from '@/constants/devbox'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
-const labelWidth = 120
+const labelWidth = 100
 
 export type CustomAccessModalParams = {
   publicDomain: string
@@ -54,12 +53,10 @@ const Form = ({
   formHook,
   pxVal,
   isEdit,
-  already,
   countGpuInventory
 }: {
   formHook: UseFormReturn<DevboxEditType, any>
   pxVal: number
-  already: boolean
   isEdit: boolean
   countGpuInventory: (type: string) => number
 }) => {
@@ -92,10 +89,12 @@ const Form = ({
     osTypeList,
     getRuntimeVersionList,
     getRuntimeVersionDefault,
-    getRuntimeDetailLabel
+    getRuntimeDetailLabel,
+    isGPURuntimeType
   } = useRuntimeStore()
   const { env } = useEnvStore()
   const { sourcePrice } = usePriceStore()
+  const { devboxList } = useDevboxStore()
   const { formSliderListConfig } = useGlobalStore()
 
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
@@ -113,7 +112,6 @@ const Form = ({
   ]
   const { message: toast } = useMessage()
   const [activeNav, setActiveNav] = useState(navList[0].id)
-  const { devboxList } = useDevboxStore()
 
   // listen scroll and set activeNav
   useEffect(() => {
@@ -185,39 +183,6 @@ const Form = ({
       inventory: countGpuInventory(selected.type)
     }
   }, [sourcePrice?.gpu, countGpuInventory, getValues])
-
-  // cpu, memory have different sliderValue
-  const countSliderList = useCallback(() => {
-    const gpuType = getValues('gpu.type')
-    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : defaultSliderKey
-
-    const cpu = getValues('cpu')
-    const memory = getValues('memory')
-
-    const cpuList = formSliderListConfig[key].cpu
-    const memoryList = formSliderListConfig[key].memory
-
-    const sortedCpuList =
-      cpu !== undefined ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b) : cpuList
-
-    const sortedMemoryList =
-      memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList
-
-    return {
-      cpu: sliderNumber2MarkList({
-        val: sortedCpuList,
-        type: 'cpu',
-        gpuAmount: getValues('gpu.amount')
-      }),
-      memory: sliderNumber2MarkList({
-        val: sortedMemoryList,
-        type: 'memory',
-        gpuAmount: getValues('gpu.amount')
-      })
-    }
-  }, [formSliderListConfig, getValues])
 
   if (!formHook) return null
 
@@ -703,7 +668,7 @@ const Form = ({
               </Flex>
 
               {/* GPU */}
-              {!sourcePrice?.gpu && (
+              {sourcePrice?.gpu && isGPURuntimeType(getValues('runtimeType')) && (
                 <Box mb={7}>
                   <Flex alignItems={'center'}>
                     <Label w={100}>GPU</Label>
@@ -754,9 +719,6 @@ const Form = ({
                                       cursor: 'pointer',
                                       onClick: () => {
                                         setValue('gpu.amount', item.value)
-                                        const sliderList = countSliderList()
-                                        setValue('cpu', sliderList.cpu[1].value)
-                                        setValue('memory', sliderList.memory[1].value)
                                       }
                                     }
                                   : {

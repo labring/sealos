@@ -65,7 +65,6 @@ const DevboxCreatePage = () => {
   const formOldYamls = useRef<YamlItemType[]>([])
   const oldDevboxEditData = useRef<DevboxEditType>()
 
-  const [already, setAlready] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
@@ -259,7 +258,6 @@ const DevboxCreatePage = () => {
         formOldYamls.current = formData2Yamls(res)
         crOldYamls.current = generateYamlList(res) as DevboxKindsType[]
         setDefaultGpuSource(res.gpu)
-        setAlready(true)
         formHook.reset(res)
       },
       onError(err) {
@@ -393,7 +391,6 @@ const DevboxCreatePage = () => {
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
             <Form
-              already={already}
               formHook={formHook}
               pxVal={pxVal}
               isEdit={isEdit}

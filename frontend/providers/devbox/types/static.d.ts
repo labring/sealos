@@ -26,6 +26,7 @@ export interface Env {
 export interface RuntimeTypeMap {
   id: string
   label: string
+  gpu: boolean
 }
 
 // RuntimeTypeMap
@@ -52,3 +53,7 @@ export interface RuntimeVersionMap {
 //     }
 //   ]
 // }
+
+export interface RuntimeNamespaceMap {
+  [key: string]: string
+}

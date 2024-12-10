@@ -144,23 +144,6 @@ export type DevboxKindsType =
   | V1Secret
   | V1HorizontalPodAutoscaler
 
-export interface ValueType {
-  id: string
-  label: string
-}
-
-export interface VersionMapType {
-  [key: string]: ValueTypeWithPorts[]
-}
-
-export interface ValueTypeWithPorts extends ValueType {
-  defaultPorts: number[]
-}
-
-export interface runtimeNamespaceMapType {
-  [key: string]: string
-}
-
 export interface PodStatusMapType {
   label: string
   value: `${PodStatusEnum}`
