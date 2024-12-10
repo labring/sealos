@@ -47,7 +47,11 @@ func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 
 	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		log.Errorf("do stt failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
+		if detail != nil {
+			log.Errorf("do stt failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
+		} else {
+			log.Errorf("do stt failed: %s", respErr)
+		}
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
