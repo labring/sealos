@@ -8,6 +8,7 @@ cloud:
 common:
   guideEnabled: false
   apiEnabled: false
+  gpuEnabled: false
 launchpad:
   pvcStorageMax: 100
   eventAnalyze:
