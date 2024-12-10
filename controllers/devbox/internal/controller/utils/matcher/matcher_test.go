@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helper
+package matcher
 
 import (
 	"testing"
@@ -156,9 +156,16 @@ func TestPodMatchExpectations(t *testing.T) {
 		},
 	}
 
+	matchers := []PodMatcher{
+		ResourceMatcher{},
+		EnvVarMatcher{},
+		PortMatcher{},
+		EphemeralStorageMatcher{},
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := PodMatchExpectations(expectPod, tt.pod)
+			result := PodMatchExpectations(expectPod, tt.pod, matchers...)
 			if result != tt.expected {
 				t.Errorf("CheckPodConsistency() = %v, expected %v", result, tt.expected)
 			}
