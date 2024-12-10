@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"sync"
@@ -259,6 +260,16 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	usage, relayErr := a.DoResponse(meta, c, resp)
 	detail.ResponseBody = conv.BytesToString(rw.body.Bytes())
 	if relayErr != nil {
+		if detail.ResponseBody == "" {
+			respData, err := json.Marshal(gin.H{
+				"error": relayErr.Error,
+			})
+			if err != nil {
+				detail.ResponseBody = relayErr.Error.String()
+			} else {
+				detail.ResponseBody = conv.BytesToString(respData)
+			}
+		}
 		return nil, &detail, relayErr
 	}
 	if usage == nil {
