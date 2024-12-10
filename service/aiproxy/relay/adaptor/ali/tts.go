@@ -51,7 +51,7 @@ type TTSInput struct {
 type TTSParameters struct {
 	TextType                string  `json:"text_type"`
 	Format                  string  `json:"format"`
-	SampleRate              int     `json:"sample_rate"`
+	SampleRate              int     `json:"sample_rate,omitempty"`
 	Volume                  int     `json:"volume"`
 	Rate                    float64 `json:"rate"`
 	Pitch                   float64 `json:"pitch"`
@@ -98,6 +98,15 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 	if err != nil {
 		return nil, nil, err
 	}
+	reqMap, err := utils.UnmarshalMap(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	var sampleRate int
+	sampleRateI, ok := reqMap["sample_rate"].(float64)
+	if ok {
+		sampleRate = int(sampleRateI)
+	}
 	request.Model = meta.ActualModelName
 
 	if strings.HasPrefix(request.Model, "sambert-v") {
@@ -126,6 +135,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 				TextType:                "PlainText",
 				Format:                  "wav",
 				Volume:                  50,
+				SampleRate:              sampleRate,
 				Rate:                    request.Speed,
 				Pitch:                   1.0,
 				WordTimestampEnabled:    true,

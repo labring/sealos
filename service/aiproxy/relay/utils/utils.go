@@ -47,6 +47,15 @@ func UnmarshalTTSRequest(req *http.Request) (*relaymodel.TextToSpeechRequest, er
 	return &request, nil
 }
 
+func UnmarshalMap(req *http.Request) (map[string]any, error) {
+	var request map[string]any
+	err := common.UnmarshalBodyReusable(req, &request)
+	if err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
 func DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
 	resp, err := client.HTTPClient.Do(req)
 	if err != nil {
