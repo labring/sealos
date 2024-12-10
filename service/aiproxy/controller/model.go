@@ -210,7 +210,7 @@ func ChannelEnabledModels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    model.CacheGetChannelType2EnabledModelConfigs(),
+		"data":    model.CacheGetEnabledChannelType2ModelConfigs(),
 	})
 }
 
@@ -234,7 +234,7 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    model.CacheGetChannelType2EnabledModelConfigs()[channelTypeInt],
+		"data":    model.CacheGetEnabledChannelType2ModelConfigs()[channelTypeInt],
 	})
 }
 
