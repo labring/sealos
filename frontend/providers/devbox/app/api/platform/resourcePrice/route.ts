@@ -42,6 +42,7 @@ const valuationMap: Record<string, number> = {
   cpu: 1000,
   memory: 1024,
   storage: 1024,
+  gpu: 1000,
   ['services.nodeports']: 1000
 }
 
@@ -141,6 +142,7 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
     const gpuType = item.name.replace('gpu-', '')
     const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType)
     if (!gpuNode) return
+
     gpuList.push({
       alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],

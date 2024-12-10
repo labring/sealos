@@ -48,7 +48,7 @@ const PriceBox = ({
       pp = sourcePrice.nodeports * nodeports * 24
 
       gp = (() => {
-        if (!gpu) return 0
+        if (!gpu || !gpu.amount) return 0
         const item = sourcePrice?.gpu?.find((item) => item.type === gpu.type)
         if (!item) return 0
         return +(item.price * gpu.amount * 24)
