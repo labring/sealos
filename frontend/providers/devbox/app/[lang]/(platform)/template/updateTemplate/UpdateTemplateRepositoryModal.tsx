@@ -245,6 +245,10 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
       queryClient.invalidateQueries(['template-repository-list'])
       reset();
       onClose();
+      toast({
+        title: t('update_template_success'),
+        status: 'success',
+      });
     } catch (error) {
       toast({
         title: error as string,
@@ -252,7 +256,6 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
       });
     }
   };
-
   const onSubmitHandler = (data: FormData) => {
     if (templateRepository.templates.findIndex(d => data.version === d.name) > -1) {
       overviewHandler.onOpen()
@@ -279,7 +282,7 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
               <ModalCloseButton />
               <VStack spacing={6} align="stretch">
                 {/* 名称 */}
-                <TemplateRepositoryNameField />
+                <TemplateRepositoryNameField isDisabled/>
 
                 {/* 版本号 */}
                 <Flex justify={'space-between'} align={'center'}>

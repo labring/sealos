@@ -70,7 +70,10 @@ const Version = () => {
   const listPrivateTemplateRepositoryQuery = useQuery(
     ['template-repository-list', 'template-repository-private'],
     () => {
-      return listPrivateTemplateRepository()
+      return listPrivateTemplateRepository({
+        page: 1,
+        pageSize: 100,
+      })
     }
   )
   const templateRepositoryList = listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
@@ -227,6 +230,7 @@ const Version = () => {
               height={'27px'}
               w={'60px'}
               size={'sm'}
+              h='32px'
               fontSize={'base'}
               bg={'grayModern.150'}
               color={'grayModern.900'}
@@ -240,8 +244,14 @@ const Version = () => {
             <SealosMenu
               width={100}
               Button={
-                <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
-                  <MyIcon name={'more'} color={'grayModern.600'} />
+                <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
+                  <MyIcon name={'more'}
+                   color={'grayModern.600'} 
+                  _groupHover={{
+                    color: 'brightBlue.600'
+                  }} 
+                  fill={'currentcolor'}
+                  />
                 </MenuButton>
               }
               menuList={[

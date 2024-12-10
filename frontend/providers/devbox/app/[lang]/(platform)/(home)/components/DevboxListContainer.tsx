@@ -5,7 +5,7 @@ import { useDevboxStore } from '@/stores/devbox'
 import { useTemplateStore } from '@/stores/template'
 import { DevboxListItemTypeV2 } from '@/types/devbox'
 import { isElementInViewport } from '@/utils/tools'
-import { Box } from '@chakra-ui/react'
+import { Flex } from '@chakra-ui/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef } from 'react'
@@ -99,7 +99,7 @@ export default function DevboxListContainer() {
   const { Loading } = useLoading()
   const { list, isLoading, refetchList } = useDevboxList()
   return (
-    <Box backgroundColor={'grayModern.100'} px={'32px'} minH="100vh">
+    <Flex flexDir={'column'} backgroundColor={'grayModern.100'} px={'32px'} h="100vh" w={'full'} >
       <DevboxHeader listLength={list.length} />
       {list.length === 0 && !isLoading ? (
         <Empty />
@@ -109,7 +109,7 @@ export default function DevboxListContainer() {
           refetchDevboxList={refetchList}
         />
       )}
-      <Loading loading={isLoading} />
-    </Box>
+      {/* <Loading loading={isLoading} /> */}
+    </Flex>
   )
 }

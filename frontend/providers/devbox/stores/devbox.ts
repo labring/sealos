@@ -119,7 +119,7 @@ export const useDevboxStore = create<State>()(
       devboxDetail: undefined,
       setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
         const detail = await getDevboxByName(devboxName)
-        console.log("store detail: ", detail)
+        
         if (detail.status.value !== 'Running') {
           set((state) => {
             state.devboxDetail = detail

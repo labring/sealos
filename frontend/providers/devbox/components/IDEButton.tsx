@@ -3,6 +3,7 @@ import {
   Button,
   ButtonProps,
   Flex,
+  FlexProps,
   IconButton,
   Menu,
   MenuButton,
@@ -35,8 +36,9 @@ const IDEButton = ({
   status,
   isBigButton = true,
   leftButtonProps = {},
-  rightButtonProps = {}
-}: Props) => {
+  rightButtonProps = {},
+  ...props
+}: Props & FlexProps) => {
   const t = useTranslations()
 
   const { env } = useEnvStore()
@@ -78,15 +80,17 @@ const IDEButton = ({
   )
 
   return (
-    <Flex>
+    <Flex {...props}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
+          width={'90px'}
           fontSize={'base'}
           bg={'grayModern.150'}
           color={'grayModern.900'}
           _hover={{
-            color: 'brightBlue.600'
+            color: 'brightBlue.600',
+            bg:"#1118240D"
           }}
           borderRightWidth={0}
           borderRightRadius={0}
@@ -96,7 +100,7 @@ const IDEButton = ({
           {isBigButton ? (
             <Flex alignItems={'center'} w={'100%'} justifyContent={'center'}>
               <MyIcon name={currentIDE} w={'25%'} />
-              <Box w={'75%'} textAlign={'center'} pl={2}>
+              <Box w={'75%'} textAlign={'center'} px={'7px'}>
                 {ideObj[currentIDE]?.label}
               </Box>
             </Flex>
@@ -113,7 +117,7 @@ const IDEButton = ({
           _hover={{
             color: 'brightBlue.600'
           }}
-          mr={6}
+          
           p={2}
           borderLeftRadius={0}
           borderLeftWidth={0}

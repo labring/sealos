@@ -162,9 +162,11 @@ export async function POST(req: NextRequest) {
         await tx.template.update({
           where: {
             uid: origionalTemplate.uid,
+            isDeleted: false
           },
           data: {
             deletedAt: new Date(),
+            isDeleted: null
           }
         })
         await createTemplate()

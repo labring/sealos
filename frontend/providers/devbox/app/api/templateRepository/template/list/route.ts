@@ -15,25 +15,6 @@ export async function GET(req: NextRequest) {
       code: 400,
       error: 'templateRepositoryUid is required'
     })
-    // const user = await devboxDB.user.findUnique({
-    //   where: {
-    //     isDeleted_regionUid_namespaceId: {
-    //       isDeleted: false,
-    //       namespaceId: payload.workspaceId,
-    //       regionUid: process.env.REGION_UID!
-    //     }
-    //   },
-    //   select: {
-    //     userOrganizations: {
-    //       select: {
-    //         organizationUid: true,
-    //       }
-    //     }
-    //   }
-    // })
-    // if (!user) {
-    //   throw new Error(ERROR_ENUM.unAuthorization)
-    // }
     const templateRepository = await devboxDB.templateRepository.findUnique({
       where: {
         uid,
