@@ -25,7 +25,8 @@ export default function useDriver() {
     const fetchUserTasks = async () => {
       await checkUserTask();
       const data = await getUserTasks();
-      setTasks(data.data);
+      const filteredTasks = data.data.filter((task) => task.isNewUserTask);
+      setTasks(filteredTasks);
     };
     fetchUserTasks();
   }, [taskComponentState]);
@@ -33,21 +34,19 @@ export default function useDriver() {
   useEffect(() => {
     const handleUserGuide = async () => {
       const data = await getUserTasks();
-      setTasks(data.data);
-      const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
-      const allTasksCompleted = data.data.every((task) => task.isCompleted);
+      const filteredTasks = data.data.filter((task) => task.isNewUserTask);
+      setTasks(filteredTasks);
+      const desktopTask = filteredTasks.find((task) => task.taskType === 'DESKTOP');
+      const allTasksCompleted = filteredTasks.every((task) => task.isCompleted);
 
       if (!desktopTask?.isCompleted && desktopTask?.id) {
-        // setTaskComponentState('none');
-        // setDesktopGuide(true);
         setTaskComponentState('none');
-        setDesktopGuide(false); // Hide First Guides
+        setDesktopGuide(true);
         driverObj.drive();
       } else if (allTasksCompleted) {
         setTaskComponentState('none');
       } else {
-        setTaskComponentState('none'); // Hide task modal for all users
-        // setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
+        setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
       }
     };
 
@@ -66,7 +65,7 @@ export default function useDriver() {
       const desktopTask = tasks.find((task) => task.taskType === 'DESKTOP');
       if (desktopTask) {
         await updateTask(desktopTask.id);
-        // setTaskComponentState('modal'); //  disable task modal for all users
+        setTaskComponentState('modal');
       }
     } catch (error) {}
   };
@@ -161,6 +160,23 @@ export default function useDriver() {
         }
       },
       {
+        element: '.system-devbox',
+        popover: {
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('common:guide_devbox')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
+        }
+      },
+      {
         element: '.system-dbprovider',
         popover: {
           side: 'bottom',
@@ -207,6 +223,40 @@ export default function useDriver() {
                 {t('common:launch_various_third-party_applications_with_one_click')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-costcenter',
+        popover: {
+          side: 'left',
+          align: 'center',
+          borderRadius: '12px 12px 0px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('common:guide_costcenter')}
+              </Text>
+              <PopoverBodyInfo top={'-120px'} />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-workorder',
+        popover: {
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('common:guide_workorder')}
+              </Text>
+              <PopoverBodyInfo />
             </Flex>
           )
         }

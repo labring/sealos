@@ -302,13 +302,6 @@ export default function Desktop(props: any) {
                 }}
               />
             )}
-            {taskComponentState === 'button' && (
-              <FloatingTaskButton
-                onClick={() => {
-                  setTaskComponentState('modal');
-                }}
-              />
-            )}
           </Box>
         )}
       </Flex>

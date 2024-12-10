@@ -9,4 +9,5 @@ export type UserTask = {
   taskType: TaskType;
   isCompleted: boolean;
   completedAt: string;
+  isNewUserTask: boolean;
 };

@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       include: { task: true }
     });
 
-    const [deployments, statefulsets, instances, clusters] = await Promise.all([
+    const [deployments, statefulsets, instances, clusters, devboxes] = await Promise.all([
       k8sApp.listNamespacedDeployment(
         namespace,
         undefined,
@@ -64,6 +64,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         undefined,
         undefined,
         `!${templateDeployKey}`
+      ) as any,
+      k8sCustomObjects.listNamespacedCustomObject(
+        'devbox.sealos.io',
+        'v1alpha1',
+        namespace,
+        'devboxes'
       ) as any
     ]);
 
@@ -75,6 +81,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return instances.body.items.length > 0;
         case TaskType.DATABASE:
           return clusters.body.items.length > 0;
+        case TaskType.DEVBOX:
+          return devboxes.body.items.length > 0;
         default:
           return false;
       }
