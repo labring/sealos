@@ -13,7 +13,9 @@ const useEnvStore = create<EnvState>()(
   immer((set, get) => ({
     SystemEnv: {
       domain: '',
-      applaunchpadUrl: ''
+      applaunchpadUrl: '',
+      successfulJobsHistoryLimit: 3,
+      failedJobsHistoryLimit: 3
     },
     initSystemEnv: async () => {
       const data = await getPlatformEnv();
