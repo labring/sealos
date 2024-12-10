@@ -167,6 +167,7 @@ const Header = ({
             isBigButton={isBigButton}
             leftButtonProps={{
               height: '40px',
+              width: '96px',
               borderWidth: '1 0 1 1',
               bg: 'white',
               color: 'grayModern.600'
