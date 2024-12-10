@@ -118,22 +118,22 @@ var ModelList = []*model.ModelConfig{
 	{
 		Model: "stable-diffusion-xl",
 		Type:  relaymode.ImagesGenerations,
-		Owner: model.ModelOwnerAlibaba,
+		Owner: model.ModelOwnerStabilityAI,
 	},
 	{
 		Model: "stable-diffusion-v1.5",
 		Type:  relaymode.ImagesGenerations,
-		Owner: model.ModelOwnerAlibaba,
+		Owner: model.ModelOwnerStabilityAI,
 	},
 	{
 		Model: "stable-diffusion-3.5-large",
 		Type:  relaymode.ImagesGenerations,
-		Owner: model.ModelOwnerAlibaba,
+		Owner: model.ModelOwnerStabilityAI,
 	},
 	{
 		Model: "stable-diffusion-3.5-large-turbo",
 		Type:  relaymode.ImagesGenerations,
-		Owner: model.ModelOwnerAlibaba,
+		Owner: model.ModelOwnerStabilityAI,
 	},
 	{
 		Model:      "sambert-v1",
