@@ -9,6 +9,7 @@ type EnvState = {
   wechatEnabled: boolean;
   stripeEnabled: boolean;
   openRecharge: boolean;
+  i18nIsInitialized: boolean;
   currency: 'shellCoin' | 'cny' | 'usd';
   stripePromise: ReturnType<typeof loadStripe>;
   setStripe: (pub: string) => void;
@@ -27,6 +28,7 @@ const useEnvStore = create<EnvState>((set, get) => ({
   stripeEnabled: false,
   gpuEnabled: false,
   openRecharge: false,
+  i18nIsInitialized: false,
   currency: 'shellCoin',
   stripePromise: Promise.resolve(null),
   setStripe: (pub: string) => set({ stripePromise: loadStripe(pub) }),
