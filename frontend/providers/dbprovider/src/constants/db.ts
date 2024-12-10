@@ -7,6 +7,7 @@ import {
   DBSourceType
 } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
+import { I18nCommonKey } from '@/types/i18next';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
@@ -270,7 +271,17 @@ export const defaultDBEditValue: DBEditType = {
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
   storage: 3,
-  labels: {}
+  labels: {},
+  autoBackup: {
+    start: true,
+    type: 'day',
+    week: [],
+    hour: '23',
+    minute: '00',
+    saveTime: 7,
+    saveType: 'd'
+  },
+  terminationPolicy: 'Delete'
 };
 
 export const defaultDBDetail: DBDetailType = {
@@ -427,4 +438,29 @@ export const DBSourceConfigs: Array<{
 }> = [
   { key: templateDeployKey, type: 'app_store' },
   { key: sealafDeployKey, type: 'sealaf' }
+];
+
+export const SelectTimeList = new Array(60).fill(0).map((item, i) => {
+  const val = i < 10 ? `0${i}` : `${i}`;
+  return {
+    id: val,
+    label: val
+  };
+});
+
+export const WeekSelectList: { label: I18nCommonKey; id: string }[] = [
+  { label: 'Monday', id: '1' },
+  { label: 'Tuesday', id: '2' },
+  { label: 'Wednesday', id: '3' },
+  { label: 'Thursday', id: '4' },
+  { label: 'Friday', id: '5' },
+  { label: 'Saturday', id: '6' },
+  { label: 'Sunday', id: '0' }
+];
+
+export const BackupSupportedDBTypeList: DBType[] = [
+  'postgresql',
+  'mongodb',
+  'apecloud-mysql',
+  'redis'
 ];

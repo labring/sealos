@@ -167,7 +167,7 @@ docker build -t java-demo .
       将 `your-dockerhub-username`、`your-repo-name` 和 `your-tag` 替换为实际的值。例如：
 
       ```
-      docker push damager6666/java-demo:v2
+      docker push damager6666/demo:v2
       ```
 
 ## 步骤7：登陆 Sealos

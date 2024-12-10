@@ -56,91 +56,91 @@ func checkDatabasePerformanceInNamespace(namespace string) error {
 }
 
 func monitorCluster(cluster unstructured.Unstructured) {
-	databaseClusterName, databaseType, namespace, UID := cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
-	status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
-	if err != nil || !found {
-		log.Printf("Unable to get %s status in ns %s: %v", databaseClusterName, namespace, err)
-	}
-	debt, _, _ := checkDebt(namespace)
+	notificationInfo := api.Info{}
+	getClusterDatabaseInfo(cluster, &notificationInfo)
+	//notificationInfo.DatabaseClusterName, notificationInfo.DatabaseType, notificationInfo.Namespace, notificationInfo.DatabaseClusterUID = cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
+	//status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
+	//if err != nil || !found {
+	//	log.Printf("Unable to get %s status in ns %s: %v", notificationInfo.DatabaseClusterName, notificationInfo.Namespace, err)
+	//}
+	debt, _, _ := checkDebt(notificationInfo.Namespace)
 	if !debt {
 		return
 	}
-	info := notification.Info{
-		DatabaseClusterName: databaseClusterName,
-		Namespace:           namespace,
-		Status:              status,
-		NotificationType:    "exception",
-		ExceptionType:       "阀值",
-	}
-	switch status {
+	notificationInfo.NotificationType = notification.ExceptionType
+	notificationInfo.ExceptionType = "阀值"
+	switch notificationInfo.ExceptionStatus {
 	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
 		break
 	default:
 		if api.CPUMemMonitor {
-			handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID, info)
+			handleCPUMemMonitor(&notificationInfo)
 		}
 		if api.DiskMonitor {
-			handleDiskMonitor(namespace, databaseClusterName, databaseType, UID, info)
+			handleDiskMonitor(&notificationInfo)
 		}
 	}
 }
 
-func handleCPUMemMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
-	if cpuUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "cpu"); err == nil {
-		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, "CPU", UID, info, api.CPUMonitorNamespaceMap)
+func handleCPUMemMonitor(notificationInfo *api.Info) {
+	if cpuUsage, err := CPUMemMonitor(notificationInfo, "cpu"); err == nil {
+		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, "CPU", notificationInfo, api.CPUMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
-	if memUsage, err := CPUMemMonitor(namespace, databaseClusterName, databaseType, "memory"); err == nil {
-		processUsage(memUsage, api.DatabaseMemMonitorThreshold, "内存", UID, info, api.MemMonitorNamespaceMap)
+	if memUsage, err := CPUMemMonitor(notificationInfo, "memory"); err == nil {
+		processUsage(memUsage, api.DatabaseMemMonitorThreshold, "内存", notificationInfo, api.MemMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Memory: %v", err)
 	}
 }
 
-func handleDiskMonitor(namespace, databaseClusterName, databaseType, UID string, info notification.Info) {
-	if maxUsage, err := checkPerformance(namespace, databaseClusterName, databaseType, "disk"); err == nil {
-		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, "磁盘", UID, info, api.DiskMonitorNamespaceMap)
+func handleDiskMonitor(notificationInfo *api.Info) {
+	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
+		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, "磁盘", notificationInfo, api.DiskMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
 	}
 }
 
-func processUsage(usage float64, threshold float64, performanceType, UID string, info notification.Info, monitorMap map[string]bool) {
-	info.PerformanceType = performanceType
+func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info, monitorMap map[string]bool) {
+	notificationInfo.PerformanceType = performanceType
 	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
 	if performanceType == "CPU" {
-		info.CPUUsage = usageStr
+		notificationInfo.CPUUsage = usageStr
 	} else if performanceType == "内存" {
-		info.MemUsage = usageStr
+		notificationInfo.MemUsage = usageStr
 	} else if performanceType == "磁盘" {
-		info.DiskUsage = usageStr
+		notificationInfo.DiskUsage = usageStr
 	}
-	if usage >= threshold && !monitorMap[UID] {
-		alertMessage := notification.GetNotificationMessage(info)
-		if err := notification.SendFeishuNotification(info, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+	if usage >= threshold && !monitorMap[notificationInfo.DatabaseClusterUID] {
+		alertMessage := notification.GetNotificationMessage(notificationInfo)
+		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
-		monitorMap[UID] = true
+		monitorMap[notificationInfo.DatabaseClusterUID] = true
 		if performanceType != "磁盘" {
 			return
 		}
 		ZNThreshold := NumberToChinese(int(threshold))
-		if err := notification.SendToSms(info.Namespace, info.DatabaseClusterName, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
+		if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
 			log.Printf("Failed to send Sms: %v", err)
 		}
-	} else if usage < threshold && monitorMap[UID] {
-		info.NotificationType = "recovery"
-		alertMessage := notification.GetNotificationMessage(info)
-		if err := notification.SendFeishuNotification(info, alertMessage, api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]); err != nil {
+	} else if usage < threshold && monitorMap[notificationInfo.DatabaseClusterUID] {
+		notificationInfo.NotificationType = "recovery"
+		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
+		alertMessage := notification.GetNotificationMessage(notificationInfo)
+		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
-		delete(monitorMap, UID)
+		delete(monitorMap, notificationInfo.DatabaseClusterUID)
 	}
 }
 
-func CPUMemMonitor(namespace, databaseClusterName, databaseType, checkType string) (float64, error) {
-	return checkPerformance(namespace, databaseClusterName, databaseType, checkType)
+func CPUMemMonitor(notificationInfo *api.Info, checkType string) (float64, error) {
+	return checkPerformance(notificationInfo, checkType)
 }
 
 func NumberToChinese(num int) string {

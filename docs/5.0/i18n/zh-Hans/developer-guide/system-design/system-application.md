@@ -31,7 +31,7 @@ description: 了解Sealos系统应用的基本原理与实现，包括Kubernetes
 
 组成：前端系统+Kubernetes API
 
-用户管理 Kbernetes 原生 CronJob 资源，逻辑与应用管理基本相同。
+用户管理 Kubernetes 原生 CronJob 资源，逻辑与应用管理基本相同。
 
 ## 数据库
 
