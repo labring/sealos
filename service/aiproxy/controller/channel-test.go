@@ -92,7 +92,7 @@ func TestChannel(c *gin.Context) {
 		return
 	}
 
-	channel, ok := model.CacheGetEnabledChannelByID(id)
+	channel, ok := model.CacheGetAllChannelByID(id)
 	if !ok {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -173,7 +173,7 @@ func TestChannelModels(c *gin.Context) {
 		return
 	}
 
-	channel, ok := model.CacheGetEnabledChannelByID(id)
+	channel, ok := model.CacheGetAllChannelByID(id)
 	if !ok {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -250,7 +250,13 @@ func TestChannelModels(c *gin.Context) {
 //nolint:goconst
 //nolint:gosec
 func TestAllChannels(c *gin.Context) {
-	channels := model.CacheGetEnabledChannels()
+	testDisabled := c.Query("test_disabled") == "true"
+	var channels []*model.Channel
+	if testDisabled {
+		channels = model.CacheGetAllChannels()
+	} else {
+		channels = model.CacheGetEnabledChannels()
+	}
 	returnSuccess := c.Query("return_success") == "true"
 	successResponseBody := c.Query("success_body") == "true"
 	isStream := c.Query("stream") == "true"
