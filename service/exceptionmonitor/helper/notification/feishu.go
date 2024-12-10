@@ -169,7 +169,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": "------------------------------数据库恢复信息------------------------------",
+					"content": "---------------------------------------数据库恢复信息---------------------------------------",
 					"tag":     "lark_md",
 				},
 			},
