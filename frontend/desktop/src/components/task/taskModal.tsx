@@ -17,7 +17,8 @@ import {
   VStack
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import React from 'react';
+import React, { useRef } from 'react';
+import RealNameModal from '../account/RealNameModal';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface TaskModalProps {
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskClick }) => {
   const { t, i18n } = useTranslation();
   const { isOpen: isQRCodeOpen, onOpen: onQRCodeOpen, onClose: onQRCodeClose } = useDisclosure();
+  const realNameModalRef = useRef<{ onOpen: () => void }>(null);
 
   const boxStyles = {
     border: '1px solid rgba(60, 101, 172, 0.08)',
@@ -80,6 +82,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
                     onClick={() => {
                       if (task.taskType === 'CONTACT') {
                         onQRCodeOpen();
+                      } else if (task.taskType === 'REAL_NAME_AUTH') {
+                        realNameModalRef.current?.onOpen();
                       } else {
                         onTaskClick(task);
                       }
@@ -145,6 +149,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
                     if (!firstIncompleteTask) return;
                     if (firstIncompleteTask.taskType === 'CONTACT') {
                       onQRCodeOpen();
+                    } else if (firstIncompleteTask.taskType === 'REAL_NAME_AUTH') {
+                      realNameModalRef.current?.onOpen();
                     } else {
                       onTaskClick(firstIncompleteTask);
                     }
@@ -197,6 +203,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
           </Flex>
         </ModalContent>
       </Modal>
+      <RealNameModal ref={realNameModalRef} />
     </>
   );
 };
