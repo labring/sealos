@@ -2,8 +2,10 @@ package ali
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -97,6 +99,14 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 		return nil, nil, err
 	}
 	request.Model = meta.ActualModelName
+
+	if strings.HasPrefix(request.Model, "sambert-v") {
+		voice := request.Voice
+		if voice == "" {
+			voice = "zhinan"
+		}
+		request.Model = fmt.Sprintf("sambert-%s-v%s", voice, strings.TrimPrefix(request.Model, "sambert-v"))
+	}
 
 	ttsRequest := TTSMessage{
 		Header: TTSHeader{
