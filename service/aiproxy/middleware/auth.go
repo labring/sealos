@@ -22,14 +22,14 @@ type APIResponse struct {
 }
 
 func SuccessResponse(c *gin.Context, data any) {
-	c.JSON(http.StatusOK, APIResponse{
+	c.JSON(http.StatusOK, &APIResponse{
 		Success: true,
 		Data:    data,
 	})
 }
 
 func ErrorResponse(c *gin.Context, code int, message string) {
-	c.JSON(code, APIResponse{
+	c.JSON(code, &APIResponse{
 		Success: false,
 		Message: message,
 	})
