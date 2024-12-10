@@ -1,5 +1,6 @@
 import { checkUserTask, getUserTasks, updateTask } from '@/api/platform';
 import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
+import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { UserTask } from '@/types/task';
@@ -20,6 +21,7 @@ export default function useDriver() {
   const conf = useConfigStore().commonConfig;
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
   const { canShowGuide } = useDesktopConfigStore();
+  const { installedApps } = useAppStore();
 
   useEffect(() => {
     const fetchUserTasks = async () => {
@@ -118,6 +120,7 @@ export default function useDriver() {
     isShowButtons: false,
     allowKeyboardControl: false,
     disableActiveInteraction: true,
+    // @ts-ignore
     steps: [
       {
         element: '.apps-container',
@@ -260,7 +263,11 @@ export default function useDriver() {
           )
         }
       }
-    ],
+    ].filter((step) => {
+      if (step.element === '.apps-container') return true;
+      const appKey = step.element.substring(1);
+      return installedApps.some((app) => app.key === appKey);
+    }),
     onDestroyed: () => {
       completeGuide();
     }
