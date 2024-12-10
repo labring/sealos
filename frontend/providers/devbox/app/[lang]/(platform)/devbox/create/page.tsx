@@ -339,7 +339,7 @@ const DevboxCreatePage = () => {
       } else {
         await createDevbox({ devboxForm: formData, runtimeNamespaceMap })
       }
-      addDevboxIDE('cursor', formData.name)
+      addDevboxIDE('vscode', formData.name)
       toast({
         title: t(applySuccess),
         status: 'success'
