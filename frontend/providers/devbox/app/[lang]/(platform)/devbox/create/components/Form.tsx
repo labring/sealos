@@ -175,14 +175,14 @@ const Form = ({
         : [],
     [countGpuInventory, t, sourcePrice?.gpu]
   )
-  const selectedGpu = useMemo(() => {
+  const selectedGpu = () => {
     const selected = sourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'))
     if (!selected) return
     return {
       ...selected,
       inventory: countGpuInventory(selected.type)
     }
-  }, [sourcePrice?.gpu, countGpuInventory, getValues])
+  }
 
   if (!formHook) return null
 
@@ -697,7 +697,8 @@ const Form = ({
                       <Box mb={1}>{t('Amount')}</Box>
                       <Flex alignItems={'center'}>
                         {GpuAmountMarkList.map((item) => {
-                          const inventory = selectedGpu?.inventory || 0
+                          const inventory = selectedGpu()?.inventory || 0
+
                           const hasInventory = item.value <= inventory
 
                           return (
