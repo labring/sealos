@@ -17,6 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -76,35 +77,35 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 func TestChannel(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: err.Error(),
 		})
 		return
 	}
 
 	modelName := c.Param("model")
 	if modelName == "" {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "model is required",
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: "model is required",
 		})
 		return
 	}
 
 	channel, err := model.LoadChannelByID(id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "channel not found",
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: "channel not found",
 		})
 		return
 	}
 
 	if !slices.Contains(channel.Models, modelName) {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "model not supported by channel",
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: "model not supported by channel",
 		})
 		return
 	}
@@ -112,9 +113,9 @@ func TestChannel(c *gin.Context) {
 	ct, err := testSingleModel(channel, modelName)
 	if err != nil {
 		log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error()),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: fmt.Sprintf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error()),
 		})
 		return
 	}
@@ -123,9 +124,9 @@ func TestChannel(c *gin.Context) {
 		ct.Response = ""
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    ct,
+	c.JSON(http.StatusOK, middleware.APIResponse{
+		Success: true,
+		Data:    ct,
 	})
 }
 
@@ -166,18 +167,18 @@ func processTestResult(channel *model.Channel, modelName string, returnSuccess b
 func TestChannelModels(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: err.Error(),
 		})
 		return
 	}
 
 	channel, err := model.LoadChannelByID(id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "channel not found",
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: "channel not found",
 		})
 		return
 	}
@@ -240,9 +241,9 @@ func TestChannelModels(c *gin.Context) {
 	}
 
 	if !isStream {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"data":    results,
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: true,
+			Data:    results,
 		})
 	}
 }
@@ -259,9 +260,9 @@ func TestAllChannels(c *gin.Context) {
 		channels, err = model.LoadEnabledChannels()
 	}
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: err.Error(),
 		})
 		return
 	}
@@ -335,9 +336,9 @@ func TestAllChannels(c *gin.Context) {
 	}
 
 	if !isStream {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"data":    results,
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: true,
+			Data:    results,
 		})
 	}
 }

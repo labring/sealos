@@ -8,6 +8,7 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -41,32 +42,32 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 func UpdateChannelBalance(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: err.Error(),
 		})
 		return
 	}
 	channel, err := model.GetChannelByID(id, false)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: err.Error(),
 		})
 		return
 	}
 	balance, err := updateChannelBalance(channel)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: err.Error(),
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"balance": balance,
+	c.JSON(http.StatusOK, middleware.APIResponse{
+		Success: true,
+		Message: "",
+		Data:    balance,
 	})
 }
 
@@ -76,35 +77,21 @@ func updateAllChannelsBalance() error {
 		return err
 	}
 	for _, channel := range channels {
-		if channel.Status != model.ChannelStatusEnabled {
-			continue
-		}
-		balance, err := updateChannelBalance(channel)
+		_, err := updateChannelBalance(channel)
 		if err != nil {
 			continue
 		}
-		// err is nil & balance <= 0 means quota is used up
-		if balance <= 0 {
-			_ = model.DisableChannelByID(channel.ID)
-		}
-		time.Sleep(time.Second)
 	}
 	return nil
 }
 
 func UpdateAllChannelsBalance(c *gin.Context) {
-	// err := updateAllChannelsBalance()
-	// if err != nil {
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"success": false,
-	// 		"message": err.Error(),
-	// 	})
-	// 	return
-	// }
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
+	err := updateAllChannelsBalance()
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
 }
 
 func AutomaticallyUpdateChannels(frequency int) {
@@ -122,9 +109,9 @@ func GetSubscription(c *gin.Context) {
 	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("get group (%s) balance failed", group.ID),
+		c.JSON(http.StatusOK, middleware.APIResponse{
+			Success: false,
+			Message: fmt.Sprintf("get group (%s) balance failed", group.ID),
 		})
 		return
 	}

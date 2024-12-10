@@ -106,7 +106,6 @@ func SetAPIRouter(router *gin.Engine) {
 		{
 			logsRoute.GET("/", controller.GetLogs)
 			logsRoute.DELETE("/", controller.DeleteHistoryLogs)
-			logsRoute.GET("/stat", controller.GetLogsStat)
 			logsRoute.GET("/search", controller.SearchLogs)
 			logsRoute.GET("/consume_error", controller.SearchConsumeError)
 		}

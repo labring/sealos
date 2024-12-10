@@ -84,11 +84,11 @@ func Relay(c *gin.Context) {
 			message = "The upstream load of the current group is saturated, please try again later"
 		}
 		c.JSON(bizErr.StatusCode, gin.H{
-			"error": gin.H{
-				"message": helper.MessageWithRequestID(message, requestID),
-				"code":    bizErr.Code,
-				"param":   bizErr.Param,
-				"type":    bizErr.Type,
+			"error": &model.Error{
+				Message: helper.MessageWithRequestID(message, requestID),
+				Code:    bizErr.Code,
+				Param:   bizErr.Param,
+				Type:    bizErr.Type,
 			},
 		})
 	}
@@ -111,13 +111,12 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 }
 
 func RelayNotImplemented(c *gin.Context) {
-	err := model.Error{
-		Message: "API not implemented",
-		Type:    middleware.ErrorTypeAIPROXY,
-		Param:   "",
-		Code:    "api_not_implemented",
-	}
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": err,
+		"error": &model.Error{
+			Message: "API not implemented",
+			Type:    middleware.ErrorTypeAIPROXY,
+			Param:   "",
+			Code:    "api_not_implemented",
+		},
 	})
 }

@@ -15,13 +15,30 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type APIResponse struct {
+	Data    any    `json:"data,omitempty"`
+	Message string `json:"message,omitempty"`
+	Success bool   `json:"success"`
+}
+
+func SuccessResponse(c *gin.Context, data any) {
+	c.JSON(http.StatusOK, APIResponse{
+		Success: true,
+		Data:    data,
+	})
+}
+
+func ErrorResponse(c *gin.Context, code int, message string) {
+	c.JSON(code, APIResponse{
+		Success: false,
+		Message: message,
+	})
+}
+
 func AdminAuth(c *gin.Context) {
 	accessToken := c.Request.Header.Get("Authorization")
 	if config.AdminKey != "" && (accessToken == "" || strings.TrimPrefix(accessToken, "Bearer ") != config.AdminKey) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"message": "unauthorized, no access token provided",
-		})
+		ErrorResponse(c, http.StatusUnauthorized, "unauthorized, no access token provided")
 		c.Abort()
 		return
 	}

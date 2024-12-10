@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -121,121 +122,71 @@ func init() {
 }
 
 func BuiltinModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    builtinModels,
-	})
+	middleware.SuccessResponse(c, builtinModels)
 }
 
 func ChannelBuiltinModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    builtinChannelID2Models,
-	})
+	middleware.SuccessResponse(c, builtinChannelID2Models)
 }
 
 func ChannelBuiltinModelsByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "type is required")
 		return
 	}
 	channelTypeInt, err := strconv.Atoi(channelType)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    builtinChannelID2Models[channelTypeInt],
-	})
+	middleware.SuccessResponse(c, builtinChannelID2Models[channelTypeInt])
 }
 
 func ChannelDefaultModelsAndMapping(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"models":  config.GetDefaultChannelModels(),
-			"mapping": config.GetDefaultChannelModelMapping(),
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"models":  config.GetDefaultChannelModels(),
+		"mapping": config.GetDefaultChannelModelMapping(),
 	})
 }
 
 func ChannelDefaultModelsAndMappingByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "type is required")
 		return
 	}
 	channelTypeInt, err := strconv.Atoi(channelType)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"models":  config.GetDefaultChannelModels()[channelTypeInt],
-			"mapping": config.GetDefaultChannelModelMapping()[channelTypeInt],
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"models":  config.GetDefaultChannelModels()[channelTypeInt],
+		"mapping": config.GetDefaultChannelModelMapping()[channelTypeInt],
 	})
 }
 
 func EnabledModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    model.CacheGetEnabledModelConfigs(),
-	})
+	middleware.SuccessResponse(c, model.CacheGetEnabledModelConfigs())
 }
 
 func ChannelEnabledModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    model.CacheGetEnabledChannelType2ModelConfigs(),
-	})
+	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs())
 }
 
 func ChannelEnabledModelsByType(c *gin.Context) {
 	channelTypeStr := c.Param("type")
 	if channelTypeStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "type is required")
 		return
 	}
 	channelTypeInt, err := strconv.Atoi(channelTypeStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    model.CacheGetEnabledChannelType2ModelConfigs()[channelTypeInt],
-	})
+	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs()[channelTypeInt])
 }
 
 func ListModels(c *gin.Context) {
@@ -268,7 +219,7 @@ func RetrieveModel(c *gin.Context) {
 
 	if _, exist := enabledModels[modelName]; !exist || !ok {
 		c.JSON(200, gin.H{
-			"error": relaymodel.Error{
+			"error": &relaymodel.Error{
 				Message: fmt.Sprintf("the model '%s' does not exist", modelName),
 				Type:    "invalid_request_error",
 				Param:   "model",
