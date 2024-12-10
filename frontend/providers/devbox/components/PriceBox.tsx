@@ -19,6 +19,10 @@ const PriceBox = ({
     cpu: number
     memory: number
     nodeports: number
+    gpu?: {
+      type: string
+      amount: number
+    }
   }[]
 }) => {
   const theme = useTheme()
@@ -36,12 +40,21 @@ const PriceBox = ({
     let mp = 0
     let pp = 0
     let tp = 0
+    let gp = 0
 
-    components.forEach(({ cpu, memory, nodeports }) => {
+    components.forEach(({ cpu, memory, nodeports, gpu }) => {
       cp = (sourcePrice.cpu * cpu * 24) / 1000
       mp = (sourcePrice.memory * memory * 24) / 1024
       pp = sourcePrice.nodeports * nodeports * 24
-      tp = cp + mp + pp
+
+      gp = (() => {
+        if (!gpu) return 0
+        const item = sourcePrice?.gpu?.find((item) => item.type === gpu.type)
+        if (!item) return 0
+        return +(item.price * gpu.amount * 24)
+      })()
+
+      tp = cp + mp + pp + gp
     })
 
     return [
@@ -56,9 +69,10 @@ const PriceBox = ({
         color: '#8172D8',
         value: pp.toFixed(2)
       },
+      ...(sourcePrice?.gpu ? [{ label: 'GPU', color: '#89CD11', value: gp.toFixed(2) }] : []),
       { label: 'total_price', color: '#485058', value: tp.toFixed(2) }
     ]
-  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports])
+  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports, sourcePrice.gpu])
 
   return (
     <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>

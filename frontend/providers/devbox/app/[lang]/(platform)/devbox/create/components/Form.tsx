@@ -301,7 +301,13 @@ const Form = ({
                 {
                   cpu: getValues('cpu'),
                   memory: getValues('memory'),
-                  nodeports: devboxList.length
+                  nodeports: devboxList.length,
+                  gpu: !!getValues('gpu.type')
+                    ? {
+                        type: getValues('gpu.type'),
+                        amount: getValues('gpu.amount')
+                      }
+                    : undefined
                 }
               ]}
             />

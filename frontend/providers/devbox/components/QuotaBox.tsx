@@ -20,6 +20,10 @@ const sourceMap = {
   nodeports: {
     color: '#FFA500',
     unit: ''
+  },
+  gpu: {
+    color: '#89CD11',
+    unit: 'Card'
   }
 }
 

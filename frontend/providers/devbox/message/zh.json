@@ -175,5 +175,7 @@
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
   "yaml_file": "YAML 文件",
-  "gpu_exceeds_quota": "申请的 GPU 超出配额限制，请联系管理员"
+  "gpu_exceeds_quota": "申请的 GPU 超出配额限制，请联系管理员",
+  "GPU": "GPU",
+  "gpu": "GPU"
 }

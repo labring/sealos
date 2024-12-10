@@ -172,5 +172,7 @@
   "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
   "yaml_file": "YAML",
-  "gpu_exceeds_quota": "Requested GPU exceeds your quota. Please contact admin."
+  "gpu_exceeds_quota": "Requested GPU exceeds your quota. Please contact admin.",
+  "GPU": "GPU",
+  "gpu": "GPU"
 }
