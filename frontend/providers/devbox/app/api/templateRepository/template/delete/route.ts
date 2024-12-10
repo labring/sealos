@@ -19,25 +19,6 @@ export async function DELETE(req: NextRequest) {
         error: 'Invalid versionUid'
       })
     }
-    // const user = await devboxDB.user.findUnique({
-    //   where: {
-    //     isDeleted_regionUid_namespaceId: {
-    //       isDeleted: false,
-    //       namespaceId: payload,
-    //       regionUid: process.env.REGION_UID!
-    //     }
-    //   },
-    //   select: {
-    //     userOrganizations: {
-    //       select: {
-    //         organizationUid: true,
-    //       }
-    //     }
-    //   }
-    // })
-    // if (!user) {
-    //   throw new Error(ERROR_ENUM.unAuthorization)
-    // }
     const uid = result.data
     // const organizationUid = user.userOrganizations[0].organizationUid
     const template = await devboxDB.template.findUnique({

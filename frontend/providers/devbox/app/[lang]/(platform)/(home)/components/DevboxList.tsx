@@ -219,27 +219,30 @@ const DevboxList = ({
               devboxName={item.name}
               sshPort={item.sshPort}
               status={item.status}
+              mr={'8px'}
             />
             <Button
-              mr={5}
-              height={'32px'}
+              mr={'8px'}
               size={'sm'}
+              boxSize={'32px'}
               fontSize={'base'}
               bg={'grayModern.150'}
               color={'grayModern.900'}
               _hover={{
                 color: 'brightBlue.600'
               }}
-              leftIcon={<MyIcon name={'detail'} w={'16px'} />}
+              minW={'unset'}
+              // leftIcon={<MyIcon name={'detail'} w={'16px'} />}
               onClick={() => {
                 router.push(`/devbox/detail/${item.name}`)
               }}>
-              {t('detail')}
+              {/* {t('detail')} */}
+              <MyIcon name={'detail'} w={'16px'} />
             </Button>
             <SealosMenu
               width={100}
               Button={
-                <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
+                <MenuButton as={Button} variant={'square'} boxSize={'32px'}>
                   <MyIcon name={'more'} />
                 </MenuButton>
               }

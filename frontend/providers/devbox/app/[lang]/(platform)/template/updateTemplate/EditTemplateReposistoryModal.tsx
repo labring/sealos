@@ -144,7 +144,7 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
         versionList: data.versions.filter(({ state }) => state === TemplateVersionState.ACTIVE)
           .map(({ uid, name }) => (uid))
       });
-
+      queryClient.invalidateQueries(['template-repository-list'])
       reset();
       onClose();
       toast({

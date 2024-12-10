@@ -63,14 +63,14 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
 
               {/* Title and Description */}
               <Flex direction="column" gap="3px">
-                <Flex gap="8px">
+                <Flex gap="8px" width={'full'}>
                   <Text
                     fontSize="16px"
                     fontWeight="500"
                     color="#111824"
                     letterSpacing="0.15px"
                     overflow={'hidden'}
-                    width={'auto'}
+                    maxW={'100px'}
                     textOverflow={'ellipsis'}
                     whiteSpace={'nowrap'}
                   >
@@ -121,7 +121,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                       color="#667085"
                       letterSpacing="0.004em"
                       overflow={'hidden'}
-                      width={'auto'}
+                      maxW={'150px'}
                       textOverflow={'ellipsis'}
                       whiteSpace={'nowrap'}
                       h={'16px'}

@@ -17,8 +17,8 @@ const OverviewTemplateVersionModal = ({ onSubmit, version, template, ...props }:
         <ModalBody px={'36px'} py={'24px'}>
           <ModalCloseButton />
           {t.rich('overview_template_version_prompt', {
-            version: <Text fontWeight={'600'}>{version}</Text> as any,
-            name:  <Text fontWeight={'600'}>{template}</Text> as any
+            version: <Text display={'inline-block'}  fontWeight={'600'}>{version}</Text> as any,
+            name:  <Text display={'inline-block'} fontWeight={'600'}>{template}</Text> as any
           })}
         </ModalBody>
         <ModalFooter pb={'24px'}>

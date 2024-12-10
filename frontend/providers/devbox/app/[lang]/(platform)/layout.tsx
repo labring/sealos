@@ -37,30 +37,34 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     content: 'not_allow_standalone_use'
   })
   const queryClient = useQueryClient()
-  
+  const [init, setInit] = useState(false)
   // init session
   useEffect(() => {
     const response = createSealosApp()
       ; (async () => {
         try {
           const newSession = JSON.stringify(await sealosApp.getSession())
-          // const oldSession = sessionStorage.getItem('session')
-          // if (newSession && newSession !== oldSession) {
-          sessionStorage.setItem('session', newSession)
-          //   return window.location.reload()
-          // }
+          const oldSession = sessionStorage.getItem('session')
+          if (newSession && oldSession && newSession !== oldSession) {
+            console.log('new Session', newSession)
+            console.log('old Session', oldSession)
+            sessionStorage.setItem('session', newSession)
+            return window.location.reload()
+          }
           // init user 
           console.log('devbox: app init success')
-          const token  = (await initUser())
+          const token = (await initUser())
+          console.log(token)
           if (!!token) {
             setSessionToSessionStorage(token)
+            setInit(true)
           }
           queryClient.clear()
         } catch (err) {
           console.log('devbox: app is not running in desktop')
           if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-            sessionStorage.removeItem('session')
-            sessionStorage.removeItem('token')
+            // sessionStorage.removeItem('session')
+            // sessionStorage.removeItem('token')
             openConfirm(() => {
               window.open(`https://${env.sealosDomain}`, '_self')
             })()
@@ -72,6 +76,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [])
 
   useEffect(() => {
+    if (!init) return
     setSourcePrice()
     // setRuntime()
     setEnv()
@@ -100,7 +105,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [init])
 
   // add resize event
   useEffect(() => {
@@ -142,13 +147,13 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [router, searchParams])
 
   return (
-      <ChakraProvider>
-        <RouteHandlerProvider>
-          <ConfirmChild />
-          <Loading loading={loading} />
-          {children}
-          <TemplateModal />
-        </RouteHandlerProvider>
-      </ChakraProvider>
+    <ChakraProvider>
+      <RouteHandlerProvider>
+        <ConfirmChild />
+        <Loading loading={loading} />
+        {children}
+        <TemplateModal />
+      </RouteHandlerProvider>
+    </ChakraProvider>
   )
 }

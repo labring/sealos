@@ -119,9 +119,20 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
       openTemplateModal({
         templateState: TemplateState.privateTemplate
       })
-    } catch (error) {
       toast({
-        title: t('submit_form_error'),
+        title: t('create_template_success'),
+        status: 'success',
+      });
+    } catch (error) {
+      
+      if(error == '409:templateRepository name already exists') {
+        return toast({
+          title: t('template_repository_name_already_exists'),
+          status: 'error',
+        });
+      }
+      toast({
+        title: error as string,
         status: 'error',
       });
     }

@@ -61,6 +61,8 @@ export default function TemplateRepositoryItem({ item, isEdit }: { item: { uid: 
       }}
       mt={'4px'}
       textAlign={'center'}
+      noOfLines={1}
+      width={'90px'}
     >
       {item.name}
     </Text>
