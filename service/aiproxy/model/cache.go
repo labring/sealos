@@ -343,13 +343,13 @@ func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
 // InitChannelCache initializes the channel cache from database
 func InitChannelCache() error {
 	// Load enabled newEnabledChannels from database
-	newEnabledChannels, err := loadEnabledChannels()
+	newEnabledChannels, err := LoadEnabledChannels()
 	if err != nil {
 		return err
 	}
 
 	// Load all channels from database
-	newAllChannels, err := loadChannels()
+	newAllChannels, err := LoadChannels()
 	if err != nil {
 		return err
 	}
@@ -387,7 +387,7 @@ func InitChannelCache() error {
 	return nil
 }
 
-func loadEnabledChannels() ([]*Channel, error) {
+func LoadEnabledChannels() ([]*Channel, error) {
 	var channels []*Channel
 	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
 	if err != nil {
@@ -402,7 +402,7 @@ func loadEnabledChannels() ([]*Channel, error) {
 	return channels, nil
 }
 
-func loadChannels() ([]*Channel, error) {
+func LoadChannels() ([]*Channel, error) {
 	var channels []*Channel
 	err := DB.Find(&channels).Error
 	if err != nil {
@@ -415,6 +415,19 @@ func loadChannels() ([]*Channel, error) {
 	}
 
 	return channels, nil
+}
+
+func LoadChannelByID(id int) (*Channel, error) {
+	var channel Channel
+	err := DB.First(&channel, id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	initializeChannelModels(&channel)
+	initializeChannelModelMapping(&channel)
+
+	return &channel, nil
 }
 
 func initializeChannelModels(channel *Channel) {

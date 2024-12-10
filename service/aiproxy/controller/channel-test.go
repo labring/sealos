@@ -92,8 +92,8 @@ func TestChannel(c *gin.Context) {
 		return
 	}
 
-	channel, ok := model.CacheGetAllChannelByID(id)
-	if !ok {
+	channel, err := model.LoadChannelByID(id)
+	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "channel not found",
@@ -173,8 +173,8 @@ func TestChannelModels(c *gin.Context) {
 		return
 	}
 
-	channel, ok := model.CacheGetAllChannelByID(id)
-	if !ok {
+	channel, err := model.LoadChannelByID(id)
+	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "channel not found",
@@ -252,10 +252,18 @@ func TestChannelModels(c *gin.Context) {
 func TestAllChannels(c *gin.Context) {
 	testDisabled := c.Query("test_disabled") == "true"
 	var channels []*model.Channel
+	var err error
 	if testDisabled {
-		channels = model.CacheGetAllChannels()
+		channels, err = model.LoadChannels()
 	} else {
-		channels = model.CacheGetEnabledChannels()
+		channels, err = model.LoadEnabledChannels()
+	}
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
 	}
 	returnSuccess := c.Query("return_success") == "true"
 	successResponseBody := c.Query("success_body") == "true"
