@@ -18,7 +18,9 @@ import { useCallback, useState } from 'react'
 
 import MyIcon from '@/components/Icon'
 import { delDevbox } from '@/api/devbox'
+
 import { useIDEStore } from '@/stores/ide'
+import { useDevboxStore } from '@/stores/devbox'
 import { DevboxDetailType, DevboxListItemType } from '@/types/devbox'
 
 const DelModal = ({
@@ -33,6 +35,7 @@ const DelModal = ({
   const t = useTranslations()
   const { message: toast } = useMessage()
   const { removeDevboxIDE } = useIDEStore()
+  const { deleteDevbox } = useDevboxStore()
 
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -42,10 +45,14 @@ const DelModal = ({
       setLoading(true)
       await delDevbox(devbox.name)
       removeDevboxIDE(devbox.name)
+      // NOTE: there delete item from devboxList
+      // why I do that? devboxLIst can not be updated immediately, so I need to delete it from devboxList,otherwise it will be not deleted in surface
+      deleteDevbox(devbox.name)
       toast({
         title: t('delete_successful'),
         status: 'success'
       })
+
       onSuccess()
       onClose()
     } catch (error: any) {
@@ -56,7 +63,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose])
+  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose, deleteDevbox])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>

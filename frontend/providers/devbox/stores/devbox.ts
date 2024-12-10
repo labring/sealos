@@ -30,6 +30,7 @@ type State = {
   setDevboxDetail: (devboxName: string, sealosDomain: string) => Promise<DevboxDetailType>
   intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
+  deleteDevbox: (devboxName: string) => Promise<any>
 }
 
 export const useDevboxStore = create<State>()(
@@ -42,6 +43,12 @@ export const useDevboxStore = create<State>()(
           state.devboxList = res
         })
         return res
+      },
+      deleteDevbox: async (devboxName: string) => {
+        set((state) => {
+          state.devboxList = state.devboxList.filter((item) => item.name !== devboxName)
+        })
+        return 'success'
       },
       loadAvgMonitorData: async (devboxName) => {
         const pods = await getDevboxPodsByDevboxName(devboxName)
