@@ -380,6 +380,10 @@ enum TaskType {
   DATABASE
   DESKTOP
   APPSTORE
+  CRONJOB
+  DEVBOX
+  CONTACT
+  REAL_NAME_AUTH
 }
 
 enum TaskStatus {

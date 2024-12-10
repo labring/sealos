@@ -1,5 +1,6 @@
 import { checkUserTask, getUserTasks, updateTask } from '@/api/platform';
 import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
+import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { UserTask } from '@/types/task';
@@ -20,12 +21,14 @@ export default function useDriver() {
   const conf = useConfigStore().commonConfig;
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
   const { canShowGuide } = useDesktopConfigStore();
+  const { installedApps } = useAppStore();
 
   useEffect(() => {
     const fetchUserTasks = async () => {
       await checkUserTask();
       const data = await getUserTasks();
-      setTasks(data.data);
+      const filteredTasks = data.data.filter((task) => task.isNewUserTask);
+      setTasks(filteredTasks);
     };
     fetchUserTasks();
   }, [taskComponentState]);
@@ -33,21 +36,18 @@ export default function useDriver() {
   useEffect(() => {
     const handleUserGuide = async () => {
       const data = await getUserTasks();
-      setTasks(data.data);
-      const desktopTask = data.data.find((task) => task.taskType === 'DESKTOP');
-      const allTasksCompleted = data.data.every((task) => task.isCompleted);
+      const filteredTasks = data.data.filter((task) => task.isNewUserTask);
+      setTasks(filteredTasks);
+      const desktopTask = filteredTasks.find((task) => task.taskType === 'DESKTOP');
+      const allTasksCompleted = filteredTasks.every((task) => task.isCompleted);
 
       if (!desktopTask?.isCompleted && desktopTask?.id) {
-        // setTaskComponentState('none');
-        // setDesktopGuide(true);
         setTaskComponentState('none');
-        setDesktopGuide(false); // Hide First Guides
         driverObj.drive();
       } else if (allTasksCompleted) {
         setTaskComponentState('none');
       } else {
-        setTaskComponentState('none'); // Hide task modal for all users
-        // setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
+        setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
       }
     };
 
@@ -66,7 +66,7 @@ export default function useDriver() {
       const desktopTask = tasks.find((task) => task.taskType === 'DESKTOP');
       if (desktopTask) {
         await updateTask(desktopTask.id);
-        // setTaskComponentState('modal'); //  disable task modal for all users
+        setTaskComponentState('modal');
       }
     } catch (error) {}
   };
@@ -120,6 +120,7 @@ export default function useDriver() {
     isShowButtons: false,
     allowKeyboardControl: false,
     disableActiveInteraction: true,
+    // @ts-ignore
     steps: [
       {
         element: '.apps-container',
@@ -154,6 +155,23 @@ export default function useDriver() {
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
                 {t('common:guide_applaunchpad')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-devbox',
+        popover: {
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('common:guide_devbox')}
               </Text>
               <PopoverBodyInfo />
             </Flex>
@@ -210,8 +228,46 @@ export default function useDriver() {
             </Flex>
           )
         }
+      },
+      {
+        element: '.system-costcenter',
+        popover: {
+          side: 'left',
+          align: 'center',
+          borderRadius: '12px 12px 0px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('common:guide_costcenter')}
+              </Text>
+              <PopoverBodyInfo top={'-120px'} />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-workorder',
+        popover: {
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('common:guide_workorder')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
+        }
       }
-    ],
+    ].filter((step) => {
+      if (step.element === '.apps-container') return true;
+      const appKey = step.element.substring(1);
+      return installedApps.some((app) => app.key === appKey);
+    }),
     onDestroyed: () => {
       completeGuide();
     }
