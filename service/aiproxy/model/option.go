@@ -103,7 +103,8 @@ func saveOption(key string, value string) error {
 		Key:   key,
 		Value: value,
 	}
-	return DB.FirstOrCreate(&option).Error
+	result := DB.Save(&option)
+	return HandleUpdateResult(result, "option:"+key)
 }
 
 func UpdateOption(key string, value string) error {
