@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
 }
 
 /* get gpu nodes by configmap. */
-export async function getGpuNode() {
+async function getGpuNode() {
   const gpuCrName = 'node-gpu-info'
   const gpuCrNS = 'node-system'
 
