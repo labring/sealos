@@ -415,6 +415,7 @@ const Form = ({
                                 'runtimeVersion',
                                 languageVersionMap[getValues('runtimeType')][0].id
                               )
+                              setValue('gpu.type', '')
                               setValue(
                                 'networks',
                                 languageVersionMap[getValues('runtimeType')][0].defaultPorts.map(
@@ -496,6 +497,7 @@ const Form = ({
                                 'runtimeVersion',
                                 frameworkVersionMap[getValues('runtimeType')][0].id
                               )
+                              setValue('gpu.type', '')
                               setValue(
                                 'networks',
                                 frameworkVersionMap[getValues('runtimeType')][0].defaultPorts.map(
@@ -577,6 +579,7 @@ const Form = ({
                                 'runtimeVersion',
                                 osVersionMap[getValues('runtimeType')][0].id
                               )
+                              setValue('gpu.type', '')
                               setValue(
                                 'networks',
                                 osVersionMap[getValues('runtimeType')][0].defaultPorts.map(
