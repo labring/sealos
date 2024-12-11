@@ -74,16 +74,13 @@ func GetCockroachMessage(errMessage, cockroachType string) string {
 func GetNotificationMessage(notificationInfo *api.Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
-	usage, recoveryUsage := "", ""
+	usage := ""
 	if notificationInfo.PerformanceType == api.CPUChinese {
 		usage = notificationInfo.CPUUsage
-		recoveryUsage = notificationInfo.RecoveryCPUUsage
 	} else if notificationInfo.PerformanceType == api.MemoryChinese {
 		usage = notificationInfo.MemUsage
-		recoveryUsage = notificationInfo.RecoveryMemUsage
 	} else if notificationInfo.PerformanceType == api.DiskChinese {
 		usage = notificationInfo.DiskUsage
-		recoveryUsage = notificationInfo.RecoveryDiskUsage
 	}
 
 	commonElements := []map[string]interface{}{
@@ -119,7 +116,6 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 
 	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
 		exceptionElements := []map[string]interface{}{
-			//这个异常时间需要给值
 			{
 				"tag": "div",
 				"text": map[string]string{
@@ -182,12 +178,11 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 				{
 					"tag": "div",
 					"text": map[string]string{
-						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, recoveryUsage),
+						"content": fmt.Sprintf("%srecovery使用率：%s", notificationInfo.PerformanceType, usage),
 						"tag":     "lark_md",
 					},
 				},
 			}
-			fmt.Println(notificationInfo.FeishuInfo)
 			notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, usageRecoveryElements...)
 		}
 		recoveryTimeElements := []map[string]interface{}{

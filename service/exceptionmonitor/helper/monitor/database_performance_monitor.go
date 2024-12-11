@@ -19,7 +19,7 @@ func DatabasePerformanceMonitor() {
 		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
-		time.Sleep(10 * time.Minute)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
@@ -129,13 +129,6 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		}
 	} else if usage < threshold && monitorMap[notificationInfo.DatabaseClusterUID] {
 		notificationInfo.NotificationType = "recovery"
-		if performanceType == api.CPUChinese {
-			notificationInfo.RecoveryCPUUsage = notificationInfo.CPUUsage
-		} else if performanceType == api.MemoryChinese {
-			notificationInfo.RecoveryMemUsage = notificationInfo.MemUsage
-		} else if performanceType == api.DiskChinese {
-			notificationInfo.RecoveryDiskUsage = notificationInfo.DiskUsage
-		}
 		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
 		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
 		alertMessage := notification.GetNotificationMessage(notificationInfo)

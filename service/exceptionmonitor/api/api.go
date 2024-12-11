@@ -33,9 +33,6 @@ type Info struct {
 	DiskUsage           string
 	CPUUsage            string
 	MemUsage            string
-	RecoveryDiskUsage   string
-	RecoveryCPUUsage    string
-	RecoveryMemUsage    string
 	PerformanceType     string
 	ExceptionType       string
 	ExceptionStatus     string
