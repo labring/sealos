@@ -62,15 +62,17 @@ export default function PrivatePanel({
         {t('my_templates')}
       </Text>
       <Box h={'0'} flex={1} overflow={'auto'} position={'relative'} >
-        <Grid templateColumns="repeat(3, 1fr)" gap="20px" position={'absolute'} inset={0} gridAutoRows={'max-content'}>
+        <Grid templateColumns="repeat(auto-fill, minmax(clamp(210px, 300px, 438px), 1fr));" 
+        gap="20px" 
+        position={'absolute'} inset={0} gridAutoRows={'max-content'}>
           {privateTempalteReposistoryList.map((tr) => (
             <TemplateCard key={tr.uid}
               isPublic={tr.isPublic}
+              isDisabled={tr.templates.length === 0 }
               iconId={tr.iconId || ''}
               templateRepositoryName={tr.name}
-              templateRepositoryDescription={tr.description || ''}
+              templateRepositoryDescription={tr.description}
               templateRepositoryUid={tr.uid}
-              width={'329px'}
               inPublicStore={false}
               tags={tr.templateRepositoryTags.map(t => t.tag)} />
           ))}

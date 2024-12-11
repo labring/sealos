@@ -181,8 +181,7 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
   });
   const formSchema = z.object({
     name: z.string().min(1, t('input_template_name_placeholder')),
-    version: versionSchema,
-    // agreeTerms: z.boolean().refine((val) => val === true, t('privacy_and_security_agreement_tips')),
+    version: z.string().min(1, t('input_template_version_placeholder')).pipe(versionSchema),
     tags: z.array(tagSchema).min(1, t('select_at_least_1_tag')).max(3, t('select_lest_than_3_tags')),
     description: z.string(),
   });
@@ -227,9 +226,16 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
     try {
       const result = formSchema.safeParse(_data)
       if (!result.success) {
-        const title = Object.values(result.error.flatten().fieldErrors)[0][0]
+        const error = result.error.errors[0]
+        if(error.path[0] === 'version' && error.code === 'invalid_string') {
+          toast({
+            title: t('invalide_template_version'),
+            status: 'error',
+          });
+          return;
+        }
         toast({
-          title,
+          title: error.message,
           status: 'error',
         });
         return;
@@ -242,6 +248,7 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
         description: data.description,
         tagUidList: data.tags.map(({ value }) => value),
       })
+
       queryClient.invalidateQueries(['template-repository-list'])
       reset();
       onClose();
@@ -334,7 +341,7 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
     </Modal>
     <OverviewTemplateVersionModal isOpen={overviewHandler.isOpen} onClose={overviewHandler.onClose} onSubmit={() => {
       submit(methods.getValues())
-    }} version={watch('version')} template={templateRepository.name} />d
+    }} version={watch('version')} template={templateRepository.name} />
   </>
   );
 };

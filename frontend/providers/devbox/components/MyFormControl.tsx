@@ -1,7 +1,6 @@
 import { FormLabel, FormLabelProps } from "@chakra-ui/react";
 
 export default function MyFormLabel({ isRequired, children, ...props }: FormLabelProps & { isRequired?: boolean }) {
-  console.log('labell!!!', children, props)
   return <FormLabel {...props} _before={
       isRequired ? {
         content: '"*"',

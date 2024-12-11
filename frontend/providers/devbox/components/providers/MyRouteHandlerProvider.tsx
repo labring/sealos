@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect } from 'react'
 import NProgress from 'nprogress'
+import { useEffect } from 'react'
 
 import { usePathname } from '@/i18n'
 import { useGlobalStore } from '@/stores/global'
 
+import { useSearchParams } from 'next/navigation'
 import 'nprogress/nprogress.css'
 
 const RouteHandlerProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
+  const search = useSearchParams()
   const { setLastRoute } = useGlobalStore()
 
   useEffect(() => {

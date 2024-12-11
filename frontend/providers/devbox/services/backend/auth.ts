@@ -21,11 +21,8 @@ export const authSession = async (headers: Headers) => {
   }
 }
 export const authSessionWithDesktopJWT = async (headers: Headers) => {
-  console.log('authSessionWithDesktopJWT', headers)
   const kubeConfig = await authSession(headers)
-  console.log('kubeConfig exists')
   const token = headers.get('Authorization-Bearer')
-  console.log('token exists')
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization)
   const payload = await verifyToken<{workspaceId:string}>(token, process.env.JWT_SECRET as string)
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization)
@@ -38,9 +35,7 @@ export const authSessionWithDesktopJWT = async (headers: Headers) => {
 export const authSessionWithJWT = async (headers: Headers) => {
 
   const kubeConfig = await authSession(headers)
-  console.log('kubeConfig exists')
   const token = headers.get('Authorization-Bearer')
-  console.log('token exists')
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization)
   const payload = await verifyToken<{workspaceId:string, organizationUid: string, userUid: string, regionUid: string}>(token, process.env.JWT_SECRET as string)
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization)

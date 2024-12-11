@@ -102,7 +102,11 @@ const BasicInfo = () => {
             {t('start_runtime')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>
+            <Text 
+            fontSize={'12px'}
+            w={'full'}
+            textOverflow={'ellipsis'}
+            >
               {
               // getRuntimeDetailLabel(devboxDetail?., devboxDetail?.runtimeVersion)
               `${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`

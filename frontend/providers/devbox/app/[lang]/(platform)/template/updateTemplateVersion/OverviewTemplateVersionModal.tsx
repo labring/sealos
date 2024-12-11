@@ -17,13 +17,17 @@ const OverviewTemplateVersionModal = ({ onSubmit, version, template, ...props }:
         <ModalBody px={'36px'} py={'24px'}>
           <ModalCloseButton />
           {t.rich('overview_template_version_prompt', {
-            version: <Text display={'inline-block'}  fontWeight={'600'}>{version}</Text> as any,
-            name:  <Text display={'inline-block'} fontWeight={'600'}>{template}</Text> as any
+            version: <Text display={'inline'}  fontWeight={'600'}>{version}</Text> as any,
+            name:  <Text display={'inline'} fontWeight={'600'}>{template}</Text> as any
           })}
         </ModalBody>
         <ModalFooter pb={'24px'}>
           <ButtonGroup variant={'solid'}>
-            <Button variant={'outline'}>
+            <Button variant={'outline'}
+              onClick={() => {
+                props.onClose()
+              }}
+            >
               {t('cancel')}
             </Button>
             <Button
