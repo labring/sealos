@@ -362,7 +362,16 @@ const AppList = ({
   // console.log('namespaces: ****************', namespaces, '***********************');
 
   return (
-    <Box backgroundColor={'grayModern.100'} px={'32px'} pb={5} minH={'100%'}>
+    <Box
+      backgroundColor={'grayModern.100'}
+      px={'32px'}
+      pb={5}
+      minH={'100%'}
+      overflow={'scroll'}
+      overflowY={'auto'}
+      h={'100%'}
+      position={'relative'}
+    >
       <Flex h={'88px'} alignItems={'center'}>
         <Center
           w="46px"
@@ -450,11 +459,8 @@ const AppList = ({
           登出
         </Button>
       </Flex>
-
       <MyTable itemClass="appItem" columns={columns} data={apps} />
-
       <PauseChild />
-
       <Modal
         isOpen={isOpen}
         onClose={() => {
@@ -513,14 +519,13 @@ const AppList = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
-
       <Modal isOpen={isUploadOpen} onClose={onUploadClose} closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader> {t('upload_file')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
+            <FileSelect fileExtension=".zip" multiple={false} files={files} setFiles={setFiles} />
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="blue" mr={3} onClick={onUploadClose}>
@@ -557,7 +562,6 @@ const AppList = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
-
       {!!delAppName && (
         <DelModal
           namespace={currentNamespaceRef.current}

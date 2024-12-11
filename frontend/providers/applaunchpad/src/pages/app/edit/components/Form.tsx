@@ -799,6 +799,7 @@ const Form = ({
                           onchange={(val: any) => setValue('hpa.target', val)}
                         />
                         <Input
+                          isInvalid={!!errors?.hpa?.value}
                           width={'80px'}
                           type={'number'}
                           backgroundColor={
@@ -815,7 +816,8 @@ const Form = ({
                             max: {
                               value: 100,
                               message: t('The target cpu value must be less than 100')
-                            }
+                            },
+                            onBlur: () => formHook.trigger('hpa.value')
                           })}
                         />
                         <Box>%</Box>
