@@ -65,7 +65,17 @@ const map = {
   shutdown: require('./icons/shutdown.svg').default,
   windsurf: require('./icons/windsurf.svg').default,
   rocket: require('./icons/rocket.svg').default,
-  jetbrains: require('./icons/jetbrains.svg').default
+  jetbrains: require('./icons/jetbrains.svg').default,
+
+  clion: require('./icons/jetbrains/clion.svg').default,
+  goland: require('./icons/jetbrains/goland.svg').default,
+  intellij: require('./icons/jetbrains/intellij.svg').default,
+  pycharm: require('./icons/jetbrains/pycharm.svg').default,
+  phpstorm: require('./icons/jetbrains/phpstorm.svg').default,
+  rider: require('./icons/jetbrains/rider.svg').default,
+  rubymine: require('./icons/jetbrains/rubymine.svg').default,
+  rustover: require('./icons/jetbrains/rustover.svg').default,
+  webstorm: require('./icons/jetbrains/webstorm.svg').default
 }
 
 const MyIcon = ({
