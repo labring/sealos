@@ -35,7 +35,6 @@ const DelModal = ({
   const t = useTranslations()
   const { message: toast } = useMessage()
   const { removeDevboxIDE } = useIDEStore()
-  const { deleteDevbox } = useDevboxStore()
 
   const [loading, setLoading] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -45,9 +44,7 @@ const DelModal = ({
       setLoading(true)
       await delDevbox(devbox.name)
       removeDevboxIDE(devbox.name)
-      // NOTE: there delete item from devboxList
-      // why I do that? devboxLIst can not be updated immediately, so I need to delete it from devboxList,otherwise it will be not deleted in surface
-      deleteDevbox(devbox.name)
+
       toast({
         title: t('delete_successful'),
         status: 'success'
@@ -63,7 +60,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose, deleteDevbox])
+  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>
