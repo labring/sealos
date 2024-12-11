@@ -19,7 +19,7 @@ func DatabasePerformanceMonitor() {
 		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
-		time.Sleep(1 * time.Minute)
+		time.Sleep(2 * time.Minute)
 	}
 }
 
@@ -58,11 +58,6 @@ func checkDatabasePerformanceInNamespace(namespace string) error {
 func monitorCluster(cluster unstructured.Unstructured) {
 	notificationInfo := api.Info{}
 	getClusterDatabaseInfo(cluster, &notificationInfo)
-	//notificationInfo.DatabaseClusterName, notificationInfo.DatabaseType, notificationInfo.Namespace, notificationInfo.DatabaseClusterUID = cluster.GetName(), cluster.GetLabels()[api.DatabaseTypeLabel], cluster.GetNamespace(), string(cluster.GetUID())
-	//status, found, err := unstructured.NestedString(cluster.Object, "status", "phase")
-	//if err != nil || !found {
-	//	log.Printf("Unable to get %s status in ns %s: %v", notificationInfo.DatabaseClusterName, notificationInfo.Namespace, err)
-	//}
 	debt, _, _ := checkDebt(notificationInfo.Namespace)
 	if !debt {
 		return
@@ -130,7 +125,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
 			log.Printf("Failed to send Sms: %v", err)
 		}
-	} else if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && usage < threshold {
+	} else if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && usage < threshold {
 		notificationInfo.NotificationType = "recovery"
 		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
 		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")

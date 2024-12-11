@@ -118,7 +118,6 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 		// nothing to do
 		break
 	case api.StatusUnknown:
-		//一般都是在新建，应该发到新建的飞书群中
 		if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
 			api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID] = &notificationInfo
 			//api.LastDatabaseClusterStatus[notificationInfo.DatabaseClusterUID] = notificationInfo.ExceptionStatus
