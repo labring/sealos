@@ -4,18 +4,20 @@ import React, { useCallback, useState } from 'react'
 import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
-
+import GPUItem from '@/components/gpuItem'
 import { DevboxDetailType } from '@/types/devbox'
 
 import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { useRuntimeStore } from '@/stores/runtime'
+import { usePriceStore } from '@/stores/price'
 
 const BasicInfo = () => {
   const t = useTranslations()
   const { message: toast } = useMessage()
 
   const { env } = useEnvStore()
+  const { sourcePrice } = usePriceStore()
   const { devboxDetail } = useDevboxStore()
   const { getRuntimeDetailLabel } = useRuntimeStore()
 
@@ -132,6 +134,16 @@ const BasicInfo = () => {
             <Text fontSize={'12px'}>{devboxDetail?.memory / 1024} G</Text>
           </Flex>
         </Flex>
+        {sourcePrice?.gpu && (
+          <Flex>
+            <Text mr={2} width={'40%'} fontSize={'12px'}>
+              GPU
+            </Text>
+            <Flex width={'60%'} color={'grayModern.600'}>
+              <GPUItem gpu={devboxDetail?.gpu} />
+            </Flex>
+          </Flex>
+        )}
       </Flex>
       {/* ssh config */}
       <Flex mb={3} mt={4}>

@@ -33,3 +33,9 @@ export type UserQuotaItemType = {
   used: number
   limit: number
 }
+
+export type GpuType = {
+  manufacturers: string
+  type: string
+  amount: number
+}

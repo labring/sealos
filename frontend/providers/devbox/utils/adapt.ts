@@ -18,6 +18,7 @@ import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/clien
 import { DBListItemType, KbPgClusterType } from '@/types/cluster'
 import { IngressListItemType } from '@/types/ingress'
 import { AppListItemType } from '@/types/app'
+import { gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -57,6 +58,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
 export const adaptDevboxDetail = (
   devbox: KBDevboxType & { portInfos: any[] }
 ): DevboxDetailType => {
+  console.log('devbox', devbox)
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
@@ -71,6 +73,11 @@ export const adaptDevboxDetail = (
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
+    gpu: {
+      type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
+      amount: Number(devbox.spec.resource[gpuResourceKey] || 1),
+      manufacturers: 'nvidia'
+    },
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),
