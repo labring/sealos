@@ -1,12 +1,13 @@
-import { Box, Flex } from '@chakra-ui/react'
 import React, { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
+import { Box, Flex } from '@chakra-ui/react'
+
 import MyIcon from './Icon'
 import { GpuType } from '@/types/user'
-import { useTranslation } from 'next-i18next'
 import { usePriceStore } from '@/stores/price'
 
 const GPUItem = ({ gpu }: { gpu?: GpuType }) => {
-  const { t } = useTranslation()
+  const t = useTranslations()
   const { sourcePrice } = usePriceStore()
 
   const gpuAlias = useMemo(() => {
@@ -16,23 +17,22 @@ const GPUItem = ({ gpu }: { gpu?: GpuType }) => {
   }, [gpu?.type, sourcePrice?.gpu])
 
   return (
-    <Flex whiteSpace={'nowrap'}>
+    <Flex whiteSpace={'nowrap'} alignItems={'center'}>
       <MyIcon name={'nvidia'} w={'16px'} mr={2} />
       {gpuAlias && (
         <>
           <Box fontSize={'12px'}>{gpuAlias}</Box>
-          <Box mx={1} color={'grayModern.500'}>
+          <Flex mx={1} color={'grayModern.500'}>
             /
-          </Box>
+          </Flex>
         </>
       )}
       <Box color={!!gpu?.amount ? 'myGray.600' : 'grayModern.500'} fontSize={'12px'}>
         {!!gpuAlias ? gpu?.amount : 0}
-
         {t('Card')}
       </Box>
     </Flex>
   )
 }
 
-export default React.memo(GPUItem)
+export default GPUItem

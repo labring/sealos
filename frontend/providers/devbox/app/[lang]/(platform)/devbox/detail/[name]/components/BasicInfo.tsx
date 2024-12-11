@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
-import GPUItem from '@/components/GpuItem'
+import GPUItem from '@/components/GPUItem'
 import { DevboxDetailType } from '@/types/devbox'
 
 import { useEnvStore } from '@/stores/env'
