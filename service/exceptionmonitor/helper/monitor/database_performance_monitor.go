@@ -114,6 +114,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		notificationInfo.DiskUsage = usageStr
 	}
 	if usage >= threshold && !monitorMap[notificationInfo.DatabaseClusterUID] {
+		notificationInfo.NotificationType = "exception"
 		alertMessage := notification.GetNotificationMessage(notificationInfo)
 		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {

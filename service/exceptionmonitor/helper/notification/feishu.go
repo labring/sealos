@@ -145,7 +145,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 			},
 		}
 		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
-	} else if notificationInfo.ExceptionType == "阀值" {
+	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "阀值" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
@@ -178,7 +178,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 				{
 					"tag": "div",
 					"text": map[string]string{
-						"content": fmt.Sprintf("%srecovery使用率：%s", notificationInfo.PerformanceType, usage),
+						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
 						"tag":     "lark_md",
 					},
 				},
