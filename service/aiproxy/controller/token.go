@@ -377,15 +377,15 @@ func UpdateTokenStatus(c *gin.Context) {
 	}
 	if token.Status == model.TokenStatusEnabled {
 		if cleanToken.Status == model.TokenStatusExpired && !cleanToken.ExpiredAt.IsZero() && cleanToken.ExpiredAt.Before(time.Now()) {
-			middleware.ErrorResponse(c, http.StatusOK, "令牌已过期，无法启用，请先修改令牌过期时间，或者设置为永不过期")
+			middleware.ErrorResponse(c, http.StatusOK, "token expired, please update token expired time or set to never expire")
 			return
 		}
 		if cleanToken.Status == model.TokenStatusExhausted && cleanToken.Quota > 0 && cleanToken.UsedAmount >= cleanToken.Quota {
-			middleware.ErrorResponse(c, http.StatusOK, "令牌可用额度已用尽，无法启用，请先修改令牌剩余额度，或者设置为无限额度")
+			middleware.ErrorResponse(c, http.StatusOK, "token quota exhausted, please update token quota or set to unlimited quota")
 			return
 		}
 		if cleanToken.Status == model.TokenStatusExhausted && cleanToken.Quota > 0 && cleanToken.UsedAmount >= cleanToken.Quota {
-			middleware.ErrorResponse(c, http.StatusOK, "令牌可用额度已用尽，无法启用，请先修改令牌剩余额度，或者设置为无限额度")
+			middleware.ErrorResponse(c, http.StatusOK, "token quota exhausted, please update token quota or set to unlimited quota")
 			return
 		}
 	}
@@ -421,15 +421,15 @@ func UpdateGroupTokenStatus(c *gin.Context) {
 	}
 	if token.Status == model.TokenStatusEnabled {
 		if cleanToken.Status == model.TokenStatusExpired && !cleanToken.ExpiredAt.IsZero() && cleanToken.ExpiredAt.Before(time.Now()) {
-			middleware.ErrorResponse(c, http.StatusOK, "令牌已过期，无法启用，请先修改令牌过期时间，或者设置为永不过期")
+			middleware.ErrorResponse(c, http.StatusOK, "token expired, please update token expired time or set to never expire")
 			return
 		}
 		if cleanToken.Status == model.TokenStatusExhausted && cleanToken.Quota > 0 && cleanToken.UsedAmount >= cleanToken.Quota {
-			middleware.ErrorResponse(c, http.StatusOK, "令牌可用额度已用尽，无法启用，请先修改令牌剩余额度，或者设置为无限额度")
+			middleware.ErrorResponse(c, http.StatusOK, "token quota exhausted, please update token quota or set to unlimited quota")
 			return
 		}
 		if cleanToken.Status == model.TokenStatusExhausted && cleanToken.Quota > 0 && cleanToken.UsedAmount >= cleanToken.Quota {
-			middleware.ErrorResponse(c, http.StatusOK, "令牌可用额度已用尽，无法启用，请先修改令牌剩余额度，或者设置为无限额度")
+			middleware.ErrorResponse(c, http.StatusOK, "token quota exhausted, please update token quota or set to unlimited quota")
 			return
 		}
 	}
