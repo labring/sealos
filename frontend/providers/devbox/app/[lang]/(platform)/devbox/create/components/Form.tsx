@@ -95,7 +95,6 @@ const Form = ({
   const { env } = useEnvStore()
   const { sourcePrice } = usePriceStore()
   const { devboxList } = useDevboxStore()
-  const { formSliderListConfig } = useGlobalStore()
 
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
   const navList: { id: string; label: string; icon: string }[] = [

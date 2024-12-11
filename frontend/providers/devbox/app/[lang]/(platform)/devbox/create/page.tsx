@@ -55,7 +55,7 @@ const DevboxCreatePage = () => {
 
   const { env } = useEnvStore()
   const { addDevboxIDE } = useIDEStore()
-  const { sourcePrice } = usePriceStore()
+  const { sourcePrice, setSourcePrice } = usePriceStore()
   const { checkQuotaAllow } = useUserStore()
   const { setDevboxDetail, devboxList } = useDevboxStore()
   const { runtimeNamespaceMap, languageVersionMap, frameworkVersionMap, osVersionMap } =
@@ -68,11 +68,6 @@ const DevboxCreatePage = () => {
   const [errorMessage, setErrorMessage] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
-  const [defaultGpuSource, setDefaultGpuSource] = useState<DevboxEditType['gpu']>({
-    type: '',
-    amount: 0,
-    manufacturers: ''
-  })
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
@@ -201,16 +196,21 @@ const DevboxCreatePage = () => {
   const countGpuInventory = useCallback(
     (type?: string) => {
       const inventory = sourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0
-      const defaultInventory = type === defaultGpuSource?.type ? defaultGpuSource?.amount || 0 : 0
-      return inventory + defaultInventory
+
+      return inventory
     },
-    [defaultGpuSource?.amount, defaultGpuSource?.type, sourcePrice?.gpu]
+    [sourcePrice?.gpu]
   )
 
   // watch form change, compute new yaml
   formHook.watch((data) => {
     data && formOnchangeDebounce(data as DevboxEditType)
     setForceUpdate(!forceUpdate)
+  })
+
+  const { refetch: refetchPrice } = useQuery(['init-price'], setSourcePrice, {
+    enabled: !!sourcePrice?.gpu,
+    refetchInterval: 6000
   })
 
   useQuery(
@@ -257,7 +257,6 @@ const DevboxCreatePage = () => {
         oldDevboxEditData.current = res
         formOldYamls.current = formData2Yamls(res)
         crOldYamls.current = generateYamlList(res) as DevboxKindsType[]
-        setDefaultGpuSource(res.gpu)
         formHook.reset(res)
       },
       onError(err) {
@@ -344,6 +343,9 @@ const DevboxCreatePage = () => {
         title: t(applySuccess),
         status: 'success'
       })
+      if (sourcePrice?.gpu) {
+        refetchPrice()
+      }
       router.push(lastRoute)
     } catch (error) {
       console.error(error)
