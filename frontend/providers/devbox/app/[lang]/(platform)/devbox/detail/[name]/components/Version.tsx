@@ -49,7 +49,7 @@ const Version = () => {
     {
       refetchInterval:
         devboxVersionList.length > 0 &&
-        devboxVersionList[0].status.value !== DevboxReleaseStatusEnum.Success
+        devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending
           ? 3000
           : false,
       onSettled() {
