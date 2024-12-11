@@ -104,7 +104,7 @@ const IDEButton = ({
         setLoading(false)
       }
     },
-    [devboxName, env.namespace, env.sealosDomain, runtimeVersion, setLoading, sshPort, toast, t]
+    [toast, t, devboxName, runtimeVersion, runtimeType, env.sealosDomain, env.namespace, sshPort]
   )
 
   return (
@@ -239,6 +239,7 @@ export const ideObj = {
   jetbrains: {
     label: 'JetBrains',
     icon: 'jetbrains',
+    menuLabel: 'JetBrains',
     prefix: '-',
     value: 'jetbrains'
   }
