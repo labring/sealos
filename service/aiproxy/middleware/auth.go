@@ -3,7 +3,6 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -12,15 +11,34 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/network"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/sirupsen/logrus"
 )
+
+type APIResponse struct {
+	Data    any    `json:"data,omitempty"`
+	Message string `json:"message,omitempty"`
+	Success bool   `json:"success"`
+}
+
+func SuccessResponse(c *gin.Context, data any) {
+	c.JSON(http.StatusOK, &APIResponse{
+		Success: true,
+		Data:    data,
+	})
+}
+
+func ErrorResponse(c *gin.Context, code int, message string) {
+	c.JSON(code, &APIResponse{
+		Success: false,
+		Message: message,
+	})
+}
 
 func AdminAuth(c *gin.Context) {
 	accessToken := c.Request.Header.Get("Authorization")
 	if config.AdminKey != "" && (accessToken == "" || strings.TrimPrefix(accessToken, "Bearer ") != config.AdminKey) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"message": "unauthorized, no access token provided",
-		})
+		ErrorResponse(c, http.StatusUnauthorized, "unauthorized, no access token provided")
 		c.Abort()
 		return
 	}
@@ -28,6 +46,7 @@ func AdminAuth(c *gin.Context) {
 }
 
 func TokenAuth(c *gin.Context) {
+	log := GetLogger(c)
 	ctx := c.Request.Context()
 	key := c.Request.Header.Get("Authorization")
 	key = strings.TrimPrefix(
@@ -41,8 +60,12 @@ func TokenAuth(c *gin.Context) {
 		abortWithMessage(c, http.StatusUnauthorized, err.Error())
 		return
 	}
+	SetLogTokenFields(log.Data, token)
 	if token.Subnet != "" {
-		if !network.IsIPInSubnets(ctx, c.ClientIP(), token.Subnet) {
+		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
+			abortWithMessage(c, http.StatusInternalServerError, err.Error())
+			return
+		} else if !ok {
 			abortWithMessage(c, http.StatusForbidden,
 				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnet: %s, current ip: %s",
 					token.Name,
@@ -59,39 +82,13 @@ func TokenAuth(c *gin.Context) {
 		abortWithMessage(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	requestModel, err := getRequestModel(c)
-	if err != nil && shouldCheckModel(c) {
-		abortWithMessage(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	c.Set(ctxkey.RequestModel, requestModel)
+	SetLogGroupFields(log.Data, group)
 	if len(token.Models) == 0 {
-		token.Models = model.CacheGetAllModels()
-		if requestModel != "" && len(token.Models) == 0 {
-			abortWithMessage(c,
-				http.StatusForbidden,
-				fmt.Sprintf("token (%s[%d]) has no permission to use any model",
-					token.Name, token.ID,
-				),
-			)
-			return
-		}
+		token.Models = model.CacheGetEnabledModels()
 	}
-	c.Set(ctxkey.AvailableModels, []string(token.Models))
-	if requestModel != "" && !slices.Contains(token.Models, requestModel) {
-		abortWithMessage(c,
-			http.StatusForbidden,
-			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
-				token.Name, token.ID, requestModel,
-			),
-		)
-		return
-	}
-
 	if group.QPM <= 0 {
 		group.QPM = config.GetDefaultGroupQPM()
 	}
-
 	if group.QPM > 0 {
 		ok := ForceRateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
 		if !ok {
@@ -102,36 +99,73 @@ func TokenAuth(c *gin.Context) {
 		}
 	}
 
-	c.Set(ctxkey.Group, token.Group)
-	c.Set(ctxkey.GroupQPM, group.QPM)
-	c.Set(ctxkey.TokenID, token.ID)
-	c.Set(ctxkey.TokenName, token.Name)
-	c.Set(ctxkey.TokenUsedAmount, token.UsedAmount)
-	c.Set(ctxkey.TokenQuota, token.Quota)
-	// if len(parts) > 1 {
-	// 	c.Set(ctxkey.SpecificChannelId, parts[1])
-	// }
-
-	// set channel id for proxy relay
-	if channelID := c.Param("channelid"); channelID != "" {
-		c.Set(ctxkey.SpecificChannelID, channelID)
-	}
+	c.Set(ctxkey.Group, group)
+	c.Set(ctxkey.Token, token)
 
 	c.Next()
 }
 
-func shouldCheckModel(c *gin.Context) bool {
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/completions") {
-		return true
+func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {
+	SetLogRequestIDField(fields, m.RequestID)
+
+	SetLogModeField(fields, m.Mode)
+	SetLogModelFields(fields, m.OriginModelName)
+	SetLogActualModelFields(fields, m.ActualModelName)
+
+	if m.IsChannelTest {
+		SetLogIsChannelTestField(fields, true)
 	}
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/chat/completions") {
-		return true
+
+	SetLogGroupFields(fields, m.Group)
+	SetLogTokenFields(fields, m.Token)
+	SetLogChannelFields(fields, m.Channel)
+}
+
+func SetLogModeField(fields logrus.Fields, mode int) {
+	fields["mode"] = mode
+}
+
+func SetLogIsChannelTestField(fields logrus.Fields, isChannelTest bool) {
+	fields["test"] = isChannelTest
+}
+
+func SetLogActualModelFields(fields logrus.Fields, actualModel string) {
+	fields["actmodel"] = actualModel
+}
+
+func SetLogModelFields(fields logrus.Fields, model string) {
+	fields["model"] = model
+}
+
+func SetLogChannelFields(fields logrus.Fields, channel *meta.ChannelMeta) {
+	if channel != nil {
+		fields["chid"] = channel.ID
+		fields["chname"] = channel.Name
+		fields["chtype"] = channel.Type
 	}
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/images") {
-		return true
+}
+
+func SetLogRequestIDField(fields logrus.Fields, requestID string) {
+	fields["reqid"] = requestID
+}
+
+func SetLogGroupFields(fields logrus.Fields, group *model.GroupCache) {
+	if group != nil {
+		fields["gid"] = group.ID
 	}
-	if strings.HasPrefix(c.Request.URL.Path, "/v1/audio") {
-		return true
+}
+
+func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache) {
+	if token != nil {
+		fields["tid"] = token.ID
+		fields["tname"] = token.Name
+		fields["key"] = maskTokenKey(token.Key)
 	}
-	return false
+}
+
+func maskTokenKey(key string) string {
+	if len(key) <= 8 {
+		return "*****"
+	}
+	return key[:4] + "*****" + key[len(key)-4:]
 }

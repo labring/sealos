@@ -7,38 +7,71 @@ import (
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/image"
+	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ImageHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
-	var imageResponse ImageResponse
+func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	reqMap := make(map[string]any)
+	err := common.UnmarshalBodyReusable(req, &reqMap)
+	if err != nil {
+		return nil, nil, err
+	}
+	meta.Set(MetaResponseFormat, reqMap["response_format"])
+
+	reqMap["model"] = meta.ActualModelName
+	jsonData, err := json.Marshal(reqMap)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nil, bytes.NewReader(jsonData), nil
+}
+
+func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
+
+	responseFormat := meta.GetString(MetaResponseFormat)
+
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
-	err = resp.Body.Close()
-	if err != nil {
-		return ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError), nil
-	}
+	var imageResponse ImageResponse
 	err = json.Unmarshal(responseBody, &imageResponse)
 	if err != nil {
-		return ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
-	resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
-
-	for k, v := range resp.Header {
-		c.Writer.Header().Set(k, v[0])
+	usage := &model.Usage{
+		PromptTokens: len(imageResponse.Data),
+		TotalTokens:  len(imageResponse.Data),
 	}
-	c.Writer.WriteHeader(resp.StatusCode)
 
-	_, err = io.Copy(c.Writer, resp.Body)
+	if responseFormat == "b64_json" {
+		for _, data := range imageResponse.Data {
+			if len(data.B64Json) > 0 {
+				continue
+			}
+			_, data.B64Json, err = image.GetImageFromURL(c.Request.Context(), data.URL)
+			if err != nil {
+				return usage, ErrorWrapper(err, "get_image_from_url_failed", http.StatusInternalServerError)
+			}
+		}
+	}
+
+	data, err := json.Marshal(imageResponse)
 	if err != nil {
-		return ErrorWrapper(err, "copy_response_body_failed", http.StatusInternalServerError), nil
+		return usage, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
-	err = resp.Body.Close()
+
+	_, err = c.Writer.Write(data)
 	if err != nil {
-		return ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError), nil
+		log.Error("write response body failed: " + err.Error())
 	}
-	return nil, nil
+	return usage, nil
 }

@@ -14,9 +14,9 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/env"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/redis/go-redis/v9"
 	"github.com/shopspring/decimal"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -98,6 +98,7 @@ type sealosCache struct {
 	Balance int64  `redis:"b"`
 }
 
+//nolint:gosec
 func cacheSetGroupBalance(ctx context.Context, group string, balance int64, userUID string) error {
 	if !common.RedisEnabled || !sealosRedisCacheEnable {
 		return nil
@@ -165,7 +166,7 @@ func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (float
 		return decimal.NewFromInt(cache.Balance).Div(decimalBalancePrecision).InexactFloat64(),
 			newSealosPostGroupConsumer(s.accountURL, group, cache.UserUID, cache.Balance), nil
 	} else if err != nil && !errors.Is(err, redis.Nil) {
-		logger.SysErrorf("get group (%s) balance cache failed: %s", group, err)
+		log.Errorf("get group (%s) balance cache failed: %s", group, err)
 	}
 
 	balance, userUID, err := s.fetchBalanceFromAPI(ctx, group)
@@ -174,7 +175,7 @@ func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (float
 	}
 
 	if err := cacheSetGroupBalance(ctx, group, balance, userUID); err != nil {
-		logger.SysErrorf("set group (%s) balance cache failed: %s", group, err)
+		log.Errorf("set group (%s) balance cache failed: %s", group, err)
 	}
 
 	return decimal.NewFromInt(balance).Div(decimalBalancePrecision).InexactFloat64(),
@@ -237,7 +238,7 @@ func (s *SealosPostGroupConsumer) PostGroupConsume(ctx context.Context, tokenNam
 	amount := s.calculateAmount(usage)
 
 	if err := cacheDecreaseGroupBalance(ctx, s.group, amount.IntPart()); err != nil {
-		logger.SysErrorf("decrease group (%s) balance cache failed: %s", s.group, err)
+		log.Errorf("decrease group (%s) balance cache failed: %s", s.group, err)
 	}
 
 	if err := s.postConsume(ctx, amount.IntPart(), tokenName); err != nil {

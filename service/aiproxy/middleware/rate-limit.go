@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	log "github.com/sirupsen/logrus"
 )
 
 var inMemoryRateLimiter common.InMemoryRateLimiter
@@ -74,7 +74,7 @@ func ForceRateLimit(ctx context.Context, key string, maxRequestNum int, duration
 		if err == nil {
 			return ok
 		}
-		logger.Error(ctx, "rate limit error: "+err.Error())
+		log.Error("rate limit error: " + err.Error())
 	}
 	return MemoryRateLimit(ctx, key, maxRequestNum, duration)
 }
