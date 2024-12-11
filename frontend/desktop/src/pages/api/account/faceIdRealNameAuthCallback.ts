@@ -204,6 +204,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               status: 'NOT_COMPLETED'
             },
             data: {
+              rewardStatus: 'COMPLETED',
               status: 'COMPLETED',
               completedAt: new Date()
             }
