@@ -2,33 +2,26 @@ package baidu
 
 import (
 	"bufio"
-	"context"
-	"errors"
-	"fmt"
+	"bytes"
+	"io"
 	"net/http"
-	"strings"
-	"sync"
-	"time"
+	"strconv"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/client"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 // https://cloud.baidu.com/doc/WENXINWORKSHOP/s/flfmc9do2
-
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-}
 
 type Message struct {
 	Role    string `json:"role"`
@@ -36,26 +29,24 @@ type Message struct {
 }
 
 type ChatRequest struct {
-	Temperature     *float64        `json:"temperature,omitempty"`
-	TopP            *float64        `json:"top_p,omitempty"`
-	PenaltyScore    *float64        `json:"penalty_score,omitempty"`
-	System          string          `json:"system,omitempty"`
-	UserID          string          `json:"user_id,omitempty"`
-	Messages        []model.Message `json:"messages"`
-	MaxOutputTokens int             `json:"max_output_tokens,omitempty"`
-	Stream          bool            `json:"stream,omitempty"`
-	DisableSearch   bool            `json:"disable_search,omitempty"`
-	EnableCitation  bool            `json:"enable_citation,omitempty"`
+	Temperature     *float64         `json:"temperature,omitempty"`
+	TopP            *float64         `json:"top_p,omitempty"`
+	PenaltyScore    *float64         `json:"penalty_score,omitempty"`
+	System          string           `json:"system,omitempty"`
+	UserID          string           `json:"user_id,omitempty"`
+	Messages        []*model.Message `json:"messages"`
+	MaxOutputTokens int              `json:"max_output_tokens,omitempty"`
+	Stream          bool             `json:"stream,omitempty"`
+	DisableSearch   bool             `json:"disable_search,omitempty"`
+	EnableCitation  bool             `json:"enable_citation,omitempty"`
 }
 
-type Error struct {
-	ErrorMsg  string `json:"error_msg"`
-	ErrorCode int    `json:"error_code"`
-}
-
-var baiduTokenStore sync.Map
-
-func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	request.Model = meta.ActualModelName
 	baiduRequest := ChatRequest{
 		Messages:        request.Messages,
 		Temperature:     request.Temperature,
@@ -87,7 +78,12 @@ func ConvertRequest(request *model.GeneralOpenAIRequest) *ChatRequest {
 			break
 		}
 	}
-	return &baiduRequest
+
+	data, err := json.Marshal(baiduRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nil, bytes.NewReader(data), nil
 }
 
 func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
@@ -103,13 +99,15 @@ func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
 		ID:      response.ID,
 		Object:  "chat.completion",
 		Created: response.Created,
-		Choices: []openai.TextResponseChoice{choice},
-		Usage:   response.Usage,
+		Choices: []*openai.TextResponseChoice{&choice},
+	}
+	if response.Usage != nil {
+		fullTextResponse.Usage = *response.Usage
 	}
 	return &fullTextResponse
 }
 
-func streamResponseBaidu2OpenAI(baiduResponse *ChatStreamResponse) *openai.ChatCompletionsStreamResponse {
+func streamResponseBaidu2OpenAI(meta *meta.Meta, baiduResponse *ChatStreamResponse) *openai.ChatCompletionsStreamResponse {
 	var choice openai.ChatCompletionsStreamResponseChoice
 	choice.Delta.Content = baiduResponse.Result
 	if baiduResponse.IsEnd {
@@ -119,37 +117,17 @@ func streamResponseBaidu2OpenAI(baiduResponse *ChatStreamResponse) *openai.ChatC
 		ID:      baiduResponse.ID,
 		Object:  "chat.completion.chunk",
 		Created: baiduResponse.Created,
-		Model:   "ernie-bot",
-		Choices: []openai.ChatCompletionsStreamResponseChoice{choice},
+		Model:   meta.OriginModelName,
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
+		Usage:   baiduResponse.Usage,
 	}
 	return &response
 }
 
-func ConvertEmbeddingRequest(request *model.GeneralOpenAIRequest) *EmbeddingRequest {
-	return &EmbeddingRequest{
-		Input: request.ParseInput(),
-	}
-}
-
-func embeddingResponseBaidu2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
-	openAIEmbeddingResponse := openai.EmbeddingResponse{
-		Object: "list",
-		Data:   make([]openai.EmbeddingResponseItem, 0, len(response.Data)),
-		Model:  "baidu-embedding",
-		Usage:  response.Usage,
-	}
-	for _, item := range response.Data {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, openai.EmbeddingResponseItem{
-			Object:    item.Object,
-			Index:     item.Index,
-			Embedding: item.Embedding,
-		})
-	}
-	return &openAIEmbeddingResponse
-}
-
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	var usage model.Usage
 	scanner := bufio.NewScanner(resp.Body)
@@ -171,23 +149,23 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var baiduResponse ChatStreamResponse
 		err := json.Unmarshal(data, &baiduResponse)
 		if err != nil {
-			logger.SysErrorf("error unmarshalling stream response: %s, data: %s", err.Error(), conv.BytesToString(data))
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
-		if baiduResponse.Usage.TotalTokens != 0 {
+		if baiduResponse.Usage != nil {
 			usage.TotalTokens = baiduResponse.Usage.TotalTokens
 			usage.PromptTokens = baiduResponse.Usage.PromptTokens
 			usage.CompletionTokens = baiduResponse.Usage.TotalTokens - baiduResponse.Usage.PromptTokens
 		}
-		response := streamResponseBaidu2OpenAI(&baiduResponse)
+		response := streamResponseBaidu2OpenAI(meta, &baiduResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)
@@ -195,123 +173,25 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &usage
 }
 
-func Handler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	var baiduResponse ChatResponse
 	err := json.NewDecoder(resp.Body).Decode(&baiduResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
-	if baiduResponse.ErrorMsg != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: baiduResponse.ErrorMsg,
-				Type:    "baidu_error",
-				Param:   "",
-				Code:    baiduResponse.ErrorCode,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+	if baiduResponse.Error != nil && baiduResponse.Error.ErrorCode != 0 {
+		return nil, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
 	}
 	fullTextResponse := responseBaidu2OpenAI(&baiduResponse)
-	fullTextResponse.Model = "ernie-bot"
+	fullTextResponse.Model = meta.OriginModelName
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
-}
-
-func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
-	defer resp.Body.Close()
-
-	var baiduResponse EmbeddingResponse
-	err := json.NewDecoder(resp.Body).Decode(&baiduResponse)
-	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	if baiduResponse.ErrorMsg != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: baiduResponse.ErrorMsg,
-				Type:    "baidu_error",
-				Param:   "",
-				Code:    baiduResponse.ErrorCode,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
-	}
-	fullTextResponse := embeddingResponseBaidu2OpenAI(&baiduResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
-	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	c.Writer.Header().Set("Content-Type", "application/json")
-	c.Writer.WriteHeader(resp.StatusCode)
-	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
-}
-
-func GetAccessToken(apiKey string) (string, error) {
-	if val, ok := baiduTokenStore.Load(apiKey); ok {
-		var accessToken AccessToken
-		if accessToken, ok = val.(AccessToken); ok {
-			// soon this will expire
-			if time.Now().Add(time.Hour).After(accessToken.ExpiresAt) {
-				go func() {
-					_, _ = getBaiduAccessTokenHelper(apiKey)
-				}()
-			}
-			return accessToken.AccessToken, nil
-		}
-	}
-	accessToken, err := getBaiduAccessTokenHelper(apiKey)
-	if err != nil {
-		return "", err
-	}
-	if accessToken == nil {
-		return "", errors.New("GetAccessToken return a nil token")
-	}
-	return accessToken.AccessToken, nil
-}
-
-func getBaiduAccessTokenHelper(apiKey string) (*AccessToken, error) {
-	parts := strings.Split(apiKey, "|")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid baidu apikey")
-	}
-	req, err := http.NewRequestWithContext(context.Background(),
-		http.MethodPost,
-		fmt.Sprintf("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s",
-			parts[0], parts[1]),
-		nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	res, err := client.ImpatientHTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	var accessToken AccessToken
-	err = json.NewDecoder(res.Body).Decode(&accessToken)
-	if err != nil {
-		return nil, err
-	}
-	if accessToken.Error != "" {
-		return nil, errors.New(accessToken.Error + ": " + accessToken.ErrorDescription)
-	}
-	if accessToken.AccessToken == "" {
-		return nil, errors.New("getBaiduAccessTokenHelper get empty access token")
-	}
-	accessToken.ExpiresAt = time.Now().Add(time.Duration(accessToken.ExpiresIn) * time.Second)
-	baiduTokenStore.Store(apiKey, accessToken)
-	return &accessToken, nil
+	return &fullTextResponse.Usage, nil
 }

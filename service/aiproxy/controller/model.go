@@ -4,19 +4,17 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
-	relay "github.com/labring/sealos/service/aiproxy/relay"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/apitype"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
-	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
-	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
+	log "github.com/sirupsen/logrus"
 )
 
 // https://platform.openai.com/docs/api-reference/models/list
@@ -46,15 +44,31 @@ type OpenAIModels struct {
 	Created    int                     `json:"created"`
 }
 
+type BuiltinModelConfig model.ModelConfig
+
+func (c *BuiltinModelConfig) MarshalJSON() ([]byte, error) {
+	type Alias BuiltinModelConfig
+	return json.Marshal(&struct {
+		*Alias
+		CreatedAt int64 `json:"created_at,omitempty"`
+		UpdatedAt int64 `json:"updated_at,omitempty"`
+	}{
+		Alias: (*Alias)(c),
+	})
+}
+
+func SortBuiltinModelConfigsFunc(i, j *BuiltinModelConfig) int {
+	return model.SortModelConfigsFunc((*model.ModelConfig)(i), (*model.ModelConfig)(j))
+}
+
 var (
-	models           []OpenAIModels
-	modelsMap        map[string]OpenAIModels
-	channelID2Models map[int][]string
+	builtinModels           []*BuiltinModelConfig
+	builtinModelsMap        map[string]*OpenAIModels
+	builtinChannelID2Models map[int][]*BuiltinModelConfig
 )
 
-func init() {
-	var permission []OpenAIModelPermission
-	permission = append(permission, OpenAIModelPermission{
+var permission = []OpenAIModelPermission{
+	{
 		ID:                 "modelperm-LwHkVFn8AcMItP432fKKDIKJ",
 		Object:             "model_permission",
 		Created:            1626777600,
@@ -67,295 +81,129 @@ func init() {
 		Organization:       "*",
 		Group:              nil,
 		IsBlocking:         false,
-	})
+	},
+}
+
+func init() {
+	builtinChannelID2Models = make(map[int][]*BuiltinModelConfig)
+	builtinModelsMap = make(map[string]*OpenAIModels)
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
-	for i := 0; i < apitype.Dummy; i++ {
-		if i == apitype.AIProxyLibrary {
-			continue
-		}
-		adaptor := relay.GetAdaptor(i)
-		adaptor.Init(&meta.Meta{
-			ChannelType: i,
-		})
-		channelName := adaptor.GetChannelName()
+	for i, adaptor := range channeltype.ChannelAdaptor {
 		modelNames := adaptor.GetModelList()
-		for _, modelName := range modelNames {
-			models = append(models, OpenAIModels{
-				ID:         modelName,
-				Object:     "model",
-				Created:    1626777600,
-				OwnedBy:    channelName,
-				Permission: permission,
-				Root:       modelName,
-				Parent:     nil,
-			})
+		builtinChannelID2Models[i] = make([]*BuiltinModelConfig, len(modelNames))
+		for idx, _model := range modelNames {
+			if _model.Owner == "" {
+				_model.Owner = model.ModelOwner(adaptor.GetChannelName())
+			}
+			if v, ok := builtinModelsMap[_model.Model]; !ok {
+				builtinModelsMap[_model.Model] = &OpenAIModels{
+					ID:         _model.Model,
+					Object:     "model",
+					Created:    1626777600,
+					OwnedBy:    string(_model.Owner),
+					Permission: permission,
+					Root:       _model.Model,
+					Parent:     nil,
+				}
+				builtinModels = append(builtinModels, (*BuiltinModelConfig)(_model))
+			} else if v.OwnedBy != string(_model.Owner) {
+				log.Fatalf("model %s owner mismatch, expect %s, actual %s", _model.Model, string(_model.Owner), v.OwnedBy)
+			}
+			builtinChannelID2Models[i][idx] = (*BuiltinModelConfig)(_model)
 		}
 	}
-	for _, channelType := range openai.CompatibleChannels {
-		if channelType == channeltype.Azure {
-			continue
-		}
-		channelName, channelModelList := openai.GetCompatibleChannelMeta(channelType)
-		for _, modelName := range channelModelList {
-			models = append(models, OpenAIModels{
-				ID:         modelName,
-				Object:     "model",
-				Created:    1626777600,
-				OwnedBy:    channelName,
-				Permission: permission,
-				Root:       modelName,
-				Parent:     nil,
-			})
-		}
+	for _, models := range builtinChannelID2Models {
+		sort.Slice(models, func(i, j int) bool {
+			return models[i].Model < models[j].Model
+		})
+		slices.SortStableFunc(models, SortBuiltinModelConfigsFunc)
 	}
-	modelsMap = make(map[string]OpenAIModels)
-	for _, model := range models {
-		modelsMap[model.ID] = model
-	}
-	channelID2Models = make(map[int][]string)
-	for i := 1; i < channeltype.Dummy; i++ {
-		adaptor := relay.GetAdaptor(channeltype.ToAPIType(i))
-		meta := &meta.Meta{
-			ChannelType: i,
-		}
-		adaptor.Init(meta)
-		channelID2Models[i] = adaptor.GetModelList()
-	}
+	slices.SortStableFunc(builtinModels, SortBuiltinModelConfigsFunc)
 }
 
 func BuiltinModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    channelID2Models,
-	})
+	middleware.SuccessResponse(c, builtinModels)
 }
 
-type modelPrice struct {
-	Prompt     float64 `json:"prompt"`
-	Completion float64 `json:"completion"`
-	Unset      bool    `json:"unset,omitempty"`
+func ChannelBuiltinModels(c *gin.Context) {
+	middleware.SuccessResponse(c, builtinChannelID2Models)
 }
 
-func ModelPrice(c *gin.Context) {
-	bill := make(map[string]*modelPrice)
-	modelPriceMap := billingprice.GetModelPriceMap()
-	completionPriceMap := billingprice.GetCompletionPriceMap()
-	for model, price := range modelPriceMap {
-		bill[model] = &modelPrice{
-			Prompt:     price,
-			Completion: price,
-		}
-		if completionPrice, ok := completionPriceMap[model]; ok {
-			bill[model].Completion = completionPrice
-		}
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    bill,
-	})
-}
-
-func EnabledType2Models(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    model.CacheGetType2Models(),
-	})
-}
-
-func EnabledType2ModelsAndPrice(c *gin.Context) {
-	type2Models := model.CacheGetType2Models()
-	result := make(map[int]map[string]*modelPrice)
-
-	modelPriceMap := billingprice.GetModelPriceMap()
-	completionPriceMap := billingprice.GetCompletionPriceMap()
-
-	for channelType, models := range type2Models {
-		m := make(map[string]*modelPrice)
-		result[channelType] = m
-		for _, modelName := range models {
-			if price, ok := modelPriceMap[modelName]; ok {
-				m[modelName] = &modelPrice{
-					Prompt:     price,
-					Completion: price,
-				}
-				if completionPrice, ok := completionPriceMap[modelName]; ok {
-					m[modelName].Completion = completionPrice
-				}
-			} else {
-				m[modelName] = &modelPrice{
-					Unset: true,
-				}
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    result,
-	})
-}
-
-func ChannelDefaultModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModels(),
-	})
-}
-
-func ChannelDefaultModelsByType(c *gin.Context) {
+func ChannelBuiltinModelsByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "type is required")
 		return
 	}
 	channelTypeInt, err := strconv.Atoi(channelType)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModels()[channelTypeInt],
-	})
-}
-
-func ChannelDefaultModelMapping(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModelMapping(),
-	})
-}
-
-func ChannelDefaultModelMappingByType(c *gin.Context) {
-	channelType := c.Param("type")
-	if channelType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
-		return
-	}
-	channelTypeInt, err := strconv.Atoi(channelType)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    config.GetDefaultChannelModelMapping()[channelTypeInt],
-	})
+	middleware.SuccessResponse(c, builtinChannelID2Models[channelTypeInt])
 }
 
 func ChannelDefaultModelsAndMapping(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"models":  config.GetDefaultChannelModels(),
-			"mapping": config.GetDefaultChannelModelMapping(),
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"models":  config.GetDefaultChannelModels(),
+		"mapping": config.GetDefaultChannelModelMapping(),
 	})
 }
 
 func ChannelDefaultModelsAndMappingByType(c *gin.Context) {
 	channelType := c.Param("type")
 	if channelType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "type is required",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "type is required")
 		return
 	}
 	channelTypeInt, err := strconv.Atoi(channelType)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "invalid type",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"models":  config.GetDefaultChannelModels()[channelTypeInt],
-			"mapping": config.GetDefaultChannelModelMapping()[channelTypeInt],
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"models":  config.GetDefaultChannelModels()[channelTypeInt],
+		"mapping": config.GetDefaultChannelModelMapping()[channelTypeInt],
 	})
 }
 
 func EnabledModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    model.CacheGetAllModels(),
-	})
+	middleware.SuccessResponse(c, model.CacheGetEnabledModelConfigs())
 }
 
-func EnabledModelsAndPrice(c *gin.Context) {
-	enabledModels := model.CacheGetAllModels()
-	result := make(map[string]*modelPrice)
+func ChannelEnabledModels(c *gin.Context) {
+	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs())
+}
 
-	modelPriceMap := billingprice.GetModelPriceMap()
-	completionPriceMap := billingprice.GetCompletionPriceMap()
-
-	for _, modelName := range enabledModels {
-		if price, ok := modelPriceMap[modelName]; ok {
-			result[modelName] = &modelPrice{
-				Prompt:     price,
-				Completion: price,
-			}
-			if completionPrice, ok := completionPriceMap[modelName]; ok {
-				result[modelName].Completion = completionPrice
-			}
-		} else {
-			result[modelName] = &modelPrice{
-				Unset: true,
-			}
-		}
+func ChannelEnabledModelsByType(c *gin.Context) {
+	channelTypeStr := c.Param("type")
+	if channelTypeStr == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "type is required")
+		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    result,
-	})
+	channelTypeInt, err := strconv.Atoi(channelTypeStr)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
+		return
+	}
+	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs()[channelTypeInt])
 }
 
 func ListModels(c *gin.Context) {
-	availableModels := c.GetStringSlice(ctxkey.AvailableModels)
-	availableOpenAIModels := make([]OpenAIModels, 0, len(availableModels))
+	models := model.CacheGetEnabledModelConfigs()
 
-	for _, modelName := range availableModels {
-		if model, ok := modelsMap[modelName]; ok {
-			availableOpenAIModels = append(availableOpenAIModels, model)
-			continue
+	availableOpenAIModels := make([]*OpenAIModels, len(models))
+
+	for idx, model := range models {
+		availableOpenAIModels[idx] = &OpenAIModels{
+			ID:         model.Model,
+			Object:     "model",
+			Created:    1626777600,
+			OwnedBy:    string(model.Owner),
+			Root:       model.Model,
+			Permission: permission,
+			Parent:     nil,
 		}
-		availableOpenAIModels = append(availableOpenAIModels, OpenAIModels{
-			ID:      modelName,
-			Object:  "model",
-			Created: 1626777600,
-			OwnedBy: "custom",
-			Root:    modelName,
-			Parent:  nil,
-		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -365,12 +213,14 @@ func ListModels(c *gin.Context) {
 }
 
 func RetrieveModel(c *gin.Context) {
-	modelID := c.Param("model")
-	model, ok := modelsMap[modelID]
-	if !ok || !slices.Contains(c.GetStringSlice(ctxkey.AvailableModels), modelID) {
+	modelName := c.Param("model")
+	enabledModels := model.GetEnabledModel2Channels()
+	model, ok := model.CacheGetModelConfig(modelName)
+
+	if _, exist := enabledModels[modelName]; !exist || !ok {
 		c.JSON(200, gin.H{
-			"error": relaymodel.Error{
-				Message: fmt.Sprintf("the model '%s' does not exist", modelID),
+			"error": &relaymodel.Error{
+				Message: fmt.Sprintf("the model '%s' does not exist", modelName),
 				Type:    "invalid_request_error",
 				Param:   "model",
 				Code:    "model_not_found",
@@ -378,5 +228,14 @@ func RetrieveModel(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(200, model)
+
+	c.JSON(200, &OpenAIModels{
+		ID:         model.Model,
+		Object:     "model",
+		Created:    1626777600,
+		OwnedBy:    string(model.Owner),
+		Root:       model.Model,
+		Permission: permission,
+		Parent:     nil,
+	})
 }

@@ -2,112 +2,99 @@ package controller
 
 import (
 	"bytes"
-	"context"
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 // https://platform.openai.com/docs/api-reference/chat
 
-func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
-	var err *model.ErrorWithStatusCode
-	switch relayMode {
+func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+	log := middleware.GetLogger(c)
+	middleware.SetLogFieldsFromMeta(meta, log.Data)
+	switch meta.Mode {
 	case relaymode.ImagesGenerations:
-		err = controller.RelayImageHelper(c, relayMode)
+		return controller.RelayImageHelper(meta, c)
 	case relaymode.AudioSpeech:
-		fallthrough
+		return controller.RelayTTSHelper(meta, c)
 	case relaymode.AudioTranslation:
-		fallthrough
+		return controller.RelaySTTHelper(meta, c)
 	case relaymode.AudioTranscription:
-		err = controller.RelayAudioHelper(c, relayMode)
+		return controller.RelaySTTHelper(meta, c)
 	case relaymode.Rerank:
-		err = controller.RerankHelper(c)
+		return controller.RerankHelper(meta, c)
 	default:
-		err = controller.RelayTextHelper(c)
+		return controller.RelayTextHelper(meta, c)
 	}
-	return err
 }
 
 func Relay(c *gin.Context) {
-	ctx := c.Request.Context()
-	relayMode := relaymode.GetByPath(c.Request.URL.Path)
+	log := middleware.GetLogger(c)
 	if config.DebugEnabled {
-		requestBody, _ := common.GetRequestBody(c)
-		logger.Debugf(ctx, "request body: %s", requestBody)
+		requestBody, _ := common.GetRequestBody(c.Request)
+		log.Debugf("request body: %s", requestBody)
 	}
-	channelID := c.GetInt(ctxkey.ChannelID)
-	bizErr := relayHelper(c, relayMode)
+	meta := middleware.NewMetaByContext(c)
+	bizErr := relayHelper(meta, c)
 	if bizErr == nil {
-		monitor.Emit(channelID, true)
 		return
 	}
-	lastFailedChannelID := channelID
-	group := c.GetString(ctxkey.Group)
-	originalModel := c.GetString(ctxkey.OriginalModel)
-	go processChannelRelayError(ctx, group, channelID, bizErr)
+	lastFailedChannelID := meta.Channel.ID
 	requestID := c.GetString(string(helper.RequestIDKey))
 	retryTimes := config.GetRetryTimes()
 	if !shouldRetry(c, bizErr.StatusCode) {
-		logger.Errorf(ctx, "relay error happen, status code is %d, won't retry in this case", bizErr.StatusCode)
 		retryTimes = 0
 	}
 	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(originalModel)
+		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName)
 		if err != nil {
-			logger.Errorf(ctx, "get random satisfied channel failed: %+v", err)
+			log.Errorf("get random satisfied channel failed: %+v", err)
 			break
 		}
-		logger.Infof(ctx, "using channel #%d to retry (remain times %d)", channel.ID, i)
+		log.Infof("using channel #%d to retry (remain times %d)", channel.ID, i)
 		if channel.ID == lastFailedChannelID {
 			continue
 		}
-		middleware.SetupContextForSelectedChannel(c, channel, originalModel)
-		requestBody, err := common.GetRequestBody(c)
+		requestBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
-			logger.Errorf(ctx, "GetRequestBody failed: %+v", err)
+			log.Errorf("GetRequestBody failed: %+v", err)
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		bizErr = relayHelper(c, relayMode)
+		meta.Reset(channel)
+		bizErr = relayHelper(meta, c)
 		if bizErr == nil {
 			return
 		}
-		channelID := c.GetInt(ctxkey.ChannelID)
-		lastFailedChannelID = channelID
-		// BUG: bizErr is in race condition
-		go processChannelRelayError(ctx, group, channelID, bizErr)
+		lastFailedChannelID = channel.ID
 	}
 	if bizErr != nil {
+		message := bizErr.Message
 		if bizErr.StatusCode == http.StatusTooManyRequests {
-			bizErr.Error.Message = "The upstream load of the current group is saturated, please try again later"
+			message = "The upstream load of the current group is saturated, please try again later"
 		}
-
-		// BUG: bizErr is in race condition
-		bizErr.Error.Message = helper.MessageWithRequestID(bizErr.Error.Message, requestID)
 		c.JSON(bizErr.StatusCode, gin.H{
-			"error": bizErr.Error,
+			"error": &model.Error{
+				Message: helper.MessageWithRequestID(message, requestID),
+				Code:    bizErr.Code,
+				Param:   bizErr.Param,
+				Type:    bizErr.Type,
+			},
 		})
 	}
 }
 
-func shouldRetry(c *gin.Context, statusCode int) bool {
-	if _, ok := c.Get(ctxkey.SpecificChannelID); ok {
-		return false
-	}
+func shouldRetry(_ *gin.Context, statusCode int) bool {
 	if statusCode == http.StatusTooManyRequests {
 		return true
 	}
@@ -123,36 +110,13 @@ func shouldRetry(c *gin.Context, statusCode int) bool {
 	return true
 }
 
-func processChannelRelayError(ctx context.Context, group string, channelID int, err *model.ErrorWithStatusCode) {
-	logger.Errorf(ctx, "relay error (channel id %d, group: %s): %s", channelID, group, err)
-	// https://platform.openai.com/docs/guides/error-codes/api-errors
-	if monitor.ShouldDisableChannel(&err.Error, err.StatusCode) {
-		_ = dbmodel.DisableChannelByID(channelID)
-	} else {
-		monitor.Emit(channelID, false)
-	}
-}
-
 func RelayNotImplemented(c *gin.Context) {
-	err := model.Error{
-		Message: "API not implemented",
-		Type:    "aiproxy_error",
-		Param:   "",
-		Code:    "api_not_implemented",
-	}
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": err,
-	})
-}
-
-func RelayNotFound(c *gin.Context) {
-	err := model.Error{
-		Message: fmt.Sprintf("Invalid URL (%s %s)", c.Request.Method, c.Request.URL.Path),
-		Type:    "invalid_request_error",
-		Param:   "",
-		Code:    "",
-	}
-	c.JSON(http.StatusNotFound, gin.H{
-		"error": err,
+		"error": &model.Error{
+			Message: "API not implemented",
+			Type:    middleware.ErrorTypeAIPROXY,
+			Param:   "",
+			Code:    "api_not_implemented",
+		},
 	})
 }

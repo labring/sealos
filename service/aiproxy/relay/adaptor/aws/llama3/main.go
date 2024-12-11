@@ -3,16 +3,16 @@ package aws
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"text/template"
 
 	json "github.com/json-iterator/go"
 
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/model"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
@@ -20,24 +20,45 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
+
+type awsModelItem struct {
+	ID string
+	model.ModelConfig
+}
 
 // AwsModelIDMap maps internal model identifiers to AWS model identifiers.
 // It currently supports only llama-3-8b and llama-3-70b instruction models.
 // For more details, see: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
-var AwsModelIDMap = map[string]string{
-	"llama3-8b-8192":  "meta.llama3-8b-instruct-v1:0",
-	"llama3-70b-8192": "meta.llama3-70b-instruct-v1:0",
+var AwsModelIDMap = map[string]awsModelItem{
+	"llama3-8b-8192": {
+		ModelConfig: model.ModelConfig{
+			Model: "llama3-8b-8192",
+			Type:  relaymode.ChatCompletions,
+			Owner: model.ModelOwnerMeta,
+		},
+		ID: "meta.llama3-8b-instruct-v1:0",
+	},
+	"llama3-70b-8192": {
+		ModelConfig: model.ModelConfig{
+			Model: "llama3-70b-8192",
+			Type:  relaymode.ChatCompletions,
+			Owner: model.ModelOwnerMeta,
+		},
+		ID: "meta.llama3-70b-instruct-v1:0",
+	},
 }
 
 func awsModelID(requestModel string) (string, error) {
 	if awsModelID, ok := AwsModelIDMap[requestModel]; ok {
-		return awsModelID, nil
+		return awsModelID.ID, nil
 	}
 
 	return "", errors.Errorf("model %s not found", requestModel)
@@ -49,11 +70,11 @@ const promptTemplate = `<|begin_of_text|>{{range .Messages}}<|start_header_id|>{
 
 var promptTpl = template.Must(template.New("llama3-chat").Parse(promptTemplate))
 
-func RenderPrompt(messages []relaymodel.Message) string {
+func RenderPrompt(messages []*relaymodel.Message) string {
 	var buf bytes.Buffer
-	err := promptTpl.Execute(&buf, struct{ Messages []relaymodel.Message }{messages})
+	err := promptTpl.Execute(&buf, struct{ Messages []*relaymodel.Message }{messages})
 	if err != nil {
-		logger.SysError("error rendering prompt messages: " + err.Error())
+		log.Error("error rendering prompt messages: " + err.Error())
 	}
 	return buf.String()
 }
@@ -72,8 +93,8 @@ func ConvertRequest(textRequest *relaymodel.GeneralOpenAIRequest) *Request {
 	return &llamaRequest
 }
 
-func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
+func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -84,7 +105,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 		ContentType: aws.String("application/json"),
 	}
 
-	llamaReq, ok := c.Get(ctxkey.ConvertedRequest)
+	llamaReq, ok := meta.Get(ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
@@ -94,7 +115,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := awsCli.InvokeModel(c.Request.Context(), awsReq)
+	awsResp, err := meta.AwsClient().InvokeModel(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModel")), nil
 	}
@@ -106,7 +127,7 @@ func Handler(c *gin.Context, awsCli *bedrockruntime.Client, modelName string) (*
 	}
 
 	openaiResp := ResponseLlama2OpenAI(&llamaResponse)
-	openaiResp.Model = modelName
+	openaiResp.Model = meta.OriginModelName
 	usage := relaymodel.Usage{
 		PromptTokens:     llamaResponse.PromptTokenCount,
 		CompletionTokens: llamaResponse.GenerationTokenCount,
@@ -136,14 +157,16 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
 
-func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+	log := middleware.GetLogger(c)
+
 	createdTime := helper.GetTimestamp()
-	awsModelID, err := awsModelID(c.GetString(ctxkey.RequestModel))
+	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -154,7 +177,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 		ContentType: aws.String("application/json"),
 	}
 
-	llamaReq, ok := c.Get(ctxkey.ConvertedRequest)
+	llamaReq, ok := meta.Get(ConvertedRequest)
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
@@ -164,7 +187,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := awsCli.InvokeModelWithResponseStream(c.Request.Context(), awsReq)
+	awsResp, err := meta.AwsClient().InvokeModelWithResponseStream(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModelWithResponseStream")), nil
 	}
@@ -185,7 +208,7 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			var llamaResp StreamResponse
 			err := json.Unmarshal(v.Value.Bytes, &llamaResp)
 			if err != nil {
-				logger.SysError("error unmarshalling stream response: " + err.Error())
+				log.Error("error unmarshalling stream response: " + err.Error())
 				return false
 			}
 
@@ -198,19 +221,19 @@ func StreamHandler(c *gin.Context, awsCli *bedrockruntime.Client) (*relaymodel.E
 			}
 			response := StreamResponseLlama2OpenAI(&llamaResp)
 			response.ID = "chatcmpl-" + random.GetUUID()
-			response.Model = c.GetString(ctxkey.OriginalModel)
+			response.Model = meta.OriginModelName
 			response.Created = createdTime
 			err = render.ObjectData(c, response)
 			if err != nil {
-				logger.SysError("error stream response: " + err.Error())
+				log.Error("error stream response: " + err.Error())
 				return true
 			}
 			return true
 		case *types.UnknownUnionMember:
-			fmt.Println("unknown tag:", v.Tag)
+			log.Error("unknown tag: " + v.Tag)
 			return false
 		default:
-			fmt.Println("union is nil or unknown type")
+			log.Errorf("union is nil or unknown type: %v", v)
 			return false
 		}
 	})
@@ -228,6 +251,6 @@ func StreamResponseLlama2OpenAI(llamaResponse *StreamResponse) *openai.ChatCompl
 	}
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
-	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	openaiResponse.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &openaiResponse
 }

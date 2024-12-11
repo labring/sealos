@@ -10,7 +10,7 @@ import (
 
 func GetUUID() string {
 	code := uuid.New().String()
-	code = strings.Replace(code, "-", "", -1)
+	code = strings.ReplaceAll(code, "-", "")
 	return code
 }
 
@@ -19,6 +19,7 @@ const (
 	keyNumbers = "0123456789"
 )
 
+//nolint:gosec
 func GenerateKey() string {
 	key := make([]byte, 48)
 	for i := 0; i < 16; i++ {
@@ -35,6 +36,7 @@ func GenerateKey() string {
 	return conv.BytesToString(key)
 }
 
+//nolint:gosec
 func GetRandomString(length int) string {
 	key := make([]byte, length)
 	for i := 0; i < length; i++ {
@@ -43,6 +45,7 @@ func GetRandomString(length int) string {
 	return conv.BytesToString(key)
 }
 
+//nolint:gosec
 func GetRandomNumberString(length int) string {
 	key := make([]byte, length)
 	for i := 0; i < length; i++ {
@@ -52,6 +55,8 @@ func GetRandomNumberString(length int) string {
 }
 
 // RandRange returns a random number between min and max (max is not included)
+//
+//nolint:gosec
 func RandRange(_min, _max int) int {
 	return _min + rand.IntN(_max-_min)
 }

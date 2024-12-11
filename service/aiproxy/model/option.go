@@ -1,16 +1,20 @@
 package model
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"slices"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
-	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
+	log "github.com/sirupsen/logrus"
 )
 
 type Option struct {
@@ -18,22 +22,21 @@ type Option struct {
 	Value string `json:"value"`
 }
 
-func AllOption() ([]*Option, error) {
+func GetAllOption() ([]*Option, error) {
 	var options []*Option
 	err := DB.Find(&options).Error
 	return options, err
 }
 
-func InitOptionMap() {
+func InitOptionMap() error {
 	config.OptionMapRWMutex.Lock()
 	config.OptionMap = make(map[string]string)
+	config.OptionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
 	config.OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
 	config.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
 	config.OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
 	config.OptionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
-	config.OptionMap["BillingEnabled"] = strconv.FormatBool(billingprice.GetBillingEnabled())
-	config.OptionMap["ModelPrice"] = billingprice.ModelPrice2JSONString()
-	config.OptionMap["CompletionPrice"] = billingprice.CompletionPrice2JSONString()
+	config.OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	config.OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
 	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
 	config.OptionMap["DefaultGroupQPM"] = strconv.FormatInt(config.GetDefaultGroupQPM(), 10)
@@ -45,46 +48,71 @@ func InitOptionMap() {
 	config.OptionMap["GeminiVersion"] = config.GetGeminiVersion()
 	config.OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
 	config.OptionMapRWMutex.Unlock()
-	loadOptionsFromDatabase()
+	err := loadOptionsFromDatabase(true)
+	if err != nil {
+		return err
+	}
+	return storeOptionMap()
 }
 
-func loadOptionsFromDatabase() {
-	options, _ := AllOption()
-	for _, option := range options {
-		if option.Key == "ModelPrice" {
-			option.Value = billingprice.AddNewMissingPrice(option.Value)
-		}
-		err := updateOptionMap(option.Key, option.Value)
+func storeOptionMap() error {
+	config.OptionMapRWMutex.Lock()
+	defer config.OptionMapRWMutex.Unlock()
+	for key, value := range config.OptionMap {
+		err := saveOption(key, value)
 		if err != nil {
-			logger.SysError("failed to update option map: " + err.Error())
+			return err
 		}
 	}
-	logger.SysDebug("options synced from database")
+	return nil
 }
 
-func SyncOptions(frequency time.Duration) {
+func loadOptionsFromDatabase(isInit bool) error {
+	options, err := GetAllOption()
+	if err != nil {
+		return err
+	}
+	for _, option := range options {
+		err := updateOptionMap(option.Key, option.Value, isInit)
+		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
+			log.Errorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
+		}
+	}
+	return nil
+}
+
+func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
+	defer wg.Done()
+
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
-	for range ticker.C {
-		logger.SysDebug("syncing options from database")
-		loadOptionsFromDatabase()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := loadOptionsFromDatabase(true); err != nil {
+				log.Error("failed to sync options from database: " + err.Error())
+			}
+		}
 	}
+}
+
+func saveOption(key string, value string) error {
+	option := Option{
+		Key:   key,
+		Value: value,
+	}
+	result := DB.Save(&option)
+	return HandleUpdateResult(result, "option:"+key)
 }
 
 func UpdateOption(key string, value string) error {
-	err := updateOptionMap(key, value)
+	err := updateOptionMap(key, value, false)
 	if err != nil {
 		return err
 	}
-	// Save to database first
-	option := Option{
-		Key: key,
-	}
-	err = DB.Assign(Option{Key: key, Value: value}).FirstOrCreate(&option).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return saveOption(key, value)
 }
 
 func UpdateOptions(options map[string]string) error {
@@ -108,11 +136,17 @@ func isTrue(value string) bool {
 	return result
 }
 
-func updateOptionMap(key string, value string) (err error) {
+func updateOptionMap(key string, value string, isInit bool) (err error) {
 	config.OptionMapRWMutex.Lock()
 	defer config.OptionMapRWMutex.Unlock()
 	config.OptionMap[key] = value
 	switch key {
+	case "LogDetailStorageHours":
+		logDetailStorageHours, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		config.SetLogDetailStorageHours(logDetailStorageHours)
 	case "DisableServe":
 		config.SetDisableServe(isTrue(value))
 	case "AutomaticDisableChannelEnabled":
@@ -122,7 +156,7 @@ func updateOptionMap(key string, value string) (err error) {
 	case "ApproximateTokenEnabled":
 		config.SetApproximateTokenEnabled(isTrue(value))
 	case "BillingEnabled":
-		billingprice.SetBillingEnabled(isTrue(value))
+		config.SetBillingEnabled(isTrue(value))
 	case "GroupMaxTokenNum":
 		groupMaxTokenNum, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
@@ -146,12 +180,43 @@ func updateOptionMap(key string, value string) (err error) {
 		}
 		config.SetDefaultGroupQPM(defaultGroupQPM)
 	case "DefaultChannelModels":
-		var newModules map[int][]string
-		err := json.Unmarshal(conv.StringToBytes(value), &newModules)
+		var newModels map[int][]string
+		err := json.Unmarshal(conv.StringToBytes(value), &newModels)
 		if err != nil {
 			return err
 		}
-		config.SetDefaultChannelModels(newModules)
+		// check model config exist
+		allModelsMap := make(map[string]struct{})
+		for _, models := range newModels {
+			for _, model := range models {
+				allModelsMap[model] = struct{}{}
+			}
+		}
+		allModels := make([]string, 0, len(allModelsMap))
+		for model := range allModelsMap {
+			allModels = append(allModels, model)
+		}
+		foundModels, missingModels, err := CheckModelConfig(allModels)
+		if err != nil {
+			return err
+		}
+		if !isInit && len(missingModels) > 0 {
+			sort.Strings(missingModels)
+			return fmt.Errorf("model config not found: %v", missingModels)
+		}
+		if len(missingModels) > 0 {
+			sort.Strings(missingModels)
+			log.Errorf("model config not found: %v", missingModels)
+		}
+		allowedNewModels := make(map[int][]string)
+		for t, ms := range newModels {
+			for _, m := range ms {
+				if slices.Contains(foundModels, m) {
+					allowedNewModels[t] = append(allowedNewModels[t], m)
+				}
+			}
+		}
+		config.SetDefaultChannelModels(allowedNewModels)
 	case "DefaultChannelModelMapping":
 		var newMapping map[int]map[string]string
 		err := json.Unmarshal(conv.StringToBytes(value), &newMapping)
@@ -165,10 +230,6 @@ func updateOptionMap(key string, value string) (err error) {
 			return err
 		}
 		config.SetRetryTimes(retryTimes)
-	case "ModelPrice":
-		err = billingprice.UpdateModelPriceByJSONString(value)
-	case "CompletionPrice":
-		err = billingprice.UpdateCompletionPriceByJSONString(value)
 	default:
 		return ErrUnknownOptionKey
 	}
