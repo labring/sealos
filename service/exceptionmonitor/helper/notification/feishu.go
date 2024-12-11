@@ -159,9 +159,12 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 		}
 		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
 	}
-	fmt.Println(4444)
+	if notificationInfo.Namespace == "ns-m0mugwwk" {
+		fmt.Println(1111)
+		fmt.Println(notificationInfo.FeishuInfo)
+		fmt.Println(1111)
+	}
 	if notificationInfo.NotificationType == "recovery" {
-		fmt.Println(3333)
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
 
@@ -169,15 +172,13 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": "---------------------------------------数据库恢复信息---------------------------------------",
+					"content": "-------------------------------------数据库恢复信息-------------------------------------",
 					"tag":     "lark_md",
 				},
 			},
 		}
 		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, separatorElements...)
-		fmt.Println(1111)
-		fmt.Println(notificationInfo.FeishuInfo)
-		fmt.Println(1111)
+
 		if notificationInfo.ExceptionType == "阀值" {
 			usageRecoveryElements := []map[string]interface{}{
 				{
