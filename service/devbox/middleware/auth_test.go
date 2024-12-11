@@ -1,15 +1,15 @@
 package middleware
 
 import (
-	"github.com/golang-jwt/jwt/v5"
-	"log"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func TestAuth(t *testing.T) {
 	secret, _ := GenerateTokenWithExpiry("1234567890", time.Hour)
-	log.Printf(secret)
+	t.Logf(secret)
 }
 
 // GenerateTokenWithExpiry generates a JWT token with only the expiration time

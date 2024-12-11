@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestTag(t *testing.T) {
+func TestTag(_ *testing.T) {
 	client := &Client{
 		Username: "admin",
 		Password: "password",
