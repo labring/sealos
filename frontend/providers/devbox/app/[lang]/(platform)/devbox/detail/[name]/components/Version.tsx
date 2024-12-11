@@ -131,6 +131,7 @@ const Version = () => {
           title: t('delete_successful'),
           status: 'success'
         })
+        refetch()
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('delete_failed'),
@@ -140,8 +141,9 @@ const Version = () => {
       }
       setIsLoading(false)
     },
-    [setIsLoading, toast, t]
+    [setIsLoading, toast, t, refetch]
   )
+
   const columns: {
     title: string
     dataIndex?: keyof DevboxVersionListItemType
