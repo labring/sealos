@@ -75,6 +75,9 @@ const (
 	//StatusUpdating = "Updating"
 	StatusUnknown  = ""
 	MonitorTypeALL = "all"
+	DiskChinese    = "磁盘"
+	MemoryChinese  = "内存"
+	CPUChinese     = "CPU"
 )
 
 var (

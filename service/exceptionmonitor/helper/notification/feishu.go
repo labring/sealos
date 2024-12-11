@@ -75,13 +75,13 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
 	usage, recoveryUsage := "", ""
-	if notificationInfo.PerformanceType == "CPU" {
+	if notificationInfo.PerformanceType == api.CPUChinese {
 		usage = notificationInfo.CPUUsage
 		recoveryUsage = notificationInfo.RecoveryCPUUsage
-	} else if notificationInfo.PerformanceType == "内存" {
+	} else if notificationInfo.PerformanceType == api.MemoryChinese {
 		usage = notificationInfo.MemUsage
 		recoveryUsage = notificationInfo.RecoveryMemUsage
-	} else if notificationInfo.PerformanceType == "磁盘" {
+	} else if notificationInfo.PerformanceType == api.DiskChinese {
 		usage = notificationInfo.DiskUsage
 		recoveryUsage = notificationInfo.RecoveryDiskUsage
 	}
@@ -252,11 +252,11 @@ func SendFeishuNotification(notification *api.Info, message string) error {
 
 func getMessageIDMap(performanceType string) map[string]string {
 	switch performanceType {
-	case "磁盘":
+	case api.DiskChinese:
 		return api.DatabaseDiskMessageIDMap
-	case "内存":
+	case api.MemoryChinese:
 		return api.DatabaseMemMessageIDMap
-	case "CPU":
+	case api.CPUChinese:
 		return api.DatabaseCPUMessageIDMap
 	case "Backup":
 		return api.DatabaseBackupMessageIDMap

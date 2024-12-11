@@ -83,13 +83,13 @@ func monitorCluster(cluster unstructured.Unstructured) {
 }
 
 func handleCPUMemMonitor(notificationInfo *api.Info) {
-	if cpuUsage, err := CPUMemMonitor(notificationInfo, "cpu"); err == nil {
-		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, "CPU", notificationInfo, api.CPUMonitorNamespaceMap)
+	if cpuUsage, err := CPUMemMonitor(notificationInfo, api.CPUChinese); err == nil {
+		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, api.CPUChinese, notificationInfo, api.CPUMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
 	if memUsage, err := CPUMemMonitor(notificationInfo, "memory"); err == nil {
-		processUsage(memUsage, api.DatabaseMemMonitorThreshold, "内存", notificationInfo, api.MemMonitorNamespaceMap)
+		processUsage(memUsage, api.DatabaseMemMonitorThreshold, api.MemoryChinese, notificationInfo, api.MemMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Memory: %v", err)
 	}
@@ -97,7 +97,7 @@ func handleCPUMemMonitor(notificationInfo *api.Info) {
 
 func handleDiskMonitor(notificationInfo *api.Info) {
 	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
-		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, "磁盘", notificationInfo, api.DiskMonitorNamespaceMap)
+		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, api.DiskChinese, notificationInfo, api.DiskMonitorNamespaceMap)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
 	}
@@ -106,11 +106,11 @@ func handleDiskMonitor(notificationInfo *api.Info) {
 func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info, monitorMap map[string]bool) {
 	notificationInfo.PerformanceType = performanceType
 	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
-	if performanceType == "CPU" {
+	if performanceType == api.CPUChinese {
 		notificationInfo.CPUUsage = usageStr
-	} else if performanceType == "内存" {
+	} else if performanceType == api.MemoryChinese {
 		notificationInfo.MemUsage = usageStr
-	} else if performanceType == "磁盘" {
+	} else if performanceType == api.DiskChinese {
 		notificationInfo.DiskUsage = usageStr
 	}
 	if usage >= threshold && !monitorMap[notificationInfo.DatabaseClusterUID] {
@@ -120,7 +120,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 			log.Printf("Failed to send notification: %v", err)
 		}
 		monitorMap[notificationInfo.DatabaseClusterUID] = true
-		if performanceType != "磁盘" {
+		if performanceType != api.DiskChinese {
 			return
 		}
 		ZNThreshold := NumberToChinese(int(threshold))
@@ -129,11 +129,11 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		}
 	} else if usage < threshold && monitorMap[notificationInfo.DatabaseClusterUID] {
 		notificationInfo.NotificationType = "recovery"
-		if performanceType == "CPU" {
+		if performanceType == api.CPUChinese {
 			notificationInfo.RecoveryCPUUsage = notificationInfo.CPUUsage
-		} else if performanceType == "内存" {
+		} else if performanceType == api.MemoryChinese {
 			notificationInfo.RecoveryMemUsage = notificationInfo.MemUsage
-		} else if performanceType == "磁盘" {
+		} else if performanceType == api.DiskChinese {
 			notificationInfo.RecoveryDiskUsage = notificationInfo.DiskUsage
 		}
 		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
