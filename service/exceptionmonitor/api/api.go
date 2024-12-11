@@ -23,8 +23,6 @@ type QueryResult struct {
 }
 
 type Info struct {
-	// lastStatus、recoveryStatus、lastStatusTime、recoveryStatusTime、lastStatusInfo、recoveryStatusInfo
-	//todo 是否应该分几个状态，是否有状态不正确的地方
 	DatabaseClusterName string
 	Namespace           string
 	DebtLevel           string
@@ -35,6 +33,9 @@ type Info struct {
 	DiskUsage           string
 	CPUUsage            string
 	MemUsage            string
+	RecoveryDiskUsage   string
+	RecoveryCPUUsage    string
+	RecoveryMemUsage    string
 	PerformanceType     string
 	ExceptionType       string
 	ExceptionStatus     string

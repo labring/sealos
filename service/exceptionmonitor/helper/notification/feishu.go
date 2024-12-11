@@ -74,16 +74,18 @@ func GetCockroachMessage(errMessage, cockroachType string) string {
 func GetNotificationMessage(notificationInfo *api.Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
-	usage := ""
+	usage, recoveryUsage := "", ""
 	if notificationInfo.PerformanceType == "CPU" {
 		usage = notificationInfo.CPUUsage
+		recoveryUsage = notificationInfo.RecoveryCPUUsage
 	} else if notificationInfo.PerformanceType == "内存" {
 		usage = notificationInfo.MemUsage
+		recoveryUsage = notificationInfo.RecoveryMemUsage
 	} else if notificationInfo.PerformanceType == "磁盘" {
 		usage = notificationInfo.DiskUsage
+		recoveryUsage = notificationInfo.RecoveryDiskUsage
 	}
 
-	//公共部分，状态和阀值的异常、恢复过程都需要，需要判断是否首次发送信息，是的话，就用这里，不是的话，就跳过（在之前的内容上追加）
 	commonElements := []map[string]interface{}{
 		{
 			"tag": "div",
@@ -159,11 +161,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 		}
 		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
 	}
-	if notificationInfo.Namespace == "ns-m0mugwwk" {
-		fmt.Println(1111)
-		fmt.Println(notificationInfo.FeishuInfo)
-		fmt.Println(1111)
-	}
+
 	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
@@ -184,7 +182,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 				{
 					"tag": "div",
 					"text": map[string]string{
-						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, usage),
+						"content": fmt.Sprintf("%s使用率：%s", notificationInfo.PerformanceType, recoveryUsage),
 						"tag":     "lark_md",
 					},
 				},
@@ -192,9 +190,6 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 			fmt.Println(notificationInfo.FeishuInfo)
 			notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, usageRecoveryElements...)
 		}
-		fmt.Println(2222)
-		fmt.Println(notificationInfo.FeishuInfo)
-		fmt.Println(2222)
 		recoveryTimeElements := []map[string]interface{}{
 			{
 				"tag": "div",
@@ -217,7 +212,6 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 		"config": map[string]bool{
 			"wide_screen_mode": true,
 		},
-		//elements替换成notificationInfo.FeishuInfo
 		"elements": notificationInfo.FeishuInfo,
 		"header": map[string]interface{}{
 			"template": headerTemplate,

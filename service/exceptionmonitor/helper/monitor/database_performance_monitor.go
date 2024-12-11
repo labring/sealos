@@ -129,6 +129,13 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		}
 	} else if usage < threshold && monitorMap[notificationInfo.DatabaseClusterUID] {
 		notificationInfo.NotificationType = "recovery"
+		if performanceType == "CPU" {
+			notificationInfo.RecoveryCPUUsage = notificationInfo.CPUUsage
+		} else if performanceType == "内存" {
+			notificationInfo.RecoveryMemUsage = notificationInfo.MemUsage
+		} else if performanceType == "磁盘" {
+			notificationInfo.RecoveryDiskUsage = notificationInfo.DiskUsage
+		}
 		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
 		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
 		alertMessage := notification.GetNotificationMessage(notificationInfo)
