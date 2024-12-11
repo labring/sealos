@@ -82,7 +82,9 @@ var (
 	DynamicClient                     *dynamic.DynamicClient
 	DebtNamespaceMap                  = make(map[string]bool)
 	DiskFullNamespaceMap              = make(map[string]bool)
-	PerformanceNotificationInfoMap    = make(map[string]*Info)
+	CPUNotificationInfoMap            = make(map[string]*Info)
+	MemNotificationInfoMap            = make(map[string]*Info)
+	DiskNotificationInfoMap           = make(map[string]*Info)
 	LastBackupStatusMap               = make(map[string]string)
 	IsSendBackupStatusMap             = make(map[string]string)
 	DatabaseNotificationInfoMap       = make(map[string]*Info)

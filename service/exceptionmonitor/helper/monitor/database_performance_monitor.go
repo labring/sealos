@@ -63,7 +63,11 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		return
 	}
 	notificationInfo.ExceptionType = "阀值"
-	if value, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		notificationInfo = *value
+	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		notificationInfo = *value
+	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 		notificationInfo = *value
 	}
 	switch notificationInfo.ExceptionStatus {
@@ -85,7 +89,7 @@ func handleCPUMemMonitor(notificationInfo *api.Info) {
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
-	if memUsage, err := CPUMemMonitor(notificationInfo, "memory"); err == nil {
+	if memUsage, err := CPUMemMonitor(notificationInfo, api.MemoryChinese); err == nil {
 		processUsage(memUsage, api.DatabaseMemMonitorThreshold, api.MemoryChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Memory: %v", err)
@@ -93,7 +97,7 @@ func handleCPUMemMonitor(notificationInfo *api.Info) {
 }
 
 func handleDiskMonitor(notificationInfo *api.Info) {
-	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
+	if maxUsage, err := checkPerformance(notificationInfo, api.DiskChinese); err == nil {
 		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, api.DiskChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
@@ -110,31 +114,70 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 	} else if performanceType == api.DiskChinese {
 		notificationInfo.DiskUsage = usageStr
 	}
-	if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && usage >= threshold {
-		notificationInfo.NotificationType = notification.ExceptionType
-		alertMessage := notification.GetNotificationMessage(notificationInfo)
-		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
-		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
-			log.Printf("Failed to send notification: %v", err)
+	if usage >= threshold {
+		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
+			processException(notificationInfo, threshold)
 		}
-		api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
-		if performanceType != api.DiskChinese {
-			return
+		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
+			processException(notificationInfo, threshold)
 		}
-		ZNThreshold := NumberToChinese(int(threshold))
-		if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
-			log.Printf("Failed to send Sms: %v", err)
+		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
+			processException(notificationInfo, threshold)
 		}
-	} else if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && usage < threshold {
-		notificationInfo.NotificationType = "recovery"
-		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
-		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
-		alertMessage := notification.GetNotificationMessage(notificationInfo)
-		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
-		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
-			log.Printf("Failed to send notification: %v", err)
+	} else if usage < threshold {
+		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+			processRecovery(notificationInfo)
 		}
-		delete(api.PerformanceNotificationInfoMap, notificationInfo.DatabaseClusterUID)
+		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+			processRecovery(notificationInfo)
+		}
+		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+			processRecovery(notificationInfo)
+		}
+	}
+}
+
+func processException(notificationInfo *api.Info, threshold float64) {
+	notificationInfo.NotificationType = notification.ExceptionType
+	alertMessage := notification.GetNotificationMessage(notificationInfo)
+	notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+	if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
+		log.Printf("Failed to send notification: %v", err)
+	}
+	if notificationInfo.PerformanceType == api.CPUChinese {
+		api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
+		return
+	}
+	if notificationInfo.PerformanceType == api.MemoryChinese {
+		api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
+		return
+	}
+	if notificationInfo.PerformanceType == api.DiskChinese {
+		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
+	}
+	ZNThreshold := NumberToChinese(int(threshold))
+	if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+notificationInfo.PerformanceType+"超过百分之"+ZNThreshold); err != nil {
+		log.Printf("Failed to send Sms: %v", err)
+	}
+}
+
+func processRecovery(notificationInfo *api.Info) {
+	notificationInfo.NotificationType = "recovery"
+	notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
+	notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
+	alertMessage := notification.GetNotificationMessage(notificationInfo)
+	notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
+	if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
+		log.Printf("Failed to send notification: %v", err)
+	}
+	if notificationInfo.PerformanceType == api.CPUChinese {
+		delete(api.CPUNotificationInfoMap, notificationInfo.DatabaseClusterUID)
+	}
+	if notificationInfo.PerformanceType == api.MemoryChinese {
+		delete(api.MemNotificationInfoMap, notificationInfo.DatabaseClusterUID)
+	}
+	if notificationInfo.PerformanceType == api.DiskChinese {
+		delete(api.DiskNotificationInfoMap, notificationInfo.DatabaseClusterUID)
 	}
 }
 
