@@ -37,7 +37,6 @@ func checkQuota(namespaces []string) error {
 		}
 	}
 	for _, ns := range namespaceList {
-
 		if !strings.Contains(ns.Name, "ns-") {
 			continue
 		}
