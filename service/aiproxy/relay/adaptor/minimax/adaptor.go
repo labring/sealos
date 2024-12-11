@@ -52,6 +52,8 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
 		return meta.Channel.BaseURL + "/v1/text/chatcompletion_v2", nil
+	case relaymode.Embeddings:
+		return fmt.Sprintf("%s/v1/embeddings?GroupId=%s", meta.Channel.BaseURL, GetGroupID(meta.Channel.Key)), nil
 	case relaymode.AudioSpeech:
 		return fmt.Sprintf("%s/v1/t2a_v2?GroupId=%s", meta.Channel.BaseURL, GetGroupID(meta.Channel.Key)), nil
 	default:

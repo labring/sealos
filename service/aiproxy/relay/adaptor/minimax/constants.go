@@ -75,6 +75,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:      model.ModelOwnerMiniMax,
 		InputPrice: 0.2,
 		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigSupportFormatsKey: []string{"pcm", "wav", "flac", "mp3"},
 			model.ModelConfigSupportVoicesKey: []string{
 				"male-qn-qingse", "male-qn-jingying", "male-qn-badao", "male-qn-daxuesheng",
 				"female-shaonv", "female-yujie", "female-chengshu", "female-tianmei",

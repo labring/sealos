@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	dataPrefix       = "data: "
-	done             = "[DONE]"
-	dataPrefixLength = len(dataPrefix)
+	DataPrefix       = "data: "
+	Done             = "[DONE]"
+	DataPrefixLength = len(DataPrefix)
 )
 
 var stdjson = json.ConfigCompatibleWithStandardLibrary
@@ -47,14 +47,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	for scanner.Scan() {
 		data := scanner.Text()
-		if len(data) < dataPrefixLength { // ignore blank line or wrong format
+		if len(data) < DataPrefixLength { // ignore blank line or wrong format
 			continue
 		}
-		if data[:dataPrefixLength] != dataPrefix {
+		if data[:DataPrefixLength] != DataPrefix {
 			continue
 		}
-		data = data[dataPrefixLength:]
-		if strings.HasPrefix(data, done) {
+		data = data[DataPrefixLength:]
+		if strings.HasPrefix(data, Done) {
 			break
 		}
 		switch meta.Mode {
