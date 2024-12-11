@@ -130,7 +130,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
 			log.Printf("Failed to send Sms: %v", err)
 		}
-	} else if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && usage < threshold {
+	} else if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && usage < threshold {
 		notificationInfo.NotificationType = "recovery"
 		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
 		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
