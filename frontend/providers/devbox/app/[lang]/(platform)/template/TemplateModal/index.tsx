@@ -2,6 +2,7 @@
 
 import MyIcon from '@/components/Icon'
 import { TemplateState } from '@/constants/template'
+import { usePathname } from '@/i18n'
 import { useTemplateStore } from '@/stores/template'
 import {
   Input,
@@ -29,7 +30,7 @@ import PublicPanel from './PublicPanel'
 
 const TemplateModal = () => {
   const t = useTranslations()
-  const { isOpen, config, closeTemplateModal, openTemplateModal } = useTemplateStore()
+  const { isOpen, config, closeTemplateModal, openTemplateModal, updateTemplateModalConfig } = useTemplateStore()
   const [search, setsearch]= useState('')
   const updateSearchVal = useCallback(
     debounce((val: string) => {
@@ -37,9 +38,13 @@ const TemplateModal = () => {
     }, 500),
     []
   )
+  const lastRoute = usePathname()
   return (
     <Modal isOpen={isOpen} onClose={() => {
       closeTemplateModal()
+      updateTemplateModalConfig({ templateState: TemplateState.publicTemplate,
+        lastRoute
+       })
     }} lockFocusAcrossFrames={false}>
       <ModalOverlay />
       <ModalContent h={'full'} maxW={'full'} margin={0}>
@@ -53,8 +58,12 @@ const TemplateModal = () => {
               flexDirection={'column'}
               index={config.templateState === TemplateState.publicTemplate ? 0 : 1}
               onChange={(idx) => {
-                if (idx === 0) openTemplateModal({ templateState: TemplateState.publicTemplate })
-                else openTemplateModal({ templateState: TemplateState.privateTemplate })
+                if (idx === 0) openTemplateModal({ templateState: TemplateState.publicTemplate,
+                  lastRoute
+                 })
+                else openTemplateModal({ templateState: TemplateState.privateTemplate,
+                  lastRoute
+                 })
               }}>
               {/* TabList must be direct child of Tabs */}
               <TabList gap={'12px'}>

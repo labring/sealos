@@ -25,7 +25,11 @@ export default function PublicPanel({
   const t = useTranslations()
   const router = useRouter()
   const lastLang = getLangStore()
-  const tags = tagsQuery.data?.tagList || []
+  let tags = (tagsQuery.data?.tagList || [])
+  const labringTag = tags.find(tag => tag.name === 'official')
+  if (labringTag) {
+    tags = [labringTag, ...tags.filter(tag => tag.name !== 'official')]
+  }
   const [selectedTag, setselectedTag] = useState<string[]>([])
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
@@ -123,17 +127,17 @@ export default function PublicPanel({
         <Box width={'full'} flex={1} h={'400px'} overflow={'auto'}
           position={'relative'}
         >
-          <Grid templateColumns="repeat(3, 1fr)" gap="20px"
+          <Grid templateColumns="repeat(auto-fill, minmax(clamp(210px, 300px, 440px), 1fr));"
             inset={0}
+            gap="20px" 
             position={'absolute'}
             gridAutoRows={'max-content'}
           >
-            {tempalteReposistoryList.map((tr) => {
+            {tempalteReposistoryList.filter(tr=>tr.templates.length > 0).map((tr) => {
               return <TemplateCard key={tr.uid}
-                w={'273px'}
                 iconId={tr.iconId || ''}
                 templateRepositoryName={tr.name}
-                templateRepositoryDescription={tr.description || ''}
+                templateRepositoryDescription={tr.description}
                 templateRepositoryUid={tr.uid}
                 tags={tr.templateRepositoryTags.map(t => t.tag)}
                 isPublic

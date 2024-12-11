@@ -1,6 +1,7 @@
 import { createTemplateReposistory } from '@/api/template';
 import MyFormLabel from '@/components/MyFormControl';
 import { TemplateState } from '@/constants/template';
+import { usePathname } from '@/i18n';
 import { useTemplateStore } from '@/stores/template';
 import { nameSchema, versionSchema } from '@/utils/vaildate';
 import {
@@ -48,8 +49,8 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
 }) => {
   const t = useTranslations()
   const formSchema = z.object({
-    name: nameSchema.min(1, t('input_template_name_placeholder')),
-    version: versionSchema,
+    name: z.string().min(1, t('input_template_name_placeholder')).pipe(nameSchema),
+    version: z.string().min(1, t('input_template_version_placeholder')).pipe(versionSchema),
     isPublic: z.boolean().default(false),
     agreeTerms: z.boolean().refine((val) => val === true, t('privacy_and_security_agreement_tips')),
     tags: z.array(tagSchema).min(1, t('select_at_least_1_tag')).max(3, t('select_lest_than_3_tags')),
@@ -82,21 +83,28 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
     // return await createTemplate(data)
   })
   const { message: toast } = useMessage()
+  const lastRoute = usePathname()
   const onSubmitHandler: SubmitHandler<FormData> = async (_data) => {
     try {
       const result = formSchema.safeParse(_data)
       if (!result.success) {
         // const title = result.error.errors[0]
-        
-        const nameError = result.error.flatten().fieldErrors.name
-        if(nameError && nameError.length > 0) {
+        const error = result.error.errors[0]
+        if(error.path[0] === 'name' && error.code === 'invalid_string') {
           toast({
             title: t('invalide_template_name'),
             status: 'error',
           });
           return;
         }
-        const title = result.error.errors[0].message
+        if(error.path[0] === 'version' && error.code === 'invalid_string') {
+          toast({
+            title: t('invalide_template_version'),
+            status: 'error',
+          });
+          return;
+        }
+        const title = error.message
         toast({
           title,
           status: 'error',
@@ -117,7 +125,8 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
       reset();
       onClose();
       openTemplateModal({
-        templateState: TemplateState.privateTemplate
+        templateState: TemplateState.privateTemplate,
+        lastRoute
       })
       toast({
         title: t('create_template_success'),
@@ -146,7 +155,7 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
       onCloseComplete={() => reset()}
     >
       <ModalOverlay />
-      <ModalContent maxW="562px">
+      <ModalContent maxW="562px" margin={'auto'}>
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmitHandler)}>
             <ModalHeader>

@@ -35,7 +35,7 @@ const DeleteTemplateReposistoryModal = ({ uid, templateRepositoryName, ...props 
   return (
     <Modal lockFocusAcrossFrames={false} {...props} onClose={props.onClose}>
       <ModalOverlay />
-      <ModalContent maxW={'400px'} width={'400px'} >
+      <ModalContent maxW={'400px'} width={'400px'} margin={'auto'}>
         <ModalHeader>
           <Flex gap={'10px'}>
             <MyIcon name='warning' boxSize={'20px'} />
@@ -45,7 +45,7 @@ const DeleteTemplateReposistoryModal = ({ uid, templateRepositoryName, ...props 
         <ModalBody px={'36px'} py={'24px'}>
           <ModalCloseButton />
           {t.rich('delete_template_prompt', {
-            name: <Text display={'inline-block'} fontWeight={600}>{templateRepositoryName}</Text> as any
+            name: <Text display={'inline'} fontWeight={600}>{templateRepositoryName}</Text> as any
           })}
         </ModalBody>
         <ModalFooter pb={'24px'}>

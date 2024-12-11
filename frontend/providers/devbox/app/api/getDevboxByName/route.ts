@@ -37,7 +37,6 @@ export async function GET(req: NextRequest) {
     const template = await devboxDB.template.findUnique({
       where: {
         uid: devboxBody.spec.templateID,
-        isDeleted: false
       },
       select: {
         templateRepository: {

@@ -41,7 +41,7 @@ const SelectTemplateModal = ({
       size="md"
     >
       <ModalOverlay />
-      <ModalContent maxW="504px" >
+      <ModalContent maxW="504px" margin={'auto'}>
         <ModalHeader>
           <Text>{t('create_or_update_template')}</Text>
         </ModalHeader>

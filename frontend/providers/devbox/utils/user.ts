@@ -52,8 +52,15 @@ export const setSessionToSessionStorage = (token: string) => {
   if(typeof window === 'undefined') {
     return null
   }
-  console.log('init success')
+  
   sessionStorage.setItem('token', token)
+}
+export const cleanSession = () => {
+  if(typeof window === 'undefined') {
+    return null
+  }
+  sessionStorage.removeItem('session')
+  sessionStorage.removeItem('token')
 }
 export const getUserNamespace = () => {
   const kubeConfig = getUserKubeConfig()

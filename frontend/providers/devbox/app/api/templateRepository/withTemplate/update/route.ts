@@ -120,8 +120,9 @@ export async function POST(req: NextRequest) {
     const createdTagList = query.tagUidList
       .filter((item) => !originalTaglist.some((tag) => tag.tagUid === item) && item !== officialTag?.uid)
     const origionalTemplate = templateRepository
-      .templates.find((item) => item.name === query.version)
-    // invoke retag service !todo
+      .templates.find((item) => item.name === query.version && item.isDeleted === false)
+    
+    // invoke retag service 
     const result = await devboxDB.$transaction(async tx => {
       await tx.templateRepository.update({
         where: {

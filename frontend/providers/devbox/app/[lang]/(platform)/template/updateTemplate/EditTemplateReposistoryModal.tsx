@@ -2,6 +2,7 @@ import { getTemplateRepository, updateTemplateReposistory } from '@/api/template
 import MyFormLabel from '@/components/MyFormControl';
 import { TemplateVersionState } from '@/constants/template';
 import {
+  Alert,
   Button,
   ButtonGroup,
   Flex,
@@ -17,7 +18,7 @@ import {
   useDisclosure,
   VStack
 } from '@chakra-ui/react';
-import { DeleteIcon, useMessage } from '@sealos/ui';
+import { DeleteIcon, InfoCircleIcon, useMessage } from '@sealos/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { FC, useEffect, useState } from 'react';
@@ -111,11 +112,11 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       setValue('tags', templateRepository.templateRepositoryTags.map(({ tag }) => ({
         value: tag.uid,
       })))
-      
+
       setValue('name', templateRepository.name)
       setValue('description', templateRepository.description || '')
       setValue('isPublic', templateRepository.isPublic)
-      if(templateRepository.isPublic) {
+      if (templateRepository.isPublic) {
         setPublicIsDisabled(true)
         setValue('agreeTerms', true)
       }
@@ -127,9 +128,9 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
     try {
       const result = formSchema.safeParse(_data)
       if (!result.success) {
-        const title = Object.values(result.error.flatten().fieldErrors)[0][0]
+        const error = result.error.errors[0]
         toast({
-          title,
+          title: error.message,
           status: 'error',
         });
         return;
@@ -158,7 +159,7 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       });
     }
   };
-
+  console.log(versionsHelper.fields)
   return (<>
     <Modal
       isOpen={isOpen}
@@ -167,28 +168,31 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       onCloseComplete={() => reset()}
     >
       <ModalOverlay />
-      <ModalContent maxW="562px">
+      <ModalContent maxW="562px" margin={'auto'}>
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmitHandler)}>
             <ModalHeader>
               <Text>{t('edit_template')}</Text>
             </ModalHeader>
-            <ModalBody pt={'32px'} pb={'24px'} px={'52px'}>
+            <ModalBody pt={'32px'} pb={'24px'} px={'52px'} >
               <ModalCloseButton />
 
               <VStack spacing={6} align="stretch">
                 {/* 名称 */}
-                <TemplateRepositoryNameField isDisabled/>
+                <TemplateRepositoryNameField isDisabled />
 
                 {/* 版本号 */}
                 <Flex >
                   <Flex justify={'space-between'}>
                     <MyFormLabel width="108px" m='0' fontSize="14px" isRequired>{t('version')}</MyFormLabel>
                     <HStack width='350px' wrap={'wrap'}>
-                      {versionsHelper.fields.map((versionField, versionIdx) => {
-                        
+                      {versionsHelper.fields.length === 0 ? <Alert status="info" borderRadius="md" py={'6px'} px={'12px'} color={'yellow.600'} bgColor={'yellow.50'} >
+                        <InfoCircleIcon fill={'currentcolor'} mr={'4px'} boxSize={'14px'} />
+                        <Text fontSize="12px" fontWeight={500}>
+                          {t('none_template_version')}
+                        </Text> 
+                      </Alert> : versionsHelper.fields.map((versionField, versionIdx) => {
                         const color = versionField.state === TemplateVersionState.ACTIVE ? 'grayModern.500' : 'red.600'
-                        
                         return <Flex
                           key={versionField.id}
                           align="center"
@@ -196,8 +200,8 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
                           gap="8px"
                           bgColor={'grayModern.100'}
                           borderRadius="6px"
-                          cursor={versionField.state === TemplateVersionState.DELETED? 'none' : 'pointer'}
-                          pointerEvents={versionField.state === TemplateVersionState.DELETED? 'none' : 'auto'}
+                          cursor={versionField.state === TemplateVersionState.DELETED ? 'none' : 'pointer'}
+                          pointerEvents={versionField.state === TemplateVersionState.DELETED ? 'none' : 'auto'}
                           onClick={() => {
                             if (versionField.state === TemplateVersionState.DELETED) {
                               return null
@@ -213,14 +217,14 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
                           data-group
                         >
                           <Text>{versionField.name}</Text>
-                          <DeleteIcon 
-                          color={color} 
-                          _groupHover={
-                            {
-                              color: 'red.600',
+                          <DeleteIcon
+                            color={color}
+                            _groupHover={
+                              {
+                                color: 'red.600',
+                              }
                             }
-                          }
-                          fill={'currentcolor'} />
+                            fill={'currentcolor'} />
                         </Flex>
                       })}
                     </HStack>
@@ -269,6 +273,7 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       </ModalContent>
     </Modal>
     {!!deletedTemplateVersion && !!templateRepository && <DeleteTemplateVersionModal
+      isLasted={versionsHelper.fields.filter((field) => field.state === TemplateVersionState.ACTIVE).length <= 1}
       version={deletedTemplateVersion.name}
       template={templateRepository.name}
       isOpen={DeleteTemplateVersionHandle.isOpen} onClose={DeleteTemplateVersionHandle.onClose} onSubmit={() => {

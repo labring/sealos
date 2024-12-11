@@ -56,9 +56,6 @@ export default function TemplateRepositoryItem({ item, isEdit }: { item: { uid: 
       src={`/images/${item.iconId || 'custom'}.svg`}
     />
     <Text
-      _firstLetter={{
-        textTransform: 'capitalize'
-      }}
       mt={'4px'}
       textAlign={'center'}
       noOfLines={1}

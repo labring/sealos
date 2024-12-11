@@ -2,6 +2,7 @@ import MyIcon from '@/components/Icon';
 import { useRouter } from '@/i18n';
 import { type Tag as TTag } from '@/prisma/generated/client';
 import { useDevboxStore } from '@/stores/devbox';
+import { useGlobalStore } from '@/stores/global';
 import { useTemplateStore } from '@/stores/template';
 import { Box, BoxProps, Button, Flex, Img, MenuButton, Tag, Text, useDisclosure } from '@chakra-ui/react';
 import { MyTooltip, SealosMenu } from '@sealos/ui';
@@ -11,31 +12,37 @@ import EditTemplateModal from '../updateTemplate/EditTemplateReposistoryModal';
 
 const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateRepositoryDescription
   , templateRepositoryUid,
+  isDisabled = false,
   inPublicStore = true,
   tags,
   ...props
 }: {
   isPublic?: boolean
   iconId: string,
-  inPublicStore?: boolean
+  isDisabled?: boolean,
+  inPublicStore?: boolean,
   templateRepositoryName: string,
-  templateRepositoryDescription: string
+  templateRepositoryDescription: string | null
   templateRepositoryUid: string,
   tags: TTag[]
 } & BoxProps) => {
   const t = useTranslations()
-  const { closeTemplateModal } = useTemplateStore()
+  const { closeTemplateModal, config, updateTemplateModalConfig } = useTemplateStore()
   const editTemplateHandle = useDisclosure()
   const deleteTemplateHandle = useDisclosure()
   const { setStartedTemplate } = useDevboxStore()
   const router = useRouter()
+  const { setLastRoute } = useGlobalStore()
+  const description = templateRepositoryDescription ? templateRepositoryDescription : t('no_description')
   const lastLang = useLocale()
   return (
     <>
       <Box
         position="relative"
-        w="330px"
+        width={'full'}
+        opacity={isDisabled ? 0.5 : 1}
         display="flex"
+        maxW={'440px'}
         flexDirection="column"
         alignItems="flex-start"
         gap="8px"
@@ -47,14 +54,16 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
           border="1px solid #E8EBF0"
           borderRadius="8px"
           p="15px 16px"
+          height={'82px'}
           bgColor={'grayModern.50'}
           _groupHover={{
             bgColor: 'grayModern.150'
           }
           }
+
         >
-          <Flex justifyContent="space-between" alignItems="center" gap="12px">
-            <Flex alignItems="center" gap="12px" flex="1">
+          <Flex justifyContent="space-between" alignItems="center" gap="12px" height={'full'}>
+            <Flex alignItems="center" gap="12px" flex="1" height={'full'} width={'full'}>
               {/* Python Logo */}
               <Img
                 boxSize={'32px'}
@@ -62,7 +71,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
               />
 
               {/* Title and Description */}
-              <Flex direction="column" gap="3px">
+              <Flex direction="column" gap="3px" flex={1}>
                 <Flex gap="8px" width={'full'}>
                   <Text
                     fontSize="16px"
@@ -111,8 +120,9 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                   }
                 </Flex>
                 <Flex
-                  width={'145px'}>
-                  <MyTooltip label={templateRepositoryDescription} maxW={'300px'}
+                  width={'full'}
+                  >
+                  <MyTooltip label={description}
                     placement='bottom'
                     offset={[0, 15]}
                   >
@@ -121,12 +131,14 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                       color="#667085"
                       letterSpacing="0.004em"
                       overflow={'hidden'}
-                      maxW={'150px'}
+                      // maxW={'150px'}
+                      width={'0'}
+                      flex={1}
                       textOverflow={'ellipsis'}
                       whiteSpace={'nowrap'}
                       h={'16px'}
                     >
-                      {templateRepositoryDescription}
+                      {description}
                     </Text>
                   </MyTooltip>
                 </Flex>
@@ -135,7 +147,8 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
             </Flex>
 
             {/* Buttons */}
-            <Flex alignItems="center" gap="2px" >
+            <Flex alignItems="center" gap="2px" 
+            >
               <Button
                 size="sm"
                 bg="#0884DD"
@@ -143,9 +156,9 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                 fontSize="12px"
                 px="10px"
                 h="28px"
-                visibility={'hidden'}
+                display={'none'}
                 _groupHover={{
-                  visibility: 'visible'
+                  display: 'flex'
                 }}
                 onClick={() => {
                   setStartedTemplate({
@@ -155,8 +168,8 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                   })
                   closeTemplateModal()
                   router.push(`/devbox/create?templateRepository${templateRepositoryUid}`)
-
                 }}
+                isDisabled={isDisabled}
                 _hover={{ bg: '#0773c4' }}
               >
                 {t('start_devbox')}
@@ -189,7 +202,8 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                       onClick: deleteTemplateHandle.onOpen
                     }
                   ]}
-                />}
+                />
+              }
             </Flex>
           </Flex>
 

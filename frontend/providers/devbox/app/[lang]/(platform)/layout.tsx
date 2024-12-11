@@ -19,7 +19,7 @@ import ChakraProvider from '@/components/providers/MyChakraProvider'
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider'
 import { useConfirm } from '@/hooks/useConfirm'
 import { getLangStore, setLangStore } from '@/utils/cookie'
-import { setSessionToSessionStorage } from '@/utils/user'
+import { cleanSession, setSessionToSessionStorage } from '@/utils/user'
 import { useQueryClient } from '@tanstack/react-query'
 import TemplateModal from './template/TemplateModal'
 
@@ -43,9 +43,10 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     const response = createSealosApp()
       ; (async () => {
         try {
+          
           const newSession = JSON.stringify(await sealosApp.getSession())
           const oldSession = sessionStorage.getItem('session')
-          if (newSession && oldSession && newSession !== oldSession) {
+          if(newSession && newSession !== oldSession) {
             console.log('new Session', newSession)
             console.log('old Session', oldSession)
             sessionStorage.setItem('session', newSession)
@@ -63,8 +64,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         } catch (err) {
           console.log('devbox: app is not running in desktop')
           if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-            // sessionStorage.removeItem('session')
-            // sessionStorage.removeItem('token')
+            cleanSession()
             openConfirm(() => {
               window.open(`https://${env.sealosDomain}`, '_self')
             })()

@@ -105,7 +105,11 @@ const BasicInfo = () => {
             {t('start_runtime')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>
+            <Text 
+            fontSize={'12px'}
+            w={'full'}
+            textOverflow={'ellipsis'}
+            >
               {
               // getRuntimeDetailLabel(devboxDetail?., devboxDetail?.runtimeVersion)
               `${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`
@@ -126,7 +130,7 @@ const BasicInfo = () => {
             CPU Limit
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.cpu || 0 / 1000} Core</Text>
+            <Text fontSize={'12px'}>{(devboxDetail?.cpu || 0) / 1000} Core</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -134,7 +138,7 @@ const BasicInfo = () => {
             Memory Limit
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.memory || 0 / 1024} G</Text>
+            <Text fontSize={'12px'}>{(devboxDetail?.memory || 0) / 1024} G</Text>
           </Flex>
         </Flex>
       </Flex>
