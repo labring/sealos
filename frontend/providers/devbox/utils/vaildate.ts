@@ -1,6 +1,11 @@
 import { z } from "zod";
+export enum versionErrorEnum {
+  INVALID_VERSION = "INVALID_VERSION",
 
-export const versionSchema = z.string().regex(/[\w][\w.-]{0,127}/);
+}
+export const versionSchema = z.string().min(1).regex(/[\w][\w.-]{0,127}/, {
+  message: versionErrorEnum.INVALID_VERSION,
+});
 export const nameSchema = z.string().regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/);
 
 export const createTemplateRepositorySchema = z.object({

@@ -28,6 +28,7 @@ import { useUserStore } from '@/stores/user'
 
 import { createDevbox, updateDevbox } from '@/api/devbox'
 import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox'
+import { useTemplateStore } from '@/stores/template'
 import { json2DevboxV2, json2Ingress, json2Service } from '@/utils/json2Yaml'
 import { patchYamlList } from '@/utils/tools'
 
@@ -103,17 +104,15 @@ const DevboxCreatePage = () => {
 
   const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
-  const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
-  const runtime = searchParams.get('runtime') || ''
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
   const [captureDevboxName, setCaptureDevboxName] = useState('')
-  const { startedTemplate, setStartedTemplate } = useDevboxStore()
+  const {updateTemplateModalConfig, config: templateConfig} = useTemplateStore()
   useEffect(() => {
     const name = searchParams.get('name')
     if (name) {
@@ -251,6 +250,10 @@ const DevboxCreatePage = () => {
       toast({
         title: t(applySuccess),
         status: 'success'
+      })
+      updateTemplateModalConfig({
+        ...templateConfig,
+        lastRoute
       })
       router.push(lastRoute)
     } catch (error) {

@@ -33,10 +33,6 @@ model Organization {
   name                 String
   userOrganizations    UserOrganization[]
   templateRepositories TemplateRepository[]
-
-  @@index([isDeleted])
-  @@index([name])
-  @@index([createdAt])
 }
 
 model UserOrganization {

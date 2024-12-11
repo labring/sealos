@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       )
     const originalVersionList = templateRepository.templates
     const deletedVersionList = originalVersionList
+      .filter((item) =>!query.versionList.includes(item.uid))
       .map((item) => item.uid)
     const isExist = await devboxDB.templateRepository.findUnique({
       where: {

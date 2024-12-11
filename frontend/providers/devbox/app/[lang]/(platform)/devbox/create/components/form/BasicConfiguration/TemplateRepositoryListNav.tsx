@@ -3,10 +3,12 @@ import { TemplateState } from "@/constants/template";
 import { useTemplateStore } from "@/stores/template";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 
 const TemplateRepositoryListNav = () => {
   const t = useTranslations()
   const { openTemplateModal, config, isOpen } = useTemplateStore()
+  const lastRoute = usePathname()
   return (
     <Flex
       // margin="0 auto"
@@ -25,7 +27,8 @@ const TemplateRepositoryListNav = () => {
         cursor="pointer"
         onClick={() => {
           openTemplateModal({
-            'templateState': TemplateState.publicTemplate
+            'templateState': TemplateState.publicTemplate,
+            lastRoute
           })
         }}
       >
@@ -66,7 +69,8 @@ const TemplateRepositoryListNav = () => {
         cursor="pointer"
         onClick={() => {
           openTemplateModal({
-            'templateState': TemplateState.privateTemplate
+            'templateState': TemplateState.privateTemplate,
+            lastRoute
           })
         }}
       >

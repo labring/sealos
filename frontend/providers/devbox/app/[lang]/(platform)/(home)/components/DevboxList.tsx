@@ -127,7 +127,6 @@ const DevboxList = ({
     },
     [t, toast]
   )
-  console.log(devboxList)
   const columns: {
     title: string
     dataIndex?: keyof DevboxListItemTypeV2
