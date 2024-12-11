@@ -8,6 +8,7 @@ export interface Env {
   sealosDomain: string
   ingressSecret: string
   registryAddr: string
+  privacyUrl: string
   devboxAffinityEnable: string
   squashEnable: string
   namespace: string

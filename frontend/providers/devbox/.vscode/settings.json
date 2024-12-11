@@ -20,4 +20,8 @@
     "google",
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
+  "cSpell.words": [
+    "devbox",
+    "Reposistory"
+  ],
 }

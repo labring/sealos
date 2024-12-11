@@ -1,14 +1,14 @@
 import axios, {
-  InternalAxiosRequestConfig,
   AxiosHeaders,
+  AxiosRequestConfig,
   AxiosResponse,
-  AxiosRequestConfig
+  InternalAxiosRequestConfig
 } from 'axios'
 
-import { isApiResp } from './kubernet'
 import type { ApiResp } from './kubernet'
+import { isApiResp } from './kubernet'
 
-import { getUserKubeConfig } from '@/utils/user'
+import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user'
 
 const showStatus = (status: number) => {
   let message = ''
@@ -66,9 +66,11 @@ request.interceptors.request.use(
       config.url = '' + config.url
     }
     let _headers: AxiosHeaders = config.headers
-
+    const session = getDesktopSessionFromSessionStorage()
+    const devboxToken = getSessionFromSessionStorage()
     //获取token，并将其添加至请求头中
-    _headers['Authorization'] = encodeURIComponent(getUserKubeConfig())
+    _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '')
+    _headers['Authorization-Bearer'] = encodeURIComponent(devboxToken || session?.token || '')
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json'
     }
