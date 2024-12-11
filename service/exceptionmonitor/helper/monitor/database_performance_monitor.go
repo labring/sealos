@@ -19,7 +19,7 @@ func DatabasePerformanceMonitor() {
 		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
-		time.Sleep(10 * time.Minute)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
@@ -67,8 +67,10 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	if !debt {
 		return
 	}
-	notificationInfo.NotificationType = notification.ExceptionType
 	notificationInfo.ExceptionType = "阀值"
+	if value, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		notificationInfo = *value
+	}
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
 		break
@@ -84,12 +86,12 @@ func monitorCluster(cluster unstructured.Unstructured) {
 
 func handleCPUMemMonitor(notificationInfo *api.Info) {
 	if cpuUsage, err := CPUMemMonitor(notificationInfo, api.CPUChinese); err == nil {
-		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, api.CPUChinese, notificationInfo, api.CPUMonitorNamespaceMap)
+		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, api.CPUChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
 	if memUsage, err := CPUMemMonitor(notificationInfo, "memory"); err == nil {
-		processUsage(memUsage, api.DatabaseMemMonitorThreshold, api.MemoryChinese, notificationInfo, api.MemMonitorNamespaceMap)
+		processUsage(memUsage, api.DatabaseMemMonitorThreshold, api.MemoryChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Memory: %v", err)
 	}
@@ -97,13 +99,13 @@ func handleCPUMemMonitor(notificationInfo *api.Info) {
 
 func handleDiskMonitor(notificationInfo *api.Info) {
 	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
-		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, api.DiskChinese, notificationInfo, api.DiskMonitorNamespaceMap)
+		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, api.DiskChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
 	}
 }
 
-func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info, monitorMap map[string]bool) {
+func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info) {
 	notificationInfo.PerformanceType = performanceType
 	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
 	if performanceType == api.CPUChinese {
@@ -113,14 +115,14 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 	} else if performanceType == api.DiskChinese {
 		notificationInfo.DiskUsage = usageStr
 	}
-	if usage >= threshold && !monitorMap[notificationInfo.DatabaseClusterUID] {
-		notificationInfo.NotificationType = "exception"
+	if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && usage >= threshold {
+		notificationInfo.NotificationType = notification.ExceptionType
 		alertMessage := notification.GetNotificationMessage(notificationInfo)
 		notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
-		monitorMap[notificationInfo.DatabaseClusterUID] = true
+		api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 		if performanceType != api.DiskChinese {
 			return
 		}
@@ -128,7 +130,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+performanceType+"超过百分之"+ZNThreshold); err != nil {
 			log.Printf("Failed to send Sms: %v", err)
 		}
-	} else if usage < threshold && monitorMap[notificationInfo.DatabaseClusterUID] {
+	} else if _, ok := api.PerformanceNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && usage < threshold {
 		notificationInfo.NotificationType = "recovery"
 		notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
 		notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
@@ -137,7 +139,7 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		}
-		delete(monitorMap, notificationInfo.DatabaseClusterUID)
+		delete(api.PerformanceNotificationInfoMap, notificationInfo.DatabaseClusterUID)
 	}
 }
 
