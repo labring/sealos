@@ -23,8 +23,6 @@ type QueryResult struct {
 }
 
 type Info struct {
-	// lastStatus、recoveryStatus、lastStatusTime、recoveryStatusTime、lastStatusInfo、recoveryStatusInfo
-	//todo 是否应该分几个状态，是否有状态不正确的地方
 	DatabaseClusterName string
 	Namespace           string
 	DebtLevel           string
@@ -74,6 +72,9 @@ const (
 	//StatusUpdating = "Updating"
 	StatusUnknown  = ""
 	MonitorTypeALL = "all"
+	DiskChinese    = "磁盘"
+	MemoryChinese  = "内存"
+	CPUChinese     = "CPU"
 )
 
 var (
@@ -81,9 +82,9 @@ var (
 	DynamicClient                     *dynamic.DynamicClient
 	DebtNamespaceMap                  = make(map[string]bool)
 	DiskFullNamespaceMap              = make(map[string]bool)
-	DiskMonitorNamespaceMap           = make(map[string]bool)
-	CPUMonitorNamespaceMap            = make(map[string]bool)
-	MemMonitorNamespaceMap            = make(map[string]bool)
+	CPUNotificationInfoMap            = make(map[string]*Info)
+	MemNotificationInfoMap            = make(map[string]*Info)
+	DiskNotificationInfoMap           = make(map[string]*Info)
 	LastBackupStatusMap               = make(map[string]string)
 	IsSendBackupStatusMap             = make(map[string]string)
 	DatabaseNotificationInfoMap       = make(map[string]*Info)

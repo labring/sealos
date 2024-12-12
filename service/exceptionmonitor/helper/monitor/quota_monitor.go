@@ -16,18 +16,27 @@ import (
 
 func QuotaMonitor() {
 	for api.QuotaMonitor {
-		if err := checkQuota(); err != nil {
+		if err := checkQuota(api.ClusterNS); err != nil {
 			log.Printf("Failed to check qouta: %v", err)
 		}
 		time.Sleep(3 * time.Hour)
 	}
 }
 
-func checkQuota() error {
-	namespaceList, _ := api.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+func checkQuota(namespaces []string) error {
+	var namespaceList []v1.Namespace
 
-	fmt.Println(len(namespaceList.Items))
-	for _, ns := range namespaceList.Items {
+	// Fetch namespaces based on MonitorType
+	if api.MonitorType == api.MonitorTypeALL {
+		namespaces, _ := api.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		namespaceList = namespaces.Items
+	} else {
+		for _, ns := range namespaces {
+			namespace, _ := api.ClientSet.CoreV1().Namespaces().Get(context.Background(), ns, metav1.GetOptions{})
+			namespaceList = append(namespaceList, *namespace)
+		}
+	}
+	for _, ns := range namespaceList {
 		if !strings.Contains(ns.Name, "ns-") {
 			continue
 		}
