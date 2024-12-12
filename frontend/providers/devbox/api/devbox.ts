@@ -88,3 +88,6 @@ export const getAppsByDevboxId = (devboxId: string) =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
     res.map(adaptAppListItem)
   )
+
+export const execCommandInDevboxPod = (data: { devboxName: string; command: string }) =>
+  POST('/api/execCommandInDevboxPod', data)

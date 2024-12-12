@@ -21,12 +21,14 @@ import {
   ModalCloseButton,
   Progress
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import MyIcon from '../Icon'
 import SshConnectModal from './SshConnectModal'
+
 import { JetBrainsGuideData } from '../IDEButton'
+import { execCommandInDevboxPod } from '@/api/devbox'
 
 const JetBrainsGuideModal = ({
   onClose,
@@ -41,8 +43,39 @@ const JetBrainsGuideModal = ({
   const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)
 
   const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false)
-  const [selectedIDE, setSelectedIDE] = useState<string | null>(recommendIDE.value)
+  const [selectedIDE, setSelectedIDE] = useState<{
+    label: string
+    value: string
+    productCode: string
+  }>(recommendIDE)
   const [onConnecting, setOnConnecting] = useState(false)
+
+  const handleConnectIDE = useCallback(async () => {
+    const res = await fetch(
+      `https://data.services.jetbrains.com/products/releases?code=${selectedIDE.productCode}&type=release&latest=true&build=`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    const data = await res.json()
+    const version = data[selectedIDE.productCode][0].version
+
+    const execDownloadCommand = `[ ! -d /home/devbox/.cache/JetBrains/IntelliJIdea${version} ] && mkdir -p /home/devbox/.cache/JetBrains/IntelliJIdea${version} && wget -q --show-progress --progress=bar:force -O- https://download.jetbrains.com/idea/ideaIU-${version}.tar.gz | tar -xzC /home/devbox/.cache/JetBrains/IntelliJIdea${version} --strip-components=1`
+
+    console.log('execDownloadCommand', execDownloadCommand)
+
+    const resp = await execCommandInDevboxPod({
+      devboxName: jetbrainsGuideData.devboxName,
+      command: execDownloadCommand
+    })
+
+    console.log(resp)
+
+    setOnConnecting(true)
+  }, [selectedIDE, jetbrainsGuideData.devboxName])
 
   return (
     <Box>
@@ -157,19 +190,15 @@ const JetBrainsGuideModal = ({
                 {t('jetbrains_guide_select_ide')}
               </Text>
               <Grid templateColumns={'repeat(3, 1fr)'} gap={4} mt={4}>
-                {Object.values(jetbrainsIDEObj).map((ideType) => (
+                {Object.values(jetbrainsIDEObj).map((ideType: any) => (
                   <GridItem key={ideType.value}>
                     <Flex
-                      bg={selectedIDE === ideType.value ? 'brightBlue.25' : 'grayModern.25'}
+                      bg={selectedIDE === ideType ? 'brightBlue.25' : 'grayModern.25'}
                       borderWidth={1}
                       boxShadow={
-                        selectedIDE === ideType.value
-                          ? '0 0 0 2.4px rgba(33, 155, 244, 0.15)'
-                          : 'none'
+                        selectedIDE === ideType ? '0 0 0 2.4px rgba(33, 155, 244, 0.15)' : 'none'
                       }
-                      borderColor={
-                        selectedIDE === ideType.value ? 'brightBlue.500' : 'grayModern.200'
-                      }
+                      borderColor={selectedIDE === ideType ? 'brightBlue.500' : 'grayModern.200'}
                       borderRadius={'6px'}
                       p={4}
                       justifyContent={'center'}
@@ -180,7 +209,7 @@ const JetBrainsGuideModal = ({
                         bg: 'brightBlue.25'
                       }}
                       onClick={() => {
-                        setSelectedIDE(ideType.value)
+                        setSelectedIDE(ideType)
                       }}
                       position={'relative'}>
                       <MyIcon name={ideType.value as any} color={'grayModern.600'} w={'36px'} />
@@ -220,9 +249,7 @@ const JetBrainsGuideModal = ({
                         borderColor: 'brightBlue.500'
                       }
                 }
-                onClick={() => {
-                  setOnConnecting(true)
-                }}
+                onClick={handleConnectIDE}
                 h={'36px'}>
                 {onConnecting ? (
                   <Flex position={'relative'} w={'full'} alignItems={'center'} justify={'center'}>
@@ -315,43 +342,52 @@ const JetBrainsGuideModal = ({
 const jetbrainsIDEObj = {
   IntelliJ: {
     label: 'IntelliJ IDEA',
-    value: 'intellij'
+    value: 'intellij',
+    productCode: 'IIU'
   },
   PyCharm: {
     label: 'PyCharm',
-    value: 'pycharm'
+    value: 'pycharm',
+    productCode: 'PCP'
   },
   WebStorm: {
     label: 'WebStorm',
-    value: 'webstorm'
+    value: 'webstorm',
+    productCode: 'WS'
   },
   Rider: {
     label: 'Rider',
-    value: 'rider'
+    value: 'rider',
+    productCode: 'RD'
   },
   CLion: {
     label: 'CLion',
-    value: 'clion'
+    value: 'clion',
+    productCode: 'CL'
   },
   GoLand: {
     label: 'GoLand',
-    value: 'goland'
+    value: 'goland',
+    productCode: 'GO'
   },
   RubyMine: {
     label: 'RubyMine',
-    value: 'rubymine'
+    value: 'rubymine',
+    productCode: 'RM'
   },
   PhpStorm: {
     label: 'PhpStorm',
-    value: 'phpstorm'
+    value: 'phpstorm',
+    productCode: 'PS'
   },
   RustRover: {
     label: 'RustRover',
-    value: 'rustover'
+    value: 'rustover',
+    productCode: 'RR'
   }
 }
 
-const runtimeTypeToIDEType = (runtimeType: string) => {
+const runtimeTypeToIDEType = (runtimeType: string): any => {
   switch (runtimeType) {
     // Python
     case 'python':
