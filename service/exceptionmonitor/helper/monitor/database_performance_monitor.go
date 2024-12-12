@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -85,12 +84,12 @@ func monitorCluster(cluster unstructured.Unstructured) {
 }
 
 func handleCPUMemMonitor(notificationInfo *api.Info) {
-	if cpuUsage, err := CPUMemMonitor(notificationInfo, api.CPUChinese); err == nil {
+	if cpuUsage, err := CPUMemMonitor(notificationInfo, "cpu"); err == nil {
 		processUsage(cpuUsage, api.DatabaseCPUMonitorThreshold, api.CPUChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor CPU: %v", err)
 	}
-	if memUsage, err := CPUMemMonitor(notificationInfo, api.MemoryChinese); err == nil {
+	if memUsage, err := CPUMemMonitor(notificationInfo, "memory"); err == nil {
 		processUsage(memUsage, api.DatabaseMemMonitorThreshold, api.MemoryChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Memory: %v", err)
@@ -98,7 +97,7 @@ func handleCPUMemMonitor(notificationInfo *api.Info) {
 }
 
 func handleDiskMonitor(notificationInfo *api.Info) {
-	if maxUsage, err := checkPerformance(notificationInfo, api.DiskChinese); err == nil {
+	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
 		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, api.DiskChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
@@ -117,15 +116,12 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 	}
 	if usage >= threshold {
 		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.CPUChinese {
-			fmt.Println(33)
 			processException(notificationInfo, threshold)
 		}
 		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.MemoryChinese {
-			fmt.Println(44)
 			processException(notificationInfo, threshold)
 		}
 		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.DiskChinese {
-			fmt.Println(55)
 			processException(notificationInfo, threshold)
 		}
 	} else if usage < threshold {
@@ -149,17 +145,14 @@ func processException(notificationInfo *api.Info, threshold float64) {
 		log.Printf("Failed to send notification: %v", err)
 	}
 	if notificationInfo.PerformanceType == api.CPUChinese {
-		fmt.Println(11)
 		api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 		return
 	}
 	if notificationInfo.PerformanceType == api.MemoryChinese {
-		fmt.Println(22)
 		api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 		return
 	}
 	if notificationInfo.PerformanceType == api.DiskChinese {
-		fmt.Println(33)
 		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 	}
 	ZNThreshold := NumberToChinese(int(threshold))
