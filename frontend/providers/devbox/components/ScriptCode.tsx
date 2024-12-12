@@ -3,9 +3,12 @@ import { Box, Button, Flex } from '@chakra-ui/react'
 
 import MyIcon from './Icon'
 import Code from './Code'
+import { useCopyData } from '@/utils/tools'
 
 const ScriptCode = ({ platform, script }: { platform: string; script: string }) => {
   const [onOpenScripts, setOnOpenScripts] = useState(false)
+
+  const { copyData } = useCopyData()
 
   return (
     <Flex
@@ -51,7 +54,12 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
               color: 'brightBlue.600'
             }
           }}>
-          <MyIcon name="copy" color={'grayModern.600'} w={'16px'} />
+          <MyIcon
+            name="copy"
+            color={'grayModern.600'}
+            w={'16px'}
+            onClick={() => copyData(script)}
+          />
         </Button>
       </Flex>
       {onOpenScripts && (
