@@ -228,6 +228,11 @@ export async function getUserQuota(
       type: 'nodeports',
       limit: Number(status?.hard?.['services.nodeports']) || 0,
       used: Number(status?.used?.['services.nodeports']) || 0
+    },
+    {
+      type: 'gpu',
+      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
+      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
     }
   ]
 }

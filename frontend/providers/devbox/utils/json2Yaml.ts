@@ -2,17 +2,27 @@ import yaml from 'js-yaml'
 
 import { str2Num } from './tools'
 import { getUserNamespace } from './user'
-import { DevboxEditType, runtimeNamespaceMapType } from '@/types/devbox'
-import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import { DevboxEditType } from '@/types/devbox'
+import { RuntimeNamespaceMap } from '@/types/static'
+import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (
   data: DevboxEditType,
-  runtimeNamespaceMap: runtimeNamespaceMapType,
+  runtimeNamespaceMap: RuntimeNamespaceMap,
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
+
+  // gpu node selector
+  const gpuMap = !!data.gpu?.type
+    ? {
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
+        }
+      }
+    : {}
 
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -30,13 +40,15 @@ export const json2Devbox = (
       },
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
-        memory: `${str2Num(data.memory)}Mi`
+        memory: `${str2Num(data.memory)}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
       runtimeRef: {
         name: data.runtimeVersion,
         namespace: runtimeNamespace
       },
-      state: 'Running'
+      state: 'Running',
+      ...gpuMap
     }
   }
   if (devboxAffinityEnable === 'true') {

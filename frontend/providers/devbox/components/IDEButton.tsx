@@ -48,7 +48,7 @@ const IDEButton = ({
   const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType
 
   const handleGotoIDE = useCallback(
-    async (currentIDE: IDEType = 'cursor') => {
+    async (currentIDE: IDEType = 'vscode') => {
       setLoading(true)
 
       toast({
