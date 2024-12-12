@@ -107,7 +107,7 @@ func handleDiskMonitor(notificationInfo *api.Info) {
 func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info) {
 	notificationInfo.PerformanceType = performanceType
 	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
-	if performanceType == api.CPUChinese {
+	if notificationInfo.PerformanceType == api.CPUChinese {
 		notificationInfo.CPUUsage = usageStr
 	} else if performanceType == api.MemoryChinese {
 		notificationInfo.MemUsage = usageStr
@@ -115,23 +115,23 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 		notificationInfo.DiskUsage = usageStr
 	}
 	if usage >= threshold {
-		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
+		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.CPUChinese {
 			processException(notificationInfo, threshold)
 		}
-		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
+		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.MemoryChinese {
 			processException(notificationInfo, threshold)
 		}
-		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
+		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.DiskChinese {
 			processException(notificationInfo, threshold)
 		}
 	} else if usage < threshold {
-		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.CPUChinese {
 			processRecovery(notificationInfo)
 		}
-		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.MemoryChinese {
 			processRecovery(notificationInfo)
 		}
-		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.DiskChinese {
 			processRecovery(notificationInfo)
 		}
 	}
