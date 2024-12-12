@@ -171,6 +171,7 @@ func processException(notificationInfo *api.Info, threshold float64) {
 	}
 	if notificationInfo.PerformanceType == api.DiskChinese {
 		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
+		fmt.Println(44444)
 	}
 	ZNThreshold := NumberToChinese(int(threshold))
 	if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+notificationInfo.PerformanceType+"超过百分之"+ZNThreshold); err != nil {
