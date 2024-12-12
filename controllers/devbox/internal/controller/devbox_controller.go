@@ -19,9 +19,10 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"strconv"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	appsv1 "k8s.io/api/apps/v1"
 
