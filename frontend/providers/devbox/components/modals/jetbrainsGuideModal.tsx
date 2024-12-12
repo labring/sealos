@@ -243,16 +243,16 @@ const JetBrainsGuideModal = ({
                 {t('jetbrains_guide_documentation')}
               </Button>
             </Box>
+            {onOpenSSHConnectModal && (
+              <SshConnectModal
+                onClose={() => setOnOpenSSHConnectModal(false)}
+                onSuccess={() => {}}
+                jetbrainsGuideData={jetbrainsGuideData}
+              />
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
-      {onOpenSSHConnectModal && (
-        <SshConnectModal
-          onClose={() => setOnOpenSSHConnectModal(false)}
-          onSuccess={() => {}}
-          jetbrainsGuideData={jetbrainsGuideData}
-        />
-      )}
     </Box>
   )
 }
