@@ -379,6 +379,7 @@ const DevboxList = ({
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={refetchDevboxList}
+          refetchDevboxList={refetchDevboxList}
         />
       )}
       {!!onOpenRelease && !!currentDevboxListItem && (
