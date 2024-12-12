@@ -17,6 +17,8 @@ export type Response = {
   fileMangerConfig: FileMangerType;
   SEALOS_USER_DOMAINS: { name: string; secretName: string }[];
   DESKTOP_DOMAIN: string;
+  PVC_STORAGE_MAX: number;
+  GPU_ENABLED: boolean;
 };
 
 export const defaultAppConfig: AppConfigType = {
@@ -38,6 +40,7 @@ export const defaultAppConfig: AppConfigType = {
   },
   launchpad: {
     currencySymbol: Coin.shellCoin,
+    pvcStorageMax: 20,
     eventAnalyze: {
       enabled: false,
       fastGPTKey: ''
@@ -80,6 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(res);
       global.AppConfig = res;
       const gpuNodes = await getGpuNode();
+      console.log(gpuNodes, 'gpuNodes');
       global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;
     }
 
@@ -93,7 +97,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fileMangerConfig: global.AppConfig.launchpad.fileManger,
         CURRENCY: global.AppConfig.launchpad.currencySymbol || Coin.shellCoin,
         SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
-        DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain
+        DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain,
+        PVC_STORAGE_MAX: global.AppConfig.launchpad.pvcStorageMax || 20,
+        GPU_ENABLED: global.AppConfig.common.gpuEnabled
       }
     });
   } catch (error) {

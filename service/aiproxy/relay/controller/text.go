@@ -1,50 +1,38 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
-	"github.com/labring/sealos/service/aiproxy/relay"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
+func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+	log := middleware.GetLogger(c)
 	ctx := c.Request.Context()
-	meta := meta.GetByContext(c)
-	textRequest, err := getAndValidateTextRequest(c, meta.Mode)
+
+	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(c.Request)
 	if err != nil {
-		logger.Errorf(ctx, "get and validate text request failed: %s", err.Error())
+		log.Errorf("get and validate text request failed: %s", err.Error())
 		return openai.ErrorWrapper(err, "invalid_text_request", http.StatusBadRequest)
 	}
-	meta.IsStream = textRequest.Stream
-
-	// map model name
-	meta.OriginModelName = textRequest.Model
-	textRequest.Model, _ = getMappedModelName(textRequest.Model, meta.ModelMapping)
-	meta.ActualModelName = textRequest.Model
 
 	// get model price
-	price, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName, meta.ChannelType)
+	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
 	if !ok {
 		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
 	}
-	completionPrice, ok := billingprice.GetCompletionPrice(meta.OriginModelName, meta.ActualModelName, meta.ChannelType)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("completion price not found: %s", meta.OriginModelName), "completion_price_not_found", http.StatusInternalServerError)
-	}
 	// pre-consume balance
-	promptTokens := getPromptTokens(textRequest, meta.Mode)
+	promptTokens := openai.GetPromptTokens(meta, textRequest)
 	meta.PromptTokens = promptTokens
 	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
 		PromptTokens: promptTokens,
@@ -52,9 +40,9 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		Price:        price,
 	}, meta)
 	if err != nil {
-		logger.Errorf(ctx, "get group (%s) balance failed: %s", meta.Group, err)
+		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
 		return openai.ErrorWrapper(
-			fmt.Errorf("get group (%s) balance failed", meta.Group),
+			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
 			"get_group_quota_failed",
 			http.StatusInternalServerError,
 		)
@@ -63,56 +51,19 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}
 
-	adaptor := relay.GetAdaptor(meta.APIType)
-	if adaptor == nil {
-		return openai.ErrorWrapper(fmt.Errorf("invalid api type: %d", meta.APIType), "invalid_api_type", http.StatusBadRequest)
-	}
-	adaptor.Init(meta)
-
-	// get request body
-	requestBody, err := getRequestBody(c, meta, textRequest, adaptor)
-	if err != nil {
-		logger.Errorf(ctx, "get request body failed: %s", err.Error())
-		return openai.ErrorWrapper(err, "convert_request_failed", http.StatusInternalServerError)
-	}
-	logger.Debugf(ctx, "converted request: \n%s", requestBody)
-
-	// do request
-	resp, err := adaptor.DoRequest(c, meta, requestBody)
-	if err != nil {
-		logger.Errorf(ctx, "do request failed: %s", err.Error())
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
-			postGroupConsumer,
-			http.StatusInternalServerError,
-			c.Request.URL.Path,
-			nil, meta, price, completionPrice, err.Error(),
-		)
-		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
-	}
-
-	if isErrorHappened(meta, resp) {
-		err := RelayErrorHandler(resp, meta.Mode)
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
-			postGroupConsumer,
-			resp.StatusCode,
-			c.Request.URL.Path,
-			nil,
-			meta,
-			price,
-			completionPrice,
-			err.String(),
-		)
-		return err
+	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
+	if !ok {
+		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
 	}
 
 	// do response
-	usage, respErr := adaptor.DoResponse(c, resp, meta)
+	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		logger.Errorf(ctx, "do response failed: %s", respErr)
+		if detail != nil {
+			log.Errorf("do text failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
+		} else {
+			log.Errorf("do text failed: %s", respErr)
+		}
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
@@ -124,6 +75,7 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 			price,
 			completionPrice,
 			respErr.String(),
+			detail,
 		)
 		return respErr
 	}
@@ -132,21 +84,14 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	go postConsumeAmount(context.Background(),
 		&ConsumeWaitGroup,
 		postGroupConsumer,
-		resp.StatusCode,
+		http.StatusOK,
 		c.Request.URL.Path,
-		usage, meta, price, completionPrice, "",
+		usage,
+		meta,
+		price,
+		completionPrice,
+		"",
+		nil,
 	)
 	return nil
-}
-
-func getRequestBody(c *gin.Context, meta *meta.Meta, textRequest *model.GeneralOpenAIRequest, adaptor adaptor.Adaptor) (io.Reader, error) {
-	convertedRequest, err := adaptor.ConvertRequest(c, meta.Mode, textRequest)
-	if err != nil {
-		return nil, err
-	}
-	jsonData, err := json.Marshal(convertedRequest)
-	if err != nil {
-		return nil, err
-	}
-	return bytes.NewReader(jsonData), nil
 }

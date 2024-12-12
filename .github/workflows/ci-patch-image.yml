@@ -70,13 +70,13 @@ jobs:
           password: ${{ secrets.GH_PAT }}
 
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-amd64
           path: docker/sealos/bin/sealos-amd64
 
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-arm64
           path: docker/sealos/bin/sealos-arm64
@@ -134,6 +134,8 @@ jobs:
           SEALOS_COMMENT_BODY: "/imagebuild_apps sealos latest"
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos
   build-on-cluster-patch-image:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
@@ -146,7 +148,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos
           path: /tmp/
@@ -159,12 +161,12 @@ jobs:
         uses: rlespinasse/git-commit-data-action@v1
 
       - name: Download amd64 patch image tar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: patch-image-amd64.tar
           path: /tmp/sealos/images/
       - name: Download arm64 patch image tar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: patch-image-arm64.tar
           path: /tmp/sealos/images/

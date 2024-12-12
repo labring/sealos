@@ -21,23 +21,23 @@ func SetAPIRouter(router *gin.Engine) {
 	apiRouter := api.Group("")
 	apiRouter.Use(middleware.AdminAuth)
 	{
-		apiRouter.GET("/models", controller.BuiltinModels)
-		apiRouter.GET("/models/price", controller.ModelPrice)
-		apiRouter.GET("/models/enabled", controller.EnabledModels)
-		apiRouter.GET("/models/enabled/price", controller.EnabledModelsAndPrice)
-		apiRouter.GET("/models/enabled/channel", controller.EnabledType2Models)
-		apiRouter.GET("/models/enabled/channel/price", controller.EnabledType2ModelsAndPrice)
-		apiRouter.GET("/models/enabled/default", controller.ChannelDefaultModels)
-		apiRouter.GET("/models/enabled/default/:type", controller.ChannelDefaultModelsByType)
-		apiRouter.GET("/models/enabled/mapping/default", controller.ChannelDefaultModelMapping)
-		apiRouter.GET("/models/enabled/mapping/default/:type", controller.ChannelDefaultModelMappingByType)
-		apiRouter.GET("/models/enabled/all/default", controller.ChannelDefaultModelsAndMapping)
-		apiRouter.GET("/models/enabled/all/default/:type", controller.ChannelDefaultModelsAndMappingByType)
+		modelsRoute := apiRouter.Group("/models")
+		{
+			modelsRoute.GET("/builtin", controller.BuiltinModels)
+			modelsRoute.GET("/builtin/channel", controller.ChannelBuiltinModels)
+			modelsRoute.GET("/builtin/channel/:type", controller.ChannelBuiltinModelsByType)
+			modelsRoute.GET("/enabled", controller.EnabledModels)
+			modelsRoute.GET("/enabled/channel", controller.ChannelEnabledModels)
+			modelsRoute.GET("/enabled/channel/:type", controller.ChannelEnabledModelsByType)
+			modelsRoute.GET("/default", controller.ChannelDefaultModelsAndMapping)
+			modelsRoute.GET("/default/:type", controller.ChannelDefaultModelsAndMappingByType)
+		}
 
 		groupsRoute := apiRouter.Group("/groups")
 		{
 			groupsRoute.GET("/", controller.GetGroups)
 			groupsRoute.GET("/search", controller.SearchGroups)
+			groupsRoute.POST("/batch_delete", controller.DeleteGroups)
 		}
 		groupRoute := apiRouter.Group("/group")
 		{
@@ -47,31 +47,37 @@ func SetAPIRouter(router *gin.Engine) {
 			groupRoute.POST("/:id/status", controller.UpdateGroupStatus)
 			groupRoute.POST("/:id/qpm", controller.UpdateGroupQPM)
 		}
+
 		optionRoute := apiRouter.Group("/option")
 		{
 			optionRoute.GET("/", controller.GetOptions)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.PUT("/batch", controller.UpdateOptions)
 		}
+
 		channelsRoute := apiRouter.Group("/channels")
 		{
 			channelsRoute.GET("/", controller.GetChannels)
 			channelsRoute.GET("/all", controller.GetAllChannels)
+			channelsRoute.GET("/type_names", controller.ChannelTypeNames)
 			channelsRoute.POST("/", controller.AddChannels)
 			channelsRoute.GET("/search", controller.SearchChannels)
-			channelsRoute.GET("/test", controller.TestChannels)
 			channelsRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
+			channelsRoute.POST("/batch_delete", controller.DeleteChannels)
+			channelsRoute.GET("/test", controller.TestAllChannels)
 		}
 		channelRoute := apiRouter.Group("/channel")
 		{
 			channelRoute.GET("/:id", controller.GetChannel)
 			channelRoute.POST("/", controller.AddChannel)
-			channelRoute.PUT("/", controller.UpdateChannel)
+			channelRoute.PUT("/:id", controller.UpdateChannel)
 			channelRoute.POST("/:id/status", controller.UpdateChannelStatus)
 			channelRoute.DELETE("/:id", controller.DeleteChannel)
-			channelRoute.GET("/test/:id", controller.TestChannel)
-			channelRoute.GET("/update_balance/:id", controller.UpdateChannelBalance)
+			channelRoute.GET("/:id/test", controller.TestChannelModels)
+			channelRoute.GET("/:id/test/:model", controller.TestChannel)
+			channelRoute.GET("/:id/update_balance", controller.UpdateChannelBalance)
 		}
+
 		tokensRoute := apiRouter.Group("/tokens")
 		{
 			tokensRoute.GET("/", controller.GetTokens)
@@ -81,10 +87,12 @@ func SetAPIRouter(router *gin.Engine) {
 			tokensRoute.POST("/:id/name", controller.UpdateTokenName)
 			tokensRoute.DELETE("/:id", controller.DeleteToken)
 			tokensRoute.GET("/search", controller.SearchTokens)
+			tokensRoute.POST("/batch_delete", controller.DeleteTokens)
 		}
 		tokenRoute := apiRouter.Group("/token")
 		{
 			tokenRoute.GET("/:group/search", controller.SearchGroupTokens)
+			tokenRoute.POST("/:group/batch_delete", controller.DeleteGroupTokens)
 			tokenRoute.GET("/:group", controller.GetGroupTokens)
 			tokenRoute.GET("/:group/:id", controller.GetGroupToken)
 			tokenRoute.POST("/:group", controller.AddToken)
@@ -93,11 +101,11 @@ func SetAPIRouter(router *gin.Engine) {
 			tokenRoute.POST("/:group/:id/name", controller.UpdateGroupTokenName)
 			tokenRoute.DELETE("/:group/:id", controller.DeleteGroupToken)
 		}
+
 		logsRoute := apiRouter.Group("/logs")
 		{
 			logsRoute.GET("/", controller.GetLogs)
 			logsRoute.DELETE("/", controller.DeleteHistoryLogs)
-			logsRoute.GET("/stat", controller.GetLogsStat)
 			logsRoute.GET("/search", controller.SearchLogs)
 			logsRoute.GET("/consume_error", controller.SearchConsumeError)
 		}
@@ -105,6 +113,22 @@ func SetAPIRouter(router *gin.Engine) {
 		{
 			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group", controller.GetGroupLogs)
+		}
+
+		modelConfigsRoute := apiRouter.Group("/model_configs")
+		{
+			modelConfigsRoute.GET("/", controller.GetModelConfigs)
+			modelConfigsRoute.GET("/search", controller.SearchModelConfigs)
+			modelConfigsRoute.GET("/all", controller.GetAllModelConfigs)
+			modelConfigsRoute.POST("/contains", controller.GetModelConfigsByModelsContains)
+			modelConfigsRoute.POST("/", controller.SaveModelConfigs)
+			modelConfigsRoute.POST("/batch_delete", controller.DeleteModelConfigs)
+		}
+		modelConfigRoute := apiRouter.Group("/model_config")
+		{
+			modelConfigRoute.GET("/:model", controller.GetModelConfig)
+			modelConfigRoute.POST("/", controller.SaveModelConfig)
+			modelConfigRoute.DELETE("/:model", controller.DeleteModelConfig)
 		}
 	}
 }

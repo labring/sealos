@@ -405,6 +405,14 @@ const (
 	QuotaLimitsNodePorts     = "QUOTA_LIMITS_NODE_PORTS"
 	QuotaObjectStorageSize   = "QUOTA_OBJECT_STORAGE_SIZE"
 	QuotaObjectStorageBucket = "QUOTA_OBJECT_STORAGE_BUCKET"
+
+	LimitRangeCPU              = "LIMIT_RANGE_CPU"
+	LimitRangeMemory           = "LIMIT_RANGE_MEMORY"
+	LimitRangeEphemeralStorage = "LIMIT_RANGE_EPHEMERAL_STORAGE"
+
+	LimitRangeRepCPU              = "LIMIT_RANGE_REP_CPU"
+	LimitRangeRepMemory           = "LIMIT_RANGE_REP_MEMORY"
+	LimitRangeRepEphemeralStorage = "LIMIT_RANGE_REP_EPHEMERAL_STORAGE"
 )
 
 const (
@@ -436,14 +444,40 @@ func DefaultLimitRangeLimits() []corev1.LimitRangeItem {
 	return []corev1.LimitRangeItem{
 		{
 			Type:           corev1.LimitTypeContainer,
-			Default:        LimitRangeDefault,
-			DefaultRequest: LimitRangeDefault,
+			Default:        defaultLimitRange,
+			DefaultRequest: defaultLimitRangeReq,
 		},
 	}
 }
 
-var LimitRangeDefault = corev1.ResourceList{
-	corev1.ResourceCPU:              resource.MustParse("50m"),
-	corev1.ResourceMemory:           resource.MustParse("64Mi"),
-	corev1.ResourceEphemeralStorage: resource.MustParse("100Mi"),
+var defaultLimitRange, defaultLimitRangeReq = getLimitRangeDefault(), getLimitRangeReq()
+
+func getLimitRangeDefault() corev1.ResourceList {
+	rcList := corev1.ResourceList{}
+	cpu, memory, ephemeralStorage := resource.MustParse(env.GetEnvWithDefault(LimitRangeCPU, "50m")), resource.MustParse(env.GetEnvWithDefault(LimitRangeMemory, "64Mi")), resource.MustParse(env.GetEnvWithDefault(LimitRangeEphemeralStorage, "100Mi"))
+	if !cpu.IsZero() {
+		rcList[corev1.ResourceCPU] = cpu
+	}
+	if !memory.IsZero() {
+		rcList[corev1.ResourceMemory] = memory
+	}
+	if !ephemeralStorage.IsZero() {
+		rcList[corev1.ResourceEphemeralStorage] = ephemeralStorage
+	}
+	return rcList
+}
+
+func getLimitRangeReq() corev1.ResourceList {
+	rcList := corev1.ResourceList{}
+	cpu, memory, ephemeralStorage := resource.MustParse(env.GetEnvWithDefault(LimitRangeRepCPU, "50m")), resource.MustParse(env.GetEnvWithDefault(LimitRangeRepMemory, "64Mi")), resource.MustParse(env.GetEnvWithDefault(LimitRangeRepEphemeralStorage, "100Mi"))
+	if !cpu.IsZero() {
+		rcList[corev1.ResourceCPU] = cpu
+	}
+	if !memory.IsZero() {
+		rcList[corev1.ResourceMemory] = memory
+	}
+	if !ephemeralStorage.IsZero() {
+		rcList[corev1.ResourceEphemeralStorage] = ephemeralStorage
+	}
+	return rcList
 }

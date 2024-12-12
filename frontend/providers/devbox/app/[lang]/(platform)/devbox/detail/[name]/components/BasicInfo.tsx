@@ -77,6 +77,9 @@ const BasicInfo = () => {
               height={'20px'}
               alt={devboxDetail?.runtimeType}
               src={`/images/${devboxDetail?.runtimeType}.svg`}
+              onError={(e) => {
+                e.currentTarget.src = '/images/custom.svg'
+              }}
             />
           </Flex>
         </Flex>

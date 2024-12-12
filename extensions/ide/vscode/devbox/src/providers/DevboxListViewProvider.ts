@@ -26,6 +26,9 @@ const messages = {
   feedbackInHelpDesk: vscode.l10n.t(
     'Give us a feedback in our help desk system.'
   ),
+  devboxDeleted: vscode.l10n.t(
+    'This Devbox has been deleted in the cloud.Now it cannot be opened. Do you want to delete its local ssh configuration?'
+  ),
 }
 
 export class DevboxListViewProvider extends Disposable {
@@ -50,14 +53,21 @@ export class DevboxListViewProvider extends Disposable {
       this._register(
         devboxDashboardView.onDidChangeVisibility(() => {
           if (devboxDashboardView.visible) {
-            projectTreeDataProvider.refresh()
+            projectTreeDataProvider.refreshData()
           }
         })
       )
       // commands
       this._register(
+        devboxDashboardView.onDidChangeVisibility(() => {
+          if (devboxDashboardView.visible) {
+            projectTreeDataProvider.refreshData()
+          }
+        })
+      )
+      this._register(
         vscode.commands.registerCommand('devboxDashboard.refresh', () => {
-          projectTreeDataProvider.refresh()
+          projectTreeDataProvider.refreshData()
         })
       )
       this._register(
@@ -103,18 +113,12 @@ class ProjectTreeDataProvider
   private treeData: DevboxListItem[] = []
 
   constructor() {
-    convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
-    this.refreshData()
-    setInterval(() => {
-      this.refresh()
-    }, 3 * 1000)
+    if (fs.existsSync(defaultDevboxSSHConfigPath)) {
+      convertSSHConfigToVersion2(defaultDevboxSSHConfigPath)
+    }
   }
 
-  refresh(): void {
-    this.refreshData()
-  }
-
-  private async refreshData(): Promise<void> {
+  async refreshData(): Promise<void> {
     const data = (await parseSSHConfig(
       defaultDevboxSSHConfigPath
     )) as DevboxListItem[]
@@ -148,20 +152,13 @@ class ProjectTreeDataProvider
               item.iconPath = new vscode.ThemeIcon('question')
           }
         } catch (error) {
-          console.error(`get devbox detail failed: ${error}`)
-          // if (
-          //   error.toString().includes('500:secrets') &&
-          //   error.toString().includes('not found')
-          // ) {
-          //   const hostParts = item.host.split('_')
-          //   const devboxName = hostParts.slice(2).join('_')
-          //   if (error.toString().includes(devboxName)) {
-          //     await this.delete(item.host, devboxName, true)
-
-          //     return
-          //   }
-          // }
-          item.iconPath = new vscode.ThemeIcon('warning')
+          Logger.error(`get devbox detail failed: ${error}`)
+          if (
+            error.toString().includes('500:secrets') &&
+            error.toString().includes('not found')
+          ) {
+            item.iconPath = new vscode.ThemeIcon('warning')
+          }
         }
       })
     )
@@ -192,6 +189,22 @@ class ProjectTreeDataProvider
   async open(item: ProjectTreeItem) {
     if (item.contextValue !== 'devbox') {
       vscode.window.showInformationMessage(messages.onlyDevboxCanBeOpened)
+      return
+    }
+
+    if (
+      item.iconPath instanceof vscode.ThemeIcon &&
+      item.iconPath.id === 'warning'
+    ) {
+      const result = await vscode.window.showWarningMessage(
+        messages.devboxDeleted,
+        { modal: true },
+        'Yes',
+        'No'
+      )
+      if (result === 'Yes') {
+        await this.delete(item.host, item.label as string, true)
+      }
       return
     }
 
@@ -292,7 +305,7 @@ class ProjectTreeDataProvider
 
       // TODO： delete known_host public key
 
-      this.refresh()
+      this.refreshData()
     } catch (error) {
       vscode.window.showErrorMessage(
         `${messages.deleteDevboxFailed}: ${error.message}`

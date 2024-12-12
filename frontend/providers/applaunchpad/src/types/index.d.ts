@@ -41,6 +41,7 @@ export type AppConfigType = {
   };
   launchpad: {
     currencySymbol: Coin;
+    pvcStorageMax: number;
     eventAnalyze: {
       enabled: boolean;
       fastGPTKey?: string;

@@ -37,13 +37,13 @@ func GetPhoneNumberByNS(owner string) (string, error) {
 	return phone, nil
 }
 
-func SendToSms(namespace, databaseName, clusterName, content string) error {
+func SendToSms(notificationInfo *api.Info, clusterName, content string) error {
 	smsClient, err := utils.CreateSMSClient(os.Getenv("SMSAccessKeyID"), os.Getenv("SMSAccessKeySecret"), os.Getenv("SMSEndpoint"))
 	if err != nil {
 		return err
 	}
-	name := strings.ReplaceAll(databaseName, "-", "/")
-	owner, _ := GetNSOwner(namespace)
+	name := strings.ReplaceAll(notificationInfo.DatabaseClusterName, "-", "/")
+	owner, _ := GetNSOwner(notificationInfo.Namespace)
 	phoneNumbers, err := GetPhoneNumberByNS(owner)
 	if err != nil {
 		return err

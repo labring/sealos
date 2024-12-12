@@ -39,7 +39,8 @@ const defaultEdit: MigrateForm = {
   sourceDatabase: '',
   sourceDatabaseTable: ['All'],
   isChecked: false,
-  continued: false
+  continued: false,
+  terminationPolicy: 'Delete'
 };
 
 const EditApp = ({

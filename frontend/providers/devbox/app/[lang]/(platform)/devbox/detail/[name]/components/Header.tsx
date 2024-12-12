@@ -5,7 +5,7 @@ import { Dispatch, useCallback, useMemo, useState } from 'react'
 
 import { useRouter } from '@/i18n'
 import { useDevboxStore } from '@/stores/devbox'
-import { IDEType, useGlobalStore } from '@/stores/global'
+import { useGlobalStore } from '@/stores/global'
 import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 
 import { DevboxDetailType } from '@/types/devbox'
@@ -15,6 +15,7 @@ import IDEButton from '@/components/IDEButton'
 import DelModal from '@/components/modals/DelModal'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { sealosApp } from 'sealos-desktop-sdk/app'
+import { useQuery } from '@tanstack/react-query'
 
 const Header = ({
   refetchDevboxDetail,
@@ -29,12 +30,17 @@ const Header = ({
   const t = useTranslations()
   const { message: toast } = useMessage()
 
-  const { screenWidth } = useGlobalStore()
-  const { devboxDetail } = useDevboxStore()
-  const { setLoading } = useGlobalStore()
+  const { devboxDetail, setDevboxList } = useDevboxStore()
+  const { screenWidth, setLoading } = useGlobalStore()
 
   const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
   const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
+
+  const { refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
+    onSettled(res) {
+      if (!res) return
+    }
+  })
 
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxDetailType) => {
@@ -168,6 +174,7 @@ const Header = ({
             isBigButton={isBigButton}
             leftButtonProps={{
               height: '40px',
+              width: '96px',
               borderWidth: '1 0 1 1',
               bg: 'white',
               color: 'grayModern.600'
@@ -276,6 +283,7 @@ const Header = ({
             setDelDevbox(null)
             router.push('/')
           }}
+          refetchDevboxList={refetchDevboxList}
         />
       )}
     </Flex>

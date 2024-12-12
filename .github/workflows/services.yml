@@ -173,6 +173,8 @@ jobs:
 
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    with:
+      artifact_name: sealos-services
   build-cluster-image:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
     needs:
@@ -208,9 +210,9 @@ jobs:
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: sealos
+          name: sealos-services
           path: /tmp/
       - name: Verify sealos
         run: |

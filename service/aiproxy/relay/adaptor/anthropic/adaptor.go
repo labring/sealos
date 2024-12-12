@@ -1,29 +1,33 @@
 package anthropic
 
 import (
-	"errors"
+	"bytes"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 type Adaptor struct{}
 
-func (a *Adaptor) Init(_ *meta.Meta) {
-}
+const baseURL = "https://api.anthropic.com"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return meta.BaseURL + "/v1/messages", nil
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
+	return u + "/v1/messages", nil
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	adaptor.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("X-Api-Key", meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {
+	req.Header.Set("X-Api-Key", meta.Channel.Key)
 	anthropicVersion := c.Request.Header.Get("Anthropic-Version")
 	if anthropicVersion == "" {
 		anthropicVersion = "2023-06-01"
@@ -40,42 +44,33 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, _ int, request *model.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	data, err := ConvertRequest(meta, req)
+	if err != nil {
+		return nil, nil, err
 	}
-	return ConvertRequest(request), nil
-}
 
-func (a *Adaptor) ConvertImageRequest(request *model.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
+	data2, err := json.Marshal(data)
+	if err != nil {
+		return nil, nil, err
 	}
-	return request, nil
+	return nil, bytes.NewReader(data2), nil
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return adaptor.DoRequestHelper(a, c, meta, requestBody)
+func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(req)
 }
 
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*model.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
-	if meta.IsStream {
-		err, usage = StreamHandler(c, resp)
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	if utils.IsStreamResponse(resp) {
+		err, usage = StreamHandler(meta, c, resp)
 	} else {
-		err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = Handler(meta, c, resp)
 	}
 	return
 }
 
-func (a *Adaptor) GetModelList() []string {
+func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
 }
 

@@ -11,14 +11,16 @@ import (
 )
 
 type ConsumeError struct {
-	CreatedAt  time.Time       `gorm:"index"          json:"created_at"`
-	GroupID    string          `gorm:"index"          json:"group_id"`
-	TokenName  EmptyNullString `gorm:"index;not null" json:"token_name"`
-	Model      string          `gorm:"index"          json:"model"`
-	Content    string          `gorm:"type:text"      json:"content"`
-	ID         int             `gorm:"primaryKey"     json:"id"`
-	UsedAmount float64         `gorm:"index"          json:"used_amount"`
-	TokenID    int             `gorm:"index"          json:"token_id"`
+	RequestAt  time.Time       `gorm:"index;index:idx_consume_error_group_reqat,priority:2" json:"request_at"`
+	CreatedAt  time.Time       `json:"created_at"`
+	GroupID    string          `gorm:"index;index:idx_consume_error_group_reqat,priority:1" json:"group_id"`
+	RequestID  string          `gorm:"index"                                                json:"request_id"`
+	TokenName  EmptyNullString `gorm:"not null"                                             json:"token_name"`
+	Model      string          `json:"model"`
+	Content    string          `gorm:"type:text"                                            json:"content"`
+	ID         int             `gorm:"primaryKey"                                           json:"id"`
+	UsedAmount float64         `json:"used_amount"`
+	TokenID    int             `json:"token_id"`
 }
 
 func (c *ConsumeError) MarshalJSON() ([]byte, error) {
@@ -26,14 +28,18 @@ func (c *ConsumeError) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at"`
+		RequestAt int64 `json:"request_at"`
 	}{
 		Alias:     (*Alias)(c),
 		CreatedAt: c.CreatedAt.UnixMilli(),
+		RequestAt: c.RequestAt.UnixMilli(),
 	})
 }
 
-func CreateConsumeError(group string, tokenName string, model string, content string, usedAmount float64, tokenID int) error {
+func CreateConsumeError(requestID string, requestAt time.Time, group string, tokenName string, model string, content string, usedAmount float64, tokenID int) error {
 	return LogDB.Create(&ConsumeError{
+		RequestID:  requestID,
+		RequestAt:  requestAt,
 		GroupID:    group,
 		TokenName:  EmptyNullString(tokenName),
 		Model:      model,
@@ -43,12 +49,15 @@ func CreateConsumeError(group string, tokenName string, model string, content st
 	}).Error
 }
 
-func SearchConsumeError(keyword string, group string, tokenName string, model string, content string, usedAmount float64, tokenID int, page int, perPage int, order string) ([]*ConsumeError, int64, error) {
+func SearchConsumeError(keyword string, requestID string, group string, tokenName string, model string, content string, usedAmount float64, tokenID int, page int, perPage int, order string) ([]*ConsumeError, int64, error) {
 	tx := LogDB.Model(&ConsumeError{})
 
 	// Handle exact match conditions for non-zero values
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
+	}
+	if requestID != "" {
+		tx = tx.Where("request_id = ?", requestID)
 	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
@@ -74,6 +83,14 @@ func SearchConsumeError(keyword string, group string, tokenName string, model st
 		if tokenID == 0 {
 			conditions = append(conditions, "token_id = ?")
 			values = append(values, helper.String2Int(keyword))
+		}
+		if requestID == "" {
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "request_id ILIKE ?")
+			} else {
+				conditions = append(conditions, "request_id LIKE ?")
+			}
+			values = append(values, "%"+keyword+"%")
 		}
 		if group == "" {
 			if common.UsingPostgreSQL {

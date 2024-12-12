@@ -145,6 +145,9 @@ const DevboxList = ({
               height={'20px'}
               alt={item.id}
               src={`/images/${item.runtimeType}.svg`}
+              onError={(e) => {
+                e.currentTarget.src = '/images/custom.svg'
+              }}
             />
             <Box color={'grayModern.900'} fontSize={'md'}>
               {item.name}
@@ -220,6 +223,9 @@ const DevboxList = ({
             runtimeVersion={item.runtimeVersion}
             sshPort={item.sshPort}
             status={item.status}
+            leftButtonProps={{
+              width: '95px'
+            }}
           />
           <Button
             mr={5}
@@ -373,6 +379,7 @@ const DevboxList = ({
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={refetchDevboxList}
+          refetchDevboxList={refetchDevboxList}
         />
       )}
       {!!onOpenRelease && !!currentDevboxListItem && (

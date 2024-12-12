@@ -7,7 +7,8 @@ import {
   Tooltip,
   IconButton,
   MenuItem,
-  ButtonProps
+  ButtonProps,
+  Box
 } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
@@ -15,8 +16,8 @@ import { useCallback, useState } from 'react'
 
 import MyIcon from './Icon'
 import { useEnvStore } from '@/stores/env'
+import { useIDEStore, IDEType } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
-import { IDEType, useGlobalStore } from '@/stores/global'
 import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
 
 interface Props {
@@ -43,10 +44,11 @@ const IDEButton = ({
   const { env } = useEnvStore()
   const { message: toast } = useMessage()
   const [loading, setLoading] = useState(false)
-  const { setCurrentIDE, currentIDE } = useGlobalStore()
+  const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore()
+  const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType
 
   const handleGotoIDE = useCallback(
-    async (currentIDE: IDEType = 'vscode') => {
+    async (currentIDE: IDEType = 'cursor') => {
       setLoading(true)
 
       toast({
@@ -85,7 +87,6 @@ const IDEButton = ({
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
-          size={'sm'}
           fontSize={'base'}
           bg={'grayModern.150'}
           color={'grayModern.900'}
@@ -95,10 +96,18 @@ const IDEButton = ({
           borderRightWidth={0}
           borderRightRadius={0}
           onClick={() => handleGotoIDE(currentIDE)}
-          leftIcon={isBigButton ? <MyIcon name={currentIDE} w={'16px'} /> : undefined}
           isDisabled={status.value !== 'Running' || loading}
           {...leftButtonProps}>
-          {!isBigButton ? <MyIcon name={currentIDE} w={'16px'} /> : ideObj[currentIDE]?.label}
+          {isBigButton ? (
+            <Flex alignItems={'center'} w={'100%'} justifyContent={'center'}>
+              <MyIcon name={currentIDE} w={'25%'} />
+              <Box w={'75%'} textAlign={'center'} pl={2}>
+                {ideObj[currentIDE]?.label}
+              </Box>
+            </Flex>
+          ) : (
+            <MyIcon name={currentIDE} w={'16px'} />
+          )}
         </Button>
       </Tooltip>
       <Menu placement="bottom-end" isLazy>
@@ -141,7 +150,10 @@ const IDEButton = ({
             <MenuItem
               key={item.value}
               value={item.value}
-              onClick={() => setCurrentIDE(item.value as IDEType)}
+              onClick={() => {
+                updateDevboxIDE(item.value as IDEType, devboxName)
+                handleGotoIDE(item.value as IDEType)
+              }}
               icon={<MyIcon name={item.value as IDEType} w={'16px'} />}
               _hover={{
                 bg: '#1118240D',
@@ -152,7 +164,7 @@ const IDEButton = ({
                 borderRadius: 4
               }}>
               <Flex justifyContent="space-between" alignItems="center" width="100%">
-                {item?.label}
+                {item?.menuLabel}
                 {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
               </Flex>
             </MenuItem>
@@ -166,30 +178,34 @@ const IDEButton = ({
 export const ideObj = {
   vscode: {
     label: 'VSCode',
+    menuLabel: 'VSCode',
     icon: 'vscode',
     prefix: 'vscode://',
     value: 'vscode'
   },
   vscodeInsiders: {
-    label: 'VSCode Insiders',
+    label: 'Insiders',
+    menuLabel: 'VSCode Insiders',
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
     value: 'vscodeInsiders'
   },
   cursor: {
     label: 'Cursor',
+    menuLabel: 'Cursor',
     icon: 'cursor',
     prefix: 'cursor://',
     value: 'cursor'
   },
   windsurf: {
     label: 'Windsurf',
+    menuLabel: 'Windsurf',
     icon: 'windsurf',
     prefix: 'windsurf://',
     value: 'windsurf'
   }
 }
 
-const menuItems = Object.values(ideObj).map(({ value, label }) => ({ value, label }))
+const menuItems = Object.values(ideObj).map(({ value, menuLabel }) => ({ value, menuLabel }))
 
 export default IDEButton

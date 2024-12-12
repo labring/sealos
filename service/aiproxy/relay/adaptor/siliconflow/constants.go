@@ -1,36 +1,76 @@
 package siliconflow
 
+import (
+	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
 // https://docs.siliconflow.cn/docs/getting-started
 
-var ModelList = []string{
-	"deepseek-ai/deepseek-llm-67b-chat",
-	"Qwen/Qwen1.5-14B-Chat",
-	"Qwen/Qwen1.5-7B-Chat",
-	"Qwen/Qwen1.5-110B-Chat",
-	"Qwen/Qwen1.5-32B-Chat",
-	"01-ai/Yi-1.5-6B-Chat",
-	"01-ai/Yi-1.5-9B-Chat-16K",
-	"01-ai/Yi-1.5-34B-Chat-16K",
-	"THUDM/chatglm3-6b",
-	"deepseek-ai/DeepSeek-V2-Chat",
-	"THUDM/glm-4-9b-chat",
-	"Qwen/Qwen2-72B-Instruct",
-	"Qwen/Qwen2-7B-Instruct",
-	"Qwen/Qwen2-57B-A14B-Instruct",
-	"deepseek-ai/DeepSeek-Coder-V2-Instruct",
-	"Qwen/Qwen2-1.5B-Instruct",
-	"internlm/internlm2_5-7b-chat",
-	"BAAI/bge-large-en-v1.5",
-	"BAAI/bge-large-zh-v1.5",
-	"Pro/Qwen/Qwen2-7B-Instruct",
-	"Pro/Qwen/Qwen2-1.5B-Instruct",
-	"Pro/Qwen/Qwen1.5-7B-Chat",
-	"Pro/THUDM/glm-4-9b-chat",
-	"Pro/THUDM/chatglm3-6b",
-	"Pro/01-ai/Yi-1.5-9B-Chat-16K",
-	"Pro/01-ai/Yi-1.5-6B-Chat",
-	"Pro/google/gemma-2-9b-it",
-	"Pro/internlm/internlm2_5-7b-chat",
-	"Pro/meta-llama/Meta-Llama-3-8B-Instruct",
-	"Pro/mistralai/Mistral-7B-Instruct-v0.2",
+var ModelList = []*model.ModelConfig{
+	{
+		Model:       "BAAI/bge-reranker-v2-m3",
+		Type:        relaymode.Rerank,
+		Owner:       model.ModelOwnerBAAI,
+		InputPrice:  0.0009,
+		OutputPrice: 0,
+	},
+
+	{
+		Model: "BAAI/bge-large-zh-v1.5",
+		Type:  relaymode.Embeddings,
+		Owner: model.ModelOwnerBAAI,
+	},
+
+	{
+		Model:       "fishaudio/fish-speech-1.4",
+		Type:        relaymode.AudioSpeech,
+		Owner:       model.ModelOwnerFishAudio,
+		OutputPrice: 0.105,
+		Config: map[model.ModelConfigKey]any{
+			model.ModelConfigSupportVoicesKey: []string{
+				"fishaudio/fish-speech-1.4:alex",
+				"fishaudio/fish-speech-1.4:benjamin",
+				"fishaudio/fish-speech-1.4:charles",
+				"fishaudio/fish-speech-1.4:david",
+				"fishaudio/fish-speech-1.4:anna",
+				"fishaudio/fish-speech-1.4:bella",
+				"fishaudio/fish-speech-1.4:claire",
+				"fishaudio/fish-speech-1.4:diana",
+			},
+		},
+	},
+
+	{
+		Model: "FunAudioLLM/SenseVoiceSmall",
+		Type:  relaymode.AudioTranscription,
+		Owner: model.ModelOwnerFunAudioLLM,
+	},
+
+	{
+		Model: "stabilityai/stable-diffusion-3-5-large",
+		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerStabilityAI,
+		ImagePrices: map[string]float64{
+			"1024x1024": 0,
+			"512x1024":  0,
+			"768x512":   0,
+			"768x1024":  0,
+			"1024x576":  0,
+			"576x1024":  0,
+		},
+	},
+	{
+		Model: "stabilityai/stable-diffusion-3-5-large-turbo",
+		Type:  relaymode.ImagesGenerations,
+		Owner: model.ModelOwnerStabilityAI,
+		ImagePrices: map[string]float64{
+			"1024x1024": 0,
+			"512x1024":  0,
+			"768x512":   0,
+			"768x1024":  0,
+			"1024x576":  0,
+			"576x1024":  0,
+		},
+	},
 }

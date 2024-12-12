@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
@@ -41,23 +41,32 @@ func GetLogs(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
 	logs, total, err := model.GetLogs(
-		startTimestampTime, endTimestampTime,
-		code, modelName, group, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
+		startTimestampTime,
+		endTimestampTime,
+		code,
+		modelName,
+		group,
+		requestID,
+		tokenID,
+		tokenName,
+		p*perPage,
+		perPage,
+		channel,
+		endpoint,
+		content,
+		order,
+		mode,
+	)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"logs":  logs,
-			"total": total,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"logs":  logs,
+		"total": total,
 	})
 }
 
@@ -92,23 +101,32 @@ func GetGroupLogs(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
-	logs, total, err := model.GetGroupLogs(group,
-		startTimestampTime, endTimestampTime,
-		code, modelName, tokenID, tokenName, p*perPage, perPage, channel, endpoint, content, order)
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	logs, total, err := model.GetGroupLogs(
+		group,
+		startTimestampTime,
+		endTimestampTime,
+		code,
+		modelName,
+		requestID,
+		tokenID,
+		tokenName,
+		p*perPage,
+		perPage,
+		channel,
+		endpoint,
+		content,
+		order,
+		mode,
+	)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"logs":  logs,
-			"total": total,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"logs":  logs,
+		"total": total,
 	})
 }
 
@@ -140,21 +158,33 @@ func SearchLogs(c *gin.Context) {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchLogs(keyword, p, perPage, code, endpoint, groupID, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channel, order)
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	logs, total, err := model.SearchLogs(
+		keyword,
+		p,
+		perPage,
+		code,
+		endpoint,
+		groupID,
+		requestID,
+		tokenID,
+		tokenName,
+		modelName,
+		content,
+		startTimestampTime,
+		endTimestampTime,
+		channel,
+		order,
+		mode,
+	)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"logs":  logs,
-			"total": total,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"logs":  logs,
+		"total": total,
 	})
 }
 
@@ -186,109 +216,48 @@ func SearchGroupLogs(c *gin.Context) {
 		endTimestampTime = time.UnixMilli(endTimestamp)
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchGroupLogs(group, keyword, p, perPage, code, endpoint, tokenID, tokenName, modelName, content, startTimestampTime, endTimestampTime, channelID, order)
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	logs, total, err := model.SearchGroupLogs(
+		group,
+		keyword,
+		p,
+		perPage,
+		code,
+		endpoint,
+		requestID,
+		tokenID,
+		tokenName,
+		modelName,
+		content,
+		startTimestampTime,
+		endTimestampTime,
+		channelID,
+		order,
+		mode,
+	)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"logs":  logs,
-			"total": total,
-		},
-	})
-}
-
-func GetLogsStat(c *gin.Context) {
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	if endTimestamp < startTimestamp {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "end_timestamp must be greater than start_timestamp",
-		})
-		return
-	}
-	tokenName := c.Query("token_name")
-	group := c.Query("group")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	endpoint := c.Query("endpoint")
-	var startTimestampTime time.Time
-	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
-	}
-	var endTimestampTime time.Time
-	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
-	}
-	quotaNum := model.SumUsedQuota(startTimestampTime, endTimestampTime, modelName, group, tokenName, channel, endpoint)
-	// tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, "")
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"quota": quotaNum,
-			// "token": tokenNum,
-		},
-	})
-}
-
-func GetLogsSelfStat(c *gin.Context) {
-	group := c.GetString(ctxkey.Group)
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	endpoint := c.Query("endpoint")
-	var startTimestampTime time.Time
-	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
-	}
-	var endTimestampTime time.Time
-	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
-	}
-	quotaNum := model.SumUsedQuota(startTimestampTime, endTimestampTime, modelName, group, tokenName, channel, endpoint)
-	// tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, tokenName)
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"quota": quotaNum,
-			// "token": tokenNum,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"logs":  logs,
+		"total": total,
 	})
 }
 
 func DeleteHistoryLogs(c *gin.Context) {
 	timestamp, _ := strconv.ParseInt(c.Query("timestamp"), 10, 64)
 	if timestamp == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "timestamp is required",
-		})
+		middleware.ErrorResponse(c, http.StatusOK, "timestamp is required")
 		return
 	}
 	count, err := model.DeleteOldLog(time.UnixMilli(timestamp))
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    count,
-	})
+	middleware.SuccessResponse(c, count)
 }
 
 func SearchConsumeError(c *gin.Context) {
@@ -307,19 +276,14 @@ func SearchConsumeError(c *gin.Context) {
 		perPage = 100
 	}
 	order := c.Query("order")
-	logs, total, err := model.SearchConsumeError(keyword, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
+	requestID := c.Query("request_id")
+	logs, total, err := model.SearchConsumeError(keyword, requestID, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"logs":  logs,
-			"total": total,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"logs":  logs,
+		"total": total,
 	})
 }
