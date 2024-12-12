@@ -9,6 +9,8 @@ export const createBackup = (data: CreateBackupPros) => POST('/api/backup/create
 export const getBackupList = (dbName: string) =>
   GET('/api/backup/getBackupList', { dbName }).then((res) => res.map(adaptBackup));
 
+export const getBackups = () => GET('/api/backup/getBackups');
+
 export const deleteBackup = (backupName: string) =>
   DELETE(`/api/backup/delBackup?backupName=${backupName}`);
 

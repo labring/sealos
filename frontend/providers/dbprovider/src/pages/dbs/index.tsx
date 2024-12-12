@@ -5,6 +5,8 @@ import { useDBStore } from '@/store/db';
 import { useLoading } from '@/hooks/useLoading';
 import { useState } from 'react';
 import { serviceSideProps } from '@/utils/i18n';
+import Sidebar from '@/components/Sidebar';
+import { Flex } from '@chakra-ui/react';
 
 function Home() {
   const { dbList, setDBList } = useDBStore();
@@ -23,9 +25,10 @@ function Home() {
       {dbList.length === 0 && initialized ? (
         <Empty />
       ) : (
-        <>
+        <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'}>
+          <Sidebar />
           <DBList dbList={dbList} refetchApps={refetch} />
-        </>
+        </Flex>
       )}
       <Loading loading={!initialized} />
     </>

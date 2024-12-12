@@ -55,6 +55,7 @@ const map = {
   config: require('./icons/config.svg').default,
   backupSettings: require('./icons/backupSettings.svg').default,
   monitor: require('./icons/monitor.svg').default,
+  logoLinear: require('./icons/logo-linear.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default
 };

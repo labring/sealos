@@ -10,29 +10,6 @@ export type Props = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { dbName } = req.query as Props;
-
-  if (!dbName) {
-    jsonRes(res, {
-      code: 500,
-      error: 'params error'
-    });
-    return;
-  }
-
-  try {
-    jsonRes(res, {
-      data: await getBackupListByDBName({ dbName, req })
-    });
-  } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
-  }
-}
-
-export async function getBackupListByDBName({ dbName, req }: Props & { req: NextApiRequest }) {
   const group = 'dataprotection.kubeblocks.io';
   const version = 'v1alpha1';
   const plural = 'backups';
@@ -45,13 +22,17 @@ export async function getBackupListByDBName({ dbName, req }: Props & { req: Next
     group,
     version,
     namespace,
-    plural,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    `app.kubernetes.io/instance=${dbName}`
+    plural
   )) as { body: { items: any[] } };
 
-  return body?.items || [];
+  try {
+    jsonRes(res, {
+      data: body
+    });
+  } catch (err: any) {
+    jsonRes(res, {
+      code: 500,
+      error: err
+    });
+  }
 }
