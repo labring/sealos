@@ -239,7 +239,6 @@ const SshConnectModal = ({
                     <ScriptCode
                       platform={script.platform}
                       script={sshConfig(
-                        jetbrainsGuideData.privateKey,
                         jetbrainsGuideData.configHost,
                         jetbrainsGuideData.host,
                         jetbrainsGuideData.port,

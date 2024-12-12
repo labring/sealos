@@ -56,7 +56,7 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
       </Flex>
       {onOpenScripts && (
         <Box pt={2} pl={3}>
-          <Code content={script} language={platform === 'windows' ? 'powershell' : 'bash'} />
+          <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
         </Box>
       )}
     </Flex>

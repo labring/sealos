@@ -4,8 +4,7 @@ export const windowsScriptsTemplate = (
   host: string,
   port: string,
   user: string
-) => `
-\$ConfigDirTxt = "\$HOME\\.ssh\\sealos\\"
+) => `\$ConfigDirTxt = "\$HOME\\.ssh\\sealos\\"
 \$ConfigDir = Resolve-Path \$ConfigDirTxt
 \$SSHConfigFile = "\$HOME\\.ssh\\config"
 
@@ -142,21 +141,18 @@ else
 fi`
 
 export const sshConfig = (
-  privateKey: string,
   configHost: string,
   host: string,
   port: string,
   user: string
-) => `
-Host ${configHost}
+) => `Host ${configHost}
   HostName ${host}
   Port ${port}
   User ${user}
-  IdentityFile ${privateKey}
+  IdentityFile ~/.ssh/sealos/${configHost}
   IdentitiesOnly yes
   StrictHostKeyChecking no
 `
 
-export const sshConnectCommand = (configHost: string) => `
-ssh ${configHost}
+export const sshConnectCommand = (configHost: string) => `ssh ${configHost}
 `
