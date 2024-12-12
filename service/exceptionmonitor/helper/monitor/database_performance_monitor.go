@@ -19,7 +19,7 @@ func DatabasePerformanceMonitor() {
 		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
-		time.Sleep(10 * time.Minute)
+		time.Sleep(2 * time.Minute)
 	}
 }
 
