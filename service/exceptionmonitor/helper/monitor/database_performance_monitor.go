@@ -64,11 +64,11 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		return
 	}
 	notificationInfo.ExceptionType = "阀值"
-	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.CPUChinese {
+	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 		notificationInfo = *value
-	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.MemoryChinese {
+	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 		notificationInfo = *value
-	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.DiskChinese {
+	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 		notificationInfo = *value
 		fmt.Println(111)
 		fmt.Println(notificationInfo)
@@ -171,7 +171,7 @@ func processException(notificationInfo *api.Info, threshold float64) {
 	}
 	if notificationInfo.PerformanceType == api.DiskChinese {
 		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
-		fmt.Println(44444)
+		//fmt.Println(44444)
 	}
 	ZNThreshold := NumberToChinese(int(threshold))
 	if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+notificationInfo.PerformanceType+"超过百分之"+ZNThreshold); err != nil {
@@ -188,8 +188,8 @@ func processRecovery(notificationInfo *api.Info) {
 	if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 		log.Printf("Failed to send notification: %v", err)
 	}
-	fmt.Println(333)
-	fmt.Println(notificationInfo)
+	//fmt.Println(333)
+	//fmt.Println(notificationInfo)
 	if notificationInfo.PerformanceType == api.CPUChinese {
 		delete(api.CPUNotificationInfoMap, notificationInfo.DatabaseClusterUID)
 	}
