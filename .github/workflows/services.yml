@@ -87,7 +87,7 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [database, pay, account, minio, launchpad, exceptionmonitor, aiproxy]
+        module: [ database, pay, account, minio, launchpad, exceptionmonitor, aiproxy, devbox ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -184,7 +184,7 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [database, pay, account, minio, launchpad, exceptionmonitor, aiproxy]
+        module: [ database, pay, account, minio, launchpad, exceptionmonitor, aiproxy, devbox ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
