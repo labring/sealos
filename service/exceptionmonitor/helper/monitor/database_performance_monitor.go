@@ -65,24 +65,28 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	}
 	notificationInfo.ExceptionType = "阀值"
 	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.CPUChinese {
-		fmt.Println(11)
 		notificationInfo = *value
-		fmt.Println(value)
-		fmt.Println(notificationInfo)
-		fmt.Println(11)
 	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.MemoryChinese {
-		fmt.Println(22)
 		notificationInfo = *value
-		fmt.Println(value)
-		fmt.Println(notificationInfo)
-		fmt.Println(22)
 	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.DiskChinese {
-		fmt.Println(33)
 		notificationInfo = *value
-		fmt.Println(value)
+		fmt.Println(111)
 		fmt.Println(notificationInfo)
-		fmt.Println(33)
 	}
+	//switch notificationInfo.PerformanceType {
+	//case api.CPUChinese:
+	//	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	//		notificationInfo = *value
+	//	}
+	//case api.MemoryChinese:
+	//	if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	//		notificationInfo = *value
+	//	}
+	//case api.DiskChinese:
+	//	if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	//		notificationInfo = *value
+	//	}
+	//}
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
 		break
@@ -183,6 +187,8 @@ func processRecovery(notificationInfo *api.Info) {
 	if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 		log.Printf("Failed to send notification: %v", err)
 	}
+	fmt.Println(333)
+	fmt.Println(notificationInfo)
 	if notificationInfo.PerformanceType == api.CPUChinese {
 		delete(api.CPUNotificationInfoMap, notificationInfo.DatabaseClusterUID)
 	}
