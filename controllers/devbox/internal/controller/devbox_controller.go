@@ -19,6 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"strconv"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -60,6 +62,8 @@ type DevboxReconciler struct {
 	DebugMode               bool
 	WebsocketProxyDomain    string
 	IngressClass            string
+	EnableAutoShutdown      bool
+	ShutdownServerKey       string
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -496,7 +500,7 @@ func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv
 				Service: &networkingv1.IngressServiceBackend{
 					Name: devbox.Name + "-proxy-svc",
 					Port: networkingv1.ServiceBackendPort{
-						Number: 8080,
+						Number: 80,
 					},
 				},
 			},
@@ -542,8 +546,8 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 	servicePort := []corev1.ServicePort{
 		{
 			Name:       "devbox-ssh-port",
-			Port:       8080,
-			TargetPort: intstr.FromInt32(8080),
+			Port:       80,
+			TargetPort: intstr.FromInt32(80),
 			Protocol:   corev1.ProtocolTCP,
 		},
 	}
@@ -581,11 +585,52 @@ func (r *DevboxReconciler) generateProxyPodDeploymentName(devbox *devboxv1alpha1
 	return devbox.Name + "-proxy-deployment"
 }
 
-func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) (*appsv1.Deployment, error) {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return nil, err
+type Claims struct {
+	DevboxName string `json:"devbox_name"`
+	NameSpace  string `json:"namespace"`
+	jwt.StandardClaims
+}
+
+func (r *DevboxReconciler) generateProxyPodJWT(ctx context.Context, devbox *devboxv1alpha1.Devbox) (string, error) {
+	expirationTime := time.Now().Add(5 * time.Minute)
+	claims := &Claims{
+		DevboxName: devbox.Name,
+		NameSpace:  devbox.Namespace,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			Issuer:    "devbox-controller",
+		},
 	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(r.ShutdownServerKey)
+}
+
+func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) []corev1.EnvVar {
+	var envVars []corev1.EnvVar
+	autoShutdownEnabled := devbox.Spec.AutoShutdownSpec.Enable && r.EnableAutoShutdown
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "ENABLE_AUTO_SHUTDOWN",
+		Value: strconv.FormatBool(autoShutdownEnabled),
+	})
+
+	if autoShutdownEnabled {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "AUTO_SHUTDOWN_INTERVAL",
+			Value: devbox.Spec.AutoShutdownSpec.Time,
+		})
+	}
+
+	if token, err := r.generateProxyPodJWT(ctx, devbox); err == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "JWT_TOKEN",
+			Value: token,
+		})
+	}
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "LISTEN",
+		Value: "0.0.0.0:80",
+	})
 
 	sshPort := "22"
 	for _, port := range servicePorts {
@@ -595,30 +640,32 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 		}
 	}
 
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "TARGET",
+		Value: fmt.Sprintf("%s-pod-svc:%s", devbox.Name, sshPort),
+	})
+
+	return envVars
+}
+
+func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) (*appsv1.Deployment, error) {
+	runtimecr, err := r.getRuntime(ctx, devbox)
+	if err != nil {
+		return nil, err
+	}
+
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  "ws-proxy",
-				Image: r.WebSocketImage,
-				Command: []string{
-					"sh",
-					"-c",
-				},
-				Args: []string{
-					fmt.Sprintf("/app/bin server --port=%d  -v --reverse & /app/bin client -v localhost:%d R:2222:%s-pod-svc:%s",
-						8080,
-						8080,
-						devbox.Name,
-						sshPort,
-					),
-				},
+				Name:      "ws-proxy",
+				Image:     r.WebSocketImage,
+				Env:       r.generateProxyPodEnv(ctx, devbox, servicePorts),
 				Resources: helper.GenerateProxyPodResourceRequirements(),
 			},
 		},
 	}
 
 	replicas := int32(1)
-
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        r.generateProxyPodDeploymentName(devbox),

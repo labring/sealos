@@ -77,7 +77,8 @@ func main() {
 	var webSocketImage string
 	var websocketProxyDomain string
 	var ingressClass string
-
+	var enableAutoShutdown bool
+	var shutdownServerKey string
 	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
 	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
 	flag.StringVar(&registryPassword, "registry-password", "passw0rd", "The password of the registry")
@@ -100,6 +101,8 @@ func main() {
 	flag.StringVar(&webSocketImage, "websocket-image", "bearslyricattack/chisel:1.0", "The image name of devbox websocket proxy pod.")
 	flag.StringVar(&websocketProxyDomain, "websocket-proxy-domain", "sealoshzh.site", "The websocket proxy domain of devbox ingress.")
 	flag.StringVar(&ingressClass, "ingress-class", "nginx", "The ingress class name.")
+	flag.BoolVar(&enableAutoShutdown, "enable-auto-shutdown", true, "If set, Devbox auto shutdown will be enabled.")
+	flag.StringVar(&shutdownServerKey, "shutdown-server-key", "sealos-devbox-shutdown", "The server key used to shutdown the server.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -202,6 +205,7 @@ func main() {
 		WebSocketImage:          webSocketImage,
 		WebsocketProxyDomain:    websocketProxyDomain,
 		IngressClass:            ingressClass,
+		EnableAutoShutdown:      enableAutoShutdown,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)

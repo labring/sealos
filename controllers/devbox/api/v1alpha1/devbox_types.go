@@ -70,6 +70,14 @@ type NetworkSpec struct {
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
 }
 
+type AutoShutdownSpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	Enable bool `json:"type"`
+	// +kubebuilder:validation:Optional
+	Time string `json:"extraPorts"`
+}
+
 // DevboxSpec defines the desired state of Devbox
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
@@ -87,6 +95,9 @@ type DevboxSpec struct {
 
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	AutoShutdownSpec AutoShutdownSpec `json:"autoShutdown,omitempty"`
 
 	// todo add rewrite labels and annotations...
 	// +kubebuilder:validation:Optional
