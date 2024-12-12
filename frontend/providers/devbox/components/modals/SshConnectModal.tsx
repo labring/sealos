@@ -16,13 +16,17 @@ import {
   StepNumber,
   StepStatus,
   StepSeparator,
-  Circle
+  Circle,
+  Tabs,
+  TabList
 } from '@chakra-ui/react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import Code from '../Code'
+import Tab from '../Tab'
 import MyIcon from '../Icon'
-import { useState } from 'react'
+import ScriptCode from '../ScriptCode'
 
 interface JetBrainsGuideData {
   devboxName: string
@@ -35,6 +39,8 @@ interface JetBrainsGuideData {
   port: string
 }
 
+const systemList = ['Windows', 'Mac', 'Linux']
+
 const SshConnectModal = ({
   onClose
 }: {
@@ -44,9 +50,7 @@ const SshConnectModal = ({
 }) => {
   const t = useTranslations()
 
-  const [onOpenScripts1, setOnOpenScripts1] = useState(false)
-  const [onOpenScripts2, setOnOpenScripts2] = useState(false)
-  const [onOpenScripts3, setOnOpenScripts3] = useState(false)
+  const [activeTab, setActiveTab] = useState(0)
 
   return (
     <Box>
@@ -56,6 +60,14 @@ const SshConnectModal = ({
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={6} overflowY={'auto'}>
+            <Tabs onChange={(index) => setActiveTab(index)} mb={4} colorScheme={'brightBlue'}>
+              <TabList>
+                {systemList.map((item) => (
+                  <Tab key={item}>{item}</Tab>
+                ))}
+              </TabList>
+            </Tabs>
+            {/* one-click */}
             <Flex flexDirection={'column'} gap={4}>
               <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
                 {t('jetbrains_guide_one_click_setup')}
@@ -68,7 +80,7 @@ const SshConnectModal = ({
                     </Text>
                   ),
                   lightColor: (chunks) => (
-                    <Text display={'inline-block'} color={'grayModern.600'}>
+                    <Text color={'grayModern.600'} display={'inline-block'}>
                       {chunks}
                     </Text>
                   )
@@ -90,234 +102,124 @@ const SshConnectModal = ({
                 }}>
                 {t('download_scripts')}
               </Button>
-              <Flex
-                justifyContent={'space-between'}
-                bg={'grayModern.25'}
-                p={2}
-                borderRadius={'6px'}
-                border={'1px solid'}
-                borderColor={'grayModern.200'}
-                alignItems={'center'}>
-                <Box>
-                  <Button
-                    onClick={() => setOnOpenScripts1(!onOpenScripts1)}
-                    bg={'transparent'}
-                    border={'none'}
-                    boxShadow={'none'}
-                    color={'grayModern.900'}
-                    fontWeight={400}
-                    leftIcon={<MyIcon name="arrowDown" color={'grayModern.500'} w={'16px'} />}
-                    _hover={{
-                      color: 'brightBlue.600',
-                      '& svg': {
-                        color: 'brightBlue.600'
-                      }
-                    }}>
-                    Bash
-                  </Button>
-                </Box>
-                <Box>
-                  <Button
-                    bg={'transparent'}
-                    border={'none'}
-                    boxShadow={'none'}
-                    color={'grayModern.900'}
-                    _hover={{
-                      color: 'brightBlue.600',
-                      '& svg': {
-                        color: 'brightBlue.600'
-                      }
-                    }}>
-                    <MyIcon name="copy" color={'grayModern.600'} w={'16px'} />
-                  </Button>
-                </Box>
-              </Flex>
-              {onOpenScripts1 && <Code content={'test'} language="bash" />}
+              <ScriptCode />
             </Flex>
             <Divider my={6} />
+            {/* step-by-step */}
             <Stepper orientation="vertical" index={-1} mt={4} gap={0} position={'relative'}>
               {/* 1 */}
-              <Step>
-                <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                  <StepStatus incomplete={<StepNumber />} />
-                </StepIndicator>
-                <Box mt={1} ml={2} mb={5}>
-                  <Box fontSize={'14px'} mb={3}>
-                    {t.rich('jetbrains_guide_download_private_key', {
-                      blue: (chunks) => (
-                        <Text fontWeight={'bold'} display={'inline-block'} color={'brightBlue.600'}>
-                          {chunks}
-                        </Text>
-                      )
-                    })}
+              <Box w={'100%'}>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Box mt={1} ml={2} mb={5} flex={1}>
+                    <Box fontSize={'14px'} mb={3}>
+                      {t.rich('jetbrains_guide_download_private_key', {
+                        blue: (chunks) => (
+                          <Text
+                            fontWeight={'bold'}
+                            display={'inline-block'}
+                            color={'brightBlue.600'}>
+                            {chunks}
+                          </Text>
+                        )
+                      })}
+                    </Box>
+                    <Button
+                      leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
+                      bg={'white'}
+                      color={'grayModern.600'}
+                      borderRadius={'5px'}
+                      borderWidth={1}
+                      size={'sm'}
+                      _hover={{
+                        color: 'brightBlue.600',
+                        '& svg': {
+                          color: 'brightBlue.600'
+                        }
+                      }}
+                      onClick={() => {
+                        window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank')
+                      }}>
+                      {t('download_private_key')}
+                    </Button>
                   </Box>
-                  <Button
-                    leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
-                    bg={'white'}
-                    color={'grayModern.600'}
-                    borderRadius={'5px'}
-                    borderWidth={1}
-                    size={'sm'}
-                    _hover={{
-                      color: 'brightBlue.600',
-                      '& svg': {
-                        color: 'brightBlue.600'
-                      }
-                    }}
-                    onClick={() => {
-                      window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank')
-                    }}>
-                    {t('download_private_key')}
-                  </Button>
-                </Box>
-                <StepSeparator />
-              </Step>
+                  <StepSeparator />
+                </Step>
+              </Box>
               {/* 2 */}
-              <Step>
-                <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                  <StepStatus incomplete={<StepNumber />} />
-                </StepIndicator>
-                <Flex mt={1} ml={2} mb={5}>
-                  <Box fontSize={'14px'}>
-                    {t.rich('jetbrains_guide_move_to_path', {
-                      blue: (chunks) => (
-                        <Text fontWeight={'bold'} display={'inline-block'} color={'brightBlue.600'}>
-                          {chunks}
-                        </Text>
-                      )
-                    })}
-                  </Box>
-                  <Button
-                    bg={'transparent'}
-                    border={'none'}
-                    boxShadow={'none'}
-                    color={'grayModern.900'}
-                    _hover={{
-                      color: 'brightBlue.600',
-                      '& svg': {
-                        color: 'brightBlue.600'
-                      }
-                    }}
-                    ml={2}>
-                    <MyIcon name="copy" color={'grayModern.500'} w={'16px'} />
-                  </Button>
-                </Flex>
-                <StepSeparator />
-              </Step>
+              <Box w={'100%'}>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Flex mt={1} ml={2} mb={5} flex={1} h={'40px'}>
+                    <Box fontSize={'14px'}>
+                      {t.rich('jetbrains_guide_move_to_path', {
+                        blue: (chunks) => (
+                          <Text
+                            fontWeight={'bold'}
+                            display={'inline-block'}
+                            color={'brightBlue.600'}>
+                            {chunks}
+                          </Text>
+                        )
+                      })}
+                    </Box>
+                    <Box
+                      color={'grayModern.900'}
+                      _hover={{
+                        color: 'brightBlue.600',
+                        '& svg': {
+                          color: 'brightBlue.600'
+                        }
+                      }}
+                      cursor={'pointer'}
+                      ml={2}>
+                      <MyIcon name="copy" color={'grayModern.500'} w={'16px'} />
+                    </Box>
+                  </Flex>
+                  <StepSeparator />
+                </Step>
+              </Box>
               {/* 3 */}
-              <Step>
-                <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                  <StepStatus incomplete={<StepNumber />} />
-                </StepIndicator>
-                <Flex mt={1} ml={2} mb={5}>
-                  <Box fontSize={'14px'}>
-                    {t.rich('jetbrains_guide_modified_file', {
-                      blue: (chunks) => (
-                        <Text fontWeight={'bold'} display={'inline-block'} color={'brightBlue.600'}>
-                          {chunks}
-                        </Text>
-                      )
-                    })}
-                  </Box>
-                  <Flex
-                    justifyContent={'space-between'}
-                    bg={'grayModern.25'}
-                    p={2}
-                    borderRadius={'6px'}
-                    border={'1px solid'}
-                    borderColor={'grayModern.200'}
-                    alignItems={'center'}>
-                    <Box>
-                      <Button
-                        onClick={() => setOnOpenScripts2(!onOpenScripts2)}
-                        bg={'transparent'}
-                        border={'none'}
-                        boxShadow={'none'}
-                        color={'grayModern.900'}
-                        fontWeight={400}
-                        leftIcon={<MyIcon name="arrowDown" color={'grayModern.500'} w={'16px'} />}
-                        _hover={{
-                          color: 'brightBlue.600',
-                          '& svg': {
-                            color: 'brightBlue.600'
-                          }
-                        }}>
-                        Bash
-                      </Button>
+              <Box w={'100%'}>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                    <Box fontSize={'14px'}>
+                      {t.rich('jetbrains_guide_modified_file', {
+                        blue: (chunks) => (
+                          <Text
+                            fontWeight={'bold'}
+                            display={'inline-block'}
+                            color={'brightBlue.600'}>
+                            {chunks}
+                          </Text>
+                        )
+                      })}
                     </Box>
-                    <Box>
-                      <Button
-                        bg={'transparent'}
-                        border={'none'}
-                        boxShadow={'none'}
-                        color={'grayModern.900'}
-                        _hover={{
-                          color: 'brightBlue.600',
-                          '& svg': {
-                            color: 'brightBlue.600'
-                          }
-                        }}>
-                        <MyIcon name="copy" color={'grayModern.600'} w={'16px'} />
-                      </Button>
-                    </Box>
+                    <ScriptCode />
                   </Flex>
-                  {onOpenScripts2 && <Code content={'test'} language="bash" />}
-                </Flex>
-                <StepSeparator />
-              </Step>
+                  <StepSeparator />
+                </Step>
+              </Box>
               {/* 4 */}
-              <Step>
-                <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                  <StepStatus incomplete={<StepNumber />} />
-                </StepIndicator>
-                <Flex mt={1} ml={2} mb={5}>
-                  <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
-                  <Flex
-                    justifyContent={'space-between'}
-                    bg={'grayModern.25'}
-                    p={2}
-                    borderRadius={'6px'}
-                    border={'1px solid'}
-                    borderColor={'grayModern.200'}
-                    alignItems={'center'}>
-                    <Box>
-                      <Button
-                        onClick={() => setOnOpenScripts3(!onOpenScripts3)}
-                        bg={'transparent'}
-                        border={'none'}
-                        boxShadow={'none'}
-                        color={'grayModern.900'}
-                        fontWeight={400}
-                        leftIcon={<MyIcon name="arrowDown" color={'grayModern.500'} w={'16px'} />}
-                        _hover={{
-                          color: 'brightBlue.600',
-                          '& svg': {
-                            color: 'brightBlue.600'
-                          }
-                        }}>
-                        Bash
-                      </Button>
-                    </Box>
-                    <Box>
-                      <Button
-                        bg={'transparent'}
-                        border={'none'}
-                        boxShadow={'none'}
-                        color={'grayModern.900'}
-                        _hover={{
-                          color: 'brightBlue.600',
-                          '& svg': {
-                            color: 'brightBlue.600'
-                          }
-                        }}>
-                        <MyIcon name="copy" color={'grayModern.600'} w={'16px'} />
-                      </Button>
-                    </Box>
+              <Box w={'100%'}>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                    <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
+                    <ScriptCode />
                   </Flex>
-                  {onOpenScripts3 && <Code content={'test'} language="bash" />}
-                </Flex>
-                <StepSeparator />
-              </Step>
+                  <StepSeparator />
+                </Step>
+              </Box>
               {/* done */}
               <Step>
                 <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
