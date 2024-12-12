@@ -49,7 +49,7 @@ const Version = () => {
     {
       refetchInterval:
         devboxVersionList.length > 0 &&
-        devboxVersionList[0].status.value !== DevboxReleaseStatusEnum.Success
+        devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending
           ? 3000
           : false,
       onSettled() {
@@ -131,6 +131,18 @@ const Version = () => {
           title: t('delete_successful'),
           status: 'success'
         })
+        let retryCount = 0
+        const maxRetries = 3
+        const retryInterval = 3000
+
+        const retry = async () => {
+          if (retryCount < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, retryInterval))
+            await refetch()
+            retryCount++
+          }
+        }
+        retry()
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('delete_failed'),
@@ -140,8 +152,9 @@ const Version = () => {
       }
       setIsLoading(false)
     },
-    [setIsLoading, toast, t]
+    [setIsLoading, toast, t, refetch]
   )
+
   const columns: {
     title: string
     dataIndex?: keyof DevboxVersionListItemType
