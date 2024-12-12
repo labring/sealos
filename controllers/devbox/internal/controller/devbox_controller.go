@@ -64,6 +64,7 @@ type DevboxReconciler struct {
 	IngressClass            string
 	EnableAutoShutdown      bool
 	ShutdownServerKey       string
+	ShutdownServerAddr      string
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -627,11 +628,6 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 		})
 	}
 
-	envVars = append(envVars, corev1.EnvVar{
-		Name:  "LISTEN",
-		Value: "0.0.0.0:80",
-	})
-
 	sshPort := "22"
 	for _, port := range servicePorts {
 		if port.Name == "devbox-ssh-port" {
@@ -639,10 +635,19 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 			break
 		}
 	}
-
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "TARGET",
 		Value: fmt.Sprintf("%s-pod-svc:%s", devbox.Name, sshPort),
+	})
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "LISTEN",
+		Value: "0.0.0.0:80",
+	})
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "AUTO_SHUTDOWN_SERVICE_URL",
+		Value: r.ShutdownServerAddr,
 	})
 
 	return envVars
