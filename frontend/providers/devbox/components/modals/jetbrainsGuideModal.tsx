@@ -25,17 +25,7 @@ import { useTranslations } from 'next-intl'
 
 import MyIcon from '../Icon'
 import SshConnectModal from './SshConnectModal'
-
-interface JetBrainsGuideData {
-  devboxName: string
-  runtimeType: string
-  privateKey: string
-  userName: string
-  token: string
-  workingDir: string
-  host: string
-  port: string
-}
+import { JetBrainsGuideData } from '../IDEButton'
 
 const JetBrainsGuideModal = ({
   onClose,

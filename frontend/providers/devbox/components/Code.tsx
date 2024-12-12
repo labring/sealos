@@ -19,7 +19,7 @@ const Code = ({ content, language, ...props }: TMarkDown) => {
       sx={{
         height: '100%',
         '& div': {
-          overflow: 'visible !important'
+          overflow: 'hidden !important'
         }
       }}>
       <ReactMarkdown

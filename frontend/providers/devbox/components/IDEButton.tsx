@@ -32,6 +32,18 @@ interface Props {
   rightButtonProps?: ButtonProps
 }
 
+export interface JetBrainsGuideData {
+  devboxName: string
+  runtimeType: string
+  privateKey: string
+  userName: string
+  token: string
+  workingDir: string
+  host: string
+  port: string
+  configHost: string
+}
+
 const IDEButton = ({
   devboxName,
   runtimeVersion,
@@ -49,7 +61,7 @@ const IDEButton = ({
   const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore()
 
   const [loading, setLoading] = useState(false)
-  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<any>(null)
+  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>()
   const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false)
   const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType
 
@@ -80,7 +92,8 @@ const IDEButton = ({
           token,
           workingDir,
           host: env.sealosDomain,
-          port: sshPort.toString()
+          port: sshPort.toString(),
+          configHost: `${env.sealosDomain}_${env.namespace}_${devboxName}`
         })
 
         if (currentIDE === 'jetbrains') {
@@ -196,7 +209,7 @@ const IDEButton = ({
           ))}
         </MenuList>
       </Menu>
-      {!!onOpenJetbrainsModal && (
+      {!!onOpenJetbrainsModal && !!jetbrainsGuideData && (
         <JetBrainsGuideModal
           onSuccess={() => {}}
           onClose={() => setOnOpenJetbrainsModal(false)}

@@ -1,6 +1,6 @@
 export const windowsScriptsTemplate = (
   privateKey: string,
-  name: string,
+  configHost: string,
   host: string,
   port: string,
   user: string
@@ -16,7 +16,7 @@ export const windowsScriptsTemplate = (
 ${privateKey}
 "@
 
-\$Name = "${name}"
+\$Name = "${configHost}"
 \$Host = "${host}"
 \$Port = "${port}"
 \$User = "${user}"
@@ -77,7 +77,7 @@ if (Select-String -Path \$ConfigFile -Pattern "^Host \$Name") {
 `
 export const macosAndLinuxScriptsTemplate = (
   privateKey: string,
-  name: string,
+  configHost: string,
   host: string,
   port: string,
   user: string
@@ -91,7 +91,7 @@ CONFIG_FILE_TXT=\${CONFIG_DIR_TXT}devbox_config
 CONFIG_FILE=\${CONFIG_DIR}devbox_config
 
 PRIVATE_KEY="${privateKey}"
-NAME="${name}"
+NAME="${configHost}"
 HOST="${host}"
 PORT="${port}"
 USER="${user}"
@@ -140,3 +140,23 @@ else
     # 追加到文件末尾
     echo -e "\$HOST_ENTRY" >> "\$CONFIG_FILE"
 fi`
+
+export const sshConfig = (
+  privateKey: string,
+  configHost: string,
+  host: string,
+  port: string,
+  user: string
+) => `
+Host ${configHost}
+  HostName ${host}
+  Port ${port}
+  User ${user}
+  IdentityFile ${privateKey}
+  IdentitiesOnly yes
+  StrictHostKeyChecking no
+`
+
+export const sshConnectCommand = (configHost: string) => `
+ssh ${configHost}
+`

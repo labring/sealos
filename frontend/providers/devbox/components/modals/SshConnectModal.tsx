@@ -20,29 +20,26 @@ import {
   Tabs,
   TabList
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-import Code from '../Code'
 import Tab from '../Tab'
 import MyIcon from '../Icon'
 import ScriptCode from '../ScriptCode'
-
-interface JetBrainsGuideData {
-  devboxName: string
-  runtimeType: string
-  privateKey: string
-  userName: string
-  token: string
-  workingDir: string
-  host: string
-  port: string
-}
+import {
+  macosAndLinuxScriptsTemplate,
+  sshConfig,
+  sshConnectCommand,
+  windowsScriptsTemplate
+} from '@/constants/scripts'
+import { JetBrainsGuideData } from '../IDEButton'
 
 const systemList = ['Windows', 'Mac', 'Linux']
 
 const SshConnectModal = ({
-  onClose
+  onClose,
+  jetbrainsGuideData,
+  onSuccess
 }: {
   onSuccess: () => void
   onClose: () => void
@@ -52,9 +49,46 @@ const SshConnectModal = ({
 
   const [activeTab, setActiveTab] = useState(0)
 
+  const script = useMemo(() => {
+    if (activeTab === 0) {
+      return {
+        platform: 'Windows',
+        script: windowsScriptsTemplate(
+          jetbrainsGuideData.privateKey,
+          jetbrainsGuideData.configHost,
+          jetbrainsGuideData.host,
+          jetbrainsGuideData.port,
+          jetbrainsGuideData.userName
+        )
+      }
+    } else if (activeTab === 1) {
+      return {
+        platform: 'Mac',
+        script: macosAndLinuxScriptsTemplate(
+          jetbrainsGuideData.privateKey,
+          jetbrainsGuideData.configHost,
+          jetbrainsGuideData.host,
+          jetbrainsGuideData.port,
+          jetbrainsGuideData.userName
+        )
+      }
+    } else {
+      return {
+        platform: 'Linux',
+        script: macosAndLinuxScriptsTemplate(
+          jetbrainsGuideData.privateKey,
+          jetbrainsGuideData.configHost,
+          jetbrainsGuideData.host,
+          jetbrainsGuideData.port,
+          jetbrainsGuideData.userName
+        )
+      }
+    }
+  }, [activeTab, jetbrainsGuideData])
+
   return (
     <Box>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
+      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'4xl'}>
         <ModalOverlay />
         <ModalContent top={'5%'} maxWidth={'800px'} w={'700px'} h={'80%'} position={'relative'}>
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
@@ -102,7 +136,7 @@ const SshConnectModal = ({
                 }}>
                 {t('download_scripts')}
               </Button>
-              <ScriptCode />
+              <ScriptCode platform={script.platform} script={script.script} />
             </Flex>
             <Divider my={6} />
             {/* step-by-step */}
@@ -202,7 +236,16 @@ const SshConnectModal = ({
                         )
                       })}
                     </Box>
-                    <ScriptCode />
+                    <ScriptCode
+                      platform={script.platform}
+                      script={sshConfig(
+                        jetbrainsGuideData.privateKey,
+                        jetbrainsGuideData.configHost,
+                        jetbrainsGuideData.host,
+                        jetbrainsGuideData.port,
+                        jetbrainsGuideData.userName
+                      )}
+                    />
                   </Flex>
                   <StepSeparator />
                 </Step>
@@ -215,7 +258,10 @@ const SshConnectModal = ({
                   </StepIndicator>
                   <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
                     <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
-                    <ScriptCode />
+                    <ScriptCode
+                      platform={script.platform}
+                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                    />
                   </Flex>
                   <StepSeparator />
                 </Step>
