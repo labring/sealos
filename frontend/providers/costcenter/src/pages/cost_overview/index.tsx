@@ -5,6 +5,7 @@ import { Trend } from '@/components/cost_overview/trend';
 import { TrendBar } from '@/components/cost_overview/trendBar';
 import useNotEnough from '@/hooks/useNotEnough';
 import request from '@/service/request';
+import useEnvStore from '@/stores/env';
 import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types';
 import { Box, Flex, useToast } from '@chakra-ui/react';
@@ -13,6 +14,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
 import { MutableRefObject, createContext, useEffect, useRef } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
 });
@@ -21,27 +23,37 @@ function CostOverview() {
   const { t } = useTranslation();
   const setRecharge = useOverviewStore((s) => s.setRecharge);
   const router = useRouter();
+  const toast = useToast();
+  const { i18nIsInitialized } = useEnvStore();
   useEffect(() => {
-    const { stripeState } = router.query;
-    if (stripeState === 'success') {
-      totast({
-        status: 'success',
-        duration: 3000,
-        title: t('Stripe Success'),
-        isClosable: true,
-        position: 'top'
-      });
-    } else if (stripeState === 'error') {
-      totast({
-        status: 'error',
-        duration: 3000,
-        title: t('Stripe Cancel'),
-        isClosable: true,
-        position: 'top'
-      });
-    }
-    !!stripeState && router.replace(router.pathname);
-  }, []);
+    (async () => {
+      const lng = ((await sealosApp.getLanguage())?.lng || 'en') as 'en' | 'zh';
+      const { stripeState } = router.query;
+      if (!i18nIsInitialized || !router.isReady || !stripeState) return;
+      if (stripeState === 'success') {
+        toast({
+          status: 'success',
+          duration: 3000,
+          title: t('Stripe Success', {
+            lng
+          }),
+          isClosable: true,
+          position: 'top'
+        });
+      } else if (stripeState === 'error') {
+        toast({
+          status: 'error',
+          duration: 3000,
+          title: t('Stripe Cancel', lng),
+          isClosable: true,
+          position: 'top'
+        });
+      } else {
+        return;
+      }
+      !!stripeState && router.replace(router.pathname);
+    })();
+  }, [t, i18nIsInitialized, router.query, router.isReady]);
   useEffect(() => {
     const { openRecharge } = router.query;
     if (openRecharge === 'true') {
@@ -50,7 +62,7 @@ function CostOverview() {
     }
   }, []);
   const { NotEnoughModal } = useNotEnough();
-  const totast = useToast();
+
   const rechargeRef = useRef<any>();
   const { data: balance_raw } = useQuery({
     queryKey: ['getAccount'],

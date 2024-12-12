@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { formatMoney } from '@/utils/format';
-import { useTranslation } from 'next-i18next';
-import { Text, Box, Flex } from '@chakra-ui/react';
 import CurrencySymbol from '@/components/CurrencySymbol';
-import useOverviewStore from '@/stores/overview';
+import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
+import useEnvStore from '@/stores/env';
+import useOverviewStore from '@/stores/overview';
+import { formatMoney } from '@/utils/format';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
 export default function AmountDisplay({ onlyOut = false }: { onlyOut?: boolean }) {
@@ -54,13 +55,14 @@ export default function AmountDisplay({ onlyOut = false }: { onlyOut?: boolean }
     return list;
   }, [onlyOut, rechargeData, expenditureData]);
   const { t } = useTranslation();
+  const { currency } = useEnvStore();
   return (
     <Flex gap={'32px'}>
       {list.map((item) => (
         <Flex align={'center'} gap={'8px'} fontSize={'12px'} key={item.title}>
           <Box w="8px" h="8px" bgColor={item.bgColor} borderRadius={'2px'} />
           <Text>{t(item.title)}: </Text>
-          <CurrencySymbol fontSize={'14px'} />
+          <CurrencySymbol fontSize={'14px'} type={currency} />
           <Text>{formatMoney(item.value).toFixed(2)}</Text>
         </Flex>
       ))}
