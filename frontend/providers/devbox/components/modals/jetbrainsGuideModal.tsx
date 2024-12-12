@@ -24,6 +24,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import MyIcon from '../Icon'
+import SshConnectModal from './SshConnectModal'
 
 interface JetBrainsGuideData {
   devboxName: string
@@ -49,6 +50,7 @@ const JetBrainsGuideModal = ({
   const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)
 
   const [selectedIDE, setSelectedIDE] = useState<string | null>(recommendIDE.value)
+  const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false)
 
   return (
     <Box>
@@ -134,9 +136,7 @@ const JetBrainsGuideModal = ({
                           color: 'brightBlue.600'
                         }
                       }}
-                      onClick={() => {
-                        window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank')
-                      }}>
+                      onClick={() => setOnOpenSSHConnectModal(true)}>
                       {t('jetbrains_guide_config_ssh')}
                     </Button>
                   </Box>
@@ -256,6 +256,13 @@ const JetBrainsGuideModal = ({
           </ModalBody>
         </ModalContent>
       </Modal>
+      {onOpenSSHConnectModal && (
+        <SshConnectModal
+          onClose={() => setOnOpenSSHConnectModal(false)}
+          onSuccess={() => {}}
+          jetbrainsGuideData={jetbrainsGuideData}
+        />
+      )}
     </Box>
   )
 }
