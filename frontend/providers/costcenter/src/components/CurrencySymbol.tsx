@@ -8,7 +8,7 @@ export default function CurrencySymbol({
 } & IconProps &
   TextProps) {
   return type === 'shellCoin' ? (
-    <Img src={sealosCoin.src} boxSize={'16px'} maxW={'unset'} {...props}></Img>
+    <Img src={sealosCoin.src} boxSize={'16px'} maxW={'unset'} {...props} w={'auto'}></Img>
   ) : type === 'cny' ? (
     <Text {...props}>￥</Text>
   ) : (
