@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -63,11 +64,11 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		return
 	}
 	notificationInfo.ExceptionType = "阀值"
-	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.CPUChinese {
 		notificationInfo = *value
-	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.MemoryChinese {
 		notificationInfo = *value
-	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.DiskChinese {
 		notificationInfo = *value
 	}
 	switch notificationInfo.ExceptionStatus {
@@ -116,12 +117,15 @@ func processUsage(usage float64, threshold float64, performanceType string, noti
 	}
 	if usage >= threshold {
 		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.CPUChinese {
+			fmt.Println(33)
 			processException(notificationInfo, threshold)
 		}
 		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.MemoryChinese {
+			fmt.Println(44)
 			processException(notificationInfo, threshold)
 		}
 		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.DiskChinese {
+			fmt.Println(55)
 			processException(notificationInfo, threshold)
 		}
 	} else if usage < threshold {
@@ -145,14 +149,17 @@ func processException(notificationInfo *api.Info, threshold float64) {
 		log.Printf("Failed to send notification: %v", err)
 	}
 	if notificationInfo.PerformanceType == api.CPUChinese {
+		fmt.Println(11)
 		api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 		return
 	}
 	if notificationInfo.PerformanceType == api.MemoryChinese {
+		fmt.Println(22)
 		api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 		return
 	}
 	if notificationInfo.PerformanceType == api.DiskChinese {
+		fmt.Println(33)
 		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 	}
 	ZNThreshold := NumberToChinese(int(threshold))
