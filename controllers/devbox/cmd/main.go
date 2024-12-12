@@ -104,7 +104,7 @@ func main() {
 	flag.StringVar(&ingressClass, "ingress-class", "nginx", "The ingress class name.")
 	flag.BoolVar(&enableAutoShutdown, "enable-auto-shutdown", true, "If set, Devbox auto shutdown will be enabled.")
 	flag.StringVar(&shutdownServerKey, "shutdown-server-key", "sealos-devbox-shutdown", "The server key used to shutdown the server.")
-	flag.StringVar(&shutdownServerAddr, "shutdown=server-addr", "sealos-devbox-shutdown", "The shutdown server address.")
+	flag.StringVar(&shutdownServerAddr, "shutdown-server-addr", "sealos-devbox-shutdown", "The shutdown server address.")
 	opts := zap.Options{
 		Development: true,
 	}
