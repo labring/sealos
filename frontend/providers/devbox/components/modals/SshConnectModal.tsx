@@ -33,6 +33,7 @@ import {
   windowsScriptsTemplate
 } from '@/constants/scripts'
 import { JetBrainsGuideData } from '../IDEButton'
+import { downLoadBlob } from '@/utils/tools'
 
 const systemList = ['Windows', 'Mac', 'Linux']
 
@@ -122,8 +123,10 @@ const SshConnectModal = ({
               </Text>
               <Button
                 leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
-                w={'fit-content'}
                 bg={'white'}
+                w={'fit-content'}
+                size={'sm'}
+                py={4}
                 color={'grayModern.600'}
                 border={'1px solid'}
                 borderColor={'grayModern.200'}
@@ -132,6 +135,17 @@ const SshConnectModal = ({
                   color: 'brightBlue.600',
                   '& svg': {
                     color: 'brightBlue.600'
+                  }
+                }}
+                onClick={() => {
+                  if (script.platform === 'Windows') {
+                    downLoadBlob(
+                      script.script,
+                      'text/plain',
+                      `${jetbrainsGuideData.configHost}.ps1`
+                    )
+                  } else {
+                    downLoadBlob(script.script, 'text/plain', `${jetbrainsGuideData.configHost}.sh`)
                   }
                 }}>
                 {t('download_scripts')}
@@ -166,6 +180,7 @@ const SshConnectModal = ({
                       color={'grayModern.600'}
                       borderRadius={'5px'}
                       borderWidth={1}
+                      py={4}
                       size={'sm'}
                       _hover={{
                         color: 'brightBlue.600',
@@ -174,7 +189,11 @@ const SshConnectModal = ({
                         }
                       }}
                       onClick={() => {
-                        window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank')
+                        downLoadBlob(
+                          jetbrainsGuideData.privateKey,
+                          'application/octet-stream',
+                          `${jetbrainsGuideData.configHost}`
+                        )
                       }}>
                       {t('download_private_key')}
                     </Button>

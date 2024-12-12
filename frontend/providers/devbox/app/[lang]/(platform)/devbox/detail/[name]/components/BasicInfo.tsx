@@ -10,6 +10,7 @@ import { DevboxDetailType } from '@/types/devbox'
 import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { useRuntimeStore } from '@/stores/runtime'
+import { downLoadBlob } from '@/utils/tools'
 
 const BasicInfo = () => {
   const t = useTranslations()
@@ -32,28 +33,6 @@ const BasicInfo = () => {
       })
     })
   }, [devboxDetail?.sshConfig?.sshUser, devboxDetail.sshPort, env.sealosDomain, toast, t])
-
-  const handleDownloadConfig = useCallback(
-    async (config: DevboxDetailType['sshConfig']) => {
-      setLoading(true)
-
-      const privateKey = config?.sshPrivateKey as string
-
-      const blob = new Blob([privateKey], { type: 'application/octet-stream' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = devboxDetail.name
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-
-      setLoading(false)
-    },
-    [devboxDetail]
-  )
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
@@ -205,7 +184,13 @@ const BasicInfo = () => {
                     color={'grayModern.600'}
                     w={'16px'}
                     h={'16px'}
-                    onClick={() => handleDownloadConfig(devboxDetail?.sshConfig)}
+                    onClick={() =>
+                      downLoadBlob(
+                        devboxDetail?.sshConfig?.sshPrivateKey as string,
+                        'application/octet-stream',
+                        `${devboxDetail?.name}`
+                      )
+                    }
                   />
                 </Flex>
               </Tooltip>
