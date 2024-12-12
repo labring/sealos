@@ -171,6 +171,7 @@ func main() {
 
 	<-ctx.Done()
 	log.Info("shutting down server...")
+	log.Info("max wait time: 120s")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
