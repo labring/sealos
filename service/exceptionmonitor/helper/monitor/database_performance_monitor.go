@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -64,11 +65,23 @@ func monitorCluster(cluster unstructured.Unstructured) {
 	}
 	notificationInfo.ExceptionType = "阀值"
 	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.CPUChinese {
+		fmt.Println(11)
 		notificationInfo = *value
+		fmt.Println(value)
+		fmt.Println(notificationInfo)
+		fmt.Println(11)
 	} else if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.MemoryChinese {
+		fmt.Println(22)
 		notificationInfo = *value
+		fmt.Println(value)
+		fmt.Println(notificationInfo)
+		fmt.Println(22)
 	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok && notificationInfo.PerformanceType == api.DiskChinese {
+		fmt.Println(33)
 		notificationInfo = *value
+		fmt.Println(value)
+		fmt.Println(notificationInfo)
+		fmt.Println(33)
 	}
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
