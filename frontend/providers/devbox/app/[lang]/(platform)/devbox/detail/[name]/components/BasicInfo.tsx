@@ -1,16 +1,16 @@
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import React, { useCallback, useState } from 'react'
-import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
+import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
-
-import { DevboxDetailType } from '@/types/devbox'
-
+import SshConnectModal from '@/components/modals/sshConnectModal'
 import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { useRuntimeStore } from '@/stores/runtime'
 import { downLoadBlob } from '@/utils/tools'
+import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import { JetBrainsGuideData } from '@/components/IDEButton'
 
 const BasicInfo = () => {
   const t = useTranslations()
@@ -21,6 +21,40 @@ const BasicInfo = () => {
   const { getRuntimeDetailLabel } = useRuntimeStore()
 
   const [loading, setLoading] = useState(false)
+  const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false)
+  const [sshConfigData, setSshConfigData] = useState<JetBrainsGuideData | null>(null)
+
+  const handleOneClickConfig = useCallback(async () => {
+    const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
+      devboxName: devboxDetail?.name,
+      runtimeName: devboxDetail?.runtimeVersion
+    })
+    const { workingDir } = await getSSHRuntimeInfo(devboxDetail?.runtimeVersion)
+    const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
+
+    if (!devboxDetail?.sshPort) return
+
+    setSshConfigData({
+      devboxName: devboxDetail?.name,
+      runtimeType: devboxDetail?.runtimeType,
+      privateKey: sshPrivateKey,
+      userName,
+      token,
+      workingDir,
+      host: env.sealosDomain,
+      port: devboxDetail?.sshPort.toString(),
+      configHost: `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+    })
+
+    setOnOpenSsHConnect(true)
+  }, [
+    devboxDetail?.name,
+    devboxDetail?.runtimeType,
+    devboxDetail?.runtimeVersion,
+    devboxDetail?.sshPort,
+    env.namespace,
+    env.sealosDomain
+  ])
 
   const handleCopySSHCommand = useCallback(() => {
     const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail.sshPort}`
@@ -113,19 +147,34 @@ const BasicInfo = () => {
         </Flex>
       </Flex>
       {/* ssh config */}
-      <Flex mb={3} mt={4}>
-        <MyIcon
-          name="link"
-          w={'15px'}
-          h={'15px'}
-          mr={'4px'}
+      <Flex mb={3} mt={4} alignItems={'center'} justify={'space-between'}>
+        <Flex>
+          <MyIcon
+            name="link"
+            w={'15px'}
+            h={'15px'}
+            mr={'4px'}
+            color={'grayModern.600'}
+            mt={'1px'}
+            ml={'1px'}
+          />
+          <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
+            {t('ssh_config')}
+          </Box>
+        </Flex>
+        <Button
+          size={'sm'}
+          leftIcon={<MyIcon name="settings" w={'16px'} />}
+          bg={'white'}
           color={'grayModern.600'}
-          mt={'1px'}
-          ml={'1px'}
-        />
-        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
-          {t('ssh_config')}
-        </Box>
+          border={'1px solid'}
+          borderColor={'grayModern.200'}
+          _hover={{
+            color: 'brightBlue.600'
+          }}
+          onClick={() => handleOneClickConfig()}>
+          {t('one_click_config')}
+        </Button>
       </Flex>
       <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
         <Flex>
@@ -259,6 +308,17 @@ const BasicInfo = () => {
           </Flex>
         </Flex>
       </Flex>
+      {onOpenSsHConnect && sshConfigData && (
+        <SshConnectModal
+          jetbrainsGuideData={sshConfigData}
+          onSuccess={() => {
+            setOnOpenSsHConnect(false)
+          }}
+          onClose={() => {
+            setOnOpenSsHConnect(false)
+          }}
+        />
+      )}
     </Flex>
   )
 }
