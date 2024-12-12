@@ -18,7 +18,8 @@ import {
   Grid,
   GridItem,
   Circle,
-  ModalCloseButton
+  ModalCloseButton,
+  Progress
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
@@ -39,8 +40,9 @@ const JetBrainsGuideModal = ({
 
   const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)
 
-  const [selectedIDE, setSelectedIDE] = useState<string | null>(recommendIDE.value)
   const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false)
+  const [selectedIDE, setSelectedIDE] = useState<string | null>(recommendIDE.value)
+  const [onConnecting, setOnConnecting] = useState(false)
 
   return (
     <Box>
@@ -208,13 +210,67 @@ const JetBrainsGuideModal = ({
                 borderRadius={'6px'}
                 color={'grayModern.600'}
                 size={'sm'}
-                _hover={{
-                  color: 'brightBlue.600',
-                  borderColor: 'brightBlue.500'
+                px={1}
+                borderColor={onConnecting ? 'brightBlue.500' : 'grayModern.200'}
+                _hover={
+                  onConnecting
+                    ? {}
+                    : {
+                        color: 'brightBlue.600',
+                        borderColor: 'brightBlue.500'
+                      }
+                }
+                onClick={() => {
+                  setOnConnecting(true)
                 }}
                 h={'36px'}>
-                {t('jetbrains_guide_start_to_connect')}
+                {onConnecting ? (
+                  <Flex position={'relative'} w={'full'} alignItems={'center'} justify={'center'}>
+                    {t.rich('jetbrains_guide_connecting', {
+                      process: '100'
+                    })}
+                    <Box
+                      _hover={{
+                        textDecoration: 'underline'
+                      }}
+                      cursor={'pointer'}
+                      color={'brightBlue.600'}
+                      ml={1}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setOnConnecting(false)
+                      }}>
+                      {t('jetbrains_guide_cancel')}
+                    </Box>
+                    <Progress
+                      value={80}
+                      size={'xs'}
+                      colorScheme={'brightBlue'}
+                      position={'absolute'}
+                      bottom={'-9.5px'}
+                      w={'full'}
+                      left={0}
+                      right={0}
+                    />
+                  </Flex>
+                ) : (
+                  t('jetbrains_guide_start_to_connect')
+                )}
               </Button>
+              {onConnecting && (
+                <Flex
+                  mt={4}
+                  bg={'brightBlue.50'}
+                  p={2}
+                  borderRadius={'6px'}
+                  alignItems={'center'}
+                  justify={'center'}>
+                  <MyIcon name="infoCircle" color={'brightBlue.600'} w={'16px'} mr={1} />
+                  <Text fontSize={'14px'} fontWeight={'400'} color={'brightBlue.600'}>
+                    {t('jetbrains_guide_connecting_info')}
+                  </Text>
+                </Flex>
+              )}
             </Box>
             <Divider />
             <Box py={6}>
