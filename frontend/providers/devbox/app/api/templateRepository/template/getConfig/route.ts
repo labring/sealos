@@ -1,7 +1,6 @@
 import { authSessionWithJWT } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
-import { produce } from 'immer'
 import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers
     const searchParams = req.nextUrl.searchParams
-    const uid = searchParams.get('templateUid')
+    const uid = searchParams.get('uid')
     const { kubeConfig, payload } = await authSessionWithJWT(headerList)
     if (!uid) return jsonRes({
       code: 400,
@@ -24,10 +23,26 @@ export async function GET(req: NextRequest) {
       select: {
         config: true,
         uid: true,
-        name: true
+        name: true,
+        templateRepository: {
+          select: {
+            organization: {
+              select: {
+                uid: true,
+                isDeleted: true
+              }
+            },
+            isDeleted: true,
+            isPublic: true,
+          }
+        }
       }
     })
-    if (!template) {
+    if (!template ||
+      !(template.templateRepository.organization.uid === payload.organizationUid
+        || template.templateRepository.isPublic === true
+      )
+    ) {
       return jsonRes({
         code: 404,
         error: 'Template is not found'
@@ -35,10 +50,11 @@ export async function GET(req: NextRequest) {
     }
     return jsonRes({
       data: {
-        template: produce(template, draft => {
-          draft.config = JSON.parse(draft.config)
-          return draft
-        })
+        template: {
+          config: template.config,
+          uid: template.uid,
+          name: template.name
+        }
       }
     })
   } catch (err: any) {

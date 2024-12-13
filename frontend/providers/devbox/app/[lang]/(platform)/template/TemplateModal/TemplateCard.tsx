@@ -2,14 +2,13 @@ import MyIcon from '@/components/Icon';
 import { useRouter } from '@/i18n';
 import { type Tag as TTag } from '@/prisma/generated/client';
 import { useDevboxStore } from '@/stores/devbox';
-import { useGlobalStore } from '@/stores/global';
 import { useTemplateStore } from '@/stores/template';
 import { Box, BoxProps, Button, Flex, Img, MenuButton, Tag, Text, useDisclosure } from '@chakra-ui/react';
 import { MyTooltip, SealosMenu } from '@sealos/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import DeleteTemplateReposistoryModal from '../updateTemplate/DeleteTemplateReposistoryModal';
-import EditTemplateModal from '../updateTemplate/EditTemplateReposistoryModal';
-
+import EditTemplateModal from '../updateTemplate/EditTemplateModal';
+import EditTemplateRepositoryModal from '../updateTemplate/EditTemplateReposistoryModal';
 const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateRepositoryDescription
   , templateRepositoryUid,
   isDisabled = false,
@@ -29,10 +28,10 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
   const t = useTranslations()
   const { closeTemplateModal, config, updateTemplateModalConfig } = useTemplateStore()
   const editTemplateHandle = useDisclosure()
+  const editTemplateRepositoryHandle = useDisclosure()
   const deleteTemplateHandle = useDisclosure()
   const { setStartedTemplate } = useDevboxStore()
   const router = useRouter()
-  const { setLastRoute } = useGlobalStore()
   const description = templateRepositoryDescription ? templateRepositoryDescription : t('no_description')
   const lastLang = useLocale()
   return (
@@ -40,30 +39,37 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
       <Box
         position="relative"
         width={'full'}
-        opacity={isDisabled ? 0.5 : 1}
+        _before={isDisabled ? {
+          content: "''",
+          position: 'absolute',
+          inset: 0,
+          background: '#fff',
+          opacity: 0.3,
+          'pointer-events': 'none'
+        } : {}}
         display="flex"
         maxW={'440px'}
         flexDirection="column"
         alignItems="flex-start"
-        gap="8px"
+        gap="12px"
         data-group
         {...props}
+        bgColor={'grayModern.50'}
+        _groupHover={{
+          bgColor: 'grayModern.150'
+        }}
+        border="1px solid #E8EBF0"
+        borderRadius="8px"
+        px="20px"
+        pt={'16px'}
+        pb={'12px'}
       >
         <Box
           w="full"
-          border="1px solid #E8EBF0"
-          borderRadius="8px"
-          p="15px 16px"
-          height={'82px'}
-          bgColor={'grayModern.50'}
-          _groupHover={{
-            bgColor: 'grayModern.150'
-          }
-          }
-
+          height={'44px'}
         >
           <Flex justifyContent="space-between" alignItems="center" gap="12px" height={'full'}>
-            <Flex alignItems="center" gap="12px" flex="1" height={'full'} width={'full'}>
+            <Flex alignItems="center" gap="12px" flex="1" height={'full'} width={'0'}>
               {/* Python Logo */}
               <Img
                 boxSize={'32px'}
@@ -71,7 +77,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
               />
 
               {/* Title and Description */}
-              <Flex direction="column" gap="3px" flex={1}>
+              <Flex direction="column" gap="3px" flex={1} width={0}>
                 <Flex gap="8px" width={'full'}>
                   <Text
                     fontSize="16px"
@@ -79,7 +85,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                     color="#111824"
                     letterSpacing="0.15px"
                     overflow={'hidden'}
-                    maxW={'100px'}
+                    flex={'0 1 auto'}
                     textOverflow={'ellipsis'}
                     whiteSpace={'nowrap'}
                   >
@@ -121,7 +127,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                 </Flex>
                 <Flex
                   width={'full'}
-                  >
+                >
                   <MyTooltip label={description}
                     placement='bottom'
                     offset={[0, 15]}
@@ -147,7 +153,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
             </Flex>
 
             {/* Buttons */}
-            <Flex alignItems="center" gap="2px" 
+            <Flex alignItems="center" gap="2px"
             >
               <Button
                 size="sm"
@@ -190,6 +196,15 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                           <Box ml={2}>{t('edit')}</Box>
                         </>
                       ),
+                      onClick: editTemplateRepositoryHandle.onOpen
+                    },
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'settings'} w={'16px'} fill={'currentcolor'} />
+                          <Box ml={2}>{t('version_manage')}</Box>
+                        </>
+                      ),
                       onClick: editTemplateHandle.onOpen
                     },
                     {
@@ -200,22 +215,20 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                         </>
                       ),
                       onClick: deleteTemplateHandle.onOpen
-                    }
+                    },
                   ]}
                 />
               }
             </Flex>
           </Flex>
-
-
         </Box>
         {/* Tags */}
-        <Flex gap="4px">
-          {tags.map(tag => <Tag
+        <Flex gap="4px" wrap={'wrap'} minH={'22px'}>
+          {tags.filter(tag => tag.name !== 'official').map(tag => <Tag
             px={'8px'}
             py={'4px'}
             key={tag.uid}
-            bg='brightBlue.50'
+            bg='grayModern.150'
             color='brightBlue.600'
             borderRadius="33px"
             fontSize="10px"
@@ -223,10 +236,16 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
             {tag[lastLang === 'zh' ? 'zhName' : 'enName'] || tag.name}
           </Tag>)}
         </Flex>
-      </Box>
+      </Box >
       <EditTemplateModal
         isOpen={editTemplateHandle.isOpen}
+        templateRepositoryName={templateRepositoryName}
         onClose={editTemplateHandle.onClose}
+        uid={templateRepositoryUid}
+      />
+      <EditTemplateRepositoryModal
+        isOpen={editTemplateRepositoryHandle.isOpen}
+        onClose={editTemplateRepositoryHandle.onClose}
         uid={templateRepositoryUid}
       />
       <DeleteTemplateReposistoryModal

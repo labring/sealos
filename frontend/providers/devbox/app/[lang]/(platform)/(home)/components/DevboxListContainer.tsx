@@ -36,21 +36,20 @@ function useDevboxList() {
       onSettled(res) {
         if (!res) return
         refreshList(res)
-      }
+      },
+      refetchInterval: !templateIsOpen ? 5000 : false,
     }
   )
-  const getViewportDevboxes = useCallback((minCount = 3) => {
+  const getViewportDevboxes = (minCount = 3) => {
     const doms = document.querySelectorAll('.devboxListItem')
     const viewportDomIds = Array.from(doms)
-      .filter((item) => isElementInViewport(item))
-      .map((item) => item.getAttribute('data-id'))
+      .filter(isElementInViewport)
+      .map(item => item.getAttribute('data-id'))
 
-    const viewportDevboxes = viewportDomIds.length < minCount
+    return viewportDomIds.length < minCount
       ? devboxList
       : devboxList.filter((devbox) => viewportDomIds.includes(devbox.id))
-    return viewportDevboxes
-  }, [devboxList])
-
+  }
   useQuery(
     ['intervalLoadPods'],
     () => {
@@ -63,10 +62,12 @@ function useDevboxList() {
     {
       refetchOnMount: true,
       refetchInterval: !templateIsOpen ? 3000 : false,
+      staleTime: 0,
+      enabled: !isLoading &&!templateIsOpen,
     }
   )
 
-  const { refetch: refetchAvgMonitorData } = useQuery(
+  useQuery(
     ['loadAvgMonitorData'],
     () => {
       console.log('loadAvgMonitorData')
@@ -76,10 +77,11 @@ function useDevboxList() {
         .map((devbox) => loadAvgMonitorData(devbox.name))
     },
     {
-      refetchInterval: !templateIsOpen ? 5000 : false,
+      refetchInterval: !templateIsOpen ? 3000 : false,
+      staleTime: 0,
+      enabled:!isLoading &&!templateIsOpen,
     }
   )
-
   // 路由预加载
   useEffect(() => {
     router.prefetch('/devbox/detail')
@@ -102,7 +104,7 @@ export default function DevboxListContainer({ ...props }: FlexProps) {
     <Flex flexDir={'column'}
       backgroundColor={'grayModern.100'}
       px={'32px'}
-      // h="100vh"
+      h="100vh"
       //  w={'full'} 
       {...props}
     >

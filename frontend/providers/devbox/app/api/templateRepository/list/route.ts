@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
     const tags = searchParams.getAll('tags') || []
     const search = searchParams.get('search') || ''
     const page = z.number().int().positive().safeParse(Number(searchParams.get('page'))).data || 1
-    const pageSize = z.number().int().min(1).safeParse(Number(searchParams.get('pageSize'))).data  || 10
-    const dbquery: Prisma.TemplateRepositoryWhereInput =  {
+    const pageSize = z.number().int().min(1).safeParse(Number(searchParams.get('pageSize'))).data || 10
+    const dbquery: Prisma.TemplateRepositoryWhereInput = {
       isPublic: true,
       isDeleted: false,
       ...(tags && tags.length > 0
@@ -33,9 +33,14 @@ export async function GET(req: NextRequest) {
         }
         : {})
     }
-    const templateRepositoryList =await devboxDB.templateRepository.findMany({
+    const templateRepositoryList = await devboxDB.templateRepository.findMany({
       where: dbquery,
       select: {
+        organization: {
+          select: {
+            name: true,
+          }
+        },
         templateRepositoryTags: {
           select: {
             tag: true,
@@ -56,9 +61,12 @@ export async function GET(req: NextRequest) {
         iconId: true,
       },
       skip: (page - 1) * pageSize,
-      orderBy: {
-        createdAt: 'desc'
-      }
+      take: pageSize,
+      orderBy: [
+        {
+          createdAt: 'asc'
+        }
+      ]
     })
     const totalItems = await devboxDB.templateRepository.count({
       where: dbquery,

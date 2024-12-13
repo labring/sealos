@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
         iconId: true,
       },
       skip: (page - 1) * pageSize,
+      take: pageSize,
       orderBy: {
         createdAt: 'desc'
       }

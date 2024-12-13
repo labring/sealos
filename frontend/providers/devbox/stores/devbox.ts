@@ -20,6 +20,7 @@ import type {
 
 type State = {
   devboxList: DevboxListItemTypeV2[]
+  requestCache: Map<string, Promise<any>>
   setDevboxList: () => Promise<DevboxListItemTypeV2[]>
   loadAvgMonitorData: (devboxName: string) => Promise<void>
   devboxVersionList: DevboxVersionListItemType[]
@@ -45,8 +46,9 @@ type State = {
 
 export const useDevboxStore = create<State>()(
   devtools(
-    immer((set) => ({
+    immer((set, get) => ({
       devboxList: [],
+      requestCache: new Map(),
       setDevboxList: async () => {
         const res = await getMyDevboxList()
         set((state) => {
@@ -78,16 +80,16 @@ export const useDevboxStore = create<State>()(
           state.devboxList.forEach((item) => {
             console.log("item name: ", item.name)
             console.log("devboxName:", devboxName)
-          //   return ({
-          //   ...item,
-          //   usedCpu:
-          //     item.name === devboxName && averageCpuData[0] ? averageCpuData[0] : item.usedCpu,
-          //   usedMemory:
-          //     item.name === devboxName && averageMemoryData[0]
-          //       ? averageMemoryData[0]
-          //       : item.usedMemory
-          // }
-          // ))
+            //   return ({
+            //   ...item,
+            //   usedCpu:
+            //     item.name === devboxName && averageCpuData[0] ? averageCpuData[0] : item.usedCpu,
+            //   usedMemory:
+            //     item.name === devboxName && averageMemoryData[0]
+            //       ? averageMemoryData[0]
+            //       : item.usedMemory
+            // }
+            // ))
           })
           console.log()
           state.devboxList = state.devboxList.map((item) => ({
@@ -119,7 +121,7 @@ export const useDevboxStore = create<State>()(
       devboxDetail: undefined,
       setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
         const detail = await getDevboxByName(devboxName)
-        
+
         if (detail.status.value !== 'Running') {
           set((state) => {
             state.devboxDetail = detail
@@ -145,7 +147,7 @@ export const useDevboxStore = create<State>()(
 
         // add upTime by Pod
         detail.upTime = pods[0].upTime
-        
+
         set((state) => {
           state.devboxDetail = detail
         })
@@ -154,6 +156,7 @@ export const useDevboxStore = create<State>()(
       },
       intervalLoadPods: async (devboxName, updateDetail) => {
         if (!devboxName) return Promise.reject('devbox name is empty')
+
         const pods = await getDevboxPodsByDevboxName(devboxName)
 
         // TODO: change Running to podStatusMap.running
@@ -162,8 +165,8 @@ export const useDevboxStore = create<State>()(
           pods.length === 0
             ? devboxStatusMap.Stopped
             : pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
-            ? devboxStatusMap.Running
-            : devboxStatusMap.Pending
+              ? devboxStatusMap.Running
+              : devboxStatusMap.Pending
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && updateDetail) {
@@ -199,17 +202,17 @@ export const useDevboxStore = create<State>()(
             state.devboxDetail.usedCpu = averageCpuData[0]
               ? averageCpuData[0]
               : {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                }
+                xData: new Array(30).fill(0),
+                yData: new Array(30).fill('0'),
+                name: ''
+              }
             state.devboxDetail.usedMemory = averageMemoryData[0]
               ? averageMemoryData[0]
               : {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                }
+                xData: new Array(30).fill(0),
+                yData: new Array(30).fill('0'),
+                name: ''
+              }
           }
         })
         return 'success'

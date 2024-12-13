@@ -93,6 +93,7 @@ model Template {
 
 model Tag {
   uid                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                   TagType            @default(OFFICIAL_CONTENT)
   name                   String
   zhName                 String?
   enName                 String?
@@ -114,4 +115,10 @@ enum TemplateRepositoryKind {
   OS
   LANGUAGE
   CUSTOM
+}
+
+enum TagType {
+  PROGRAMMING_LANGUAGE
+  USE_CASE
+  OFFICIAL_CONTENT
 }

@@ -1,4 +1,4 @@
-import { TemplateRepositoryKind } from "@/prisma/generated/client"
+import { TagType, TemplateRepositoryKind } from "@/prisma/generated/client"
 import { authSessionWithJWT } from "@/services/backend/auth"
 import { getK8s } from "@/services/backend/kubernetes"
 import { jsonRes } from "@/services/backend/response"
@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
       })
     }
     const query = createTemplateRepositorySchema.parse(queryRaw)
-    const {kubeConfig, payload, token } = await authSessionWithJWT(headerList)
+    const { kubeConfig, payload, token } = await authSessionWithJWT(headerList)
     const { namespace, k8sCustomObjects } = await getK8s({
-      kubeconfig:kubeConfig
+      kubeconfig: kubeConfig
     })
     // get devbox release cr !todo
     const { body: releaseBody } = (await k8sCustomObjects.getNamespacedCustomObject(
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const devboxReleaseImage = releaseBody.status.originalImage
     // hzh.hub.sealos.run/orgNanoid/templateRepositoryName:templateName
-    if(!devboxReleaseImage) {
+    if (!devboxReleaseImage) {
       return jsonRes({
         code: 409,
         error: 'devboxReleaseImage not found'
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     }
     const isExist = await devboxDB.templateRepository.findUnique({
       where: {
-        isDeleted_name:{
+        isDeleted_name: {
           name: query.templateRepositoryName,
           isDeleted: false
         },
@@ -93,11 +93,11 @@ export async function POST(req: NextRequest) {
       target: tagretImage,
     }
     const retagResult = await retagSvcClient.post('/tag', retagbody, {
-      headers:{
+      headers: {
         'Authorization': token
       }
     })
-    if (retagResult.status!== 200) {
+    if (retagResult.status !== 200) {
       console.log('retagResult', retagResult)
       throw Error('retag failed')
     }
@@ -108,16 +108,19 @@ export async function POST(req: NextRequest) {
         uid: devboxBody.spec.templateID,
       },
       select: {
-        templateRepository:{
-          select:{
+        templateRepository: {
+          select: {
             iconId: true
           }
         }
       }
     })
-    const officialTag = await devboxDB.tag.findFirst({
+    const officialTagList = await devboxDB.tag.findMany({
       where: {
-        name: 'official'
+        type: TagType.OFFICIAL_CONTENT
+      },
+      select: {
+        uid: true
       }
     })
     const result = await devboxDB.templateRepository.create({
@@ -125,7 +128,10 @@ export async function POST(req: NextRequest) {
         description: query.description,
         templateRepositoryTags: {
           createMany: {
-            data: query.tagUidList.filter(item=>item !== officialTag?.uid).map((uid) => ({ tagUid: uid }))
+            data: query
+              .tagUidList
+              .filter(item => !officialTagList.some(tag => tag.uid === item))
+              .map((uid) => ({ tagUid: uid }))
           }
         },
         templates: {

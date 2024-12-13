@@ -1,12 +1,8 @@
 import { getTemplateRepository, updateTemplateReposistory } from '@/api/template';
-import MyFormLabel from '@/components/MyFormControl';
 import { TemplateVersionState } from '@/constants/template';
 import {
-  Alert,
   Button,
   ButtonGroup,
-  Flex,
-  HStack,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -18,13 +14,12 @@ import {
   useDisclosure,
   VStack
 } from '@chakra-ui/react';
-import { DeleteIcon, InfoCircleIcon, useMessage } from '@sealos/ui';
+import { useMessage } from '@sealos/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { FC, useEffect, useState } from 'react';
-import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import DeleteTemplateVersionModal from '../updateTemplateVersion/DeleteTemplateVersionModal';
 import TemplateRepositoryDescriptionField from './components/TemplateRepositoryDescriptionField';
 import TemplateRepositoryIsPublicField from './components/TemplateRepositoryIsPublicField';
 import TemplateRepositoryNameField from './components/TemplateRepositoryNameField';
@@ -45,7 +40,7 @@ interface CreateTemplateModalProps {
   uid: string;
 }
 
-const EditTemplateModal: FC<CreateTemplateModalProps> = ({
+const EditTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
   isOpen,
   onClose,
   uid
@@ -53,7 +48,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
   const t = useTranslations()
   const formSchema = z.object({
     name: z.string().min(1, t('input_template_name_placeholder')),
-    versions: z.array(versionSchema),
     isPublic: z.boolean().default(false),
     agreeTerms: z.boolean().refine((val) => val === true, t('privacy_and_security_agreement_tips')),
     tags: z.array(tagSchema).min(1, t('select_at_least_1_tag')).max(3, t('select_lest_than_3_tags')),
@@ -63,7 +57,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
   const methods = useForm<FormData>({
     defaultValues: {
       name: '',
-      versions: [],
       isPublic: false,
       agreeTerms: false,
       tags: [],
@@ -78,10 +71,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
     setValue,
   } = methods
 
-  const versionsHelper = useFieldArray({
-    control,
-    name: 'versions',
-  });
   const DeleteTemplateVersionHandle = useDisclosure()
   const [deletedTemplateVersion, setDeletedTemplateVersion] = useState<VersionType | null>()
   const templateRepositoryQuery = useQuery(
@@ -104,11 +93,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
   const [publicIsDisabled, setPublicIsDisabled] = useState(false)
   useEffect(() => {
     if (isOpen && templateRepository && templateRepositoryQuery.isSuccess) {
-      setValue('versions', templateRepository.templates.map(({ name, uid }) => ({
-        name,
-        uid,
-        state: TemplateVersionState.ACTIVE
-      })))
       setValue('tags', templateRepository.templateRepositoryTags.map(({ tag }) => ({
         value: tag.uid,
       })))
@@ -141,9 +125,7 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
         templateRepositoryName: data.name,
         isPublic: data.isPublic,
         description: data.description,
-        tagUidList: data.tags.map(({ value }) => value),
-        versionList: data.versions.filter(({ state }) => state === TemplateVersionState.ACTIVE)
-          .map(({ uid, name }) => (uid))
+        tagUidList: data.tags.map(({ value }) => value)
       });
       queryClient.invalidateQueries(['template-repository-list'])
       reset();
@@ -159,7 +141,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       });
     }
   };
-  console.log(versionsHelper.fields)
   return (<>
     <Modal
       isOpen={isOpen}
@@ -180,56 +161,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
               <VStack spacing={6} align="stretch">
                 {/* 名称 */}
                 <TemplateRepositoryNameField isDisabled />
-
-                {/* 版本号 */}
-                <Flex >
-                  <Flex justify={'space-between'}>
-                    <MyFormLabel width="108px" m='0' fontSize="14px" isRequired>{t('version')}</MyFormLabel>
-                    <HStack width='350px' wrap={'wrap'}>
-                      {versionsHelper.fields.length === 0 ? <Alert status="info" borderRadius="md" py={'6px'} px={'12px'} color={'yellow.600'} bgColor={'yellow.50'} >
-                        <InfoCircleIcon fill={'currentcolor'} mr={'4px'} boxSize={'14px'} />
-                        <Text fontSize="12px" fontWeight={500}>
-                          {t('none_template_version')}
-                        </Text> 
-                      </Alert> : versionsHelper.fields.map((versionField, versionIdx) => {
-                        const color = versionField.state === TemplateVersionState.ACTIVE ? 'grayModern.500' : 'red.600'
-                        return <Flex
-                          key={versionField.id}
-                          align="center"
-                          p="4px 8px"
-                          gap="8px"
-                          bgColor={'grayModern.100'}
-                          borderRadius="6px"
-                          cursor={versionField.state === TemplateVersionState.DELETED ? 'none' : 'pointer'}
-                          pointerEvents={versionField.state === TemplateVersionState.DELETED ? 'none' : 'auto'}
-                          onClick={() => {
-                            if (versionField.state === TemplateVersionState.DELETED) {
-                              return null
-                            }
-                            setDeletedTemplateVersion({
-                              name: versionField.name,
-                              uid: versionField.uid,
-                              state: TemplateVersionState.PENDING_DELETE
-                            })
-                            DeleteTemplateVersionHandle.onOpen()
-                          }
-                          }
-                          data-group
-                        >
-                          <Text>{versionField.name}</Text>
-                          <DeleteIcon
-                            color={color}
-                            _groupHover={
-                              {
-                                color: 'red.600',
-                              }
-                            }
-                            fill={'currentcolor'} />
-                        </Flex>
-                      })}
-                    </HStack>
-                  </Flex>
-                </Flex>
 
                 {/* 公开 */}
                 <TemplateRepositoryIsPublicField isDisabled={publicIsDisabled} />
@@ -272,19 +203,8 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
 
       </ModalContent>
     </Modal>
-    {!!deletedTemplateVersion && !!templateRepository && <DeleteTemplateVersionModal
-      isLasted={versionsHelper.fields.filter((field) => field.state === TemplateVersionState.ACTIVE).length <= 1}
-      version={deletedTemplateVersion.name}
-      template={templateRepository.name}
-      isOpen={DeleteTemplateVersionHandle.isOpen} onClose={DeleteTemplateVersionHandle.onClose} onSubmit={() => {
-        const id = versionsHelper.fields.findIndex((field) => field.uid === deletedTemplateVersion.uid)
-        versionsHelper.update(id, {
-          ...deletedTemplateVersion,
-          state: TemplateVersionState.DELETED,
-        })
-      }} />}
   </>
   );
 };
 
-export default EditTemplateModal
+export default EditTemplateRepositoryModal

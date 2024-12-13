@@ -112,7 +112,7 @@ const DevboxCreatePage = () => {
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
   const [captureDevboxName, setCaptureDevboxName] = useState('')
-  const {updateTemplateModalConfig, config: templateConfig} = useTemplateStore()
+  const { updateTemplateModalConfig, config: templateConfig } = useTemplateStore()
   useEffect(() => {
     const name = searchParams.get('name')
     if (name) {
@@ -257,8 +257,12 @@ const DevboxCreatePage = () => {
       })
       router.push(lastRoute)
     } catch (error) {
-      console.error(error)
-      setErrorMessage(JSON.stringify(error))
+      console.log('error', error)
+      if (error instanceof String && error.includes('402')) {
+        setErrorMessage(t('outstanding_tips'))
+      }
+      else
+        setErrorMessage(JSON.stringify(error))
     }
     setIsLoading(false)
   }

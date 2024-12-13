@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
 import { KBDevboxTypeV2 } from '@/types/k8s'
+import { parseTemplateConfig } from '@/utils/tools'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,26 +45,8 @@ export async function GET(req: NextRequest) {
         uid: devboxBody.spec.templateID
       }
     })
-    // const runtimeName = devboxBody.spec.runtimeRef.name
-    // const { body: runtime } = (await k8sCustomObjects.getNamespacedCustomObject(
-    //   'devbox.sealos.io',
-    //   'v1alpha1',
-    //   ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
-    //   'runtimes',
-    //   runtimeName
-    // )) as { body: KBRuntimeType }
-    // if(!template) return jsonRes({
-    //   code: 404,
-    //   error: 'Template is not found'
-    // })
     if (!template) throw new Error(`Template ${devboxBody.spec.templateID} is not found`)
-      const config = JSON.parse(template.config) as {
-      user: string
-      workingDir: string
-      releaseCommand: string[]
-      releaseArgs: string[]
-    }
-
+      const config = parseTemplateConfig(template.config)
     return jsonRes({ data: { base64PublicKey, base64PrivateKey, token, 
       userName: config.user,
       workingDir: config.workingDir,

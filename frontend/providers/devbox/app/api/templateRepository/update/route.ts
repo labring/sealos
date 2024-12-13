@@ -1,3 +1,4 @@
+import { TagType } from "@/prisma/generated/client"
 import { authSessionWithJWT } from "@/services/backend/auth"
 import { jsonRes } from "@/services/backend/response"
 import { devboxDB } from "@/services/db/init"
@@ -47,9 +48,12 @@ export async function POST(req: NextRequest) {
         error: 'template repository not found'
       })
     }
-    const officialTag = await devboxDB.tag.findFirst({
+    const officialTagList = await devboxDB.tag.findMany({
       where: {
-        name: 'official'
+        type: TagType.OFFICIAL_CONTENT,
+      },
+      select: {
+        uid: true
       }
     })
     const originalTaglist = templateRepository.templateRepositoryTags
@@ -59,12 +63,8 @@ export async function POST(req: NextRequest) {
     const createdTagList = query.tagUidList
       .filter((item) =>
         !originalTaglist.some((tag) => tag.tagUid === item)
-        && item !== officialTag?.uid
+        && !officialTagList.some((tag) => tag.uid === item)
       )
-    const originalVersionList = templateRepository.templates
-    const deletedVersionList = originalVersionList
-      .filter((item) =>!query.versionList.includes(item.uid))
-      .map((item) => item.uid)
     const isExist = await devboxDB.templateRepository.findUnique({
       where: {
         isDeleted_name: {
@@ -91,19 +91,6 @@ export async function POST(req: NextRequest) {
           isPublic: query.isPublic
         }
       })
-      for (const uid of deletedVersionList) {
-        await tx.template.update({
-          where: {
-            uid: uid,
-            templateRepositoryUid: query.uid,
-            isDeleted: false
-          },
-          data: {
-            deletedAt: new Date(),
-            isDeleted: null
-          }
-        })
-      }
       await tx.templateRepositoryTag.deleteMany({
         where: {
           templateRepositoryUid: query.uid,

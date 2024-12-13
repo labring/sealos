@@ -119,7 +119,6 @@ export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers
     const { payload } = await authSessionWithDesktopJWT(headerList)
-    console.log('desktopjwt', payload)
     const user = await findOrCreateUser(regionUid, payload.workspaceId)
     if (!user) {
       return jsonRes({

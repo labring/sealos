@@ -1,5 +1,6 @@
 import { DevboxEditTypeV2 } from "@/types/devbox"
 import { nanoid } from "@/utils/tools"
+import { devboxNameSchema } from "@/utils/vaildate"
 import { Flex, FormControl, FormControlProps, Input } from "@chakra-ui/react"
 import { useTranslations } from "next-intl"
 import { useFieldArray, useFormContext } from "react-hook-form"
@@ -36,9 +37,7 @@ export default function DevboxNameInput({isEdit, ...props}: {isEdit: boolean} & 
           },
           validate: {
             pattern: (value) =>
-              /^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?)*$/.test(
-                value
-              ) || t('devbox_name_invalid')
+            devboxNameSchema.safeParse(value).success || t('devbox_name_invalid')
           }
         })}
         onBlur={(e) => {

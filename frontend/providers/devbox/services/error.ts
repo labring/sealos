@@ -15,7 +15,8 @@ export const proxyError: Record<string, boolean> = {
 }
 
 export enum ERROR_ENUM {
-  unAuthorization = 'unAuthorization'
+  unAuthorization = 'unAuthorization',
+  outstandingPayment = 'outstandingPayment'
 }
 export const ERROR_RESPONSE: Record<
   any,
@@ -30,5 +31,10 @@ export const ERROR_RESPONSE: Record<
     code: 403,
     statusText: ERROR_ENUM.unAuthorization,
     message: 'credential error'
+  },
+  [ERROR_ENUM.outstandingPayment]: {
+    code: 402,
+    statusText: ERROR_ENUM.outstandingPayment,
+    message: 'outstanding payment'
   }
 }
