@@ -62,7 +62,7 @@ func checkDeletedDatabases() {
 			//	DatabaseClusterUID:  databaseClusterUID,
 			//	Namespace:           notificationInfo.Namespace,
 			//	DatabaseClusterName: databaseClusterName,
-			//	RecoveryStatus:      "Deleted",
+			//	RecoveryStatus:      "Deleted",w
 			//}
 			notificationInfo.RecoveryStatus = "Deleted"
 			notificationInfo.RecoveryTime = time.Now().Format("2006-01-02 15:04:05")
