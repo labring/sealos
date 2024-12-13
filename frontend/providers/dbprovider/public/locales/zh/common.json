@@ -71,6 +71,7 @@
   "are_you_sure_you_want_to_turn_off_automatic_backup": "确定关闭自动备份吗",
   "auto_backup": "自动备份",
   "automatic_backup_is_turned_off": "已关闭自动备份",
+  "backup_center": "备份中心",
   "backup_completed": "备份成功",
   "backup_database": "备份数据库",
   "backup_deleting": "删除中",
@@ -161,6 +162,8 @@
   },
   "delete_anyway": "仍要删除",
   "delete_backup": "删除备份",
+  "delete_backup_with_db": "保留备份",
+  "delete_backup_with_db_tip": "在删除数据库时，保留其备份",
   "delete_failed": "删除出现意外",
   "delete_hint": "如果确认要删除这个数据库吗？如果执行此操作，将删除该数据库的所有数据。",
   "delete_sealaf_app_tip": "该数据库是通过云开发部署的。仅删除数据库无法清除应用的所有组件，这些组件可能仍会产生费用。要彻底卸载应用并清理所有相关组件，请在云开发中卸载整个应用。",
@@ -319,13 +322,11 @@
   "upload_dump_file": "点击上传 Dump 文件",
   "use_docs": "使用文档",
   "version": "版本",
+  "wipeout_backup_with_db": "随数据库删除",
+  "wipeout_backup_with_db_tip": "在删除数据库时，删除其备份",
   "within_1_day": "一天内",
   "within_1_hour": "一小时内",
   "within_5_minutes": "五分钟内",
   "yaml_file": "YAML 文件",
-  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
-  "delete_backup_with_db": "保留备份",
-  "delete_backup_with_db_tip": "在删除数据库时，保留其备份",
-  "wipeout_backup_with_db": "随数据库删除",
-  "wipeout_backup_with_db_tip": "在删除数据库时，删除其备份"
+  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！"
 }

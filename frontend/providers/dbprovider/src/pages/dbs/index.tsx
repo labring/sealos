@@ -25,7 +25,7 @@ function Home() {
       {dbList.length === 0 && initialized ? (
         <Empty />
       ) : (
-        <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'}>
+        <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'} overflow={'hidden'}>
           <Sidebar />
           <DBList dbList={dbList} refetchApps={refetch} />
         </Flex>

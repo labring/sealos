@@ -26,6 +26,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
+import { CustomMenu } from '@/components/BaseTable/customMenu';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -175,7 +176,7 @@ const DBList = ({
         id: 'actions',
         header: () => t('operation'),
         cell: ({ row }) => (
-          <Flex>
+          <Flex key={row.id} zIndex={10}>
             <Button
               mr={5}
               height={'32px'}
@@ -191,12 +192,22 @@ const DBList = ({
             >
               {t('details')}
             </Button>
-            <SealosMenu
+
+            <CustomMenu
               width={100}
               Button={
-                <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
+                <Button
+                  bg={'white'}
+                  _hover={{
+                    bg: 'rgba(17, 24, 36, 0.05)',
+                    color: 'brightBlue.600'
+                  }}
+                  variant={'square'}
+                  w={'30px'}
+                  h={'30px'}
+                >
                   <MyIcon name={'more'} px={3} />
-                </MenuButton>
+                </Button>
               }
               menuList={[
                 ...(row.original.status.value === DBStatusEnum.Stopped
@@ -281,7 +292,7 @@ const DBList = ({
         )
       }
     ],
-    [t, router, handleStartApp, handleRestartApp, handlePauseApp]
+    [t, onOpenPause, router, handleStartApp, onOpenUpdateModal, handleRestartApp, handlePauseApp]
   );
 
   const table = useReactTable({
@@ -293,7 +304,7 @@ const DBList = ({
         right: ['actions']
       }
     },
-    enableColumnPinning: true,
+    // enableColumnPinning: true,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel()
   });

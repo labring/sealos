@@ -138,6 +138,7 @@ export interface BackupItemType {
   type: `${BackupTypeEnum}`;
   namespace: string;
   connectionPassword: string;
+  dbName: string;
 }
 
 export type ReconfigStatusMapType = {

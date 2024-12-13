@@ -87,6 +87,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           autoBackup: dbForm?.autoBackup,
           dbType: dbForm.dbType
         });
+        console.log('backup', {
+          dbName: dbForm.dbName,
+          dbType: dbForm.dbType,
+          autoBackup,
+          k8sCustomObjects,
+          namespace
+        });
 
         await updateBackupPolicyApi({
           dbName: dbForm.dbName,

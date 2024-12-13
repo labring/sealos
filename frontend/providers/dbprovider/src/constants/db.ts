@@ -20,6 +20,8 @@ export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
+export const DBNameLabel = 'app.kubernetes.io/instance';
+
 export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',

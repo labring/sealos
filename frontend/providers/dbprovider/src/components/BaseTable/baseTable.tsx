@@ -20,7 +20,7 @@ const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties =
     position: isPinned ? 'sticky' : 'relative',
     left: isPinned === 'left' ? 0 : undefined,
     right: isPinned === 'right' ? 0 : undefined,
-    zIndex: isPinned ? 1 : 0
+    zIndex: isPinned ? 10 : 0
   };
 };
 
@@ -32,7 +32,7 @@ export function BaseTable<T extends unknown>({
   return (
     <TableContainer {...props}>
       <Table variant="unstyled" width={'full'}>
-        <Thead position={'sticky'} top={0} zIndex={1}>
+        <Thead>
           {table.getHeaderGroups().map((headers) => {
             return (
               <Tr key={headers.id}>

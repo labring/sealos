@@ -110,6 +110,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     cursor: 'pointer',
     _hover: { bg: '#EFF0F1' }
   };
+
   const operationIconStyles = {
     w: '18px'
   };

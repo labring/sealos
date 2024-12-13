@@ -4,6 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { crLabelKey } from '@/constants/db';
+import { adaptBackup } from '@/utils/adapt';
 
 export type Props = {
   dbName: string;
@@ -27,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     jsonRes(res, {
-      data: body
+      data: body.items.map(adaptBackup)
     });
   } catch (err: any) {
     jsonRes(res, {

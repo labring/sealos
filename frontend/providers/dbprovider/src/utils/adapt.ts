@@ -1,6 +1,7 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
 import {
   DBBackupMethodNameMap,
+  DBNameLabel,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
   DBSourceConfigs,
@@ -231,7 +232,8 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
     type: autoLabel in backup.metadata.labels ? BackupTypeEnum.auto : BackupTypeEnum.manual,
     remark: remark ? decodeFromHex(remark) : '-',
     failureReason: backup.status?.failureReason,
-    connectionPassword: backup.metadata?.annotations?.[passwordLabel]
+    connectionPassword: backup.metadata?.annotations?.[passwordLabel],
+    dbName: backup.metadata.labels[DBNameLabel]
   };
 };
 
