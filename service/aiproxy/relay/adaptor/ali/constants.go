@@ -6,6 +6,7 @@ import (
 )
 
 // https://help.aliyun.com/zh/model-studio/getting-started/models?spm=a2c4g.11186623.0.i12#ced16cb6cdfsy
+
 var ModelList = []*model.ModelConfig{
 	// 通义千问-Max
 	{
