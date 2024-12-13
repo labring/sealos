@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -20,7 +19,7 @@ func DatabasePerformanceMonitor() {
 		if err := checkDatabasePerformance(api.ClusterNS); err != nil {
 			log.Printf("Failed to check database performance: %v", err)
 		}
-		time.Sleep(2 * time.Minute)
+		time.Sleep(10 * time.Minute)
 	}
 }
 
@@ -70,23 +69,7 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		notificationInfo = *value
 	} else if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
 		notificationInfo = *value
-		fmt.Println(111)
-		fmt.Println(notificationInfo)
 	}
-	//switch notificationInfo.PerformanceType {
-	//case api.CPUChinese:
-	//	if value, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
-	//		notificationInfo = *value
-	//	}
-	//case api.MemoryChinese:
-	//	if value, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
-	//		notificationInfo = *value
-	//	}
-	//case api.DiskChinese:
-	//	if value, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
-	//		notificationInfo = *value
-	//	}
-	//}
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
 		break
@@ -171,7 +154,6 @@ func processException(notificationInfo *api.Info, threshold float64) {
 	}
 	if notificationInfo.PerformanceType == api.DiskChinese {
 		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
-		//fmt.Println(44444)
 	}
 	ZNThreshold := NumberToChinese(int(threshold))
 	if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+notificationInfo.PerformanceType+"超过百分之"+ZNThreshold); err != nil {
@@ -188,8 +170,6 @@ func processRecovery(notificationInfo *api.Info) {
 	if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
 		log.Printf("Failed to send notification: %v", err)
 	}
-	//fmt.Println(333)
-	//fmt.Println(notificationInfo)
 	if notificationInfo.PerformanceType == api.CPUChinese {
 		delete(api.CPUNotificationInfoMap, notificationInfo.DatabaseClusterUID)
 	}
