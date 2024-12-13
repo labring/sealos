@@ -60,6 +60,8 @@ spec:
           value: "admin"
         - name: LAUNCHPAD_PASSWORD
           value: "Sealos@2024"
+        - name: JWT_SECRET
+          value: "SEALOS_SECRET"
         ports:
         - containerPort: 3000
 ---

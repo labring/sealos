@@ -401,18 +401,6 @@ const AppList = ({
           w={'100px'}
           flex={'0 0 auto'}
           onClick={() => {
-            router.push('/user');
-          }}
-        >
-          用户管理
-        </Button>
-
-        <Button
-          mr={'12px'}
-          h={'40px'}
-          w={'100px'}
-          flex={'0 0 auto'}
-          onClick={() => {
             router.push('/imagehub');
           }}
         >
