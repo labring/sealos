@@ -69,6 +69,7 @@ func (t *Token) ToTokenCache() *TokenCache {
 	return &TokenCache{
 		ID:         t.ID,
 		Group:      t.GroupID,
+		Key:        t.Key,
 		Name:       t.Name.String(),
 		Models:     t.Models,
 		Subnet:     t.Subnet,
