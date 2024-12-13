@@ -75,7 +75,7 @@ type AutoShutdownSpec struct {
 	// +kubebuilder:default=false
 	Enable bool `json:"type"`
 	// +kubebuilder:validation:Optional
-	Time string `json:"extraPorts"`
+	Time string `json:"time"`
 }
 
 // DevboxSpec defines the desired state of Devbox
