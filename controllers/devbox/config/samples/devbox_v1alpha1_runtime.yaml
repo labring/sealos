@@ -31,6 +31,7 @@ spec:
       - /home/sealos/project/entrypoint.sh
   category:
     - ubuntu
+    - gpu
     - go
 ---
 apiVersion: devbox.sealos.io/v1alpha1

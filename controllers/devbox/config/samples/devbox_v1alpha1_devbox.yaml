@@ -18,15 +18,19 @@ metadata:
   labels:
     app.kubernetes.io/name: devbox
     app.kubernetes.io/managed-by: kustomize
-  name: devbox-sample
+  name: devbox-gpu-sample
 spec:
   state: Running
+  runtimeClassName: nvidia
   resource:
     cpu: 2
     memory: 4000Mi
+    nvidia.com/gpu: 1
   runtimeRef:
-    name: go-1-22-5
+    name: go-1-22-5-2024-11-12-0651
     namespace: devbox-system
+  nodeSelector:
+    nvidia.com/gpu.product: Tesla-P40
   network:
     type: NodePort
     extraPorts:

@@ -18,17 +18,10 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ResourceName string
-
 const (
-	// ResourceCPU CPU, in cores. (500m = .5 cores)
-	ResourceCPU ResourceName = "cpu"
-	// ResourceMemory Memory, in bytes. (500Gi = 500GiB = 500 * 1024 * 1024 * 1024)
-	ResourceMemory ResourceName = "memory"
 	// FinalizerName is the finalizer for Devbox
 	FinalizerName = "devbox.sealos.io/finalizer"
 	DevBoxPartOf  = "devbox"
@@ -52,8 +45,6 @@ const (
 	NetworkTypeTailnet  NetworkType = "Tailnet"
 )
 
-type ResourceList map[ResourceName]resource.Quantity
-
 type RuntimeRef struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
@@ -75,7 +66,7 @@ type DevboxSpec struct {
 	// +kubebuilder:validation:Enum=Running;Stopped
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
-	Resource ResourceList `json:"resource"`
+	Resource corev1.ResourceList `json:"resource"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
@@ -109,6 +100,10 @@ type DevboxSpec struct {
 	// +kubebuilder:validation:Optional
 	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	RuntimeClassName string `json:"runtimeClassName,omitempty"`
+	// +kubebuilder:validation:Optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// +kubebuilder:validation:Optional
