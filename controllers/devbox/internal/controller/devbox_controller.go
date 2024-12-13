@@ -605,7 +605,6 @@ func (r *DevboxReconciler) generateProxyPodJWT(ctx context.Context, devbox *devb
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	fmt.Printf("生成的token为：%s\n", token)
 	return token.SignedString(r.ShutdownServerKey)
 }
 
@@ -629,8 +628,8 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 			Name:  "JWT_TOKEN",
 			Value: token,
 		})
+		fmt.Printf("生成的token为：%s\n", token)
 	}
-
 	sshPort := "22"
 	for _, port := range servicePorts {
 		if port.Name == "devbox-ssh-port" {
