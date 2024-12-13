@@ -611,6 +611,8 @@ func (r *DevboxReconciler) generateProxyPodJWT(ctx context.Context, devbox *devb
 func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	autoShutdownEnabled := devbox.Spec.AutoShutdownSpec.Enable && r.EnableAutoShutdown
+	fmt.Println(devbox.Spec.AutoShutdownSpec.Enable)
+	fmt.Println(r.EnableAutoShutdown)
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "ENABLE_AUTO_SHUTDOWN",
 		Value: strconv.FormatBool(autoShutdownEnabled),
