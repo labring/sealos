@@ -59,13 +59,16 @@ func getBaiduAccessTokenHelper(ctx context.Context, apiKey string) (*TokenRespon
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", authorization)
+	query := req.URL.Query()
+	query.Add("expireInSeconds", "86400")
+	req.URL.RawQuery = query.Encode()
+	req.Header.Set("Authorization", authorization)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("get token failed, status code: %d", res.StatusCode)
 	}
 	var tokenResponse TokenResponse
