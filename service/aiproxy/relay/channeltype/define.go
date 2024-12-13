@@ -8,6 +8,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baichuan"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baidu"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baiduv2"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/cloudflare"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/cohere"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze"
@@ -34,6 +35,7 @@ import (
 var ChannelAdaptor = map[int]adaptor.Adaptor{
 	1: &openai.Adaptor{},
 	// 3:  &azure.Adaptor{},
+	13: &baiduv2.Adaptor{},
 	14: &anthropic.Adaptor{},
 	15: &baidu.Adaptor{},
 	16: &zhipu.Adaptor{},
@@ -70,7 +72,13 @@ func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
 var ChannelNames = map[int]string{}
 
 func init() {
+	names := make(map[string]struct{})
 	for i, adaptor := range ChannelAdaptor {
-		ChannelNames[i] = adaptor.GetChannelName()
+		name := adaptor.GetChannelName()
+		if _, ok := names[name]; ok {
+			panic("duplicate channel name: " + name)
+		}
+		names[name] = struct{}{}
+		ChannelNames[i] = name
 	}
 }

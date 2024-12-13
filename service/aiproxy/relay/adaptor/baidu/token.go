@@ -2,19 +2,16 @@ package baidu
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/client"
+	log "github.com/sirupsen/logrus"
 )
 
 type AccessToken struct {
@@ -23,11 +20,6 @@ type AccessToken struct {
 	Error            string    `json:"error,omitempty"`
 	ErrorDescription string    `json:"error_description,omitempty"`
 	ExpiresIn        int64     `json:"expires_in,omitempty"`
-}
-
-type TokenResponse struct {
-	ExpireTime time.Time `json:"expireTime"`
-	Token      string    `json:"token"`
 }
 
 var baiduTokenStore sync.Map
@@ -39,7 +31,10 @@ func GetAccessToken(ctx context.Context, apiKey string) (string, error) {
 			// soon this will expire
 			if time.Now().Add(time.Hour).After(accessToken.ExpiresAt) {
 				go func() {
-					_, _ = getBaiduAccessTokenHelper(context.Background(), apiKey)
+					_, err := getBaiduAccessTokenHelper(context.Background(), apiKey)
+					if err != nil {
+						log.Errorf("get baidu access token failed: %v", err)
+					}
 				}()
 			}
 			return accessToken.AccessToken, nil
@@ -47,6 +42,7 @@ func GetAccessToken(ctx context.Context, apiKey string) (string, error) {
 	}
 	accessToken, err := getBaiduAccessTokenHelper(ctx, apiKey)
 	if err != nil {
+		log.Errorf("get baidu access token failed: %v", err)
 		return "", errors.New("get baidu access token failed")
 	}
 	if accessToken == nil {
@@ -90,70 +86,4 @@ func getBaiduAccessTokenHelper(ctx context.Context, apiKey string) (*AccessToken
 	accessToken.ExpiresAt = time.Now().Add(time.Duration(accessToken.ExpiresIn) * time.Second)
 	baiduTokenStore.Store(apiKey, accessToken)
 	return &accessToken, nil
-}
-
-func GetBearerToken(ctx context.Context, apiKey string) (*TokenResponse, error) {
-	parts := strings.Split(apiKey, "|")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid baidu apikey")
-	}
-	if val, ok := baiduTokenStore.Load("bearer|" + apiKey); ok {
-		var tokenResponse TokenResponse
-		if tokenResponse, ok = val.(TokenResponse); ok {
-			if time.Now().Add(time.Hour).After(tokenResponse.ExpireTime) {
-				go func() {
-					_, _ = GetBearerToken(context.Background(), apiKey)
-				}()
-			}
-			return &tokenResponse, nil
-		}
-	}
-	authorization := generateAuthorizationString(parts[0], parts[1])
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://iam.bj.baidubce.com/v1/BCE-BEARER/token", nil)
-	if err != nil {
-		return nil, err
-	}
-	query := url.Values{}
-	query.Add("expireInSeconds", "86400")
-	req.URL.RawQuery = query.Encode()
-	req.Header.Add("Authorization", authorization)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	var tokenResponse TokenResponse
-	err = json.NewDecoder(res.Body).Decode(&tokenResponse)
-	if err != nil {
-		return nil, err
-	}
-	baiduTokenStore.Store("bearer|"+apiKey, tokenResponse)
-	return &tokenResponse, nil
-}
-
-func generateAuthorizationString(ak, sk string) string {
-	httpMethod := http.MethodGet
-	uri := "/v1/BCE-BEARER/token"
-	queryString := "expireInSeconds=86400"
-	hostHeader := "iam.bj.baidubce.com"
-	canonicalRequest := fmt.Sprintf("%s\n%s\n%s\nhost:%s", httpMethod, uri, queryString, hostHeader)
-
-	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05Z")
-	expirationPeriodInSeconds := 1800
-	authStringPrefix := fmt.Sprintf("bce-auth-v1/%s/%s/%d", ak, timestamp, expirationPeriodInSeconds)
-
-	signingKey := hmacSHA256(sk, authStringPrefix)
-
-	signature := hmacSHA256(signingKey, canonicalRequest)
-
-	signedHeaders := "host"
-	authorization := fmt.Sprintf("%s/%s/%s", authStringPrefix, signedHeaders, signature)
-
-	return authorization
-}
-
-func hmacSHA256(key, data string) string {
-	h := hmac.New(sha256.New, []byte(key))
-	h.Write([]byte(data))
-	return hex.EncodeToString(h.Sum(nil))
 }
