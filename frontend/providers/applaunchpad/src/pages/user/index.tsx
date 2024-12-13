@@ -1,15 +1,14 @@
-import { getImageHubs } from '@/api/app';
-import SwitchPage from '@/components/ImageHub/SwitchPage';
-import List from '@/components/ImageHub/list';
 import { useLoading } from '@/hooks/useLoading';
 import { serviceSideProps } from '@/utils/i18n';
-import { getUserNamespace } from '@/utils/user';
 import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import List from './components/list';
+import SwitchPage from './components/switchpage';
+import { getResourceQuotas } from '@/api/app';
 
-const Home = ({ namespace }: { namespace: string }) => {
+const UserResourceQuota = ({ namespace }: { namespace: string }) => {
   const router = useRouter();
   const { Loading } = useLoading();
   const [page, setPage] = useState(1);
@@ -17,19 +16,36 @@ const Home = ({ namespace }: { namespace: string }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { isLoading, data, refetch } = useQuery(
-    ['getImageHubs', page, pageSize, searchTerm],
-    () => getImageHubs({ page, pageSize, search: searchTerm }),
+    ['getUserResourceQuotas'],
+    getResourceQuotas,
     {
       retry: 3
     }
   );
 
+  console.log(data);
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter((item: any) =>
+      item.name.includes(searchTerm) || item.namespace.includes(searchTerm)
+    );
+  }, [data, searchTerm]);
+
+  
+  console.log('filteredData', filteredData);
+
+  const paginatedData = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredData.slice(start, end);
+  }, [filteredData, page, pageSize]);
+
   return (
     <Flex backgroundColor={'grayModern.100'} px={'32px'} h={'100vh'} flexDirection={'column'}>
       <List
-        namespaces={[]}
-        apps={data?.items || []}
-        refetchApps={refetch}
+        quotas={data?.items || []}
+        refetchQuotas={refetch}
         onSearch={setSearchTerm}
       />
 
@@ -58,4 +74,4 @@ export async function getServerSideProps(content: any) {
   };
 }
 
-export default Home;
+export default UserResourceQuota;

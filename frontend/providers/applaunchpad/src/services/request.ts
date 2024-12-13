@@ -24,7 +24,10 @@ request.interceptors.request.use(
     let _headers: AxiosHeaders = config.headers;
 
     //获取token，并将其添加至请求头中
-    // _headers['Authorization'] = encodeURIComponent(getUserKubeConfig());
+    let kc = JSON.stringify(getUserKubeConfig());
+    console.log('kc:', kc);
+    _headers['Authorization'] = encodeURIComponent(kc);
+    console.log('Authorization:', _headers['Authorization']);
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }

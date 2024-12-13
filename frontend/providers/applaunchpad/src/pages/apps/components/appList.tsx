@@ -401,15 +401,29 @@ const AppList = ({
           w={'100px'}
           flex={'0 0 auto'}
           onClick={() => {
+            router.push('/user');
+          }}
+        >
+          用户管理
+        </Button>
+
+        <Button
+          mr={'12px'}
+          h={'40px'}
+          w={'100px'}
+          flex={'0 0 auto'}
+          onClick={() => {
             router.push('/imagehub');
           }}
         >
           镜像管理
         </Button>
 
+        {namespaces.length > 1 && (
         <Button mr={'12px'} h={'40px'} w={'100px'} flex={'0 0 auto'} onClick={onOpen}>
           {t('New Namaspace')}
         </Button>
+        )}
 
         <Button
           leftIcon={
@@ -443,7 +457,7 @@ const AppList = ({
           ml={'12px'}
           variant={'outline'}
           onClick={() => {
-            setUserIsLogin(false);
+            setUserIsLogin(false, '');
             router.replace('/login');
           }}
         >

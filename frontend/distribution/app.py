@@ -9,6 +9,8 @@ import zipfile
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import requests
+from node import add_node_to_cluster, delete_node_from_cluster
+
 
 app = Flask(__name__)
 
@@ -626,6 +628,42 @@ def scale_high_priority_workloads():
                         continue
     except Exception as e:
         print("Error in scale_high_priority_workloads: {}".format(str(e)))
+        
+@app.route('/add_node', methods=['POST'])
+def add_node():
+    data = request.json
+    node_ip = data.get('node_ip')
+    cluster_name = data.get('cluster_name', 'default')
+    user = data.get('user', '')
+    passwd = data.get('passwd', '')
+    pk = data.get('pk', '/root/.ssh/id_rsa')
+    pk_passwd = data.get('pk_passwd', '')
+    port = data.get('port', 22)
+    
+    if not node_ip:
+        return jsonify({'error': 'node_ip is required'}), 400
+    
+    try:
+        add_node_to_cluster(node_ip, cluster_name, user, passwd, pk, pk_passwd, port)
+        return jsonify({'message': 'Node added successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/delete_node', methods=['POST'])
+def delete_node():
+    data = request.json
+    node_ip = data.get('node_ip')
+    cluster_name = data.get('cluster_name', 'default')
+    force = data.get('force', False)
+    
+    if not node_ip:
+        return jsonify({'error': 'node_ip is required'}), 400
+    
+    try:
+        delete_node_from_cluster(node_ip, cluster_name, force)
+        return jsonify({'message': 'Node deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # 创建定时任务调度器
 scheduler = BackgroundScheduler()

@@ -12,6 +12,7 @@ import React, { useMemo, useState } from 'react';
 import AppBaseInfo from './components/AppBaseInfo';
 import Header from './components/Header';
 import Pods from './components/Pods';
+import { getCurrentNamespace, getUserNamespace } from '@/utils/user';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
@@ -33,9 +34,11 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
   const [podsLoaded, setPodsLoaded] = useState(false);
   const [showSlider, setShowSlider] = useState(false);
 
+  const currentNamespace = getCurrentNamespace(namespace);
+
   const { refetch, isSuccess } = useQuery(
     ['setAppDetail'],
-    () => setAppDetail(namespace, appName),
+    () => setAppDetail(currentNamespace, appName),
     {
       onError(err) {
         toast({
@@ -50,7 +53,7 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
     ['app-detail-pod'],
     () => {
       if (appDetail?.isPause) return null;
-      return intervalLoadPods(namespace, appName, true);
+      return intervalLoadPods(currentNamespace, appName, true);
     },
     {
       refetchOnMount: true,
@@ -65,7 +68,7 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
     ['loadDetailMonitorData', appName, appDetail?.isPause],
     () => {
       if (appDetail?.isPause) return null;
-      return loadDetailMonitorData(namespace, appName);
+      return loadDetailMonitorData(currentNamespace, appName);
     },
     {
       refetchOnMount: true,
@@ -83,7 +86,7 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
     >
       <Box>
         <Header
-          namespace={namespace}
+          namespace={currentNamespace}
           appName={appName}
           appStatus={appDetail?.status}
           isPause={appDetail?.isPause}
@@ -126,7 +129,7 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
             minH={'257px'}
           >
             {appDetail ? (
-              <AppMainInfo namespace={namespace} app={appDetail} />
+              <AppMainInfo namespace={currentNamespace} app={appDetail} />
             ) : (
               <Loading loading={true} fixed={false} />
             )}
@@ -140,7 +143,7 @@ const AppDetail = ({ appName, namespace }: { appName: string; namespace: string 
             minH={'300px'}
           >
             <Pods
-              namespace={namespace}
+              namespace={currentNamespace}
               pods={appDetailPods}
               appName={appName}
               loading={!podsLoaded}

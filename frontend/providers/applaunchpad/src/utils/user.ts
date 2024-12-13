@@ -2,13 +2,15 @@
 import yaml from 'js-yaml';
 
 export const getUserKubeConfig = () => {
-  let kubeConfig: string =
-    process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
+  let kubeConfig: string = '';
+    //process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
     const store = localStorage.getItem('session');
+    console.log(store);
     if (!kubeConfig && store) {
-      kubeConfig = JSON.parse(store)?.kubeconfig;
+      kubeConfig = JSON.parse(store)?.state.session.kubeconfig;
+      console.log('kubeConfig:', kubeConfig);
     }
   } catch (err) {
     err;
@@ -17,17 +19,33 @@ export const getUserKubeConfig = () => {
 };
 
 export const getUserNamespace = () => {
-  const kubeConfig = getUserKubeConfig();
-  const json: any = yaml.load(kubeConfig);
+  const kubeConfig: any = getUserKubeConfig();
+  console.log('getuserns-kubeConfig:', kubeConfig);
   try {
-    return json?.contexts[0]?.context?.namespace || `ns-${json.users[0].name}`;
+    return kubeConfig?.contexts[0]?.context?.namespace || 'default';
   } catch (err) {
+    console.log('getuserns-err:', err);
     return 'nx-';
   }
 };
 
-export const setUserIsLogin = (isLogin: boolean) => {
+export const getCurrentNamespace = (namespace: string) => {
+  console.log('getCurrentNamespace-namespace:', namespace);
+  if (namespace === 'default') {
+    const ns = getUserNamespace();
+    console.log('ns:', ns);
+    return ns;
+  }
+  return namespace;
+}
+
+export const setUserIsLogin = (isLogin: boolean, session: string) => {
   localStorage.setItem('user-login', isLogin.toString());
+  if (isLogin) {
+    localStorage.setItem('session', session);
+  } else {
+    localStorage.removeItem('session');
+  }
 };
 
 export const getUserIsLogin = (): boolean => {

@@ -24,8 +24,8 @@ export default function LoginForm() {
 
   const handleLogin = async () => {
     try {
-      await login({ username, password });
-      setUserIsLogin(true);
+      const session = await login({ username, password });
+      setUserIsLogin(true, JSON.stringify(session));
       toast({
         title: '登录成功',
         status: 'success',

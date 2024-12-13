@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RequestController, isElementInViewport } from '@/utils/tools';
 import AppList from './components/appList';
+import { getCurrentNamespace } from '@/utils/user';
 
 const Home = ({ namespace }: { namespace: string }) => {
   const router = useRouter();
@@ -16,6 +17,8 @@ const Home = ({ namespace }: { namespace: string }) => {
   const list = useRef<AppListItemType[]>(appList);
   const currentNamespace = useRef<string>(namespace);
   const namespacesRef = useRef<string[]>(namespaces);
+
+  currentNamespace.current = getCurrentNamespace(currentNamespace.current);
 
   const refreshList = useCallback(
     (res = appList) => {
