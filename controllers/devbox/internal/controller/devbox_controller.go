@@ -564,6 +564,7 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 			Namespace: devbox.Namespace,
 			Labels:    helper.GenerateProxyPodLabels(devbox, runtimecr),
 		},
+		Spec: expectServiceSpec,
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, proxySvc, func() error {
 		proxySvc.Spec.Selector = expectServiceSpec.Selector
