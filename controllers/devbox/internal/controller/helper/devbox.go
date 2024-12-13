@@ -38,16 +38,11 @@ const (
 	DevBoxPartOf = "devbox"
 )
 
-func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
+func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 	labels := make(map[string]string)
 
-	if runtime.Spec.Config.Labels != nil {
-		for k, v := range runtime.Spec.Config.Labels {
-			labels[k] = v
-		}
-	}
-	if devbox.Spec.ExtraLabels != nil {
-		for k, v := range devbox.Spec.ExtraLabels {
+	if devbox.Spec.Config.Labels != nil {
+		for k, v := range devbox.Spec.Config.Labels {
 			labels[k] = v
 		}
 	}
@@ -62,15 +57,10 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Ru
 	return labels
 }
 
-func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
+func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox) map[string]string {
 	annotations := make(map[string]string)
-	if runtime.Spec.Config.Annotations != nil {
-		for k, v := range runtime.Spec.Config.Annotations {
-			annotations[k] = v
-		}
-	}
-	if devbox.Spec.ExtraAnnotations != nil {
-		for k, v := range devbox.Spec.ExtraAnnotations {
+	if devbox.Spec.Config.Annotations != nil {
+		for k, v := range devbox.Spec.Config.Annotations {
 			annotations[k] = v
 		}
 	}
@@ -347,13 +337,13 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 	return nil
 }
 
-func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) string {
+func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox) string {
 	if len(devbox.Status.CommitHistory) == 0 {
-		return runtime.Spec.Config.Image
+		return devbox.Spec.Image
 	}
 	commit := GetLastSuccessCommitHistory(devbox)
 	if commit == nil {
-		return runtime.Spec.Config.Image
+		return devbox.Spec.Image
 	}
 	return commit.Image
 }
@@ -448,26 +438,17 @@ func calculateResourceRequest(limit corev1.ResourceList, requestCPURate, request
 	return request
 }
 
-// GenerateWorkingDir generates the working directory for the Devbox pod
-func GenerateWorkingDir(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) string {
-	if devbox.Spec.WorkingDir != "" {
-		return devbox.Spec.WorkingDir
-	}
-	return runtime.Spec.Config.WorkingDir
+// GetWorkingDir get the working directory for the Devbox pod
+func GetWorkingDir(devbox *devboxv1alpha1.Devbox) string {
+	return devbox.Spec.Config.WorkingDir
 }
 
-// GenerateCommand generates the command for the Devbox pod
-func GenerateCommand(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) []string {
-	if len(devbox.Spec.Command) != 0 {
-		return devbox.Spec.Command
-	}
-	return runtime.Spec.Config.Command
+// GetCommand get the command for the Devbox pod
+func GetCommand(devbox *devboxv1alpha1.Devbox) []string {
+	return devbox.Spec.Config.Command
 }
 
-// GenerateDevboxArgs generates the arguments for the Devbox pod
-func GenerateDevboxArgs(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) []string {
-	if len(devbox.Spec.Args) != 0 {
-		return devbox.Spec.Args
-	}
-	return runtime.Spec.Config.Args
+// GetArgs get the arguments for the Devbox pod
+func GetArgs(devbox *devboxv1alpha1.Devbox) []string {
+	return devbox.Spec.Config.Args
 }
