@@ -195,7 +195,7 @@ const BonusBox = (props: {
             </Flex>
           </Flex>
         </Flex>
-      ) : (
+      ) : props.bouns !== 0 ? (
         <Flex
           position={'absolute'}
           minW={'max-content'}
@@ -216,6 +216,8 @@ const BonusBox = (props: {
           <CurrencySymbol boxSize={'10px'} mr={'2px'} />
           <Text> {props.bouns}</Text>
         </Flex>
+      ) : (
+        <></>
       )}
       <Flex align={'center'}>
         <Currencysymbol boxSize="20px" type={currency} />
@@ -345,6 +347,7 @@ const RechargeModal = forwardRef(
         >('/api/price/bonus'),
       {}
     );
+
     const [defaultSteps, ratios, steps, specialBonus] = useMemo(() => {
       const defaultSteps = Object.entries(bonuses?.data?.discount.defaultSteps || {}).sort(
         (a, b) => +a[0] - +b[0]
@@ -377,7 +380,12 @@ const RechargeModal = forwardRef(
     const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
       if (steps && steps.length > 0) {
-        setAmount(steps[0]);
+        const result = steps.map((v, idx) => [v, getBonus(v), idx]).filter(([k, v]) => v > 0);
+        if (result.length > 0) {
+          const [key, bouns, idx] = result[0];
+          setSelectAmount(idx);
+          setAmount(key);
+        }
       }
     }, [steps]);
     const handleWechatConfirm = () => {
@@ -674,6 +682,7 @@ const RechargeModal = forwardRef(
                       .filter(([_, _2, ratio], idx) => {
                         return ratio > 0;
                       })
+
                       .map(([pre, next, ratio], idx) => (
                         <>
                           <Text key={idx} pl={'24px'} color={'grayModern.900'}>
