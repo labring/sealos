@@ -99,7 +99,7 @@ func main() {
 	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
 	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
 	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
-	flag.StringVar(&webSocketImage, "websocket-image", "cbluebird/wst:v0.0.3", "The image name of devbox websocket proxy pod.")
+	flag.StringVar(&webSocketImage, "websocket-image", "cbluebird/wst:v0.0.4", "The image name of devbox websocket proxy pod.")
 	flag.StringVar(&websocketProxyDomain, "websocket-proxy-domain", "sealoshzh.site", "The websocket proxy domain of devbox ingress.")
 	flag.StringVar(&ingressClass, "ingress-class", "nginx", "The ingress class name.")
 	flag.BoolVar(&enableAutoShutdown, "enable-auto-shutdown", true, "If set, Devbox auto shutdown will be enabled.")
