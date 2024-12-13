@@ -22,14 +22,14 @@ function Home() {
 
   return (
     <>
-      {dbList.length === 0 && initialized ? (
-        <Empty />
-      ) : (
-        <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'} overflow={'hidden'}>
-          <Sidebar />
+      <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'} overflow={'hidden'}>
+        <Sidebar />
+        {dbList.length === 0 && initialized ? (
+          <Empty />
+        ) : (
           <DBList dbList={dbList} refetchApps={refetch} />
-        </Flex>
-      )}
+        )}
+      </Flex>
       <Loading loading={!initialized} />
     </>
   );

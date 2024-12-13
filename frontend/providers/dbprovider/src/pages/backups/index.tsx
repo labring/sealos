@@ -1,32 +1,53 @@
 import { deleteBackup, getBackups } from '@/api/backup';
+import { getDBByName } from '@/api/db';
 import MyIcon from '@/components/Icon';
+import MyTooltip from '@/components/MyTooltip';
 import Sidebar from '@/components/Sidebar';
+import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useLoading } from '@/hooks/useLoading';
 import useEnvStore from '@/store/env';
+import { BackupItemType, DBDetailType } from '@/types/db';
+import { I18nCommonKey } from '@/types/i18next';
 import { serviceSideProps } from '@/utils/i18n';
-import { Box, Button, Center, Flex, Input, InputGroup, InputLeftElement } from '@chakra-ui/react';
+import { getErrText } from '@/utils/tools';
+import { QuestionOutlineIcon } from '@chakra-ui/icons';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
-import { useState, useMemo, useCallback } from 'react';
 import {
   ColumnDef,
+  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { Tooltip } from '@chakra-ui/react';
-import { QuestionOutlineIcon } from '@chakra-ui/icons';
-import MyTooltip from '@/components/MyTooltip';
-import { I18nCommonKey } from '@/types/i18next';
-import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
-import { BackupItemType } from '@/types/db';
-import { useConfirm } from '@/hooks/useConfirm';
-import { useMessage } from '@sealos/ui';
-import { useLoading } from '@/hooks/useLoading';
-import { getErrText } from '@/utils/tools';
-import { BaseTable } from '@/components/BaseTable/baseTable';
 import { groupBy } from 'lodash';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import React, { useCallback, useMemo, useState } from 'react';
+import RestoreModal from '../db/detail/components/RestoreModal';
+
+const operationIconStyles = {
+  w: '18px'
+};
 
 export default function Backups() {
   const { t } = useTranslation();
@@ -36,20 +57,60 @@ export default function Backups() {
   const { SystemEnv } = useEnvStore();
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  const { openConfirm: openConfirmDel, ConfirmChild: RestartConfirmDelChild } = useConfirm({
+  const { openConfirm: openConfirmDel, ConfirmChild: ConfirmDelChild } = useConfirm({
     content: t('confirm_delete_the_backup')
   });
 
+  const [db, setDb] = useState<DBDetailType>();
+
+  const loadDBDetail = useCallback(
+    async (dbName: string) => {
+      try {
+        const res = await getDBByName(dbName);
+        setDb(res);
+      } catch (err) {
+        toast({
+          title: getErrText(err),
+          status: 'error'
+        });
+      }
+    },
+    [toast]
+  );
+
   const { data, refetch, isLoading } = useQuery(['getBackups'], getBackups, {
-    cacheTime: 2 * 60 * 1000
+    cacheTime: 2 * 60 * 1000,
+    onSuccess: (data) => {
+      if (data.length > 0 && Object.keys(expandedGroups).length === 0) {
+        const firstDbName = data[0].dbName;
+        setExpandedGroups((prev) => ({
+          ...prev,
+          [firstDbName]: true
+        }));
+      }
+    }
   });
 
   console.log(data);
 
-  const operationIconStyles = {
-    w: '18px'
-  };
+  const confirmDel = useCallback(
+    async (name: string) => {
+      try {
+        setIsLoading(true);
+        await deleteBackup(name);
+        await refetch();
+      } catch (err) {
+        toast({
+          title: getErrText(err),
+          status: 'error'
+        });
+      }
+      setIsLoading(false);
+    },
+    [refetch, setIsLoading, toast]
+  );
 
   const columns = useMemo<Array<ColumnDef<BackupItemType>>>(
     () => [
@@ -71,9 +132,9 @@ export default function Backups() {
           <Flex color={row.original.status.color} alignItems={'center'}>
             {t(row.original.status.label as I18nCommonKey)}
             {row.original.failureReason && (
-              <Tooltip label={row.original.failureReason}>
+              <MyTooltip label={row.original.failureReason}>
                 <QuestionOutlineIcon ml={1} />
-              </Tooltip>
+              </MyTooltip>
             )}
           </Flex>
         )
@@ -97,7 +158,13 @@ export default function Backups() {
           row.original.status.value !== BackupStatusEnum.InProgress ? (
             <Flex>
               <MyTooltip label={t('restore_backup')}>
-                <Button variant={'square'} onClick={() => setBackupInfo(row.original)}>
+                <Button
+                  variant={'square'}
+                  onClick={() => {
+                    loadDBDetail(row.original.dbName);
+                    setBackupInfo(row.original);
+                  }}
+                >
                   <MyIcon name={'restore'} {...operationIconStyles} />
                 </Button>
               </MyTooltip>
@@ -115,46 +182,24 @@ export default function Backups() {
           ) : null
       }
     ],
-    [t]
+    [confirmDel, openConfirmDel, t]
   );
 
-  // const table = useReactTable({
-  //   data: data || [],
-  //   columns,
-  //   getCoreRowModel: getCoreRowModel(),
-  //   getFilteredRowModel: getFilteredRowModel(),
-  //   state: {
-  //     globalFilter
-  //   },
-  //   onGlobalFilterChange: setGlobalFilter
-  // });
-
-  const confirmDel = useCallback(
-    async (name: string) => {
-      try {
-        setIsLoading(true);
-        await deleteBackup(name);
-        await refetch();
-      } catch (err) {
-        toast({
-          title: getErrText(err),
-          status: 'error'
-        });
-      }
-      setIsLoading(false);
+  const table = useReactTable({
+    data: data || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter
     },
-    [refetch, setIsLoading, toast]
-  );
-
-  const groupedData = useMemo(() => {
-    if (!data) return [];
-    return Object.entries(groupBy(data, (item) => item.dbName)).map(([dbName, items]) => ({
-      dbName,
-      items
-    }));
-  }, [data]);
-
-  console.log(groupedData);
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, filterValue) => {
+      const name = row.original.name.toLowerCase().includes(filterValue.toLowerCase());
+      const remark = row.original.remark.toLowerCase().includes(filterValue.toLowerCase());
+      return name || remark;
+    }
+  });
 
   return (
     <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'}>
@@ -171,15 +216,102 @@ export default function Backups() {
               <MyIcon name="search" />
             </InputLeftElement>
             <Input
-              placeholder={t('error_log.search_content')}
+              placeholder={t('backup_center_search_tip')}
               value={globalFilter ?? ''}
-              // onChange={(e) => table.setGlobalFilter(e.target.value)}
+              onChange={(e) => table.setGlobalFilter(e.target.value)}
             />
           </InputGroup>
         </Flex>
 
-        {/* <BaseTable table={table} isLoading={isLoading} overflow={'auto'} /> */}
+        <Table variant="unstyled" width={'full'}>
+          <Thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <Tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <Th
+                    key={header.id}
+                    fontSize={'12px'}
+                    py="13px"
+                    px={'24px'}
+                    bg={'grayModern.100'}
+                    color={'grayModern.600'}
+                    border={'none'}
+                    _first={{
+                      borderLeftRadius: '6px'
+                    }}
+                    _last={{
+                      borderRightRadius: '6px'
+                    }}
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </Th>
+                ))}
+              </Tr>
+            ))}
+          </Thead>
+          <Tbody>
+            {Object.entries(groupBy(table.getRowModel().rows, (row) => row.original.dbName)).map(
+              ([dbName, rows]) => (
+                <React.Fragment key={dbName}>
+                  <Tr>
+                    <Td colSpan={table.getAllColumns().length} px="0px">
+                      <Flex alignItems="center">
+                        <Center
+                          _hover={{
+                            bg: 'rgba(17, 24, 36, 0.05)'
+                          }}
+                          cursor="pointer"
+                          w="24px"
+                          h="24px"
+                          borderRadius="4px"
+                          onClick={() =>
+                            setExpandedGroups((prev) => ({
+                              ...prev,
+                              [dbName]: !prev[dbName]
+                            }))
+                          }
+                        >
+                          <MyIcon
+                            name={'chevronDown'}
+                            transform={expandedGroups[dbName] ? 'rotate(0deg)' : 'rotate(-90deg)'}
+                            w="20px"
+                            h="20px"
+                            color="grayModern.400"
+                          />
+                        </Center>
+                        <Text ml={'8px'} fontWeight="bold">
+                          {dbName}
+                        </Text>
+                        <Image
+                          ml={'16px'}
+                          width={'20px'}
+                          height={'20px'}
+                          alt={dbName}
+                          src={`/images/${rows[0]?.original?.dbType}.svg`}
+                        />
+                      </Flex>
+                    </Td>
+                  </Tr>
+                  {expandedGroups[dbName] &&
+                    rows.map((row) => (
+                      <Tr key={row.id} fontSize={'12px'}>
+                        {row.getVisibleCells().map((cell) => (
+                          <Td key={cell.id} py="10px" px={'24px'}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </Td>
+                        ))}
+                      </Tr>
+                    ))}
+                </React.Fragment>
+              )
+            )}
+          </Tbody>
+        </Table>
       </Box>
+      <ConfirmDelChild />
+      {!!backupInfo?.name && db && (
+        <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
+      )}
     </Flex>
   );
 }

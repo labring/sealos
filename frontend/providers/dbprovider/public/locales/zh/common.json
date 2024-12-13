@@ -72,6 +72,7 @@
   "auto_backup": "自动备份",
   "automatic_backup_is_turned_off": "已关闭自动备份",
   "backup_center": "备份中心",
+  "backup_center_search_tip": "搜索备份名称",
   "backup_completed": "备份成功",
   "backup_database": "备份数据库",
   "backup_deleting": "删除中",

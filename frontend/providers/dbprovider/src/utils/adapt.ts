@@ -233,7 +233,8 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
     remark: remark ? decodeFromHex(remark) : '-',
     failureReason: backup.status?.failureReason,
     connectionPassword: backup.metadata?.annotations?.[passwordLabel],
-    dbName: backup.metadata.labels[DBNameLabel]
+    dbName: backup.metadata.labels[DBNameLabel],
+    dbType: (backup.metadata.labels['apps.kubeblocks.io/component-name'] || 'postgresql') as DBType
   };
 };
 

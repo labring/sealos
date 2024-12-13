@@ -57,7 +57,8 @@ const map = {
   monitor: require('./icons/monitor.svg').default,
   logoLinear: require('./icons/logo-linear.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
-  docs: require('./icons/docs.svg').default
+  docs: require('./icons/docs.svg').default,
+  chevronDown: require('./icons/chevron-down.svg').default
 };
 
 const MyIcon = ({

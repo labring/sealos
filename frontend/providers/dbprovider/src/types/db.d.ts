@@ -139,6 +139,7 @@ export interface BackupItemType {
   namespace: string;
   connectionPassword: string;
   dbName: string;
+  dbType: DBType;
 }
 
 export type ReconfigStatusMapType = {

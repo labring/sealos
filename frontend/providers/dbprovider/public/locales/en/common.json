@@ -72,6 +72,7 @@
   "auto_backup": "Automated Backup",
   "automatic_backup_is_turned_off": "Auto backup disabled",
   "backup_center": "backup center",
+  "backup_center_search_tip": "Search backup name",
   "backup_completed": "Backup completed",
   "backup_database": "Backup Database",
   "backup_deleting": "Purging Backup",
