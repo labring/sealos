@@ -20,39 +20,8 @@ import (
 type Adaptor struct{}
 
 const (
-	baseURL   = "https://aip.baidubce.com"
-	baseURLV2 = "https://qianfan.baidubce.com"
+	baseURL = "https://aip.baidubce.com"
 )
-
-// func IsV2(modelName string) bool {
-// 	return strings.HasPrefix(strings.ToLower(modelName), "ernie-")
-// }
-
-// func (a *Adaptor) getRequestURLV2(_ *meta.Meta) string {
-// 	return baseURLV2 + "/v2/chat/completions"
-// }
-
-// var v2ModelMap = map[string]string{
-// 	"ERNIE-4.0-8K-Latest":        "ernie-4.0-8k-latest",
-// 	"ERNIE-4.0-8K-Preview":       "ernie-4.0-8k-preview",
-// 	"ERNIE-4.0-8K":               "ernie-4.0-8k",
-// 	"ERNIE-4.0-Turbo-8K-Latest":  "ernie-4.0-turbo-8k-latest",
-// 	"ERNIE-4.0-Turbo-8K-Preview": "ernie-4.0-turbo-8k-preview",
-// 	"ERNIE-4.0-Turbo-8K":         "ernie-4.0-turbo-8k",
-// 	"ERNIE-4.0-Turbo-128K":       "ernie-4.0-turbo-128k",
-// 	"ERNIE-3.5-8K-Preview":       "ernie-3.5-8k-preview",
-// 	"ERNIE-3.5-8K":               "ernie-3.5-8k",
-// 	"ERNIE-3.5-128K":             "ernie-3.5-128k",
-// 	"ERNIE-Speed-8K":             "ernie-speed-8k",
-// 	"ERNIE-Speed-128K":           "ernie-speed-128k",
-// 	"ERNIE-Speed-Pro-128K":       "ernie-speed-pro-128k",
-// 	"ERNIE-Lite-8K":              "ernie-lite-8k",
-// 	"ERNIE-Lite-Pro-128K":        "ernie-lite-pro-128k",
-// 	"ERNIE-Tiny-8K":              "ernie-tiny-8k",
-// 	"ERNIE-Character-8K":         "ernie-char-8k",
-// 	"ERNIE-Character-Fiction-8K": "ernie-char-fiction-8k",
-// 	"ERNIE-Novel-8K":             "ernie-novel-8k",
-// }
 
 // Get model-specific endpoint using map
 var modelEndpointMap = map[string]string{
@@ -108,14 +77,6 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
-	// if IsV2(meta.ActualModelName) {
-	// 	token, err := GetBearerToken(meta.APIKey)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	req.Header.Set("Authorization", "Bearer "+token.Token)
-	// 	return nil
-	// }
 	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 	accessToken, err := GetAccessToken(context.Background(), meta.Channel.Key)
 	if err != nil {
@@ -135,9 +96,6 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	case relaymode.ImagesGenerations:
 		return openai.ConvertRequest(meta, req)
 	default:
-		// if IsV2(meta.ActualModelName) {
-		// 	return openai.ConvertRequest(meta, req)
-		// }
 		return ConvertRequest(meta, req)
 	}
 }
@@ -155,10 +113,6 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
 	default:
-		// if IsV2(meta.ActualModelName) {
-		// 	usage, err = openai.DoResponse(meta, c, resp)
-		// 	return
-		// }
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(meta, c, resp)
 		} else {
