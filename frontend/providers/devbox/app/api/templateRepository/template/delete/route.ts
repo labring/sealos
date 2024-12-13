@@ -10,7 +10,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const headerList = req.headers
     const { searchParams } = req.nextUrl
-    const idRaw = searchParams.get('versionUid') as string
+    const idRaw = searchParams.get('uid') as string
     const result = z.string().uuid().safeParse(idRaw)
     const { payload } = await authSessionWithJWT(headerList)
     if (!result.success) {
@@ -20,7 +20,6 @@ export async function DELETE(req: NextRequest) {
       })
     }
     const uid = result.data
-    // const organizationUid = user.userOrganizations[0].organizationUid
     const template = await devboxDB.template.findUnique({
       where: {
         uid,
@@ -40,8 +39,8 @@ export async function DELETE(req: NextRequest) {
       }
     })
     if (!template ||
-      (template.templateRepository.organization.uid !== payload.organizationUid
-        && template.templateRepository.organization.isDeleted === false)) {
+      !(template.templateRepository.organization.uid === payload.organizationUid
+         && template.templateRepository.organization.isDeleted === false)) {
       return jsonRes({
         code: 404,
         error: 'template not found'

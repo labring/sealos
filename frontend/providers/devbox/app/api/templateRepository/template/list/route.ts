@@ -39,6 +39,8 @@ export async function GET(req: NextRequest) {
             name: true,
             config: true,
             image: true,
+            createdAt: true,
+            updatedAt: true,
           }
         }
       }

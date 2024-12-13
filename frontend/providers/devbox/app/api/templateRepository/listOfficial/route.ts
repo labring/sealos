@@ -24,9 +24,6 @@ export const GET = async function GET(req: NextRequest) {
         uid: true,
         description: true,
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
     })
     return jsonRes({
       data: {

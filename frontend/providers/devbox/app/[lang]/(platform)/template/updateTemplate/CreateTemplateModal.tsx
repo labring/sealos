@@ -3,7 +3,7 @@ import MyFormLabel from '@/components/MyFormControl';
 import { TemplateState } from '@/constants/template';
 import { usePathname } from '@/i18n';
 import { useTemplateStore } from '@/stores/template';
-import { nameSchema, versionSchema } from '@/utils/vaildate';
+import { templateNameSchema, versionSchema } from '@/utils/vaildate';
 import {
   Button,
   ButtonGroup,
@@ -49,7 +49,7 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
 }) => {
   const t = useTranslations()
   const formSchema = z.object({
-    name: z.string().min(1, t('input_template_name_placeholder')).pipe(nameSchema),
+    name: z.string().min(1, t('input_template_name_placeholder')).pipe(templateNameSchema),
     version: z.string().min(1, t('input_template_version_placeholder')).pipe(versionSchema),
     isPublic: z.boolean().default(false),
     agreeTerms: z.boolean().refine((val) => val === true, t('privacy_and_security_agreement_tips')),

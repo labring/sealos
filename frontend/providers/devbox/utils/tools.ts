@@ -331,3 +331,12 @@ export const isElementInViewport = (element: Element) => {
   return vertInView && horInView
 }
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
+
+export const parseTemplateConfig = (config: string) => {
+  return JSON.parse(config) as {
+    user: string
+    workingDir: string
+    releaseCommand: string[]
+    releaseArgs: string[]
+  }
+}

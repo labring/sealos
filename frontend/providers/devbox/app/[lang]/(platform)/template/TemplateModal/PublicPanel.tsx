@@ -1,16 +1,73 @@
 import { listTag, listTemplateRepository } from "@/api/template";
 import SwitchPage from "@/components/SwitchPage";
-import { useRouter } from "@/i18n";
+import { Tag, TagType } from "@/prisma/generated/client";
+import { createTagSelectorStore } from "@/stores/tagSelector";
 import { getLangStore } from "@/utils/cookie";
-import { Box, Flex, Grid, Heading, TabPanel, Text } from "@chakra-ui/react";
+import { Box, Divider, Flex, FlexProps, Grid, Heading, TabPanel, Text } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { produce } from "immer";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useStore } from "zustand";
 import { TagCheckbox } from "../TagCheckbox";
 import TemplateCard from "./TemplateCard";
-
-export default function PublicPanel({
+const TagSelectorStoreCtx = createContext<ReturnType<typeof createTagSelectorStore> | null>(null)
+const TagItem = ({ tag, ...props }: { tag: Tag } & FlexProps) => {
+  const store = useContext(TagSelectorStoreCtx)
+  if (!store) throw new Error('TagSelectorStoreCtx is null')
+  const { selectedTagList, setSelectedTag } = useStore(store,)
+  const lastLang = getLangStore()
+  return !tag ? null : <Flex
+    align="center"
+    gap="8px"
+    h={'36px'}
+    {...props}
+  >
+    <TagCheckbox
+      ml={tag.type !== TagType.OFFICIAL_CONTENT ? '10px' : '0'}
+      defaultChecked={tag.type === TagType.OFFICIAL_CONTENT}
+      isChecked={selectedTagList.has(tag.uid)}
+      onChange={(e) => {
+        const selected = e.target.checked
+        setSelectedTag(tag.uid, selected)
+      }}
+    ></TagCheckbox>
+    <Text fontWeight={500} fontSize={'14px'} color={'grayModern.600'}>
+      {
+        tag[lastLang === 'zh' ? 'zhName' : 'enName'] || tag.name
+      }
+    </Text>
+  </Flex>
+}
+const TagList = ({ tags, title }: { tags: Tag[], title: string }) => {
+  const t = useTranslations()
+  return <Box>
+    <Text color={'grayModern.600'} mb={'12px'}
+      fontWeight={'500'}
+    >{title}</Text>
+    <Flex direction="column" gap="4px" >{
+      tags.map((tag, index) => (
+        <TagItem
+          borderRadius={'6px'}
+          key={tag.uid}
+          tag={tag}
+          bgColor={'grayModern.25'}
+        >
+        </TagItem>))}
+    </Flex>
+  </Box>
+}
+const PublicPanel = ({
+  search, }: {
+    search: string,
+  }) => {
+  const [tagSelectorStore] = useState(createTagSelectorStore())
+  return <TagSelectorStoreCtx.Provider value={tagSelectorStore}>
+    <_PublicPanel
+      search={search}
+    />
+  </TagSelectorStoreCtx.Provider>
+}
+function _PublicPanel({
   search, }: {
     search: string,
   }) {
@@ -22,15 +79,20 @@ export default function PublicPanel({
       cacheTime: Infinity,
     }
   )
-  const t = useTranslations()
-  const router = useRouter()
-  const lastLang = getLangStore()
-  let tags = (tagsQuery.data?.tagList || [])
-  const labringTag = tags.find(tag => tag.name === 'official')
-  if (labringTag) {
-    tags = [labringTag, ...tags.filter(tag => tag.name !== 'official')]
-  }
-  const [selectedTag, setselectedTag] = useState<string[]>([])
+  let tags = (tagsQuery.data?.tagList || []).sort((a, b) => a.name === 'official' ? -1 : b.name === 'official' ? 1 : 0)
+  let tagListCollection = tags.reduce((acc, tag) => {
+    if (!acc[tag.type]) {
+      acc[tag.type] = [];
+    }
+    acc[tag.type].push(tag);
+    return acc;
+  }, {
+    [TagType.OFFICIAL_CONTENT]: [],
+    [TagType.USE_CASE]: [],
+    [TagType.PROGRAMMING_LANGUAGE]: []
+  } as Record<TagType, Tag[]>
+  );
+
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
     pageSize: 10,
@@ -38,23 +100,35 @@ export default function PublicPanel({
     totalPage: 0,
   })
 
-  const [queryBody, setQueryBody] = useState({
-    page: 1,
-    pageSize: 10,
-    search,
-    tags: selectedTag,
-  })
-
+  const store = useContext(TagSelectorStoreCtx)
+  if (!store) throw new Error('TagSelectorStoreCtx is null')
+  const state = useStore(store)
   // reset query
   useEffect(() => {
-    setQueryBody(prev => ({
+    if (!search) return
+    setPageQueryBody(prev => ({
       ...prev,
       page: 1,
-      tags: selectedTag,
-      search: search
+      totalItems: 0,
+      totalPage: 0,
     }))
-  }, [selectedTag, search])
-
+  }, [search])
+  // reset query
+  useEffect(() => {
+    setPageQueryBody(prev => ({
+      ...prev,
+      page: 1,
+      totalItems: 0,
+      totalPage: 0,
+    }))
+  }, [state.selectedTagList])
+  const queryBody = {
+    page: pageQueryBody.page,
+    pageSize: pageQueryBody.pageSize,
+    search,
+    tags: state.getSelectedTagList(),
+  }
+  console.log(queryBody, pageQueryBody)
   const listTemplateReposistory = useQuery(
     ['template-repository-list', 'template-repository-public', queryBody],
     () => {
@@ -66,7 +140,7 @@ export default function PublicPanel({
   )
 
   useEffect(() => {
-    if (listTemplateReposistory.isFetched && listTemplateReposistory.isSuccess && listTemplateReposistory.data) {
+    if (listTemplateReposistory.isSuccess && listTemplateReposistory.data) {
       const data = listTemplateReposistory.data.page
       setPageQueryBody(prev => ({
         ...prev,
@@ -78,45 +152,42 @@ export default function PublicPanel({
   }, [listTemplateReposistory.data])  // 添加依赖项
 
   const tempalteReposistoryList = listTemplateReposistory.data?.templateRepositoryList || []
+  const t = useTranslations()
   return <TabPanel p={0} height={'full'}>
     <Flex gap="8px" height={'full'}>
       {/* Left Sidebar */}
-      <Box w="150px">
-        <Heading as="h3" size="sm" color={'grayModern.600'} mb="2">
+      <Flex w="150px" direction={'column'} height={'full'}>
+        <Heading fontSize={'16px'} fontWeight={500} color={'grayModern.900'} mb="2">
           {t('tags')}
         </Heading>
-        <Flex direction="column" gap="2px">
-          {tags.map((tag, index) => (
-            <Flex
-              key={index}
-              align="center"
-              gap="8px"
-              h={'36px'}
-            >
-              <TagCheckbox defaultChecked={index < 2}
-                isChecked={selectedTag.includes(tag.uid)}
-                onChange={(e) => {
-                  const selected = e.target.checked
-                  setselectedTag(
-                    produce(selectedTag, (draft) => {
-                      if (selected) draft.push(tag.uid)
-                      else draft.splice(draft.indexOf(tag.uid), 1)
-                    })
-                  )
-                }}
-              ></TagCheckbox>
-              <Text fontWeight={500} fontSize={'14px'} color={'grayModern.600'}>
-                {
-                  tag[lastLang === 'zh' ? 'zhName' : 'enName'] || tag.name
-                }
-              </Text>
+        <Flex direction={'column'} flex={1} position={'relative'}>
+          <Flex direction={'column'} position={'absolute'} inset={0} overflow={'auto'}
+            pr={'4px'}
+            sx={{
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              scrollbarWidth: '6px',
+            }}
+
+          >
+            <Flex direction="column" gap="2px" >
+              {/* <TagList tags={tagListCollection[TagType.OFFICIAL_CONTENT]} /> */}
+              <TagItem
+                tag={tagListCollection[TagType.OFFICIAL_CONTENT][0]}
+              />
+              <Divider color={'grayModern.150'} mt={'11px'} mb='12px'></Divider>
+              <TagList tags={tagListCollection[TagType.USE_CASE]} title={t('use_case')} />
+              <Divider color={'grayModern.150'} my={'12px'}></Divider>
+              <TagList tags={tagListCollection[TagType.PROGRAMMING_LANGUAGE]} title={t('programming_language')} />
             </Flex>
-          ))}
+
+          </Flex>
         </Flex>
-      </Box>
+      </Flex>
 
       {/* Right Content */}
-      <Flex flex="1" flexDir={'column'} >
+      <Flex flex="1" flexDir={'column'}>
         <Text
           color={'grayModern.600'} mb="16px"
           fontSize='18px'
@@ -126,14 +197,21 @@ export default function PublicPanel({
         </Text>
         <Box width={'full'} flex={1} h={'400px'} overflow={'auto'}
           position={'relative'}
+          pr={'4px'}
+          sx={{
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            scrollbarWidth: '6px',
+          }}
         >
           <Grid templateColumns="repeat(auto-fill, minmax(clamp(210px, 300px, 440px), 1fr));"
             inset={0}
-            gap="20px" 
+            gap="20px"
             position={'absolute'}
             gridAutoRows={'max-content'}
           >
-            {tempalteReposistoryList.filter(tr=>tr.templates.length > 0).map((tr) => {
+            {tempalteReposistoryList.filter(tr => tr.templates.length > 0).map((tr) => {
               return <TemplateCard key={tr.uid}
                 iconId={tr.iconId || ''}
                 templateRepositoryName={tr.name}
@@ -161,12 +239,6 @@ export default function PublicPanel({
                   page: currentPage,
                 }
               })
-              setQueryBody(page => {
-                return {
-                  ...page,
-                  page: currentPage,
-                }
-              })
             }}
           />
         </Flex>
@@ -174,3 +246,4 @@ export default function PublicPanel({
     </Flex>
   </TabPanel>;
 }
+export default PublicPanel

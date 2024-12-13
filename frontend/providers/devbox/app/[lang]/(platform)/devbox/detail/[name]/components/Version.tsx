@@ -17,7 +17,7 @@ import { DevboxVersionListItemType } from '@/types/devbox'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 
-import { listPrivateTemplateRepository } from '@/api/template'
+import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template'
 import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal'
 import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal'
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal'
@@ -25,6 +25,7 @@ import AppSelectModal from '@/components/modals/AppSelectModal'
 import { useDevboxStore } from '@/stores/devbox'
 import { useEnvStore } from '@/stores/env'
 import { AppListItemType } from '@/types/app'
+import { parseTemplateConfig } from '@/utils/tools'
 
 const Version = () => {
   const t = useTranslations()
@@ -81,8 +82,10 @@ const Version = () => {
     async (version: DevboxVersionListItemType) => {
       // const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
       if (!devbox) return
-      const releaseCommand = ''
-      const releaseArgs = ''
+      const result = await getTemplateConfig(devbox.templateUid)
+      const config = parseTemplateConfig(result.template.config)
+      const releaseArgs = config.releaseArgs.join(' ')
+      const releaseCommand = config.releaseCommand.join(' ')
       const { cpu, memory, networks, name } = devbox
       const newNetworks = networks.map((network) => {
         return {
@@ -116,6 +119,7 @@ const Version = () => {
           [devboxIdKey]: devbox.id
         }
       }
+      console.log(transformData)
       setDeployData(transformData)
       const apps = await getAppsByDevboxId(devbox.id)
 

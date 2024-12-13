@@ -18,7 +18,7 @@ export const useIDEStore = create<State>()(
       immer((set, get) => ({
         devboxIDEList: [],
         getDevboxIDEByDevboxName(devboxName: string) {
-          return get().devboxIDEList.find((item) => item.devboxName === devboxName)?.ide || 'cursor'
+          return get().devboxIDEList.find((item) => item.devboxName === devboxName)?.ide ||'vscode'
         },
         addDevboxIDE(ide: IDEType, devboxName: string) {
           set((state) => {

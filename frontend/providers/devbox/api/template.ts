@@ -1,6 +1,6 @@
 import { Tag, TemplateRepositoryKind } from "@/prisma/generated/client";
 import { DELETE, GET, POST } from "@/services/request";
-import { CreateTemplateRepositoryType, UpdateTemplateRepositoryType, UpdateTemplateType } from "@/utils/vaildate";
+import { CreateTemplateRepositoryType, UpdateTemplateListType, UpdateTemplateRepositoryType, UpdateTemplateType } from "@/utils/vaildate";
 
 export const listOfficialTemplateRepository = () => GET<{
   templateRepositoryList: {
@@ -101,13 +101,21 @@ export const getTemplateRepository = (uid: string) => GET<{
     }[];
   }
 }>(`/api/templateRepository/get?uid=${uid}`)
-
+export const getTemplateConfig = (uid: string) => GET<{
+  template: {
+    name: string;
+    uid: string;
+    config: string;
+  }
+}>(`/api/templateRepository/template/getConfig?uid=${uid}`)
 export const listTemplate = (templateRepositoryUid: string) => GET<{
   templateList: {
     uid: string;
     name: string;
     config: string;
     image: string;
+    createAt: Date;
+    updateAt: Date;
   }[]
 }>(`/api/templateRepository/template/list?templateRepositoryUid=${templateRepositoryUid}`)
 export const listTag = () => GET<{
@@ -121,3 +129,6 @@ export const deleteTemplateRepository = (templateRepositoryUid: string) => DELET
 
 export const updateTemplateReposistory = (data: UpdateTemplateRepositoryType) => POST(`/api/templateRepository/update`, data)
 export const updateTemplate = (data: UpdateTemplateType) => POST(`/api/templateRepository/withTemplate/update`, data)
+export const deleteTemplate = (templateUid: string) => DELETE(`/api/templateRepository/template/delete?uid=${templateUid}`)
+
+export const updateTemplateList = (data: UpdateTemplateListType) => POST(`/api/templateRepository/withTemplate/updateList`, data)

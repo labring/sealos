@@ -19,6 +19,9 @@ const showStatus = (status: number) => {
     case 401:
       message = 'unauthorized, please login again(401)'
       break
+    case 402:
+      message = 'payment required(402)'
+      break
     case 403:
       message = 'access denied(403)'
       break

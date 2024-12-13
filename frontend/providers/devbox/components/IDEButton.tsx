@@ -180,31 +180,35 @@ export const ideObj = {
     menuLabel: 'VSCode',
     icon: 'vscode',
     prefix: 'vscode://',
-    value: 'vscode'
+    value: 'vscode',
+    sortId: 0
   },
   vscodeInsiders: {
     label: 'Insiders',
     menuLabel: 'VSCode Insiders',
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
-    value: 'vscodeInsiders'
+    value: 'vscodeInsiders',
+    sortId: 1
   },
   cursor: {
     label: 'Cursor',
     menuLabel: 'Cursor',
     icon: 'cursor',
     prefix: 'cursor://',
-    value: 'cursor'
+    value: 'cursor',
+    sortId: 2
   },
   windsurf: {
     label: 'Windsurf',
     menuLabel: 'Windsurf',
     icon: 'windsurf',
     prefix: 'windsurf://',
-    value: 'windsurf'
+    value: 'windsurf',
+    sortId: 3
   }
-}
+} as const
 
-const menuItems = Object.values(ideObj).map(({ value, menuLabel }) => ({ value, menuLabel }))
+const menuItems = Object.values(ideObj).sort((a,b)=>a.sortId - b.sortId).map(({ value, menuLabel }) => ({ value, menuLabel }))
 
 export default IDEButton

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { ERROR_RESPONSE, ERROR_TEXT } from '../error'
+import { V1Status } from '@kubernetes/client-node'
+import { ERROR_ENUM, ERROR_RESPONSE, ERROR_TEXT } from '../error'
 
 export const jsonRes = <T = any>(props: {
   code?: number
@@ -12,6 +13,10 @@ export const jsonRes = <T = any>(props: {
 
   if (typeof error === 'string' && ERROR_RESPONSE[error]) {
     return NextResponse.json(ERROR_RESPONSE[error])
+  }
+  const body = error?.body
+  if(body instanceof V1Status && body.message?.includes('40001:')) {
+    return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.outstandingPayment])
   }
 
   let msg = message

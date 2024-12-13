@@ -1,3 +1,4 @@
+import { TagType } from '@/prisma/generated/client'
 import { authSessionWithJWT } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
@@ -108,9 +109,12 @@ export async function POST(req: NextRequest) {
     if (retagResult.status !== 200) {
       throw Error('retag failed')
     }
-    const officialTag = await devboxDB.tag.findFirst({
+    const officialTagList = await devboxDB.tag.findMany({
       where: {
-        name: 'official'
+        type: TagType.OFFICIAL_CONTENT
+      },
+      select:{
+        uid: true
       }
     })
     const originalTaglist = templateRepository.templateRepositoryTags
@@ -118,10 +122,11 @@ export async function POST(req: NextRequest) {
       .filter((item) => !query.tagUidList.includes(item.tagUid))
       .map((item) => item.tagUid)
     const createdTagList = query.tagUidList
-      .filter((item) => !originalTaglist.some((tag) => tag.tagUid === item) && item !== officialTag?.uid)
+      .filter((item) => !originalTaglist.some((tag) => tag.tagUid === item) &&
+        !officialTagList.some((tag) => tag.uid === item))
     const origionalTemplate = templateRepository
       .templates.find((item) => item.name === query.version && item.isDeleted === false)
-    
+
     // invoke retag service 
     const result = await devboxDB.$transaction(async tx => {
       await tx.templateRepository.update({
