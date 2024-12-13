@@ -8,7 +8,7 @@ import { json2Account, json2ClusterOps, json2CreateCluster } from '@/utils/json2
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
-import { convertBackupFormToSpec } from '@/utils/adapt';
+import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -33,33 +33,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       )) as {
         body: KbPgClusterType;
       };
-
-      const currentConfig = {
-        cpu: parseInt(body.spec.componentSpecs[0].resources.limits.cpu.replace('m', '')),
-        memory: parseInt(body.spec.componentSpecs[0].resources.limits.memory.replace('Mi', '')),
-        replicas: body.spec.componentSpecs[0].replicas,
-        storage: parseInt(
-          body.spec.componentSpecs[0].volumeClaimTemplates[0].spec.resources.requests.storage.replace(
-            'Gi',
-            ''
-          )
-        ),
-        terminationPolicy: body.spec.terminationPolicy
-      };
+      const { cpu, memory, replicas, storage, terminationPolicy } = adaptDBDetail(body);
 
       const opsRequests = [];
 
-      if (currentConfig.cpu !== dbForm.cpu || currentConfig.memory !== dbForm.memory) {
+      if (cpu !== dbForm.cpu || memory !== dbForm.memory) {
         const verticalScalingYaml = json2ClusterOps(dbForm, 'VerticalScaling');
         opsRequests.push(verticalScalingYaml);
       }
 
-      if (currentConfig.replicas !== dbForm.replicas) {
+      if (replicas !== dbForm.replicas) {
         const horizontalScalingYaml = json2ClusterOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
       }
 
-      if (dbForm.storage > currentConfig.storage) {
+      if (dbForm.storage > storage) {
         const volumeExpansionYaml = json2ClusterOps(dbForm, 'VolumeExpansion');
         opsRequests.push(volumeExpansionYaml);
       }
@@ -67,32 +55,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       console.log('DB Edit Operation:', {
         dbName: dbForm.dbName,
         changes: {
-          cpu: currentConfig.cpu !== dbForm.cpu,
-          memory: currentConfig.memory !== dbForm.memory,
-          replicas: currentConfig.replicas !== dbForm.replicas,
-          storage: dbForm.storage > currentConfig.storage
+          cpu: cpu !== dbForm.cpu,
+          memory: memory !== dbForm.memory,
+          replicas: replicas !== dbForm.replicas,
+          storage: dbForm.storage > storage
         },
         opsCount: opsRequests.length
       });
 
       if (opsRequests.length > 0) {
         await applyYamlList(opsRequests, 'create');
-        return jsonRes(res, {
-          data: `Successfully submitted ${opsRequests.length} change requests`
-        });
       }
 
       if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
         const autoBackup = convertBackupFormToSpec({
           autoBackup: dbForm?.autoBackup,
           dbType: dbForm.dbType
-        });
-        console.log('backup', {
-          dbName: dbForm.dbName,
-          dbType: dbForm.dbType,
-          autoBackup,
-          k8sCustomObjects,
-          namespace
         });
 
         await updateBackupPolicyApi({
@@ -103,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           namespace
         });
 
-        if (currentConfig.terminationPolicy !== dbForm.terminationPolicy) {
+        if (terminationPolicy !== dbForm.terminationPolicy) {
           await updateTerminationPolicyApi({
             dbName: dbForm.dbName,
             terminationPolicy: dbForm.terminationPolicy,
@@ -114,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       return jsonRes(res, {
-        data: 'success update db'
+        data: `Successfully submitted ${opsRequests.length} change requests`
       });
     }
 
