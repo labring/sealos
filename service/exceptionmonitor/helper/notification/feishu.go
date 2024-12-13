@@ -267,8 +267,6 @@ func updateFeishuNotification(messageID, message string) error {
 		MessageId(messageID).
 		Body(larkim.NewPatchMessageReqBodyBuilder().
 			Content(message).Build()).Build()
-
-	fmt.Println(messageID)
 	resp, err := feiShuClient.Im.Message.Patch(context.Background(), req)
 	if err != nil {
 		log.Println("Error:", err)
@@ -312,7 +310,6 @@ func createFeishuNotification(notification *api.Info, message string, messageIDM
 	} else {
 		messageIDMap[notification.DatabaseClusterName] = messageID
 	}
-	fmt.Println(messageIDMap)
 	return nil
 }
 
