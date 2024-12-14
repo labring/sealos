@@ -1,9 +1,11 @@
 package ali
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -75,6 +77,14 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) 
 		return TTSDoRequest(meta, req)
 	case relaymode.AudioTranscription:
 		return STTDoRequest(meta, req)
+	case relaymode.ChatCompletions:
+		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(nil)),
+			}, nil
+		}
+		fallthrough
 	default:
 		return utils.DoRequest(req)
 	}
@@ -87,6 +97,9 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
 	case relaymode.ChatCompletions:
+		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
+			return nil, nil
+		}
 		usage, err = openai.DoResponse(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)
