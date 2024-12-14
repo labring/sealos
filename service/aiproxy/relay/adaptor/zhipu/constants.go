@@ -12,10 +12,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+		),
 	},
 	{
 		Model:       "glm-4",
@@ -23,10 +23,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.1,
 		OutputPrice: 0.1,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4-plus",
@@ -34,10 +35,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4-air",
@@ -45,10 +47,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4-airx",
@@ -56,10 +59,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 8192,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(8192),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4-long",
@@ -67,10 +71,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 1000000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(1024000),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4-flashx",
@@ -78,10 +83,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4-flash",
@@ -89,10 +95,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "glm-4v-flash",
@@ -100,10 +107,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey:  8192,
-			model.ModelConfigMaxOutputTokensKey: 1024,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(8192),
+			model.WithModelConfigMaxOutputTokens(1024),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "glm-4v",
@@ -111,10 +119,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey:  2048,
-			model.ModelConfigMaxOutputTokensKey: 1024,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(2048),
+			model.WithModelConfigMaxOutputTokens(1024),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "glm-4v-plus",
@@ -122,10 +131,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey:  8192,
-			model.ModelConfigMaxOutputTokensKey: 1024,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(8192),
+			model.WithModelConfigMaxOutputTokens(1024),
+			model.WithModelConfigVision(true),
+		),
 	},
 
 	{
@@ -134,10 +144,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.015,
 		OutputPrice: 0.015,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 4096,
-			model.ModelConfigMaxOutputTokensKey:  2048,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(4096),
+			model.WithModelConfigMaxOutputTokens(2048),
+		),
 	},
 	{
 		Model:       "emohaa",
@@ -145,10 +155,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.015,
 		OutputPrice: 0.015,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 8192,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(8192),
+			model.WithModelConfigMaxOutputTokens(4096),
+		),
 	},
 	{
 		Model:       "codegeex-4",
@@ -156,10 +166,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxOutputTokens(4096),
+		),
 	},
 
 	{
@@ -167,18 +177,18 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerChatGLM,
 		InputPrice: 0.0005,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 8192,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(8192),
+		),
 	},
 	{
 		Model:      "embedding-3",
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerChatGLM,
 		InputPrice: 0.0005,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 8192,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(8192),
+		),
 	},
 
 	{
@@ -189,9 +199,9 @@ var ModelList = []*model.ModelConfig{
 		ImagePrices: map[string]float64{
 			"1024x1024": 0.1,
 		},
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxOutputTokensKey: 1024,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxOutputTokens(1024),
+		),
 	},
 	{
 		Model:             "cogview-3-plus",
@@ -207,8 +217,8 @@ var ModelList = []*model.ModelConfig{
 			"1440x720":  0.06,
 			"720x1440":  0.06,
 		},
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxOutputTokensKey: 1024,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxOutputTokens(1024),
+		),
 	},
 }

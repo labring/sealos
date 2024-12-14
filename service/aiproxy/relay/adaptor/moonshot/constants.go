@@ -12,9 +12,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMoonshot,
 		InputPrice:  0.012,
 		OutputPrice: 0.012,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 8192,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "moonshot-v1-32k",
@@ -22,9 +23,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMoonshot,
 		InputPrice:  0.024,
 		OutputPrice: 0.024,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 32768,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(32768),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "moonshot-v1-128k",
@@ -32,8 +34,9 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMoonshot,
 		InputPrice:  0.06,
 		OutputPrice: 0.06,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 131072,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(131072),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 }

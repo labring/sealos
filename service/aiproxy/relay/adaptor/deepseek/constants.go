@@ -12,14 +12,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDeepSeek,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey:  64000,
-			model.ModelConfigMaxOutputTokensKey: 4096,
-		},
-	},
-	{
-		Model: "deepseek-coder",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerDeepSeek,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(64000),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 }
