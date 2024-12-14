@@ -12,26 +12,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.022,
 		OutputPrice: 0.044,
-	},
-	{
-		Model: "gpt-3.5-turbo-0301",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-3.5-turbo-0613",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-3.5-turbo-1106",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-3.5-turbo-0125",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "gpt-3.5-turbo-16k",
@@ -39,11 +23,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.022,
 		OutputPrice: 0.044,
-	},
-	{
-		Model: "gpt-3.5-turbo-16k-0613",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(16384),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model: "gpt-3.5-turbo-instruct",
@@ -56,26 +39,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.22,
 		OutputPrice: 0.44,
-	},
-	{
-		Model: "gpt-4-0314",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-4-0613",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-4-1106-preview",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-4-0125-preview",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(8192),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "gpt-4-32k",
@@ -83,21 +50,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.44,
 		OutputPrice: 0.88,
-	},
-	{
-		Model: "gpt-4-32k-0314",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-4-32k-0613",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-4-turbo-preview",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "gpt-4-turbo",
@@ -105,11 +61,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.071,
 		OutputPrice: 0.213,
-	},
-	{
-		Model: "gpt-4-turbo-2024-04-09",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "gpt-4o",
@@ -117,16 +72,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.01775,
 		OutputPrice: 0.071,
-	},
-	{
-		Model: "gpt-4o-2024-05-13",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
-	},
-	{
-		Model: "gpt-4o-2024-08-06",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigVision(true),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model: "chatgpt-4o-latest",
@@ -139,11 +89,10 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.001065,
 		OutputPrice: 0.00426,
-	},
-	{
-		Model: "gpt-4o-mini-2024-07-18",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerOpenAI,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model: "gpt-4-vision-preview",
@@ -156,6 +105,9 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.0213,
 		OutputPrice: 0.0852,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+		),
 	},
 	{
 		Model:       "o1-preview",
@@ -163,7 +115,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerOpenAI,
 		InputPrice:  0.1065,
 		OutputPrice: 0.426,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+		),
 	},
+
 	{
 		Model: "text-embedding-ada-002",
 		Type:  relaymode.Embeddings,
