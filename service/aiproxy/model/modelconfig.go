@@ -50,11 +50,15 @@ func (c *ModelConfig) MaxOutputTokens() (int, bool) {
 	return GetModelConfigInt(c.Config, ModelConfigMaxOutputTokensKey)
 }
 
+func (c *ModelConfig) SupportVision() (bool, bool) {
+	return GetModelConfigBool(c.Config, ModelConfigVisionKey)
+}
+
 func (c *ModelConfig) SupportVoices() ([]string, bool) {
 	return GetModelConfigStringSlice(c.Config, ModelConfigSupportVoicesKey)
 }
 
-func (c *ModelConfig) ToolChoice() (bool, bool) {
+func (c *ModelConfig) SupportToolChoice() (bool, bool) {
 	return GetModelConfigBool(c.Config, ModelConfigToolChoiceKey)
 }
 
