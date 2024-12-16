@@ -623,7 +623,7 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 		})
 	}
 
-	if token, err := r.generateProxyPodJWT(ctx, devbox); err != nil {
+	if token, err := r.generateProxyPodJWT(ctx, devbox); err == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "JWT_TOKEN",
 			Value: token,
