@@ -22,8 +22,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-
 	appsv1 "k8s.io/api/apps/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,10 +29,10 @@ import (
 
 	networkingv1 "k8s.io/api/networking/v1"
 
+	"github.com/golang-jwt/jwt/v5"
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/label"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -588,24 +586,28 @@ func (r *DevboxReconciler) generateProxyPodDeploymentName(devbox *devboxv1alpha1
 	return devbox.Name + "-proxy-deployment"
 }
 
-type Claims struct {
+type DevboxClaims struct {
 	DevboxName string `json:"devbox_name"`
 	NameSpace  string `json:"namespace"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 func (r *DevboxReconciler) generateProxyPodJWT(ctx context.Context, devbox *devboxv1alpha1.Devbox) (string, error) {
-	expirationTime := time.Now().Add(5 * time.Minute)
-	claims := &Claims{
+	claims := DevboxClaims{
 		DevboxName: devbox.Name,
 		NameSpace:  devbox.Namespace,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 7 * 24)),
 			Issuer:    "devbox-controller",
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(r.ShutdownServerKey))
+	signedToken, err := token.SignedString(r.ShutdownServerKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+	return signedToken, nil
 }
 
 func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) []corev1.EnvVar {
@@ -628,11 +630,6 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 			Name:  "JWT_TOKEN",
 			Value: token,
 		})
-		fmt.Println(token)
-		fmt.Println(2222)
-	} else {
-		fmt.Println(err)
-		fmt.Println(1111)
 	}
 	sshPort := "22"
 	for _, port := range servicePorts {
