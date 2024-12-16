@@ -587,7 +587,7 @@ func getHourTimestamp() string {
 	case common.UsingMySQL:
 		return "UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%Y-%m-%d %H:00:00'))"
 	case common.UsingPostgreSQL:
-		return "EXTRACT(EPOCH FROM date_trunc('hour', request_at))"
+		return "FLOOR(EXTRACT(EPOCH FROM date_trunc('hour', request_at)))"
 	case common.UsingSQLite:
 		return "STRFTIME('%s', STRFTIME('%Y-%m-%d %H:00:00', request_at))"
 	default:
