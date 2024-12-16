@@ -22,7 +22,7 @@ func GetGroupDashboard(c *gin.Context) {
 	case "month":
 		start = end.AddDate(0, 0, -30)
 	case "two_week":
-		start = end.AddDate(0, 0, -14)
+		start = end.AddDate(0, 0, -15)
 	case "week":
 		start = end.AddDate(0, 0, -7)
 	case "day":
