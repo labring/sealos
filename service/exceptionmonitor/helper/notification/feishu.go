@@ -75,15 +75,14 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
 	usage := ""
-	if notificationInfo.PerformanceType == "CPU" {
+	if notificationInfo.PerformanceType == api.CPUChinese {
 		usage = notificationInfo.CPUUsage
-	} else if notificationInfo.PerformanceType == "内存" {
+	} else if notificationInfo.PerformanceType == api.MemoryChinese {
 		usage = notificationInfo.MemUsage
-	} else if notificationInfo.PerformanceType == "磁盘" {
+	} else if notificationInfo.PerformanceType == api.DiskChinese {
 		usage = notificationInfo.DiskUsage
 	}
 
-	//公共部分，状态和阀值的异常、恢复过程都需要，需要判断是否首次发送信息，是的话，就用这里，不是的话，就跳过（在之前的内容上追加）
 	commonElements := []map[string]interface{}{
 		{
 			"tag": "div",
@@ -117,7 +116,6 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 
 	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
 		exceptionElements := []map[string]interface{}{
-			//这个异常时间需要给值
 			{
 				"tag": "div",
 				"text": map[string]string{
@@ -147,7 +145,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 			},
 		}
 		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
-	} else if notificationInfo.ExceptionType == "阀值" {
+	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "阀值" {
 		exceptionElements := []map[string]interface{}{
 			{
 				"tag": "div",
@@ -161,24 +159,21 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 	}
 
 	if notificationInfo.NotificationType == "recovery" {
-		// todo 拿到之前的发送信息并加上，已做状态监控，未做阀值监控
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
 
-		//获取之前发送的飞书内容
 		separatorElements := []map[string]interface{}{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": "-------------------------------------------",
+					"content": "-------------------------------------数据库恢复信息-------------------------------------",
 					"tag":     "lark_md",
 				},
 			},
 		}
 		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, separatorElements...)
-		//elements = commonElements
+
 		if notificationInfo.ExceptionType == "阀值" {
-			//todo 数据库阀值的恢复时间怎么跟其它统一起来，需要在数据库阀值恢复中增加恢复时间
 			usageRecoveryElements := []map[string]interface{}{
 				{
 					"tag": "div",
@@ -212,7 +207,6 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 		"config": map[string]bool{
 			"wide_screen_mode": true,
 		},
-		//elements替换成notificationInfo.FeishuInfo
 		"elements": notificationInfo.FeishuInfo,
 		"header": map[string]interface{}{
 			"template": headerTemplate,
@@ -253,11 +247,11 @@ func SendFeishuNotification(notification *api.Info, message string) error {
 
 func getMessageIDMap(performanceType string) map[string]string {
 	switch performanceType {
-	case "磁盘":
+	case api.DiskChinese:
 		return api.DatabaseDiskMessageIDMap
-	case "内存":
+	case api.MemoryChinese:
 		return api.DatabaseMemMessageIDMap
-	case "CPU":
+	case api.CPUChinese:
 		return api.DatabaseCPUMessageIDMap
 	case "Backup":
 		return api.DatabaseBackupMessageIDMap
@@ -273,8 +267,6 @@ func updateFeishuNotification(messageID, message string) error {
 		MessageId(messageID).
 		Body(larkim.NewPatchMessageReqBodyBuilder().
 			Content(message).Build()).Build()
-
-	fmt.Println(messageID)
 	resp, err := feiShuClient.Im.Message.Patch(context.Background(), req)
 	if err != nil {
 		log.Println("Error:", err)
@@ -318,7 +310,6 @@ func createFeishuNotification(notification *api.Info, message string, messageIDM
 	} else {
 		messageIDMap[notification.DatabaseClusterName] = messageID
 	}
-	fmt.Println(messageIDMap)
 	return nil
 }
 
