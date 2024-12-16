@@ -577,7 +577,7 @@ type HourlyChartData struct {
 type DashboardResponse struct {
 	ChartData      []*HourlyChartData `json:"chart_data"`
 	TokenNames     []string           `json:"token_names"`
-	ModelNames     []string           `json:"model_names"`
+	Models         []string           `json:"models"`
 	TotalCount     int64              `json:"total_count"`
 	ExceptionCount int64              `json:"exception_count"`
 }
@@ -663,7 +663,7 @@ func GetDashboardData(group string, start, end time.Time, tokenName string, mode
 		return nil, err
 	}
 
-	modelNames, err := getGroupLogDistinctValues[string]("model", group, start, end)
+	models, err := getGroupLogDistinctValues[string]("model", group, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -674,7 +674,7 @@ func GetDashboardData(group string, start, end time.Time, tokenName string, mode
 	return &DashboardResponse{
 		ChartData:      chartData,
 		TokenNames:     tokenNames,
-		ModelNames:     modelNames,
+		Models:         models,
 		TotalCount:     totalCount,
 		ExceptionCount: exceptionCount,
 	}, nil
