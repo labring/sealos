@@ -633,7 +633,7 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 			Name:  "JWT_TOKEN",
 			Value: token,
 		})
-		fmt.Printf("生成的token为：%s\n\n", token)
+		fmt.Printf("生成的token为12345：%s\n\n", token)
 	}
 	sshPort := "22"
 	for _, port := range servicePorts {
