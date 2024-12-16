@@ -567,36 +567,115 @@ func DeleteGroupLogs(groupID string) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-type LogStatistic struct {
-	Day              string `gorm:"column:day"`
-	Model            string `gorm:"column:model"`
-	RequestCount     int    `gorm:"column:request_count"`
-	PromptTokens     int    `gorm:"column:prompt_tokens"`
-	CompletionTokens int    `gorm:"column:completion_tokens"`
+type HourlyChartData struct {
+	Timestamp      int64   `json:"timestamp"`
+	RequestCount   int64   `json:"request_count"`
+	TotalCost      float64 `json:"total_cost"`
+	ExceptionCount int64   `json:"exception_count"`
 }
 
-func SearchLogsByDayAndModel(group string, start time.Time, end time.Time) (logStatistics []*LogStatistic, err error) {
-	groupSelect := "DATE_FORMAT(FROM_UNIXTIME(created_at), '%Y-%m-%d') as day"
+type DashboardResponse struct {
+	ChartData      []*HourlyChartData `json:"chart_data"`
+	TokenNames     []string           `json:"token_names"`
+	ModelNames     []string           `json:"model_names"`
+	TotalCount     int64              `json:"total_count"`
+	ExceptionCount int64              `json:"exception_count"`
+}
 
-	if common.UsingPostgreSQL {
-		groupSelect = "TO_CHAR(date_trunc('day', to_timestamp(created_at)), 'YYYY-MM-DD') as day"
+func getHourTimestamp() string {
+	switch {
+	case common.UsingMySQL:
+		return "UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%Y-%m-%d %H:00:00'))"
+	case common.UsingPostgreSQL:
+		return "EXTRACT(EPOCH FROM date_trunc('hour', request_at))"
+	case common.UsingSQLite:
+		return "STRFTIME('%s', STRFTIME('%Y-%m-%d %H:00:00', request_at))"
+	default:
+		return ""
+	}
+}
+
+func getChartData(group string, start, end time.Time, tokenName, modelName string) ([]*HourlyChartData, error) {
+	var chartData []*HourlyChartData
+
+	hourTimestamp := getHourTimestamp()
+	if hourTimestamp == "" {
+		return nil, errors.New("unsupported hour format")
 	}
 
-	if common.UsingSQLite {
-		groupSelect = "strftime('%Y-%m-%d', datetime(created_at, 'unixepoch')) as day"
+	query := LogDB.Table("logs").
+		Select(hourTimestamp+" as timestamp, count(*) as request_count, sum(price) as total_cost, sum(case when code != 200 then 1 else 0 end) as exception_count").
+		Where("group_id = ? AND request_at BETWEEN ? AND ?", group, start, end).
+		Group("timestamp").
+		Order("timestamp ASC")
+
+	if tokenName != "" {
+		query = query.Where("token_name = ?", tokenName)
+	}
+	if modelName != "" {
+		query = query.Where("model = ?", modelName)
 	}
 
-	err = LogDB.Raw(`
-		SELECT `+groupSelect+`,
-		model, count(1) as request_count,
-		sum(prompt_tokens) as prompt_tokens,
-		sum(completion_tokens) as completion_tokens
-		FROM logs
-		WHERE group_id = ?
-		AND created_at BETWEEN ? AND ?
-		GROUP BY day, model
-		ORDER BY day, model
-	`, group, start, end).Scan(&logStatistics).Error
+	err := query.Scan(&chartData).Error
+	return chartData, err
+}
 
-	return logStatistics, err
+func getGroupLogDistinctValues[T any](field string, group string, start, end time.Time) ([]T, error) {
+	var values []T
+	err := LogDB.
+		Model(&Log{}).
+		Distinct(field).
+		Where("group_id = ? AND request_at BETWEEN ? AND ?", group, start, end).
+		Pluck(field, &values).Error
+	return values, err
+}
+
+func sumTotalCount(chartData []*HourlyChartData) int64 {
+	var count int64
+	for _, data := range chartData {
+		count += data.RequestCount
+	}
+	return count
+}
+
+func sumExceptionCount(chartData []*HourlyChartData) int64 {
+	var count int64
+	for _, data := range chartData {
+		count += data.ExceptionCount
+	}
+	return count
+}
+
+func GetDashboardData(group string, start, end time.Time, tokenName string, modelName string) (*DashboardResponse, error) {
+	if end.IsZero() {
+		end = time.Now()
+	} else if end.Before(start) {
+		return nil, errors.New("end time is before start time")
+	}
+
+	chartData, err := getChartData(group, start, end, tokenName, modelName)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenNames, err := getGroupLogDistinctValues[string]("token_name", group, start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	modelNames, err := getGroupLogDistinctValues[string]("model", group, start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := sumTotalCount(chartData)
+	exceptionCount := sumExceptionCount(chartData)
+
+	return &DashboardResponse{
+		ChartData:      chartData,
+		TokenNames:     tokenNames,
+		ModelNames:     modelNames,
+		TotalCount:     totalCount,
+		ExceptionCount: exceptionCount,
+	}, nil
 }

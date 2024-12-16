@@ -33,6 +33,11 @@ func SetAPIRouter(router *gin.Engine) {
 			modelsRoute.GET("/default/:type", controller.ChannelDefaultModelsAndMappingByType)
 		}
 
+		dashboardRoute := apiRouter.Group("/dashboard")
+		{
+			dashboardRoute.GET("/:id", controller.GetGroupDashboard)
+		}
+
 		groupsRoute := apiRouter.Group("/groups")
 		{
 			groupsRoute.GET("/", controller.GetGroups)
