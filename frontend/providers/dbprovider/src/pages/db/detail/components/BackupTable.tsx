@@ -66,7 +66,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     data: backups = [],
     isSuccess
   } = useQuery(
-    ['intervalLoadBackups'],
+    ['intervalLoadBackups', db.dbName],
     async () => {
       const backups: BackupItemType[] = await getBackupList(db.dbName);
       backups.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());

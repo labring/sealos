@@ -20,9 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
 
+  const data = await getBackupListByDBName({ dbName, req });
   try {
     jsonRes(res, {
-      data: await getBackupListByDBName({ dbName, req })
+      data
     });
   } catch (err: any) {
     jsonRes(res, {

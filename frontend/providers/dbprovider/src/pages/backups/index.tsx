@@ -80,8 +80,7 @@ export default function Backups() {
     [toast]
   );
 
-  const { data, refetch, isLoading } = useQuery(['getBackups'], getBackups, {
-    cacheTime: 2 * 60 * 1000,
+  const { data, refetch, isLoading } = useQuery(['getBackupList'], getBackups, {
     onSuccess: (data) => {
       if (data.length > 0 && Object.keys(expandedGroups).length === 0) {
         const firstDbName = data[0].dbName;
@@ -90,10 +89,9 @@ export default function Backups() {
           [firstDbName]: true
         }));
       }
-    }
+    },
+    refetchInterval: 60000
   });
-
-  console.log(data);
 
   const confirmDel = useCallback(
     async (name: string) => {
@@ -101,6 +99,10 @@ export default function Backups() {
         setIsLoading(true);
         await deleteBackup(name);
         await refetch();
+        toast({
+          title: t('Success'),
+          status: 'success'
+        });
       } catch (err) {
         toast({
           title: getErrText(err),
