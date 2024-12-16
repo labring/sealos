@@ -3,7 +3,6 @@ package controller
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	json "github.com/json-iterator/go"
 
@@ -76,20 +75,6 @@ func GetGroup(c *gin.Context) {
 		return
 	}
 	middleware.SuccessResponse(c, group)
-}
-
-func GetGroupDashboard(c *gin.Context) {
-	id := c.Param("id")
-	now := time.Now()
-	startOfDay := now.Truncate(24*time.Hour).AddDate(0, 0, -6).Unix()
-	endOfDay := now.Truncate(24 * time.Hour).Add(24*time.Hour - time.Second).Unix()
-
-	dashboards, err := model.SearchLogsByDayAndModel(id, time.Unix(startOfDay, 0), time.Unix(endOfDay, 0))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, "failed to get statistics")
-		return
-	}
-	middleware.SuccessResponse(c, dashboards)
 }
 
 type UpdateGroupQPMRequest struct {
