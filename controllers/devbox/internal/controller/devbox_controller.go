@@ -628,6 +628,11 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 			Name:  "JWT_TOKEN",
 			Value: token,
 		})
+		fmt.Println(token)
+		fmt.Println(2222)
+	} else {
+		fmt.Println(err)
+		fmt.Println(1111)
 	}
 	sshPort := "22"
 	for _, port := range servicePorts {
