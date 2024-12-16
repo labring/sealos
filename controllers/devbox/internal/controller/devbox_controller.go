@@ -605,6 +605,7 @@ func (r *DevboxReconciler) generateProxyPodJWT(ctx context.Context, devbox *devb
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	fmt.Println(token.SignedString(r.ShutdownServerKey))
 	return token.SignedString(r.ShutdownServerKey)
 }
 
