@@ -49,17 +49,10 @@ export async function GET(req: NextRequest) {
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')
     const dealtLanguageList = languageList.map((item: any) => {
       const aRuntime = runtimes.find((runtime: any) => runtime.spec.classRef === item.metadata.name)
-      if (aRuntime?.spec.category?.includes('gpu')) {
-        return {
-          id: item.metadata.name,
-          label: item.spec.title,
-          gpu: true
-        }
-      }
       return {
         id: item.metadata.name,
         label: item.spec.title,
-        gpu: false
+        gpu: !!aRuntime?.spec.category?.includes('gpu')
       }
     })
     languageTypeList.push(...dealtLanguageList)
@@ -69,17 +62,10 @@ export async function GET(req: NextRequest) {
     )
     const dealtFrameworkList = frameworkList.map((item: any) => {
       const aRuntime = runtimes.find((runtime: any) => runtime.spec.classRef === item.metadata.name)
-      if (aRuntime?.spec.category?.includes('gpu')) {
-        return {
-          id: item.metadata.name,
-          label: item.spec.title,
-          gpu: true
-        }
-      }
       return {
         id: item.metadata.name,
         label: item.spec.title,
-        gpu: false
+        gpu: !!aRuntime?.spec.category?.includes('gpu')
       }
     })
     frameworkTypeList.push(...dealtFrameworkList)
@@ -87,17 +73,10 @@ export async function GET(req: NextRequest) {
     const osList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'OS')
     const dealtOsList = osList.map((item: any) => {
       const aRuntime = runtimes.find((runtime: any) => runtime.spec.classRef === item.metadata.name)
-      if (aRuntime?.spec.category?.includes('gpu')) {
-        return {
-          id: item.metadata.name,
-          label: item.spec.title,
-          gpu: true
-        }
-      }
       return {
         id: item.metadata.name,
         label: item.spec.title,
-        gpu: false
+        gpu: !!aRuntime?.spec.category?.includes('gpu')
       }
     })
     osTypeList.push(...dealtOsList)
