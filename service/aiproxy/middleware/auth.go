@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
@@ -47,7 +46,6 @@ func AdminAuth(c *gin.Context) {
 
 func TokenAuth(c *gin.Context) {
 	log := GetLogger(c)
-	ctx := c.Request.Context()
 	key := c.Request.Header.Get("Authorization")
 	key = strings.TrimPrefix(
 		strings.TrimPrefix(key, "Bearer "),
@@ -85,18 +83,6 @@ func TokenAuth(c *gin.Context) {
 	SetLogGroupFields(log.Data, group)
 	if len(token.Models) == 0 {
 		token.Models = model.CacheGetEnabledModels()
-	}
-	if group.QPM <= 0 {
-		group.QPM = config.GetDefaultGroupQPM()
-	}
-	if group.QPM > 0 {
-		ok := ForceRateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
-		if !ok {
-			abortWithMessage(c, http.StatusTooManyRequests,
-				group.ID+" is requesting too frequently",
-			)
-			return
-		}
 	}
 
 	c.Set(ctxkey.Group, group)

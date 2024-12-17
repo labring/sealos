@@ -39,7 +39,6 @@ func InitOptionMap() error {
 	config.OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	config.OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
 	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
-	config.OptionMap["DefaultGroupQPM"] = strconv.FormatInt(config.GetDefaultGroupQPM(), 10)
 	defaultChannelModelsJSON, _ := json.Marshal(config.GetDefaultChannelModels())
 	config.OptionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
 	defaultChannelModelMappingJSON, _ := json.Marshal(config.GetDefaultChannelModelMapping())
@@ -173,12 +172,6 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 			return err
 		}
 		config.SetGlobalAPIRateLimitNum(globalAPIRateLimitNum)
-	case "DefaultGroupQPM":
-		defaultGroupQPM, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		config.SetDefaultGroupQPM(defaultGroupQPM)
 	case "DefaultChannelModels":
 		var newModels map[int][]string
 		err := json.Unmarshal(conv.StringToBytes(value), &newModels)
@@ -202,11 +195,11 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		}
 		if !isInit && len(missingModels) > 0 {
 			sort.Strings(missingModels)
-			return fmt.Errorf("model config not found: %v", missingModels)
+			return fmt.Errorf("model config not found or rpm less than 0: %v", missingModels)
 		}
 		if len(missingModels) > 0 {
 			sort.Strings(missingModels)
-			log.Errorf("model config not found: %v", missingModels)
+			log.Errorf("model config not found or rpm less than 0: %v", missingModels)
 		}
 		allowedNewModels := make(map[int][]string)
 		for t, ms := range newModels {

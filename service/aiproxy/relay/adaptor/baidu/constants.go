@@ -12,9 +12,9 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.004,
 		OutputPrice: 0.004,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 4800,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(4800),
+		),
 	},
 
 	{
@@ -23,6 +23,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0005,
 		OutputPrice: 0,
+		RPM:         1200,
 	},
 	{
 		Model:       "bge-large-zh",
@@ -30,6 +31,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBAAI,
 		InputPrice:  0.0005,
 		OutputPrice: 0,
+		RPM:         1200,
 	},
 	{
 		Model:       "bge-large-en",
@@ -37,6 +39,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBAAI,
 		InputPrice:  0.0005,
 		OutputPrice: 0,
+		RPM:         1200,
 	},
 	{
 		Model:       "tao-8k",
@@ -44,6 +47,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0005,
 		OutputPrice: 0,
+		RPM:         1200,
 	},
 
 	{
@@ -52,6 +56,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0005,
 		OutputPrice: 0,
+		RPM:         1200,
 	},
 
 	{

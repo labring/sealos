@@ -44,7 +44,7 @@ else
 end
 `
 
-func redisRateLimitRequest(ctx context.Context, key string, maxRequestNum int, duration time.Duration) (bool, error) {
+func redisRateLimitRequest(ctx context.Context, key string, maxRequestNum int64, duration time.Duration) (bool, error) {
 	rdb := common.RDB
 	currentTime := time.Now().UnixMilli()
 	result, err := rdb.Eval(ctx, luaScript, []string{key}, maxRequestNum, duration.Milliseconds(), currentTime).Int64()
@@ -54,7 +54,7 @@ func redisRateLimitRequest(ctx context.Context, key string, maxRequestNum int, d
 	return result == 1, nil
 }
 
-func RateLimit(ctx context.Context, key string, maxRequestNum int, duration time.Duration) (bool, error) {
+func RateLimit(ctx context.Context, key string, maxRequestNum int64, duration time.Duration) (bool, error) {
 	if maxRequestNum == 0 {
 		return true, nil
 	}
@@ -65,7 +65,7 @@ func RateLimit(ctx context.Context, key string, maxRequestNum int, duration time
 }
 
 // ignore redis error
-func ForceRateLimit(ctx context.Context, key string, maxRequestNum int, duration time.Duration) bool {
+func ForceRateLimit(ctx context.Context, key string, maxRequestNum int64, duration time.Duration) bool {
 	if maxRequestNum == 0 {
 		return true
 	}
@@ -79,10 +79,10 @@ func ForceRateLimit(ctx context.Context, key string, maxRequestNum int, duration
 	return MemoryRateLimit(ctx, key, maxRequestNum, duration)
 }
 
-func MemoryRateLimit(_ context.Context, key string, maxRequestNum int, duration time.Duration) bool {
+func MemoryRateLimit(_ context.Context, key string, maxRequestNum int64, duration time.Duration) bool {
 	// It's safe to call multi times.
 	inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
-	return inMemoryRateLimiter.Request(key, maxRequestNum, duration)
+	return inMemoryRateLimiter.Request(key, int(maxRequestNum), duration)
 }
 
 func GlobalAPIRateLimit(c *gin.Context) {
@@ -91,7 +91,7 @@ func GlobalAPIRateLimit(c *gin.Context) {
 		c.Next()
 		return
 	}
-	ok := ForceRateLimit(c.Request.Context(), "global_qpm", int(globalAPIRateLimitNum), time.Minute)
+	ok := ForceRateLimit(c.Request.Context(), "global_qpm", globalAPIRateLimitNum, time.Minute)
 	if !ok {
 		c.Status(http.StatusTooManyRequests)
 		c.Abort()

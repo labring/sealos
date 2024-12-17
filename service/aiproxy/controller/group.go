@@ -77,23 +77,23 @@ func GetGroup(c *gin.Context) {
 	middleware.SuccessResponse(c, group)
 }
 
-type UpdateGroupQPMRequest struct {
-	QPM int64 `json:"qpm"`
+type UpdateGroupRPMRequest struct {
+	RPMRatio float64 `json:"rpm_ratio"`
 }
 
-func UpdateGroupQPM(c *gin.Context) {
+func UpdateGroupRPM(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	req := UpdateGroupQPMRequest{}
+	req := UpdateGroupRPMRequest{}
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err = model.UpdateGroupQPM(id, req.QPM)
+	err = model.UpdateGroupRPM(id, req.RPMRatio)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -155,8 +155,8 @@ func DeleteGroups(c *gin.Context) {
 }
 
 type CreateGroupRequest struct {
-	ID  string `json:"id"`
-	QPM int64  `json:"qpm"`
+	ID       string  `json:"id"`
+	RPMRatio float64 `json:"rpm_ratio"`
 }
 
 func CreateGroup(c *gin.Context) {
@@ -167,8 +167,8 @@ func CreateGroup(c *gin.Context) {
 		return
 	}
 	if err := model.CreateGroup(&model.Group{
-		ID:  group.ID,
-		QPM: group.QPM,
+		ID:       group.ID,
+		RPMRatio: group.RPMRatio,
 	}); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

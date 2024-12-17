@@ -107,7 +107,6 @@ var (
 	globalAPIRateLimitNum      atomic.Int64
 	defaultChannelModels       atomic.Value
 	defaultChannelModelMapping atomic.Value
-	defaultGroupQPM            atomic.Int64
 	groupMaxTokenNum           atomic.Int32
 )
 
@@ -123,15 +122,6 @@ func GetGlobalAPIRateLimitNum() int64 {
 
 func SetGlobalAPIRateLimitNum(num int64) {
 	globalAPIRateLimitNum.Store(num)
-}
-
-// group默认qpm，如果group没有设置qpm，则使用该qpm
-func GetDefaultGroupQPM() int64 {
-	return defaultGroupQPM.Load()
-}
-
-func SetDefaultGroupQPM(qpm int64) {
-	defaultGroupQPM.Store(qpm)
 }
 
 func GetDefaultChannelModels() map[int][]string {

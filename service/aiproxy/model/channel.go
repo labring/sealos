@@ -59,11 +59,12 @@ func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
 		return err
 	}
 	if len(missingModels) > 0 {
-		return fmt.Errorf("model config not found: %v", missingModels)
+		return fmt.Errorf("model config not found or rpm less than 0: %v", missingModels)
 	}
 	return nil
 }
 
+// check model config exist and rpm greater than 0
 func CheckModelConfig(models []string) ([]string, []string, error) {
 	return checkModelConfig(DB, models)
 }
@@ -73,7 +74,7 @@ func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) 
 		return models, nil, nil
 	}
 
-	where := tx.Model(&ModelConfig{}).Where("model IN ?", models)
+	where := tx.Model(&ModelConfig{}).Where("model IN ? AND rpm > 0", models)
 	var count int64
 	if err := where.Count(&count).Error; err != nil {
 		return nil, nil, err
