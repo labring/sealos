@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
-import SshConnectModal from '@/components/modals/sshConnectModal'
+import SshConnectModal from '@/components/modals/SshConnectModal'
 import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import { useRuntimeStore } from '@/stores/runtime'

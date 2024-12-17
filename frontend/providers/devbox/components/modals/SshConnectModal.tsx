@@ -107,7 +107,7 @@ const SshConnectModal = ({
               <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
                 {t('jetbrains_guide_one_click_setup')}
               </Text>
-              <Text fontSize={'14px'} color={'grayModern.900'} fontWeight={400} lineHeight={'20px'}>
+              <Box fontSize={'14px'} color={'grayModern.900'} fontWeight={400} lineHeight={'20px'}>
                 {t.rich('jetbrains_guide_one_click_setup_desc', {
                   blue: (chunks) => (
                     <Text fontWeight={'bold'} display={'inline-block'} color={'brightBlue.600'}>
@@ -120,7 +120,7 @@ const SshConnectModal = ({
                     </Text>
                   )
                 })}
-              </Text>
+              </Box>
               <Button
                 leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
                 bg={'white'}
@@ -142,10 +142,14 @@ const SshConnectModal = ({
                     downLoadBlob(
                       script.script,
                       'text/plain',
-                      `${jetbrainsGuideData.configHost}.ps1`
+                      `ssh-config-${jetbrainsGuideData.devboxName}.ps1`
                     )
                   } else {
-                    downLoadBlob(script.script, 'text/plain', `${jetbrainsGuideData.configHost}.sh`)
+                    downLoadBlob(
+                      script.script,
+                      'text/plain',
+                      `ssh-config-${jetbrainsGuideData.devboxName}.sh`
+                    )
                   }
                 }}>
                 {t('download_scripts')}

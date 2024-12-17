@@ -82,11 +82,11 @@ export const macosAndLinuxScriptsTemplate = (
   user: string
 ) => `#!/bin/bash
 
-CONFIG_DIR_TXT='~/.ssh/sealos/'
-CONFIG_DIR="~/.ssh/sealos/"
+CONFIG_DIR_TXT="~/.ssh/sealos/"
+CONFIG_DIR=~/.ssh/sealos/
 SSH_CONFIG_FILE=~/.ssh/config
 
-CONFIG_FILE_TXT=\${CONFIG_DIR_TXT}devbox_config
+CONFIG_FILE_TXT="\${CONFIG_DIR_TXT}devbox_config"
 CONFIG_FILE=\${CONFIG_DIR}devbox_config
 
 PRIVATE_KEY="${privateKey}"
@@ -97,47 +97,48 @@ USER="${user}"
 
 IDENTITY_FILE_TXT="\${CONFIG_DIR_TXT}\$NAME"
 IDENTITY_FILE="\${CONFIG_DIR}\$NAME"
-HOST_ENTRY="Host \$NAME\\n  HostName \$HOST\\n  Port \$PORT\\n  User \$USER\\n  IdentityFile \$IDENTITY_FILE_TXT\\n  IdentitiesOnly yes\\n  StrictHostKeyChecking no"
+HOST_ENTRY="
+Host \$NAME
+  HostName \$HOST
+  Port \$PORT
+  User \$USER
+  IdentityFile \$IDENTITY_FILE_TXT
+  IdentitiesOnly yes
+  StrictHostKeyChecking no"
 
-# 检查配置目录是否存在
 mkdir -p \$CONFIG_DIR
 
-# 检查配置文件是否存在
 if [ ! -f "\$CONFIG_FILE" ]; then
     touch "\$CONFIG_FILE"
     chmod 0644 "\$CONFIG_FILE"
 fi
 
-# 检查默认的 config 是否 include 了
 if [ ! -f "\$SSH_CONFIG_FILE" ]; then
     touch "\$SSH_CONFIG_FILE"
     chmod 0600 "\$SSH_CONFIG_FILE"
 fi
 
-# 检查 .ssh/config 文件中是否包含 Include 语句
 if [ ! -s "\$SSH_CONFIG_FILE" ]; then
-    # 如果文件为空，直接写入 Include 语句
     echo -e "Include \$CONFIG_FILE_TXT\\n" >> "\$SSH_CONFIG_FILE"
 else
-    # 如果文件不为空，检查是否包含 Include 语句
     if ! grep -q "Include \$CONFIG_FILE_TXT" "\$SSH_CONFIG_FILE"; then
-        # 将 Include 语句添加到第一行
-        sed -i "1i Include \$CONFIG_FILE_TXT" "\$SSH_CONFIG_FILE"
+        temp_file="\$(mktemp)"
+        echo "Include \$CONFIG_FILE_TXT" > "\$temp_file"
+        cat "\$SSH_CONFIG_FILE" >> "\$temp_file"
+        mv "\$temp_file" "\$SSH_CONFIG_FILE"
     fi
 fi
 
-# 写入私钥到文件
-echo -e \$PRIVATE_KEY > \$IDENTITY_FILE
-chmod 0600 \$IDENTITY_FILE
+echo "$PRIVATE_KEY" > "$IDENTITY_FILE"
+chmod 0600 "$IDENTITY_FILE"
 
-# 检查是否存在同名的 host
 if grep -q "^Host \$NAME" "\$CONFIG_FILE"; then
-    # 替换现有的 host 条目
-    sed -i "/^Host \$NAME/,/^Host /{ /^Host \$NAME/!{ /^Host /!d; } }" "\$CONFIG_FILE"
-    sed -i "/^Host \$NAME/c\\\$HOST_ENTRY" "\$CONFIG_FILE"
+    temp_file="\$(mktemp)"
+    awk "/^Host \$NAME/,/^Host /{next} /^Host /{p=1} p" "\$CONFIG_FILE" > "\$temp_file"
+    echo "\$HOST_ENTRY" >> "\$temp_file"
+    mv "\$temp_file" "\$CONFIG_FILE"
 else
-    # 追加到文件末尾
-    echo -e "\$HOST_ENTRY" >> "\$CONFIG_FILE"
+    echo "\$HOST_ENTRY" >> "\$CONFIG_FILE"
 fi`
 
 export const sshConfig = (

@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Box,
   Modal,
@@ -21,11 +23,13 @@ import {
   ModalCloseButton,
   Progress
 } from '@chakra-ui/react'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import MyIcon from '../Icon'
 import SshConnectModal from './SshConnectModal'
+
+import { useEnvStore } from '@/stores/env'
 
 import { JetBrainsGuideData } from '../IDEButton'
 import { execCommandInDevboxPod } from '@/api/devbox'
@@ -40,15 +44,18 @@ const JetBrainsGuideModal = ({
 }) => {
   const t = useTranslations()
 
+  const controllerRef = useRef<AbortController | null>(null)
+
   const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)
 
-  const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false)
   const [selectedIDE, setSelectedIDE] = useState<{
     label: string
     value: string
     productCode: string
   }>(recommendIDE)
+  const [progress, setProgress] = useState(0)
   const [onConnecting, setOnConnecting] = useState(false)
+  const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false)
 
   const handleConnectIDE = useCallback(async () => {
     const res = await fetch(
@@ -61,21 +68,62 @@ const JetBrainsGuideModal = ({
       }
     )
     const data = await res.json()
-    const version = data[selectedIDE.productCode][0].version
-
-    const execDownloadCommand = `[ ! -d /home/devbox/.cache/JetBrains/IntelliJIdea${version} ] && mkdir -p /home/devbox/.cache/JetBrains/IntelliJIdea${version} && wget -q --show-progress --progress=bar:force -O- https://download.jetbrains.com/idea/ideaIU-${version}.tar.gz | tar -xzC /home/devbox/.cache/JetBrains/IntelliJIdea${version} --strip-components=1`
-
-    console.log('execDownloadCommand', execDownloadCommand)
-
-    const resp = await execCommandInDevboxPod({
-      devboxName: jetbrainsGuideData.devboxName,
-      command: execDownloadCommand
-    })
-
-    console.log(resp)
 
     setOnConnecting(true)
-  }, [selectedIDE, jetbrainsGuideData.devboxName])
+
+    const controller = new AbortController()
+    controllerRef.current = controller
+
+    const version = data[selectedIDE.productCode][0].version
+    const downloadLink = data[selectedIDE.productCode][0].downloads['linux']['link']
+    const idePathName = selectedIDE.value
+
+    const execDownloadCommand = `[ ! -d /home/devbox/.cache/JetBrains/${idePathName}${version} ] && mkdir -p /home/devbox/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC /home/devbox/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 /home/devbox/.cache && chown -R devbox:devbox /home/devbox/.cache`
+
+    try {
+      await execCommandInDevboxPod({
+        devboxName: jetbrainsGuideData.devboxName,
+        command: execDownloadCommand,
+        onDownloadProgress: (progressEvent) => {
+          const text = progressEvent.event.target.response
+          const progressMatch = text.match(/\s+(\d+)%\[/g)
+          const progress = progressMatch
+            ? parseInt(progressMatch[progressMatch.length - 1].split('%')[0])
+            : null
+
+          if (progress) {
+            setProgress(progress)
+          }
+        },
+        signal: controller.signal
+      })
+
+      setOnConnecting(false)
+    } catch (error) {
+      // when progress is 100%, will trigger error
+      setOnConnecting(false)
+    }
+    if (progress === 100) {
+      window.open(
+        `jetbrains-gateway://connect#host=${
+          jetbrainsGuideData.configHost
+        }&type=ssh&deploy=false&projectPath=${encodeURIComponent(
+          jetbrainsGuideData.workingDir
+        )}&user=${encodeURIComponent(jetbrainsGuideData.userName)}&port=${encodeURIComponent(
+          jetbrainsGuideData.port
+        )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
+        '_blank'
+      )
+    }
+  }, [
+    selectedIDE,
+    jetbrainsGuideData.devboxName,
+    jetbrainsGuideData.configHost,
+    jetbrainsGuideData.port,
+    jetbrainsGuideData.userName,
+    jetbrainsGuideData.workingDir,
+    progress
+  ])
 
   return (
     <Box>
@@ -254,7 +302,7 @@ const JetBrainsGuideModal = ({
                 {onConnecting ? (
                   <Flex position={'relative'} w={'full'} alignItems={'center'} justify={'center'}>
                     {t.rich('jetbrains_guide_connecting', {
-                      process: '100'
+                      process: progress
                     })}
                     <Box
                       _hover={{
@@ -265,12 +313,15 @@ const JetBrainsGuideModal = ({
                       ml={1}
                       onClick={(e) => {
                         e.stopPropagation()
+                        controllerRef.current?.abort()
+                        controllerRef.current = null
+                        setProgress(0)
                         setOnConnecting(false)
                       }}>
                       {t('jetbrains_guide_cancel')}
                     </Box>
                     <Progress
-                      value={80}
+                      value={progress}
                       size={'xs'}
                       colorScheme={'brightBlue'}
                       position={'absolute'}
