@@ -15,6 +15,7 @@ import {
   TableContainer,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tooltip,
@@ -195,6 +196,23 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
 
   return (
     <Flex flexDirection={'column'} h="100%" position={'relative'}>
+      <Flex justifyContent={'space-between'} h={'32px'} alignItems={'center'} mb={'16px'}>
+        <Text fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+          {t('backup_list')}
+        </Text>
+        {!backupProcessing && (
+          <Button
+            ml={3}
+            height={'32px'}
+            variant={'solid'}
+            onClick={() => {
+              onOpenBackupModal();
+            }}
+          >
+            {t('Backup')}
+          </Button>
+        )}
+      </Flex>
       <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead position={'sticky'} top={0} zIndex={1}>
@@ -208,6 +226,12 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                   backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
                   color={'grayModern.600'}
+                  _first={{
+                    borderLeftRadius: '6px'
+                  }}
+                  _last={{
+                    borderRightRadius: '6px'
+                  }}
                 >
                   {t(item.title)}
                 </Th>

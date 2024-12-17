@@ -269,7 +269,7 @@ export default function RunTimeLog({
           />
         )}
 
-        <InputGroup w={'200px'} h={'32px'} mr={'24px'} ml={'12px'}>
+        <InputGroup w={'200px'} h={'32px'} ml={'12px'}>
           <InputLeftElement>
             <MyIcon name="search" />
           </InputLeftElement>

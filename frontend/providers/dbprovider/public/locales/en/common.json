@@ -123,6 +123,7 @@
   "create_db": "Create Database",
   "creation_time": "Creation Time",
   "current_connections": "Current Connections",
+  "data_import": "Data import",
   "data_migration_config": "Data Migration Settings",
   "database_config": "parameters",
   "database_edit_config": "Update Parameters",

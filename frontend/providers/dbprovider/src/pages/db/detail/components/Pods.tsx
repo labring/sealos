@@ -131,6 +131,12 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                   backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
                   color={'grayModern.600'}
+                  _first={{
+                    borderLeftRadius: '6px'
+                  }}
+                  _last={{
+                    borderRightRadius: '6px'
+                  }}
                 >
                   {t(item.title)}
                 </Th>

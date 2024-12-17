@@ -36,6 +36,55 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
+const CopyBox = ({
+  value,
+  showSecret = true,
+  boxStyle
+}: {
+  value: string;
+  showSecret?: boolean;
+  boxStyle?: FlexProps;
+}) => {
+  const { copyData } = useCopyData();
+
+  const defaultBoxStyle: FlexProps = {
+    borderRadius: '4px',
+    bg: 'grayModern.25',
+    h: '32px',
+    p: '8px 32px 8px 12px',
+    border: '1px solid',
+    borderColor: 'grayModern.100',
+    color: 'grayModern.900',
+    noOfLines: 1
+  };
+
+  return (
+    <Flex position="relative" role="group" alignItems="center">
+      <Flex {...defaultBoxStyle} {...boxStyle} flex={1}>
+        {showSecret ? value : '***********'}
+      </Flex>
+      <Center
+        position="absolute"
+        right={2}
+        top="50%"
+        transform="translateY(-50%)"
+        w={'22px'}
+        h={'22px'}
+        borderRadius={'4px'}
+        opacity={0}
+        _groupHover={{ opacity: 1 }}
+        _hover={{
+          bg: 'rgba(17, 24, 36, 0.05)'
+        }}
+        onClick={() => copyData(value)}
+        cursor="pointer"
+      >
+        <MyIcon name="copy" w="14px" h="14px" color={'grayModern.500'} />
+      </Center>
+    </Flex>
+  );
+};
+
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
@@ -221,19 +270,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   };
 
-  const copyBoxStyle: FlexProps = {
-    borderRadius: '4px',
-    bg: 'grayModern.25',
-    h: '32px',
-    p: '8px 12px',
-    border: '1px solid',
-    borderColor: 'grayModern.100',
-    color: 'grayModern.900',
-    cursor: 'pointer',
-    noOfLines: 1,
-    mt: '4px'
-  };
-
   return (
     <Flex position={'relative'} gap={'8px'}>
       <Box flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
@@ -371,12 +407,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>
-                  <Box color={'grayModern.600'} textTransform={'capitalize'}>
+                  <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
                     {name}
                   </Box>
-                  <Flex {...copyBoxStyle} onClick={() => copyData(value)}>
-                    {showSecret ? value : '***********'}
-                  </Flex>
+                  <CopyBox value={value} showSecret={showSecret} />
                 </Box>
               ))}
             </Flex>
@@ -389,12 +423,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             <Flex gap={'12px'} mt={'8px'}>
               {Object.entries(otherSecret).map(([name, value], index) => (
                 <Box key={name} flex={index === 0 ? '0 1 280px' : index === 1 ? '0 0 100px' : '1'}>
-                  <Box color={'grayModern.600'} textTransform={'capitalize'}>
+                  <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
                     {name}
                   </Box>
-                  <Flex {...copyBoxStyle} onClick={() => copyData(value)}>
-                    {showSecret ? value : '***********'}
-                  </Flex>
+                  <CopyBox value={value} showSecret={showSecret} />
                 </Box>
               ))}
             </Flex>
@@ -419,12 +451,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                     key={name}
                     flex={index === 0 ? '0 1 280px' : index === 1 ? '0 0 100px' : '1'}
                   >
-                    <Box color={'grayModern.600'} textTransform={'capitalize'}>
+                    <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
                       {name}
                     </Box>
-                    <Flex {...copyBoxStyle} onClick={() => copyData(value)}>
-                      {showSecret ? value : '***********'}
-                    </Flex>
+                    <CopyBox value={value} showSecret={showSecret} />
                   </Box>
                 ))}
               </Flex>
