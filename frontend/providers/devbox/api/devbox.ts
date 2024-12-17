@@ -93,11 +93,12 @@ export const getAppsByDevboxId = (devboxId: string) =>
 export const execCommandInDevboxPod = (data: {
   devboxName: string
   command: string
+  idePath: string
   onDownloadProgress: (progressEvent: AxiosProgressEvent) => void
   signal: AbortSignal
 }) =>
   POST('/api/execCommandInDevboxPod', data, {
-    responseType: 'stream',
+    // responseType: 'stream',
     timeout: 0,
     onDownloadProgress: data.onDownloadProgress,
     signal: data.signal

@@ -1,5 +1,3 @@
-'use client'
-
 import {
   Box,
   Modal,
@@ -28,8 +26,6 @@ import { useTranslations } from 'next-intl'
 
 import MyIcon from '../Icon'
 import SshConnectModal from './SshConnectModal'
-
-import { useEnvStore } from '@/stores/env'
 
 import { JetBrainsGuideData } from '../IDEButton'
 import { execCommandInDevboxPod } from '@/api/devbox'
@@ -84,6 +80,7 @@ const JetBrainsGuideModal = ({
       await execCommandInDevboxPod({
         devboxName: jetbrainsGuideData.devboxName,
         command: execDownloadCommand,
+        idePath: `/home/devbox/.cache/JetBrains/${idePathName}${version}`,
         onDownloadProgress: (progressEvent) => {
           const text = progressEvent.event.target.response
           const progressMatch = text.match(/\s+(\d+)%\[/g)
@@ -97,23 +94,24 @@ const JetBrainsGuideModal = ({
         },
         signal: controller.signal
       })
-
       setOnConnecting(false)
-    } catch (error) {
-      // when progress is 100%, will trigger error
+      setProgress(0)
+    } catch (error: any) {
+      console.log('error', error)
+      if (error !== 'cancel requestCanceledError: canceled') {
+        window.open(
+          `jetbrains-gateway://connect#host=${
+            jetbrainsGuideData.configHost
+          }&type=ssh&deploy=false&projectPath=${encodeURIComponent(
+            jetbrainsGuideData.workingDir
+          )}&user=${encodeURIComponent(jetbrainsGuideData.userName)}&port=${encodeURIComponent(
+            jetbrainsGuideData.port
+          )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
+          '_blank'
+        )
+      }
+      setProgress(0)
       setOnConnecting(false)
-    }
-    if (progress === 100) {
-      window.open(
-        `jetbrains-gateway://connect#host=${
-          jetbrainsGuideData.configHost
-        }&type=ssh&deploy=false&projectPath=${encodeURIComponent(
-          jetbrainsGuideData.workingDir
-        )}&user=${encodeURIComponent(jetbrainsGuideData.userName)}&port=${encodeURIComponent(
-          jetbrainsGuideData.port
-        )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
-        '_blank'
-      )
     }
   }, [
     selectedIDE,
@@ -121,17 +119,16 @@ const JetBrainsGuideModal = ({
     jetbrainsGuideData.configHost,
     jetbrainsGuideData.port,
     jetbrainsGuideData.userName,
-    jetbrainsGuideData.workingDir,
-    progress
+    jetbrainsGuideData.workingDir
   ])
 
   return (
     <Box>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
+      <Modal isOpen onClose={onConnecting ? () => {} : onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent top={'5%'} maxWidth={'800px'} w={'700px'} h={'80%'} position={'relative'}>
           <ModalHeader pl={10}>{t('use_jetbrains')}</ModalHeader>
-          <ModalCloseButton top={'10px'} right={'10px'} />
+          <ModalCloseButton top={'10px'} right={'10px'} isDisabled={onConnecting} />
           <ModalBody pb={6} overflowY={'auto'}>
             {/* prepare */}
             <Box pb={6}>
@@ -252,12 +249,15 @@ const JetBrainsGuideModal = ({
                       justifyContent={'center'}
                       alignItems={'center'}
                       flexDirection={'column'}
-                      cursor={'pointer'}
+                      cursor={onConnecting ? 'not-allowed' : 'pointer'}
+                      opacity={onConnecting ? 0.5 : 1}
                       _hover={{
-                        bg: 'brightBlue.25'
+                        bg: onConnecting ? 'inherit' : 'brightBlue.25'
                       }}
                       onClick={() => {
-                        setSelectedIDE(ideType)
+                        if (!onConnecting) {
+                          setSelectedIDE(ideType)
+                        }
                       }}
                       position={'relative'}>
                       <MyIcon name={ideType.value as any} color={'grayModern.600'} w={'36px'} />

@@ -4,6 +4,7 @@ import { PassThrough, Readable, Writable } from 'stream'
 import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
+import { NextApiResponse } from 'next'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +33,8 @@ async function execCommand(
 
     stdout.on('end', () => {
       free()
-      resolve(chunks.toString())
+      console.log('stdout end')
+      resolve('success')
     })
 
     stdout.on('error', (error) => {
@@ -46,6 +48,10 @@ async function execCommand(
 
     stderr.on('data', (chunk) => {
       stdout?.write(chunk)
+    })
+    stderr.on('end', () => {
+      console.log('stderr end')
+      resolve('success')
     })
 
     const WebSocket = await k8sExec.exec(
@@ -62,6 +68,10 @@ async function execCommand(
     WebSocket.on('close', () => {
       resolve('success upload, close web socket')
     })
+    WebSocket.on('error', (error: any) => {
+      console.error('WebSocket error:', error)
+      reject(error)
+    })
 
     if (stdin) {
       stdin.on('end', () => {
@@ -73,9 +83,10 @@ async function execCommand(
 
 export async function POST(req: NextRequest) {
   try {
-    const { devboxName, command } = (await req.json()) as {
+    const { devboxName, command, idePath } = (await req.json()) as {
       devboxName: string
       command: string
+      idePath: string
     }
 
     const headerList = req.headers
@@ -109,6 +120,7 @@ export async function POST(req: NextRequest) {
     const processStream = new PassThrough()
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
+    let isStreamClosed = false
 
     const execPromise = execCommand(
       k8sExec,
@@ -122,24 +134,51 @@ export async function POST(req: NextRequest) {
     )
 
     processStream.on('data', (chunk) => writer.write(chunk))
-    processStream.on('end', () => writer.close())
+    processStream.on('end', async () => {
+      console.log('processStream end')
+      if (!isStreamClosed) {
+        isStreamClosed = true
+        await writer.close()
+      }
+      return jsonRes({
+        code: 200,
+        data: 'success'
+      })
+    })
+
     processStream.on('error', async (error) => {
       console.error('Process stream error:', error)
-      await writer.close()
+      if (!isStreamClosed) {
+        isStreamClosed = true
+        await writer.close()
+      }
+      return jsonRes({
+        code: 500,
+        error: 'Process stream error'
+      })
     })
 
     execPromise.finally(async () => {
       processStream.end()
+      processStream.destroy()
+      if (!isStreamClosed) {
+        isStreamClosed = true
+        await writer.close()
+      }
+      console.log('execPromise end')
     })
 
     req.signal.addEventListener('abort', async () => {
       console.log('Connection aborted by client')
       processStream.destroy()
-      await writer.close()
+      if (!isStreamClosed) {
+        isStreamClosed = true
+        await writer.close()
+      }
       execCommand(k8sExec, namespace, podName, containerName, [
         '/bin/sh',
         '-c',
-        'rm -rf /home/devbox/.cache/JetBrains'
+        `rm -rf ${idePath}`
       ])
     })
 
