@@ -73,46 +73,47 @@ upstream connect error or disconnect/reset before headers. retried and the lates
 
 代码里暴露地址由于网络原因必须从 `localhost` 改为 `0.0.0.0`。
 
-## 7、在Devbox中可以正常运行程序,但是在发版之后,程序无法正常运行
+## 7、在 Devbox 中可以正常运行程序，但是在发版之后，程序无法正常运行
 
-在发版之前请确保能在终端中运行entrypoint.sh(这是推荐的发版后的启动脚本),如果需要公网服务,也请同时检查公网地址是否联通.
+在发版之前请确保能在终端中运行 `entrypoint.sh` (这是推荐的发版后的启动脚本)，如果需要公网服务，也请同时检查公网地址是否联通。
 
 ```bash
 ./entrypoint.sh
 ```
 
-如果遇到下面的问题
+如果遇到下面的问题:
 
 ```bash
 bash: ./entrypoint.sh: Permission denied
 ```
 
-可以在终端中输入如下的命令,并再次运行entrypoint脚本,并确保结果与期望的相同
+可以在终端中输入如下的命令，并再次运行 `entrypoint` 脚本，并确保结果与期望的相同。
 
 ```bash
 sudo chmod +x entrypoint.sh
 ```
 
-同时,建议先在devbox中预先构建完项目代码后并测试,测试成功后再发版,这可以有效避免在发版后的启动时的错误和oom问题
+同时，建议先在 Devbox 中预先构建完项目代码后并测试，测试成功后再发版，这可以有效避免在发版后的启动时的错误和 oom 问题。
 
-## 8、应用程序监听的端口为1-100时,应用程序启动失败
+## 8、应用程序监听的端口为 80 时，应用程序启动失败
 
-在使用devbox时,本地编辑器(vscode、cursor等)
-默认的用户为devbox,使用1-100端口是root用户的特权.如果需要正常使用,请使用root权限运行你的程序吗,例如在go的devbox中,可以使用下面的命令.
+在使用 Devbox 时，本地编辑器(vscode、cursor 等)
+默认的用户为 Devbox，使用 1-100 端口是 root 用户的特权。 如果需要正常使用，请使用 root 权限运行你的程序吗，例如在 go 的
+Devbox 中，可以使用下面的命令:
 
 ```bash
 sudo go run main.go
 ```
 
-或者变更你的端口.
+或者变更你的端口。
 
-## 9、如何在devbox中更换默认的用户为root用户
+## 9、如何在 Devbox 中更换默认的用户为root用户
 
-如果你需要在打开本地编辑器时,链接到devbox的用户为root,可以参考以下的步骤.
-首先请确保你的devbox在使用默认的配置时,可以正常连接.
-打开本地电脑的`~/.ssh/sealos/devbox_config`,如果不清楚这个文件在哪里,请参考问题2.
+如果你需要在打开本地编辑器时，链接到 Devbox 的用户为 root，可以参考以下的步骤。
+首先请确保你的 Devbox 在使用默认的配置时，可以正常连接。
+打开本地电脑的 `~/.ssh/sealos/devbox_config`，如果不清楚这个文件在哪里，请参考问题2。
 
-找到你需要切换为root用户的配置,例如
+找到你需要切换为 root 用户的配置，例如:
 
 ```config
 Host usw.sailos.io_ns-rqtny6y6_devbox1234
@@ -124,7 +125,7 @@ Host usw.sailos.io_ns-rqtny6y6_devbox1234
   StrictHostKeyChecking no
 ```
 
-修改`User`为`root`,例如:
+修改 `User` 的值为 root，例如:
 
 ```config
 Host usw.sailos.io_ns-rqtny6y6_devbox1234
@@ -136,4 +137,4 @@ Host usw.sailos.io_ns-rqtny6y6_devbox1234
   StrictHostKeyChecking no
 ```
 
-保存之后退出打开了devbox的本地编辑器,重新打开编辑器,连接到devbox,此时的用户已经切换为root.
+保存之后退出打开了 Devbox 的本地编辑器，重新打开编辑器，连接到 Devbox，此时的用户已经切换为 root。
