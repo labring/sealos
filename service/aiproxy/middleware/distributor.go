@@ -76,7 +76,7 @@ func Distribute(c *gin.Context) {
 	if groupRPMRatio <= 0 {
 		groupRPMRatio = 1
 	}
-	modelRPM = int64(float64(modelRPM) * float64(groupRPMRatio))
+	modelRPM = int64(float64(modelRPM) * groupRPMRatio)
 	ok = ForceRateLimit(
 		c.Request.Context(),
 		fmt.Sprintf(groupModelRPMKey, group.ID, requestModel),
