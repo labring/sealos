@@ -58,7 +58,6 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
 export const adaptDevboxDetail = (
   devbox: KBDevboxType & { portInfos: any[] }
 ): DevboxDetailType => {
-  console.log('devbox', devbox)
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
