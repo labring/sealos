@@ -14,6 +14,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(245760),
 			model.WithModelConfigToolChoice(true),
@@ -25,6 +26,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(245760),
 			model.WithModelConfigToolChoice(true),
@@ -36,6 +38,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8192),
 			model.WithModelConfigToolChoice(true),
@@ -47,6 +50,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8192),
 			model.WithModelConfigToolChoice(true),
@@ -58,6 +62,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8192),
 			model.WithModelConfigToolChoice(true),
@@ -69,6 +74,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.015,
 		OutputPrice: 0.015,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(16384),
 			model.WithModelConfigToolChoice(true),
@@ -80,6 +86,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.AudioSpeech,
 		Owner:      model.ModelOwnerMiniMax,
 		InputPrice: 0.2,
+		RPM:        20,
 		Config: model.NewModelConfig(
 			model.WithModelConfigSupportFormats([]string{"pcm", "wav", "flac", "mp3"}),
 			model.WithModelConfigSupportVoices([]string{

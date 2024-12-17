@@ -50,7 +50,7 @@ func SetAPIRouter(router *gin.Engine) {
 			groupRoute.GET("/:id", controller.GetGroup)
 			groupRoute.DELETE("/:id", controller.DeleteGroup)
 			groupRoute.POST("/:id/status", controller.UpdateGroupStatus)
-			groupRoute.POST("/:id/qpm", controller.UpdateGroupQPM)
+			groupRoute.POST("/:id/rpm", controller.UpdateGroupRPM)
 		}
 
 		optionRoute := apiRouter.Group("/option")

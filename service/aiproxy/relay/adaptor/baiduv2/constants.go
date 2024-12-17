@@ -14,6 +14,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.03,
 		OutputPrice: 0.09,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(5120),
 			model.WithModelConfigMaxInputTokens(5120),
@@ -27,6 +28,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.03,
 		OutputPrice: 0.09,
+		RPM:         300,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(5120),
 			model.WithModelConfigMaxInputTokens(5120),
@@ -40,6 +42,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.03,
 		OutputPrice: 0.09,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(5120),
 			model.WithModelConfigMaxInputTokens(5120),
@@ -53,6 +56,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),
@@ -66,6 +70,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),
@@ -79,6 +84,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),
@@ -92,6 +98,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(126976),
 			model.WithModelConfigMaxInputTokens(126976),
@@ -105,6 +112,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
+		RPM:         300,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(5120),
 			model.WithModelConfigMaxInputTokens(5120),
@@ -118,6 +126,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(5120),
 			model.WithModelConfigMaxInputTokens(5120),
@@ -131,6 +140,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
+		RPM:         5000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(126976),
 			model.WithModelConfigMaxInputTokens(126976),
@@ -144,6 +154,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         500,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(7168),
 			model.WithModelConfigMaxInputTokens(7168),
@@ -156,6 +167,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         500,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(126976),
 			model.WithModelConfigMaxInputTokens(126976),
@@ -168,6 +180,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(126976),
 			model.WithModelConfigMaxInputTokens(126976),
@@ -180,6 +193,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         500,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),
@@ -192,6 +206,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0002,
 		OutputPrice: 0.0004,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(126976),
 			model.WithModelConfigMaxInputTokens(126976),
@@ -205,6 +220,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),
@@ -217,6 +233,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),
@@ -229,6 +246,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
+		RPM:         300,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(5120),
 			model.WithModelConfigMaxInputTokens(5120),
@@ -241,6 +259,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBaidu,
 		InputPrice:  0.04,
 		OutputPrice: 0.12,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(6144),
 			model.WithModelConfigMaxInputTokens(6144),

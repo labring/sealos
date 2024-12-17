@@ -12,6 +12,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDeepSeek,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(64000),
 			model.WithModelConfigMaxOutputTokens(4096),

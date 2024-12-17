@@ -15,6 +15,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32768),
 			model.WithModelConfigMaxInputTokens(30720),
@@ -28,6 +29,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.06,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32768),
 			model.WithModelConfigMaxInputTokens(30720),
@@ -43,6 +45,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -56,6 +59,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0008,
 		OutputPrice: 0.002,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -71,6 +75,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -84,6 +89,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(1000000),
 			model.WithModelConfigMaxInputTokens(1000000),
@@ -99,6 +105,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0005,
 		OutputPrice: 0.002,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(10000000),
 			model.WithModelConfigMaxInputTokens(10000000),
@@ -114,6 +121,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.02,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -128,6 +136,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.02,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -142,6 +151,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.008,
 		OutputPrice: 0.008,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8000),
 			model.WithModelConfigMaxInputTokens(6000),
@@ -156,6 +166,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.008,
 		OutputPrice: 0.008,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -172,6 +183,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
+		RPM:         600,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(34096),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -185,6 +197,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
+		RPM:         600,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(34096),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -200,6 +213,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.004,
 		OutputPrice: 0.012,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -213,6 +227,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.004,
 		OutputPrice: 0.012,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -226,6 +241,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -239,6 +255,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -254,6 +271,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0035,
 		OutputPrice: 0.007,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -267,6 +285,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0035,
 		OutputPrice: 0.007,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -280,6 +299,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -293,6 +313,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -308,6 +329,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.004,
 		OutputPrice: 0.012,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -321,6 +343,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0035,
 		OutputPrice: 0.007,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -334,6 +357,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -347,6 +371,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -362,6 +387,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.004,
 		OutputPrice: 0.012,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(128000),
@@ -375,6 +401,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0035,
 		OutputPrice: 0.007,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(65536),
 			model.WithModelConfigMaxInputTokens(63488),
@@ -388,6 +415,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(128000),
@@ -403,6 +431,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.007,
 		OutputPrice: 0.014,
+		RPM:         10,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -416,6 +445,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.005,
 		OutputPrice: 0.01,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -429,6 +459,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0035,
 		OutputPrice: 0.007,
+		RPM:         10,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -442,6 +473,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.004,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8000),
 			model.WithModelConfigMaxInputTokens(6000),
@@ -455,6 +487,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         120,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8000),
 			model.WithModelConfigMaxInputTokens(6000),
@@ -470,6 +503,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.02,
 		OutputPrice: 0.02,
+		RPM:         80,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(32000),
 			model.WithModelConfigMaxInputTokens(30000),
@@ -483,6 +517,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.008,
 		OutputPrice: 0.008,
+		RPM:         300,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8000),
 			model.WithModelConfigMaxInputTokens(6000),
@@ -496,6 +531,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.006,
 		OutputPrice: 0.006,
+		RPM:         300,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(7500),
 			model.WithModelConfigMaxInputTokens(6000),
@@ -511,6 +547,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.004,
 		OutputPrice: 0.012,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -524,6 +561,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -537,6 +575,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.004,
 		OutputPrice: 0.012,
+		RPM:         10,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -550,6 +589,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         10,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxInputTokens(3072),
@@ -565,6 +605,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.0035,
 		OutputPrice: 0.007,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -578,6 +619,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.002,
 		OutputPrice: 0.006,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -591,6 +633,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerAlibaba,
 		InputPrice:  0.001,
 		OutputPrice: 0.002,
+		RPM:         1200,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxInputTokens(129024),
@@ -604,27 +647,33 @@ var ModelList = []*model.ModelConfig{
 		Model: "stable-diffusion-xl",
 		Type:  relaymode.ImagesGenerations,
 		Owner: model.ModelOwnerStabilityAI,
+		RPM:   2,
 	},
 	{
 		Model: "stable-diffusion-v1.5",
 		Type:  relaymode.ImagesGenerations,
 		Owner: model.ModelOwnerStabilityAI,
+		RPM:   2,
 	},
 	{
 		Model: "stable-diffusion-3.5-large",
 		Type:  relaymode.ImagesGenerations,
 		Owner: model.ModelOwnerStabilityAI,
+		RPM:   2,
 	},
 	{
 		Model: "stable-diffusion-3.5-large-turbo",
 		Type:  relaymode.ImagesGenerations,
 		Owner: model.ModelOwnerStabilityAI,
+		RPM:   2,
 	},
+
 	{
 		Model:      "sambert-v1",
 		Type:       relaymode.AudioSpeech,
 		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.1,
+		RPM:        20,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(10000),
 			model.WithModelConfigSupportFormats([]string{"mp3", "wav", "pcm"}),
@@ -678,6 +727,7 @@ var ModelList = []*model.ModelConfig{
 		Model: "paraformer-realtime-v2",
 		Type:  relaymode.AudioTranscription,
 		Owner: model.ModelOwnerAlibaba,
+		RPM:   20,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(10000),
 			model.WithModelConfigSupportFormats([]string{"pcm", "wav", "opus", "speex", "aac", "amr"}),
@@ -688,6 +738,7 @@ var ModelList = []*model.ModelConfig{
 		Model: "gte-rerank",
 		Type:  relaymode.Rerank,
 		Owner: model.ModelOwnerAlibaba,
+		RPM:   5,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4000),
 			model.WithModelConfigMaxInputTokens(4000),
@@ -699,6 +750,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.0007,
+		RPM:        30,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(2048),
 		),
@@ -708,6 +760,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.0007,
+		RPM:        30,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(2048),
 		),
@@ -717,6 +770,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerAlibaba,
 		InputPrice: 0.0007,
+		RPM:        30,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(8192),
 		),

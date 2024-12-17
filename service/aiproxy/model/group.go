@@ -30,7 +30,7 @@ type Group struct {
 	Tokens       []*Token  `gorm:"foreignKey:GroupID" json:"-"`
 	Status       int       `gorm:"default:1;index"    json:"status"`
 	UsedAmount   float64   `gorm:"index"              json:"used_amount"`
-	QPM          int64     `gorm:"index"              json:"qpm"`
+	RPMRatio     float64   `gorm:"index"              json:"rpm_ratio"`
 	RequestCount int       `gorm:"index"              json:"request_count"`
 }
 
@@ -168,15 +168,15 @@ func UpdateGroupRequestCount(id string, count int) error {
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 
-func UpdateGroupQPM(id string, qpm int64) (err error) {
+func UpdateGroupRPM(id string, rpmRatio float64) (err error) {
 	defer func() {
 		if err == nil {
-			if err := CacheUpdateGroupQPM(id, qpm); err != nil {
-				log.Error("cache update group qpm failed: " + err.Error())
+			if err := CacheUpdateGroupRPM(id, rpmRatio); err != nil {
+				log.Error("cache update group rpm failed: " + err.Error())
 			}
 		}
 	}()
-	result := DB.Model(&Group{}).Where("id = ?", id).Update("qpm", qpm)
+	result := DB.Model(&Group{}).Where("id = ?", id).Update("rpm_ratio", rpmRatio)
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 
