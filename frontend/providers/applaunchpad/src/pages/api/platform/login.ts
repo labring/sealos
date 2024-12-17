@@ -93,10 +93,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const { username, password } = req.body;
 
-    console.log('username:', username);
-    console.log('password:', password);
-    console.log('process.env.LAUNCHPAD_USERNAME:', process.env.LAUNCHPAD_USERNAME);
-    console.log('process.env.LAUNCHPAD_PASSWORD:', process.env.LAUNCHPAD_PASSWORD);
+    // console.log('username:', username);
+    // console.log('password:', password);
+    // console.log('process.env.LAUNCHPAD_USERNAME:', process.env.LAUNCHPAD_USERNAME);
+    // console.log('process.env.LAUNCHPAD_PASSWORD:', process.env.LAUNCHPAD_PASSWORD);
 
     let ticket: string;
     let kubeconfig: any;
@@ -104,14 +104,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (username === process.env.LAUNCHPAD_USERNAME) {
       // admin user login
       if (password === process.env.LAUNCHPAD_PASSWORD) {
-        console.log('process.env.JWT_SECRET:', process.env.JWT_SECRET);
+        // console.log('process.env.JWT_SECRET:', process.env.JWT_SECRET);
         ticket = jwt.sign(
           { username },
           "SEALOS_SECRET",
           { expiresIn: '1h' }
         );
 
-        console.log('process.env.JWT_SECRET:', process.env.JWT_SECRET);
+        // console.log('process.env.JWT_SECRET:', process.env.JWT_SECRET);
 
         kubeconfig =
           process.env.NODE_ENV === 'development' ? getUserKubeConfigMock() : getUserKubeConfig();
