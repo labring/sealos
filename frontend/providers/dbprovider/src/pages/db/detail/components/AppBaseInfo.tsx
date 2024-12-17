@@ -19,6 +19,7 @@ import {
   Center,
   Divider,
   Flex,
+  FlexProps,
   Modal,
   ModalCloseButton,
   ModalContent,
@@ -220,111 +221,120 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   };
 
-  return (
-    <Box px={5} py={7} position={'relative'}>
-      {db?.source?.hasSource && (
-        <Box fontSize={'base'}>
-          <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
-            <MyIcon w={'16px'} name={'target'}></MyIcon>
-            <Box>{t('application_source')}</Box>
-          </Flex>
-          <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
-            <Flex
-              flexWrap={'wrap'}
-              _notFirst={{
-                mt: 4
-              }}
-              cursor={'pointer'}
-              onClick={() => {
-                if (!db.source.sourceName) return;
-                if (db.source.sourceType === 'app_store') {
-                  sealosApp.runEvents('openDesktopApp', {
-                    appKey: 'system-template',
-                    pathname: '/instance',
-                    query: { instanceName: db.source.sourceName }
-                  });
-                }
-                if (db.source.sourceType === 'sealaf') {
-                  sealosApp.runEvents('openDesktopApp', {
-                    appKey: 'system-sealaf',
-                    pathname: '/',
-                    query: { instanceName: db.source.sourceName }
-                  });
-                }
-              }}
-            >
-              <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                {t(db.source.sourceType)}
-              </Box>
-              <Box color={'grayModern.600'}>{t('manage_all_resources')}</Box>
-              <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
-            </Flex>
-          </Box>
-        </Box>
-      )}
-      {appInfoTable.map((info) => (
-        <Box
-          _notFirst={{
-            mt: 6
-          }}
-          key={info.name}
-          fontSize={'base'}
-        >
-          <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
-            <MyIcon w={'16px'} name={info.iconName as any}></MyIcon>
-            <Box>{t(info.name)}</Box>
-          </Flex>
+  const copyBoxStyle: FlexProps = {
+    borderRadius: '4px',
+    bg: 'grayModern.25',
+    h: '32px',
+    p: '8px 12px',
+    border: '1px solid',
+    borderColor: 'grayModern.100',
+    color: 'grayModern.900',
+    cursor: 'pointer',
+    noOfLines: 1,
+    mt: '4px'
+  };
 
-          <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
-            {info.items.map((item, i) => (
-              <Flex
-                key={item.label || i}
-                flexWrap={'wrap'}
-                _notFirst={{
-                  mt: 4
-                }}
-              >
-                <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                  {t(item.label)}
+  return (
+    <Flex position={'relative'} gap={'8px'}>
+      <Box flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
+        {appInfoTable.map((info, index) => (
+          <Box key={info.name} fontSize={'md'}>
+            <Flex
+              alignItems={'center'}
+              gap={'8px'}
+              color={'grayModern.900'}
+              fontWeight={'bold'}
+              fontSize={'16px'}
+            >
+              <Box>{t(info.name)}</Box>
+            </Flex>
+            <Box mt={'14px'}>
+              {!db?.source?.hasSource && index === 0 && (
+                <Box>
+                  <Flex
+                    flexWrap={'wrap'}
+                    cursor={'pointer'}
+                    onClick={() => {
+                      if (!db.source.sourceName) return;
+                      if (db.source.sourceType === 'app_store') {
+                        sealosApp.runEvents('openDesktopApp', {
+                          appKey: 'system-template',
+                          pathname: '/instance',
+                          query: { instanceName: db.source.sourceName }
+                        });
+                      }
+                      if (db.source.sourceType === 'sealaf') {
+                        sealosApp.runEvents('openDesktopApp', {
+                          appKey: 'system-sealaf',
+                          pathname: '/',
+                          query: { instanceName: db.source.sourceName }
+                        });
+                      }
+                    }}
+                  >
+                    <Text flex={'0 0 110px'} color={'grayModern.600'}>
+                      {t('application_source')}
+                    </Text>
+                    <Flex alignItems={'center'}>
+                      <Text color={'grayModern.900'}>{t(db.source.sourceType)}</Text>
+                      <Divider
+                        orientation="vertical"
+                        h={'12px'}
+                        mx={'8px'}
+                        borderColor={'grayModern.300'}
+                      />
+                      <Text color={'grayModern.600'}>{t('manage_all_resources')}</Text>
+                      <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
+                    </Flex>
+                  </Flex>
                 </Box>
-                <Box
-                  color={'grayModern.600'}
-                  flex={'1 0 0'}
-                  textOverflow={'ellipsis'}
-                  overflow={'hidden'}
-                  whiteSpace={'nowrap'}
+              )}
+              {info.items.map((item, i) => (
+                <Flex
+                  key={item.label || i}
+                  flexWrap={'wrap'}
+                  _notFirst={{
+                    mt: '12px'
+                  }}
                 >
-                  <MyTooltip label={item.value}>
-                    <Box
-                      as="span"
-                      cursor={!!item.copy ? 'pointer' : 'default'}
-                      onClick={() => item.value && !!item.copy && copyData(item.copy)}
-                    >
-                      {item.value}
-                    </Box>
-                  </MyTooltip>
-                </Box>
-              </Flex>
-            ))}
+                  <Box flex={'0 0 110px'} w={0} color={'grayModern.600'}>
+                    {t(item.label)}
+                  </Box>
+                  <Box
+                    color={'grayModern.900'}
+                    flex={'1 0 0'}
+                    textOverflow={'ellipsis'}
+                    overflow={'hidden'}
+                    whiteSpace={'nowrap'}
+                  >
+                    <MyTooltip label={item.value}>
+                      <Box
+                        as="span"
+                        cursor={!!item.copy ? 'pointer' : 'default'}
+                        onClick={() => item.value && !!item.copy && copyData(item.copy)}
+                      >
+                        {item.value}
+                      </Box>
+                    </MyTooltip>
+                  </Box>
+                </Flex>
+              ))}
+            </Box>
+            {index !== appInfoTable.length - 1 && <Divider my={'16px'} />}
           </Box>
-        </Box>
-      ))}
-      {/* secret */}
+        ))}
+      </Box>
       {secret && (
-        <>
-          <Flex
-            fontSize={'base'}
-            gap={'8px'}
-            mt={'24px'}
-            alignItems={'center'}
-            color={'grayModern.600'}
-          >
-            <MyIcon w={'16px'} name={'connection'}></MyIcon>
-            <Box fontWeight={'bold'}>{t('connection_info')}</Box>
+        <Box flex={'1 0 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
+          <Flex fontSize={'base'} gap={'8px'} alignItems={'center'} color={'grayModern.600'}>
+            <Box fontSize={'16px'} fontWeight={'bold'} color={'grayModern.900'}>
+              {t('connection_info')}
+            </Box>
             <Center
               h="28px"
               w="28px"
-              bg="grayModern.150"
+              bg="white"
+              border="1px solid #DFE2EA"
               borderRadius={'md'}
               cursor={'pointer'}
               onClick={() => setShowSecret(!showSecret)}
@@ -341,7 +351,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 gap={'6px'}
                 h="28px"
                 fontSize={'12px'}
-                bg="grayModern.150"
+                bg="white"
+                border="1px solid #DFE2EA"
                 borderRadius={'md'}
                 px="8px"
                 cursor={'pointer'}
@@ -355,97 +366,84 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 {t('direct_connection')}
               </Center>
             )}
+          </Flex>
+          {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
+            <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
+              {Object.entries(baseSecret).map(([name, value]) => (
+                <Box key={name} flex={1}>
+                  <Box color={'grayModern.600'} textTransform={'capitalize'}>
+                    {name}
+                  </Box>
+                  <Flex {...copyBoxStyle} onClick={() => copyData(value)}>
+                    {showSecret ? value : '***********'}
+                  </Flex>
+                </Box>
+              ))}
+            </Flex>
+          )}
 
-            <Center ml="auto">
-              <Text color={'grayModern.900'}> {t('external_network')} </Text>
+          <Box mt={'24px'} position={'relative'} fontSize={'base'}>
+            <Text fontWeight={500} fontSize={'14px'} color={'grayModern.900'}>
+              {t('intranet_address')}
+            </Text>
+            <Flex gap={'12px'} mt={'8px'}>
+              {Object.entries(otherSecret).map(([name, value], index) => (
+                <Box key={name} flex={index === 0 ? '0 1 280px' : index === 1 ? '0 0 100px' : '1'}>
+                  <Box color={'grayModern.600'} textTransform={'capitalize'}>
+                    {name}
+                  </Box>
+                  <Flex {...copyBoxStyle} onClick={() => copyData(value)}>
+                    {showSecret ? value : '***********'}
+                  </Flex>
+                </Box>
+              ))}
+            </Flex>
+          </Box>
+
+          <Box mt={'24px'} position={'relative'} fontSize={'base'}>
+            <Flex alignItems={'center'}>
+              <Text fontWeight={500} fontSize={'14px'} color={'grayModern.900'}>
+                {t('external_address')}
+              </Text>
               <Switch
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
                 onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
               />
-            </Center>
-          </Flex>
-          {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
-            <Box
-              mt={'12px'}
-              p={4}
-              backgroundColor={'grayModern.50'}
-              borderRadius={'lg'}
-              position={'relative'}
-              fontSize={'base'}
-            >
-              {Object.entries(baseSecret).map(([name, value]) => (
-                <Box
-                  key={name}
-                  _notFirst={{
-                    mt: 4
-                  }}
-                >
-                  <Box color={'grayModern.900'}>{name}</Box>
-                  <Box color={'grayModern.600'}>
-                    <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
-                      {showSecret ? value : '***********'}
+            </Flex>
+            {isChecked ? (
+              <Flex gap={'12px'} mt={'8px'}>
+                {Object.entries(externalNetWork).map(([name, value], index) => (
+                  <Box
+                    key={name}
+                    flex={index === 0 ? '0 1 280px' : index === 1 ? '0 0 100px' : '1'}
+                  >
+                    <Box color={'grayModern.600'} textTransform={'capitalize'}>
+                      {name}
                     </Box>
+                    <Flex {...copyBoxStyle} onClick={() => copyData(value)}>
+                      {showSecret ? value : '***********'}
+                    </Flex>
                   </Box>
-                </Box>
-              ))}
-            </Box>
-          )}
-          <Box
-            mt={'12px'}
-            p={4}
-            backgroundColor={'grayModern.50'}
-            borderRadius={'lg'}
-            position={'relative'}
-            fontSize={'base'}
-          >
-            <Text color={'grayModern.900'}>{t('intranet_address')}</Text>
-            <Divider my="12px" borderColor={'rgb(226, 232, 240)'} />
-            {Object.entries(otherSecret).map(([name, value]) => (
-              <Box
-                key={name}
-                _notFirst={{
-                  mt: 4
-                }}
+                ))}
+              </Flex>
+            ) : (
+              <Center
+                mt={'8px'}
+                w={'100%'}
+                h={'66px'}
+                color={'grayModern.600'}
+                fontSize={'12px'}
+                borderRadius={'4px'}
+                bg={'grayModern.25'}
+                border={'1px solid'}
+                borderColor={'grayModern.100'}
               >
-                <Box color={'grayModern.900'}>{name}</Box>
-                <Box color={'grayModern.600'}>
-                  <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
-                    {showSecret ? value : '***********'}
-                  </Box>
-                </Box>
-              </Box>
-            ))}
+                <Box>{t('no_data_available')}</Box>
+              </Center>
+            )}
           </Box>
-          {isChecked && (
-            <Box
-              mt={'12px'}
-              p={4}
-              backgroundColor={'grayModern.50'}
-              borderRadius={'lg'}
-              position={'relative'}
-              fontSize={'base'}
-            >
-              <Text color={'grayModern.900'}>{t('external_address')}</Text>
-              <Divider my="12px" />
-              {Object.entries(externalNetWork).map(([name, value]) => (
-                <Box
-                  key={name}
-                  _notFirst={{
-                    mt: 4
-                  }}
-                >
-                  <Box color={'grayModern.900'}>{name}</Box>
-                  <Box color={'grayModern.600'}>
-                    <Box as="span" cursor={'pointer'} onClick={() => copyData(value)}>
-                      {showSecret ? value : '***********'}
-                    </Box>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          )}
 
           <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
             <ModalOverlay />
@@ -487,9 +485,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               </Flex>
             </ModalContent>
           </Modal>
-        </>
+        </Box>
       )}
-    </Box>
+    </Flex>
   );
 };
 

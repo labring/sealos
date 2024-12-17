@@ -58,7 +58,8 @@ const map = {
   logoLinear: require('./icons/logo-linear.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default,
-  chevronDown: require('./icons/chevron-down.svg').default
+  chevronDown: require('./icons/chevron-down.svg').default,
+  overview: require('./icons/overview.svg').default
 };
 
 const MyIcon = ({

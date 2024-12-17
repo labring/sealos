@@ -197,7 +197,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     <Flex flexDirection={'column'} h="100%" position={'relative'}>
       <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
-          <Thead>
+          <Thead position={'sticky'} top={0} zIndex={1}>
             <Tr>
               {columns.map((item) => (
                 <Th

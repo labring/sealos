@@ -190,7 +190,7 @@ export default function RunTimeLog({
 
   return (
     <Flex flex={'1 0 0'} h={'0'} flexDirection={'column'}>
-      <Flex mt={'8px'} mb="12px" ml={'26px'} position={'relative'} alignItems={'center'} zIndex={2}>
+      <Flex mt={'8px'} mb="12px" position={'relative'} alignItems={'center'} zIndex={2}>
         {filteredSubNavList?.map((item) => (
           <Box
             h={'32px'}

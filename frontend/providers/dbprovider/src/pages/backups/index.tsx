@@ -196,7 +196,7 @@ export default function Backups() {
       globalFilter
     },
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: (row, filterValue) => {
+    globalFilterFn: (row, columnId, filterValue) => {
       const name = row.original.name.toLowerCase().includes(filterValue.toLowerCase());
       const remark = row.original.remark.toLowerCase().includes(filterValue.toLowerCase());
       return name || remark;
@@ -238,6 +238,7 @@ export default function Backups() {
                     bg={'grayModern.100'}
                     color={'grayModern.600'}
                     border={'none'}
+                    whiteSpace={'nowrap'}
                     _first={{
                       borderLeftRadius: '6px'
                     }}
@@ -298,7 +299,7 @@ export default function Backups() {
                     rows.map((row) => (
                       <Tr key={row.id} fontSize={'12px'}>
                         {row.getVisibleCells().map((cell) => (
-                          <Td key={cell.id} py="10px" px={'24px'}>
+                          <Td key={cell.id} py="10px" px={'24px'} whiteSpace={'nowrap'}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </Td>
                         ))}

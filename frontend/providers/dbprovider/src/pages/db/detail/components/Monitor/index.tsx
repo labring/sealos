@@ -32,7 +32,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
   }, []);
 
   return (
-    <Flex h={'100%'} p={'0px 24px 24px 24px'} flexDirection={'column'}>
+    <Flex h={'100%'} flexDirection={'column'}>
       <Flex justifyContent={'space-between'} alignItems={'center'}>
         <Tabs
           size="sm"

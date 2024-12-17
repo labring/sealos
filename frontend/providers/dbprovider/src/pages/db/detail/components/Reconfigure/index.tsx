@@ -135,7 +135,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
 
   return (
     <Flex flexDirection={'column'} h={'full'} w={'full'} position={'relative'}>
-      <Flex mx={'26px'} h={'36px'}>
+      <Flex h={'36px'}>
         {SubNavList.map((item) => (
           <Box
             key={item.label}
