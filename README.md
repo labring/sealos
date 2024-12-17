@@ -100,7 +100,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Install
 
-* Install Sealos cloud: [Self hosting](https://sealos.io/self-hosting)
+* Install Sealos cloud: [Self hosting](https://sealos.run/self-hosting)
 * Install Kubernetes and kubernetes lifecycle managemant: [One command install kubernetes HA cluster](https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes#install-single-node-kubernetes)
 
 ## 💡 Core features
