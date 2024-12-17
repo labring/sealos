@@ -18,7 +18,7 @@ def add_node_to_cluster(node_ip: str, cluster_name: str = 'default', user: str =
     if pk_passwd:
         command.extend(['--pk-passwd', pk_passwd])
     
-    p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     
     print(' '.join(command))
     
@@ -58,8 +58,8 @@ def delete_node_from_cluster(node_ip: str, cluster_name: str = 'default', force:
     if force:
         command.append('--force')
     
-    #result = subprocess.run(command, capture_output=True, text=True)
-    p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    #result = subprocess.run(command, capture_output=True, universal_newlines=True)
+    p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     
     time.sleep(3)
     

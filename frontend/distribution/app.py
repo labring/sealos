@@ -523,7 +523,7 @@ def get_cluster_resources():
     try:
         # 获取节点总容量
         cmd = "kubectl get nodes --no-headers -o custom-columns=':status.capacity.cpu',':status.capacity.memory' --kubeconfig=/etc/kubernetes/admin.conf"
-        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
         
         # 解析节点容量
         lines = result.stdout.strip().split('\n')
@@ -544,7 +544,7 @@ def get_cluster_resources():
 
         # 获取所有Pod的资源限制
         cmd = "kubectl get pods --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf"
-        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
         pods = json.loads(result.stdout)
 
         total_cpu_limits = 0
@@ -603,7 +603,7 @@ def scale_high_priority_workloads():
             workload_types = ['deployment', 'statefulset']
             for workload_type in workload_types:
                 cmd = "kubectl get {} --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf".format(workload_type)
-                result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+                result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
                 workloads = json.loads(result.stdout)
                 
                 for workload in workloads['items']:
