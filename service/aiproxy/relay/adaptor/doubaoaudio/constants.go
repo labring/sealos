@@ -13,6 +13,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.AudioSpeech,
 		Owner:      model.ModelOwnerDoubao,
 		InputPrice: 0.5,
+		RPM:        60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigSupportFormats([]string{
 				"pcm",

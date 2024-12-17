@@ -23,6 +23,14 @@ type ModelConfig struct {
 	Type        int     `json:"type"`
 	InputPrice  float64 `json:"input_price,omitempty"`
 	OutputPrice float64 `json:"output_price,omitempty"`
+	RPM         int64   `json:"rpm"`
+}
+
+func (c *ModelConfig) BeforeSave(_ *gorm.DB) error {
+	if c.RPM <= 0 {
+		return fmt.Errorf("%s rpm must be greater than 0", c.Model)
+	}
+	return nil
 }
 
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {

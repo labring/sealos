@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
@@ -13,6 +14,10 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+)
+
+const (
+	groupModelRPMKey = "group_model_rpm:%s:%s"
 )
 
 type ModelRequest struct {
@@ -26,6 +31,8 @@ func Distribute(c *gin.Context) {
 	}
 
 	log := GetLogger(c)
+
+	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 
 	requestModel, err := getRequestModel(c)
 	if err != nil {
@@ -52,6 +59,34 @@ func Distribute(c *gin.Context) {
 	channel, err := model.CacheGetRandomSatisfiedChannel(requestModel)
 	if err != nil {
 		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
+		return
+	}
+
+	mc, ok := model.CacheGetModelConfig(requestModel)
+	if !ok {
+		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
+		return
+	}
+	modelRPM := mc.RPM
+	if modelRPM <= 0 {
+		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" rpm is not available, please contact the administrator")
+		return
+	}
+	groupRPMRatio := group.RPMRatio
+	if groupRPMRatio <= 0 {
+		groupRPMRatio = 1
+	}
+	modelRPM = int64(float64(modelRPM) * float64(groupRPMRatio))
+	ok = ForceRateLimit(
+		c.Request.Context(),
+		fmt.Sprintf(groupModelRPMKey, group.ID, requestModel),
+		modelRPM,
+		time.Minute,
+	)
+	if !ok {
+		abortWithMessage(c, http.StatusTooManyRequests,
+			group.ID+" is requesting too frequently",
+		)
 		return
 	}
 

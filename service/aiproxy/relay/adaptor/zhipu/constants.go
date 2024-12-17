@@ -12,6 +12,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
+		RPM:         300,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -23,6 +24,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.1,
 		OutputPrice: 0.1,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -35,6 +37,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
+		RPM:         600,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -47,6 +50,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
+		RPM:         900,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -59,6 +63,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(8192),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -71,6 +76,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(1024000),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -83,6 +89,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         600,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -95,6 +102,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         1800,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -107,6 +115,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(8192),
 			model.WithModelConfigMaxOutputTokens(1024),
@@ -119,6 +128,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.05,
 		OutputPrice: 0.05,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(2048),
 			model.WithModelConfigMaxOutputTokens(1024),
@@ -131,6 +141,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(8192),
 			model.WithModelConfigMaxOutputTokens(1024),
@@ -139,25 +150,15 @@ var ModelList = []*model.ModelConfig{
 	},
 
 	{
-		Model:       "charglm-3",
+		Model:       "charglm-4",
 		Type:        relaymode.ChatCompletions,
 		Owner:       model.ModelOwnerChatGLM,
-		InputPrice:  0.015,
-		OutputPrice: 0.015,
+		InputPrice:  0.001,
+		OutputPrice: 0.001,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(4096),
 			model.WithModelConfigMaxOutputTokens(2048),
-		),
-	},
-	{
-		Model:       "emohaa",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerChatGLM,
-		InputPrice:  0.015,
-		OutputPrice: 0.015,
-		Config: model.NewModelConfig(
-			model.WithModelConfigMaxContextTokens(8192),
-			model.WithModelConfigMaxOutputTokens(4096),
 		),
 	},
 	{
@@ -166,6 +167,7 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerChatGLM,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0001,
+		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(131072),
 			model.WithModelConfigMaxOutputTokens(4096),
@@ -177,6 +179,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerChatGLM,
 		InputPrice: 0.0005,
+		RPM:        60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(8192),
 		),
@@ -186,6 +189,7 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerChatGLM,
 		InputPrice: 0.0005,
+		RPM:        600,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(8192),
 		),
@@ -199,6 +203,7 @@ var ModelList = []*model.ModelConfig{
 		ImagePrices: map[string]float64{
 			"1024x1024": 0.1,
 		},
+		RPM: 60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxOutputTokens(1024),
 		),
@@ -217,6 +222,7 @@ var ModelList = []*model.ModelConfig{
 			"1440x720":  0.06,
 			"720x1440":  0.06,
 		},
+		RPM: 60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxOutputTokens(1024),
 		),
