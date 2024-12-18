@@ -95,19 +95,11 @@ func Relay(c *gin.Context) {
 }
 
 func shouldRetry(_ *gin.Context, statusCode int) bool {
-	if statusCode == http.StatusTooManyRequests {
+	if statusCode == http.StatusTooManyRequests ||
+		statusCode == http.StatusGatewayTimeout {
 		return true
 	}
-	if statusCode/100 == 5 {
-		return true
-	}
-	if statusCode == http.StatusBadRequest {
-		return false
-	}
-	if statusCode/100 == 2 {
-		return false
-	}
-	return true
+	return false
 }
 
 func RelayNotImplemented(c *gin.Context) {

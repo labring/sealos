@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -55,7 +54,7 @@ func UnmarshalMap(req *http.Request) (map[string]any, error) {
 }
 
 func DoRequest(req *http.Request) (*http.Response, error) {
-	resp, err := client.HTTPClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

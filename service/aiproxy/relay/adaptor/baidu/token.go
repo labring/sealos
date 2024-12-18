@@ -10,7 +10,7 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/client"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -66,7 +66,7 @@ func getBaiduAccessTokenHelper(ctx context.Context, apiKey string) (*AccessToken
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
-	res, err := client.ImpatientHTTPClient.Do(req)
+	res, err := utils.DoRequest(req)
 	if err != nil {
 		return nil, err
 	}

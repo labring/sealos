@@ -86,20 +86,9 @@ func SetRetryTimes(times int64) {
 
 var DisableAutoMigrateDB = os.Getenv("DISABLE_AUTO_MIGRATE_DB") == "true"
 
-var RelayTimeout = env.Int("RELAY_TIMEOUT", 0) // unit is second
-
 var RateLimitKeyExpirationDuration = 20 * time.Minute
 
 var OnlyOneLogFile = env.Bool("ONLY_ONE_LOG_FILE", false)
-
-var (
-	// 代理地址
-	RelayProxy = env.String("RELAY_PROXY", "")
-	// 用户内容请求代理地址
-	UserContentRequestProxy = env.String("USER_CONTENT_REQUEST_PROXY", "")
-	// 用户内容请求超时时间，单位为秒
-	UserContentRequestTimeout = env.Int("USER_CONTENT_REQUEST_TIMEOUT", 30)
-)
 
 var AdminKey = env.String("ADMIN_KEY", "")
 
