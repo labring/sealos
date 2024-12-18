@@ -21,8 +21,6 @@ import (
 
 	// import webp decoder
 	_ "golang.org/x/image/webp"
-
-	"github.com/labring/sealos/service/aiproxy/common/client"
 )
 
 // Regex to match data URL pattern
@@ -37,7 +35,7 @@ func GetImageSizeFromURL(url string) (width int, height int, err error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	resp, err := client.UserContentRequestHTTPClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return
 	}
@@ -70,7 +68,7 @@ func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	resp, err := client.UserContentRequestHTTPClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", "", err
 	}
