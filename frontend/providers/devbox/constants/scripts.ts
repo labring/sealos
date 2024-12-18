@@ -134,9 +134,23 @@ chmod 0600 "$IDENTITY_FILE"
 
 if grep -q "^Host \$NAME" "\$CONFIG_FILE"; then
     temp_file="\$(mktemp)"
-    awk "/^Host \$NAME/,/^Host /{next} /^Host /{p=1} p" "\$CONFIG_FILE" > "\$temp_file"
-    echo "\$HOST_ENTRY" >> "\$temp_file"
-    mv "\$temp_file" "\$CONFIG_FILE"
+    awk '
+        BEGIN { skip=0 }
+        /^Host '"$NAME"'$/ { skip=1; next }
+        /^Host / {
+            skip=0
+            print
+            next
+        }
+        /^$/ {
+            skip=0
+            print
+            next
+        }
+        !skip { print }
+    ' "$CONFIG_FILE" > "$temp_file"
+    echo "\$HOST_ENTRY" >> "$temp_file"
+    mv "$temp_file" "$CONFIG_FILE"
 else
     echo "\$HOST_ENTRY" >> "\$CONFIG_FILE"
 fi`
