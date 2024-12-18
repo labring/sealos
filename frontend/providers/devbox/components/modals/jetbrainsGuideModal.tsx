@@ -97,8 +97,7 @@ const JetBrainsGuideModal = ({
       setOnConnecting(false)
       setProgress(0)
     } catch (error: any) {
-      console.log('error', error)
-      if (error !== 'cancel requestCanceledError: canceled') {
+      if (!error) {
         window.open(
           `jetbrains-gateway://connect#host=${
             jetbrainsGuideData.configHost
