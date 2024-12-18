@@ -16,13 +16,13 @@ ${privateKey}
 "@
 
 \$Name = "${configHost}"
-\$Host = "${host}"
+\$HostName = "${host}"
 \$Port = "${port}"
 \$User = "${user}"
 
 \$IdentityFileTxt = "\${ConfigDirTxt}\$Name"
 \$IdentityFile = "\$ConfigDir\$Name"
-\$HostEntry = "Host \$Name\`n  HostName \$Host\`n  Port \$Port\`n  User \$User\`n  IdentityFile \$IdentityFileTxt\`n  IdentitiesOnly yes\`n  StrictHostKeyChecking no"
+\$HostEntry = "Host \$Name\`n  HostName \$HostName\`n  Port \$Port\`n  User \$User\`n  IdentityFile \$IdentityFileTxt\`n  IdentitiesOnly yes\`n  StrictHostKeyChecking no"
 
 # Check if the configuration directory exists
 if (-Not (Test-Path \$ConfigDir)) {
@@ -59,16 +59,24 @@ if (-Not (Get-Content \$SSHConfigFile)) {
 
 # Check if a host with the same name exists
 if (Select-String -Path \$ConfigFile -Pattern "^Host \$Name") {
-    # Replace existing host entry
-    (Get-Content \$ConfigFile) | ForEach-Object {
-        if (\$_ -match "^Host \$Name") {
-            \$HostEntry
-        } elseif (\$_ -match "^Host ") {
-            ""
-        } else {
-            \$_
+    $newContent = @()
+    $skip = $false
+
+    (Get-Content $ConfigFile) | ForEach-Object {
+        if ($_ -match "^Host $Name$") {
+            $skip = $true
+            $newContent += $HostEntry
         }
-    } | Set-Content \$ConfigFile
+        elseif ($_ -match "^Host ") {
+            $skip = $false
+            $newContent += $_
+        }
+        elseif (-not $skip) {
+            $newContent += $_
+        }
+    }
+
+    $newContent | Set-Content $ConfigFile
 } else {
     # Append to the end of the file
     Add-Content -Path \$ConfigFile -Value \$HostEntry
