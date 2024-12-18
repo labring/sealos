@@ -25,6 +25,9 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Skeleton,
+  SkeletonText,
+  Stack,
   Switch,
   Text,
   useDisclosure
@@ -360,7 +363,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           </Box>
         ))}
       </Box>
-      {secret && (
+      {secret ? (
         <Box flex={'1 0 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
           <Flex fontSize={'base'} gap={'8px'} alignItems={'center'} color={'grayModern.600'}>
             <Box fontSize={'16px'} fontWeight={'bold'} color={'grayModern.900'}>
@@ -516,6 +519,26 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </ModalContent>
           </Modal>
         </Box>
+      ) : (
+        <Stack flex={'1 0 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
+          <Skeleton
+            startColor="white"
+            endColor="grayModern.200"
+            fadeDuration={0.6}
+            width={'200px'}
+            height={'40px'}
+          />
+          <Skeleton startColor="white" endColor="grayModern.200" fadeDuration={0.6} p={'20px'} />
+          <SkeletonText
+            startColor="white"
+            endColor="grayModern.200"
+            fadeDuration={0.6}
+            mt="4"
+            noOfLines={4}
+            spacing="4"
+            skeletonHeight="20px"
+          />
+        </Stack>
       )}
     </Flex>
   );

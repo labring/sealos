@@ -176,9 +176,9 @@ const DBList = ({
         id: 'actions',
         header: () => t('operation'),
         cell: ({ row }) => (
-          <Flex key={row.id} zIndex={10}>
+          <Flex key={row.id}>
             <Button
-              mr={5}
+              mr={'4px'}
               height={'32px'}
               size={'sm'}
               fontSize={'base'}
@@ -203,8 +203,8 @@ const DBList = ({
                     color: 'brightBlue.600'
                   }}
                   variant={'square'}
-                  w={'30px'}
-                  h={'30px'}
+                  w={'32px'}
+                  h={'32px'}
                 >
                   <MyIcon name={'more'} px={3} />
                 </Button>
@@ -312,6 +312,7 @@ const DBList = ({
   return (
     <Box
       backgroundColor={'white'}
+      py={'24px'}
       px={'32px'}
       h={'full'}
       w={'full'}
@@ -320,7 +321,7 @@ const DBList = ({
       overflowY={'auto'}
       position={'relative'}
     >
-      <Flex h={'90px'} alignItems={'center'}>
+      <Flex h={'36px'} alignItems={'center'} mb={'16px'}>
         <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
           {t('DBList')}
         </Box>
@@ -342,7 +343,7 @@ const DBList = ({
           <Button
             variant={'outline'}
             minW={'156px'}
-            h={'40px'}
+            h={'full'}
             mr={'16px'}
             leftIcon={<MyIcon name={'docs'} w={'16px'} />}
             onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
@@ -352,9 +353,9 @@ const DBList = ({
         )}
         <Button
           minW={'95px'}
-          h={'40px'}
+          h={'full'}
           variant={'solid'}
-          leftIcon={<MyIcon name={'plus'} w={'20px'} />}
+          leftIcon={<MyIcon name={'plus'} w={'18px'} h={'18px'} />}
           onClick={() => router.push('/db/edit')}
         >
           {t('create_db')}

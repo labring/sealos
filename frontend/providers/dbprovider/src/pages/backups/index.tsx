@@ -206,8 +206,16 @@ export default function Backups() {
   return (
     <Flex bg={'grayModern.100'} h={'100%'} pb={'12px'} pr={'12px'}>
       <Sidebar />
-      <Box bg={'white'} px={'32px'} h={'full'} w={'full'} borderRadius={'xl'} overflow={'auto'}>
-        <Flex h={'90px'} alignItems={'center'}>
+      <Box
+        bg={'white'}
+        px={'32px'}
+        py={'24px'}
+        h={'full'}
+        w={'full'}
+        borderRadius={'xl'}
+        overflow={'auto'}
+      >
+        <Flex h={'36px'} alignItems={'center'} mb={'16px'}>
           <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
             {t('backup_center')}
           </Box>
@@ -225,7 +233,15 @@ export default function Backups() {
           </InputGroup>
         </Flex>
 
-        <Table variant="unstyled" width={'full'}>
+        <Table
+          variant="unstyled"
+          width={'full'}
+          fontWeight={500}
+          sx={{
+            borderSpacing: '0 4px',
+            borderCollapse: 'separate'
+          }}
+        >
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
@@ -282,7 +298,7 @@ export default function Backups() {
                             color="grayModern.400"
                           />
                         </Center>
-                        <Text ml={'8px'} fontWeight="bold">
+                        <Text ml={'8px'} fontWeight="bold" fontSize={'16px'}>
                           {dbName}
                         </Text>
                         <Image
@@ -296,10 +312,23 @@ export default function Backups() {
                     </Td>
                   </Tr>
                   {expandedGroups[dbName] &&
-                    rows.map((row) => (
-                      <Tr key={row.id} fontSize={'12px'}>
+                    rows.map((row, index) => (
+                      <Tr key={row.id} fontSize={'12px'} bg={'grayModern.25'}>
                         {row.getVisibleCells().map((cell) => (
-                          <Td key={cell.id} py="10px" px={'24px'} whiteSpace={'nowrap'}>
+                          <Td
+                            key={cell.id}
+                            py="10px"
+                            px={'24px'}
+                            whiteSpace={'nowrap'}
+                            sx={{
+                              '&:first-of-type': {
+                                borderLeftRadius: '6px'
+                              },
+                              '&:last-of-type': {
+                                borderRightRadius: '6px'
+                              }
+                            }}
+                          >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </Td>
                         ))}

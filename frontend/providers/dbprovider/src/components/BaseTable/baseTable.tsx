@@ -37,7 +37,6 @@ export function BaseTable<T extends unknown>({
             return (
               <Tr key={headers.id}>
                 {headers.headers.map((header, i) => {
-                  const isPinned = header.column.getIsPinned();
                   return (
                     <Th
                       fontSize={'12px'}
@@ -71,13 +70,16 @@ export function BaseTable<T extends unknown>({
               </Td>
             </Tr>
           ) : (
-            table.getRowModel().rows.map((item) => {
+            table.getRowModel().rows.map((item, index) => {
               return (
                 <Tr
                   key={item.id}
+                  h={'64px'}
                   fontSize={'12px'}
-                  // borderBottom={'1px solid'}
-                  // borderColor={'#F0F1F6'}
+                  borderBottom={'1px solid'}
+                  borderBottomColor={
+                    index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
+                  }
                 >
                   {item.getAllCells().map((cell, i) => {
                     const isPinned = cell.column.getIsPinned();
@@ -87,6 +89,9 @@ export function BaseTable<T extends unknown>({
                         key={cell.id}
                         px={'24px'}
                         bg={isPinned ? 'white' : ''}
+                        _last={{
+                          w: '140px'
+                        }}
                         {...(getCommonPinningStyles(cell.column) as HTMLChakraProps<'td'>)}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
