@@ -17,6 +17,7 @@ import {
 import { GET, POST, DELETE } from '@/services/request'
 import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
+import { AxiosProgressEvent } from 'axios'
 
 export const getMyDevboxList = () =>
   GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
@@ -88,3 +89,17 @@ export const getAppsByDevboxId = (devboxId: string) =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
     res.map(adaptAppListItem)
   )
+
+export const execCommandInDevboxPod = (data: {
+  devboxName: string
+  command: string
+  idePath: string
+  onDownloadProgress: (progressEvent: AxiosProgressEvent) => void
+  signal: AbortSignal
+}) =>
+  POST('/api/execCommandInDevboxPod', data, {
+    // responseType: 'stream',
+    timeout: 0,
+    onDownloadProgress: data.onDownloadProgress,
+    signal: data.signal
+  })
