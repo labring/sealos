@@ -190,6 +190,31 @@ func (rw *responseWriter) WriteString(s string) (int, error) {
 	return rw.ResponseWriter.WriteString(s)
 }
 
+const (
+	// 0.5MB
+	defaultBufferSize = 512 * 1024
+	// 3MB
+	maxBufferSize = 3 * 1024 * 1024
+)
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, defaultBufferSize))
+	},
+}
+
+func getBuffer() *bytes.Buffer {
+	return bufferPool.Get().(*bytes.Buffer)
+}
+
+func putBuffer(buf *bytes.Buffer) {
+	buf.Reset()
+	if buf.Cap() > maxBufferSize {
+		return
+	}
+	bufferPool.Put(buf)
+}
+
 func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *model.RequestDetail, *relaymodel.ErrorWithStatusCode) {
 	log := middleware.GetLogger(c)
 
@@ -248,9 +273,12 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 		return nil, &detail, utils.RelayErrorHandler(meta, resp)
 	}
 
+	buf := getBuffer()
+	defer putBuffer(buf)
+
 	rw := &responseWriter{
 		ResponseWriter: c.Writer,
-		body:           bytes.NewBuffer(nil),
+		body:           buf,
 	}
 	rawWriter := c.Writer
 	defer func() { c.Writer = rawWriter }()
@@ -258,7 +286,8 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
 	usage, relayErr := a.DoResponse(meta, c, resp)
-	detail.ResponseBody = conv.BytesToString(rw.body.Bytes())
+	// copy buf to detail.ResponseBody
+	detail.ResponseBody = rw.body.String()
 	if relayErr != nil {
 		if detail.ResponseBody == "" {
 			respData, err := json.Marshal(gin.H{
