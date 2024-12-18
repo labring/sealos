@@ -190,7 +190,7 @@ const BonusBox = (props: {
             <Text>{t('Double')}!</Text>
             <Flex align={'center'}>
               +
-              <CurrencySymbol boxSize={'10px'} mr={'2px'} />
+              <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
               <Text>{props.bouns}</Text>
             </Flex>
           </Flex>
@@ -213,7 +213,7 @@ const BonusBox = (props: {
           fontSize="12px"
         >
           <Text mr="4px">{t('Bonus')}</Text>
-          <CurrencySymbol boxSize={'10px'} mr={'2px'} />
+          <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
           <Text> {props.bouns}</Text>
         </Flex>
       ) : (
@@ -544,7 +544,7 @@ const RechargeModal = forwardRef(
                     >
                       {t('Bonus')} {getBonus(amount)}
                     </Text>
-                    <CurrencySymbol boxSize={'10px'} />
+                    <CurrencySymbol boxSize={'10px'} type={currency} />
                   </Flex>
                   <Flex
                     alignSelf={'flex-start'}
