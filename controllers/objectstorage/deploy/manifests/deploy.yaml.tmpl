@@ -276,6 +276,31 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+        - ''
+      resources:
+        - resourcequotas
+      verbs:
+        - get
+        - patch
+        - update
+        - create
+        - delete
+        - watch
+        - list
+  - apiGroups:
+        - ''
+      resources:
+        - resourcequotas/status
+      verbs:
+        - get
+        - patch
+        - update
+        - create
+        - delete
+        - watch
+        - list
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
