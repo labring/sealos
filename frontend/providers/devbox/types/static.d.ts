@@ -2,6 +2,13 @@ export interface SourcePrice {
   cpu: number
   memory: number
   nodeports: number
+  gpu: {
+    alias: string
+    type: string
+    price: number
+    inventory: number
+    vm: number
+  }[]
 }
 
 export interface Env {
@@ -19,6 +26,7 @@ export interface Env {
 export interface RuntimeTypeMap {
   id: string
   label: string
+  gpu: boolean
 }
 
 // RuntimeTypeMap
@@ -45,3 +53,7 @@ export interface RuntimeVersionMap {
 //     }
 //   ]
 // }
+
+export interface RuntimeNamespaceMap {
+  [key: string]: string
+}
