@@ -38,11 +38,7 @@ func initializeServices() error {
 		return err
 	}
 
-	if err := initializeCaches(); err != nil {
-		return err
-	}
-
-	return nil
+	return initializeCaches()
 }
 
 func initializeBalance() error {
