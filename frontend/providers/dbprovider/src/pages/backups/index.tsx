@@ -221,7 +221,7 @@ export default function Backups() {
           </Box>
 
           <Box flex={1}></Box>
-          <InputGroup w={'200px'} h={'32px'} mr={'24px'} ml={'12px'}>
+          <InputGroup w={'200px'} h={'32px'} ml={'12px'}>
             <InputLeftElement>
               <MyIcon name="search" />
             </InputLeftElement>

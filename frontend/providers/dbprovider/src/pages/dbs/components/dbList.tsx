@@ -339,18 +339,6 @@ const DBList = ({
           {dbList.length}
         </Center>
         <Box flex={1}></Box>
-        {SystemEnv?.SHOW_DOCUMENT && (
-          <Button
-            variant={'outline'}
-            minW={'156px'}
-            h={'full'}
-            mr={'16px'}
-            leftIcon={<MyIcon name={'docs'} w={'16px'} />}
-            onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
-          >
-            {t('use_docs')}
-          </Button>
-        )}
         <Button
           minW={'95px'}
           h={'full'}

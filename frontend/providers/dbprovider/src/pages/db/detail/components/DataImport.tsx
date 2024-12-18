@@ -37,6 +37,7 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
               borderBottom={'2px solid'}
               cursor={'pointer'}
               fontSize={'md'}
+              fontWeight={'500'}
               {...(item.id === activeId
                 ? {
                     color: 'grayModern.900',

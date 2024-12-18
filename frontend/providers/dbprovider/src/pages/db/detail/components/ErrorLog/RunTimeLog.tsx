@@ -202,6 +202,7 @@ export default function RunTimeLog({
             color={item.value === logType ? 'grayModern.900' : 'grayModern.600'}
             borderBottomColor={item.value === logType ? 'grayModern.900' : 'transparent'}
             onClick={() => item.value !== logType && updateSubMenu(item.value)}
+            fontWeight={'500'}
           >
             {t(item.label as I18nCommonKey)}
           </Box>

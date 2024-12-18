@@ -89,6 +89,9 @@ export function BaseTable<T extends unknown>({
                         key={cell.id}
                         px={'24px'}
                         bg={isPinned ? 'white' : ''}
+                        _first={{
+                          w: '200px'
+                        }}
                         _last={{
                           w: '140px'
                         }}

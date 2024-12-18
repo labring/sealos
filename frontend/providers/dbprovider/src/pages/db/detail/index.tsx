@@ -148,10 +148,10 @@ const AppDetail = ({
       <Box>
         <Header db={dbDetail} setShowSlider={setShowSlider} isLargeScreen={isLargeScreen} />
       </Box>
-      <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'}>
+      <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'} minH={'600px'}>
         <Flex
           w={isSmallScreen ? '52px' : '132px'}
-          flexShrink={0}
+          flexShrink={'0'}
           flexDirection={'column'}
           gap={'8px'}
           bg={'white'}

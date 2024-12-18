@@ -47,6 +47,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
               borderBottom={'2px solid'}
               cursor={'pointer'}
               fontSize={'md'}
+              fontWeight={'500'}
               {...(item.id === activeId
                 ? {
                     color: 'grayModern.900',

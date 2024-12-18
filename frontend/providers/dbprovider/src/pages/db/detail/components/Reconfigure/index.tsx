@@ -144,6 +144,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
             borderBottom={'2px solid'}
             cursor={'pointer'}
             fontSize={'md'}
+            fontWeight={'500'}
             {...(item.value === subMenu
               ? {
                   color: 'grayModern.900',
