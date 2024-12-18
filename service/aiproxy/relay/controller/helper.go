@@ -314,5 +314,8 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	if usage.TotalTokens == 0 {
 		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	}
+	log.Data["t_input"] = usage.PromptTokens
+	log.Data["t_output"] = usage.CompletionTokens
+	log.Data["t_total"] = usage.TotalTokens
 	return usage, &detail, nil
 }
