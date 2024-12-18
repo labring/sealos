@@ -444,11 +444,25 @@ func (r *DevboxReconciler) getRuntime(ctx context.Context, devbox *devboxv1alpha
 
 // create a new pod, add predicated status to nextCommitHistory
 func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, expectPod *corev1.Pod, nextCommitHistory *devboxv1alpha1.CommitHistory) error {
+	logger := log.FromContext(ctx)
+
+	logger.Info("creating pod",
+		"podName", expectPod.Name,
+		"namespace", expectPod.Namespace,
+		"nextCommitHistory", nextCommitHistory)
+
 	nextCommitHistory.Status = devboxv1alpha1.CommitStatusPending
 	nextCommitHistory.PredicatedStatus = devboxv1alpha1.CommitStatusPending
+
+	if expectPod.Name == "" {
+		return fmt.Errorf("pod name cannot be empty")
+	}
+
 	if err := r.Create(ctx, expectPod); err != nil {
+		logger.Error(err, "failed to create pod")
 		return err
 	}
+
 	devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
 	return nil
 }
@@ -567,6 +581,14 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 	terminationGracePeriodSeconds := 300
 	automountServiceAccountToken := false
 
+	runtimeClassName := devbox.Spec.RuntimeClassName
+	var runtimeClassNamePtr *string
+	if runtimeClassName == "" {
+		runtimeClassNamePtr = nil
+	} else {
+		runtimeClassNamePtr = ptr.To(runtimeClassName)
+	}
+
 	expectPod := &corev1.Pod{
 		ObjectMeta: objectMeta,
 		Spec: corev1.PodSpec{
@@ -578,7 +600,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			Containers: containers,
 			Volumes:    volumes,
 
-			RuntimeClassName: ptr.To(devbox.Spec.RuntimeClassName),
+			RuntimeClassName: runtimeClassNamePtr,
 
 			NodeSelector: devbox.Spec.NodeSelector,
 			Tolerations:  devbox.Spec.Tolerations,
