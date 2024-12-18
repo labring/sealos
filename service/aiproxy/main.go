@@ -17,7 +17,6 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -43,7 +42,6 @@ func initializeServices() error {
 		return err
 	}
 
-	client.Init()
 	return nil
 }
 

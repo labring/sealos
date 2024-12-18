@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -260,6 +261,9 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 
 	resp, err := a.DoRequest(meta, c, req)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusGatewayTimeout)
+		}
 		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusBadRequest)
 	}
 
