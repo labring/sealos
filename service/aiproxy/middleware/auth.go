@@ -41,6 +41,13 @@ func AdminAuth(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	group := c.Param("group")
+	if group != "" {
+		log := GetLogger(c)
+		log.Data["gid"] = group
+	}
+
 	c.Next()
 }
 

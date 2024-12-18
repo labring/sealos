@@ -64,17 +64,17 @@ func SearchGroups(c *gin.Context) {
 }
 
 func GetGroup(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "group id is empty")
 		return
 	}
-	group, err := model.GetGroupByID(id)
+	_group, err := model.GetGroupByID(group)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, group)
+	middleware.SuccessResponse(c, _group)
 }
 
 type UpdateGroupRPMRequest struct {
@@ -82,8 +82,8 @@ type UpdateGroupRPMRequest struct {
 }
 
 func UpdateGroupRPM(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
@@ -93,7 +93,7 @@ func UpdateGroupRPM(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err = model.UpdateGroupRPM(id, req.RPMRatio)
+	err = model.UpdateGroupRPM(group, req.RPMRatio)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -106,8 +106,8 @@ type UpdateGroupStatusRequest struct {
 }
 
 func UpdateGroupStatus(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
@@ -117,7 +117,7 @@ func UpdateGroupStatus(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err = model.UpdateGroupStatus(id, req.Status)
+	err = model.UpdateGroupStatus(group, req.Status)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -126,12 +126,12 @@ func UpdateGroupStatus(c *gin.Context) {
 }
 
 func DeleteGroup(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err := model.DeleteGroupByID(id)
+	err := model.DeleteGroupByID(group)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

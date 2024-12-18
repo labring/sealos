@@ -10,8 +10,8 @@ import (
 )
 
 func GetGroupDashboard(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
@@ -33,7 +33,7 @@ func GetGroupDashboard(c *gin.Context) {
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model")
 
-	dashboards, err := model.GetDashboardData(id, start, end, tokenName, modelName)
+	dashboards, err := model.GetDashboardData(group, start, end, tokenName, modelName)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "failed to get statistics")
 		return
