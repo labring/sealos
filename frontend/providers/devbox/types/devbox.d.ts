@@ -18,6 +18,7 @@ import {
   PodStatusEnum,
   YamlKindEnum
 } from '@/constants/devbox'
+import { PortInfos } from './ingress'
 import { MonitorDataResult } from './monitor'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
@@ -49,15 +50,7 @@ export interface DevboxEditTypeV2 {
   image: string
   cpu: number
   memory: number
-  networks: {
-    networkName: string
-    portName: string
-    port: number
-    protocol: ProtocolType
-    openPublicDomain: boolean
-    publicDomain: string // default domain
-    customDomain: string // custom domain
-  }[]
+  networks: PortInfos
 }
 export interface DevboxStatusMapType {
   label: string

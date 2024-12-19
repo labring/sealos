@@ -3,6 +3,8 @@ import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
+import { ProtocolType } from '@/types/devbox'
+import { PortInfos } from '@/types/ingress'
 import { KBDevboxTypeV2 } from '@/types/k8s'
 import { NextRequest } from 'next/server'
 
@@ -23,7 +25,7 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const { k8sCustomObjects, namespace, k8sCore } = await getK8s({
+    const { k8sCustomObjects, namespace, k8sCore, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
@@ -58,51 +60,47 @@ export async function GET(req: NextRequest) {
         error: 'template not found'
       })
     }
+    const label = `${devboxKey}=${devboxName}`
     // get ingresses and service
     const [ingressesResponse, serviceResponse] = await Promise.all([
-      k8sCustomObjects.listNamespacedCustomObject(
-        'networking.k8s.io',
-        'v1',
+      k8sNetworkingApp.listNamespacedIngress(
         namespace,
-        'ingresses',
         undefined,
         undefined,
         undefined,
         undefined,
-        `${devboxKey}=${devboxName}`
-      ),
-      k8sCore.readNamespacedService(devboxName, namespace).catch(() => null)
+        label
+      ).catch(() => null),
+      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
     ])
-
-    const ingresses: any = (ingressesResponse.body as { items: any[] }).items
+    const ingresses = ingressesResponse?.body.items || []
     const service = serviceResponse?.body
 
-    const ingressList = ingresses.map((item: any) => {
-      const defaultDomain = item.metadata.labels[publicDomainKey]
-      const tlsHost = item.spec.tls[0].hosts[0]
-
+    const ingressList = ingresses.map((item) => {
+      const defaultDomain = item.metadata?.labels?.[publicDomainKey]
+      const tlsHost = item.spec?.tls?.[0]?.hosts?.[0]
       return {
-        networkName: item.metadata.name,
-        port: item.spec.rules[0].http.paths[0].backend.service.port.number,
-        protocol: item.metadata.annotations[ingressProtocolKey],
-        openPublicDomain: !!item.metadata.labels[publicDomainKey],
+        networkName: item.metadata?.name,
+        port: item.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number,
+        protocol: item.metadata?.annotations?.[ingressProtocolKey],
+        openPublicDomain: !!defaultDomain,
         publicDomain: defaultDomain === tlsHost ? tlsHost : defaultDomain,
         customDomain: defaultDomain === tlsHost ? '' : tlsHost
       }
     })
 
-    const portInfos: any[] = []
-    const servicePort = service?.spec?.ports?.[0]
-    if (ingressList.length > 0) {
-      portInfos.push({
-        ...ingressList[0],
-        portName: servicePort?.name
-      })
-    } else {
-      portInfos.push({
-        ...servicePort
-      })
-    }
+    const portInfos: PortInfos = service?.spec?.ports?.map((svcport) => {
+      const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port)
+        return {
+          portName: svcport.name!,
+          port: svcport.port,
+          protocol: ingressInfo?.protocol as ProtocolType,
+          networkName: ingressInfo?.networkName,
+          openPublicDomain: !!ingressInfo?.openPublicDomain,
+          publicDomain: ingressInfo?.publicDomain,
+          customDomain: ingressInfo?.customDomain
+        }
+    }) || []
     const resp = [
       devboxBody,
       portInfos,

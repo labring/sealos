@@ -92,17 +92,18 @@ function _PublicPanel({
     [TagType.PROGRAMMING_LANGUAGE]: []
   } as Record<TagType, Tag[]>
   );
+  const store = useContext(TagSelectorStoreCtx)
+  if (!store) throw new Error('TagSelectorStoreCtx is null')
+  const state = useStore(store)
+
 
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
     totalItems: 0,
     totalPage: 0,
   })
 
-  const store = useContext(TagSelectorStoreCtx)
-  if (!store) throw new Error('TagSelectorStoreCtx is null')
-  const state = useStore(store)
   // reset query
   useEffect(() => {
     if (!search) return
@@ -128,7 +129,6 @@ function _PublicPanel({
     search,
     tags: state.getSelectedTagList(),
   }
-  console.log(queryBody, pageQueryBody)
   const listTemplateReposistory = useQuery(
     ['template-repository-list', 'template-repository-public', queryBody],
     () => {
@@ -211,7 +211,7 @@ function _PublicPanel({
             position={'absolute'}
             gridAutoRows={'max-content'}
           >
-            {tempalteReposistoryList.filter(tr => tr.templates.length > 0).map((tr) => {
+            {tempalteReposistoryList.map((tr) => {
               return <TemplateCard key={tr.uid}
                 iconId={tr.iconId || ''}
                 templateRepositoryName={tr.name}
@@ -228,7 +228,7 @@ function _PublicPanel({
             ml={'auto'}
             mr={'0'}
             mt={'8px'}
-            pageSize={10}
+            pageSize={pageQueryBody.pageSize}
             totalPage={pageQueryBody.totalPage}
             totalItem={pageQueryBody.totalItems}
             currentPage={pageQueryBody.page}

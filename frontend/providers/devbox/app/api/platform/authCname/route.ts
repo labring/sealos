@@ -15,7 +15,6 @@ export async function POST(req: NextRequest) {
     await (async () =>
       new Promise((resolve, reject) => {
         dns.resolveCname(customDomain, (err, address) => {
-          console.log(err, address)
           if (err) return reject(err)
 
           if (address[0] !== publicDomain)

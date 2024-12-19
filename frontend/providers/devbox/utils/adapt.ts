@@ -139,9 +139,9 @@ export const adaptDevboxDetailV2 = (
   [devbox, portInfos, template]: GetDevboxByNameReturn
 ): DevboxDetailTypeV2 => {
   console.log('adaptDevboxDetailV2')
-  const status = devbox.status.phase && devboxStatusMap[devbox.status.phase]
-    ? devboxStatusMap[devbox.status.phase]
-    : devboxStatusMap.Error
+  const status =       devbox.status.phase && devboxStatusMap[devbox.status.phase]
+  ? devboxStatusMap[devbox.status.phase]
+  : devboxStatusMap.Error
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',

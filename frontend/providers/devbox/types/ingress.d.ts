@@ -1,3 +1,5 @@
+import { ProtocolType } from "./devbox"
+
 export interface IngressListItemType {
   name: string
   namespace: string
@@ -7,11 +9,12 @@ export interface IngressListItemType {
 }
 
 export type PortInfos = {
-  networkName: string;
+  networkName?: string;
   portName: string;
   port: number;
-  protocol: ProtocolType;
+  protocol?: ProtocolType; // 
   openPublicDomain: boolean;
-  publicDomain: string;
-  customDomain: string;
+  publicDomain?: string;
+  customDomain?: string;
 }[]
+// export type PortInfos = NetworkType[]

@@ -107,6 +107,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                         borderColor={'green.200'}
                         borderRadius="33px"
                         px="8px"
+                        minW={'max-content'}
                         fontSize="10px"
                       >
                         {t('public')}
@@ -119,6 +120,7 @@ const TemplateCard = ({ isPublic, iconId, templateRepositoryName, templateReposi
                         borderColor={'adora.200'}
                         borderRadius="33px"
                         px="8px"
+                        minW={'max-content'}
                         fontSize="10px"
                       >
                         {t('private')}

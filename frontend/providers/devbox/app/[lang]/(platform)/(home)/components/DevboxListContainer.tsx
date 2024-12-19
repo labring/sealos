@@ -1,6 +1,5 @@
 // components/DevboxListContainer.tsx
 'use client'
-import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { useTemplateStore } from '@/stores/template'
 import { DevboxListItemTypeV2 } from '@/types/devbox'
@@ -20,24 +19,18 @@ function useDevboxList() {
   const { isOpen: templateIsOpen } = useTemplateStore()
   const list = useRef<DevboxListItemTypeV2[]>(devboxList)
 
-  const refreshList = useCallback(
-    (res = devboxList) => {
-      list.current = res
-      queryClient.invalidateQueries(['intervalLoadPods'])
-      queryClient.invalidateQueries(['loadAvgMonitorData'])
-    },
-    [devboxList, queryClient]
-  )
-
   const { isLoading, refetch: refetchDevboxList } = useQuery(
     ['devboxListQuery'],
     setDevboxList,
     {
       onSettled(res) {
         if (!res) return
-        refreshList(res)
+        // refreshList(res)
+        list.current = res
       },
-      refetchInterval: !templateIsOpen ? 5000 : false,
+      refetchInterval: !templateIsOpen ? 3000 : false,
+      staleTime: 3000,
+      enabled:!templateIsOpen,
     }
   )
   const getViewportDevboxes = (minCount = 3) => {
@@ -51,9 +44,9 @@ function useDevboxList() {
       : devboxList.filter((devbox) => viewportDomIds.includes(devbox.id))
   }
   useQuery(
-    ['intervalLoadPods'],
+    ['intervalLoadPods', devboxList.length],
     () => {
-      console.log('intervalLoadPods')
+
       const viewportDevboxList = getViewportDevboxes()
       return viewportDevboxList
         .filter((devbox) => devbox.status.value !== 'Stopped')
@@ -62,23 +55,22 @@ function useDevboxList() {
     {
       refetchOnMount: true,
       refetchInterval: !templateIsOpen ? 3000 : false,
-      staleTime: 0,
+      staleTime: 3000,
       enabled: !isLoading &&!templateIsOpen,
     }
   )
 
   useQuery(
-    ['loadAvgMonitorData'],
+    ['loadAvgMonitorData', devboxList.length],
     () => {
-      console.log('loadAvgMonitorData')
       const viewportDevboxList = getViewportDevboxes()
       return viewportDevboxList
         .filter((devbox) => devbox.status.value === 'Running')
         .map((devbox) => loadAvgMonitorData(devbox.name))
     },
     {
-      refetchInterval: !templateIsOpen ? 3000 : false,
-      staleTime: 0,
+      refetchInterval: !templateIsOpen ? 2 * 60 * 1000 : false,
+      staleTime: 2 * 60 * 1000,
       enabled:!isLoading &&!templateIsOpen,
     }
   )
@@ -98,7 +90,6 @@ function useDevboxList() {
 }
 
 export default function DevboxListContainer({ ...props }: FlexProps) {
-  const { Loading } = useLoading()
   const { list, isLoading, refetchList } = useDevboxList()
   return (
     <Flex flexDir={'column'}

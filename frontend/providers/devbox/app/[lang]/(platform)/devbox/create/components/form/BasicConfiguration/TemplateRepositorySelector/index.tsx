@@ -1,4 +1,4 @@
-import { listOfficialTemplateRepository } from '@/api/template'
+import { getTemplateRepository, listOfficialTemplateRepository } from '@/api/template'
 import { TemplateRepositoryKind } from '@/prisma/generated/client'
 import { useDevboxStore } from '@/stores/devbox'
 import { DevboxEditTypeV2 } from '@/types/devbox'
@@ -19,15 +19,22 @@ interface TemplateRepositorySelectorProps {
 export default function TemplateRepositorySelector({
   isEdit,
 }: TemplateRepositorySelectorProps) {
-
+  const { startedTemplate, setStartedTemplate } = useDevboxStore()
+  const { setValue, getValues, watch } = useFormContext<DevboxEditTypeV2>()
   const t = useTranslations()
   const templateRepositoryQuery = useQuery(['list-official-template-repository'], listOfficialTemplateRepository, {
-    staleTime: 1000 * 60,
+    staleTime: Infinity,
+    cacheTime: 1000 * 60 * 30
   })
-  const { startedTemplate, setStartedTemplate } = useDevboxStore()
-  const { setValue } = useFormContext<DevboxEditTypeV2>()
+  const curTemplateRepositoryUid = watch('templateRepositoryUid')
+  const curTemplateRepositoryDetail = useQuery(['get-template-repository', curTemplateRepositoryUid], () => {
+    return getTemplateRepository(curTemplateRepositoryUid)
+  }, {
+    enabled: !!isEdit && !!curTemplateRepositoryUid,
+  })
 
   const templateData = useMemo(() => templateRepositoryQuery.data?.templateRepositoryList || [], [templateRepositoryQuery.data])
+
   const categorizedData = useMemo(() => {
     return templateData.reduce((acc, item) => {
       acc[item.kind] = [...(acc[item.kind] || []), item]
@@ -40,15 +47,49 @@ export default function TemplateRepositorySelector({
     } as Record<TemplateRepositoryKind, TemplateRepository[]>)
   }, [templateData])
   useEffect(() => {
-    if(!startedTemplate) return
+    if (!startedTemplate || isEdit) {
+      return
+    }
     const templateUid = startedTemplate.uid
-    if(templateData.findIndex((item) => {
+    if (templateData.findIndex((item) => {
       return item.uid === templateUid
     }) > -1) {
       setStartedTemplate(undefined)
     }
     setValue('templateRepositoryUid', templateUid)
-  }, [startedTemplate])
+  }, [startedTemplate, isEdit])
+
+  useEffect(() => {
+    if (startedTemplate || isEdit) {
+      return
+    }
+    if (!(templateRepositoryQuery.isSuccess
+      && templateData.length > 0
+      && templateRepositoryQuery.isFetched)) return
+    const curTemplateRepositoryUid = getValues('templateRepositoryUid')
+    const curTemplateRepository = templateData.find((item) => {
+      return item.uid === curTemplateRepositoryUid
+    })
+    if (!curTemplateRepository) {
+      const defaultTemplateRepositoryUid = templateData[0].uid
+      setValue('templateRepositoryUid', defaultTemplateRepositoryUid)
+    }
+  }, [templateRepositoryQuery.isSuccess, startedTemplate, templateData, templateRepositoryQuery.isFetched, isEdit])
+
+  useEffect(() => {
+    if (!isEdit || !templateRepositoryQuery.isSuccess || !templateData ||  !curTemplateRepositoryDetail.isSuccess || !curTemplateRepositoryDetail.data) {
+      return
+    }
+    const templateRepository = curTemplateRepositoryDetail.data.templateRepository
+    // setStartedTemplate(templateRepository)
+    setValue('templateRepositoryUid', templateRepository.uid)
+
+    if (templateData.findIndex((item) => {
+      return item.uid === templateRepository.uid
+    }) === -1) {
+      setStartedTemplate(templateRepository)
+    }
+  }, [curTemplateRepositoryDetail.isSuccess, curTemplateRepositoryDetail.data, curTemplateRepositoryDetail.isFetched, isEdit, templateData, templateRepositoryQuery.isSuccess])
   return (
     <VStack alignItems={'center'} mb={7} gap={'24px'}>
       <Flex w='full' justify={'space-between'}>

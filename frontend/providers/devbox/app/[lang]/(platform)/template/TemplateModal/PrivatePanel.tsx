@@ -13,7 +13,7 @@ export default function PrivatePanel({
   }) {
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
     totalItems: 0,
     totalPage: 0,
   })
@@ -98,7 +98,7 @@ export default function PrivatePanel({
         <SwitchPage
           ml={'auto'}
           mr={'0'}
-          pageSize={10}
+          pageSize={pageQueryBody.page}
           totalPage={pageQueryBody.totalPage}
           totalItem={pageQueryBody.totalItems}
           currentPage={pageQueryBody.page}

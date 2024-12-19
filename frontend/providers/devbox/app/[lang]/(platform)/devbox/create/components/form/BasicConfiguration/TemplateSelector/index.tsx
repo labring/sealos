@@ -41,11 +41,7 @@ export default function TemplateSelector({
     }
   })
   const afterUpdateTemplate = (uid: string) => {
-    const devboxName = getValues('name')
     const template = templateList.find(v => v.uid === uid)!
-    const parsedConfig =
-      JSON.parse(template.config as string) as { appPorts: [{ port: number, name: string, protocol: string }] }
-
     setValue(
       'templateConfig',
       template.config as string
@@ -54,6 +50,13 @@ export default function TemplateSelector({
       'image',
       template.image
     )
+
+  }
+  const resetNetwork = () => {
+    const devboxName = getValues('name')
+    const config = getValues('templateConfig')
+    const parsedConfig =
+      JSON.parse(config as string) as { appPorts: [{ port: number, name: string, protocol: string }] }
     setValue(
       'networks',
       parsedConfig.appPorts.map(
@@ -71,13 +74,19 @@ export default function TemplateSelector({
   }
   useEffect(() => {
     if (!templateListQuery.isSuccess || !templateList.length || !templateListQuery.isFetched) return
-    const curTemplate = templateList.find(t => t.uid === field.value) || templateList[0]
-    if (curTemplate) {
+
+    const curTemplate = templateList.find(t => t.uid === field.value)
+    const isExist = !!curTemplate
+    if (!isExist) {
+      const defaultTemplate = templateList[0]
+      setValue('templateUid', defaultTemplate.uid)
+      afterUpdateTemplate(defaultTemplate.uid)
+      resetNetwork()
+    } else {
       setValue('templateUid', curTemplate.uid)
       afterUpdateTemplate(curTemplate.uid)
     }
-  }, [templateListQuery.isSuccess, templateList, templateListQuery.isFetched])
-  
+  }, [templateListQuery.isSuccess, templateList, templateListQuery.isFetched, isEdit])
   return (
     <Flex alignItems={'center'} mb={7}>
       <Label w={100}>{t('version')}</Label>
@@ -85,23 +94,20 @@ export default function TemplateSelector({
         <Input
           opacity={0.5}
           width={'200px'}
-          defaultValue={field.value}
+          defaultValue={templateList.find(t => t.uid === field.value)?.name}
           disabled
         />
       ) : (
         <MySelect
           width={'200px'}
           placeholder={`${t('runtime')} ${t('version')}`}
-          defaultValue={
-            field.value
-          }
           isDisabled={!templateListQuery.isSuccess}
-          ref={field.ref}
+          // ref={field.ref}
           value={field.value}
           list={menuList}
           name={field.name}
           onchange={(val) => {
-            if (isEdit) return
+            // if (isEdit) return
             const devboxName = getValues('name')
             if (!devboxName) {
               toast({
@@ -110,9 +116,10 @@ export default function TemplateSelector({
               })
               return
             }
-            // setValue('templateUid', val)
+            const oldTemplateUid = getValues('templateUid')
             field.onChange(val)
             afterUpdateTemplate(val)
+            if(oldTemplateUid !== val) resetNetwork()
           }}
         />
       )}

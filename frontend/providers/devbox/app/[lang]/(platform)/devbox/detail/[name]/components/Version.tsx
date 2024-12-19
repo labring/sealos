@@ -119,7 +119,6 @@ const Version = () => {
           [devboxIdKey]: devbox.id
         }
       }
-      console.log(transformData)
       setDeployData(transformData)
       const apps = await getAppsByDevboxId(devbox.id)
 

@@ -112,9 +112,14 @@ export const useDevboxStore = create<State>()(
         })
         return res
       },
-      setStartedTemplate(template) {
+      setStartedTemplate(templateRepository) {
         set((state) => {
-          state.startedTemplate = template
+          if(!templateRepository) state.startedTemplate = undefined
+          else state.startedTemplate = {
+            uid: templateRepository.uid,
+            iconId: templateRepository.iconId,
+            name: templateRepository.name
+          }
         })
       },
       startedTemplate: undefined,
