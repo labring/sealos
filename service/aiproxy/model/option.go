@@ -46,7 +46,6 @@ func InitOption2DB() error {
 	defaultChannelModelMappingJSON, _ := json.Marshal(config.GetDefaultChannelModelMapping())
 	OptionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
 	OptionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
-	OptionMap["GeminiVersion"] = config.GetGeminiVersion()
 	OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
 	err := loadOptionsFromDatabase(true)
 	if err != nil {
@@ -170,8 +169,6 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		config.SetGroupMaxTokenNum(int32(groupMaxTokenNum))
 	case "GeminiSafetySetting":
 		config.SetGeminiSafetySetting(value)
-	case "GeminiVersion":
-		config.SetGeminiVersion(value)
 	case "GlobalApiRateLimitNum":
 		globalAPIRateLimitNum, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {

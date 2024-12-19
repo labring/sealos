@@ -14,11 +14,6 @@ var ModelList = []*model.ModelConfig{
 		Owner: model.ModelOwnerGoogle,
 	},
 	{
-		Model: "gemini-1.0-pro",
-		Type:  relaymode.ChatCompletions,
-		Owner: model.ModelOwnerGoogle,
-	},
-	{
 		Model: "gemini-1.5-flash",
 		Type:  relaymode.ChatCompletions,
 		Owner: model.ModelOwnerGoogle,
@@ -29,10 +24,17 @@ var ModelList = []*model.ModelConfig{
 		Owner: model.ModelOwnerGoogle,
 	},
 	{
+		Model: "gemini-2.0-flash-exp",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerGoogle,
+	},
+
+	{
 		Model: "text-embedding-004",
 		Type:  relaymode.Embeddings,
 		Owner: model.ModelOwnerGoogle,
 	},
+
 	{
 		Model: "aqa",
 		Type:  relaymode.ChatCompletions,

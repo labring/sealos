@@ -390,7 +390,7 @@ func InitChannelCache() error {
 
 func LoadEnabledChannels() ([]*Channel, error) {
 	var channels []*Channel
-	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
+	err := DB.Where("status = ? or status = ?", ChannelStatusEnabled, ChannelStatusFail).Find(&channels).Error
 	if err != nil {
 		return nil, err
 	}
@@ -596,6 +596,9 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 func filterChannels(channels []*Channel, ignoreChannel ...int) []*Channel {
 	filtered := make([]*Channel, 0)
 	for _, channel := range channels {
+		if channel.Status != ChannelStatusEnabled {
+			continue
+		}
 		if slices.Contains(ignoreChannel, channel.ID) {
 			continue
 		}
