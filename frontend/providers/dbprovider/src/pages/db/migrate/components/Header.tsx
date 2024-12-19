@@ -32,7 +32,7 @@ const Header = ({
             query: {
               name: dbName,
               dbType: dbType,
-              listType: 'InternetMigration'
+              listType: 'dataImport'
             }
           })
         }

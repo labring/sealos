@@ -38,9 +38,9 @@ export const theme = extendTheme(SealosTheme, {
         color: 'grayModern.900',
         fontSize: 'md',
         height: '100%',
-        overflowY: 'auto',
-        fontWeight: 400,
-        minWidth: '700px'
+        fontWeight: 400
+        // overflowY: 'auto',
+        // minWidth: '700px'
       }
     }
   },

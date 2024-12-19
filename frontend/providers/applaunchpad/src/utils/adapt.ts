@@ -126,16 +126,16 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
       if (container.length > 0) {
         const stateObj = container[0].state;
         if (stateObj) {
-          const stateKeys = Object.keys(stateObj);
-          const key = stateKeys[0] as `${PodStatusEnum}`;
-          if (key === PodStatusEnum.running) {
-            return podStatusMap[PodStatusEnum.running];
-          }
-          if (key && podStatusMap[key]) {
-            return {
-              ...podStatusMap[key],
-              ...stateObj[key]
-            };
+          const status = [
+            PodStatusEnum.running,
+            PodStatusEnum.terminated,
+            PodStatusEnum.waiting
+          ].find((s) => stateObj[s]);
+
+          if (status) {
+            return status === PodStatusEnum.running
+              ? podStatusMap[PodStatusEnum.running]
+              : { ...podStatusMap[status], ...stateObj[status] };
           }
         }
       }
@@ -146,13 +146,16 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
       if (container.length > 0) {
         const lastStateObj = container[0].lastState;
         if (lastStateObj) {
-          const lastStateKeys = Object.keys(lastStateObj);
-          const key = lastStateKeys[0] as `${PodStatusEnum}`;
-          if (key && podStatusMap[key]) {
-            return {
-              ...podStatusMap[key],
-              ...lastStateObj[key]
-            };
+          const status = [
+            PodStatusEnum.running,
+            PodStatusEnum.terminated,
+            PodStatusEnum.waiting
+          ].find((s) => lastStateObj[s]);
+
+          if (status) {
+            return status === PodStatusEnum.running
+              ? podStatusMap[PodStatusEnum.running]
+              : { ...podStatusMap[status], ...lastStateObj[status] };
           }
         }
       }

@@ -1,6 +1,7 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
 import {
   DBBackupMethodNameMap,
+  DBNameLabel,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
   DBSourceConfigs,
@@ -218,6 +219,7 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   const autoLabel = 'dataprotection.kubeblocks.io/autobackup';
   const passwordLabel = 'dataprotection.kubeblocks.io/connection-password';
   const remark = backup.metadata.labels[BACKUP_REMARK_LABEL_KEY];
+  const dbType = backup.metadata.labels['apps.kubeblocks.io/component-name'] || 'postgresql';
 
   return {
     id: backup.metadata.uid,
@@ -231,7 +233,9 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
     type: autoLabel in backup.metadata.labels ? BackupTypeEnum.auto : BackupTypeEnum.manual,
     remark: remark ? decodeFromHex(remark) : '-',
     failureReason: backup.status?.failureReason,
-    connectionPassword: backup.metadata?.annotations?.[passwordLabel]
+    connectionPassword: backup.metadata?.annotations?.[passwordLabel],
+    dbName: backup.metadata.labels[DBNameLabel],
+    dbType: dbType === 'mysql' ? 'apecloud-mysql' : dbType
   };
 };
 

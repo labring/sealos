@@ -2,7 +2,7 @@ import React from 'react';
 import type { IconProps } from '@chakra-ui/react';
 import { Icon } from '@chakra-ui/react';
 
-const map = {
+export const IconMap = {
   more: require('./icons/more.svg').default,
   podList: require('./icons/podList.svg').default,
   arrowLeft: require('./icons/arrowLeft.svg').default,
@@ -55,8 +55,11 @@ const map = {
   config: require('./icons/config.svg').default,
   backupSettings: require('./icons/backupSettings.svg').default,
   monitor: require('./icons/monitor.svg').default,
+  logoLinear: require('./icons/logo-linear.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
-  docs: require('./icons/docs.svg').default
+  docs: require('./icons/docs.svg').default,
+  chevronDown: require('./icons/chevron-down.svg').default,
+  overview: require('./icons/overview.svg').default
 };
 
 const MyIcon = ({
@@ -64,9 +67,16 @@ const MyIcon = ({
   w = 'auto',
   h = 'auto',
   ...props
-}: { name: keyof typeof map } & IconProps) => {
-  return map[name] ? (
-    <Icon as={map[name]} verticalAlign={'text-top'} fill={'currentColor'} w={w} h={h} {...props} />
+}: { name: keyof typeof IconMap } & IconProps) => {
+  return IconMap[name] ? (
+    <Icon
+      as={IconMap[name]}
+      verticalAlign={'text-top'}
+      fill={'currentColor'}
+      w={w}
+      h={h}
+      {...props}
+    />
   ) : null;
 };
 

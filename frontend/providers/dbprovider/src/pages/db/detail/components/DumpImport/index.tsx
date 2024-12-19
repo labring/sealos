@@ -196,8 +196,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
 
   return (
     <Box h={'100%'} position={'relative'}>
-      <Flex borderTop={'1px solid #EAEBF0'} h="100%">
-        <Box flex={1} pt="35px" px="40px" overflowY={'auto'}>
+      <Flex h="100%" justifyContent={'center'}>
+        <Box flex={1} pt="32px" px="40px" overflowY={'auto'} maxW={'720px'}>
           <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
             {t('upload_dump_file')}
           </Text>

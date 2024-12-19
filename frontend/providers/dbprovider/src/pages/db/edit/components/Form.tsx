@@ -197,6 +197,7 @@ const Form = ({
                   }}
                   color="grayModern.900"
                   backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}
+                  fontWeight={500}
                 >
                   <Box
                     w={'2px'}

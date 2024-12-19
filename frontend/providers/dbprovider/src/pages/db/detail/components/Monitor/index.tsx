@@ -32,19 +32,41 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
   }, []);
 
   return (
-    <Flex h={'100%'} p={'0px 24px 24px 24px'} flexDirection={'column'}>
+    <Flex h={'100%'} flexDirection={'column'}>
       <Flex justifyContent={'space-between'} alignItems={'center'}>
-        <Tabs
-          size="sm"
-          w={'280px'}
-          list={[
+        <Flex>
+          {[
             { id: MonitorType.resources, label: t('Resources') },
             { id: MonitorType.status, label: t('status') },
             { id: MonitorType.performance, label: t('Performance') }
-          ]}
-          activeId={activeId}
-          onChange={(id) => setActiveId(id as MonitorType)}
-        />
+          ].map((item) => (
+            <Box
+              key={item.label}
+              mr={'16px'}
+              pb={'6px'}
+              pt={'4px'}
+              borderBottom={'2px solid'}
+              cursor={'pointer'}
+              fontSize={'16px'}
+              fontWeight={'500'}
+              {...(item.id === activeId
+                ? {
+                    color: 'grayModern.900',
+                    borderBottomColor: 'grayModern.900'
+                  }
+                : {
+                    color: 'grayModern.600',
+                    borderBottomColor: 'transparent',
+                    onClick: () => {
+                      setActiveId(item.id);
+                    }
+                  })}
+            >
+              {item.label}
+            </Box>
+          ))}
+        </Flex>
+
         <Box fontSize={'12px'} fontWeight={500} color={'#7B838B'} pr="8px">
           {t('update_time')} {currentTime}
         </Box>
@@ -159,7 +181,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
         </Box>
       )}
       {activeId === MonitorType.performance && (
-        <Box mt={'16px'} overflowY={'scroll'} flex={1}>
+        <Box overflowY={'scroll'} flex={1}>
           {dbType === DBTypeEnum.postgresql && (
             <>
               <ChartTemplate
