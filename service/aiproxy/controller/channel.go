@@ -35,7 +35,7 @@ func GetChannels(c *gin.Context) {
 	channelType, _ := strconv.Atoi(c.Query("channel_type"))
 	baseURL := c.Query("base_url")
 	order := c.Query("order")
-	channels, total, err := model.GetChannels(p*perPage, perPage, false, false, id, name, key, channelType, baseURL, order)
+	channels, total, err := model.GetChannels(p*perPage, perPage, id, name, key, channelType, baseURL, order)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -47,7 +47,7 @@ func GetChannels(c *gin.Context) {
 }
 
 func GetAllChannels(c *gin.Context) {
-	channels, err := model.GetAllChannels(false, false)
+	channels, err := model.GetAllChannels()
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -93,7 +93,7 @@ func SearchChannels(c *gin.Context) {
 	channelType, _ := strconv.Atoi(c.Query("channel_type"))
 	baseURL := c.Query("base_url")
 	order := c.Query("order")
-	channels, total, err := model.SearchChannels(keyword, p*perPage, perPage, false, false, id, name, key, channelType, baseURL, order)
+	channels, total, err := model.SearchChannels(keyword, p*perPage, perPage, id, name, key, channelType, baseURL, order)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -110,7 +110,7 @@ func GetChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	channel, err := model.GetChannelByID(id, false)
+	channel, err := model.GetChannelByID(id)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

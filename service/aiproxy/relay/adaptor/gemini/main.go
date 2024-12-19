@@ -205,13 +205,7 @@ func CountTokens(ctx context.Context, meta *meta.Meta, chat []ChatContent) (int,
 	if err != nil {
 		return 0, err
 	}
-	version := AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	countURL := fmt.Sprintf("%s/%s/models/%s:countTokens", u, version, meta.ActualModelName)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, countURL, bytes.NewReader(countData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, getRequestURL(meta, "countTokens"), bytes.NewReader(countData))
 	if err != nil {
 		return 0, err
 	}
