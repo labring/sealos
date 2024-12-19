@@ -182,7 +182,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
         )}
       </Flex>
 
-      <Box mt={'8px'} flex={'1 0 0'} h={'0'}>
+      <Box mt={'16px'} flex={'1 0 0'} h={'0'}>
         {subMenu === SubMenuEnum.Parameter && config && (
           <ConfigTable
             ref={configTableRef}

@@ -2,7 +2,7 @@ import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { DBComponentNameMap, DBStatusEnum } from '@/constants/db';
+import { DBComponentNameMap, DBStatusEnum, DBTypeList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
@@ -143,7 +143,7 @@ const DBList = ({
               alt={row.original.id}
               src={`/images/${row.original.dbType}.svg`}
             />
-            {DBComponentNameMap[row.original.dbType]}
+            {DBTypeList.find((i) => i.id === row.original.dbType)?.label}
           </Flex>
         )
       },

@@ -215,7 +215,7 @@ export default function Backups() {
         borderRadius={'xl'}
         overflow={'auto'}
       >
-        <Flex h={'36px'} alignItems={'center'} mb={'16px'}>
+        <Flex h={'36px'} alignItems={'center'} mb={'12px'}>
           <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
             {t('backup_center')}
           </Box>

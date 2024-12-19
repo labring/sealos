@@ -217,12 +217,12 @@ export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 
 export const DBTypeList = [
-  { id: DBTypeEnum.postgresql, label: 'postgres' },
-  { id: DBTypeEnum.mongodb, label: 'mongo' },
-  { id: DBTypeEnum.mysql, label: 'mysql' },
-  { id: DBTypeEnum.redis, label: 'redis' },
-  { id: DBTypeEnum.kafka, label: 'kafka' },
-  { id: DBTypeEnum.milvus, label: 'milvus' }
+  { id: DBTypeEnum.postgresql, label: 'PostgreSQL' },
+  { id: DBTypeEnum.mongodb, label: 'MongoDB' },
+  { id: DBTypeEnum.mysql, label: 'MySQL' },
+  { id: DBTypeEnum.redis, label: 'Redis' },
+  { id: DBTypeEnum.kafka, label: 'Kafka' },
+  { id: DBTypeEnum.milvus, label: 'Milvus' }
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
