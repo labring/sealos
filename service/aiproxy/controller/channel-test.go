@@ -16,7 +16,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -42,7 +41,7 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		Body:   io.NopCloser(body),
 		Header: make(http.Header),
 	}
-	newc.Set(string(helper.RequestIDKey), channelTestRequestID)
+	middleware.SetRequestID(newc, channelTestRequestID)
 
 	meta := meta.NewMeta(
 		channel,

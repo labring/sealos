@@ -8,10 +8,12 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -240,6 +242,16 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	if err != nil {
 		return nil, &detail, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
 	}
+
+	timeout := config.GetTimeoutWithModelType()[meta.Mode]
+	if timeout > 0 {
+		rawRequest := c.Request
+		ctx, cancel := context.WithTimeout(rawRequest.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+		c.Request = rawRequest.WithContext(ctx)
+		defer func() { c.Request = rawRequest }()
+	}
+
 	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, fullRequestURL, body)
 	if err != nil {
 		return nil, &detail, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
@@ -261,10 +273,13 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 
 	resp, err := a.DoRequest(meta, c, req)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusGatewayTimeout)
+		if errors.Is(err, context.Canceled) {
+			return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: request canceled by client", "request_canceled", http.StatusBadRequest)
 		}
-		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusBadRequest)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: request timeout", "request_timeout", http.StatusGatewayTimeout)
+		}
+		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusBadRequest)
 	}
 
 	if isErrorHappened(resp) {

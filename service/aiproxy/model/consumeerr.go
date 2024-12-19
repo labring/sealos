@@ -7,7 +7,6 @@ import (
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 )
 
 type ConsumeError struct {
@@ -82,7 +81,7 @@ func SearchConsumeError(keyword string, requestID string, group string, tokenNam
 
 		if tokenID == 0 {
 			conditions = append(conditions, "token_id = ?")
-			values = append(values, helper.String2Int(keyword))
+			values = append(values, String2Int(keyword))
 		}
 		if requestID == "" {
 			if common.UsingPostgreSQL {

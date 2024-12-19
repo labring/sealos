@@ -6,18 +6,16 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
-
-	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/random"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
+	"github.com/labring/sealos/service/aiproxy/common/random"
+	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -92,7 +90,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Model:   response.Model,
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 		Usage: relaymodel.Usage{
 			PromptTokens:     response.PromptEvalCount,
@@ -113,7 +111,7 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 	response := openai.ChatCompletionsStreamResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion.chunk",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Model:   ollamaResponse.Model,
 		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}

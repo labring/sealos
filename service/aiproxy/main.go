@@ -99,7 +99,7 @@ func initializeDatabases() error {
 }
 
 func initializeCaches() error {
-	if err := model.InitOptionMap(); err != nil {
+	if err := model.InitOption2DB(); err != nil {
 		return err
 	}
 	if err := model.InitModelConfigCache(); err != nil {

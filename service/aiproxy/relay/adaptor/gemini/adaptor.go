@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -21,8 +20,15 @@ type Adaptor struct{}
 
 const baseURL = "https://generativelanguage.googleapis.com"
 
+func AssignOrDefault(value string, defaultValue string) string {
+	if len(value) != 0 {
+		return value
+	}
+	return defaultValue
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	version := helper.AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
+	version := AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
 	var action string
 	switch meta.Mode {
 	case relaymode.Embeddings:

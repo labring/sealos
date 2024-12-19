@@ -8,7 +8,6 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -59,7 +58,7 @@ func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
 		return err
 	}
 	if len(missingModels) > 0 {
-		return fmt.Errorf("model config not found or rpm less than 0: %v", missingModels)
+		return fmt.Errorf("model config not found: %v", missingModels)
 	}
 	return nil
 }
@@ -74,7 +73,7 @@ func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) 
 		return models, nil, nil
 	}
 
-	where := tx.Model(&ModelConfig{}).Where("model IN ? AND rpm > 0", models)
+	where := tx.Model(&ModelConfig{}).Where("model IN ?", models)
 	var count int64
 	if err := where.Count(&count).Error; err != nil {
 		return nil, nil, err
@@ -229,7 +228,7 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 
 		if id == 0 {
 			conditions = append(conditions, "id = ?")
-			values = append(values, helper.String2Int(keyword))
+			values = append(values, String2Int(keyword))
 		}
 		if name == "" {
 			if common.UsingPostgreSQL {
@@ -249,7 +248,7 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 		}
 		if channelType == 0 {
 			conditions = append(conditions, "type = ?")
-			values = append(values, helper.String2Int(keyword))
+			values = append(values, String2Int(keyword))
 		}
 		if baseURL == "" {
 			if common.UsingPostgreSQL {
