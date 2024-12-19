@@ -232,7 +232,6 @@ export default function Backups() {
             />
           </InputGroup>
         </Flex>
-
         <Table
           variant="unstyled"
           width={'full'}
@@ -339,6 +338,18 @@ export default function Backups() {
             )}
           </Tbody>
         </Table>
+        {data?.length === 0 && (
+          <Flex
+            height={'400px'}
+            justifyContent={'center'}
+            alignItems={'center'}
+            flexDirection={'column'}
+            flex={1}
+          >
+            <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
+            <Box pt={'8px'}>{t('no_data_available')}</Box>
+          </Flex>
+        )}
       </Box>
       <ConfirmDelChild />
       {!!backupInfo?.name && db && (

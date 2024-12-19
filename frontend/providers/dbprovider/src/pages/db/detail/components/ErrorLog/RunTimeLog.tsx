@@ -198,9 +198,9 @@ export default function RunTimeLog({
             mr={5}
             pb={'6px'}
             pt={'4px'}
+            borderBottom={'2px solid'}
             cursor={'pointer'}
             fontSize={'16px'}
-            borderBottom={'2px solid'}
             color={item.value === logType ? 'grayModern.900' : 'grayModern.600'}
             borderBottomColor={item.value === logType ? 'grayModern.900' : 'transparent'}
             onClick={() => item.value !== logType && updateSubMenu(item.value)}
@@ -283,7 +283,7 @@ export default function RunTimeLog({
           />
         </InputGroup>
       </Flex>
-      <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} />
+      <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} showBorder={false} />
       <SwitchPage
         mt={'auto'}
         justifyContent={'end'}

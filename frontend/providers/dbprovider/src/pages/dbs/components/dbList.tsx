@@ -292,7 +292,7 @@ const DBList = ({
         )
       }
     ],
-    [t, onOpenPause, router, handleStartApp, onOpenUpdateModal, handleRestartApp, handlePauseApp]
+    []
   );
 
   const table = useReactTable({

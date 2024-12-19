@@ -196,10 +196,17 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
 
   return (
     <Flex flexDirection={'column'} h="100%" position={'relative'}>
-      <Flex justifyContent={'space-between'} h={'32px'} alignItems={'center'} mb={'16px'}>
-        <Text fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+      <Flex justifyContent={'space-between'} alignItems={'center'} mb={'16px'}>
+        <Box
+          pb={'6px'}
+          pt={'4px'}
+          borderBottom={'2px solid'}
+          fontSize={'16px'}
+          fontWeight={500}
+          color={'grayModern.900'}
+        >
           {t('backup_list')}
-        </Text>
+        </Box>
         {!backupProcessing && (
           <Button
             ml={3}

@@ -27,8 +27,9 @@ const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties =
 export function BaseTable<T extends unknown>({
   table,
   isLoading,
+  showBorder = true,
   ...props
-}: { table: ReactTable<T>; isLoading: boolean } & TableContainerProps) {
+}: { table: ReactTable<T>; isLoading: boolean; showBorder?: boolean } & TableContainerProps) {
   return (
     <TableContainer {...props}>
       <Table variant="unstyled" width={'full'}>
@@ -76,7 +77,7 @@ export function BaseTable<T extends unknown>({
                   key={item.id}
                   h={'64px'}
                   fontSize={'12px'}
-                  borderBottom={'1px solid'}
+                  borderBottom={showBorder ? '1px solid' : 'none'}
                   borderBottomColor={
                     index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
                   }
