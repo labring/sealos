@@ -4,16 +4,10 @@ import (
 	"os"
 	"slices"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/env"
-)
-
-var (
-	OptionMap        map[string]string
-	OptionMapRWMutex sync.RWMutex
 )
 
 var (
@@ -28,13 +22,38 @@ var (
 	automaticEnableChannelWhenTestSucceedEnabled atomic.Bool
 	// 是否近似计算token
 	approximateTokenEnabled atomic.Bool
-	// 重试次数
-	retryTimes atomic.Int64
 	// 暂停服务
 	disableServe atomic.Bool
 	// log detail 存储时间(小时)
 	logDetailStorageHours int64 = 3 * 24
 )
+
+var (
+	// 重试次数
+	retryTimes atomic.Int64
+	// 模型类型超时时间，单位秒
+	timeoutWithModelType atomic.Value
+)
+
+func GetRetryTimes() int64 {
+	return retryTimes.Load()
+}
+
+func SetRetryTimes(times int64) {
+	retryTimes.Store(times)
+}
+
+func init() {
+	timeoutWithModelType.Store(make(map[int]int64))
+}
+
+func GetTimeoutWithModelType() map[int]int64 {
+	return timeoutWithModelType.Load().(map[int]int64)
+}
+
+func SetTimeoutWithModelType(timeout map[int]int64) {
+	timeoutWithModelType.Store(timeout)
+}
 
 func GetLogDetailStorageHours() int64 {
 	return atomic.LoadInt64(&logDetailStorageHours)
@@ -74,14 +93,6 @@ func GetApproximateTokenEnabled() bool {
 
 func SetApproximateTokenEnabled(enabled bool) {
 	approximateTokenEnabled.Store(enabled)
-}
-
-func GetRetryTimes() int64 {
-	return retryTimes.Load()
-}
-
-func SetRetryTimes(times int64) {
-	retryTimes.Store(times)
 }
 
 var DisableAutoMigrateDB = os.Getenv("DISABLE_AUTO_MIGRATE_DB") == "true"

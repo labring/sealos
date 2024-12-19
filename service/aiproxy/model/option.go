@@ -28,25 +28,26 @@ func GetAllOption() ([]*Option, error) {
 	return options, err
 }
 
-func InitOptionMap() error {
-	config.OptionMapRWMutex.Lock()
-	config.OptionMap = make(map[string]string)
-	config.OptionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
-	config.OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
-	config.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
-	config.OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
-	config.OptionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
-	config.OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
-	config.OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
-	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
+var OptionMap = make(map[string]string)
+
+func InitOption2DB() error {
+	OptionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
+	OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
+	OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
+	OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
+	OptionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
+	OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
+	OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
+	timeoutWithModelTypeJSON, _ := json.Marshal(config.GetTimeoutWithModelType())
+	OptionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
+	OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
 	defaultChannelModelsJSON, _ := json.Marshal(config.GetDefaultChannelModels())
-	config.OptionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
+	OptionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
 	defaultChannelModelMappingJSON, _ := json.Marshal(config.GetDefaultChannelModelMapping())
-	config.OptionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
-	config.OptionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
-	config.OptionMap["GeminiVersion"] = config.GetGeminiVersion()
-	config.OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
-	config.OptionMapRWMutex.Unlock()
+	OptionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
+	OptionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
+	OptionMap["GeminiVersion"] = config.GetGeminiVersion()
+	OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
 	err := loadOptionsFromDatabase(true)
 	if err != nil {
 		return err
@@ -55,9 +56,7 @@ func InitOptionMap() error {
 }
 
 func storeOptionMap() error {
-	config.OptionMapRWMutex.Lock()
-	defer config.OptionMapRWMutex.Unlock()
-	for key, value := range config.OptionMap {
+	for key, value := range OptionMap {
 		err := saveOption(key, value)
 		if err != nil {
 			return err
@@ -72,9 +71,18 @@ func loadOptionsFromDatabase(isInit bool) error {
 		return err
 	}
 	for _, option := range options {
-		err := updateOptionMap(option.Key, option.Value, isInit)
-		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
-			log.Errorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
+		err := updateOption(option.Key, option.Value, isInit)
+		if err != nil {
+			if !errors.Is(err, ErrUnknownOptionKey) {
+				return fmt.Errorf("failed to update option: %s, value: %s, error: %w", option.Key, option.Value, err)
+			}
+			if isInit {
+				log.Warnf("unknown option: %s, value: %s", option.Key, option.Value)
+			}
+			continue
+		}
+		if isInit {
+			delete(OptionMap, option.Key)
 		}
 	}
 	return nil
@@ -90,7 +98,7 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := loadOptionsFromDatabase(true); err != nil {
+			if err := loadOptionsFromDatabase(false); err != nil {
 				log.Error("failed to sync options from database: " + err.Error())
 			}
 		}
@@ -107,7 +115,7 @@ func saveOption(key string, value string) error {
 }
 
 func UpdateOption(key string, value string) error {
-	err := updateOptionMap(key, value, false)
+	err := updateOption(key, value, false)
 	if err != nil {
 		return err
 	}
@@ -135,10 +143,8 @@ func isTrue(value string) bool {
 	return result
 }
 
-func updateOptionMap(key string, value string, isInit bool) (err error) {
-	config.OptionMapRWMutex.Lock()
-	defer config.OptionMapRWMutex.Unlock()
-	config.OptionMap[key] = value
+//nolint:gocyclo
+func updateOption(key string, value string, isInit bool) (err error) {
 	switch key {
 	case "LogDetailStorageHours":
 		logDetailStorageHours, err := strconv.ParseInt(value, 10, 64)
@@ -195,11 +201,11 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		}
 		if !isInit && len(missingModels) > 0 {
 			sort.Strings(missingModels)
-			return fmt.Errorf("model config not found or rpm less than 0: %v", missingModels)
+			return fmt.Errorf("model config not found: %v", missingModels)
 		}
 		if len(missingModels) > 0 {
 			sort.Strings(missingModels)
-			log.Errorf("model config not found or rpm less than 0: %v", missingModels)
+			log.Errorf("model config not found: %v", missingModels)
 		}
 		allowedNewModels := make(map[int][]string)
 		for t, ms := range newModels {
@@ -223,6 +229,13 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 			return err
 		}
 		config.SetRetryTimes(retryTimes)
+	case "TimeoutWithModelType":
+		var newTimeoutWithModelType map[int]int64
+		err := json.Unmarshal(conv.StringToBytes(value), &newTimeoutWithModelType)
+		if err != nil {
+			return err
+		}
+		config.SetTimeoutWithModelType(newTimeoutWithModelType)
 	default:
 		return ErrUnknownOptionKey
 	}
