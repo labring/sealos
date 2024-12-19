@@ -73,9 +73,6 @@ func Relay(c *gin.Context) {
 				log.Errorf("get random satisfied channel failed: %+v", err)
 				break
 			}
-			if len(failedChannelIDs) != 1 {
-				break
-			}
 			newChannel = channel
 		}
 		log.Warnf("using channel %s(%d) to retry (remain times %d)", newChannel.Name, newChannel.ID, i)
