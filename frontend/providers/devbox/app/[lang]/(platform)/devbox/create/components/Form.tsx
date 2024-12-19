@@ -705,17 +705,21 @@ const Form = ({
                           w={'100px'}
                           variant={'outline'}
                           leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
-                          onClick={() =>
+                          onClick={() => {
+                            const defaultPort =
+                              getRuntimeVersionList(getValues('runtimeType'))[0].defaultPorts[0] ||
+                              8080
+
                             appendNetworks({
                               networkName: '',
                               portName: nanoid(),
-                              port: 8080,
+                              port: defaultPort,
                               protocol: 'HTTP',
                               openPublicDomain: false,
                               publicDomain: '',
                               customDomain: ''
                             })
-                          }>
+                          }}>
                           {t('Add Port')}
                         </Button>
                       </Box>

@@ -90,28 +90,23 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    resp.portInfos = devboxBody.spec.network.extraPorts.map((network: any) => {
-      const matchingIngress = ingressList.find(
-        (ingress: any) => ingress.port === network.containerPort
-      )
+    // Either svc or ingress exist.
+    resp.portInfos =
+      service?.spec?.ports?.map((port: any) => {
+        const matchingIngress = ingressList.find((ingress: any) => ingress.port === port.port)
+        const servicePortName = port.name
 
-      const servicePort = service?.spec?.ports?.find(
-        (port: any) => port.port === network.containerPort
-      )
-      const servicePortName = servicePort?.name
+        if (matchingIngress) {
+          return {
+            ...matchingIngress,
+            portName: servicePortName
+          }
+        }
 
-      if (matchingIngress) {
         return {
-          ...matchingIngress,
           portName: servicePortName
         }
-      }
-
-      return {
-        ...network,
-        port: network.containerPort
-      }
-    })
+      }) || []
 
     return jsonRes({ data: resp })
   } catch (err: any) {
