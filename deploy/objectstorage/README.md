@@ -16,7 +16,7 @@ log: add resourcequota/status role to objectstorage-manager-role clusterrole
 
 ### date 2024.12.29
 
-log: add resourcequota & resourcequota/statuc role to objectstorage-manager-role clusterrole
+log: update sealos-cloud-objectstorage-controller image (add resourcequota & resourcequota/status role to objectstorage-manager-role clusterrole)
 
 ## components
 
