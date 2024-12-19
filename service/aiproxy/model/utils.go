@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -130,4 +131,15 @@ func (ns EmptyNullString) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns), nil
+}
+
+func String2Int(keyword string) int {
+	if keyword == "" {
+		return 0
+	}
+	i, err := strconv.Atoi(keyword)
+	if err != nil {
+		return 0
+	}
+	return i
 }

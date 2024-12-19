@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -190,6 +193,31 @@ func (rw *responseWriter) WriteString(s string) (int, error) {
 	return rw.ResponseWriter.WriteString(s)
 }
 
+const (
+	// 0.5MB
+	defaultBufferSize = 512 * 1024
+	// 3MB
+	maxBufferSize = 3 * 1024 * 1024
+)
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, defaultBufferSize))
+	},
+}
+
+func getBuffer() *bytes.Buffer {
+	return bufferPool.Get().(*bytes.Buffer)
+}
+
+func putBuffer(buf *bytes.Buffer) {
+	buf.Reset()
+	if buf.Cap() > maxBufferSize {
+		return
+	}
+	bufferPool.Put(buf)
+}
+
 func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *model.RequestDetail, *relaymodel.ErrorWithStatusCode) {
 	log := middleware.GetLogger(c)
 
@@ -214,6 +242,16 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	if err != nil {
 		return nil, &detail, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
 	}
+
+	timeout := config.GetTimeoutWithModelType()[meta.Mode]
+	if timeout > 0 {
+		rawRequest := c.Request
+		ctx, cancel := context.WithTimeout(rawRequest.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+		c.Request = rawRequest.WithContext(ctx)
+		defer func() { c.Request = rawRequest }()
+	}
+
 	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, fullRequestURL, body)
 	if err != nil {
 		return nil, &detail, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
@@ -235,7 +273,13 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 
 	resp, err := a.DoRequest(meta, c, req)
 	if err != nil {
-		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusBadRequest)
+		if errors.Is(err, context.Canceled) {
+			return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: request canceled by client", "request_canceled", http.StatusBadRequest)
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: request timeout", "request_timeout", http.StatusGatewayTimeout)
+		}
+		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusBadRequest)
 	}
 
 	if isErrorHappened(resp) {
@@ -248,9 +292,12 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 		return nil, &detail, utils.RelayErrorHandler(meta, resp)
 	}
 
+	buf := getBuffer()
+	defer putBuffer(buf)
+
 	rw := &responseWriter{
 		ResponseWriter: c.Writer,
-		body:           bytes.NewBuffer(nil),
+		body:           buf,
 	}
 	rawWriter := c.Writer
 	defer func() { c.Writer = rawWriter }()
@@ -258,7 +305,8 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
 	usage, relayErr := a.DoResponse(meta, c, resp)
-	detail.ResponseBody = conv.BytesToString(rw.body.Bytes())
+	// copy buf to detail.ResponseBody
+	detail.ResponseBody = rw.body.String()
 	if relayErr != nil {
 		if detail.ResponseBody == "" {
 			respData, err := json.Marshal(gin.H{
@@ -281,5 +329,8 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	if usage.TotalTokens == 0 {
 		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	}
+	log.Data["t_input"] = usage.PromptTokens
+	log.Data["t_output"] = usage.CompletionTokens
+	log.Data["t_total"] = usage.TotalTokens
 	return usage, &detail, nil
 }

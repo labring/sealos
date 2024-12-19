@@ -4,16 +4,10 @@ import (
 	"os"
 	"slices"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/env"
-)
-
-var (
-	OptionMap        map[string]string
-	OptionMapRWMutex sync.RWMutex
 )
 
 var (
@@ -28,13 +22,58 @@ var (
 	automaticEnableChannelWhenTestSucceedEnabled atomic.Bool
 	// 是否近似计算token
 	approximateTokenEnabled atomic.Bool
-	// 重试次数
-	retryTimes atomic.Int64
 	// 暂停服务
 	disableServe atomic.Bool
 	// log detail 存储时间(小时)
 	logDetailStorageHours int64 = 3 * 24
 )
+
+var (
+	// 重试次数
+	retryTimes atomic.Int64
+	// 模型可重试的失败次数上限
+	modelFailDisableTimes atomic.Int64
+	// 模型禁用时间
+	modelFailDisableTime atomic.Int64
+	// 模型类型超时时间，单位秒
+	timeoutWithModelType atomic.Value
+)
+
+func GetRetryTimes() int64 {
+	return retryTimes.Load()
+}
+
+func SetRetryTimes(times int64) {
+	retryTimes.Store(times)
+}
+
+func GetModelFailDisableTimes() int64 {
+	return modelFailDisableTimes.Load()
+}
+
+func SetModelFailDisableTimes(times int64) {
+	modelFailDisableTimes.Store(times)
+}
+
+func GetModelFailDisableTime() int64 {
+	return modelFailDisableTime.Load()
+}
+
+func SetModelFailDisableTime(time int64) {
+	modelFailDisableTime.Store(time)
+}
+
+func init() {
+	timeoutWithModelType.Store(make(map[int]int64))
+}
+
+func GetTimeoutWithModelType() map[int]int64 {
+	return timeoutWithModelType.Load().(map[int]int64)
+}
+
+func SetTimeoutWithModelType(timeout map[int]int64) {
+	timeoutWithModelType.Store(timeout)
+}
 
 func GetLogDetailStorageHours() int64 {
 	return atomic.LoadInt64(&logDetailStorageHours)
@@ -76,30 +115,11 @@ func SetApproximateTokenEnabled(enabled bool) {
 	approximateTokenEnabled.Store(enabled)
 }
 
-func GetRetryTimes() int64 {
-	return retryTimes.Load()
-}
-
-func SetRetryTimes(times int64) {
-	retryTimes.Store(times)
-}
-
 var DisableAutoMigrateDB = os.Getenv("DISABLE_AUTO_MIGRATE_DB") == "true"
-
-var RelayTimeout = env.Int("RELAY_TIMEOUT", 0) // unit is second
 
 var RateLimitKeyExpirationDuration = 20 * time.Minute
 
 var OnlyOneLogFile = env.Bool("ONLY_ONE_LOG_FILE", false)
-
-var (
-	// 代理地址
-	RelayProxy = env.String("RELAY_PROXY", "")
-	// 用户内容请求代理地址
-	UserContentRequestProxy = env.String("USER_CONTENT_REQUEST_PROXY", "")
-	// 用户内容请求超时时间，单位为秒
-	UserContentRequestTimeout = env.Int("USER_CONTENT_REQUEST_TIMEOUT", 30)
-)
 
 var AdminKey = env.String("ADMIN_KEY", "")
 
@@ -107,7 +127,6 @@ var (
 	globalAPIRateLimitNum      atomic.Int64
 	defaultChannelModels       atomic.Value
 	defaultChannelModelMapping atomic.Value
-	defaultGroupQPM            atomic.Int64
 	groupMaxTokenNum           atomic.Int32
 )
 
@@ -123,15 +142,6 @@ func GetGlobalAPIRateLimitNum() int64 {
 
 func SetGlobalAPIRateLimitNum(num int64) {
 	globalAPIRateLimitNum.Store(num)
-}
-
-// group默认qpm，如果group没有设置qpm，则使用该qpm
-func GetDefaultGroupQPM() int64 {
-	return defaultGroupQPM.Load()
-}
-
-func SetDefaultGroupQPM(qpm int64) {
-	defaultGroupQPM.Store(qpm)
 }
 
 func GetDefaultChannelModels() map[int][]string {
@@ -163,14 +173,10 @@ func SetGroupMaxTokenNum(num int32) {
 	groupMaxTokenNum.Store(num)
 }
 
-var (
-	geminiSafetySetting atomic.Value
-	geminiVersion       atomic.Value
-)
+var geminiSafetySetting atomic.Value
 
 func init() {
 	geminiSafetySetting.Store("BLOCK_NONE")
-	geminiVersion.Store("v1beta")
 }
 
 func GetGeminiSafetySetting() string {
@@ -179,14 +185,6 @@ func GetGeminiSafetySetting() string {
 
 func SetGeminiSafetySetting(setting string) {
 	geminiSafetySetting.Store(setting)
-}
-
-func GetGeminiVersion() string {
-	return geminiVersion.Load().(string)
-}
-
-func SetGeminiVersion(version string) {
-	geminiVersion.Store(version)
 }
 
 var billingEnabled atomic.Bool

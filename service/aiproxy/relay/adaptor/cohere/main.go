@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
-
-	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -125,7 +124,7 @@ func ResponseCohere2OpenAI(cohereResponse *Response) *openai.TextResponse {
 		ID:      "chatcmpl-" + cohereResponse.ResponseID,
 		Model:   "model",
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
@@ -136,7 +135,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 	log := middleware.GetLogger(c)
 
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 

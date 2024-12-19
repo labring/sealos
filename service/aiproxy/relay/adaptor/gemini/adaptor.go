@@ -7,8 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -21,8 +19,15 @@ type Adaptor struct{}
 
 const baseURL = "https://generativelanguage.googleapis.com"
 
+func getRequestURL(meta *meta.Meta, action string) string {
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
+	return fmt.Sprintf("%s/%s/models/%s:%s", u, "v1beta", meta.ActualModelName, action)
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	version := helper.AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
 	var action string
 	switch meta.Mode {
 	case relaymode.Embeddings:
@@ -34,11 +39,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	if meta.GetBool("stream") {
 		action = "streamGenerateContent?alt=sse"
 	}
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	return fmt.Sprintf("%s/%s/models/%s:%s", u, version, meta.ActualModelName, action), nil
+	return getRequestURL(meta, action), nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {

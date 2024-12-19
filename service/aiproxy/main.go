@@ -17,7 +17,6 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -39,12 +38,7 @@ func initializeServices() error {
 		return err
 	}
 
-	if err := initializeCaches(); err != nil {
-		return err
-	}
-
-	client.Init()
-	return nil
+	return initializeCaches()
 }
 
 func initializeBalance() error {
@@ -105,7 +99,7 @@ func initializeDatabases() error {
 }
 
 func initializeCaches() error {
-	if err := model.InitOptionMap(); err != nil {
+	if err := model.InitOption2DB(); err != nil {
 		return err
 	}
 	if err := model.InitModelConfigCache(); err != nil {
