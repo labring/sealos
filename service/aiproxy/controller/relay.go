@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -43,7 +45,18 @@ func Relay(c *gin.Context) {
 	log := middleware.GetLogger(c)
 
 	requestModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
-	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel)
+
+	ids, err := monitor.GetChannelsWithErrors(c.Request.Context(), requestModel, 10*time.Minute, 1)
+	if err != nil {
+		log.Errorf("get channels with errors failed: %+v", err)
+	}
+
+	failedChannelIDs := []int{}
+	for _, id := range ids {
+		failedChannelIDs = append(failedChannelIDs, int(id))
+	}
+
+	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": &model.Error{
@@ -58,17 +71,28 @@ func Relay(c *gin.Context) {
 	meta := middleware.NewMetaByContext(c, channel)
 	bizErr := relayHelper(meta, c)
 	if bizErr == nil {
+		err = monitor.ClearChannelErrors(c.Request.Context(), requestModel, channel.ID)
+		if err != nil {
+			log.Errorf("clear channel errors failed: %+v", err)
+		}
 		return
 	}
-	failedChannelIDs := []int{channel.ID}
+	failedChannelIDs = append(failedChannelIDs, channel.ID)
 	requestID := c.GetString(ctxkey.RequestID)
 	var retryTimes int64
 	if shouldRetry(c, bizErr.StatusCode) {
+		err = monitor.AddError(c.Request.Context(), requestModel, int64(channel.ID), 10*time.Second)
+		if err != nil {
+			log.Errorf("add error failed: %+v", err)
+		}
 		retryTimes = config.GetRetryTimes()
 	}
 	for i := retryTimes; i > 0; i-- {
-		newChannel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName, failedChannelIDs...)
+		newChannel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
 		if err != nil {
+			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
+				break
+			}
 			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
 				log.Errorf("get random satisfied channel failed: %+v", err)
 				break
