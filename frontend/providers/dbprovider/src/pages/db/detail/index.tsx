@@ -51,7 +51,7 @@ const AppDetail = ({
   const { t } = useTranslation();
   const { SystemEnv } = useEnvStore();
 
-  const [isSmallScreen] = useMediaQuery('(max-width: 950px)');
+  const [isSmallScreen] = useMediaQuery('(max-width: 1180px)');
 
   const { listNav } = useMemo(() => {
     const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
@@ -142,7 +142,7 @@ const AppDetail = ({
       bg={'grayModern.100'}
       px={'16px'}
       pb={'12px'}
-      minW={'760px'}
+      minW={'870px'}
       overflowX={'auto'}
     >
       <Box>
@@ -150,8 +150,7 @@ const AppDetail = ({
       </Box>
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'} minH={'600px'}>
         <Flex
-          w={isSmallScreen ? '52px' : '132px'}
-          flexShrink={'0'}
+          flex={isSmallScreen ? '0 0 52px' : '0 0 12%'}
           flexDirection={'column'}
           gap={'8px'}
           bg={'white'}
@@ -167,7 +166,7 @@ const AppDetail = ({
               cursor={'pointer'}
               fontSize={'14px'}
               fontWeight={'500'}
-              gap={isSmallScreen ? '0px' : '4px'}
+              gap={isSmallScreen ? '0px' : '6px'}
               p={isSmallScreen ? '10px' : '8px'}
               position={'relative'}
               {...(item.value === listType

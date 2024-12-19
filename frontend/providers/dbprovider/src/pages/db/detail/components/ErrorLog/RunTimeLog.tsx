@@ -190,14 +190,16 @@ export default function RunTimeLog({
 
   return (
     <Flex flex={'1 0 0'} h={'0'} flexDirection={'column'}>
-      <Flex mt={'8px'} mb="12px" position={'relative'} alignItems={'center'} zIndex={2}>
+      <Flex mb="12px" position={'relative'} alignItems={'center'} zIndex={2}>
         {filteredSubNavList?.map((item) => (
           <Box
-            h={'32px'}
+            h={'36px'}
             key={item.label}
             mr={5}
+            pb={'6px'}
+            pt={'4px'}
             cursor={'pointer'}
-            fontSize={'md'}
+            fontSize={'16px'}
             borderBottom={'2px solid'}
             color={item.value === logType ? 'grayModern.900' : 'grayModern.600'}
             borderBottomColor={item.value === logType ? 'grayModern.900' : 'transparent'}

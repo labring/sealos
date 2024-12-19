@@ -33,10 +33,11 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
             <Box
               key={item.label}
               mr={'16px'}
-              py={'8px'}
+              pb={'6px'}
+              pt={'4px'}
               borderBottom={'2px solid'}
               cursor={'pointer'}
-              fontSize={'md'}
+              fontSize={'16px'}
               fontWeight={'500'}
               {...(item.id === activeId
                 ? {

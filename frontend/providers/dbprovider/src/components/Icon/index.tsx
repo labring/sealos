@@ -2,7 +2,7 @@ import React from 'react';
 import type { IconProps } from '@chakra-ui/react';
 import { Icon } from '@chakra-ui/react';
 
-const map = {
+export const IconMap = {
   more: require('./icons/more.svg').default,
   podList: require('./icons/podList.svg').default,
   arrowLeft: require('./icons/arrowLeft.svg').default,
@@ -67,9 +67,16 @@ const MyIcon = ({
   w = 'auto',
   h = 'auto',
   ...props
-}: { name: keyof typeof map } & IconProps) => {
-  return map[name] ? (
-    <Icon as={map[name]} verticalAlign={'text-top'} fill={'currentColor'} w={w} h={h} {...props} />
+}: { name: keyof typeof IconMap } & IconProps) => {
+  return IconMap[name] ? (
+    <Icon
+      as={IconMap[name]}
+      verticalAlign={'text-top'}
+      fill={'currentColor'}
+      w={w}
+      h={h}
+      {...props}
+    />
   ) : null;
 };
 

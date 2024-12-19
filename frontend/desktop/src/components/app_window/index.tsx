@@ -47,7 +47,7 @@ export default function AppWindow(props: {
       setPosition({
         x:
           x < 0
-            ? x < -0.9 * appHeaderWidth // (0.8width + width/0.8*0.1)
+            ? x < -0.9 * appHeaderWidth // (0.8width + width/0.70*0.15)
               ? 0
               : x
             : x > 0.9 * appHeaderWidth

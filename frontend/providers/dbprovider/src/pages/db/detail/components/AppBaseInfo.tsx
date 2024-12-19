@@ -275,7 +275,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   return (
     <Flex position={'relative'} gap={'8px'}>
-      <Box flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
+      <Box flex={'1 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
         {appInfoTable.map((info, index) => (
           <Box key={info.name} fontSize={'md'}>
             <Flex
@@ -288,7 +288,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               <Box>{t(info.name)}</Box>
             </Flex>
             <Box mt={'14px'}>
-              {!db?.source?.hasSource && index === 0 && (
+              {db?.source?.hasSource && index === 0 && (
                 <Box>
                   <Flex
                     flexWrap={'wrap'}
@@ -311,7 +311,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                       }
                     }}
                   >
-                    <Text flex={'0 0 110px'} color={'grayModern.600'}>
+                    <Text flex={'0 1 30%'} color={'grayModern.600'} minW={'120px'}>
                       {t('application_source')}
                     </Text>
                     <Flex alignItems={'center'}>
@@ -336,7 +336,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                     mt: '12px'
                   }}
                 >
-                  <Box flex={'0 0 110px'} w={0} color={'grayModern.600'}>
+                  <Box flex={'0 1 30%'} w={0} color={'grayModern.600'} minW={'120px'}>
                     {t(item.label)}
                   </Box>
                   <Box
@@ -364,7 +364,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         ))}
       </Box>
       {secret ? (
-        <Box flex={'1 0 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
+        <Box flex={'1 1 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
           <Flex fontSize={'base'} gap={'8px'} alignItems={'center'} color={'grayModern.600'}>
             <Box fontSize={'16px'} fontWeight={'bold'} color={'grayModern.900'}>
               {t('connection_info')}
