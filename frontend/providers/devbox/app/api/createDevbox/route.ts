@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
     )
     const service = json2Service(devboxForm)
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string)
-
     await applyYamlList([devbox, service, ingress], 'create')
 
     return jsonRes({

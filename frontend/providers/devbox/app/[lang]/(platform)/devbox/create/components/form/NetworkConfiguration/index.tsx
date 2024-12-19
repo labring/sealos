@@ -1,12 +1,12 @@
 import MyIcon from "@/components/Icon"
 import { ProtocolList } from "@/constants/devbox"
+import { useEnvStore } from "@/stores/env"
 import { DevboxEditTypeV2 } from "@/types/devbox"
 import { nanoid } from "@/utils/tools"
 import { Box, BoxProps, Button, ButtonProps, Flex, IconButton, Input, Switch, useTheme } from "@chakra-ui/react"
 import { MySelect, useMessage } from "@sealos/ui"
 import { useTranslations } from "next-intl"
 import dynamic from "next/dynamic"
-import { env } from "process"
 import { useState } from "react"
 import { useFieldArray, useFormContext } from "react-hook-form"
 import ConfigurationHeader from "../ConfigurationHeader"
@@ -37,6 +37,7 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
   } = useFormContext<DevboxEditTypeV2>()
   const theme = useTheme()
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
+  const { env } = useEnvStore()
   const {
     fields: networks,
     update: updateNetworks,
@@ -67,7 +68,7 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
     </ConfigurationHeader>
     <Box px={'42px'} py={'24px'} userSelect={'none'}>
       {networks.length === 0 && (
-        <AppendNetworksButton onClick={()=>appendNetworks()}/>
+        <AppendNetworksButton onClick={() => appendNetworks()} />
       )}
       {networks.map((network, i) => (
         <Flex
@@ -93,18 +94,31 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                 max: {
                   value: 65535,
                   message: t('The maximum number of exposed ports is 65535')
+                },
+                validate: {
+                  repeatPort: (value) => {
+                    const ports = getValues('networks').map((network, index) => ({
+                      port: network.port,
+                      index
+                    }));
+                    // 排除当前正在编辑的端口
+                    const isDuplicate = ports.some(
+                      (item) => item.port === value && item.index !== i
+                    );
+                    return !isDuplicate || t('The port number cannot be repeated');
+                  }
                 }
               })}
             />
             {i === networks.length - 1 && networks.length < 5 && (
               <Box mt={3}>
-                <AppendNetworksButton onClick={()=>appendNetworks()}/>
+                <AppendNetworksButton onClick={() => appendNetworks()} />
               </Box>
             )}
           </Box>
           <Box mx={7}>
-            <Box mb={'8px'} 
-            h={'20px'} fontSize={'base'} color={'grayModern.900'}>
+            <Box mb={'8px'}
+              h={'20px'} fontSize={'base'} color={'grayModern.900'}>
               {t('Open Public Access')}
             </Box>
             <Flex alignItems={'center'} h={'35px'}>
@@ -122,7 +136,6 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                     })
                     return
                   }
-
                   updateNetworks(i, {
                     ...getValues('networks')[i],
                     networkName: network.networkName || `${devboxName}-${nanoid()}`,
@@ -166,7 +179,7 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                     borderTopRightRadius={'md'}
                     borderBottomRightRadius={'md'}>
                     <Box flex={1} userSelect={'all'} className="textEllipsis">
-                      {network.customDomain ? network.customDomain : network.publicDomain}
+                      {network.customDomain ? network.customDomain : network.publicDomain!}
                     </Box>
                     <Box
                       fontSize={'11px'}
@@ -175,8 +188,8 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                       whiteSpace={'nowrap'}
                       onClick={() =>
                         setCustomAccessModalData({
-                          publicDomain: network.publicDomain,
-                          customDomain: network.customDomain
+                          publicDomain: network.publicDomain!,
+                          customDomain: network.customDomain!
                         })
                       }>
                       {t('Custom Domain')}

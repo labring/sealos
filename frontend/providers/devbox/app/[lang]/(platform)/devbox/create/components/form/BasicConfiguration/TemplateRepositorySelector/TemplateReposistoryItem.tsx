@@ -2,11 +2,12 @@ import { useDevboxStore } from "@/stores/devbox";
 import { DevboxEditTypeV2 } from "@/types/devbox";
 import { Center, Img, Text } from "@chakra-ui/react";
 import { useMessage } from "@sealos/ui";
-import { t } from "i18next";
+import { useTranslations } from "next-intl";
 import { useFormContext } from "react-hook-form";
 
 export default function TemplateRepositoryItem({ item, isEdit }: { item: { uid: string, iconId: string, name: string }; isEdit: boolean}) {
   const { message: toast } = useMessage()
+  const t = useTranslations()
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>()
   const { startedTemplate, setStartedTemplate } = useDevboxStore()
   return <Center

@@ -131,11 +131,11 @@ export const getErrText = (err: any, def = '') => {
 export const patchYamlList = ({
   parsedOldYamlList,
   parsedNewYamlList,
-  originalYamlList
+  originalYamlList,
 }: {
   parsedOldYamlList: string[]
   parsedNewYamlList: string[]
-  originalYamlList: DevboxKindsType[]
+  originalYamlList: DevboxKindsType[],
 }) => {
   const oldFormJsonList = parsedOldYamlList
     .map((item) => yaml.loadAll(item))
@@ -338,5 +338,16 @@ export const parseTemplateConfig = (config: string) => {
     workingDir: string
     releaseCommand: string[]
     releaseArgs: string[]
+    appPorts: {
+      name: string
+      port: number
+      protocol: string
+      targetPort: number
+    }[]
+    ports: {
+      containerPort: number
+      name: string
+      protocol: string
+    }[]
   }
 }

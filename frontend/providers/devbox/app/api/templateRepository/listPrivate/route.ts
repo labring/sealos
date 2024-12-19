@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const search = searchParams.get('search') || ''
     const page = z.number().int().positive().safeParse(Number(searchParams.get('page'))).data || 1
-    const pageSize = z.number().int().min(1).safeParse(Number(searchParams.get('pageSize'))).data  || 10
+    const pageSize = z.number().int().min(1).safeParse(Number(searchParams.get('pageSize'))).data  || 30
 
     const queryWhereInput:Prisma.TemplateRepositoryWhereInput= {
       isDeleted: false,

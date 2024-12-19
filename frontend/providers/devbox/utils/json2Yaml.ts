@@ -1,8 +1,8 @@
 import yaml from 'js-yaml'
 
 import { devboxKey, publicDomainKey } from '@/constants/devbox'
-import { DevboxEditType, json2DevboxV2Data, runtimeNamespaceMapType } from '@/types/devbox'
-import { str2Num } from './tools'
+import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType, runtimeNamespaceMapType } from '@/types/devbox'
+import { parseTemplateConfig, str2Num } from './tools'
 import { getUserNamespace } from './user'
 
 export const json2Devbox = (
@@ -71,9 +71,6 @@ export const json2DevboxV2 = (
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
-  // runtimeNamespace inject
-  // const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
-
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -94,7 +91,7 @@ export const json2DevboxV2 = (
       },
       templateID: data.templateUid,
       image: data.image,
-      config: JSON.parse(data.templateConfig),
+      config: parseTemplateConfig(data.templateConfig),
       state: 'Running'
     }
   }
@@ -176,7 +173,7 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json)
 }
 
-export const json2Ingress = (data: Pick<DevboxEditType, 'name'|'networks'>, ingressSecret: string) => {
+export const json2Ingress = (data: Pick<DevboxEditTypeV2, 'name'|'networks'>, ingressSecret: string) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -206,7 +203,7 @@ export const json2Ingress = (data: Pick<DevboxEditType, 'name'|'networks'>, ingr
       const host = network.customDomain ? network.customDomain : network.publicDomain
 
       const secretName = network.customDomain ? network.networkName : ingressSecret
-
+      const protocol = network.protocol
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
@@ -219,7 +216,7 @@ export const json2Ingress = (data: Pick<DevboxEditType, 'name'|'networks'>, ingr
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.protocol]
+            ...map[network.protocol as ProtocolType || 'HTTP']
           }
         },
         spec: {
@@ -309,7 +306,7 @@ export const json2Ingress = (data: Pick<DevboxEditType, 'name'|'networks'>, ingr
 
   return result.join('\n---\n')
 }
-export const json2Service = (data: Pick<DevboxEditType, 'name'|'networks'>) => {
+export const json2Service = (data: Pick<DevboxEditTypeV2, 'name'|'networks'>) => {
   if (data.networks.length === 0) {
     return ''
   }
@@ -349,3 +346,31 @@ spec:
         memory: 64Mi
       type: Container
 `
+export const generateYamlList = (data: json2DevboxV2Data, env: {
+  devboxAffinityEnable?: string,
+  squashEnable?: string,
+  ingressSecret: string
+}) => {
+  return [
+    {
+      filename: 'devbox.yaml',
+      value: json2DevboxV2(data, env.devboxAffinityEnable, env.squashEnable)
+    },
+    ...(data.networks.length > 0
+      ? [
+        {
+          filename: 'service.yaml',
+          value: json2Service(data)
+        }
+      ]
+      : []),
+    ...(data.networks.find((item) => item.openPublicDomain)
+      ? [
+        {
+          filename: 'ingress.yaml',
+          value: json2Ingress(data, env.ingressSecret)
+        }
+      ]
+      : [])
+  ]
+}

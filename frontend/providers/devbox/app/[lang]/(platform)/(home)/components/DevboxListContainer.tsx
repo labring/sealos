@@ -1,6 +1,5 @@
 // components/DevboxListContainer.tsx
 'use client'
-import { useLoading } from '@/hooks/useLoading'
 import { useDevboxStore } from '@/stores/devbox'
 import { useTemplateStore } from '@/stores/template'
 import { DevboxListItemTypeV2 } from '@/types/devbox'
@@ -53,7 +52,7 @@ function useDevboxList() {
   useQuery(
     ['intervalLoadPods'],
     () => {
-      console.log('intervalLoadPods')
+
       const viewportDevboxList = getViewportDevboxes()
       return viewportDevboxList
         .filter((devbox) => devbox.status.value !== 'Stopped')
@@ -62,7 +61,7 @@ function useDevboxList() {
     {
       refetchOnMount: true,
       refetchInterval: !templateIsOpen ? 3000 : false,
-      staleTime: 0,
+      staleTime: 3000,
       enabled: !isLoading &&!templateIsOpen,
     }
   )
@@ -70,7 +69,6 @@ function useDevboxList() {
   useQuery(
     ['loadAvgMonitorData'],
     () => {
-      console.log('loadAvgMonitorData')
       const viewportDevboxList = getViewportDevboxes()
       return viewportDevboxList
         .filter((devbox) => devbox.status.value === 'Running')
@@ -78,7 +76,7 @@ function useDevboxList() {
     },
     {
       refetchInterval: !templateIsOpen ? 3000 : false,
-      staleTime: 0,
+      staleTime: 3000,
       enabled:!isLoading &&!templateIsOpen,
     }
   )
@@ -98,7 +96,6 @@ function useDevboxList() {
 }
 
 export default function DevboxListContainer({ ...props }: FlexProps) {
-  const { Loading } = useLoading()
   const { list, isLoading, refetchList } = useDevboxList()
   return (
     <Flex flexDir={'column'}

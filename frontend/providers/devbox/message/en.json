@@ -19,6 +19,7 @@
   "Success": "Success",
   "The maximum number of exposed ports is 65535": "Maximum port number is 65535",
   "The minimum exposed port is 1": "Minimum port number is 1",
+  "The port number cannot be repeated": "The port number cannot be repeated",
   "This runtime field is required": "The runtime version field is required",
   "all_templates": "All Templates",
   "app_name": "App Name",

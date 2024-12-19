@@ -47,15 +47,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           const newSession = JSON.stringify(await sealosApp.getSession())
           const oldSession = sessionStorage.getItem('session')
           if(newSession && newSession !== oldSession) {
-            console.log('new Session', newSession)
-            console.log('old Session', oldSession)
             sessionStorage.setItem('session', newSession)
             return window.location.reload()
           }
           // init user 
           console.log('devbox: app init success')
           const token = (await initUser())
-          console.log(token)
           if (!!token) {
             setSessionToSessionStorage(token)
             setInit(true)

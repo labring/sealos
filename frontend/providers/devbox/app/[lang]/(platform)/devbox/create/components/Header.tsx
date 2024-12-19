@@ -6,6 +6,7 @@ import { useCallback } from 'react'
 
 import MyIcon from '@/components/Icon'
 import { useRouter } from '@/i18n'
+import { useEnvStore } from '@/stores/env'
 import { useGlobalStore } from '@/stores/global'
 import { useTemplateStore } from '@/stores/template'
 import type { YamlItemType } from '@/types/index'
@@ -26,6 +27,7 @@ const Header = ({
   const { lastRoute } = useGlobalStore()
   const t = useTranslations()
   const { config } = useTemplateStore()
+  const { env } = useEnvStore()
   const handleExportYaml = useCallback(async () => {
     const zip = new JSZip()
     yamlList.forEach((item) => {
@@ -34,7 +36,6 @@ const Header = ({
     const res = await zip.generateAsync({ type: 'blob' })
     downLoadBlob(res, 'application/zip', `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`)
   }, [yamlList])
-  console.log(config)
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => {

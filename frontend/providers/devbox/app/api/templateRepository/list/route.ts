@@ -10,10 +10,15 @@ export async function GET(req: NextRequest) {
     const tags = searchParams.getAll('tags') || []
     const search = searchParams.get('search') || ''
     const page = z.number().int().positive().safeParse(Number(searchParams.get('page'))).data || 1
-    const pageSize = z.number().int().min(1).safeParse(Number(searchParams.get('pageSize'))).data || 10
+    const pageSize = z.number().int().min(1).safeParse(Number(searchParams.get('pageSize'))).data || 30
     const dbquery: Prisma.TemplateRepositoryWhereInput = {
       isPublic: true,
       isDeleted: false,
+      templates: {
+        some: {
+          isDeleted: false,
+        }
+      },
       ...(tags && tags.length > 0
         ? {
           AND: tags.map((tag) => ({
@@ -33,6 +38,8 @@ export async function GET(req: NextRequest) {
         }
         : {})
     }
+    const skip = (page - 1) * pageSize
+    const take = pageSize
     const templateRepositoryList = await devboxDB.templateRepository.findMany({
       where: dbquery,
       select: {

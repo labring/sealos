@@ -19,6 +19,7 @@
   "Success": "成功",
   "The maximum number of exposed ports is 65535": "暴露端口最大为 65535",
   "The minimum exposed port is 1": "暴露端口最小为 1",
+  "The port number cannot be repeated": "不能重复暴露相同的端口",
   "This runtime field is required": "运行时版本是必填项",
   "all_templates": "所有模板",
   "app_name": "应用名称",
