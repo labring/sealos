@@ -2,13 +2,14 @@ package controller
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
@@ -40,43 +41,56 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 
 func Relay(c *gin.Context) {
 	log := middleware.GetLogger(c)
-	if config.DebugEnabled {
-		requestBody, _ := common.GetRequestBody(c.Request)
-		log.Debugf("request body: %s", requestBody)
+
+	requestModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
+	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": &model.Error{
+				Message: "The upstream load of the current group is saturated, please try again later",
+				Code:    "upstream_load_saturated",
+				Type:    middleware.ErrorTypeAIPROXY,
+			},
+		})
+		return
 	}
-	meta := middleware.NewMetaByContext(c)
+
+	meta := middleware.NewMetaByContext(c, channel)
 	bizErr := relayHelper(meta, c)
 	if bizErr == nil {
 		return
 	}
-	lastFailedChannelID := meta.Channel.ID
-	requestID := c.GetString(string(helper.RequestIDKey))
-	retryTimes := config.GetRetryTimes()
-	if !shouldRetry(c, bizErr.StatusCode) {
-		retryTimes = 0
+	failedChannelIDs := []int{channel.ID}
+	requestID := c.GetString(ctxkey.RequestID)
+	var retryTimes int64
+	if shouldRetry(c, bizErr.StatusCode) {
+		retryTimes = config.GetRetryTimes()
 	}
 	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName)
+		newChannel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName, failedChannelIDs...)
 		if err != nil {
-			log.Errorf("get random satisfied channel failed: %+v", err)
-			break
+			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
+				log.Errorf("get random satisfied channel failed: %+v", err)
+				break
+			}
+			if len(failedChannelIDs) != 1 {
+				break
+			}
+			newChannel = channel
 		}
-		log.Infof("using channel #%d to retry (remain times %d)", channel.ID, i)
-		if channel.ID == lastFailedChannelID {
-			continue
-		}
+		log.Warnf("using channel %s(%d) to retry (remain times %d)", newChannel.Name, newChannel.ID, i)
 		requestBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			log.Errorf("GetRequestBody failed: %+v", err)
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		meta.Reset(channel)
+		meta.Reset(newChannel)
 		bizErr = relayHelper(meta, c)
 		if bizErr == nil {
 			return
 		}
-		lastFailedChannelID = channel.ID
+		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
 	}
 	if bizErr != nil {
 		message := bizErr.Message
@@ -85,7 +99,7 @@ func Relay(c *gin.Context) {
 		}
 		c.JSON(bizErr.StatusCode, gin.H{
 			"error": &model.Error{
-				Message: helper.MessageWithRequestID(message, requestID),
+				Message: middleware.MessageWithRequestID(message, requestID),
 				Code:    bizErr.Code,
 				Param:   bizErr.Param,
 				Type:    bizErr.Type,
@@ -96,7 +110,8 @@ func Relay(c *gin.Context) {
 
 func shouldRetry(_ *gin.Context, statusCode int) bool {
 	if statusCode == http.StatusTooManyRequests ||
-		statusCode == http.StatusGatewayTimeout {
+		statusCode == http.StatusGatewayTimeout ||
+		statusCode == http.StatusForbidden {
 		return true
 	}
 	return false

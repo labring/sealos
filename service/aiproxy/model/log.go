@@ -11,7 +11,6 @@ import (
 
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 )
 
 type RequestDetail struct {
@@ -288,7 +287,7 @@ func SearchLogs(keyword string, page int, perPage int, endpoint string, groupID 
 		var conditions []string
 		var values []interface{}
 
-		if num := helper.String2Int(keyword); num != 0 {
+		if num := String2Int(keyword); num != 0 {
 			if channelID == 0 {
 				conditions = append(conditions, "channel_id = ?")
 				values = append(values, num)
@@ -418,7 +417,7 @@ func SearchGroupLogs(group string, keyword string, page int, perPage int, endpoi
 		var conditions []string
 		var values []interface{}
 
-		if num := helper.String2Int(keyword); num != 0 {
+		if num := String2Int(keyword); num != 0 {
 			if channelID == 0 {
 				conditions = append(conditions, "channel_id = ?")
 				values = append(values, num)

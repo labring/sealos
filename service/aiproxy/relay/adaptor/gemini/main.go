@@ -8,25 +8,23 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/common/random"
+	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gin-gonic/gin"
 )
 
 // https://ai.google.dev/docs/gemini_api_overview?hl=zh-cn
@@ -207,7 +205,7 @@ func CountTokens(ctx context.Context, meta *meta.Meta, chat []ChatContent) (int,
 	if err != nil {
 		return 0, err
 	}
-	version := helper.AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
+	version := AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
 	u := meta.Channel.BaseURL
 	if u == "" {
 		u = baseURL
@@ -295,7 +293,7 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: make([]*openai.TextResponseChoice, 0, len(response.Candidates)),
 	}
 	for i, candidate := range response.Candidates {
@@ -327,7 +325,7 @@ func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatRespon
 	// choice.FinishReason = &constant.StopFinishReason
 	var response openai.ChatCompletionsStreamResponse
 	response.ID = "chatcmpl-" + random.GetUUID()
-	response.Created = helper.GetTimestamp()
+	response.Created = time.Now().Unix()
 	response.Object = "chat.completion.chunk"
 	response.Model = meta.OriginModelName
 	response.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net/http"
 	"slices"
+	"time"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -256,7 +256,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 		ID:      "chatcmpl-" + claudeResponse.ID,
 		Model:   claudeResponse.Model,
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
@@ -267,7 +267,7 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 
 	log := middleware.GetLogger(c)
 
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {

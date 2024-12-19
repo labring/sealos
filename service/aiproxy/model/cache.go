@@ -444,7 +444,7 @@ func initializeChannelModels(channel *Channel) {
 
 	if len(missingModels) > 0 {
 		slices.Sort(missingModels)
-		log.Errorf("model config not found or rpm less than 0: %v", missingModels)
+		log.Errorf("model config not found: %v", missingModels)
 	}
 	slices.Sort(findedModels)
 	channel.Models = findedModels
@@ -593,11 +593,32 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 	}
 }
 
+func filterChannels(channels []*Channel, ignoreChannel ...int) []*Channel {
+	filtered := make([]*Channel, 0)
+	for _, channel := range channels {
+		if slices.Contains(ignoreChannel, channel.ID) {
+			continue
+		}
+		filtered = append(filtered, channel)
+	}
+	return filtered
+}
+
+var (
+	ErrChannelsNotFound  = errors.New("channels not found")
+	ErrChannelsExhausted = errors.New("channels exhausted")
+)
+
 //nolint:gosec
-func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
-	channels := GetEnabledModel2Channels()[model]
+func CacheGetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channel, error) {
+	_channels := GetEnabledModel2Channels()[model]
+	if len(_channels) == 0 {
+		return nil, ErrChannelsNotFound
+	}
+
+	channels := filterChannels(_channels, ignoreChannel...)
 	if len(channels) == 0 {
-		return nil, errors.New("model not found")
+		return nil, ErrChannelsExhausted
 	}
 
 	if len(channels) == 1 {
