@@ -101,9 +101,10 @@ during the startup phase after deployment.
 
 ## 8. Application Startup Fails When Listening on Port 80
 
-When using Devbox, the default user for local editors (such as VSCode, Cursor, etc.) is `devbox`. Ports in the range of
-1-100 are restricted to the root user. If you need to use these ports, please run your application with root privileges.
-For example, in the Go Devbox, you can execute the following command:
+When using Devbox, the default user for local editors (such as VSCode, Cursor, etc.) is devbox.
+Ports in the range of 1-1023 are restricted to the administrator user.
+If you need to use these ports normally, please run your program with administrator privileges. For example, in the Go
+Devbox, you can use the following command:
 
 ```bash
 sudo go run main.go
