@@ -116,7 +116,15 @@ const SshConnectModal = ({
         <ModalContent top={'5%'} maxWidth={'800px'} w={'700px'} h={'80%'} position={'relative'}>
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
-          <ModalBody pb={6} overflowY={'auto'}>
+          <ModalBody
+            pb={6}
+            overflowY={'auto'}
+            sx={{
+              '&::-webkit-scrollbar': {
+                width: '0',
+                background: 'transparent'
+              }
+            }}>
             <Tabs
               onChange={(index) => setActiveTab(index)}
               mb={4}

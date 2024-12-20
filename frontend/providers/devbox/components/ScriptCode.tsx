@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Button, Flex } from '@chakra-ui/react'
+import { Box, Button, Collapse, Flex } from '@chakra-ui/react'
 
 import MyIcon from './Icon'
 import Code from './Code'
@@ -62,11 +62,11 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
           />
         </Button>
       </Flex>
-      {onOpenScripts && (
+      <Collapse in={onOpenScripts} animateOpacity>
         <Box pt={2} pl={3}>
           <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
         </Box>
-      )}
+      </Collapse>
     </Flex>
   )
 }
