@@ -112,6 +112,7 @@
   "jetbrains_guide_step_3_3": "Click <blue>Download IDE and Connect</blue> to download.",
   "jetbrains_guide_step_3_4": "Wait for the IDE to be ready.",
   "jetbrains_guide_step_3_5": "Check if local <blue>{ide}</blue> is automatically invoked.",
+  "jetbrains_guide_step_by_step": "Step-By-Step",
   "jetbrains_guide_three_steps": "(3 steps)",
   "jump_prompt": "Jump prompt",
   "jump_terminal_error": "Jump terminal failed",

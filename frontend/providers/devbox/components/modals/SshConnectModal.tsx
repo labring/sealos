@@ -184,7 +184,10 @@ const SshConnectModal = ({
             </Flex>
             <Divider my={6} />
             {/* step-by-step */}
-            <Stepper orientation="vertical" index={-1} mt={4} gap={0} position={'relative'}>
+            <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
+              {t('jetbrains_guide_step_by_step')}
+            </Text>
+            <Stepper orientation="vertical" index={-1} mt={3} gap={0} position={'relative'}>
               {/* 1 */}
               <Box w={'100%'}>
                 <Step>

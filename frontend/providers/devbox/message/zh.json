@@ -114,6 +114,7 @@
   "jetbrains_guide_step_3_3": "点击 <blue>Download IDE and Connect</blue> 按钮，即可下载 IDE 和连接。",
   "jetbrains_guide_step_3_4": "等待 IDE 下载完毕。",
   "jetbrains_guide_step_3_5": "自动唤起本地的<blue>{ide}</blue>。",
+  "jetbrains_guide_step_by_step": "手把手",
   "jetbrains_guide_three_steps": "（共 3 步）",
   "jump_prompt": "跳转提示",
   "jump_terminal_error": "跳转终端失败",
