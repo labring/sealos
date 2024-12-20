@@ -9,9 +9,11 @@ type State = {
   languageTypeList: RuntimeTypeMap[]
   frameworkTypeList: RuntimeTypeMap[]
   osTypeList: RuntimeTypeMap[]
+
   runtimeNamespaceMap: {
     [key: string]: string
   }
+
   languageVersionMap: RuntimeVersionMap
   frameworkVersionMap: RuntimeVersionMap
   osVersionMap: RuntimeVersionMap
@@ -24,6 +26,7 @@ type State = {
   }[]
   getRuntimeDetailLabel: (runtimeType: string, runtimeVersion: string) => string
   getRuntimeVersionDefault: (runtimeType: string) => string
+  isGPURuntimeType: (runtimeType: string) => boolean
 }
 
 export const useRuntimeStore = create<State>()(
@@ -33,10 +36,13 @@ export const useRuntimeStore = create<State>()(
         languageTypeList: [],
         frameworkTypeList: [],
         osTypeList: [],
+
         runtimeNamespaceMap: {},
+
         languageVersionMap: {},
         frameworkVersionMap: {},
         osVersionMap: {},
+
         async setRuntime() {
           const res = await getRuntime()
           set((state) => {
@@ -72,6 +78,15 @@ export const useRuntimeStore = create<State>()(
             languageVersionMap[runtimeType]?.[0]?.id ||
             frameworkVersionMap[runtimeType]?.[0]?.id ||
             osVersionMap[runtimeType]?.[0]?.id
+          )
+        },
+        isGPURuntimeType(runtimeType: string) {
+          const { languageTypeList, frameworkTypeList, osTypeList } = get()
+          return (
+            languageTypeList.find((i) => i.id === runtimeType)?.gpu ||
+            frameworkTypeList.find((i) => i.id === runtimeType)?.gpu ||
+            osTypeList.find((i) => i.id === runtimeType)?.gpu ||
+            false
           )
         }
       })),

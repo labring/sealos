@@ -4,20 +4,23 @@ import { defaultEnv } from '@/stores/env'
 import { authSession } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
+
+import { RuntimeTypeMap, RuntimeVersionMap, RuntimeNamespaceMap } from '@/types/static'
 import { KBRuntimeClassType, KBRuntimeType } from '@/types/k8s'
-import { VersionMapType, runtimeNamespaceMapType, ValueType } from '@/types/devbox'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const languageTypeList: ValueType[] = []
-    const frameworkTypeList: ValueType[] = []
-    const osTypeList: ValueType[] = []
-    const languageVersionMap: VersionMapType = {}
-    const frameworkVersionMap: VersionMapType = {}
-    const osVersionMap: VersionMapType = {}
-    const runtimeNamespaceMap: runtimeNamespaceMapType = {}
+    const languageTypeList: RuntimeTypeMap[] = []
+    const frameworkTypeList: RuntimeTypeMap[] = []
+    const osTypeList: RuntimeTypeMap[] = []
+
+    const osVersionMap: RuntimeVersionMap = {}
+    const languageVersionMap: RuntimeVersionMap = {}
+    const frameworkVersionMap: RuntimeVersionMap = {}
+
+    const runtimeNamespaceMap: RuntimeNamespaceMap = {}
 
     const { ROOT_RUNTIME_NAMESPACE } = process.env
 
@@ -44,34 +47,39 @@ export async function GET(req: NextRequest) {
 
     // runtimeClasses
     const languageList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'Language')
-    languageTypeList.push(
-      ...languageList.map((item: any) => {
-        return {
-          id: item.metadata.name,
-          label: item.spec.title
-        }
-      })
-    )
+    const dealtLanguageList = languageList.map((item: any) => {
+      const aRuntime = runtimes.find((runtime: any) => runtime.spec.classRef === item.metadata.name)
+      return {
+        id: item.metadata.name,
+        label: item.spec.title,
+        gpu: !!aRuntime?.spec.category?.includes('gpu')
+      }
+    })
+    languageTypeList.push(...dealtLanguageList)
+
     const frameworkList = runtimeClasses?.items.filter(
       (item: any) => item.spec.kind === 'Framework'
     )
-    frameworkTypeList.push(
-      ...frameworkList.map((item: any) => {
-        return {
-          id: item.metadata.name,
-          label: item.spec.title
-        }
-      })
-    )
+    const dealtFrameworkList = frameworkList.map((item: any) => {
+      const aRuntime = runtimes.find((runtime: any) => runtime.spec.classRef === item.metadata.name)
+      return {
+        id: item.metadata.name,
+        label: item.spec.title,
+        gpu: !!aRuntime?.spec.category?.includes('gpu')
+      }
+    })
+    frameworkTypeList.push(...dealtFrameworkList)
+
     const osList = runtimeClasses?.items.filter((item: any) => item.spec.kind === 'OS')
-    osTypeList.push(
-      ...osList.map((item: any) => {
-        return {
-          id: item.metadata.name,
-          label: item.spec.title
-        }
-      })
-    )
+    const dealtOsList = osList.map((item: any) => {
+      const aRuntime = runtimes.find((runtime: any) => runtime.spec.classRef === item.metadata.name)
+      return {
+        id: item.metadata.name,
+        label: item.spec.title,
+        gpu: !!aRuntime?.spec.category?.includes('gpu')
+      }
+    })
+    osTypeList.push(...dealtOsList)
 
     // runtimeVersions and runtimeNamespaceMap
     languageList.forEach((item: any) => {
@@ -166,9 +174,11 @@ export async function GET(req: NextRequest) {
         languageVersionMap,
         frameworkVersionMap,
         osVersionMap,
+
         languageTypeList,
         frameworkTypeList,
         osTypeList,
+
         runtimeNamespaceMap
       }
     })

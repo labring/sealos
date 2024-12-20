@@ -14,11 +14,15 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
+    const { GPU_ENABLE } = process.env
+
     const quota = await getUserQuota()
+
+    const filteredQuota = GPU_ENABLE ? quota : quota.filter((item) => item.type !== 'gpu')
 
     return jsonRes({
       data: {
-        quota
+        quota: filteredQuota
       }
     })
   } catch (error) {

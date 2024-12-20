@@ -23,34 +23,35 @@ export const useUserStore = create<State>()(
       userQuota: [],
       loadUserQuota: async () => {
         const response = await getUserQuota()
-
         set((state) => {
           state.userQuota = response.quota
         })
         return null
       },
-      checkQuotaAllow: ({ cpu, memory, nodeports }, usedData): string | undefined => {
+      checkQuotaAllow: ({ cpu, memory, nodeports, gpu }, usedData): string | undefined => {
         const quote = get().userQuota
 
-        console.log(cpu, memory, nodeports)
         const request = {
           cpu: cpu / 1000,
           memory: memory / 1024,
-          nodeports: nodeports
+          nodeports: nodeports,
+          gpu: gpu?.type ? gpu.amount : 0
         }
 
         if (usedData) {
-          const { cpu = 0, memory = 0, nodeports = 0 } = usedData
+          const { cpu = 0, memory = 0, nodeports = 0, gpu } = usedData
 
           request.cpu -= cpu / 1000
           request.memory -= memory / 1024
           request.nodeports -= nodeports
+          request.gpu -= gpu?.type ? gpu.amount : 0
         }
 
         const overLimitTip: { [key: string]: string } = {
           cpu: 'cpu_exceeds_quota',
           memory: 'memory_exceeds_quota',
-          nodeports: 'nodeports_exceeds_quota'
+          nodeports: 'nodeports_exceeds_quota',
+          gpu: 'gpu_exceeds_quota'
         }
 
         const exceedQuota = quote.find((item) => {
