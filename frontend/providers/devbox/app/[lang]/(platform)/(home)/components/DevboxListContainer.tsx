@@ -96,7 +96,6 @@ export default function DevboxListContainer({ ...props }: FlexProps) {
       backgroundColor={'grayModern.100'}
       px={'32px'}
       h="100vh"
-      //  w={'full'} 
       {...props}
     >
       <DevboxHeader listLength={list.length} />
