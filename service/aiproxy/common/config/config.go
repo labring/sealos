@@ -1,6 +1,7 @@
 package config
 
 import (
+	"math"
 	"os"
 	"slices"
 	"strconv"
@@ -31,10 +32,8 @@ var (
 var (
 	// 重试次数
 	retryTimes atomic.Int64
-	// 模型可重试的失败次数上限
-	modelFailDisableTimes atomic.Int64
-	// 模型禁用时间
-	modelFailDisableTime atomic.Int64
+	// 模型错误率自动封禁
+	modelErrorAutoBanRate = math.Float64bits(0.5)
 	// 模型类型超时时间，单位秒
 	timeoutWithModelType atomic.Value
 )
@@ -43,24 +42,16 @@ func GetRetryTimes() int64 {
 	return retryTimes.Load()
 }
 
+func GetModelErrorAutoBanRate() float64 {
+	return math.Float64frombits(atomic.LoadUint64(&modelErrorAutoBanRate))
+}
+
+func SetModelErrorAutoBanRate(rate float64) {
+	atomic.StoreUint64(&modelErrorAutoBanRate, math.Float64bits(rate))
+}
+
 func SetRetryTimes(times int64) {
 	retryTimes.Store(times)
-}
-
-func GetModelFailDisableTimes() int64 {
-	return modelFailDisableTimes.Load()
-}
-
-func SetModelFailDisableTimes(times int64) {
-	modelFailDisableTimes.Store(times)
-}
-
-func GetModelFailDisableTime() int64 {
-	return modelFailDisableTime.Load()
-}
-
-func SetModelFailDisableTime(time int64) {
-	modelFailDisableTime.Store(time)
 }
 
 func init() {
