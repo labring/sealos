@@ -151,7 +151,7 @@ export const ConstructModeMappingComponent = function ({
             whiteSpace="nowrap" // prevent text from wrapping
             css={{
               '&::-webkit-scrollbar': { display: 'none' },
-              '-ms-overflow-style': 'none',
+              msOverflowStyle: 'none',
               scrollbarWidth: 'none'
             }}>
             <Text
@@ -213,7 +213,7 @@ export const ConstructModeMappingComponent = function ({
         whiteSpace="nowrap" // prevent text from wrapping
         css={{
           '&::-webkit-scrollbar': { display: 'none' },
-          '-ms-overflow-style': 'none',
+          msOverflowStyle: 'none',
           scrollbarWidth: 'none'
         }}>
         <Text
