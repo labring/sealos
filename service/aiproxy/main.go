@@ -18,6 +18,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
@@ -137,6 +138,16 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 	}, server
 }
 
+func autoTestBannedModels() {
+	log.Info("auto test banned models start")
+	ticker := time.NewTicker(time.Second * 15)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		controller.AutoTestBannedModels()
+	}
+}
+
 func main() {
 	if err := initializeServices(); err != nil {
 		log.Fatal("failed to initialize services: " + err.Error())
@@ -162,6 +173,8 @@ func main() {
 			log.Fatal("failed to start HTTP server: " + err.Error())
 		}
 	}()
+
+	go autoTestBannedModels()
 
 	<-ctx.Done()
 	log.Info("shutting down server...")

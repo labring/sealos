@@ -10,7 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
+	log "github.com/sirupsen/logrus"
 )
 
 func ChannelTypeNames(c *gin.Context) {
@@ -223,6 +225,10 @@ func UpdateChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	err = monitor.ClearChannelAllModelErrors(c.Request.Context(), id)
+	if err != nil {
+		log.Errorf("failed to clear channel all model errors: %+v", err)
+	}
 	middleware.SuccessResponse(c, ch)
 }
 
@@ -242,6 +248,10 @@ func UpdateChannelStatus(c *gin.Context) {
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
+	}
+	err = monitor.ClearChannelAllModelErrors(c.Request.Context(), id)
+	if err != nil {
+		log.Errorf("failed to clear channel all model errors: %+v", err)
 	}
 	middleware.SuccessResponse(c, nil)
 }
