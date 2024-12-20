@@ -22,7 +22,7 @@ export const initAppConfig = () =>
     '/api/init-app-config'
   )
 
-// user
+// <user>
 export const getEnabledMode = () => GET<GetEnabledModelsResponse['data']>('/api/models/enabled')
 
 // log
@@ -42,7 +42,7 @@ export const updateToken = (id: number, status: number) =>
   POST<ApiResp>(`/api/user/token/${id}`, { status: status })
 
 // ------------------------------------------------------------
-// admin
+// <admin>
 
 export const getChannels = (params: ChannelQueryParams) =>
   GET<GetChannelsResponse['data']>('/api/admin/channel', params)

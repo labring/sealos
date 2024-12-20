@@ -446,19 +446,17 @@ export const UpdateChannelModal = function ({
                 borderBottom="1px solid grayModern.100"
                 background="grayModern.25"
                 w="full">
-                <Flex w="full" justifyContent="space-between" alignItems="center">
-                  <Flex w="98px" alignItems="center" gap="10px" flexShrink={0}>
-                    <Text
-                      color="grayModern.900"
-                      fontFamily="PingFang SC"
-                      fontSize="16px"
-                      fontStyle="normal"
-                      fontWeight={500}
-                      lineHeight="24px"
-                      letterSpacing="0.15px">
-                      {operationType === 'create' ? t('channels.create') : t('channels.edit')}
-                    </Text>
-                  </Flex>
+                <Flex alignItems="flex-start" flexShrink={0}>
+                  <Text
+                    color="grayModern.900"
+                    fontFamily="PingFang SC"
+                    fontSize="16px"
+                    fontStyle="normal"
+                    fontWeight={500}
+                    lineHeight="24px"
+                    letterSpacing="0.15px">
+                    {operationType === 'create' ? t('channels.create') : t('channels.edit')}
+                  </Text>
                 </Flex>
               </ModalHeader>
               <ModalCloseButton
@@ -468,8 +466,7 @@ export const UpdateChannelModal = function ({
                 padding="4px"
                 justifyContent="center"
                 alignItems="center"
-                gap="10px"
-                flexShrink={0}
+                flexShrink="0"
                 borderRadius="4px"
               />
               <ModalBody w="full" h="full" m="0">
@@ -502,19 +499,17 @@ export const UpdateChannelModal = function ({
                 borderBottom="1px solid grayModern.100"
                 background="grayModern.25"
                 w="full">
-                <Flex w="full" justifyContent="space-between" alignItems="center">
-                  <Flex w="98px" alignItems="center" gap="10px" flexShrink={0}>
-                    <Text
-                      color="grayModern.900"
-                      fontFamily="PingFang SC"
-                      fontSize="16px"
-                      fontStyle="normal"
-                      fontWeight={500}
-                      lineHeight="24px"
-                      letterSpacing="0.15px">
-                      {operationType === 'create' ? t('channels.create') : t('channels.edit')}
-                    </Text>
-                  </Flex>
+                <Flex alignItems="flex-start" flexShrink={0}>
+                  <Text
+                    color="grayModern.900"
+                    fontFamily="PingFang SC"
+                    fontSize="16px"
+                    fontStyle="normal"
+                    fontWeight={500}
+                    lineHeight="24px"
+                    letterSpacing="0.15px">
+                    {operationType === 'create' ? t('channels.create') : t('channels.edit')}
+                  </Text>
                 </Flex>
               </ModalHeader>
               <ModalCloseButton
@@ -524,7 +519,6 @@ export const UpdateChannelModal = function ({
                 padding="4px"
                 justifyContent="center"
                 alignItems="center"
-                gap="10px"
                 flexShrink={0}
                 borderRadius="4px"
               />

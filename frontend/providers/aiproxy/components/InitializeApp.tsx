@@ -77,7 +77,7 @@ export default function InitializeApp() {
         router.push(pathParts.join('/'))
         router.refresh()
       }
-      console.log('aiproxy: init language success')
+      console.info('aiproxy: init language success')
     } catch (error) {
       if (error instanceof Error) {
         console.debug('aiproxy: init language error:', error.message)
@@ -99,9 +99,9 @@ export default function InitializeApp() {
         setSession(newSession)
         window.location.reload()
       }
-      console.log('aiproxy: init session success')
+      console.info('aiproxy: init session success')
     } catch (err) {
-      console.log('aiproxy: app is not running in desktop')
+      console.info('aiproxy: app is not running in desktop')
       if (!process.env.NEXT_PUBLIC_MOCK_USER) {
         setSession(null)
       }
@@ -114,7 +114,7 @@ export default function InitializeApp() {
       const { aiproxyBackend, currencySymbol } = await initAppConfig()
       setAiproxyBackend(aiproxyBackend)
       setCurrencySymbol(currencySymbol)
-      console.log('aiproxy: init config success')
+      console.info('aiproxy: init config success')
     } catch (error) {
       console.error('aiproxy: init config error:', error)
     }

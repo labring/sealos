@@ -239,7 +239,9 @@ export default function Home(): React.JSX.Element {
               alignItems="flex-start"
               justifyContent="space-between"
               sx={{
+                transition: 'gap 0.3s ease',
                 '@media screen and (min-width: 1300px)': {
+                  gap: '160px',
                   flexWrap: 'nowrap'
                 }
               }}
@@ -340,6 +342,7 @@ export default function Home(): React.JSX.Element {
               alignItems="flex-start"
               justifyContent="space-between"
               sx={{
+                transition: 'gap 0.3s ease',
                 '@media screen and (min-width: 1300px)': {
                   gap: '160px',
                   flexWrap: 'nowrap'

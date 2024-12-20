@@ -17,9 +17,9 @@ export type UserLogSearchResponse = ApiResp<{
 export interface UserLogQueryParams {
   token_name?: string
   model_name?: string
-  code?: string
   start_timestamp?: string
   end_timestamp?: string
+  code_type?: 'all' | 'success' | 'error' | undefined
   page: number
   perPage: number
 }
@@ -58,8 +58,9 @@ async function fetchLogs(
     if (params.model_name) {
       url.searchParams.append('model_name', params.model_name)
     }
-    if (params.code) {
-      url.searchParams.append('code', params.code)
+
+    if (params.code_type) {
+      url.searchParams.append('code_type', params.code_type)
     }
     if (params.start_timestamp) {
       url.searchParams.append('start_timestamp', params.start_timestamp)
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserLogSea
       perPage: parseInt(searchParams.get('perPage') || '10', 10),
       token_name: searchParams.get('token_name') || undefined,
       model_name: searchParams.get('model_name') || undefined,
-      code: searchParams.get('code') || undefined,
+      code_type: (searchParams.get('code_type') as 'all' | 'success' | 'error') || undefined,
       start_timestamp: searchParams.get('start_timestamp') || undefined,
       end_timestamp: searchParams.get('end_timestamp') || undefined
     }
