@@ -4,11 +4,11 @@ export const windowsScriptsTemplate = (
   host: string,
   port: string,
   user: string
-) => `\$ConfigDirTxt = "\$HOME\\.ssh\\sealos\\"
-\$ConfigDir = Resolve-Path \$ConfigDirTxt
+) => `\$ConfigDirTxt = "~/.ssh/sealos/"
+\$ConfigDir = "\$HOME\\.ssh\\sealos\\"
 \$SSHConfigFile = "\$HOME\\.ssh\\config"
 
-\$ConfigFileTxt = "\${ConfigDirTxt}devbox_config"
+\$ConfigFileTxt = "~/.ssh/sealos/devbox_config"
 \$ConfigFile = "\$ConfigDir\\devbox_config"
 
 \$PrivateKey = @"
