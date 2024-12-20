@@ -40,7 +40,7 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
                 color: 'brightBlue.600'
               }
             }}>
-            {platform === 'windows' ? 'PowerShell' : 'Bash'}
+            {platform === 'Windows' ? 'PowerShell' : 'Bash'}
           </Button>
         </Box>
         <Button
