@@ -4,36 +4,13 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { crLabelKey } from '@/constants/db';
+import { adaptBackup } from '@/utils/adapt';
 
 export type Props = {
   dbName: string;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { dbName } = req.query as Props;
-
-  if (!dbName) {
-    jsonRes(res, {
-      code: 500,
-      error: 'params error'
-    });
-    return;
-  }
-
-  const data = await getBackupListByDBName({ dbName, req });
-  try {
-    jsonRes(res, {
-      data
-    });
-  } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
-  }
-}
-
-export async function getBackupListByDBName({ dbName, req }: Props & { req: NextApiRequest }) {
   const group = 'dataprotection.kubeblocks.io';
   const version = 'v1alpha1';
   const plural = 'backups';
@@ -46,13 +23,17 @@ export async function getBackupListByDBName({ dbName, req }: Props & { req: Next
     group,
     version,
     namespace,
-    plural,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    `app.kubernetes.io/instance=${dbName}`
+    plural
   )) as { body: { items: any[] } };
 
-  return body?.items || [];
+  try {
+    jsonRes(res, {
+      data: body.items.map(adaptBackup)
+    });
+  } catch (err: any) {
+    jsonRes(res, {
+      code: 500,
+      error: err
+    });
+  }
 }

@@ -135,15 +135,17 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
 
   return (
     <Flex flexDirection={'column'} h={'full'} w={'full'} position={'relative'}>
-      <Flex mx={'26px'} h={'36px'}>
+      <Flex h={'36px'}>
         {SubNavList.map((item) => (
           <Box
             key={item.label}
             mr={5}
-            py={'8px'}
+            pb={'6px'}
+            pt={'4px'}
             borderBottom={'2px solid'}
             cursor={'pointer'}
-            fontSize={'md'}
+            fontSize={'16px'}
+            fontWeight={'500'}
             {...(item.value === subMenu
               ? {
                   color: 'grayModern.900',
@@ -180,7 +182,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
         )}
       </Flex>
 
-      <Box mt={'8px'} flex={'1 0 0'} h={'0'}>
+      <Box mt={'16px'} flex={'1 0 0'} h={'0'}>
         {subMenu === SubMenuEnum.Parameter && config && (
           <ConfigTable
             ref={configTableRef}
