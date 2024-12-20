@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 
-import { KBDevboxType } from '@/types/k8s'
-import { jsonRes } from '@/services/backend/response'
-import { getK8s } from '@/services/backend/kubernetes'
+import { devboxStatusMap } from '@/constants/devbox'
 import { getPayloadWithoutVerification, verifyToken } from '@/services/backend/auth'
-import { adaptDevboxListItem } from '@/utils/adapt'
+import { getK8s } from '@/services/backend/kubernetes'
+import { jsonRes } from '@/services/backend/response'
+import { KBDevboxTypeV2 } from '@/types/k8s'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,15 +40,22 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const devboxResult = await k8sCustomObjects.getNamespacedCustomObject(
+    const { body } = await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
       'devboxes',
       devboxName
-    )
+    ) as {
+      body: KBDevboxTypeV2
+    }
 
-    const devbox = adaptDevboxListItem(devboxResult.body as KBDevboxType)
+    const devbox = {
+      status:
+        body.status.phase && devboxStatusMap[body.status.phase]
+          ? devboxStatusMap[body.status.phase]
+          : devboxStatusMap.Error,
+    }
 
     return jsonRes({
       data: {

@@ -1,4 +1,4 @@
-import { DevboxEditType, DevboxDetailType } from '@/types/devbox'
+import { DevboxDetailType, DevboxEditType, DevboxEditTypeV2 } from '@/types/devbox'
 
 export const crLabelKey = 'sealos-devbox-cr'
 export const devboxKey = 'cloud.sealos.io/devbox-manager'
@@ -86,7 +86,16 @@ export const defaultDevboxEditValue: DevboxEditType = {
   memory: MemorySlideMarkList[1].value,
   networks: []
 }
-
+export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
+  name: 'devbox',
+  image: '',
+  templateConfig: '{}',
+  templateRepositoryUid: '',
+  templateUid: '',
+  cpu: CpuSlideMarkList[1].value,
+  memory: MemorySlideMarkList[1].value,
+  networks: []
+}
 export const devboxStatusMap = {
   [DevboxStatusEnum.Stopping]: {
     label: 'Stopping',

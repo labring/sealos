@@ -1,15 +1,14 @@
+import { Box, Flex, Image, Spinner, Text, Tooltip } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import React, { useCallback, useState } from 'react'
-import { Box, Text, Flex, Image, Spinner, Tooltip } from '@chakra-ui/react'
+import { useCallback, useState } from 'react'
 
 import MyIcon from '@/components/Icon'
 
 import { DevboxDetailType } from '@/types/devbox'
 
-import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
-import { useRuntimeStore } from '@/stores/runtime'
+import { useEnvStore } from '@/stores/env'
 
 const BasicInfo = () => {
   const t = useTranslations()
@@ -17,12 +16,12 @@ const BasicInfo = () => {
 
   const { env } = useEnvStore()
   const { devboxDetail } = useDevboxStore()
-  const { getRuntimeDetailLabel } = useRuntimeStore()
+  // const { getRuntimeDetailLabel } = useRuntimeStore()
 
   const [loading, setLoading] = useState(false)
-
+  
   const handleCopySSHCommand = useCallback(() => {
-    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail.sshPort}`
+    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`
     navigator.clipboard.writeText(sshCommand).then(() => {
       toast({
         title: t('copy_success'),
@@ -31,7 +30,7 @@ const BasicInfo = () => {
         isClosable: true
       })
     })
-  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail.sshPort, env.sealosDomain, toast, t])
+  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t])
 
   const handleDownloadConfig = useCallback(
     async (config: DevboxDetailType['sshConfig']) => {
@@ -44,7 +43,7 @@ const BasicInfo = () => {
       const a = document.createElement('a')
       a.style.display = 'none'
       a.href = url
-      a.download = devboxDetail.name
+      a.download = devboxDetail?.name || ''
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -52,7 +51,7 @@ const BasicInfo = () => {
 
       setLoading(false)
     },
-    [devboxDetail]
+    [devboxDetail?.name]
   )
 
   return (
@@ -75,11 +74,11 @@ const BasicInfo = () => {
               ml={2}
               width={'20px'}
               height={'20px'}
-              alt={devboxDetail?.runtimeType}
-              src={`/images/${devboxDetail?.runtimeType}.svg`}
               onError={(e) => {
                 e.currentTarget.src = '/images/custom.svg'
               }}
+              alt={devboxDetail?.iconId}
+              src={`/images/${devboxDetail?.iconId}.svg`}
             />
           </Flex>
         </Flex>
@@ -106,8 +105,15 @@ const BasicInfo = () => {
             {t('start_runtime')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>
-              {getRuntimeDetailLabel(devboxDetail?.runtimeType, devboxDetail?.runtimeVersion)}
+            <Text 
+            fontSize={'12px'}
+            w={'full'}
+            textOverflow={'ellipsis'}
+            >
+              {
+              // getRuntimeDetailLabel(devboxDetail?., devboxDetail?.runtimeVersion)
+              `${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`
+              }
             </Text>
           </Flex>
         </Flex>
@@ -124,7 +130,7 @@ const BasicInfo = () => {
             CPU Limit
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.cpu / 1000} Core</Text>
+            <Text fontSize={'12px'}>{(devboxDetail?.cpu || 0) / 1000} Core</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -132,7 +138,7 @@ const BasicInfo = () => {
             Memory Limit
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.memory / 1024} G</Text>
+            <Text fontSize={'12px'}>{(devboxDetail?.memory || 0) / 1024} G</Text>
           </Flex>
         </Flex>
       </Flex>
@@ -174,7 +180,7 @@ const BasicInfo = () => {
                 _hover={{ color: 'blue.500' }}
                 onClick={handleCopySSHCommand}
                 w={'full'}>
-                {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail.sshPort}`}
+                {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
               </Text>
             </Tooltip>
           </Flex>
@@ -267,9 +273,6 @@ const BasicInfo = () => {
                   h={'16px'}
                   color={'grayModern.600'}
                   mt={'1px'}
-                  onClick={() => {
-                    console.log('click')
-                  }}
                 />
               </Flex>
             </Tooltip>

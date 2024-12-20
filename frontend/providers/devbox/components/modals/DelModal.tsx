@@ -16,10 +16,10 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import MyIcon from '@/components/Icon'
 import { delDevbox } from '@/api/devbox'
+import MyIcon from '@/components/Icon'
 import { useIDEStore } from '@/stores/ide'
-import { DevboxDetailType, DevboxListItemType } from '@/types/devbox'
+import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox'
 
 const DelModal = ({
   devbox,
@@ -27,7 +27,7 @@ const DelModal = ({
   refetchDevboxList,
   onSuccess
 }: {
-  devbox: DevboxListItemType | DevboxDetailType
+  devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2
   onClose: () => void
   onSuccess: () => void
   refetchDevboxList: () => void

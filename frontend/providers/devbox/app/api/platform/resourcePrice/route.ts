@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 
-import { userPriceType } from '@/types/user'
 import { jsonRes } from '@/services/backend/response'
+import { userPriceType } from '@/types/user'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
           method: 'POST'
         })
 
-        const data: ResourcePriceType = await res.json()
+        const data: ResourcePriceType = await res.clone().json()
 
         return data.data.properties
       } catch (error) {

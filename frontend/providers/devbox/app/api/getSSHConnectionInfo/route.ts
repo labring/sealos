@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server'
 
-import { defaultEnv } from '@/stores/env'
-import { KBRuntimeType } from '@/types/k8s'
-import { jsonRes } from '@/services/backend/response'
-import { getK8s } from '@/services/backend/kubernetes'
 import { authSession, generateAccessToken } from '@/services/backend/auth'
+import { getK8s } from '@/services/backend/kubernetes'
+import { jsonRes } from '@/services/backend/response'
+import { devboxDB } from '@/services/db/init'
+import { KBDevboxTypeV2 } from '@/types/k8s'
+import { parseTemplateConfig } from '@/utils/tools'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName') as string
-    const runtimeName = searchParams.get('runtimeName') as string
+    // const runtimeName = searchParams.get('runtimeName') as string
 
     const headerList = req.headers
 
@@ -32,18 +33,25 @@ export async function GET(req: NextRequest) {
       'base64'
     ).toString('utf-8')
     const token = generateAccessToken({ namespace, devboxName }, jwtSecret)
-
-    const { body: runtime } = (await k8sCustomObjects.getNamespacedCustomObject(
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
-      ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
-      'runtimes',
-      runtimeName
-    )) as { body: KBRuntimeType }
-
-    const userName = runtime.spec.config.user
-
-    return jsonRes({ data: { base64PublicKey, base64PrivateKey, userName, token } })
+      namespace,
+      'devboxes',
+      devboxName
+    )) as { body: KBDevboxTypeV2 }
+    const template = await devboxDB.template.findUnique({
+      where: {
+        uid: devboxBody.spec.templateID
+      }
+    })
+    if (!template) throw new Error(`Template ${devboxBody.spec.templateID} is not found`)
+      const config = parseTemplateConfig(template.config)
+    return jsonRes({ data: { base64PublicKey, base64PrivateKey, token, 
+      userName: config.user,
+      workingDir: config.workingDir,
+      releaseCommand: config.releaseCommand.join(' '),
+      releaseArgs: config.releaseArgs.join(' ') } })
   } catch (err: any) {
     return jsonRes({
       code: 500,
