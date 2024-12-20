@@ -2656,6 +2656,10 @@ spec:
                 required:
                 - type
                 type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                type: object
               resource:
                 additionalProperties:
                   anyOf:
@@ -2663,7 +2667,10 @@ spec:
                   - type: string
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
+                description: ResourceList is a set of (resource name, quantity) pairs.
                 type: object
+              runtimeClassName:
+                type: string
               runtimeRef:
                 properties:
                   name:
