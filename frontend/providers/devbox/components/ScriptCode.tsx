@@ -17,7 +17,8 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
       borderRadius={'6px'}
       border={'1px solid'}
       borderColor={'grayModern.200'}
-      flexDirection={'column'}>
+      flexDirection={'column'}
+      w={'585px'}>
       <Flex justifyContent={'space-between'} alignItems={'center'} w={'full'}>
         <Box>
           <Button

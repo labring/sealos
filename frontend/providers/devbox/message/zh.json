@@ -89,7 +89,7 @@
   "jetbrains_guide_cancel": "点击取消",
   "jetbrains_guide_check_ssh_connection": "连接验证",
   "jetbrains_guide_click_to_config": "点击下方按钮，<blue>配置 SSH 连接信息</blue>。",
-  "jetbrains_guide_command": "打开命令行，输入以下命令：",
+  "jetbrains_guide_command": "打开命令行，输入以下命令来检测SSH连接是否正常：",
   "jetbrains_guide_config_ssh": "配置 SSH 连接信息",
   "jetbrains_guide_connecting": "正在连接（{process}%）...",
   "jetbrains_guide_connecting_info": "第一次连接需要 3-5 min，请耐心等待",

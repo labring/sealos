@@ -138,59 +138,98 @@ const SshConnectModal = ({
               </TabList>
             </Tabs>
             {/* one-click */}
-            <Flex flexDirection={'column'} gap={4}>
-              <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
-                {t('jetbrains_guide_one_click_setup')}
-              </Text>
-              <Box fontSize={'14px'} color={'grayModern.900'} fontWeight={400} lineHeight={'20px'}>
-                {t.rich('jetbrains_guide_one_click_setup_desc', {
-                  blue: (chunks) => (
-                    <Text fontWeight={'bold'} display={'inline-block'} color={'brightBlue.600'}>
-                      {chunks}
-                    </Text>
-                  ),
-                  lightColor: (chunks) => (
-                    <Text color={'grayModern.600'} display={'inline-block'}>
-                      {chunks}
-                    </Text>
-                  )
-                })}
+            <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
+              {t('jetbrains_guide_one_click_setup')}
+            </Text>
+            <Stepper orientation="vertical" index={-1} mt={3} gap={0}>
+              {/* 1 */}
+              <Box>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Flex flexDirection={'column'} gap={4} mt={1} ml={2} mb={5} flex={1}>
+                    <Box
+                      fontSize={'14px'}
+                      color={'grayModern.900'}
+                      fontWeight={400}
+                      lineHeight={'20px'}>
+                      {t.rich('jetbrains_guide_one_click_setup_desc', {
+                        blue: (chunks) => (
+                          <Text
+                            fontWeight={'bold'}
+                            display={'inline-block'}
+                            color={'brightBlue.600'}>
+                            {chunks}
+                          </Text>
+                        ),
+                        lightColor: (chunks) => (
+                          <Text color={'grayModern.600'} display={'inline-block'}>
+                            {chunks}
+                          </Text>
+                        )
+                      })}
+                    </Box>
+                    <Button
+                      leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
+                      bg={'white'}
+                      w={'fit-content'}
+                      size={'sm'}
+                      py={4}
+                      color={'grayModern.600'}
+                      border={'1px solid'}
+                      borderColor={'grayModern.200'}
+                      borderRadius={'6px'}
+                      _hover={{
+                        color: 'brightBlue.600',
+                        '& svg': {
+                          color: 'brightBlue.600'
+                        }
+                      }}
+                      onClick={() => {
+                        if (script.platform === 'Windows') {
+                          downLoadBlob(
+                            script.script,
+                            'text/plain',
+                            `ssh-config-${jetbrainsGuideData.devboxName}.ps1`
+                          )
+                        } else {
+                          downLoadBlob(
+                            script.script,
+                            'text/plain',
+                            `ssh-config-${jetbrainsGuideData.devboxName}.sh`
+                          )
+                        }
+                      }}>
+                      {t('download_scripts')}
+                    </Button>
+                    <ScriptCode platform={script.platform} script={script.script} />
+                  </Flex>
+                  <StepSeparator />
+                </Step>
               </Box>
-              <Button
-                leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
-                bg={'white'}
-                w={'fit-content'}
-                size={'sm'}
-                py={4}
-                color={'grayModern.600'}
-                border={'1px solid'}
-                borderColor={'grayModern.200'}
-                borderRadius={'6px'}
-                _hover={{
-                  color: 'brightBlue.600',
-                  '& svg': {
-                    color: 'brightBlue.600'
-                  }
-                }}
-                onClick={() => {
-                  if (script.platform === 'Windows') {
-                    downLoadBlob(
-                      script.script,
-                      'text/plain',
-                      `ssh-config-${jetbrainsGuideData.devboxName}.ps1`
-                    )
-                  } else {
-                    downLoadBlob(
-                      script.script,
-                      'text/plain',
-                      `ssh-config-${jetbrainsGuideData.devboxName}.sh`
-                    )
-                  }
-                }}>
-                {t('download_scripts')}
-              </Button>
-              <ScriptCode platform={script.platform} script={script.script} />
-            </Flex>
+              {/* 2 */}
+              <Box w={'100%'}>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                    <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
+                    <ScriptCode
+                      platform={script.platform}
+                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                    />
+                  </Flex>
+                  <StepSeparator />
+                </Step>
+              </Box>
+              {/* done */}
+              <Step>
+                <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
+              </Step>
+            </Stepper>
+
             <Divider my={6} />
             {/* step-by-step */}
             <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
@@ -315,27 +354,27 @@ const SshConnectModal = ({
                   <StepSeparator />
                 </Step>
               </Box>
+              {/* 4 */}
+              <Box w={'100%'}>
+                <Step>
+                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
+                    <StepStatus incomplete={<StepNumber />} />
+                  </StepIndicator>
+                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                    <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
+                    <ScriptCode
+                      platform={script.platform}
+                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                    />
+                  </Flex>
+                  <StepSeparator />
+                </Step>
+              </Box>
               {/* done */}
               <Step>
                 <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
               </Step>
             </Stepper>
-            <Divider my={6} />
-            {/* Check SSH Connection */}
-            <Flex flexDirection={'column'} gap={4}>
-              <Text fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
-                {t('jetbrains_guide_check_ssh_connection')}
-              </Text>
-            </Flex>
-            <Box w={'100%'}>
-              <Flex mt={1} mb={5} flexDirection={'column'} gap={4} flex={1}>
-                <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
-                <ScriptCode
-                  platform={script.platform}
-                  script={sshConnectCommand(jetbrainsGuideData.configHost)}
-                />
-              </Flex>
-            </Box>
           </ModalBody>
         </ModalContent>
       </Modal>
