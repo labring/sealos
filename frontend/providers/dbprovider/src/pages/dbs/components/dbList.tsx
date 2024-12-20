@@ -350,7 +350,7 @@ const DBList = ({
         </Button>
       </Flex>
 
-      <BaseTable table={table} isLoading={false} overflow={'auto'} />
+      <BaseTable table={table} isLoading={false} overflow={'auto'} tdStyle={{ height: '64px' }} />
 
       <PauseChild />
       {!!delAppName && (

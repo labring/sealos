@@ -275,7 +275,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   return (
     <Flex position={'relative'} gap={'8px'}>
-      <Box flex={'1 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
+      <Box flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
         {appInfoTable.map((info, index) => (
           <Box key={info.name} fontSize={'md'}>
             <Flex
@@ -364,7 +364,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         ))}
       </Box>
       {secret ? (
-        <Box flex={'1 1 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
+        <Box flex={'0 1 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
           <Flex fontSize={'base'} gap={'8px'} alignItems={'center'} color={'grayModern.600'}>
             <Box fontSize={'16px'} fontWeight={'bold'} color={'grayModern.900'}>
               {t('connection_info')}

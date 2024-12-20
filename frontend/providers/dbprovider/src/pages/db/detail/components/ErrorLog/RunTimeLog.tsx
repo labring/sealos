@@ -283,7 +283,12 @@ export default function RunTimeLog({
           />
         </InputGroup>
       </Flex>
-      <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} showBorder={false} />
+      <BaseTable
+        table={table}
+        isLoading={isLoading}
+        overflowY={'auto'}
+        tdStyle={{ p: '12px 24px 4px 24px', border: 'none' }}
+      />
       <SwitchPage
         mt={'auto'}
         justifyContent={'end'}

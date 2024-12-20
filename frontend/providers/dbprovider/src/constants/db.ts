@@ -198,7 +198,7 @@ export const podStatusMap = {
   [PodStatusEnum.running]: {
     label: 'running',
     value: PodStatusEnum.running,
-    bg: '#47C8BF'
+    bg: '#6CD99F'
   },
   [PodStatusEnum.waiting]: {
     label: 'waiting',

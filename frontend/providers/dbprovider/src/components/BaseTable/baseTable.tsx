@@ -27,9 +27,13 @@ const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties =
 export function BaseTable<T extends unknown>({
   table,
   isLoading,
-  showBorder = true,
+  tdStyle,
   ...props
-}: { table: ReactTable<T>; isLoading: boolean; showBorder?: boolean } & TableContainerProps) {
+}: {
+  table: ReactTable<T>;
+  isLoading: boolean;
+  tdStyle?: HTMLChakraProps<'td'>;
+} & TableContainerProps) {
   return (
     <TableContainer {...props}>
       <Table variant="unstyled" width={'full'}>
@@ -73,22 +77,13 @@ export function BaseTable<T extends unknown>({
           ) : (
             table.getRowModel().rows.map((item, index) => {
               return (
-                <Tr
-                  key={item.id}
-                  h={'64px'}
-                  fontSize={'12px'}
-                  borderBottom={showBorder ? '1px solid' : 'none'}
-                  borderBottomColor={
-                    index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
-                  }
-                >
+                <Tr key={item.id} fontSize={'12px'}>
                   {item.getAllCells().map((cell, i) => {
                     const isPinned = cell.column.getIsPinned();
                     return (
                       <Td
-                        py="10px"
                         key={cell.id}
-                        px={'24px'}
+                        p={'10px 24px'}
                         bg={isPinned ? 'white' : ''}
                         _first={{
                           w: '200px'
@@ -96,7 +91,12 @@ export function BaseTable<T extends unknown>({
                         _last={{
                           w: '140px'
                         }}
+                        borderBottom={'1px solid'}
+                        borderBottomColor={
+                          index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
+                        }
                         {...(getCommonPinningStyles(cell.column) as HTMLChakraProps<'td'>)}
+                        {...tdStyle}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Td>
