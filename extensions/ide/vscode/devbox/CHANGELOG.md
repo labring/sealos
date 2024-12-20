@@ -6,6 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.3.0] - 2024-12-20
+
+### Fixed
+
+- Fix http url -> https url.
+
+## [1.2.2] - 2024-12-09
+
 ### Changed
 
 - Adjust `Remote-SSH` to install by code.
