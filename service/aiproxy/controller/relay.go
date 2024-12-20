@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
@@ -18,6 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	log "github.com/sirupsen/logrus"
 )
 
 // https://platform.openai.com/docs/api-reference/chat
@@ -41,14 +41,22 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	}
 }
 
+func RelayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+	err := relayHelper(meta, c)
+	if err := monitor.AddRequest(c.Request.Context(), meta.OriginModelName, int64(meta.Channel.ID), err != nil); err != nil {
+		log.Errorf("add request failed: %+v", err)
+	}
+	return err
+}
+
 func Relay(c *gin.Context) {
 	log := middleware.GetLogger(c)
 
 	requestModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
 
-	ids, err := monitor.GetChannelsWithErrors(c.Request.Context(), requestModel, 10*time.Minute, 1)
+	ids, err := monitor.GetBannedChannels(c.Request.Context(), requestModel)
 	if err != nil {
-		log.Errorf("get channels with errors failed: %+v", err)
+		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
 	}
 
 	failedChannelIDs := []int{}
@@ -69,22 +77,14 @@ func Relay(c *gin.Context) {
 	}
 
 	meta := middleware.NewMetaByContext(c, channel)
-	bizErr := relayHelper(meta, c)
+	bizErr := RelayHelper(meta, c)
 	if bizErr == nil {
-		err = monitor.ClearChannelErrors(c.Request.Context(), requestModel, channel.ID)
-		if err != nil {
-			log.Errorf("clear channel errors failed: %+v", err)
-		}
 		return
 	}
 	failedChannelIDs = append(failedChannelIDs, channel.ID)
 	requestID := c.GetString(ctxkey.RequestID)
 	var retryTimes int64
 	if shouldRetry(c, bizErr.StatusCode) {
-		err = monitor.AddError(c.Request.Context(), requestModel, int64(channel.ID), 10*time.Second)
-		if err != nil {
-			log.Errorf("add error failed: %+v", err)
-		}
 		retryTimes = config.GetRetryTimes()
 	}
 	for i := retryTimes; i > 0; i-- {
@@ -107,7 +107,7 @@ func Relay(c *gin.Context) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		meta.Reset(newChannel)
-		bizErr = relayHelper(meta, c)
+		bizErr = RelayHelper(meta, c)
 		if bizErr == nil {
 			return
 		}
