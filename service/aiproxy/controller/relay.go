@@ -49,6 +49,17 @@ func RelayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	return err
 }
 
+func getChannelWithFallback(model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
+	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(model, failedChannelIDs...)
+	if err == nil {
+		return channel, nil
+	}
+	if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
+		return nil, err
+	}
+	return dbmodel.CacheGetRandomSatisfiedChannel(model)
+}
+
 func Relay(c *gin.Context) {
 	log := middleware.GetLogger(c)
 
@@ -64,7 +75,7 @@ func Relay(c *gin.Context) {
 		failedChannelIDs = append(failedChannelIDs, int(id))
 	}
 
-	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
+	channel, err := getChannelWithFallback(requestModel, failedChannelIDs...)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": &model.Error{
@@ -94,7 +105,6 @@ func Relay(c *gin.Context) {
 				break
 			}
 			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
-				log.Errorf("get random satisfied channel failed: %+v", err)
 				break
 			}
 			newChannel = channel
