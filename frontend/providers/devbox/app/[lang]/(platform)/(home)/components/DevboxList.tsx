@@ -14,7 +14,7 @@ import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import ReleaseModal from '@/components/modals/releaseModal'
+import ReleaseModal from '@/components/modals/ReleaseModal'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
@@ -220,6 +220,7 @@ const DevboxList = ({
         <Flex>
           <IDEButton
             devboxName={item.name}
+            runtimeType={item.runtimeType}
             runtimeVersion={item.runtimeVersion}
             sshPort={item.sshPort}
             status={item.status}
