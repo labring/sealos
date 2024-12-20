@@ -85,6 +85,7 @@
   "image_name": "Image Name",
   "internal_address": "Internal Address",
   "jetbrains_guide_cancel": "Click to Cancel",
+  "jetbrains_guide_check_ssh_connection": "Connection Verification",
   "jetbrains_guide_click_to_config": "Click the button below to <blue>configure SSH connection </blue>.",
   "jetbrains_guide_command": "Open a terminal and type the following command:",
   "jetbrains_guide_config_ssh": "Configure SSH Connection",

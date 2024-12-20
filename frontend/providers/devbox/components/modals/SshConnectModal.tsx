@@ -33,7 +33,7 @@ import {
   windowsScriptsTemplate
 } from '@/constants/scripts'
 import { JetBrainsGuideData } from '../IDEButton'
-import { downLoadBlob } from '@/utils/tools'
+import { downLoadBlob, useCopyData } from '@/utils/tools'
 
 const systemList = ['Windows', 'Mac', 'Linux']
 
@@ -47,6 +47,7 @@ const SshConnectModal = ({
   jetbrainsGuideData: JetBrainsGuideData
 }) => {
   const t = useTranslations()
+  const { copyData } = useCopyData()
 
   const [activeTab, setActiveTab] = useState(0)
 
@@ -271,7 +272,12 @@ const SshConnectModal = ({
                       }}
                       cursor={'pointer'}
                       ml={2}>
-                      <MyIcon name="copy" color={'grayModern.500'} w={'16px'} />
+                      <MyIcon
+                        name="copy"
+                        color={'grayModern.500'}
+                        w={'16px'}
+                        onClick={() => copyData('~/.ssh/sealos')}
+                      />
                     </Box>
                   </Flex>
                   <StepSeparator />
@@ -309,27 +315,27 @@ const SshConnectModal = ({
                   <StepSeparator />
                 </Step>
               </Box>
-              {/* 4 */}
-              <Box w={'100%'}>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
-                    <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
-                    <ScriptCode
-                      platform={script.platform}
-                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
-                    />
-                  </Flex>
-                  <StepSeparator />
-                </Step>
-              </Box>
               {/* done */}
               <Step>
                 <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
               </Step>
             </Stepper>
+            <Divider my={6} />
+            {/* Check SSH Connection */}
+            <Flex flexDirection={'column'} gap={4}>
+              <Text fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                {t('jetbrains_guide_check_ssh_connection')}
+              </Text>
+            </Flex>
+            <Box w={'100%'}>
+              <Flex mt={1} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
+                <ScriptCode
+                  platform={script.platform}
+                  script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                />
+              </Flex>
+            </Box>
           </ModalBody>
         </ModalContent>
       </Modal>
