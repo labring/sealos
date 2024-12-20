@@ -48,8 +48,9 @@ const (
 type NetworkType string
 
 const (
-	NetworkTypeNodePort NetworkType = "NodePort"
-	NetworkTypeTailnet  NetworkType = "Tailnet"
+	NetworkTypeNodePort  NetworkType = "NodePort"
+	NetworkTypeTailnet   NetworkType = "Tailnet"
+	NetworkTypeWebSocket NetworkType = "WebSocket"
 )
 
 type ResourceList map[ResourceName]resource.Quantity
@@ -63,10 +64,18 @@ type RuntimeRef struct {
 
 type NetworkSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;WebSocket
 	Type NetworkType `json:"type"`
 	// +kubebuilder:validation:Optional
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
+}
+
+type AutoShutdownSpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	Enable bool `json:"type"`
+	// +kubebuilder:validation:Optional
+	Time string `json:"time"`
 }
 
 // DevboxSpec defines the desired state of Devbox
@@ -86,6 +95,9 @@ type DevboxSpec struct {
 
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	AutoShutdownSpec AutoShutdownSpec `json:"autoShutdown,omitempty"`
 
 	// todo add rewrite labels and annotations...
 	// +kubebuilder:validation:Optional
@@ -117,11 +129,14 @@ type DevboxSpec struct {
 
 type NetworkStatus struct {
 	// +kubebuilder:default=NodePort
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;WebSocket
 	Type NetworkType `json:"type"`
 
 	// +kubebuilder:validation:Optional
 	NodePort int32 `json:"nodePort"`
+
+	// +kubebuilder:validation:Optional
+	WebSocket string `json:"webSocket"`
 
 	// todo TailNet
 	// +kubebuilder:validation:Optional
