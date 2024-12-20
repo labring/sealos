@@ -14,7 +14,7 @@ import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
 import PodLineChart from '@/components/PodLineChart'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import ReleaseModal from '@/components/modals/ReleaseModal'
+import ReleaseModal from '@/components/modals/ReleaseModalTemp'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 

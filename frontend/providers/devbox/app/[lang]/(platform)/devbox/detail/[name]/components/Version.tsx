@@ -8,7 +8,7 @@ import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/r
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import ReleaseModal from '@/components/modals/ReleaseModal'
+import ReleaseModal from '@/components/modals/ReleaseModalTemp'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 
 import { DevboxVersionListItemType } from '@/types/devbox'
