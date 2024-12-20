@@ -19,7 +19,7 @@ import { useEnvStore } from '@/stores/env'
 import { useIDEStore, IDEType } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
 import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
-import JetBrainsGuideModal from './modals/JetbrainsGuideModalTemp'
+import JetBrainsGuideModal from './modals/JetbrainsGuideModal'
 
 interface Props {
   devboxName: string
