@@ -50,6 +50,7 @@ const map = {
   upload: require('./icons/upload.svg').default,
   target: require('./icons/target.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
+  arrowRight: require('./icons/arrowRight.svg').default,
   docs: require('./icons/docs.svg').default,
   vscode: require('./icons/vscode.svg').default,
   monitor: require('./icons/monitor.svg').default,

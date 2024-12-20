@@ -29,11 +29,13 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
             color={'grayModern.900'}
             fontWeight={400}
             leftIcon={
-              onOpenScripts ? (
-                <MyIcon name="arrowUp" color={'grayModern.500'} w={'16px'} />
-              ) : (
-                <MyIcon name="arrowDown" color={'grayModern.500'} w={'16px'} />
-              )
+              <MyIcon
+                name="arrowRight"
+                color={'grayModern.500'}
+                w={'16px'}
+                transform={onOpenScripts ? 'rotate(90deg)' : 'rotate(0)'}
+                transition="transform 0.2s ease"
+              />
             }
             _hover={{
               color: 'brightBlue.600',
