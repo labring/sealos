@@ -9,7 +9,9 @@
     "lint": "next lint",
     "ts-lint": "tsc --noEmit",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
-    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
+    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
+    "gen-client": "prisma generate --schema ./prisma/schema.prisma",
+    "postinstall": "pnpm gen-client"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.8.1",
