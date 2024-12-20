@@ -20,7 +20,7 @@ import {
   Tabs,
   TabList
 } from '@chakra-ui/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import Tab from '../Tab'
@@ -49,6 +49,28 @@ const SshConnectModal = ({
   const t = useTranslations()
 
   const [activeTab, setActiveTab] = useState(0)
+
+  useEffect(() => {
+    const detectPlatform = () => {
+      if (window.navigator.platform) {
+        const platform = window.navigator.platform.toLowerCase()
+        console.log('platform', platform)
+        if (platform.includes('windows')) return 0
+        if (platform.includes('mac')) return 1
+        if (platform.includes('linux')) return 2
+      }
+
+      const userAgent = window.navigator.userAgent.toLowerCase()
+      console.log('userAgent', userAgent)
+      if (userAgent.includes('win')) return 0
+      if (userAgent.includes('mac')) return 1
+      if (userAgent.includes('linux')) return 2
+
+      return 0
+    }
+
+    setActiveTab(detectPlatform())
+  }, [])
 
   const script = useMemo(() => {
     if (activeTab === 0) {
@@ -95,7 +117,11 @@ const SshConnectModal = ({
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={6} overflowY={'auto'}>
-            <Tabs onChange={(index) => setActiveTab(index)} mb={4} colorScheme={'brightBlue'}>
+            <Tabs
+              onChange={(index) => setActiveTab(index)}
+              mb={4}
+              colorScheme={'brightBlue'}
+              defaultIndex={activeTab}>
               <TabList>
                 {systemList.map((item) => (
                   <Tab key={item}>{item}</Tab>

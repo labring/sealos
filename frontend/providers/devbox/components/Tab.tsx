@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, useMultiStyleConfig, useTab } from '@chakra-ui/react'
+import { Box, useTab } from '@chakra-ui/react'
 
 const Tab = React.forwardRef((props: { children: React.ReactNode }, ref) => {
   const tabProps = useTab({ ...props, ref: ref as React.Ref<HTMLElement> })
