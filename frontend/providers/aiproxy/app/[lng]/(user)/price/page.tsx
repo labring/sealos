@@ -16,8 +16,7 @@ import {
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useQuery } from '@tanstack/react-query'
-import { ModelPrice } from '@/types/backend'
-import { getModelPrices } from '@/api/platform'
+import { getEnabledMode } from '@/api/platform'
 import { useMemo } from 'react'
 import {
   createColumnHelper,
@@ -27,8 +26,11 @@ import {
 } from '@tanstack/react-table'
 import { CurrencySymbol } from '@sealos/ui'
 import { ModelIdentifier } from '@/types/front'
-import { MyTooltip } from '@/components/MyTooltip'
+import { MyTooltip } from '@/components/common/MyTooltip'
 import { useMessage } from '@sealos/ui'
+import { ModelConfig } from '@/types/models/model'
+import Image, { StaticImageData } from 'next/image'
+import { QueryKey } from '@/types/query-key'
 // icons
 import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
 import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
@@ -39,21 +41,27 @@ import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
 import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
-import Image, { StaticImageData } from 'next/image'
+import BaaiIcon from '@/ui/svg/icons/modelist/baai.svg'
+import HunyuanIcon from '@/ui/svg/icons/modelist/hunyuan.svg'
+import { getTranslationWithFallback } from '@/utils/common'
 import { useBackendStore } from '@/store/backend'
+import { modelIcons } from '@/ui/icons/mode-icons'
+
+const getModelIcon = (modelOwner: string): StaticImageData => {
+  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default']
+  return icon
+}
+
+const getIdentifier = (modelName: string): ModelIdentifier => {
+  return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
+}
 
 function Price() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   return (
-    <Box
-      w="full"
-      h="full"
-      display="inline-flex"
-      padding="0px 12px 12px 0px"
-      alignItems="center"
-      bg="white">
-      <Box w="full" h="full" padding="27px 32px 0px 32px">
+    <Box w="full" h="full" display="inline-flex" pt="4px" pb="12px" pr="12px" alignItems="center">
+      <Box w="full" h="full" padding="27px 32px 0px 32px" bg="white" borderRadius="12px">
         <Flex w="full" h="full" gap="32px" direction="column">
           <Text
             color="black"
@@ -76,59 +84,13 @@ function Price() {
 function PriceTable() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const { isLoading, data } = useQuery({
-    queryKey: ['getModelPrices'],
-    queryFn: () => getModelPrices(),
-    refetchOnReconnect: true
-  })
+  const { isLoading, data: modelConfigs = [] } = useQuery([QueryKey.GetEnabledModels], () =>
+    getEnabledMode()
+  )
+
   const { currencySymbol } = useBackendStore()
 
-  const modelGroups = {
-    ernie: {
-      icon: ErnieIcon,
-      identifiers: ['ernie']
-    },
-    qwen: {
-      icon: QwenIcon,
-      identifiers: ['qwen']
-    },
-    chatglm: {
-      icon: ChatglmIcon,
-      identifiers: ['chatglm', 'glm']
-    },
-    deepseek: {
-      icon: DeepseekIcon,
-      identifiers: ['deepseek']
-    },
-    moonshot: {
-      icon: MoonshotIcon,
-      identifiers: ['moonshot']
-    },
-    sparkdesk: {
-      icon: SparkdeskIcon,
-      identifiers: ['sparkdesk']
-    },
-    abab: {
-      icon: AbabIcon,
-      identifiers: ['abab']
-    },
-    doubao: {
-      icon: DoubaoIcon,
-      identifiers: ['doubao']
-    }
-  }
-
-  const getIdentifier = (modelName: string): ModelIdentifier => {
-    return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
-  }
-
-  const getModelIcon = (modelName: string): StaticImageData => {
-    const identifier = getIdentifier(modelName)
-    const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
-    return group?.icon || OpenAIIcon
-  }
-
-  const ModelComponent = ({ modelName }: { modelName: string }) => {
+  const ModelComponent = ({ modelName, modelOwner }: { modelName: string; modelOwner: string }) => {
     const { message } = useMessage({
       warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
       warningIconBg: 'var(--Yellow-500, #F79009)',
@@ -137,7 +99,8 @@ function PriceTable() {
       successIconBg: 'var(--Green-600, #039855)',
       successIconFill: 'white'
     })
-    const iconSrc = getModelIcon(modelName)
+
+    const iconSrc = getModelIcon(modelOwner)
 
     return (
       <Flex align="center" gap="12px">
@@ -150,6 +113,7 @@ function PriceTable() {
             fontWeight={500}
             lineHeight="16px"
             letterSpacing="0.5px"
+            whiteSpace="nowrap"
             onClick={() =>
               navigator.clipboard.writeText(modelName).then(
                 () => {
@@ -180,35 +144,10 @@ function PriceTable() {
     )
   }
 
-  const sortModelsByIdentifier = (models: ModelPrice[]): ModelPrice[] => {
-    const groupedModels = new Map<string, ModelPrice[]>()
-
-    // Group models by identifier
-    models.forEach((model) => {
-      const identifier = getIdentifier(model.name)
-      if (!groupedModels.has(identifier)) {
-        groupedModels.set(identifier, [])
-      }
-      groupedModels.get(identifier)!.push(model)
-    })
-
-    // Define order based on modelGroups
-    const orderMap = new Map(Object.keys(modelGroups).map((key, index) => [key, index]))
-
-    // Sort based on modelGroups order, unknown models go to the end
-    const sortedEntries = Array.from(groupedModels.entries()).sort((a, b) => {
-      const orderA = orderMap.has(a[0]) ? orderMap.get(a[0])! : Number.MAX_VALUE
-      const orderB = orderMap.has(b[0]) ? orderMap.get(b[0])! : Number.MAX_VALUE
-      return orderA - orderB
-    })
-
-    return sortedEntries.flatMap(([_, models]) => models)
-  }
-
-  const columnHelper = createColumnHelper<ModelPrice>()
+  const columnHelper = createColumnHelper<ModelConfig>()
   const columns = [
-    columnHelper.accessor((row) => row.name, {
-      id: 'name',
+    columnHelper.accessor((row) => row.model, {
+      id: 'model',
       header: () => (
         <Text
           color="grayModern.600"
@@ -220,9 +159,40 @@ function PriceTable() {
           {t('key.name')}
         </Text>
       ),
-      cell: (info) => <ModelComponent modelName={info.getValue()} />
+      cell: (info) => (
+        <ModelComponent modelName={info.getValue()} modelOwner={info.row.original.owner} />
+      )
     }),
-    columnHelper.accessor((row) => row.prompt, {
+    columnHelper.accessor((row) => row.type, {
+      id: 'type',
+      header: () => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {t('key.modelType')}
+        </Text>
+      ),
+      cell: (info) => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {getTranslationWithFallback(
+            `modeType.${String(info.getValue())}`,
+            'modeType.0',
+            t as any
+          )}
+        </Text>
+      )
+    }),
+    columnHelper.accessor((row) => row.input_price, {
       id: 'inputPrice',
       header: () => {
         return (
@@ -265,7 +235,7 @@ function PriceTable() {
         </Text>
       )
     }),
-    columnHelper.accessor((row) => row.completion, {
+    columnHelper.accessor((row) => row.output_price, {
       id: 'outputPrice',
       header: () => (
         <Box position={'relative'}>
@@ -308,10 +278,10 @@ function PriceTable() {
     })
   ]
 
-  const sortedData = useMemo(() => sortModelsByIdentifier(data || []), [data])
+  const tableData = useMemo(() => modelConfigs, [modelConfigs])
 
   const table = useReactTable({
-    data: sortedData,
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel()
   })
@@ -321,7 +291,7 @@ function PriceTable() {
       <Spinner size="md" color="grayModern.800" />
     </Center>
   ) : (
-    <TableContainer w="full" h="full" maxH="full" overflowY="auto">
+    <TableContainer w="full" h="full" flex="1 0 0" minHeight="0" overflowY="auto">
       <Table variant="simple" w="full" size="md">
         <Thead position="sticky" top={0} zIndex={1} bg="white">
           {table.getHeaderGroups().map((headerGroup) => (

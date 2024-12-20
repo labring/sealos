@@ -4,7 +4,11 @@
   "Sidebar": {
     "Home": "API Keys",
     "Logs": "Logs",
-    "Price": "Pricing"
+    "Price": "Pricing",
+    "Dashboard": "Channels",
+    "GlobalLogs": "Logs",
+    "GlobalConfigs": "Config",
+    "NsManager": "NS Manage"
   },
   "keyList": {
     "title": "API Keys"
@@ -15,8 +19,8 @@
     "createdAt": "Creation time",
     "lastUsedAt": "Last use time",
     "status": "State",
-    "namePlaceholder": "Please enter name",
-    "nameRequired": "Please enter key name",
+    "namePlaceholder": "please enter name",
+    "nameRequired": "please enter key name",
     "nameMaxLength": "Key length is illegal",
     "nameOnlyLettersAndNumbers": "key name contains special characters",
     "createSuccess": "Created successfully",
@@ -29,7 +33,8 @@
     "unused": "Not use",
     "inputPrice": "Input price",
     "outputPrice": "Output price",
-    "createName": "Name"
+    "createName": "Name",
+    "modelType": "Type"
   },
   "logs": {
     "call_log": "Logs",
@@ -40,18 +45,32 @@
     "prompt_tokens": "Input",
     "completion_tokens": "Output",
     "price": "Price",
-    "select_modal": "Please select model",
-    "select_token_name": "Please select name",
+    "select_modal": "please select model",
+    "select_token_name": "please select name",
     "model": "Model",
     "total_price": "Total amount",
     "total_price_tip": "(Number of input tokens × Input price) + (Number of output tokens × Output price)",
     "success": "Success",
-    "failed": "Failed"
+    "failed": "Failed",
+    "logDetail": "Log details",
+    "actions": "Operation",
+    "detail": "Details",
+    "requestId": "RequestID",
+    "mode": "Type",
+    "requestTime": "Request At",
+    "totalTime": "Time consuming",
+    "tokenName": "Key name",
+    "tokenId": "Key ID",
+    "info": "Message",
+    "requestBody": "Request Body",
+    "responseBody": "Response Body",
+    "inputTokens": "Input Tokens",
+    "outputTokens": "Output Tokens"
   },
   "Page": "Page",
   "Total": "Total",
   "modelList": {
-    "title": "Supported models"
+    "title": "Supported Models"
   },
   "copy": "Copy",
   "createKey": "New",
@@ -87,5 +106,130 @@
   "glm": "Glm",
   "o": "OpenAI",
   "gpt": "OpenAI",
-  "createKey2": "Create Key"
+  "bge": "BAAI",
+  "hunyuan": "Hunyuan",
+  "createKey2": "Create Key",
+  "dashboard": {
+    "title": "Channels",
+    "create": "New",
+    "import": "Import",
+    "export": "Export",
+    "exportAll": "Export All",
+    "importSuccess": "Import successful",
+    "importError": "Import failed"
+  },
+  "channelStatus": {
+    "autoDisabled": "System disabled"
+  },
+  "channels": {
+    "name": "Name",
+    "type": "Manufacturer",
+    "test": "Test",
+    "disable": "Disable",
+    "enable": "Enable",
+    "edit": "Edit",
+    "export": "Export",
+    "create": "New",
+    "name_required": "The name is illegal",
+    "key_required": "Key is illegal",
+    "modelDefault": "Channel default model",
+    "createFailed": "Failed to create channel",
+    "createSuccess": "Channel created successfully",
+    "updateSuccess": "Update channel successful",
+    "updateFailed": "Update channel failed",
+    "id": "ID",
+    "requestCount": "Request Times",
+    "status": "Status",
+    "action": "Operation",
+    "delete": "Delete"
+  },
+  "channelsForm": {
+    "name": "Custom Name",
+    "type": "Manufacturer",
+    "models": "Model",
+    "model_mapping": "Input Mode & Output Mode",
+    "add": "Add",
+    "key": "Key",
+    "base_url": "Proxy Address"
+  },
+  "channelsFormPlaceholder": {
+    "name": "custom name",
+    "type": "open ai",
+    "model": "enter selection",
+    "modelInput": "enter custom model name",
+    "modelMappingInput": "input model",
+    "modelMappingOutput": "output model",
+    "key": "please enter the channel key",
+    "base_url": "please enter agent"
+  },
+  "common": {
+    "add": "Add"
+  },
+  "global_configs": {
+    "title": "Global configuration",
+    "export": "Export",
+    "import": "Import",
+    "qpm_limit": "Global QPM limits",
+    "pause_service": "Service Pause",
+    "retry_count": "Number of error retries",
+    "max_token": "Maximum number of tokens in the workspace"
+  },
+  "globalConfigs": {
+    "defaultModel": "Default Model",
+    "addDefaultModel": "New",
+    "saveDefaultModel": "Save",
+    "saveDefaultModelFailed": "Failed To Save",
+    "saveDefaultModelSuccess": "Saved successfully",
+    "saveCommonConfigSuccess": "Update successful",
+    "saveCommonConfigFailed": "Update failed",
+    "common_config": "Common Configuration",
+    "model_config": "Model Settings"
+  },
+  "modeType": {
+    "0": "Unknown",
+    "1": "Chat",
+    "2": "Text",
+    "3": "Embed",
+    "4": "Moderate",
+    "5": "Image",
+    "6": "Edit",
+    "7": "TTS",
+    "8": "STT",
+    "9": "Audio",
+    "10": "Rerank"
+  },
+  "GlobalLogs": {
+    "selectModel": "model Name",
+    "select_token_name": "token name",
+    "selectGroupId": "workspace",
+    "groupId": "Workspace",
+    "tokenName": "Token Name",
+    "channel": "Channel ID"
+  },
+  "nsManager": {
+    "groupId": "Workspace",
+    "qpm": "QPM Restrictions",
+    "created_at": "Creation Time",
+    "accessed_at": "Last use time",
+    "used_amount": "Amount used",
+    "status": "State",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "request_count": "Number of uses",
+    "actions": "Operation",
+    "ns_manager": "NS Management",
+    "select_group_id": "fill in the workspace",
+    "updateGroupStatusSuccess": "Update status successful",
+    "updateGroupStatusFailed": "Update status failed",
+    "updateGroupQpmSuccess": "Update QPM successful",
+    "updateGroupQpmFailed": "Update QPM failed",
+    "deleteGroupSuccess": "Delete successfully",
+    "deleteGroupFailed": "Delete failed"
+  },
+  "channel": {
+    "updateSuccess": "Update status successful",
+    "updateFailed": "Update status failed",
+    "deleteSuccess": "Delete successfully",
+    "deleteFailed": "Delete failed"
+  }
 }

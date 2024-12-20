@@ -61,7 +61,7 @@ const SideBar = (): JSX.Element => {
       px="12px"
       gap="var(--md, 8px)"
       alignContent="center"
-      flexShrink={0}>
+      flex="1">
       {menus
         .filter((menu) => menu.display)
         .map((menu) => {
