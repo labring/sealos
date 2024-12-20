@@ -72,3 +72,75 @@ Try to open Cursor's extension market. If the extension market cannot be loaded 
 ## 6. The local localhost can open the project but the public network address cannot be opened
 
 The exposed address in the code must be changed from `localhost` to `0.0.0.0` due to network reasons.
+
+## 7. The Program Runs Normally in Devbox, but Fails to Run After Deployment
+
+Before deploying, please ensure you can execute `entrypoint.sh` in the terminal (this is the recommended startup script
+post-deployment). If public services are required, also check that the public address is accessible.
+
+```bash
+./entrypoint.sh
+```
+
+If you encounter the following issue:
+
+```bash
+bash: ./entrypoint.sh: Permission denied
+```
+
+You can run the following command in the terminal to modify the script's permissions, and then attempt to execute the
+`entrypoint` script again, ensuring the outcome aligns with your expectations.
+
+```bash
+sudo chmod +x entrypoint.sh
+```
+
+Additionally, it is advisable to build and test the project code in Devbox before deployment. Once testing is
+successful, you can proceed with the deployment. This can effectively prevent errors and out-of-memory (OOM) issues
+during the startup phase after deployment.
+
+## 8. Application Startup Fails When Listening on Port 80
+
+When using Devbox, the default user for local editors (such as VSCode, Cursor, etc.) is devbox.
+Ports in the range of 1-1023 are restricted to the administrator user.
+If you need to use these ports normally, please run your program with administrator privileges. For example, in the Go
+Devbox, you can use the following command:
+
+```bash
+sudo go run main.go
+```
+
+Alternatively, you could change your application's port.
+
+## 9. How to Change the Default User to Root in Devbox
+
+If you want to connect to Devbox as the root user when opening a local editor, please follow these steps. First, ensure
+your Devbox can connect properly using the default configuration. Open the file `~/.ssh/sealos/devbox_config` on your
+local machine. If you are uncertain about the file's location, please refer to Question 2.
+
+Locate the configuration that you wish to modify to use the root user, for example:
+
+```config
+Host usw.sailos.io_ns-rqtny6y6_devbox1234
+  HostName usw.sailos.io
+  User devbox
+  Port 40911
+  IdentityFile ~/.ssh/sealos/usw.sailos.io_ns-rqtny6y6_devbox1234
+  IdentitiesOnly yes
+  StrictHostKeyChecking no
+```
+
+Change the `User` value to root, as follows:
+
+```config
+Host usw.sailos.io_ns-rqtny6y6_devbox1234
+  HostName usw.sailos.io
+  User root
+  Port 40911
+  IdentityFile ~/.ssh/sealos/usw.sailos.io_ns-rqtny6y6_devbox1234
+  IdentitiesOnly yes
+  StrictHostKeyChecking no
+```
+
+After saving the changes, exit the local editor connected to Devbox and then reopen the editor. You should now be
+connected to Devbox as the root user.

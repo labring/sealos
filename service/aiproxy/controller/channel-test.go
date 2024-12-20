@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math/rand/v2"
@@ -138,6 +139,13 @@ type testResult struct {
 
 func processTestResult(channel *model.Channel, modelName string, returnSuccess bool, successResponseBody bool) *testResult {
 	ct, err := testSingleModel(channel, modelName)
+
+	e := &utils.UnsupportedModelTypeError{}
+	if errors.As(err, &e) {
+		log.Errorf("model %s not supported test: %s", modelName, err.Error())
+		return nil
+	}
+
 	result := &testResult{
 		Success: err == nil,
 	}

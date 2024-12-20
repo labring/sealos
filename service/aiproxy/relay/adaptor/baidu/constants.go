@@ -7,66 +7,6 @@ import (
 
 var ModelList = []*model.ModelConfig{
 	{
-		Model:       "ERNIE-4.0-8K",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerBaidu,
-		InputPrice:  0.03,
-		OutputPrice: 0.09,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 5120,
-			model.ModelConfigMaxInputTokensKey:   5120,
-			model.ModelConfigMaxOutputTokensKey:  1024,
-		},
-	},
-	{
-		Model:       "ERNIE-3.5-8K",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerBaidu,
-		InputPrice:  0.0008,
-		OutputPrice: 0.002,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 5120,
-			model.ModelConfigMaxInputTokensKey:   5120,
-			model.ModelConfigMaxOutputTokensKey:  1024,
-		},
-	},
-	{
-		Model:       "ERNIE-Tiny-8K",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerBaidu,
-		InputPrice:  0.0001,
-		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 6144,
-			model.ModelConfigMaxInputTokensKey:   6144,
-			model.ModelConfigMaxOutputTokensKey:  1024,
-		},
-	},
-	{
-		Model:       "ERNIE-Speed-8K",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerBaidu,
-		InputPrice:  0.0001,
-		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 6144,
-			model.ModelConfigMaxInputTokensKey:   6144,
-			model.ModelConfigMaxOutputTokensKey:  1024,
-		},
-	},
-	{
-		Model:       "ERNIE-Speed-128K",
-		Type:        relaymode.ChatCompletions,
-		Owner:       model.ModelOwnerBaidu,
-		InputPrice:  0.0001,
-		OutputPrice: 0.0001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 126976,
-			model.ModelConfigMaxInputTokensKey:   126976,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
-	},
-	{
 		Model:       "BLOOMZ-7B",
 		Type:        relaymode.ChatCompletions,
 		Owner:       model.ModelOwnerBaidu,

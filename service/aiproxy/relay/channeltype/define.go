@@ -8,11 +8,13 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baichuan"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baidu"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/baiduv2"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/cloudflare"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/cohere"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/deepseek"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doubao"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doubaoaudio"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/gemini"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/groq"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/lingyiwanwu"
@@ -33,6 +35,7 @@ import (
 var ChannelAdaptor = map[int]adaptor.Adaptor{
 	1: &openai.Adaptor{},
 	// 3:  &azure.Adaptor{},
+	13: &baiduv2.Adaptor{},
 	14: &anthropic.Adaptor{},
 	15: &baidu.Adaptor{},
 	16: &zhipu.Adaptor{},
@@ -58,6 +61,7 @@ var ChannelAdaptor = map[int]adaptor.Adaptor{
 	41: &novita.Adaptor{},
 	42: &vertexai.Adaptor{},
 	43: &siliconflow.Adaptor{},
+	44: &doubaoaudio.Adaptor{},
 }
 
 func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
@@ -68,7 +72,13 @@ func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
 var ChannelNames = map[int]string{}
 
 func init() {
+	names := make(map[string]struct{})
 	for i, adaptor := range ChannelAdaptor {
-		ChannelNames[i] = adaptor.GetChannelName()
+		name := adaptor.GetChannelName()
+		if _, ok := names[name]; ok {
+			panic("duplicate channel name: " + name)
+		}
+		names[name] = struct{}{}
+		ChannelNames[i] = name
 	}
 }
