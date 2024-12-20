@@ -37,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const remoteUri = workspaceFolder.uri.authority
     const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
     const region = GlobalStateManager.getRegion(devboxId)
-    updateBaseUrl(`http://devbox.${region}`)
+    updateBaseUrl(`https://devbox.${region}`)
   }
 
   // network view
