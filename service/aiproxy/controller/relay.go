@@ -2,19 +2,22 @@ package controller
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	log "github.com/sirupsen/logrus"
 )
 
 // https://platform.openai.com/docs/api-reference/chat
@@ -38,45 +41,87 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	}
 }
 
+func RelayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+	err := relayHelper(meta, c)
+	if err := monitor.AddRequest(c.Request.Context(), meta.OriginModelName, int64(meta.Channel.ID), err != nil); err != nil {
+		log.Errorf("add request failed: %+v", err)
+	}
+	return err
+}
+
+func getChannelWithFallback(model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
+	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(model, failedChannelIDs...)
+	if err == nil {
+		return channel, nil
+	}
+	if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
+		return nil, err
+	}
+	return dbmodel.CacheGetRandomSatisfiedChannel(model)
+}
+
 func Relay(c *gin.Context) {
 	log := middleware.GetLogger(c)
-	if config.DebugEnabled {
-		requestBody, _ := common.GetRequestBody(c.Request)
-		log.Debugf("request body: %s", requestBody)
+
+	requestModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
+
+	ids, err := monitor.GetBannedChannels(c.Request.Context(), requestModel)
+	if err != nil {
+		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
 	}
-	meta := middleware.NewMetaByContext(c)
-	bizErr := relayHelper(meta, c)
+
+	failedChannelIDs := []int{}
+	for _, id := range ids {
+		failedChannelIDs = append(failedChannelIDs, int(id))
+	}
+
+	channel, err := getChannelWithFallback(requestModel, failedChannelIDs...)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": &model.Error{
+				Message: "The upstream load of the current group is saturated, please try again later",
+				Code:    "upstream_load_saturated",
+				Type:    middleware.ErrorTypeAIPROXY,
+			},
+		})
+		return
+	}
+
+	meta := middleware.NewMetaByContext(c, channel)
+	bizErr := RelayHelper(meta, c)
 	if bizErr == nil {
 		return
 	}
-	lastFailedChannelID := meta.Channel.ID
-	requestID := c.GetString(string(helper.RequestIDKey))
-	retryTimes := config.GetRetryTimes()
-	if !shouldRetry(c, bizErr.StatusCode) {
-		retryTimes = 0
+	failedChannelIDs = append(failedChannelIDs, channel.ID)
+	requestID := c.GetString(ctxkey.RequestID)
+	var retryTimes int64
+	if shouldRetry(c, bizErr.StatusCode) {
+		retryTimes = config.GetRetryTimes()
 	}
 	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(meta.OriginModelName)
+		newChannel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
 		if err != nil {
-			log.Errorf("get random satisfied channel failed: %+v", err)
-			break
+			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
+				break
+			}
+			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
+				break
+			}
+			newChannel = channel
 		}
-		log.Infof("using channel #%d to retry (remain times %d)", channel.ID, i)
-		if channel.ID == lastFailedChannelID {
-			continue
-		}
+		log.Warnf("using channel %s(%d) to retry (remain times %d)", newChannel.Name, newChannel.ID, i)
 		requestBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			log.Errorf("GetRequestBody failed: %+v", err)
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		meta.Reset(channel)
-		bizErr = relayHelper(meta, c)
+		meta.Reset(newChannel)
+		bizErr = RelayHelper(meta, c)
 		if bizErr == nil {
 			return
 		}
-		lastFailedChannelID = channel.ID
+		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
 	}
 	if bizErr != nil {
 		message := bizErr.Message
@@ -85,7 +130,7 @@ func Relay(c *gin.Context) {
 		}
 		c.JSON(bizErr.StatusCode, gin.H{
 			"error": &model.Error{
-				Message: helper.MessageWithRequestID(message, requestID),
+				Message: middleware.MessageWithRequestID(message, requestID),
 				Code:    bizErr.Code,
 				Param:   bizErr.Param,
 				Type:    bizErr.Type,
@@ -95,19 +140,12 @@ func Relay(c *gin.Context) {
 }
 
 func shouldRetry(_ *gin.Context, statusCode int) bool {
-	if statusCode == http.StatusTooManyRequests {
+	if statusCode == http.StatusTooManyRequests ||
+		statusCode == http.StatusGatewayTimeout ||
+		statusCode == http.StatusForbidden {
 		return true
 	}
-	if statusCode/100 == 5 {
-		return true
-	}
-	if statusCode == http.StatusBadRequest {
-		return false
-	}
-	if statusCode/100 == 2 {
-		return false
-	}
-	return true
+	return false
 }
 
 func RelayNotImplemented(c *gin.Context) {

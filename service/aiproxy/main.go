@@ -17,8 +17,8 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
@@ -39,12 +39,7 @@ func initializeServices() error {
 		return err
 	}
 
-	if err := initializeCaches(); err != nil {
-		return err
-	}
-
-	client.Init()
-	return nil
+	return initializeCaches()
 }
 
 func initializeBalance() error {
@@ -105,7 +100,7 @@ func initializeDatabases() error {
 }
 
 func initializeCaches() error {
-	if err := model.InitOptionMap(); err != nil {
+	if err := model.InitOption2DB(); err != nil {
 		return err
 	}
 	if err := model.InitModelConfigCache(); err != nil {
@@ -143,6 +138,16 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 	}, server
 }
 
+func autoTestBannedModels() {
+	log.Info("auto test banned models start")
+	ticker := time.NewTicker(time.Second * 15)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		controller.AutoTestBannedModels()
+	}
+}
+
 func main() {
 	if err := initializeServices(); err != nil {
 		log.Fatal("failed to initialize services: " + err.Error())
@@ -168,6 +173,8 @@ func main() {
 			log.Fatal("failed to start HTTP server: " + err.Error())
 		}
 	}()
+
+	go autoTestBannedModels()
 
 	<-ctx.Done()
 	log.Info("shutting down server...")

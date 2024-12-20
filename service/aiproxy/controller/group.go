@@ -3,7 +3,6 @@ package controller
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	json "github.com/json-iterator/go"
 
@@ -65,50 +64,36 @@ func SearchGroups(c *gin.Context) {
 }
 
 func GetGroup(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "group id is empty")
 		return
 	}
-	group, err := model.GetGroupByID(id)
+	_group, err := model.GetGroupByID(group)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, group)
+	middleware.SuccessResponse(c, _group)
 }
 
-func GetGroupDashboard(c *gin.Context) {
-	id := c.Param("id")
-	now := time.Now()
-	startOfDay := now.Truncate(24*time.Hour).AddDate(0, 0, -6).Unix()
-	endOfDay := now.Truncate(24 * time.Hour).Add(24*time.Hour - time.Second).Unix()
-
-	dashboards, err := model.SearchLogsByDayAndModel(id, time.Unix(startOfDay, 0), time.Unix(endOfDay, 0))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, "failed to get statistics")
-		return
-	}
-	middleware.SuccessResponse(c, dashboards)
+type UpdateGroupRPMRequest struct {
+	RPMRatio float64 `json:"rpm_ratio"`
 }
 
-type UpdateGroupQPMRequest struct {
-	QPM int64 `json:"qpm"`
-}
-
-func UpdateGroupQPM(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+func UpdateGroupRPM(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	req := UpdateGroupQPMRequest{}
+	req := UpdateGroupRPMRequest{}
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err = model.UpdateGroupQPM(id, req.QPM)
+	err = model.UpdateGroupRPM(group, req.RPMRatio)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -121,8 +106,8 @@ type UpdateGroupStatusRequest struct {
 }
 
 func UpdateGroupStatus(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
@@ -132,7 +117,7 @@ func UpdateGroupStatus(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err = model.UpdateGroupStatus(id, req.Status)
+	err = model.UpdateGroupStatus(group, req.Status)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -141,12 +126,12 @@ func UpdateGroupStatus(c *gin.Context) {
 }
 
 func DeleteGroup(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	group := c.Param("group")
+	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err := model.DeleteGroupByID(id)
+	err := model.DeleteGroupByID(group)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -170,8 +155,8 @@ func DeleteGroups(c *gin.Context) {
 }
 
 type CreateGroupRequest struct {
-	ID  string `json:"id"`
-	QPM int64  `json:"qpm"`
+	ID       string  `json:"id"`
+	RPMRatio float64 `json:"rpm_ratio"`
 }
 
 func CreateGroup(c *gin.Context) {
@@ -182,8 +167,8 @@ func CreateGroup(c *gin.Context) {
 		return
 	}
 	if err := model.CreateGroup(&model.Group{
-		ID:  group.ID,
-		QPM: group.QPM,
+		ID:       group.ID,
+		RPMRatio: group.RPMRatio,
 	}); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

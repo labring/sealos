@@ -33,6 +33,11 @@ func SetAPIRouter(router *gin.Engine) {
 			modelsRoute.GET("/default/:type", controller.ChannelDefaultModelsAndMappingByType)
 		}
 
+		dashboardRoute := apiRouter.Group("/dashboard")
+		{
+			dashboardRoute.GET("/:group", controller.GetGroupDashboard)
+		}
+
 		groupsRoute := apiRouter.Group("/groups")
 		{
 			groupsRoute.GET("/", controller.GetGroups)
@@ -42,10 +47,10 @@ func SetAPIRouter(router *gin.Engine) {
 		groupRoute := apiRouter.Group("/group")
 		{
 			groupRoute.POST("/", controller.CreateGroup)
-			groupRoute.GET("/:id", controller.GetGroup)
-			groupRoute.DELETE("/:id", controller.DeleteGroup)
-			groupRoute.POST("/:id/status", controller.UpdateGroupStatus)
-			groupRoute.POST("/:id/qpm", controller.UpdateGroupQPM)
+			groupRoute.GET("/:group", controller.GetGroup)
+			groupRoute.DELETE("/:group", controller.DeleteGroup)
+			groupRoute.POST("/:group/status", controller.UpdateGroupStatus)
+			groupRoute.POST("/:group/rpm", controller.UpdateGroupRPM)
 		}
 
 		optionRoute := apiRouter.Group("/option")

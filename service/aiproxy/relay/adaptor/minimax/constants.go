@@ -14,9 +14,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.01,
 		OutputPrice: 0.01,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 245760,
-		},
+		RPM:         120,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(245760),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "abab6.5s-chat",
@@ -24,9 +26,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.001,
 		OutputPrice: 0.001,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 245760,
-		},
+		RPM:         120,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(245760),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "abab6.5g-chat",
@@ -34,9 +38,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 8192,
-		},
+		RPM:         120,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(8192),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "abab6.5t-chat",
@@ -44,9 +50,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 8192,
-		},
+		RPM:         120,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(8192),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "abab5.5s-chat",
@@ -54,9 +62,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.005,
 		OutputPrice: 0.005,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 8192,
-		},
+		RPM:         120,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(8192),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "abab5.5-chat",
@@ -64,9 +74,11 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerMiniMax,
 		InputPrice:  0.015,
 		OutputPrice: 0.015,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 16384,
-		},
+		RPM:         120,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(16384),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 
 	{
@@ -74,9 +86,10 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.AudioSpeech,
 		Owner:      model.ModelOwnerMiniMax,
 		InputPrice: 0.2,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigSupportFormatsKey: []string{"pcm", "wav", "flac", "mp3"},
-			model.ModelConfigSupportVoicesKey: []string{
+		RPM:        20,
+		Config: model.NewModelConfig(
+			model.WithModelConfigSupportFormats([]string{"pcm", "wav", "flac", "mp3"}),
+			model.WithModelConfigSupportVoices([]string{
 				"male-qn-qingse", "male-qn-jingying", "male-qn-badao", "male-qn-daxuesheng",
 				"female-shaonv", "female-yujie", "female-chengshu", "female-tianmei",
 				"presenter_male", "presenter_female",
@@ -90,7 +103,7 @@ var ModelList = []*model.ModelConfig{
 				"Santa_Claus", "Grinch", "Rudolph", "Arnold",
 				"Charming_Santa", "Charming_Lady", "Sweet_Girl", "Cute_Elf",
 				"Attractive_Girl", "Serene_Woman",
-			},
-		},
+			}),
+		),
 	},
 }

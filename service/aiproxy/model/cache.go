@@ -133,30 +133,30 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 }
 
 var updateTokenUsedAmountScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "used_amount") then
-		redis.call("HSet", KEYS[1], "used_amount", ARGV[1])
+	if redis.call("HExists", KEYS[1], "ua") then
+		redis.call("HSet", KEYS[1], "ua", ARGV[1])
 	end
 	return redis.status_reply("ok")
 `)
 
 var updateTokenUsedAmountOnlyIncreaseScript = redis.NewScript(`
-	local used_amount = redis.call("HGet", KEYS[1], "used_amount")
+	local used_amount = redis.call("HGet", KEYS[1], "ua")
 	if used_amount == false then
 		return redis.status_reply("ok")
 	end
 	if ARGV[1] < used_amount then
 		return redis.status_reply("ok")
 	end
-	redis.call("HSet", KEYS[1], "used_amount", ARGV[1])
+	redis.call("HSet", KEYS[1], "ua", ARGV[1])
 	return redis.status_reply("ok")
 `)
 
 var increaseTokenUsedAmountScript = redis.NewScript(`
-	local used_amount = redis.call("HGet", KEYS[1], "used_amount")
+	local used_amount = redis.call("HGet", KEYS[1], "ua")
 	if used_amount == false then
 		return redis.status_reply("ok")
 	end
-	redis.call("HSet", KEYS[1], "used_amount", used_amount + ARGV[1])
+	redis.call("HSet", KEYS[1], "ua", used_amount + ARGV[1])
 	return redis.status_reply("ok")
 `)
 
@@ -182,16 +182,16 @@ func CacheIncreaseTokenUsedAmount(key string, amount float64) error {
 }
 
 type GroupCache struct {
-	ID     string `json:"-"      redis:"-"`
-	Status int    `json:"status" redis:"st"`
-	QPM    int64  `json:"qpm"    redis:"q"`
+	ID       string  `json:"-"         redis:"-"`
+	Status   int     `json:"status"    redis:"st"`
+	RPMRatio float64 `json:"rpm_ratio" redis:"rpm"`
 }
 
 func (g *Group) ToGroupCache() *GroupCache {
 	return &GroupCache{
-		ID:     g.ID,
-		Status: g.Status,
-		QPM:    g.QPM,
+		ID:       g.ID,
+		Status:   g.Status,
+		RPMRatio: g.RPMRatio,
 	}
 }
 
@@ -202,23 +202,23 @@ func CacheDeleteGroup(id string) error {
 	return common.RedisDel(fmt.Sprintf(GroupCacheKey, id))
 }
 
-var updateGroupQPMScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "qpm") then
-		redis.call("HSet", KEYS[1], "qpm", ARGV[1])
+var updateGroupRPMScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "rpm") then
+		redis.call("HSet", KEYS[1], "rpm", ARGV[1])
 	end
 	return redis.status_reply("ok")
 `)
 
-func CacheUpdateGroupQPM(id string, qpm int64) error {
+func CacheUpdateGroupRPM(id string, rpmRatio float64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	return updateGroupQPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, qpm).Err()
+	return updateGroupRPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, rpmRatio).Err()
 }
 
 var updateGroupStatusScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "status") then
-		redis.call("HSet", KEYS[1], "status", ARGV[1])
+	if redis.call("HExists", KEYS[1], "st") then
+		redis.call("HSet", KEYS[1], "st", ARGV[1])
 	end
 	return redis.status_reply("ok")
 `)
@@ -390,7 +390,7 @@ func InitChannelCache() error {
 
 func LoadEnabledChannels() ([]*Channel, error) {
 	var channels []*Channel
-	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
+	err := DB.Where("status = ? or status = ?", ChannelStatusEnabled, ChannelStatusFail).Find(&channels).Error
 	if err != nil {
 		return nil, err
 	}
@@ -593,11 +593,35 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 	}
 }
 
+func filterChannels(channels []*Channel, ignoreChannel ...int) []*Channel {
+	filtered := make([]*Channel, 0)
+	for _, channel := range channels {
+		if channel.Status != ChannelStatusEnabled {
+			continue
+		}
+		if slices.Contains(ignoreChannel, channel.ID) {
+			continue
+		}
+		filtered = append(filtered, channel)
+	}
+	return filtered
+}
+
+var (
+	ErrChannelsNotFound  = errors.New("channels not found")
+	ErrChannelsExhausted = errors.New("channels exhausted")
+)
+
 //nolint:gosec
-func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
-	channels := GetEnabledModel2Channels()[model]
+func CacheGetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channel, error) {
+	_channels := GetEnabledModel2Channels()[model]
+	if len(_channels) == 0 {
+		return nil, ErrChannelsNotFound
+	}
+
+	channels := filterChannels(_channels, ignoreChannel...)
 	if len(channels) == 0 {
-		return nil, errors.New("model not found")
+		return nil, ErrChannelsExhausted
 	}
 
 	if len(channels) == 1 {

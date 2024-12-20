@@ -4,6 +4,7 @@ package aws
 import (
 	"io"
 	"net/http"
+	"time"
 
 	json "github.com/json-iterator/go"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -147,7 +147,7 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 
 func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	log := middleware.GetLogger(c)
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	originModelName := meta.OriginModelName
 	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {

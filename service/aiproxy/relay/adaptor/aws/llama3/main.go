@@ -6,20 +6,19 @@ import (
 	"io"
 	"net/http"
 	"text/template"
+	"time"
 
 	json "github.com/json-iterator/go"
-
-	"github.com/labring/sealos/service/aiproxy/common/random"
-	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
-	"github.com/labring/sealos/service/aiproxy/model"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/random"
+	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -156,7 +155,7 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
@@ -165,7 +164,7 @@ func ResponseLlama2OpenAI(llamaResponse *Response) *openai.TextResponse {
 func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	log := middleware.GetLogger(c)
 
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	awsModelID, err := awsModelID(meta.ActualModelName)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
