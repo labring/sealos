@@ -1,6 +1,8 @@
 package openai
 
-import "github.com/labring/sealos/service/aiproxy/relay/model"
+import (
+	"github.com/labring/sealos/service/aiproxy/relay/model"
+)
 
 type TextContent struct {
 	Type string `json:"type,omitempty"`

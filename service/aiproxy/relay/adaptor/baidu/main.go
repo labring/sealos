@@ -93,7 +93,7 @@ func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
 			Role:    "assistant",
 			Content: response.Result,
 		},
-		FinishReason: "stop",
+		FinishReason: constant.StopFinishReason,
 	}
 	fullTextResponse := openai.TextResponse{
 		ID:      response.ID,
