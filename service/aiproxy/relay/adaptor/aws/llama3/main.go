@@ -21,6 +21,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/aws/utils"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -214,7 +215,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			if llamaResp.PromptTokenCount > 0 {
 				usage.PromptTokens = llamaResp.PromptTokenCount
 			}
-			if llamaResp.StopReason == "stop" {
+			if llamaResp.StopReason == constant.StopFinishReason {
 				usage.CompletionTokens = llamaResp.GenerationTokenCount
 				usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 			}

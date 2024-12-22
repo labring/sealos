@@ -14,6 +14,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze/constant/messagetype"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -93,7 +94,7 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 			Content: responseText,
 			Name:    nil,
 		},
-		FinishReason: "stop",
+		FinishReason: constant.StopFinishReason,
 	}
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + cozeResponse.ConversationID,

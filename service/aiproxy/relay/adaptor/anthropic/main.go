@@ -15,6 +15,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -26,10 +27,8 @@ func stopReasonClaude2OpenAI(reason *string) string {
 		return ""
 	}
 	switch *reason {
-	case "end_turn":
-		return "stop"
-	case "stop_sequence":
-		return "stop"
+	case "end_turn", "stop_sequence":
+		return constant.StopFinishReason
 	case "max_tokens":
 		return "length"
 	case toolUseType:

@@ -84,7 +84,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 		},
 	}
 	if response.Done {
-		choice.FinishReason = "stop"
+		choice.FinishReason = constant.StopFinishReason
 	}
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),

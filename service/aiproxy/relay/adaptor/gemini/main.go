@@ -50,6 +50,7 @@ func buildSafetySettings() []ChatSafetySettings {
 		{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: safetySetting},
 		{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: safetySetting},
 		{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: safetySetting},
+		{Category: "HARM_CATEGORY_CIVIC_INTEGRITY", Threshold: safetySetting},
 	}
 }
 
@@ -237,10 +238,13 @@ func (g *ChatResponse) GetResponseText() string {
 	if g == nil {
 		return ""
 	}
-	if len(g.Candidates) > 0 && len(g.Candidates[0].Content.Parts) > 0 {
-		return g.Candidates[0].Content.Parts[0].Text
+	builder := strings.Builder{}
+	for _, candidate := range g.Candidates {
+		for _, part := range candidate.Content.Parts {
+			builder.WriteString(part.Text)
+		}
 	}
-	return ""
+	return builder.String()
 }
 
 type ChatCandidate struct {
@@ -283,9 +287,10 @@ func getToolCalls(candidate *ChatCandidate) []*model.Tool {
 	return toolCalls
 }
 
-func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
+func responseGeminiChat2OpenAI(meta *meta.Meta, response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
+		Model:   meta.OriginModelName,
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Choices: make([]*openai.TextResponseChoice, 0, len(response.Candidates)),
@@ -302,7 +307,14 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 			if candidate.Content.Parts[0].FunctionCall != nil {
 				choice.Message.ToolCalls = getToolCalls(candidate)
 			} else {
-				choice.Message.Content = candidate.Content.Parts[0].Text
+				builder := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i > 0 {
+						builder.WriteString("\n")
+					}
+					builder.WriteString(part.Text)
+				}
+				choice.Message.Content = builder.String()
 			}
 		} else {
 			choice.Message.Content = ""
@@ -314,16 +326,37 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 }
 
 func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
-	var choice openai.ChatCompletionsStreamResponseChoice
-	choice.Delta.Content = geminiResponse.GetResponseText()
-	// choice.FinishReason = &constant.StopFinishReason
-	var response openai.ChatCompletionsStreamResponse
-	response.ID = "chatcmpl-" + random.GetUUID()
-	response.Created = time.Now().Unix()
-	response.Object = "chat.completion.chunk"
-	response.Model = meta.OriginModelName
-	response.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
-	return &response
+	response := &openai.ChatCompletionsStreamResponse{
+		ID:      "chatcmpl-" + random.GetUUID(),
+		Created: time.Now().Unix(),
+		Model:   meta.OriginModelName,
+		Object:  "chat.completion.chunk",
+		Choices: make([]*openai.ChatCompletionsStreamResponseChoice, 0, len(geminiResponse.Candidates)),
+	}
+	for i, candidate := range geminiResponse.Candidates {
+		choice := openai.ChatCompletionsStreamResponseChoice{
+			Index: i,
+		}
+		if len(candidate.Content.Parts) > 0 {
+			if candidate.Content.Parts[0].FunctionCall != nil {
+				choice.Delta.ToolCalls = getToolCalls(candidate)
+			} else {
+				builder := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i > 0 {
+						builder.WriteString("\n")
+					}
+					builder.WriteString(part.Text)
+				}
+				choice.Delta.Content = builder.String()
+			}
+		} else {
+			choice.Delta.Content = ""
+			choice.FinishReason = &candidate.FinishReason
+		}
+		response.Choices = append(response.Choices, &choice)
+	}
+	return response
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
@@ -405,7 +438,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if len(geminiResponse.Candidates) == 0 {
 		return nil, openai.ErrorWrapperWithMessage("No candidates returned", "gemini_error", resp.StatusCode)
 	}
-	fullTextResponse := responseGeminiChat2OpenAI(&geminiResponse)
+	fullTextResponse := responseGeminiChat2OpenAI(meta, &geminiResponse)
 	fullTextResponse.Model = meta.OriginModelName
 	respContent := []ChatContent{}
 	for _, candidate := range geminiResponse.Candidates {

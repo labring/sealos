@@ -28,6 +28,11 @@ var ModelList = []*model.ModelConfig{
 		Type:  relaymode.ChatCompletions,
 		Owner: model.ModelOwnerGoogle,
 	},
+	{
+		Model: "gemini-2.0-flash-thinking-exp",
+		Type:  relaymode.ChatCompletions,
+		Owner: model.ModelOwnerGoogle,
+	},
 
 	{
 		Model: "text-embedding-004",

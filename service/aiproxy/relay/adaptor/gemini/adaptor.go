@@ -19,12 +19,18 @@ type Adaptor struct{}
 
 const baseURL = "https://generativelanguage.googleapis.com"
 
+var v1ModelMap = map[string]struct{}{}
+
 func getRequestURL(meta *meta.Meta, action string) string {
 	u := meta.Channel.BaseURL
 	if u == "" {
 		u = baseURL
 	}
-	return fmt.Sprintf("%s/%s/models/%s:%s", u, "v1beta", meta.ActualModelName, action)
+	version := "v1beta"
+	if _, ok := v1ModelMap[meta.ActualModelName]; ok {
+		version = "v1"
+	}
+	return fmt.Sprintf("%s/%s/models/%s:%s", u, version, meta.ActualModelName, action)
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
