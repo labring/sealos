@@ -41,12 +41,31 @@ func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
 	}
 }
 
-func RelayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+func RelayHelper(meta *meta.Meta, c *gin.Context) (*model.ErrorWithStatusCode, bool) {
 	err := relayHelper(meta, c)
-	if err := monitor.AddRequest(c.Request.Context(), meta.OriginModelName, int64(meta.Channel.ID), err != nil); err != nil {
-		log.Errorf("add request failed: %+v", err)
+	if err == nil {
+		if err := monitor.AddRequest(
+			c.Request.Context(),
+			meta.OriginModelName,
+			int64(meta.Channel.ID),
+			false,
+		); err != nil {
+			log.Errorf("add request failed: %+v", err)
+		}
+		return nil, false
 	}
-	return err
+	if shouldRetry(c, err.StatusCode) {
+		if err := monitor.AddRequest(
+			c.Request.Context(),
+			meta.OriginModelName,
+			int64(meta.Channel.ID),
+			true,
+		); err != nil {
+			log.Errorf("add request failed: %+v", err)
+		}
+		return err, true
+	}
+	return nil, false
 }
 
 func getChannelWithFallback(model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
@@ -88,14 +107,14 @@ func Relay(c *gin.Context) {
 	}
 
 	meta := middleware.NewMetaByContext(c, channel)
-	bizErr := RelayHelper(meta, c)
+	bizErr, retry := RelayHelper(meta, c)
 	if bizErr == nil {
 		return
 	}
 	failedChannelIDs = append(failedChannelIDs, channel.ID)
 	requestID := c.GetString(ctxkey.RequestID)
 	var retryTimes int64
-	if shouldRetry(c, bizErr.StatusCode) {
+	if retry {
 		retryTimes = config.GetRetryTimes()
 	}
 	for i := retryTimes; i > 0; i-- {
@@ -117,9 +136,12 @@ func Relay(c *gin.Context) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		meta.Reset(newChannel)
-		bizErr = RelayHelper(meta, c)
+		bizErr, retry = RelayHelper(meta, c)
 		if bizErr == nil {
 			return
+		}
+		if !retry {
+			break
 		}
 		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
 	}
@@ -139,6 +161,7 @@ func Relay(c *gin.Context) {
 	}
 }
 
+// 仅当是channel错误时，才需要重试，用户请求参数错误时，不需要重试
 func shouldRetry(_ *gin.Context, statusCode int) bool {
 	if statusCode == http.StatusTooManyRequests ||
 		statusCode == http.StatusGatewayTimeout ||
