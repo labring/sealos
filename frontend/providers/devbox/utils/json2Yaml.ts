@@ -43,6 +43,7 @@ export const json2Devbox = (
         memory: `${str2Num(data.memory)}Mi`,
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
+      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       runtimeRef: {
         name: data.runtimeVersion,
         namespace: runtimeNamespace
