@@ -38,11 +38,11 @@ spec:
         - name: devbox-frontend
           env:
             - name: SEALOS_DOMAIN
-              value: {{ .cloudDomain }}
+              value: { { .cloudDomain } }
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
-              value: {{ .registryAddr }}
+              value: { { .registryAddr } }
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
             - name: MONITOR_URL
@@ -57,6 +57,8 @@ spec:
               value: sealosusw.site
             - name: CURRENCY_SYMBOL
               value: usd #  'shellCoin' | 'cny' | 'usd'
+            - name: GPU_ENABLE
+              value: 'true'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
