@@ -10,7 +10,7 @@ import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
 
-import Form from './components/Form/index'
+import Form from './components/form'
 import Header from './components/Header'
 import Yaml from './components/Yaml'
 

@@ -72,26 +72,7 @@ export const useDevboxStore = create<State>()(
             step: '2m'
           })
         ])
-        console.log("averageCpuData: ", averageCpuData)
-        console.log("averageMemoryData: ", averageMemoryData)
-        // console.log(get())
         set((state) => {
-          console.log("state.devboxList len: ", state.devboxList.length)
-          state.devboxList.forEach((item) => {
-            console.log("item name: ", item.name)
-            console.log("devboxName:", devboxName)
-            //   return ({
-            //   ...item,
-            //   usedCpu:
-            //     item.name === devboxName && averageCpuData[0] ? averageCpuData[0] : item.usedCpu,
-            //   usedMemory:
-            //     item.name === devboxName && averageMemoryData[0]
-            //       ? averageMemoryData[0]
-            //       : item.usedMemory
-            // }
-            // ))
-          })
-          console.log()
           state.devboxList = state.devboxList.map((item) => ({
             ...item,
             usedCpu:
