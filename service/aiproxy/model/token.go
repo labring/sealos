@@ -497,7 +497,7 @@ func UpdateToken(token *Token) (err error) {
 func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error) {
 	token := &Token{ID: id}
 	defer func() {
-		if amount > 0 && err == nil && token.Quota > 0 {
+		if amount > 0 && err == nil {
 			if err := CacheUpdateTokenUsedAmountOnlyIncrease(token.Key, token.UsedAmount); err != nil {
 				log.Error("update token used amount in cache failed: " + err.Error())
 			}
@@ -508,7 +508,6 @@ func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error)
 		Clauses(clause.Returning{
 			Columns: []clause.Column{
 				{Name: "key"},
-				{Name: "quota"},
 				{Name: "used_amount"},
 			},
 		}).

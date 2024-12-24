@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -57,7 +58,7 @@ func RerankHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCo
 
 	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
-		if detail != nil {
+		if detail != nil && config.DebugEnabled {
 			log.Errorf("do rerank failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
 		} else {
 			log.Errorf("do rerank failed: %s", respErr)

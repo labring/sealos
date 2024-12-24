@@ -135,20 +135,6 @@ func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) 
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 
-func UpdateGroupUsedAmount(id string, amount float64) error {
-	result := DB.Model(&Group{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"used_amount": gorm.Expr("used_amount + ?", amount),
-	})
-	return HandleUpdateResult(result, ErrGroupNotFound)
-}
-
-func UpdateGroupRequestCount(id string, count int) error {
-	result := DB.Model(&Group{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"request_count": gorm.Expr("request_count + ?", count),
-	})
-	return HandleUpdateResult(result, ErrGroupNotFound)
-}
-
 func UpdateGroupRPM(id string, rpmRatio float64) (err error) {
 	defer func() {
 		if err == nil {
