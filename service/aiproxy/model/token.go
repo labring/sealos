@@ -284,6 +284,8 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 		return nil, fmt.Errorf("token (%s[%d]) quota is exhausted", token.Name, token.ID)
 	case TokenStatusExpired:
 		return nil, fmt.Errorf("token (%s[%d]) is expired", token.Name, token.ID)
+	case TokenStatusDisabled:
+		return nil, fmt.Errorf("token (%s[%d]) is disabled", token.Name, token.ID)
 	}
 	if token.Status != TokenStatusEnabled {
 		return nil, fmt.Errorf("token (%s[%d]) is not available", token.Name, token.ID)
@@ -330,8 +332,8 @@ func UpdateTokenStatus(id int, status int) (err error) {
 	token := Token{ID: id}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenStatus(token.Key, status); err != nil {
+				log.Error("update token status in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -355,8 +357,8 @@ func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 	token := Token{}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenStatus(token.Key, status); err != nil {
+				log.Error("update token status in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -497,7 +499,7 @@ func UpdateToken(token *Token) (err error) {
 func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error) {
 	token := &Token{ID: id}
 	defer func() {
-		if amount > 0 && err == nil {
+		if amount > 0 && err == nil && token.Quota > 0 {
 			if err := CacheUpdateTokenUsedAmountOnlyIncrease(token.Key, token.UsedAmount); err != nil {
 				log.Error("update token used amount in cache failed: " + err.Error())
 			}
@@ -508,6 +510,7 @@ func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error)
 		Clauses(clause.Returning{
 			Columns: []clause.Column{
 				{Name: "key"},
+				{Name: "quota"},
 				{Name: "used_amount"},
 			},
 		}).
@@ -525,8 +528,8 @@ func UpdateTokenName(id int, name string) (err error) {
 	token := &Token{ID: id}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenName(token.Key, name); err != nil {
+				log.Error("update token name in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -549,8 +552,8 @@ func UpdateGroupTokenName(group string, id int, name string) (err error) {
 	token := &Token{ID: id, GroupID: group}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenName(token.Key, name); err != nil {
+				log.Error("update token name in cache failed: " + err.Error())
 			}
 		}
 	}()

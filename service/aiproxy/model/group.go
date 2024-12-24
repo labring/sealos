@@ -127,11 +127,27 @@ func DeleteGroupsByIDs(ids []string) (err error) {
 	})
 }
 
-func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) error {
-	result := DB.Model(&Group{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"used_amount":   gorm.Expr("used_amount + ?", amount),
-		"request_count": gorm.Expr("request_count + ?", count),
-	})
+func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) (err error) {
+	group := &Group{ID: id}
+	defer func() {
+		if amount > 0 && err == nil {
+			if err := CacheUpdateGroupUsedAmountOnlyIncrease(group.ID, group.UsedAmount); err != nil {
+				log.Error("update group used amount in cache failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Model(group).
+		Clauses(clause.Returning{
+			Columns: []clause.Column{
+				{Name: "used_amount"},
+			},
+		}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"used_amount":   gorm.Expr("used_amount + ?", amount),
+			"request_count": gorm.Expr("request_count + ?", count),
+		})
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 
