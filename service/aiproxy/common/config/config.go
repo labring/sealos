@@ -32,6 +32,8 @@ var (
 var (
 	// 重试次数
 	retryTimes atomic.Int64
+	// 是否开启模型错误率自动封禁
+	enableModelErrorAutoBan atomic.Bool
 	// 模型错误率自动封禁
 	modelErrorAutoBanRate = math.Float64bits(0.5)
 	// 模型类型超时时间，单位秒
@@ -40,6 +42,14 @@ var (
 
 func GetRetryTimes() int64 {
 	return retryTimes.Load()
+}
+
+func GetEnableModelErrorAutoBan() bool {
+	return enableModelErrorAutoBan.Load()
+}
+
+func SetEnableModelErrorAutoBan(enabled bool) {
+	enableModelErrorAutoBan.Store(enabled)
 }
 
 func GetModelErrorAutoBanRate() float64 {
