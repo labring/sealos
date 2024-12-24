@@ -2,10 +2,8 @@ package middleware
 
 import (
 	"context"
-	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	log "github.com/sirupsen/logrus"
@@ -83,19 +81,4 @@ func MemoryRateLimit(_ context.Context, key string, maxRequestNum int64, duratio
 	// It's safe to call multi times.
 	inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
 	return inMemoryRateLimiter.Request(key, int(maxRequestNum), duration)
-}
-
-func GlobalAPIRateLimit(c *gin.Context) {
-	globalAPIRateLimitNum := config.GetGlobalAPIRateLimitNum()
-	if globalAPIRateLimitNum <= 0 {
-		c.Next()
-		return
-	}
-	ok := ForceRateLimit(c.Request.Context(), "global_qpm", globalAPIRateLimitNum, time.Minute)
-	if !ok {
-		c.Status(http.StatusTooManyRequests)
-		c.Abort()
-		return
-	}
-	c.Next()
 }
