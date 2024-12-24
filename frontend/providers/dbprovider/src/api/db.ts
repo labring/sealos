@@ -16,13 +16,13 @@ import { json2Restart } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
-import { json2StartOrStop } from '../utils/json2Yaml';
+import { AxiosRequestConfig } from 'axios';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
 
-export const getDBByName = (name: string) =>
-  GET(`/api/getDBByName?name=${name}`).then(adaptDBDetail);
+export const getDBByName = (name: string, config?: AxiosRequestConfig) =>
+  GET(`/api/getDBByName?name=${name}`, {}, config).then(adaptDBDetail);
 
 export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
   GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
