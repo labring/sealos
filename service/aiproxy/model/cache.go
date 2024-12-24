@@ -437,7 +437,7 @@ func initializeChannelModels(channel *Channel) {
 		return
 	}
 
-	findedModels, missingModels, err := CheckModelConfig(channel.Models)
+	findedModels, missingModels, err := GetModelConfigWithModels(channel.Models)
 	if err != nil {
 		return
 	}

@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -46,32 +47,12 @@ func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
 }
 
-// check model config exist
-func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
-	if len(c.Models) == 0 {
-		return nil
-	}
-	_, missingModels, err := checkModelConfig(tx, c.Models)
-	if err != nil {
-		return err
-	}
-	if len(missingModels) > 0 {
-		return fmt.Errorf("model config not found: %v", missingModels)
-	}
-	return nil
-}
-
-// check model config exist and rpm greater than 0
-func CheckModelConfig(models []string) ([]string, []string, error) {
-	return checkModelConfig(DB, models)
-}
-
-func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) {
+func GetModelConfigWithModels(models []string) ([]string, []string, error) {
 	if len(models) == 0 {
 		return models, nil, nil
 	}
 
-	where := tx.Model(&ModelConfig{}).Where("model IN ?", models)
+	where := DB.Model(&ModelConfig{}).Where("model IN ?", models)
 	var count int64
 	if err := where.Count(&count).Error; err != nil {
 		return nil, nil, err
@@ -104,6 +85,18 @@ func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) 
 		return foundModels, missingModels, nil
 	}
 	return foundModels, nil, nil
+}
+
+func CheckModelConfigExist(models []string) error {
+	_, missingModels, err := GetModelConfigWithModels(models)
+	if err != nil {
+		return err
+	}
+	if len(missingModels) > 0 {
+		slices.Sort(missingModels)
+		return fmt.Errorf("model config not found: %v", missingModels)
+	}
+	return nil
 }
 
 func (c *Channel) MarshalJSON() ([]byte, error) {
@@ -262,12 +255,20 @@ func GetChannelByID(id int) (*Channel, error) {
 }
 
 func BatchInsertChannels(channels []*Channel) error {
+	for _, channel := range channels {
+		if err := CheckModelConfigExist(channel.Models); err != nil {
+			return err
+		}
+	}
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return tx.Create(&channels).Error
 	})
 }
 
 func UpdateChannel(channel *Channel) error {
+	if err := CheckModelConfigExist(channel.Models); err != nil {
+		return err
+	}
 	result := DB.
 		Model(channel).
 		Omit("used_amount", "request_count", "created_at", "balance_updated_at", "balance").
