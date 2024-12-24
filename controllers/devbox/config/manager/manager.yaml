@@ -80,7 +80,6 @@ spec:
           - --registry-addr={{ .registryAddr }}
           - --registry-user={{ .registryUser }}
           - --registry-password={{ .registryPassword }}
-          - --auth-addr={{ .authAddr }}
         image: controller:latest
         name: manager
         securityContext:
