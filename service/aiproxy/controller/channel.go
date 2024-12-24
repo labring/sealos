@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"errors"
+	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -66,7 +68,12 @@ func AddChannels(c *gin.Context) {
 	}
 	_channels := make([]*model.Channel, 0, len(channels))
 	for _, channel := range channels {
-		_channels = append(_channels, channel.ToChannels()...)
+		channels, err := channel.ToChannels()
+		if err != nil {
+			middleware.ErrorResponse(c, http.StatusOK, err.Error())
+			return
+		}
+		_channels = append(_channels, channels...)
 	}
 	err = model.BatchInsertChannels(_channels)
 	if err != nil {
@@ -133,7 +140,15 @@ type AddChannelRequest struct {
 	Status       int                 `json:"status"`
 }
 
-func (r *AddChannelRequest) ToChannel() *model.Channel {
+func (r *AddChannelRequest) ToChannel() (*model.Channel, error) {
+	channelType, ok := channeltype.GetAdaptorKeyValidator(r.Type)
+	if !ok {
+		return nil, errors.New("invalid channel type")
+	}
+	err := channelType.ValidateKey(r.Key)
+	if err != nil {
+		return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w", r.Name, channeltype.ChannelNames[r.Type], r.Type, err)
+	}
 	return &model.Channel{
 		Type:         r.Type,
 		Name:         r.Name,
@@ -143,21 +158,24 @@ func (r *AddChannelRequest) ToChannel() *model.Channel {
 		ModelMapping: maps.Clone(r.ModelMapping),
 		Priority:     r.Priority,
 		Status:       r.Status,
-	}
+	}, nil
 }
 
-func (r *AddChannelRequest) ToChannels() []*model.Channel {
+func (r *AddChannelRequest) ToChannels() ([]*model.Channel, error) {
 	keys := strings.Split(r.Key, "\n")
 	channels := make([]*model.Channel, 0, len(keys))
 	for _, key := range keys {
 		if key == "" {
 			continue
 		}
-		c := r.ToChannel()
+		c, err := r.ToChannel()
+		if err != nil {
+			return nil, err
+		}
 		c.Key = key
 		channels = append(channels, c)
 	}
-	return channels
+	return channels, nil
 }
 
 func AddChannel(c *gin.Context) {
@@ -167,7 +185,12 @@ func AddChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	err = model.BatchInsertChannels(channel.ToChannels())
+	channels, err := channel.ToChannels()
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	err = model.BatchInsertChannels(channels)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -217,7 +240,11 @@ func UpdateChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	ch := channel.ToChannel()
+	ch, err := channel.ToChannel()
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
 	ch.ID = id
 	err = model.UpdateChannel(ch)
 	if err != nil {

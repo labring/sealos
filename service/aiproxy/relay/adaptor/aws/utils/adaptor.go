@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -28,7 +28,7 @@ type AwsConfig struct {
 func GetAwsConfigFromKey(key string) (*AwsConfig, error) {
 	split := strings.Split(key, "|")
 	if len(split) != 3 {
-		return nil, fmt.Errorf("invalid key format")
+		return nil, errors.New("invalid key format")
 	}
 	return &AwsConfig{
 		Region: split[0],

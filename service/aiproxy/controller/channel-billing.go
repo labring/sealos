@@ -25,7 +25,7 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 	if !ok {
 		return 0, fmt.Errorf("invalid channel type: %d", channel.Type)
 	}
-	if getBalance, ok := adaptorI.(adaptor.GetBalance); ok {
+	if getBalance, ok := adaptorI.(adaptor.Balancer); ok {
 		balance, err := getBalance.GetBalance(channel)
 		if err != nil {
 			return 0, err

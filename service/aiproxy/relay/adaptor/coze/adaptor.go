@@ -29,16 +29,11 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return u + "/open_api/v2/chat", nil
 }
 
-func getTokenAndUserID(key string) (string, string) {
-	split := strings.Split(key, "|")
-	if len(split) != 2 {
-		return "", ""
-	}
-	return split[0], split[1]
-}
-
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
-	token, _ := getTokenAndUserID(meta.Channel.Key)
+	token, _, err := getTokenAndUserID(meta.Channel.Key)
+	if err != nil {
+		return err
+	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	return nil
 }
@@ -51,7 +46,10 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	if err != nil {
 		return nil, nil, err
 	}
-	_, userID := getTokenAndUserID(meta.Channel.Key)
+	_, userID, err := getTokenAndUserID(meta.Channel.Key)
+	if err != nil {
+		return nil, nil, err
+	}
 	request.User = userID
 	request.Model = meta.ActualModelName
 	cozeRequest := Request{
@@ -75,13 +73,6 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 		return nil, nil, err
 	}
 	return nil, bytes.NewReader(data), nil
-}
-
-func (a *Adaptor) ConvertImageRequest(request *relaymodel.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	return request, nil
 }
 
 func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
