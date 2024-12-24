@@ -24,40 +24,66 @@ type Option struct {
 
 func GetAllOption() ([]*Option, error) {
 	var options []*Option
-	err := DB.Find(&options).Error
+	err := DB.Where("key IN (?)", optionKeys).Find(&options).Error
 	return options, err
 }
 
-var OptionMap = make(map[string]string)
+var (
+	optionMap  = make(map[string]string)
+	optionKeys []string
+)
 
 func InitOption2DB() error {
-	OptionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
-	OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
-	OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
-	OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
-	OptionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
-	OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
-	OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
-	OptionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
-	OptionMap["EnableModelErrorAutoBan"] = strconv.FormatBool(config.GetEnableModelErrorAutoBan())
-	timeoutWithModelTypeJSON, _ := json.Marshal(config.GetTimeoutWithModelType())
-	OptionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
-	OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
-	defaultChannelModelsJSON, _ := json.Marshal(config.GetDefaultChannelModels())
-	OptionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
-	defaultChannelModelMappingJSON, _ := json.Marshal(config.GetDefaultChannelModelMapping())
-	OptionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
-	OptionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
-	OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
-	err := loadOptionsFromDatabase(true)
+	err := initOptionMap()
+	if err != nil {
+		return err
+	}
+
+	err = loadOptionsFromDatabase(true)
 	if err != nil {
 		return err
 	}
 	return storeOptionMap()
 }
 
+func initOptionMap() error {
+	optionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
+	optionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
+	optionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
+	optionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
+	optionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
+	optionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
+	optionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
+	optionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
+	optionMap["EnableModelErrorAutoBan"] = strconv.FormatBool(config.GetEnableModelErrorAutoBan())
+	timeoutWithModelTypeJSON, err := json.Marshal(config.GetTimeoutWithModelType())
+	if err != nil {
+		return err
+	}
+	optionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
+	optionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
+	defaultChannelModelsJSON, err := json.Marshal(config.GetDefaultChannelModels())
+	if err != nil {
+		return err
+	}
+	optionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
+	defaultChannelModelMappingJSON, err := json.Marshal(config.GetDefaultChannelModelMapping())
+	if err != nil {
+		return err
+	}
+	optionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
+	optionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
+	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
+
+	optionKeys = make([]string, 0, len(optionMap))
+	for key := range optionMap {
+		optionKeys = append(optionKeys, key)
+	}
+	return nil
+}
+
 func storeOptionMap() error {
-	for key, value := range OptionMap {
+	for key, value := range optionMap {
 		err := saveOption(key, value)
 		if err != nil {
 			return err
@@ -83,7 +109,7 @@ func loadOptionsFromDatabase(isInit bool) error {
 			continue
 		}
 		if isInit {
-			delete(OptionMap, option.Key)
+			delete(optionMap, option.Key)
 		}
 	}
 	return nil
