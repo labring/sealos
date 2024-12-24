@@ -8,11 +8,32 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/network"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
+
+type TokenResponse struct {
+	*model.Token
+	AccessedAt time.Time `json:"accessed_at"`
+}
+
+func (t *TokenResponse) MarshalJSON() ([]byte, error) {
+	type Alias TokenResponse
+	return json.Marshal(&struct {
+		*Alias
+		CreatedAt  int64 `json:"created_at"`
+		ExpiredAt  int64 `json:"expired_at"`
+		AccessedAt int64 `json:"accessed_at"`
+	}{
+		Alias:      (*Alias)(t),
+		CreatedAt:  t.CreatedAt.UnixMilli(),
+		ExpiredAt:  t.ExpiredAt.UnixMilli(),
+		AccessedAt: t.AccessedAt.UnixMilli(),
+	})
+}
 
 func GetTokens(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
@@ -34,8 +55,16 @@ func GetTokens(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	tokenResponses := make([]*TokenResponse, len(tokens))
+	for i, token := range tokens {
+		lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
+		tokenResponses[i] = &TokenResponse{
+			Token:      token,
+			AccessedAt: lastRequestAt,
+		}
+	}
 	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokens,
+		"tokens": tokenResponses,
 		"total":  total,
 	})
 }
@@ -60,8 +89,16 @@ func GetGroupTokens(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	tokenResponses := make([]*TokenResponse, len(tokens))
+	for i, token := range tokens {
+		lastRequestAt, _ := model.GetGroupTokenLastRequestTime(group, token.ID)
+		tokenResponses[i] = &TokenResponse{
+			Token:      token,
+			AccessedAt: lastRequestAt,
+		}
+	}
 	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokens,
+		"tokens": tokenResponses,
 		"total":  total,
 	})
 }
@@ -89,8 +126,16 @@ func SearchTokens(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	tokenResponses := make([]*TokenResponse, len(tokens))
+	for i, token := range tokens {
+		lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
+		tokenResponses[i] = &TokenResponse{
+			Token:      token,
+			AccessedAt: lastRequestAt,
+		}
+	}
 	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokens,
+		"tokens": tokenResponses,
 		"total":  total,
 	})
 }
@@ -118,8 +163,16 @@ func SearchGroupTokens(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	tokenResponses := make([]*TokenResponse, len(tokens))
+	for i, token := range tokens {
+		lastRequestAt, _ := model.GetGroupTokenLastRequestTime(group, token.ID)
+		tokenResponses[i] = &TokenResponse{
+			Token:      token,
+			AccessedAt: lastRequestAt,
+		}
+	}
 	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokens,
+		"tokens": tokenResponses,
 		"total":  total,
 	})
 }
@@ -135,7 +188,12 @@ func GetToken(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, token)
+	lastRequestAt, _ := model.GetTokenLastRequestTime(id)
+	tokenResponse := &TokenResponse{
+		Token:      token,
+		AccessedAt: lastRequestAt,
+	}
+	middleware.SuccessResponse(c, tokenResponse)
 }
 
 func GetGroupToken(c *gin.Context) {
@@ -150,7 +208,12 @@ func GetGroupToken(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, token)
+	lastRequestAt, _ := model.GetGroupTokenLastRequestTime(group, id)
+	tokenResponse := &TokenResponse{
+		Token:      token,
+		AccessedAt: lastRequestAt,
+	}
+	middleware.SuccessResponse(c, tokenResponse)
 }
 
 func validateToken(token AddTokenRequest) error {
@@ -212,7 +275,9 @@ func AddToken(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, cleanToken)
+	middleware.SuccessResponse(c, &TokenResponse{
+		Token: cleanToken,
+	})
 }
 
 func DeleteToken(c *gin.Context) {
@@ -311,7 +376,9 @@ func UpdateToken(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, cleanToken)
+	middleware.SuccessResponse(c, &TokenResponse{
+		Token: cleanToken,
+	})
 }
 
 func UpdateGroupToken(c *gin.Context) {
@@ -351,7 +418,9 @@ func UpdateGroupToken(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, cleanToken)
+	middleware.SuccessResponse(c, &TokenResponse{
+		Token: cleanToken,
+	})
 }
 
 type UpdateTokenStatusRequest struct {

@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	log "github.com/sirupsen/logrus"
@@ -29,7 +27,6 @@ const (
 type Token struct {
 	CreatedAt    time.Time       `json:"created_at"`
 	ExpiredAt    time.Time       `json:"expired_at"`
-	AccessedAt   time.Time       `gorm:"index"                                     json:"accessed_at"`
 	Group        *Group          `gorm:"foreignKey:GroupID"                        json:"-"`
 	Key          string          `gorm:"type:char(48);uniqueIndex"                 json:"key"`
 	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
@@ -43,26 +40,11 @@ type Token struct {
 	RequestCount int             `gorm:"index"                                     json:"request_count"`
 }
 
-func (t *Token) MarshalJSON() ([]byte, error) {
-	type Alias Token
-	return json.Marshal(&struct {
-		*Alias
-		CreatedAt  int64 `json:"created_at"`
-		AccessedAt int64 `json:"accessed_at"`
-		ExpiredAt  int64 `json:"expired_at"`
-	}{
-		Alias:      (*Alias)(t),
-		CreatedAt:  t.CreatedAt.UnixMilli(),
-		AccessedAt: t.AccessedAt.UnixMilli(),
-		ExpiredAt:  t.ExpiredAt.UnixMilli(),
-	})
-}
-
 //nolint:goconst
 func getTokenOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
-	case "name", "accessed_at", "expired_at", "group", "used_amount", "request_count", "id", "created_at":
+	case "name", "expired_at", "group", "used_amount", "request_count", "id", "created_at":
 		switch suffix {
 		case "asc":
 			return prefix + " asc"
@@ -307,7 +289,7 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 		return nil, fmt.Errorf("token (%s[%d]) is not available", token.Name, token.ID)
 	}
 	if !time.Time(token.ExpiredAt).IsZero() && time.Time(token.ExpiredAt).Before(time.Now()) {
-		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExpired)
+		err := UpdateTokenStatus(token.ID, TokenStatusExpired)
 		if err != nil {
 			log.Error("failed to update token status" + err.Error())
 		}
@@ -315,7 +297,7 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	}
 	if token.Quota > 0 && token.UsedAmount >= token.Quota {
 		// in this case, we can make sure the token is exhausted
-		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExhausted)
+		err := UpdateTokenStatus(token.ID, TokenStatusExhausted)
 		if err != nil {
 			log.Error("failed to update token status" + err.Error())
 		}
@@ -364,57 +346,6 @@ func UpdateTokenStatus(id int, status int) (err error) {
 		Updates(
 			map[string]interface{}{
 				"status": status,
-			},
-		)
-	return HandleUpdateResult(result, ErrTokenNotFound)
-}
-
-func UpdateTokenStatusAndAccessedAt(id int, status int) (err error) {
-	token := Token{ID: id}
-	defer func() {
-		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
-			}
-		}
-	}()
-	result := DB.
-		Model(&token).
-		Clauses(clause.Returning{
-			Columns: []clause.Column{
-				{Name: "key"},
-			},
-		}).
-		Where("id = ?", id).Updates(
-		map[string]interface{}{
-			"status":      status,
-			"accessed_at": time.Now(),
-		},
-	)
-	return HandleUpdateResult(result, ErrTokenNotFound)
-}
-
-func UpdateGroupTokenStatusAndAccessedAt(group string, id int, status int) (err error) {
-	token := Token{}
-	defer func() {
-		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
-			}
-		}
-	}()
-	result := DB.
-		Model(&token).
-		Clauses(clause.Returning{
-			Columns: []clause.Column{
-				{Name: "key"},
-			},
-		}).
-		Where("id = ? and group_id = ?", id, group).
-		Updates(
-			map[string]interface{}{
-				"status":      status,
-				"accessed_at": time.Now(),
 			},
 		)
 	return HandleUpdateResult(result, ErrTokenNotFound)
@@ -586,7 +517,6 @@ func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error)
 			map[string]interface{}{
 				"used_amount":   gorm.Expr("used_amount + ?", amount),
 				"request_count": gorm.Expr("request_count + ?", requestCount),
-				"accessed_at":   time.Now(),
 			},
 		)
 	return HandleUpdateResult(result, ErrTokenNotFound)

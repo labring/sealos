@@ -789,3 +789,21 @@ func GetDashboardData(group string, start, end time.Time, tokenName string, mode
 		ExceptionCount: exceptionCount,
 	}, nil
 }
+
+func GetGroupLastRequestTime(group string) (time.Time, error) {
+	var log Log
+	err := LogDB.Model(&Log{}).Where("group_id = ?", group).Order("request_at desc").First(&log).Error
+	return log.RequestAt, err
+}
+
+func GetTokenLastRequestTime(id int) (time.Time, error) {
+	var log Log
+	err := LogDB.Model(&Log{}).Where("token_id = ?", id).Order("request_at desc").First(&log).Error
+	return log.RequestAt, err
+}
+
+func GetGroupTokenLastRequestTime(group string, id int) (time.Time, error) {
+	var log Log
+	err := LogDB.Model(&Log{}).Where("group_id = ? and token_id = ?", group, id).Order("request_at desc").First(&log).Error
+	return log.RequestAt, err
+}
