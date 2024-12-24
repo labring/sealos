@@ -80,6 +80,19 @@ func GetLogDetail(logID int) (*RequestDetail, error) {
 	return &detail, nil
 }
 
+func cleanRequestDetail() error {
+	detailStorageHours := config.GetLogDetailStorageHours()
+	if detailStorageHours <= 0 {
+		return nil
+	}
+	return LogDB.
+		Where(
+			"created_at < ?",
+			time.Now().Add(-time.Duration(detailStorageHours)*time.Hour),
+		).
+		Delete(&RequestDetail{}).Error
+}
+
 func RecordConsumeLog(
 	requestID string,
 	requestAt time.Time,
@@ -100,13 +113,10 @@ func RecordConsumeLog(
 	requestDetail *RequestDetail,
 ) error {
 	defer func() {
-		detailStorageHours := config.GetLogDetailStorageHours()
-		if detailStorageHours <= 0 {
+		if requestDetail == nil {
 			return
 		}
-		err := LogDB.
-			Where("created_at < ?", time.Now().Add(-time.Duration(detailStorageHours)*time.Hour)).
-			Delete(&RequestDetail{}).Error
+		err := cleanRequestDetail()
 		if err != nil {
 			log.Errorf("delete request detail failed: %s", err)
 		}
