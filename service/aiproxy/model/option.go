@@ -49,9 +49,6 @@ func InitOption2DB() error {
 func initOptionMap() error {
 	optionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
 	optionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
-	optionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
-	optionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
-	optionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
 	optionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	optionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
 	optionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
@@ -181,12 +178,6 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		config.SetLogDetailStorageHours(logDetailStorageHours)
 	case "DisableServe":
 		config.SetDisableServe(isTrue(value))
-	case "AutomaticDisableChannelEnabled":
-		config.SetAutomaticDisableChannelEnabled(isTrue(value))
-	case "AutomaticEnableChannelWhenTestSucceedEnabled":
-		config.SetAutomaticEnableChannelWhenTestSucceedEnabled(isTrue(value))
-	case "ApproximateTokenEnabled":
-		config.SetApproximateTokenEnabled(isTrue(value))
 	case "BillingEnabled":
 		config.SetBillingEnabled(isTrue(value))
 	case "GroupMaxTokenNum":

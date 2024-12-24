@@ -17,12 +17,6 @@ var (
 )
 
 var (
-	// 当测试或请求的时候发生错误是否自动禁用渠道
-	automaticDisableChannelEnabled atomic.Bool
-	// 当测试成功是否自动启用渠道
-	automaticEnableChannelWhenTestSucceedEnabled atomic.Bool
-	// 是否近似计算token
-	approximateTokenEnabled atomic.Bool
 	// 暂停服务
 	disableServe atomic.Bool
 	// log detail 存储时间(小时)
@@ -90,30 +84,6 @@ func GetDisableServe() bool {
 
 func SetDisableServe(disabled bool) {
 	disableServe.Store(disabled)
-}
-
-func GetAutomaticDisableChannelEnabled() bool {
-	return automaticDisableChannelEnabled.Load()
-}
-
-func SetAutomaticDisableChannelEnabled(enabled bool) {
-	automaticDisableChannelEnabled.Store(enabled)
-}
-
-func GetAutomaticEnableChannelWhenTestSucceedEnabled() bool {
-	return automaticEnableChannelWhenTestSucceedEnabled.Load()
-}
-
-func SetAutomaticEnableChannelWhenTestSucceedEnabled(enabled bool) {
-	automaticEnableChannelWhenTestSucceedEnabled.Store(enabled)
-}
-
-func GetApproximateTokenEnabled() bool {
-	return approximateTokenEnabled.Load()
-}
-
-func SetApproximateTokenEnabled(enabled bool) {
-	approximateTokenEnabled.Store(enabled)
 }
 
 var DisableAutoMigrateDB = os.Getenv("DISABLE_AUTO_MIGRATE_DB") == "true"
