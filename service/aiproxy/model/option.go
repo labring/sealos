@@ -204,7 +204,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		for model := range allModelsMap {
 			allModels = append(allModels, model)
 		}
-		foundModels, missingModels, err := CheckModelConfig(allModels)
+		foundModels, missingModels, err := GetModelConfigWithModels(allModels)
 		if err != nil {
 			return err
 		}
