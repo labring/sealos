@@ -365,6 +365,7 @@ func AutoTestBannedModels() {
 	channels, err := monitor.GetAllBannedChannels(context.Background())
 	if err != nil {
 		log.Errorf("failed to get banned channels: %s", err.Error())
+		return
 	}
 	if len(channels) == 0 {
 		return
