@@ -1,40 +1,42 @@
 import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node'
 
+import { DELETE, GET, POST } from '@/services/request'
+import { GetDevboxByNameReturn } from '@/types/adapt'
 import {
-  DevboxEditType,
-  DevboxListItemType,
+  DevboxEditTypeV2,
+  DevboxListItemTypeV2,
   DevboxPatchPropsType,
-  DevboxVersionListItemType,
-  runtimeNamespaceMapType
+  DevboxVersionListItemType
 } from '@/types/devbox'
+import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s'
+import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 import {
   adaptAppListItem,
-  adaptDevboxDetail,
-  adaptDevboxListItem,
+  adaptDevboxDetailV2,
+  adaptDevboxListItemV2,
   adaptDevboxVersionListItem,
   adaptPod
 } from '@/utils/adapt'
-import { GET, POST, DELETE } from '@/services/request'
-import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
-import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 
 export const getMyDevboxList = () =>
-  GET<KBDevboxType[]>('/api/getDevboxList').then((data): DevboxListItemType[] =>
-    data.map(adaptDevboxListItem).sort((a, b) => {
+  GET<[KBDevboxTypeV2, {
+    templateRepository: {
+      iconId: string | null;
+    };
+    uid: string;
+  }][]>('/api/getDevboxList').then((data): DevboxListItemTypeV2[] =>
+    data.map(adaptDevboxListItemV2).sort((a, b) => {
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
     })
   )
 export const getDevboxByName = (devboxName: string) =>
-  GET<KBDevboxType & { portInfos: any[] }>('/api/getDevboxByName', { devboxName }).then((data) =>
-    adaptDevboxDetail(data)
-  )
+  GET<GetDevboxByNameReturn>('/api/getDevboxByName', { devboxName }).then(adaptDevboxDetailV2)
 
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
 export const createDevbox = (payload: {
-  devboxForm: DevboxEditType
-  runtimeNamespaceMap: runtimeNamespaceMapType
+  devboxForm: DevboxEditTypeV2
 }) => POST(`/api/createDevbox`, payload)
 
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
@@ -69,8 +71,16 @@ export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>
 export const delDevboxVersionByName = (versionName: string) =>
   DELETE('/api/delDevboxVersionByName', { versionName })
 
-export const getSSHConnectionInfo = (data: { devboxName: string; runtimeName: string }) =>
-  GET('/api/getSSHConnectionInfo', data)
+export const getSSHConnectionInfo = (data: { devboxName: string }) =>
+  GET<{
+    base64PublicKey: string;
+    base64PrivateKey: string;
+    token: string;
+    userName: string;
+    workingDir: string;
+    releaseCommand: string;
+    releaseArgs: string;
+}>('/api/getSSHConnectionInfo', data)
 
 export const getDevboxPodsByDevboxName = (name: string) =>
   GET<V1Pod[]>('/api/getDevboxPodsByDevboxName', { name }).then((item) => item.map(adaptPod))
@@ -80,9 +90,6 @@ export const getDevboxMonitorData = (payload: {
   queryKey: keyof MonitorQueryKey
   step: string
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload)
-
-export const getSSHRuntimeInfo = (runtimeName: string) =>
-  GET('/api/getSSHRuntimeInfo', { runtimeName })
 
 export const getAppsByDevboxId = (devboxId: string) =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
