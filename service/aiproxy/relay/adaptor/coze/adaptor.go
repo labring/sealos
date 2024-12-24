@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -12,6 +13,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
@@ -27,23 +29,48 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return u + "/open_api/v2/chat", nil
 }
 
+func getTokenAndUserID(key string) (string, string) {
+	split := strings.Split(key, "|")
+	if len(split) != 2 {
+		return "", ""
+	}
+	return split[0], split[1]
+}
+
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
-	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
+	token, _ := getTokenAndUserID(meta.Channel.Key)
+	req.Header.Set("Authorization", "Bearer "+token)
 	return nil
 }
 
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	if meta.Mode != relaymode.ChatCompletions {
+		return nil, nil, errors.New("coze only support chat completions")
+	}
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
-	request.User = meta.Channel.Config.UserID
+	_, userID := getTokenAndUserID(meta.Channel.Key)
+	request.User = userID
 	request.Model = meta.ActualModelName
-	requestBody := ConvertRequest(request)
-	if requestBody == nil {
-		return nil, nil, errors.New("request body is nil")
+	cozeRequest := Request{
+		Stream: request.Stream,
+		User:   request.User,
+		BotID:  strings.TrimPrefix(meta.ActualModelName, "bot-"),
 	}
-	data, err := json.Marshal(requestBody)
+	for i, message := range request.Messages {
+		if i == len(request.Messages)-1 {
+			cozeRequest.Query = message.StringContent()
+			continue
+		}
+		cozeMessage := Message{
+			Role:    message.Role,
+			Content: message.StringContent(),
+		}
+		cozeRequest.ChatHistory = append(cozeRequest.ChatHistory, cozeMessage)
+	}
+	data, err := json.Marshal(cozeRequest)
 	if err != nil {
 		return nil, nil, err
 	}

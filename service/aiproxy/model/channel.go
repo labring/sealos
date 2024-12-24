@@ -30,7 +30,6 @@ type Channel struct {
 	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
-	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text"      json:"config"`
 	Key              string            `gorm:"type:text;index"                    json:"key"`
 	Name             string            `gorm:"index"                              json:"name"`
 	BaseURL          string            `gorm:"index"                              json:"base_url"`

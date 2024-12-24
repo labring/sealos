@@ -3,7 +3,6 @@ package coze
 import (
 	"bufio"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -34,26 +33,6 @@ func stopReasonCoze2OpenAI(reason *string) string {
 	default:
 		return *reason
 	}
-}
-
-func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
-	cozeRequest := Request{
-		Stream: textRequest.Stream,
-		User:   textRequest.User,
-		BotID:  strings.TrimPrefix(textRequest.Model, "bot-"),
-	}
-	for i, message := range textRequest.Messages {
-		if i == len(textRequest.Messages)-1 {
-			cozeRequest.Query = message.StringContent()
-			continue
-		}
-		cozeMessage := Message{
-			Role:    message.Role,
-			Content: message.StringContent(),
-		}
-		cozeRequest.ChatHistory = append(cozeRequest.ChatHistory, cozeMessage)
-	}
-	return &cozeRequest
 }
 
 func StreamResponseCoze2OpenAI(cozeResponse *StreamResponse) (*openai.ChatCompletionsStreamResponse, *Response) {

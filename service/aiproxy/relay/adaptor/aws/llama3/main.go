@@ -115,7 +115,12 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := meta.AwsClient().InvokeModel(c.Request.Context(), awsReq)
+	awsClient, err := utils.AwsClientFromMeta(meta)
+	if err != nil {
+		return utils.WrapErr(errors.Wrap(err, "get aws client")), nil
+	}
+
+	awsResp, err := awsClient.InvokeModel(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModel")), nil
 	}
@@ -187,7 +192,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := meta.AwsClient().InvokeModelWithResponseStream(c.Request.Context(), awsReq)
+	awsClient, err := utils.AwsClientFromMeta(meta)
+	if err != nil {
+		return utils.WrapErr(errors.Wrap(err, "get aws client")), nil
+	}
+
+	awsResp, err := awsClient.InvokeModelWithResponseStream(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModelWithResponseStream")), nil
 	}
