@@ -8,7 +8,6 @@ import { z } from "zod"
 export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers
-    const { searchParams } = req.nextUrl
     const queryRaw = await req.json()
     const imageHub = process.env.REGISTRY_ADDR
     if (!imageHub) {
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
       })
     }
     const query = updateTemplateRepositorySchema.parse(queryRaw)
-    const { kubeConfig, payload, token } = await authSessionWithJWT(headerList)
+    const { payload} = await authSessionWithJWT(headerList)
     const templateRepository = await devboxDB.templateRepository.findUnique({
       where: {
         uid: query.uid,

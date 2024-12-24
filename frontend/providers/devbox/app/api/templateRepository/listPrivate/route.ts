@@ -5,9 +5,6 @@ import { devboxDB } from '@/services/db/init'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 export const dynamic = 'force-dynamic'
-const schema = z.object({
-  search: z.string().optional()
-})
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers

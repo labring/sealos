@@ -16,7 +16,6 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers
-    const { searchParams } = req.nextUrl
     const queryRaw = await req.json()
     const imageHub = process.env.REGISTRY_ADDR
     if (!imageHub) {
@@ -53,7 +52,6 @@ export async function POST(req: NextRequest) {
       devboxName
     )) as { body: KBDevboxTypeV2 }
     const devboxReleaseImage = releaseBody.status.originalImage
-    // hzh.hub.sealos.run/orgNanoid/templateRepositoryName:templateName
     if (!devboxReleaseImage) {
       return jsonRes({
         code: 409,

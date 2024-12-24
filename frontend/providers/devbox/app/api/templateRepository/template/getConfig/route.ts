@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const headerList = req.headers
     const searchParams = req.nextUrl.searchParams
     const uid = searchParams.get('uid')
-    const { kubeConfig, payload } = await authSessionWithJWT(headerList)
+    const { payload } = await authSessionWithJWT(headerList)
     if (!uid) return jsonRes({
       code: 400,
       error: 'templateUid is required'
