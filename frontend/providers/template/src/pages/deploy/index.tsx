@@ -32,7 +32,8 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false });
 
 export default function EditApp({
   appName,
-  metaData
+  metaData,
+  brandName
 }: {
   appName?: string;
   metaData: {
@@ -40,6 +41,7 @@ export default function EditApp({
     keywords: string;
     description: string;
   };
+  brandName?: string;
 }) {
   const { t, i18n } = useTranslation();
   const { message: toast } = useMessage();
@@ -295,10 +297,10 @@ export default function EditApp({
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
     >
       <Head>
-        <title>{`${metaData.title}${
+        <title>{`${metaData.title} ${
           i18n.language === 'en'
-            ? 'Deployment and installation tutorial - Sealos'
-            : '部署和安装教程 - Sealos'
+            ? `Deployment and installation tutorial - ${brandName}`
+            : `部署和安装教程 - ${brandName}`
         }`}</title>
         <meta name="keywords" content={metaData.keywords} />
         <meta name="description" content={metaData.description} />
@@ -400,6 +402,7 @@ export default function EditApp({
 }
 
 export async function getServerSideProps(content: any) {
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
   const local =
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
@@ -434,6 +437,7 @@ export async function getServerSideProps(content: any) {
     props: {
       appName,
       metaData,
+      brandName,
       ...(await serviceSideProps(content))
     }
   };

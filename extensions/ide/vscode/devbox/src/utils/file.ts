@@ -13,9 +13,9 @@ export const ensureFileAccessPermission = async (path: string) => {
       if (!username) {
         throw new Error('can not get username')
       }
-      // await execa('icacls', [path, '/inheritance:r'])
       // await execa('icacls', [path, '/grant:r', `${username}:F`])
-      // await execa('icacls', [path, '/remove:g', 'everyone'])
+      await execa('icacls', [path, '/inheritance:d'])
+      await execa('icacls', [path, '/remove:g', 'everyone'])
     } catch (error) {
       Logger.error(`Failed to set file access permission: ${error}`)
     }
@@ -40,7 +40,7 @@ export function ensureFileExists(filePath: string, parentDir: string) {
       recursive: true,
     })
     fs.writeFileSync(filePath, '', 'utf8')
-    // .ssh/config authority
-    ensureFileAccessPermission(filePath)
   }
+  // .ssh/config authority
+  ensureFileAccessPermission(filePath)
 }

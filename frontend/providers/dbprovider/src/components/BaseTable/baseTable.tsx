@@ -85,12 +85,6 @@ export function BaseTable<T extends unknown>({
                         key={cell.id}
                         p={'10px 24px'}
                         bg={isPinned ? 'white' : ''}
-                        _first={{
-                          w: '200px'
-                        }}
-                        _last={{
-                          w: '140px'
-                        }}
                         borderBottom={'1px solid'}
                         borderBottomColor={
                           index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'

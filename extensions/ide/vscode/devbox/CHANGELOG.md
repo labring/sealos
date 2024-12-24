@@ -18,6 +18,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Adjust `Remote-SSH` to install by code.
 
+### Fixed
+
+- Fix Windows file authority issue caused by `Everyone` group.
+
 ## [1.2.1] - 2024-12-4
 
 ### Fixed
