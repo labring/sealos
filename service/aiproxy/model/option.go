@@ -39,6 +39,7 @@ func InitOption2DB() error {
 	OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
 	OptionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
+	OptionMap["EnableModelErrorAutoBan"] = strconv.FormatBool(config.GetEnableModelErrorAutoBan())
 	timeoutWithModelTypeJSON, _ := json.Marshal(config.GetTimeoutWithModelType())
 	OptionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
 	OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
@@ -227,6 +228,8 @@ func updateOption(key string, value string, isInit bool) (err error) {
 			return err
 		}
 		config.SetRetryTimes(retryTimes)
+	case "EnableModelErrorAutoBan":
+		config.SetEnableModelErrorAutoBan(isTrue(value))
 	case "ModelErrorAutoBanRate":
 		modelErrorAutoBanRate, err := strconv.ParseFloat(value, 64)
 		if err != nil {

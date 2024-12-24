@@ -59,7 +59,7 @@ var addRequestScript = redis.NewScript(`
 `)
 
 func AddRequest(ctx context.Context, model string, channelID int64, isError bool) error {
-	if !common.RedisEnabled {
+	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return nil
 	}
 	errorFlag := 0
@@ -87,7 +87,7 @@ var getBannedChannelsScript = redis.NewScript(`
 `)
 
 func GetBannedChannels(ctx context.Context, model string) ([]int64, error) {
-	if !common.RedisEnabled {
+	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return nil, nil
 	}
 	result, err := getBannedChannelsScript.Run(ctx, common.RDB, []string{model}).Int64Slice()
@@ -110,7 +110,7 @@ var clearChannelModelErrorsScript = redis.NewScript(`
 `)
 
 func ClearChannelModelErrors(ctx context.Context, model string, channelID int) error {
-	if !common.RedisEnabled {
+	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return nil
 	}
 	return clearChannelModelErrorsScript.Run(ctx, common.RDB, []string{model}, channelID).Err()
@@ -131,14 +131,14 @@ var clearChannelAllModelErrorsScript = redis.NewScript(`
 `)
 
 func ClearChannelAllModelErrors(ctx context.Context, channelID int) error {
-	if !common.RedisEnabled {
+	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return nil
 	}
 	return clearChannelAllModelErrorsScript.Run(ctx, common.RDB, []string{}, channelID).Err()
 }
 
 func GetAllBannedChannels(ctx context.Context) (map[string][]int64, error) {
-	if !common.RedisEnabled {
+	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return nil, nil
 	}
 
