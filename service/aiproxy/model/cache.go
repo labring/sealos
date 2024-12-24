@@ -132,13 +132,6 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 	return token.ToTokenCache(), nil
 }
 
-var updateTokenUsedAmountScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "ua") then
-		redis.call("HSet", KEYS[1], "ua", ARGV[1])
-	end
-	return redis.status_reply("ok")
-`)
-
 var updateTokenUsedAmountOnlyIncreaseScript = redis.NewScript(`
 	local used_amount = redis.call("HGet", KEYS[1], "ua")
 	if used_amount == false then
@@ -151,22 +144,6 @@ var updateTokenUsedAmountOnlyIncreaseScript = redis.NewScript(`
 	return redis.status_reply("ok")
 `)
 
-var increaseTokenUsedAmountScript = redis.NewScript(`
-	local used_amount = redis.call("HGet", KEYS[1], "ua")
-	if used_amount == false then
-		return redis.status_reply("ok")
-	end
-	redis.call("HSet", KEYS[1], "ua", used_amount + ARGV[1])
-	return redis.status_reply("ok")
-`)
-
-func CacheUpdateTokenUsedAmount(key string, amount float64) error {
-	if !common.RedisEnabled {
-		return nil
-	}
-	return updateTokenUsedAmountScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, amount).Err()
-}
-
 func CacheUpdateTokenUsedAmountOnlyIncrease(key string, amount float64) error {
 	if !common.RedisEnabled {
 		return nil
@@ -174,24 +151,47 @@ func CacheUpdateTokenUsedAmountOnlyIncrease(key string, amount float64) error {
 	return updateTokenUsedAmountOnlyIncreaseScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, amount).Err()
 }
 
-func CacheIncreaseTokenUsedAmount(key string, amount float64) error {
+var updateTokenNameScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "n") then
+		redis.call("HSet", KEYS[1], "n", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateTokenName(key string, name string) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	return increaseTokenUsedAmountScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, amount).Err()
+	return updateTokenNameScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, name).Err()
+}
+
+var updateTokenStatusScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "st") then
+		redis.call("HSet", KEYS[1], "st", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateTokenStatus(key string, status int) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateTokenStatusScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, status).Err()
 }
 
 type GroupCache struct {
-	ID       string  `json:"-"         redis:"-"`
-	Status   int     `json:"status"    redis:"st"`
-	RPMRatio float64 `json:"rpm_ratio" redis:"rpm"`
+	ID         string  `json:"-"           redis:"-"`
+	Status     int     `json:"status"      redis:"st"`
+	UsedAmount float64 `json:"used_amount" redis:"ua"`
+	RPMRatio   float64 `json:"rpm_ratio"   redis:"rpm"`
 }
 
 func (g *Group) ToGroupCache() *GroupCache {
 	return &GroupCache{
-		ID:       g.ID,
-		Status:   g.Status,
-		RPMRatio: g.RPMRatio,
+		ID:         g.ID,
+		Status:     g.Status,
+		UsedAmount: g.UsedAmount,
+		RPMRatio:   g.RPMRatio,
 	}
 }
 
@@ -273,6 +273,25 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 	}
 
 	return group.ToGroupCache(), nil
+}
+
+var updateGroupUsedAmountOnlyIncreaseScript = redis.NewScript(`
+	local used_amount = redis.call("HGet", KEYS[1], "ua")
+	if used_amount == false then
+		return redis.status_reply("ok")
+	end
+	if ARGV[1] < used_amount then
+		return redis.status_reply("ok")
+	end
+	redis.call("HSet", KEYS[1], "ua", ARGV[1])
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupUsedAmountOnlyIncrease(id string, amount float64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateGroupUsedAmountOnlyIncreaseScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, amount).Err()
 }
 
 var (
