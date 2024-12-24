@@ -58,7 +58,6 @@ func initOptionMap() error {
 		return err
 	}
 	optionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
-	optionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
 	defaultChannelModelsJSON, err := json.Marshal(config.GetDefaultChannelModels())
 	if err != nil {
 		return err
@@ -188,12 +187,6 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		config.SetGroupMaxTokenNum(int32(groupMaxTokenNum))
 	case "GeminiSafetySetting":
 		config.SetGeminiSafetySetting(value)
-	case "GlobalApiRateLimitNum":
-		globalAPIRateLimitNum, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		config.SetGlobalAPIRateLimitNum(globalAPIRateLimitNum)
 	case "DefaultChannelModels":
 		var newModels map[int][]string
 		err := json.Unmarshal(conv.StringToBytes(value), &newModels)

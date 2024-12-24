@@ -95,7 +95,6 @@ var OnlyOneLogFile = env.Bool("ONLY_ONE_LOG_FILE", false)
 var AdminKey = env.String("ADMIN_KEY", "")
 
 var (
-	globalAPIRateLimitNum      atomic.Int64
 	defaultChannelModels       atomic.Value
 	defaultChannelModelMapping atomic.Value
 	groupMaxTokenNum           atomic.Int32
@@ -104,15 +103,6 @@ var (
 func init() {
 	defaultChannelModels.Store(make(map[int][]string))
 	defaultChannelModelMapping.Store(make(map[int]map[string]string))
-}
-
-// 全局qpm，不是根据ip限制，而是所有请求共享一个qpm
-func GetGlobalAPIRateLimitNum() int64 {
-	return globalAPIRateLimitNum.Load()
-}
-
-func SetGlobalAPIRateLimitNum(num int64) {
-	globalAPIRateLimitNum.Store(num)
 }
 
 func GetDefaultChannelModels() map[int][]string {
