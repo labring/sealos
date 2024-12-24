@@ -33,6 +33,12 @@ const (
 	VisionMaxImageNum = 16
 )
 
+var toolChoiceTypeMap = map[string]string{
+	"none":     "NONE",
+	"auto":     "AUTO",
+	"required": "ANY",
+}
+
 var mimeTypeMap = map[string]string{
 	"json_object": "application/json",
 	"text":        "text/plain",
@@ -88,6 +94,31 @@ func buildTools(textRequest *model.GeneralOpenAIRequest) []ChatTools {
 	return nil
 }
 
+func buildToolConfig(textRequest *model.GeneralOpenAIRequest) *ToolConfig {
+	if textRequest.ToolChoice == nil {
+		return nil
+	}
+	toolConfig := ToolConfig{
+		FunctionCallingConfig: FunctionCallingConfig{
+			Mode: "auto",
+		},
+	}
+	switch mode := textRequest.ToolChoice.(type) {
+	case string:
+		if toolChoiceType, ok := toolChoiceTypeMap[mode]; ok {
+			toolConfig.FunctionCallingConfig.Mode = toolChoiceType
+		}
+	case map[string]interface{}:
+		toolConfig.FunctionCallingConfig.Mode = "ANY"
+		if fn, ok := mode["function"].(map[string]interface{}); ok {
+			if fnName, ok := fn["name"].(string); ok {
+				toolConfig.FunctionCallingConfig.AllowedFunctionNames = []string{fnName}
+			}
+		}
+	}
+	return &toolConfig
+}
+
 func buildMessageParts(ctx context.Context, part model.MessageContent) ([]Part, error) {
 	if part.Type == model.ContentTypeText {
 		return []Part{{Text: part.Text}}, nil
@@ -109,24 +140,16 @@ func buildMessageParts(ctx context.Context, part model.MessageContent) ([]Part, 
 	return nil, nil
 }
 
-func buildContents(textRequest *model.GeneralOpenAIRequest, req *http.Request) ([]ChatContent, error) {
-	contents := make([]ChatContent, 0, len(textRequest.Messages))
-	shouldAddDummyModelMessage := false
+func buildContents(ctx context.Context, textRequest *model.GeneralOpenAIRequest) (*ChatContent, []*ChatContent, error) {
+	contents := make([]*ChatContent, 0, len(textRequest.Messages))
 	imageNum := 0
+
+	var systemContent *ChatContent
 
 	for _, message := range textRequest.Messages {
 		content := ChatContent{
 			Role:  message.Role,
 			Parts: make([]Part, 0),
-		}
-
-		// Convert role names
-		switch content.Role {
-		case "assistant":
-			content.Role = "model"
-		case "system":
-			content.Role = "user"
-			shouldAddDummyModelMessage = true
 		}
 
 		// Process message content
@@ -139,26 +162,25 @@ func buildContents(textRequest *model.GeneralOpenAIRequest, req *http.Request) (
 				}
 			}
 
-			parts, err := buildMessageParts(req.Context(), part)
+			parts, err := buildMessageParts(ctx, part)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			content.Parts = append(content.Parts, parts...)
 		}
 
-		contents = append(contents, content)
-
-		// Add dummy model message after system message
-		if shouldAddDummyModelMessage {
-			contents = append(contents, ChatContent{
-				Role:  "model",
-				Parts: []Part{{Text: "Okay"}},
-			})
-			shouldAddDummyModelMessage = false
+		// Convert role names
+		switch content.Role {
+		case "assistant":
+			content.Role = "model"
+		case "system":
+			systemContent = &content
+			continue
 		}
+		contents = append(contents, &content)
 	}
 
-	return contents, nil
+	return systemContent, contents, nil
 }
 
 // Setting safety to the lowest possible values since Gemini is already powerless enough
@@ -171,7 +193,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	textRequest.Model = meta.ActualModelName
 	meta.Set("stream", textRequest.Stream)
 
-	contents, err := buildContents(textRequest, req)
+	systemContent, contents, err := buildContents(req.Context(), textRequest)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -184,10 +206,12 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 
 	// Build actual request
 	geminiRequest := ChatRequest{
-		Contents:         contents,
-		SafetySettings:   buildSafetySettings(),
-		GenerationConfig: buildGenerationConfig(textRequest),
-		Tools:            buildTools(textRequest),
+		Contents:          contents,
+		SystemInstruction: systemContent,
+		SafetySettings:    buildSafetySettings(),
+		GenerationConfig:  buildGenerationConfig(textRequest),
+		Tools:             buildTools(textRequest),
+		ToolConfig:        buildToolConfig(textRequest),
 	}
 
 	data, err := json.Marshal(geminiRequest)
@@ -198,7 +222,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	return nil, bytes.NewReader(data), nil
 }
 
-func CountTokens(ctx context.Context, meta *meta.Meta, chat []ChatContent) (int, error) {
+func CountTokens(ctx context.Context, meta *meta.Meta, chat []*ChatContent) (int, error) {
 	countReq := ChatRequest{
 		Contents: chat,
 	}
@@ -240,7 +264,10 @@ func (g *ChatResponse) GetResponseText() string {
 	}
 	builder := strings.Builder{}
 	for _, candidate := range g.Candidates {
-		for _, part := range candidate.Content.Parts {
+		for i, part := range candidate.Content.Parts {
+			if i > 0 {
+				builder.WriteString("\n")
+			}
 			builder.WriteString(part.Text)
 		}
 	}
@@ -365,7 +392,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	log := middleware.GetLogger(c)
 
 	responseText := strings.Builder{}
-	respContent := []ChatContent{}
+	respContent := []*ChatContent{}
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
@@ -389,7 +416,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			continue
 		}
 		for _, candidate := range geminiResponse.Candidates {
-			respContent = append(respContent, candidate.Content)
+			respContent = append(respContent, &candidate.Content)
 		}
 		response := streamResponseGeminiChat2OpenAI(meta, &geminiResponse)
 		if response == nil {
@@ -440,9 +467,9 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	}
 	fullTextResponse := responseGeminiChat2OpenAI(meta, &geminiResponse)
 	fullTextResponse.Model = meta.OriginModelName
-	respContent := []ChatContent{}
+	respContent := []*ChatContent{}
 	for _, candidate := range geminiResponse.Candidates {
-		respContent = append(respContent, candidate.Content)
+		respContent = append(respContent, &candidate.Content)
 	}
 
 	usage := model.Usage{
