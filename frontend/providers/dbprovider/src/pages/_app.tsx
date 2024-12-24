@@ -148,7 +148,8 @@ function App({ Component, pageProps }: AppProps) {
               router.push({
                 pathname: '/db/detail',
                 query: {
-                  name: e.data.name
+                  name: e.data.name,
+                  dbType: e.data.dbType
                 }
               });
             }

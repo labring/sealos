@@ -22,7 +22,6 @@ import ErrorLog from '@/pages/db/detail/components/ErrorLog';
 import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
-import { getDBByName } from '@/api/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -255,16 +254,9 @@ const AppDetail = ({
 export default AppDetail;
 
 export async function getServerSideProps(context: any) {
-  let dbType = context.query?.dbType || '';
-
+  const dbType = context.query?.dbType || '';
   const dbName = context.query?.name || '';
   const listType = context.query?.listType || TabEnum.Overview;
-
-  if (!dbType) {
-    const baseURL = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-    const db = await getDBByName(dbName, { baseURL });
-    dbType = db.dbType;
-  }
 
   return {
     props: { ...(await serviceSideProps(context)), dbName, listType, dbType }
