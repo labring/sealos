@@ -1,11 +1,9 @@
 package doubaoaudio
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -47,15 +45,6 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	default:
 		return nil, nil, fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
 	}
-}
-
-// key格式: app_id|app_token
-func getAppIDAndToken(key string) (string, string, error) {
-	parts := strings.Split(key, "|")
-	if len(parts) != 2 {
-		return "", "", errors.New("invalid key format")
-	}
-	return parts[0], parts[1], nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {

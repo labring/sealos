@@ -20,6 +20,10 @@ type Adaptor interface {
 	GetModelList() []*model.ModelConfig
 }
 
-type GetBalance interface {
+type Balancer interface {
 	GetBalance(channel *model.Channel) (float64, error)
+}
+
+type KeyValidator interface {
+	ValidateKey(key string) error
 }

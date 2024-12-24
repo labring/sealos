@@ -23,27 +23,10 @@ const channelName = "vertexai"
 
 type Adaptor struct{}
 
-type VertexAIConfig struct {
+type Config struct {
 	Region    string
 	ProjectID string
 	ADCJSON   string
-}
-
-// region|projectID|adcJSON
-func getConfigFromKey(key string) (VertexAIConfig, error) {
-	region, after, ok := strings.Cut(key, "|")
-	if !ok {
-		return VertexAIConfig{}, fmt.Errorf("invalid key format")
-	}
-	projectID, adcJSON, ok := strings.Cut(after, "|")
-	if !ok {
-		return VertexAIConfig{}, fmt.Errorf("invalid key format")
-	}
-	return VertexAIConfig{
-		Region:    region,
-		ProjectID: projectID,
-		ADCJSON:   adcJSON,
-	}, nil
 }
 
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
