@@ -23,6 +23,29 @@ const channelName = "vertexai"
 
 type Adaptor struct{}
 
+type VertexAIConfig struct {
+	Region    string
+	ProjectID string
+	ADCJSON   string
+}
+
+// region|projectID|adcJSON
+func getConfigFromKey(key string) (VertexAIConfig, error) {
+	region, after, ok := strings.Cut(key, "|")
+	if !ok {
+		return VertexAIConfig{}, fmt.Errorf("invalid key format")
+	}
+	projectID, adcJSON, ok := strings.Cut(after, "|")
+	if !ok {
+		return VertexAIConfig{}, fmt.Errorf("invalid key format")
+	}
+	return VertexAIConfig{
+		Region:    region,
+		ProjectID: projectID,
+		ADCJSON:   adcJSON,
+	}, nil
+}
+
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
@@ -64,28 +87,37 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		}
 	}
 
+	config, err := getConfigFromKey(meta.Channel.Key)
+	if err != nil {
+		return "", err
+	}
+
 	if meta.Channel.BaseURL != "" {
 		return fmt.Sprintf(
 			"%s/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
 			meta.Channel.BaseURL,
-			meta.Channel.Config.VertexAIProjectID,
-			meta.Channel.Config.Region,
+			config.ProjectID,
+			config.Region,
 			meta.ActualModelName,
 			suffix,
 		), nil
 	}
 	return fmt.Sprintf(
 		"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
-		meta.Channel.Config.Region,
-		meta.Channel.Config.VertexAIProjectID,
-		meta.Channel.Config.Region,
+		config.Region,
+		config.ProjectID,
+		config.Region,
 		meta.ActualModelName,
 		suffix,
 	), nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
-	token, err := getToken(context.Background(), meta.Channel.ID, meta.Channel.Config.VertexAIADC)
+	config, err := getConfigFromKey(meta.Channel.Key)
+	if err != nil {
+		return err
+	}
+	token, err := getToken(context.Background(), meta.Channel.ID, config.ADCJSON)
 	if err != nil {
 		return err
 	}

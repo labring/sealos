@@ -4,14 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
 type ChannelMeta struct {
-	Config  model.ChannelConfig
 	Name    string
 	BaseURL string
 	Key     string
@@ -85,7 +81,6 @@ func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option)
 
 func (m *Meta) Reset(channel *model.Channel) {
 	m.Channel = &ChannelMeta{
-		Config:  channel.Config,
 		Name:    channel.Name,
 		BaseURL: channel.BaseURL,
 		Key:     channel.Key,
@@ -135,18 +130,6 @@ func (m *Meta) GetBool(key string) bool {
 		return v.(bool)
 	}
 	return false
-}
-
-func (m *Meta) AwsClient() *bedrockruntime.Client {
-	if v, ok := m.Get("awsClient"); ok {
-		return v.(*bedrockruntime.Client)
-	}
-	awsClient := bedrockruntime.New(bedrockruntime.Options{
-		Region:      m.Channel.Config.Region,
-		Credentials: aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(m.Channel.Config.AK, m.Channel.Config.SK, "")),
-	})
-	m.Set("awsClient", awsClient)
-	return awsClient
 }
 
 //nolint:unparam

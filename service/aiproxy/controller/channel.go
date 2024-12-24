@@ -141,7 +141,6 @@ func (r *AddChannelRequest) ToChannel() *model.Channel {
 		BaseURL:      r.BaseURL,
 		Models:       slices.Clone(r.Models),
 		ModelMapping: maps.Clone(r.ModelMapping),
-		Config:       r.Config,
 		Priority:     r.Priority,
 		Status:       r.Status,
 	}
