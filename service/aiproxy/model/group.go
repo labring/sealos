@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -25,7 +23,6 @@ const (
 
 type Group struct {
 	CreatedAt    time.Time `json:"created_at"`
-	AccessedAt   time.Time `json:"accessed_at"`
 	ID           string    `gorm:"primaryKey"         json:"id"`
 	Tokens       []*Token  `gorm:"foreignKey:GroupID" json:"-"`
 	Status       int       `gorm:"default:1;index"    json:"status"`
@@ -38,24 +35,11 @@ func (g *Group) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&Token{}).Where("group_id = ?", g.ID).Delete(&Token{}).Error
 }
 
-func (g *Group) MarshalJSON() ([]byte, error) {
-	type Alias Group
-	return json.Marshal(&struct {
-		*Alias
-		CreatedAt  int64 `json:"created_at"`
-		AccessedAt int64 `json:"accessed_at"`
-	}{
-		Alias:      (*Alias)(g),
-		CreatedAt:  g.CreatedAt.UnixMilli(),
-		AccessedAt: g.AccessedAt.UnixMilli(),
-	})
-}
-
 //nolint:goconst
 func getGroupOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
-	case "id", "request_count", "accessed_at", "status", "created_at", "used_amount":
+	case "id", "request_count", "status", "created_at", "used_amount":
 		switch suffix {
 		case "asc":
 			return prefix + " asc"
@@ -147,7 +131,6 @@ func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) 
 	result := DB.Model(&Group{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"used_amount":   gorm.Expr("used_amount + ?", amount),
 		"request_count": gorm.Expr("request_count + ?", count),
-		"accessed_at":   time.Now(),
 	})
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
@@ -155,7 +138,6 @@ func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) 
 func UpdateGroupUsedAmount(id string, amount float64) error {
 	result := DB.Model(&Group{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"used_amount": gorm.Expr("used_amount + ?", amount),
-		"accessed_at": time.Now(),
 	})
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
@@ -163,7 +145,6 @@ func UpdateGroupUsedAmount(id string, amount float64) error {
 func UpdateGroupRequestCount(id string, count int) error {
 	result := DB.Model(&Group{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"request_count": gorm.Expr("request_count + ?", count),
-		"accessed_at":   time.Now(),
 	})
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }

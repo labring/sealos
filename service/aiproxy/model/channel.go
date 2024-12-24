@@ -25,7 +25,6 @@ const (
 
 type Channel struct {
 	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
-	AccessedAt       time.Time         `json:"accessed_at"`
 	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
 	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
@@ -112,13 +111,11 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		*Alias
 		CreatedAt        int64 `json:"created_at"`
-		AccessedAt       int64 `json:"accessed_at"`
 		BalanceUpdatedAt int64 `json:"balance_updated_at"`
 		LastTestErrorAt  int64 `json:"last_test_error_at"`
 	}{
 		Alias:            (*Alias)(c),
 		CreatedAt:        c.CreatedAt.UnixMilli(),
-		AccessedAt:       c.AccessedAt.UnixMilli(),
 		BalanceUpdatedAt: c.BalanceUpdatedAt.UnixMilli(),
 		LastTestErrorAt:  c.LastTestErrorAt.UnixMilli(),
 	})
@@ -128,7 +125,7 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 func getChannelOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
-	case "name", "type", "created_at", "accessed_at", "status", "test_at", "balance_updated_at", "used_amount", "request_count", "priority", "id":
+	case "name", "type", "created_at", "status", "test_at", "balance_updated_at", "used_amount", "request_count", "priority", "id":
 		switch suffix {
 		case "asc":
 			return prefix + " asc"
@@ -273,7 +270,7 @@ func BatchInsertChannels(channels []*Channel) error {
 func UpdateChannel(channel *Channel) error {
 	result := DB.
 		Model(channel).
-		Omit("accessed_at", "used_amount", "request_count", "created_at", "balance_updated_at", "balance").
+		Omit("used_amount", "request_count", "created_at", "balance_updated_at", "balance").
 		Clauses(clause.Returning{}).
 		Updates(channel)
 	return HandleUpdateResult(result, ErrChannelNotFound)
@@ -351,7 +348,6 @@ func UpdateChannelUsedAmount(id int, amount float64, requestCount int) error {
 	result := DB.Model(&Channel{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"used_amount":   gorm.Expr("used_amount + ?", amount),
 		"request_count": gorm.Expr("request_count + ?", requestCount),
-		"accessed_at":   time.Now(),
 	})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }

@@ -3,14 +3,31 @@ package controller
 import (
 	"net/http"
 	"strconv"
-
-	json "github.com/json-iterator/go"
-
-	"github.com/labring/sealos/service/aiproxy/middleware"
-	"github.com/labring/sealos/service/aiproxy/model"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/model"
 )
+
+type GroupResponse struct {
+	*model.Group
+	AccessedAt time.Time `json:"accessed_at,omitempty"`
+}
+
+func (g *GroupResponse) MarshalJSON() ([]byte, error) {
+	type Alias model.Group
+	return json.Marshal(&struct {
+		*Alias
+		CreatedAt  int64 `json:"created_at,omitempty"`
+		AccessedAt int64 `json:"accessed_at,omitempty"`
+	}{
+		Alias:      (*Alias)(g.Group),
+		CreatedAt:  g.CreatedAt.UnixMilli(),
+		AccessedAt: g.AccessedAt.UnixMilli(),
+	})
+}
 
 func GetGroups(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
@@ -31,8 +48,16 @@ func GetGroups(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	groupResponses := make([]*GroupResponse, len(groups))
+	for i, group := range groups {
+		lastRequestAt, _ := model.GetGroupLastRequestTime(group.ID)
+		groupResponses[i] = &GroupResponse{
+			Group:      group,
+			AccessedAt: lastRequestAt,
+		}
+	}
 	middleware.SuccessResponse(c, gin.H{
-		"groups": groups,
+		"groups": groupResponses,
 		"total":  total,
 	})
 }
@@ -57,8 +82,16 @@ func SearchGroups(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+	groupResponses := make([]*GroupResponse, len(groups))
+	for i, group := range groups {
+		lastRequestAt, _ := model.GetGroupLastRequestTime(group.ID)
+		groupResponses[i] = &GroupResponse{
+			Group:      group,
+			AccessedAt: lastRequestAt,
+		}
+	}
 	middleware.SuccessResponse(c, gin.H{
-		"groups": groups,
+		"groups": groupResponses,
 		"total":  total,
 	})
 }
@@ -74,7 +107,12 @@ func GetGroup(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, _group)
+	lastRequestAt, _ := model.GetGroupLastRequestTime(group)
+	groupResponse := &GroupResponse{
+		Group:      _group,
+		AccessedAt: lastRequestAt,
+	}
+	middleware.SuccessResponse(c, groupResponse)
 }
 
 type UpdateGroupRPMRequest struct {
