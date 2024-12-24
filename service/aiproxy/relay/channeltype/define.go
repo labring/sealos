@@ -17,6 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doubao"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doubaoaudio"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/gemini"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/geminiopenai"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/groq"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/lingyiwanwu"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/minimax"
@@ -36,6 +37,7 @@ import (
 var ChannelAdaptor = map[int]adaptor.Adaptor{
 	1:  &openai.Adaptor{},
 	3:  &azure.Adaptor{},
+	12: &geminiopenai.Adaptor{},
 	13: &baiduv2.Adaptor{},
 	14: &anthropic.Adaptor{},
 	15: &baidu.Adaptor{},
@@ -68,24 +70,6 @@ var ChannelAdaptor = map[int]adaptor.Adaptor{
 func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
 	a, ok := ChannelAdaptor[channel]
 	return a, ok
-}
-
-func GetAdaptorBalancer(channel int) (adaptor.Balancer, bool) {
-	a, ok := GetAdaptor(channel)
-	if !ok {
-		return nil, false
-	}
-	balancer, ok := a.(adaptor.Balancer)
-	return balancer, ok
-}
-
-func GetAdaptorKeyValidator(channel int) (adaptor.KeyValidator, bool) {
-	a, ok := GetAdaptor(channel)
-	if !ok {
-		return nil, false
-	}
-	validator, ok := a.(adaptor.KeyValidator)
-	return validator, ok
 }
 
 var ChannelNames = map[int]string{}

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"maps"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	log "github.com/sirupsen/logrus"
 )
@@ -141,13 +141,15 @@ type AddChannelRequest struct {
 }
 
 func (r *AddChannelRequest) ToChannel() (*model.Channel, error) {
-	channelType, ok := channeltype.GetAdaptorKeyValidator(r.Type)
+	channelType, ok := channeltype.GetAdaptor(r.Type)
 	if !ok {
-		return nil, errors.New("invalid channel type")
+		return nil, fmt.Errorf("invalid channel type: %d", r.Type)
 	}
-	err := channelType.ValidateKey(r.Key)
-	if err != nil {
-		return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w", r.Name, channeltype.ChannelNames[r.Type], r.Type, err)
+	if validator, ok := channelType.(adaptor.KeyValidator); ok {
+		err := validator.ValidateKey(r.Key)
+		if err != nil {
+			return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w", r.Name, channeltype.ChannelNames[r.Type], r.Type, err)
+		}
 	}
 	return &model.Channel{
 		Type:         r.Type,
