@@ -113,11 +113,13 @@ func SetAPIRouter(router *gin.Engine) {
 			logsRoute.DELETE("/", controller.DeleteHistoryLogs)
 			logsRoute.GET("/search", controller.SearchLogs)
 			logsRoute.GET("/consume_error", controller.SearchConsumeError)
+			logsRoute.GET("/detail/:log_id", controller.GetLogDetail)
 		}
 		logRoute := apiRouter.Group("/log")
 		{
 			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group", controller.GetGroupLogs)
+			logRoute.GET("/:group/detail/:log_id", controller.GetGroupLogDetail)
 		}
 
 		modelConfigsRoute := apiRouter.Group("/model_configs")

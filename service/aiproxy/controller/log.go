@@ -42,7 +42,8 @@ func GetLogs(c *gin.Context) {
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
-	logs, total, err := model.GetLogs(
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	result, err := model.GetLogs(
 		startTimestampTime,
 		endTimestampTime,
 		modelName,
@@ -57,15 +58,13 @@ func GetLogs(c *gin.Context) {
 		order,
 		mode,
 		model.CodeType(codeType),
+		withBody,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
 }
 
 func GetGroupLogs(c *gin.Context) {
@@ -100,7 +99,8 @@ func GetGroupLogs(c *gin.Context) {
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
-	logs, total, err := model.GetGroupLogs(
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	result, err := model.GetGroupLogs(
 		group,
 		startTimestampTime,
 		endTimestampTime,
@@ -115,15 +115,13 @@ func GetGroupLogs(c *gin.Context) {
 		order,
 		mode,
 		model.CodeType(codeType),
+		withBody,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
 }
 
 func SearchLogs(c *gin.Context) {
@@ -155,7 +153,8 @@ func SearchLogs(c *gin.Context) {
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
-	logs, total, err := model.SearchLogs(
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	result, err := model.SearchLogs(
 		keyword,
 		p,
 		perPage,
@@ -171,15 +170,13 @@ func SearchLogs(c *gin.Context) {
 		order,
 		mode,
 		model.CodeType(codeType),
+		withBody,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
 }
 
 func SearchGroupLogs(c *gin.Context) {
@@ -211,7 +208,8 @@ func SearchGroupLogs(c *gin.Context) {
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
-	logs, total, err := model.SearchGroupLogs(
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	result, err := model.SearchGroupLogs(
 		group,
 		keyword,
 		p,
@@ -227,15 +225,38 @@ func SearchGroupLogs(c *gin.Context) {
 		order,
 		mode,
 		model.CodeType(codeType),
+		withBody,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
+}
+
+func GetLogDetail(c *gin.Context) {
+	logID, _ := strconv.Atoi(c.Param("log_id"))
+	log, err := model.GetLogDetail(logID)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, log)
+}
+
+func GetGroupLogDetail(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	logID, _ := strconv.Atoi(c.Param("log_id"))
+	log, err := model.GetGroupLogDetail(group, logID)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, log)
 }
 
 func DeleteHistoryLogs(c *gin.Context) {
