@@ -19,8 +19,9 @@ import (
 	"regexp"
 	"strings"
 
-	// import webp decoder
 	"github.com/labring/sealos/service/aiproxy/common"
+
+	// import webp decoder
 	_ "golang.org/x/image/webp"
 )
 
