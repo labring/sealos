@@ -76,6 +76,10 @@ func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("status code: %d", resp.StatusCode)
 	}
+	isImage := IsImageURL(resp)
+	if !isImage {
+		return "", "", errors.New("not an image")
+	}
 	var buf []byte
 	if resp.ContentLength <= 0 {
 		buf, err = io.ReadAll(resp.Body)
@@ -85,10 +89,6 @@ func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	}
 	if err != nil {
 		return "", "", err
-	}
-	isImage := IsImageURL(resp)
-	if !isImage {
-		return "", "", errors.New("not an image")
 	}
 	return resp.Header.Get("Content-Type"), base64.StdEncoding.EncodeToString(buf), nil
 }
