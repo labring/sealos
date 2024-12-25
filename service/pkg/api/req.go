@@ -70,6 +70,21 @@ type Stats struct {
 	ExecutionTimeMsec int    `json:"executionTimeMsec"`
 }
 
+type VlogsRequest struct {
+	Time    string
+	NS      string
+	App     string
+	Pod     string
+	Limit   string
+	Json    string
+	Keyword string
+}
+
+type VlogsResult struct {
+	Time string `json:"_time"`
+	Msg  string `json:"_msg"`
+}
+
 var (
 	Mysql = map[string]string{
 		"cpu":           "round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"#\",pod=~\"@-mysql-\\\\d\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"#\",pod=~\"@-mysql-\\\\d\"}) by (pod)*100,0.01)",
