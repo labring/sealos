@@ -5,15 +5,12 @@ import { immer } from 'zustand/middleware/immer'
 import { getUserQuota } from '@/api/platform'
 import { DevboxEditType } from '@/types/devbox'
 import { UserQuotaItemType } from '@/types/user'
-type TQuota = Pick<DevboxEditType, 'memory'|'cpu'> & { nodeports: number }
+type TQuota = Pick<DevboxEditType, 'memory' | 'cpu' | 'gpu'> & { nodeports: number }
 type State = {
   balance: number
   userQuota: UserQuotaItemType[]
   loadUserQuota: () => Promise<null>
-  checkQuotaAllow: (
-    request: TQuota,
-    usedData?: TQuota
-  ) => string | undefined
+  checkQuotaAllow: (request: TQuota, usedData?: TQuota) => string | undefined
 }
 
 export const useUserStore = create<State>()(

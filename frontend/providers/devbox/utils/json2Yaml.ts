@@ -1,16 +1,11 @@
 import yaml from 'js-yaml'
 
-import { devboxKey, publicDomainKey } from '@/constants/devbox'
-import {
-  DevboxEditType,
-  DevboxEditTypeV2,
-  json2DevboxV2Data,
-  ProtocolType,
-  runtimeNamespaceMapType
-} from '@/types/devbox'
+import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox'
+import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox'
 import { produce } from 'immer'
 import { parseTemplateConfig, str2Num } from './tools'
 import { getUserNamespace } from './user'
+import { RuntimeNamespaceMap } from '@/types/static'
 
 export const json2Devbox = (
   data: DevboxEditType,

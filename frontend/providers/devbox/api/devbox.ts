@@ -1,12 +1,10 @@
 import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node'
 
-import { DELETE, GET, POST } from '@/services/request'
 import { GetDevboxByNameReturn } from '@/types/adapt'
 import {
   DevboxEditTypeV2,
   DevboxListItemTypeV2,
   DevboxPatchPropsType,
-  DevboxVersionListItemType
   DevboxVersionListItemType
 } from '@/types/devbox'
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s'
@@ -18,18 +16,20 @@ import {
   adaptDevboxVersionListItem,
   adaptPod
 } from '@/utils/adapt'
-import { RuntimeNamespaceMap } from '@/types/static'
 import { GET, POST, DELETE } from '@/services/request'
-import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
-import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 
 export const getMyDevboxList = () =>
-  GET<[KBDevboxTypeV2, {
-    templateRepository: {
-      iconId: string | null;
-    };
-    uid: string;
-  }][]>('/api/getDevboxList').then((data): DevboxListItemTypeV2[] =>
+  GET<
+    [
+      KBDevboxTypeV2,
+      {
+        templateRepository: {
+          iconId: string | null
+        }
+        uid: string
+      }
+    ][]
+  >('/api/getDevboxList').then((data): DevboxListItemTypeV2[] =>
     data.map(adaptDevboxListItemV2).sort((a, b) => {
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
     })
@@ -40,9 +40,8 @@ export const getDevboxByName = (devboxName: string) =>
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
-export const createDevbox = (payload: {
-  devboxForm: DevboxEditTypeV2
-}) => POST(`/api/createDevbox`, payload)
+export const createDevbox = (payload: { devboxForm: DevboxEditTypeV2 }) =>
+  POST(`/api/createDevbox`, payload)
 
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
   POST(`/api/updateDevbox`, payload)
@@ -78,14 +77,14 @@ export const delDevboxVersionByName = (versionName: string) =>
 
 export const getSSHConnectionInfo = (data: { devboxName: string }) =>
   GET<{
-    base64PublicKey: string;
-    base64PrivateKey: string;
-    token: string;
-    userName: string;
-    workingDir: string;
-    releaseCommand: string;
-    releaseArgs: string;
-}>('/api/getSSHConnectionInfo', data)
+    base64PublicKey: string
+    base64PrivateKey: string
+    token: string
+    userName: string
+    workingDir: string
+    releaseCommand: string
+    releaseArgs: string
+  }>('/api/getSSHConnectionInfo', data)
 
 export const getDevboxPodsByDevboxName = (name: string) =>
   GET<V1Pod[]>('/api/getDevboxPodsByDevboxName', { name }).then((item) => item.map(adaptPod))
