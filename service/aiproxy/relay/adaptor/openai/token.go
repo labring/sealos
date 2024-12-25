@@ -2,7 +2,6 @@ package openai
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"strings"
 	"sync"
@@ -33,22 +32,23 @@ func getTokenEncoder(model string) *tiktoken.Tiktoken {
 	tokenEncoderLock.RLock()
 	tokenEncoder, ok := tokenEncoderMap[model]
 	tokenEncoderLock.RUnlock()
-
-	if ok && tokenEncoder != nil {
-		return tokenEncoder
-	}
 	if ok {
-		tokenEncoder, err := tiktoken.EncodingForModel(model)
-		if err != nil {
-			log.Error(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
-			tokenEncoder = defaultTokenEncoder
-		}
-		tokenEncoderLock.Lock()
-		tokenEncoderMap[model] = tokenEncoder
-		tokenEncoderLock.Unlock()
 		return tokenEncoder
 	}
-	return defaultTokenEncoder
+
+	tokenEncoderLock.Lock()
+	defer tokenEncoderLock.Unlock()
+	if tokenEncoder, ok := tokenEncoderMap[model]; ok {
+		return tokenEncoder
+	}
+
+	tokenEncoder, err := tiktoken.EncodingForModel(model)
+	if err != nil {
+		log.Warnf("failed to get token encoder for model %s: %v, using encoder for gpt-3.5-turbo", model, err)
+		tokenEncoder = defaultTokenEncoder
+	}
+	tokenEncoderMap[model] = tokenEncoder
+	return tokenEncoder
 }
 
 func getTokenNum(tokenEncoder *tiktoken.Tiktoken, text string) int {
