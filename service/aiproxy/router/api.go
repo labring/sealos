@@ -56,6 +56,7 @@ func SetAPIRouter(router *gin.Engine) {
 		optionRoute := apiRouter.Group("/option")
 		{
 			optionRoute.GET("/", controller.GetOptions)
+			optionRoute.GET("/:key", controller.GetOption)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.PUT("/batch", controller.UpdateOptions)
 		}
