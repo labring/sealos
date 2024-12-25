@@ -98,7 +98,7 @@ func Relay(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": &model.Error{
-				Message: "The upstream load of the current group is saturated, please try again later",
+				Message: "The upstream load is saturated, please try again later",
 				Code:    "upstream_load_saturated",
 				Type:    middleware.ErrorTypeAIPROXY,
 			},
@@ -146,17 +146,9 @@ func Relay(c *gin.Context) {
 		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
 	}
 	if bizErr != nil {
-		message := bizErr.Message
-		if bizErr.StatusCode == http.StatusTooManyRequests {
-			message = "The upstream load of the current group is saturated, please try again later"
-		}
+		bizErr.Message = middleware.MessageWithRequestID(bizErr.Message, requestID)
 		c.JSON(bizErr.StatusCode, gin.H{
-			"error": &model.Error{
-				Message: middleware.MessageWithRequestID(message, requestID),
-				Code:    bizErr.Code,
-				Param:   bizErr.Param,
-				Type:    bizErr.Type,
-			},
+			"error": bizErr,
 		})
 	}
 }
