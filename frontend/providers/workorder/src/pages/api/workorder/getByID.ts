@@ -27,6 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Not Found'
       });
     }
+
+    if (result?.dialogs) {
+      result.dialogs = result.dialogs.map((dialog) => ({
+        ...dialog,
+        content: dialog?.isRecall ? '***' : dialog.content
+      }));
+    }
+
     jsonRes(res, {
       data: result
     });
