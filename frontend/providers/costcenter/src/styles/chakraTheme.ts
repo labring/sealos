@@ -125,5 +125,11 @@ export const theme = extendTheme(originTheme, {
     '*': `'PingFang SC'`,
     div: `'PingFang SC'`,
     button: `'PingFang SC'`
+  },
+  colors: {
+    purple: {
+      100: '#F7E7FF',
+      600: '#9E53C1'
+    }
   }
 });

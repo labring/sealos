@@ -11,20 +11,23 @@ export async function POST(req: NextRequest) {
       publicDomain: string
       customDomain: string
     }
+    const cnameError = await new Promise<NodeJS.ErrnoException | string | null>((resolve) => {
+      dns.resolveCname(customDomain, (err, address) => {
+        if (err) return resolve(err)
 
-    await (async () =>
-      new Promise((resolve, reject) => {
-        dns.resolveCname(customDomain, (err, address) => {
-          console.log(err, address)
-          if (err) return reject(err)
-
-          if (address[0] !== publicDomain)
-            return reject("Cname auth error: customDomain's cname is not equal to publicDomain")
-          resolve('')
-        })
-      }))()
-
-    return jsonRes({})
+        if (address[0] !== publicDomain)
+          return resolve("Cname auth error: customDomain's cname is not equal to publicDomain")
+        resolve(null)
+      })
+    })
+    if(!!cnameError) {
+      return jsonRes({
+        code: 409,
+        error: cnameError
+      })
+    } else {
+      return jsonRes({})
+    }
   } catch (error) {
     return jsonRes({
       code: 500,

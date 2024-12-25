@@ -16,21 +16,22 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import MyIcon from '@/components/Icon'
 import { delDevbox } from '@/api/devbox'
-
+import MyIcon from '@/components/Icon'
 import { useIDEStore } from '@/stores/ide'
 import { useDevboxStore } from '@/stores/devbox'
-import { DevboxDetailType, DevboxListItemType } from '@/types/devbox'
+import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox'
 
 const DelModal = ({
   devbox,
   onClose,
+  refetchDevboxList,
   onSuccess
 }: {
-  devbox: DevboxListItemType | DevboxDetailType
+  devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2
   onClose: () => void
   onSuccess: () => void
+  refetchDevboxList: () => void
 }) => {
   const t = useTranslations()
   const { message: toast } = useMessage()
@@ -52,6 +53,19 @@ const DelModal = ({
 
       onSuccess()
       onClose()
+
+      let retryCount = 0
+      const maxRetries = 3
+      const retryInterval = 3000
+
+      const retry = async () => {
+        if (retryCount < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, retryInterval))
+          await refetchDevboxList()
+          retryCount++
+        }
+      }
+      retry()
     } catch (error: any) {
       toast({
         title: typeof error === 'string' ? error : error.message || t('delete_failed'),
@@ -60,7 +74,7 @@ const DelModal = ({
       console.error(error)
     }
     setLoading(false)
-  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose])
+  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose, refetchDevboxList])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>

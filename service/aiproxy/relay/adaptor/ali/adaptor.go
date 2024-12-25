@@ -1,108 +1,119 @@
 package ali
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 // https://help.aliyun.com/zh/dashscope/developer-reference/api-details
 
-type Adaptor struct {
-	meta *meta.Meta
-}
+type Adaptor struct{}
 
-func (a *Adaptor) Init(meta *meta.Meta) {
-	a.meta = meta
-}
+const baseURL = "https://dashscope.aliyuncs.com"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		return meta.BaseURL + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
+		return u + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
 	case relaymode.ImagesGenerations:
-		return meta.BaseURL + "/api/v1/services/aigc/text2image/image-synthesis", nil
+		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
+	case relaymode.ChatCompletions:
+		return u + "/compatible-mode/v1/chat/completions", nil
+	case relaymode.AudioSpeech, relaymode.AudioTranscription:
+		return u + "/api-ws/v1/inference", nil
+	case relaymode.Rerank:
+		return u + "/api/v1/services/rerank/text-rerank/text-rerank", nil
 	default:
-		return meta.BaseURL + "/compatible-mode/v1/chat/completions", nil
+		return "", errors.New("unsupported mode")
 	}
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	adaptor.SetupCommonRequestHeader(c, req, meta)
-	if meta.IsStream {
-		req.Header.Set("Accept", "text/event-stream")
-		req.Header.Set("X-Dashscope-Sse", "enable")
-	}
-	req.Header.Set("Authorization", "Bearer "+meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 
-	if meta.Mode == relaymode.ImagesGenerations {
-		req.Header.Set("X-Dashscope-Async", "enable")
-	}
-	if a.meta.Config.Plugin != "" {
-		req.Header.Set("X-Dashscope-Plugin", a.meta.Config.Plugin)
+	if meta.Channel.Config.Plugin != "" {
+		req.Header.Set("X-Dashscope-Plugin", meta.Channel.Config.Plugin)
 	}
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	switch relayMode {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	switch meta.Mode {
+	case relaymode.ImagesGenerations:
+		return ConvertImageRequest(meta, req)
+	case relaymode.Rerank:
+		return ConvertRerankRequest(meta, req)
 	case relaymode.Embeddings:
-		aliEmbeddingRequest := ConvertEmbeddingRequest(request)
-		return aliEmbeddingRequest, nil
+		return ConvertEmbeddingsRequest(meta, req)
+	case relaymode.ChatCompletions:
+		return openai.ConvertRequest(meta, req)
+	case relaymode.AudioSpeech:
+		return ConvertTTSRequest(meta, req)
+	case relaymode.AudioTranscription:
+		return ConvertSTTRequest(meta, req)
 	default:
-		aliRequest := ConvertRequest(request)
-		return aliRequest, nil
+		return nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 
-func (a *Adaptor) ConvertImageRequest(request *model.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-
-	aliRequest := ConvertImageRequest(*request)
-	return aliRequest, nil
-}
-
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return adaptor.DoRequestHelper(a, c, meta, requestBody)
-}
-
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*model.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
-	if meta.IsStream {
-		err, _, usage = openai.StreamHandler(c, resp, meta.Mode)
-	} else {
-		switch meta.Mode {
-		case relaymode.Embeddings:
-			err, usage = EmbeddingHandler(c, resp)
-		case relaymode.ImagesGenerations:
-			err, usage = ImageHandler(c, resp, meta.APIKey)
-		default:
-			err, usage = openai.Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
+	switch meta.Mode {
+	case relaymode.AudioSpeech:
+		return TTSDoRequest(meta, req)
+	case relaymode.AudioTranscription:
+		return STTDoRequest(meta, req)
+	case relaymode.ChatCompletions:
+		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(nil)),
+			}, nil
 		}
+		fallthrough
+	default:
+		return utils.DoRequest(req)
+	}
+}
+
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	switch meta.Mode {
+	case relaymode.Embeddings:
+		usage, err = EmbeddingsHandler(meta, c, resp)
+	case relaymode.ImagesGenerations:
+		usage, err = ImageHandler(meta, c, resp)
+	case relaymode.ChatCompletions:
+		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
+			return nil, nil
+		}
+		usage, err = openai.DoResponse(meta, c, resp)
+	case relaymode.Rerank:
+		usage, err = RerankHandler(meta, c, resp)
+	case relaymode.AudioSpeech:
+		usage, err = TTSDoResponse(meta, c, resp)
+	case relaymode.AudioTranscription:
+		usage, err = STTDoResponse(meta, c, resp)
+	default:
+		return nil, openai.ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }
 
-func (a *Adaptor) GetModelList() []string {
+func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
 }
 

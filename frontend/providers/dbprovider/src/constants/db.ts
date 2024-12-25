@@ -20,6 +20,8 @@ export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 
+export const DBNameLabel = 'app.kubernetes.io/instance';
+
 export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',
@@ -196,7 +198,7 @@ export const podStatusMap = {
   [PodStatusEnum.running]: {
     label: 'running',
     value: PodStatusEnum.running,
-    bg: '#47C8BF'
+    bg: '#6CD99F'
   },
   [PodStatusEnum.waiting]: {
     label: 'waiting',
@@ -215,12 +217,12 @@ export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 
 export const DBTypeList = [
-  { id: DBTypeEnum.postgresql, label: 'postgres' },
-  { id: DBTypeEnum.mongodb, label: 'mongo' },
-  { id: DBTypeEnum.mysql, label: 'mysql' },
-  { id: DBTypeEnum.redis, label: 'redis' },
-  { id: DBTypeEnum.kafka, label: 'kafka' },
-  { id: DBTypeEnum.milvus, label: 'milvus' }
+  { id: DBTypeEnum.postgresql, label: 'PostgreSQL' },
+  { id: DBTypeEnum.mongodb, label: 'MongoDB' },
+  { id: DBTypeEnum.mysql, label: 'MySQL' },
+  { id: DBTypeEnum.redis, label: 'Redis' },
+  { id: DBTypeEnum.kafka, label: 'Kafka' },
+  { id: DBTypeEnum.milvus, label: 'Milvus' }
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }

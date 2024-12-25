@@ -15,6 +15,7 @@ import {
   TableContainer,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tooltip,
@@ -66,7 +67,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     data: backups = [],
     isSuccess
   } = useQuery(
-    ['intervalLoadBackups'],
+    ['intervalLoadBackups', db.dbName],
     async () => {
       const backups: BackupItemType[] = await getBackupList(db.dbName);
       backups.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
@@ -110,6 +111,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     cursor: 'pointer',
     _hover: { bg: '#EFF0F1' }
   };
+
   const operationIconStyles = {
     w: '18px'
   };
@@ -194,9 +196,33 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
 
   return (
     <Flex flexDirection={'column'} h="100%" position={'relative'}>
+      <Flex justifyContent={'space-between'} alignItems={'center'} mb={'16px'}>
+        <Box
+          pb={'6px'}
+          pt={'4px'}
+          borderBottom={'2px solid'}
+          fontSize={'16px'}
+          fontWeight={500}
+          color={'grayModern.900'}
+        >
+          {t('backup_list')}
+        </Box>
+        {!backupProcessing && (
+          <Button
+            ml={3}
+            height={'32px'}
+            variant={'solid'}
+            onClick={() => {
+              onOpenBackupModal();
+            }}
+          >
+            {t('Backup')}
+          </Button>
+        )}
+      </Flex>
       <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
-          <Thead>
+          <Thead position={'sticky'} top={0} zIndex={1}>
             <Tr>
               {columns.map((item) => (
                 <Th
@@ -207,6 +233,12 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                   backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
                   color={'grayModern.600'}
+                  _first={{
+                    borderLeftRadius: '6px'
+                  }}
+                  _last={{
+                    borderRightRadius: '6px'
+                  }}
                 >
                   {t(item.title)}
                 </Th>

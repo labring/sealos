@@ -1,11 +1,10 @@
 import { NextRequest } from 'next/server'
 
-import { defaultEnv } from '@/stores/env'
 import { authSession } from '@/services/backend/auth'
-import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
-
-import { RuntimeTypeMap, RuntimeVersionMap, RuntimeNamespaceMap } from '@/types/static'
+import { jsonRes } from '@/services/backend/response'
+import { defaultEnv } from '@/stores/env'
+import { runtimeNamespaceMapType, ValueType, VersionMapType } from '@/types/devbox'
 import { KBRuntimeClassType, KBRuntimeType } from '@/types/k8s'
 
 export const dynamic = 'force-dynamic'

@@ -27,13 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const tasks = userTasks.map((ut) => ({
       id: ut.task.id,
-      title: JSON.parse(ut.task.title),
+      title: typeof ut.task.title === 'string' ? JSON.parse(ut.task.title) : ut.task.title,
       description: ut.task.description,
       reward: ut.task.reward.toString(),
       order: ut.task.order,
       taskType: ut.task.taskType,
       isCompleted: ut.status === 'COMPLETED',
-      completedAt: ut.completedAt
+      completedAt: ut.completedAt,
+      isNewUserTask: ut.task.isNewUserTask
     }));
 
     const allTasksCompleted = tasks.every((task) => task.isCompleted);
@@ -44,6 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: allTasksCompleted ? 'All tasks completed' : 'Tasks fetched'
     });
   } catch (error) {
+    console.log(error);
     return jsonRes(res, { code: 500, message: 'error' });
   }
 }

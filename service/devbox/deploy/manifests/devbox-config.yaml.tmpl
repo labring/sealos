@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devbox-service-env
+data:
+  GIN_MODE: "release"
+  LOG_LEVEL: "info"
+  USER: "{{ .USER }}"
+  PASSWORD: "{{ .PASSWORD }}"
+  JWTSecret: "{{ .JWTSecret }}"

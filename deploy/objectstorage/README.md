@@ -14,6 +14,10 @@ log: update controller and frontend image
 
 log: add resourcequota/status role to objectstorage-manager-role clusterrole
 
+### date 2024.12.29
+
+log: add resourcequota & resourcequota/statuc role to objectstorage-manager-role clusterrole
+
 ## components
 
 1. minio

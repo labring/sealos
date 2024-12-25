@@ -195,6 +195,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           });
 
+          await globalPrisma.userTask.updateMany({
+            where: {
+              userUid,
+              task: {
+                taskType: 'REAL_NAME_AUTH'
+              },
+              status: 'NOT_COMPLETED'
+            },
+            data: {
+              rewardStatus: 'COMPLETED',
+              status: 'COMPLETED',
+              completedAt: new Date()
+            }
+          });
+
           return {
             account: updatedAccount,
             transaction: accountTransaction,

@@ -26,7 +26,14 @@ import {
 } from '@chakra-ui/react';
 import { CloseIcon, useMessage, WarningIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
+import React, {
+  forwardRef,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useState
+} from 'react';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -140,12 +147,15 @@ export function useRealNameAuthNotification(props?: UseToastOptions) {
   };
 }
 
-function RealNameModal(props: {
-  children: React.ReactElement;
-  onModalOpen?: () => void;
-  onModalClose?: () => void;
-  onFormSuccess?: () => void;
-}): ReactElement {
+const RealNameModal = forwardRef<
+  { onOpen: () => void },
+  {
+    children?: React.ReactElement;
+    onModalOpen?: () => void;
+    onModalClose?: () => void;
+    onFormSuccess?: () => void;
+  }
+>(function RealNameModal(props, ref) {
   const { t } = useTranslation();
   const { children } = props;
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -156,6 +166,10 @@ function RealNameModal(props: {
       props.onModalClose();
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    onOpen
+  }));
 
   return (
     <>
@@ -245,7 +259,7 @@ function RealNameModal(props: {
       </Modal>
     </>
   );
-}
+});
 
 export function RealNameAuthForm(
   props: FlexProps & {

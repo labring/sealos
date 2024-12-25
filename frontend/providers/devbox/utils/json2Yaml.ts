@@ -1,10 +1,16 @@
 import yaml from 'js-yaml'
 
-import { str2Num } from './tools'
+import { devboxKey, publicDomainKey } from '@/constants/devbox'
+import {
+  DevboxEditType,
+  DevboxEditTypeV2,
+  json2DevboxV2Data,
+  ProtocolType,
+  runtimeNamespaceMapType
+} from '@/types/devbox'
+import { produce } from 'immer'
+import { parseTemplateConfig, str2Num } from './tools'
 import { getUserNamespace } from './user'
-import { DevboxEditType } from '@/types/devbox'
-import { RuntimeNamespaceMap } from '@/types/static'
-import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox'
 
 export const json2Devbox = (
   data: DevboxEditType,
@@ -14,7 +20,6 @@ export const json2Devbox = (
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
-
   // gpu node selector
   const gpuMap = !!data.gpu?.type
     ? {
@@ -23,7 +28,6 @@ export const json2Devbox = (
         }
       }
     : {}
-
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -79,7 +83,69 @@ export const json2Devbox = (
   }
   return yaml.dump(json)
 }
-
+export const json2DevboxV2 = (
+  data: json2DevboxV2Data,
+  devboxAffinityEnable: string = 'true',
+  squashEnable: string = 'false'
+) => {
+  let json: any = {
+    apiVersion: 'devbox.sealos.io/v1alpha1',
+    kind: 'Devbox',
+    metadata: {
+      name: data.name
+    },
+    spec: {
+      squash: squashEnable === 'true',
+      network: {
+        type: 'NodePort',
+        extraPorts: data.networks.map((item) => ({
+          containerPort: item.port
+        }))
+      },
+      resource: {
+        cpu: `${str2Num(Math.floor(data.cpu))}m`,
+        memory: `${str2Num(data.memory)}Mi`
+      },
+      templateID: data.templateUid,
+      image: data.image,
+      config: produce(parseTemplateConfig(data.templateConfig), (draft) => {
+        draft.appPorts = data.networks.map((item) => ({
+          port: str2Num(item.port),
+          name: item.portName,
+          protocol: 'TCP',
+          targetPort: str2Num(item.port)
+        }))
+      }),
+      state: 'Running'
+    }
+  }
+  if (devboxAffinityEnable === 'true') {
+    json.spec.tolerations = [
+      {
+        key: 'devbox.sealos.io/node',
+        operator: 'Exists',
+        effect: 'NoSchedule'
+      }
+    ]
+    json.spec.affinity = {
+      nodeAffinity: {
+        requiredDuringSchedulingIgnoredDuringExecution: {
+          nodeSelectorTerms: [
+            {
+              matchExpressions: [
+                {
+                  key: 'devbox.sealos.io/node',
+                  operator: 'Exists'
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+  return yaml.dump(json)
+}
 export const json2StartOrStop = ({
   devboxName,
   type
@@ -99,7 +165,9 @@ export const json2StartOrStop = ({
   }
   return yaml.dump(json)
 }
-
+export const getDevboxReleaseName = (devboxName: string, tag: string) => {
+  return `${devboxName}-${tag}`
+}
 export const json2DevboxRelease = (data: {
   devboxName: string
   tag: string
@@ -110,7 +178,7 @@ export const json2DevboxRelease = (data: {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'DevBoxRelease',
     metadata: {
-      name: `${data.devboxName}-${data.tag}`,
+      name: getDevboxReleaseName(data.devboxName, data.tag),
       ownerReferences: [
         {
           apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -131,7 +199,10 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json)
 }
 
-export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
+export const json2Ingress = (
+  data: Pick<DevboxEditTypeV2, 'name' | 'networks'>,
+  ingressSecret: string
+) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -161,7 +232,7 @@ export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
       const host = network.customDomain ? network.customDomain : network.publicDomain
 
       const secretName = network.customDomain ? network.networkName : ingressSecret
-
+      const protocol = network.protocol
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
@@ -174,7 +245,7 @@ export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.protocol]
+            ...map[(network.protocol as ProtocolType) || 'HTTP']
           }
         },
         spec: {
@@ -264,8 +335,7 @@ export const json2Ingress = (data: DevboxEditType, ingressSecret: string) => {
 
   return result.join('\n---\n')
 }
-
-export const json2Service = (data: DevboxEditType) => {
+export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) => {
   if (data.networks.length === 0) {
     return ''
   }
@@ -293,7 +363,6 @@ export const json2Service = (data: DevboxEditType) => {
   }
   return yaml.dump(template)
 }
-
 export const limitRangeYaml = `
 apiVersion: v1
 kind: LimitRange
@@ -306,3 +375,34 @@ spec:
         memory: 64Mi
       type: Container
 `
+export const generateYamlList = (
+  data: json2DevboxV2Data,
+  env: {
+    devboxAffinityEnable?: string
+    squashEnable?: string
+    ingressSecret: string
+  }
+) => {
+  return [
+    {
+      filename: 'devbox.yaml',
+      value: json2DevboxV2(data, env.devboxAffinityEnable, env.squashEnable)
+    },
+    ...(data.networks.length > 0
+      ? [
+          {
+            filename: 'service.yaml',
+            value: json2Service(data)
+          }
+        ]
+      : []),
+    ...(data.networks.find((item) => item.openPublicDomain)
+      ? [
+          {
+            filename: 'ingress.yaml',
+            value: json2Ingress(data, env.ingressSecret)
+          }
+        ]
+      : [])
+  ]
+}

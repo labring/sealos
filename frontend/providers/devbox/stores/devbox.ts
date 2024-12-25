@@ -2,11 +2,6 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
-import type {
-  DevboxDetailType,
-  DevboxListItemType,
-  DevboxVersionListItemType
-} from '@/types/devbox'
 import {
   getDevboxByName,
   getDevboxMonitorData,
@@ -16,26 +11,44 @@ import {
   getSSHConnectionInfo
 } from '@/api/devbox'
 import { devboxStatusMap, PodStatusEnum } from '@/constants/devbox'
+import type {
+  DevboxDetailType,
+  DevboxDetailTypeV2,
+  DevboxListItemTypeV2,
+  DevboxVersionListItemType
+} from '@/types/devbox'
 
 type State = {
-  devboxList: DevboxListItemType[]
-  setDevboxList: () => Promise<DevboxListItemType[]>
+  devboxList: DevboxListItemTypeV2[]
+  requestCache: Map<string, Promise<any>>
+  setDevboxList: () => Promise<DevboxListItemTypeV2[]>
   loadAvgMonitorData: (devboxName: string) => Promise<void>
   devboxVersionList: DevboxVersionListItemType[]
+  startedTemplate?: {
+    uid: string,
+    iconId: string | null,
+    name: string,
+  }
+  setStartedTemplate: (template: {
+    uid: string,
+    iconId: string | null,
+    name: string,
+  } | undefined) => void,
   setDevboxVersionList: (
     devboxName: string,
     devboxUid: string
   ) => Promise<DevboxVersionListItemType[]>
-  devboxDetail: DevboxDetailType
-  setDevboxDetail: (devboxName: string, sealosDomain: string) => Promise<DevboxDetailType>
+  devboxDetail?: DevboxDetailTypeV2
+  setDevboxDetail: (devboxName: string, sealosDomain: string) => Promise<DevboxDetailTypeV2>
   intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>
   loadDetailMonitorData: (devboxName: string) => Promise<any>
 }
 
 export const useDevboxStore = create<State>()(
   devtools(
-    immer((set) => ({
+    immer((set, get) => ({
       devboxList: [],
+      requestCache: new Map(),
       setDevboxList: async () => {
         const res = await getMyDevboxList()
         set((state) => {
@@ -59,7 +72,6 @@ export const useDevboxStore = create<State>()(
             step: '2m'
           })
         ])
-
         set((state) => {
           state.devboxList = state.devboxList.map((item) => ({
             ...item,
@@ -81,7 +93,18 @@ export const useDevboxStore = create<State>()(
         })
         return res
       },
-      devboxDetail: {} as DevboxDetailType,
+      setStartedTemplate(templateRepository) {
+        set((state) => {
+          if(!templateRepository) state.startedTemplate = undefined
+          else state.startedTemplate = {
+            uid: templateRepository.uid,
+            iconId: templateRepository.iconId,
+            name: templateRepository.name
+          }
+        })
+      },
+      startedTemplate: undefined,
+      devboxDetail: undefined,
       setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
         const detail = await getDevboxByName(devboxName)
 
@@ -91,12 +114,10 @@ export const useDevboxStore = create<State>()(
           })
           return detail
         }
-
         const pods = await getDevboxPodsByDevboxName(devboxName)
 
         const { base64PrivateKey, userName } = await getSSHConnectionInfo({
-          devboxName: detail.name,
-          runtimeName: detail.runtimeVersion
+          devboxName: detail.name
         })
 
         const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
@@ -121,6 +142,7 @@ export const useDevboxStore = create<State>()(
       },
       intervalLoadPods: async (devboxName, updateDetail) => {
         if (!devboxName) return Promise.reject('devbox name is empty')
+
         const pods = await getDevboxPodsByDevboxName(devboxName)
 
         // TODO: change Running to podStatusMap.running
@@ -129,8 +151,8 @@ export const useDevboxStore = create<State>()(
           pods.length === 0
             ? devboxStatusMap.Stopped
             : pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
-            ? devboxStatusMap.Running
-            : devboxStatusMap.Pending
+              ? devboxStatusMap.Running
+              : devboxStatusMap.Pending
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && updateDetail) {
@@ -166,17 +188,17 @@ export const useDevboxStore = create<State>()(
             state.devboxDetail.usedCpu = averageCpuData[0]
               ? averageCpuData[0]
               : {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                }
+                xData: new Array(30).fill(0),
+                yData: new Array(30).fill('0'),
+                name: ''
+              }
             state.devboxDetail.usedMemory = averageMemoryData[0]
               ? averageMemoryData[0]
               : {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                }
+                xData: new Array(30).fill(0),
+                yData: new Array(30).fill('0'),
+                name: ''
+              }
           }
         })
         return 'success'
