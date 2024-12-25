@@ -15,6 +15,7 @@ export type PricePayload = {
   price: number;
   title: string;
   unit: string;
+  isGpu: boolean;
   icon: typeof Img;
 };
 export function PriceTable({ data }: { data: PricePayload[] }) {
