@@ -28,6 +28,15 @@ func GetAllOption() ([]*Option, error) {
 	return options, err
 }
 
+func GetOption(key string) (*Option, error) {
+	if !slices.Contains(optionKeys, key) {
+		return nil, ErrUnknownOptionKey
+	}
+	var option Option
+	err := DB.Where("key = ?", key).First(&option).Error
+	return &option, err
+}
+
 var (
 	optionMap  = make(map[string]string)
 	optionKeys []string
@@ -70,6 +79,11 @@ func initOptionMap() error {
 	optionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
 	optionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
 	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
+	groupConsumeLevelRpmRatioJSON, err := json.Marshal(config.GetGroupConsumeLevelRpmRatio())
+	if err != nil {
+		return err
+	}
+	optionMap["GroupConsumeLevelRpmRatio"] = conv.BytesToString(groupConsumeLevelRpmRatioJSON)
 
 	optionKeys = make([]string, 0, len(optionMap))
 	for key := range optionMap {
@@ -174,6 +188,9 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		if err != nil {
 			return err
 		}
+		if logDetailStorageHours < 0 {
+			return errors.New("log detail storage hours must be greater than 0")
+		}
 		config.SetLogDetailStorageHours(logDetailStorageHours)
 	case "DisableServe":
 		config.SetDisableServe(isTrue(value))
@@ -183,6 +200,9 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		groupMaxTokenNum, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
 			return err
+		}
+		if groupMaxTokenNum < 0 {
+			return errors.New("group max token num must be greater than 0")
 		}
 		config.SetGroupMaxTokenNum(int32(groupMaxTokenNum))
 	case "GeminiSafetySetting":
@@ -237,6 +257,9 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		if err != nil {
 			return err
 		}
+		if retryTimes < 0 {
+			return errors.New("retry times must be greater than 0")
+		}
 		config.SetRetryTimes(retryTimes)
 	case "EnableModelErrorAutoBan":
 		config.SetEnableModelErrorAutoBan(isTrue(value))
@@ -245,6 +268,9 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		if err != nil {
 			return err
 		}
+		if modelErrorAutoBanRate < 0 || modelErrorAutoBanRate > 1 {
+			return errors.New("model error auto ban rate must be between 0 and 1")
+		}
 		config.SetModelErrorAutoBanRate(modelErrorAutoBanRate)
 	case "TimeoutWithModelType":
 		var newTimeoutWithModelType map[int]int64
@@ -252,7 +278,27 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		if err != nil {
 			return err
 		}
+		for _, v := range newTimeoutWithModelType {
+			if v < 0 {
+				return errors.New("timeout must be greater than 0")
+			}
+		}
 		config.SetTimeoutWithModelType(newTimeoutWithModelType)
+	case "GroupConsumeLevelRpmRatio":
+		var newGroupRpmRatio map[float64]float64
+		err := json.Unmarshal(conv.StringToBytes(value), &newGroupRpmRatio)
+		if err != nil {
+			return err
+		}
+		for k, v := range newGroupRpmRatio {
+			if k < 0 {
+				return errors.New("consume level must be greater than 0")
+			}
+			if v < 0 {
+				return errors.New("rpm ratio must be greater than 0")
+			}
+		}
+		config.SetGroupConsumeLevelRpmRatio(newGroupRpmRatio)
 	default:
 		return ErrUnknownOptionKey
 	}

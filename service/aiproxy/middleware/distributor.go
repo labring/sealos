@@ -22,6 +22,59 @@ type ModelRequest struct {
 	Model string `form:"model" json:"model"`
 }
 
+func calculateGroupConsumeLevelRpmRatio(usedAmount float64) float64 {
+	v := config.GetGroupConsumeLevelRpmRatio()
+	var maxConsumeLevel float64 = -1
+	var groupConsumeLevelRpmRatio float64
+	for consumeLevel, ratio := range v {
+		if usedAmount < consumeLevel {
+			continue
+		}
+		if consumeLevel > maxConsumeLevel {
+			maxConsumeLevel = consumeLevel
+			groupConsumeLevelRpmRatio = ratio
+		}
+	}
+	if groupConsumeLevelRpmRatio <= 0 {
+		groupConsumeLevelRpmRatio = 1
+	}
+	return groupConsumeLevelRpmRatio
+}
+
+func getGroupRPMRatio(group *model.GroupCache) float64 {
+	groupRPMRatio := group.RPMRatio
+	if groupRPMRatio <= 0 {
+		groupRPMRatio = 1
+	}
+	return groupRPMRatio
+}
+
+func checkModelRPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64) bool {
+	if modelRPM <= 0 {
+		return true
+	}
+
+	groupConsumeLevelRpmRatio := calculateGroupConsumeLevelRpmRatio(group.UsedAmount)
+	groupRPMRatio := getGroupRPMRatio(group)
+
+	adjustedModelRPM := int64(float64(modelRPM) * groupRPMRatio * groupConsumeLevelRpmRatio)
+
+	ok := ForceRateLimit(
+		c.Request.Context(),
+		fmt.Sprintf(groupModelRPMKey, group.ID, requestModel),
+		adjustedModelRPM,
+		time.Minute,
+	)
+
+	if !ok {
+		abortWithMessage(c, http.StatusTooManyRequests,
+			group.ID+" is requesting too frequently",
+		)
+		return false
+	}
+	return true
+}
+
 func Distribute(c *gin.Context) {
 	if config.GetDisableServe() {
 		abortWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
@@ -60,25 +113,9 @@ func Distribute(c *gin.Context) {
 		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
 		return
 	}
-	modelRPM := mc.RPM
-	if modelRPM > 0 {
-		groupRPMRatio := group.RPMRatio
-		if groupRPMRatio <= 0 {
-			groupRPMRatio = 1
-		}
-		modelRPM = int64(float64(modelRPM) * groupRPMRatio)
-		ok = ForceRateLimit(
-			c.Request.Context(),
-			fmt.Sprintf(groupModelRPMKey, group.ID, requestModel),
-			modelRPM,
-			time.Minute,
-		)
-		if !ok {
-			abortWithMessage(c, http.StatusTooManyRequests,
-				group.ID+" is requesting too frequently",
-			)
-			return
-		}
+
+	if !checkModelRPM(c, group, requestModel, mc.RPM) {
+		return
 	}
 
 	c.Set(ctxkey.OriginalModel, requestModel)
