@@ -10,7 +10,11 @@ import TemplateSelector from './TemplateSelector'
 import ConfigurationHeader from '../ConfigurationHeader'
 import TemplateRepositorySelector from './TemplateRepositorySelector'
 
-export default function BasicConfiguration({ isEdit, ...props }: BoxProps & { isEdit: boolean }) {
+export default function BasicConfiguration({
+  isEdit,
+  countGpuInventory,
+  ...props
+}: BoxProps & { isEdit: boolean; countGpuInventory: (type: string) => number }) {
   const t = useTranslations()
   return (
     <Box {...props}>
@@ -26,7 +30,7 @@ export default function BasicConfiguration({ isEdit, ...props }: BoxProps & { is
         {/* Runtime Version */}
         <TemplateSelector isEdit={isEdit} />
         {/* GPU */}
-        <GpuSelector />
+        <GpuSelector countGpuInventory={countGpuInventory} />
         {/* CPU */}
         <CpuSelector />
         {/* Memory */}

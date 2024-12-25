@@ -1,11 +1,6 @@
 'use client'
 
-import {
-  Box,
-  Flex,
-  Grid,
-  useTheme
-} from '@chakra-ui/react'
+import { Box, Flex, Grid, useTheme } from '@chakra-ui/react'
 import { Tabs } from '@sealos/ui'
 import { throttle } from 'lodash'
 import { useTranslations } from 'next-intl'
@@ -26,17 +21,17 @@ import NetworkConfiguration from './NetworkConfiguration'
 
 const Form = ({
   pxVal,
-  isEdit
+  isEdit,
+  countGpuInventory
 }: {
   pxVal: number
   isEdit: boolean
+  countGpuInventory: (type: string) => number
 }) => {
   const theme = useTheme()
   const router = useRouter()
   const t = useTranslations()
-  const {
-    watch
-  } = useFormContext<DevboxEditTypeV2>()
+  const { watch } = useFormContext<DevboxEditTypeV2>()
   const navList: { id: string; label: string; icon: string }[] = [
     {
       id: 'baseInfo',
@@ -79,7 +74,6 @@ const Form = ({
     // eslint-disable-next-line
   }, [])
 
-
   const boxStyles = {
     border: theme.borders.base,
     borderRadius: 'lg',
@@ -88,100 +82,105 @@ const Form = ({
   }
 
   return (
-      <Grid
-        height={'100%'}
-        templateColumns={'220px 1fr'}
-        gridGap={5}
-        alignItems={'start'}
-        pl={`${pxVal}px`}>
-        {/* left sidebar */}
-        <Box>
-          <Tabs
-            list={[
-              { id: 'form', label: t('config_form') },
-              { id: 'yaml', label: t('yaml_file') }
-            ]}
-            activeId={'form'}
-            onChange={() =>
-              router.replace(
-                `/devbox/create?${obj2Query({
-                  type: 'yaml'
-                })}`
-              )
-            }
-          />
-          <Box
-            mt={3}
-            borderRadius={'md'}
-            overflow={'hidden'}
-            backgroundColor={'white'}
-            border={theme.borders.base}
-            p={'4px'}>
-            {navList.map((item) => (
-              <Box
-                key={item.id}
-                onClick={() => {
-                  setActiveNav(item.id)
-                  window.location.hash = item.id
-                }}>
-                <Flex
-                  borderRadius={'base'}
-                  cursor={'pointer'}
-                  gap={'8px'}
-                  alignItems={'center'}
-                  h={'40px'}
-                  _hover={{
-                    backgroundColor: 'grayModern.100'
-                  }}
-                  color="grayModern.900"
-                  backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}>
-                  <Box
-                    w={'2px'}
-                    h={'24px'}
-                    justifySelf={'start'}
-                    bg={'grayModern.900'}
-                    borderRadius={'12px'}
-                    opacity={activeNav === item.id ? 1 : 0}
-                  />
-                  <MyIcon
-                    name={item.icon as any}
-                    w={'20px'}
-                    h={'20px'}
-                    color={activeNav === item.id ? 'myGray.400' : 'grayModern.600'}
-                  />
-                  <Box>{item.label}</Box>
-                </Flex>
-              </Box>
-            ))}
-          </Box>
-          <Box mt={3} overflow={'hidden'}>
-            <QuotaBox />
-          </Box>
-          <Box mt={3} overflow={'hidden'}>
-            <PriceBox
-              components={[
-                {
-                  cpu: watch('cpu'),
-                  memory: watch('memory'),
-                  nodeports: devboxList.length
-                }
-              ]}
-            />
-          </Box>
-        </Box>
-        {/* right content */}
+    <Grid
+      height={'100%'}
+      templateColumns={'220px 1fr'}
+      gridGap={5}
+      alignItems={'start'}
+      pl={`${pxVal}px`}>
+      {/* left sidebar */}
+      <Box>
+        <Tabs
+          list={[
+            { id: 'form', label: t('config_form') },
+            { id: 'yaml', label: t('yaml_file') }
+          ]}
+          activeId={'form'}
+          onChange={() =>
+            router.replace(
+              `/devbox/create?${obj2Query({
+                type: 'yaml'
+              })}`
+            )
+          }
+        />
         <Box
-          id={'form-container'}
-          pr={`${pxVal}px`}
-          height={'100%'}
-          position={'relative'}
-          overflowY={'scroll'}>
-          {/* base info */}
-          <BasicConfiguration isEdit={isEdit} id={'baseInfo'} {...boxStyles}/>
-          {/* network */}
-          <NetworkConfiguration isEdit={isEdit} id={'network'} {...boxStyles}/>
+          mt={3}
+          borderRadius={'md'}
+          overflow={'hidden'}
+          backgroundColor={'white'}
+          border={theme.borders.base}
+          p={'4px'}>
+          {navList.map((item) => (
+            <Box
+              key={item.id}
+              onClick={() => {
+                setActiveNav(item.id)
+                window.location.hash = item.id
+              }}>
+              <Flex
+                borderRadius={'base'}
+                cursor={'pointer'}
+                gap={'8px'}
+                alignItems={'center'}
+                h={'40px'}
+                _hover={{
+                  backgroundColor: 'grayModern.100'
+                }}
+                color="grayModern.900"
+                backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}>
+                <Box
+                  w={'2px'}
+                  h={'24px'}
+                  justifySelf={'start'}
+                  bg={'grayModern.900'}
+                  borderRadius={'12px'}
+                  opacity={activeNav === item.id ? 1 : 0}
+                />
+                <MyIcon
+                  name={item.icon as any}
+                  w={'20px'}
+                  h={'20px'}
+                  color={activeNav === item.id ? 'myGray.400' : 'grayModern.600'}
+                />
+                <Box>{item.label}</Box>
+              </Flex>
+            </Box>
+          ))}
         </Box>
-      </Grid>
+        <Box mt={3} overflow={'hidden'}>
+          <QuotaBox />
+        </Box>
+        <Box mt={3} overflow={'hidden'}>
+          <PriceBox
+            components={[
+              {
+                cpu: watch('cpu'),
+                memory: watch('memory'),
+                nodeports: devboxList.length
+              }
+            ]}
+          />
+        </Box>
+      </Box>
+      {/* right content */}
+      <Box
+        id={'form-container'}
+        pr={`${pxVal}px`}
+        height={'100%'}
+        position={'relative'}
+        overflowY={'scroll'}>
+        {/* base info */}
+        <BasicConfiguration
+          isEdit={isEdit}
+          id={'baseInfo'}
+          {...boxStyles}
+          countGpuInventory={countGpuInventory}
+        />
+        {/* network */}
+        <NetworkConfiguration isEdit={isEdit} id={'network'} {...boxStyles} />
+      </Box>
+    </Grid>
   )
 }
 
