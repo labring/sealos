@@ -1,3 +1,4 @@
+import { customAlphabet } from 'nanoid'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -12,7 +13,7 @@ import ReleaseModal from '@/components/modals/releaseModal'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 
 import { DevboxVersionListItemType } from '@/types/devbox'
-import { DevboxReleaseStatusEnum, devboxIdKey } from '@/constants/devbox'
+import { DevboxReleaseStatusEnum } from '@/constants/devbox'
 import { delDevboxVersionByName, getAppsByDevboxId, getSSHRuntimeInfo } from '@/api/devbox'
 
 import { useConfirm } from '@/hooks/useConfirm'
@@ -22,6 +23,8 @@ import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
 import AppSelectModal from '@/components/modals/AppSelectModal'
 import { AppListItemType } from '@/types/app'
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
 
 const Version = () => {
   const t = useTranslations()
@@ -75,7 +78,7 @@ const Version = () => {
       const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`
 
       const transformData = {
-        appName: `${name}-release`,
+        appName: `${name}-release-${nanoid()}`,
         cpu: cpu,
         memory: memory,
         imageName: imageName,
@@ -91,10 +94,7 @@ const Version = () => {
                 }
               ],
         runCMD: releaseCommand,
-        cmdParam: releaseArgs,
-        labels: {
-          [devboxIdKey]: devboxId
-        }
+        cmdParam: releaseArgs
       }
       setDeployData(transformData)
       const apps = await getAppsByDevboxId(devboxId)
