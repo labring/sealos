@@ -42,8 +42,10 @@ const Version = () => {
   const [apps, setApps] = useState<AppListItemType[]>([])
   const [deployData, setDeployData] = useState<any>(null)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
-  const [updateTemplateRepo, setUpdateTemplateRepo] = useState<null |
-    Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]>(null)
+  const [updateTemplateRepo, setUpdateTemplateRepo] = useState<
+    | null
+    | Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]
+  >(null)
   const createTemplateModalHandler = useDisclosure()
   const selectTemplalteModalHandler = useDisclosure()
   const updateTemplateModalHandler = useDisclosure()
@@ -56,10 +58,10 @@ const Version = () => {
     {
       refetchInterval:
         devboxVersionList.length > 0 &&
-          !createTemplateModalHandler.isOpen &&
-          !updateTemplateModalHandler.isOpen &&
-          !selectTemplalteModalHandler.isOpen &&
-          devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending
+        !createTemplateModalHandler.isOpen &&
+        !updateTemplateModalHandler.isOpen &&
+        !selectTemplalteModalHandler.isOpen &&
+        devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending
           ? 3000
           : false,
       onSettled() {
@@ -73,11 +75,12 @@ const Version = () => {
     () => {
       return listPrivateTemplateRepository({
         page: 1,
-        pageSize: 100,
+        pageSize: 100
       })
     }
   )
-  const templateRepositoryList = listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
+  const templateRepositoryList =
+    listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
       // const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
@@ -106,13 +109,13 @@ const Version = () => {
           newNetworks.length > 0
             ? newNetworks
             : [
-              {
-                port: 80,
-                protocol: 'http',
-                openPublicDomain: false,
-                domain: env.ingressDomain
-              }
-            ],
+                {
+                  port: 80,
+                  protocol: 'http',
+                  openPublicDomain: false,
+                  domain: env.ingressDomain
+                }
+              ],
         runCMD: releaseCommand,
         cmdParam: releaseArgs,
         labels: {
@@ -183,133 +186,128 @@ const Version = () => {
     key: string
     render?: (item: DevboxVersionListItemType) => JSX.Element
   }[] = [
-      {
-        title: t('version_number'),
-        key: 'tag',
-        render: (item: DevboxVersionListItemType) => (
-          <Box color={'grayModern.900'} pl={'12px'}>
-            {item.tag}
+    {
+      title: t('version_number'),
+      key: 'tag',
+      render: (item: DevboxVersionListItemType) => (
+        <Box color={'grayModern.900'} pl={'12px'}>
+          {item.tag}
+        </Box>
+      )
+    },
+    {
+      title: t('status'),
+      key: 'status',
+      render: (item: DevboxVersionListItemType) => (
+        <DevboxStatusTag status={item.status} h={'27px'} thinMode />
+      )
+    },
+    {
+      title: t('create_time'),
+      dataIndex: 'createTime',
+      key: 'createTime',
+      render: (item: DevboxVersionListItemType) => {
+        return <Text color={'grayModern.600'}>{item.createTime}</Text>
+      }
+    },
+    {
+      title: t('version_description'),
+      key: 'description',
+      render: (item: DevboxVersionListItemType) => (
+        <Flex alignItems="center" minH={'20px'} width={'full'}>
+          <Box color={'grayModern.600'} noOfLines={1} w={'0'} flex={1}>
+            {item.description}
           </Box>
-        )
-      },
-      {
-        title: t('status'),
-        key: 'status',
-        render: (item: DevboxVersionListItemType) => (
-          <DevboxStatusTag status={item.status} h={'27px'} thinMode />
-        )
-      },
-      {
-        title: t('create_time'),
-        dataIndex: 'createTime',
-        key: 'createTime',
-        render: (item: DevboxVersionListItemType) => {
-          return <Text color={'grayModern.600'}>{item.createTime}</Text>
-        }
-      },
-      {
-        title: t('version_description'),
-        key: 'description',
-        render: (item: DevboxVersionListItemType) => (
-          <Flex alignItems="center" minH={'20px'} width={'full'}>
-            <Box
-              color={'grayModern.600'}
-              noOfLines={1}
-              w={'0'}
-              flex={1}
-            >
-              {item.description}
-            </Box>
-          </Flex>
-        )
-      },
-      {
-        title: t('control'),
-        key: 'control',
-        render: (item: DevboxVersionListItemType) => (
-          <Flex alignItems={'center'}>
-            <Button
-              mr={5}
-              height={'27px'}
-              w={'60px'}
-              size={'sm'}
-              h='32px'
-              fontSize={'base'}
-              bg={'grayModern.150'}
-              color={'grayModern.900'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              isDisabled={item.status.value !== DevboxReleaseStatusEnum.Success}
-              onClick={() => handleDeploy(item)}>
-              {t('deploy')}
-            </Button>
-            <SealosMenu
-              width={100}
-              Button={
-                <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
-                  <MyIcon name={'more'}
-                   color={'grayModern.600'} 
+        </Flex>
+      )
+    },
+    {
+      title: t('control'),
+      key: 'control',
+      render: (item: DevboxVersionListItemType) => (
+        <Flex alignItems={'center'}>
+          <Button
+            mr={5}
+            height={'27px'}
+            w={'60px'}
+            size={'sm'}
+            h="32px"
+            fontSize={'base'}
+            bg={'grayModern.150'}
+            color={'grayModern.900'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            isDisabled={item.status.value !== DevboxReleaseStatusEnum.Success}
+            onClick={() => handleDeploy(item)}>
+            {t('deploy')}
+          </Button>
+          <SealosMenu
+            width={100}
+            Button={
+              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
+                <MyIcon
+                  name={'more'}
+                  color={'grayModern.600'}
                   _groupHover={{
                     color: 'brightBlue.600'
-                  }} 
+                  }}
                   fill={'currentcolor'}
-                  />
-                </MenuButton>
-              }
-              menuList={[
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'edit'} w={'16px'} />
-                      <Box ml={2}>{t('edit')}</Box>
-                    </>
-                  ),
-                  onClick: () => {
-                    setCurrentVersion(item)
-                    onOpenEdit()
-                  }
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'template'} w={'16px'} />
-                      <Box ml={2}>{t('convert_to_runtime')}</Box>
-                    </>
-                  ),
-                  onClick: () => {
-                    setCurrentVersion(item)
-                    // onOpenEdit()
-                    // openTemplateModal({templateState: })
-                    if (templateRepositoryList.length > 0) {
-                      selectTemplalteModalHandler.onOpen()
-                    } else {
-                      createTemplateModalHandler.onOpen()
-                    }
-                  }
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'delete'} w={'16px'} />
-                      <Box ml={2}>{t('delete')}</Box>
-                    </>
-                  ),
-                  menuItemStyle: {
-                    _hover: {
-                      color: 'red.600',
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }
-                  },
-                  onClick: () => openConfirm(() => handleDelDevboxVersion(item.name))()
+                />
+              </MenuButton>
+            }
+            menuList={[
+              {
+                child: (
+                  <>
+                    <MyIcon name={'edit'} w={'16px'} />
+                    <Box ml={2}>{t('edit')}</Box>
+                  </>
+                ),
+                onClick: () => {
+                  setCurrentVersion(item)
+                  onOpenEdit()
                 }
-              ]
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'template'} w={'16px'} />
+                    <Box ml={2}>{t('convert_to_runtime')}</Box>
+                  </>
+                ),
+                onClick: () => {
+                  setCurrentVersion(item)
+                  // onOpenEdit()
+                  // openTemplateModal({templateState: })
+                  if (templateRepositoryList.length > 0) {
+                    selectTemplalteModalHandler.onOpen()
+                  } else {
+                    createTemplateModalHandler.onOpen()
+                  }
+                }
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'delete'} w={'16px'} />
+                    <Box ml={2}>{t('delete')}</Box>
+                  </>
+                ),
+                menuItemStyle: {
+                  _hover: {
+                    color: 'red.600',
+                    bg: 'rgba(17, 24, 36, 0.05)'
+                  }
+                },
+                onClick: () => openConfirm(() => handleDelDevboxVersion(item.name))()
               }
-            />
-          </Flex >
-        )
-      }
-    ]
+            ]}
+          />
+        </Flex>
+      )
+    }
+  ]
   return (
     <Box
       borderWidth={1}
@@ -354,9 +352,12 @@ const Version = () => {
           </Box>
         </Flex>
       ) : (
-        <MyTable columns={columns} data={devboxVersionList} needRadius gridTemplateColumns={
-          '105px 105px 144px minmax(0, 1fr) 140px'
-        } />
+        <MyTable
+          columns={columns}
+          data={devboxVersionList}
+          needRadius
+          gridTemplateColumns={'105px 105px 144px minmax(0, 1fr) 140px'}
+        />
       )}
       {!!currentVersion && (
         <EditVersionDesModal
@@ -385,25 +386,32 @@ const Version = () => {
         />
       )}
       <ConfirmChild />
-      <CreateTemplateModal isOpen={createTemplateModalHandler.isOpen} onClose={createTemplateModalHandler.onClose} devboxReleaseName={currentVersion?.name || ''} />
-      {templateRepositoryList.length > 0 && <SelectTemplateModal
-        onOpenCreate={createTemplateModalHandler.onOpen}
-        onOpenUdate={(uid) => {
-          const repo = templateRepositoryList.find((item) => item.uid === uid)
-          setUpdateTemplateRepo(repo || null)
-          updateTemplateModalHandler.onOpen()
-        }}
-        templateRepositoryList={templateRepositoryList}
-        isOpen={selectTemplalteModalHandler.isOpen} onClose={
-          selectTemplalteModalHandler.onClose
-        } />}
-      {!!updateTemplateRepo && <UpdateTemplateRepositoryModal
-        templateRepository={updateTemplateRepo}
-        isOpen={updateTemplateModalHandler.isOpen}
-        onClose={updateTemplateModalHandler.onClose}
+      <CreateTemplateModal
+        isOpen={createTemplateModalHandler.isOpen}
+        onClose={createTemplateModalHandler.onClose}
         devboxReleaseName={currentVersion?.name || ''}
-      />}
-
+      />
+      {templateRepositoryList.length > 0 && (
+        <SelectTemplateModal
+          onOpenCreate={createTemplateModalHandler.onOpen}
+          onOpenUdate={(uid) => {
+            const repo = templateRepositoryList.find((item) => item.uid === uid)
+            setUpdateTemplateRepo(repo || null)
+            updateTemplateModalHandler.onOpen()
+          }}
+          templateRepositoryList={templateRepositoryList}
+          isOpen={selectTemplalteModalHandler.isOpen}
+          onClose={selectTemplalteModalHandler.onClose}
+        />
+      )}
+      {!!updateTemplateRepo && (
+        <UpdateTemplateRepositoryModal
+          templateRepository={updateTemplateRepo}
+          isOpen={updateTemplateModalHandler.isOpen}
+          onClose={updateTemplateModalHandler.onClose}
+          devboxReleaseName={currentVersion?.name || ''}
+        />
+      )}
     </Box>
   )
 }

@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 
-import { userPriceType } from '@/types/user'
 import { CoreV1Api } from '@kubernetes/client-node'
 import { jsonRes } from '@/services/backend/response'
 import { userPriceType } from '@/types/user'

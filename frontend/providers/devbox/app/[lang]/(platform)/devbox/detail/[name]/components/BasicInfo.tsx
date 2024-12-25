@@ -7,9 +7,9 @@ import MyIcon from '@/components/Icon'
 import GPUItem from '@/components/GPUItem'
 import { DevboxDetailType } from '@/types/devbox'
 
-import { useDevboxStore } from '@/stores/devbox'
-import { useRuntimeStore } from '@/stores/runtime'
+import { useEnvStore } from '@/stores/env'
 import { usePriceStore } from '@/stores/price'
+import { useDevboxStore } from '@/stores/devbox'
 
 const BasicInfo = () => {
   const t = useTranslations()

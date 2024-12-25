@@ -26,9 +26,6 @@ import { useGlobalStore } from '@/stores/global'
 import { useIDEStore } from '@/stores/ide'
 import { useUserStore } from '@/stores/user'
 import { usePriceStore } from '@/stores/price'
-import { useDevboxStore } from '@/stores/devbox'
-import { useGlobalStore } from '@/stores/global'
-import { useRuntimeStore } from '@/stores/runtime'
 
 import { createDevbox, updateDevbox } from '@/api/devbox'
 import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox'
@@ -110,15 +107,6 @@ const DevboxCreatePage = () => {
         }
       }, 300),
     []
-  )
-
-  const countGpuInventory = useCallback(
-    (type?: string) => {
-      const inventory = sourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0
-
-      return inventory
-    },
-    [sourcePrice?.gpu]
   )
 
   const countGpuInventory = useCallback(

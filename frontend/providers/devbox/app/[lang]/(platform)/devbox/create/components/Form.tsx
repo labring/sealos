@@ -34,7 +34,7 @@ import { useRuntimeStore } from '@/stores/runtime'
 
 import { obj2Query } from '@/utils/tools'
 import { useGlobalStore } from '@/stores/global'
-import type { DevboxEditType } from '@/types/devbox'
+import type { DevboxEditType, DevboxEditTypeV2 } from '@/types/devbox'
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/devbox'
 import { GpuAmountMarkList, ProtocolList } from '@/constants/devbox'
 
@@ -55,7 +55,7 @@ const Form = ({
   isEdit,
   countGpuInventory
 }: {
-  formHook: UseFormReturn<DevboxEditType, any>
+  formHook: UseFormReturn<DevboxEditTypeV2, any>
   pxVal: number
   isEdit: boolean
   countGpuInventory: (type: string) => number

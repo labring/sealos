@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers
-    const { ROOT_RUNTIME_NAMESPACE } = process.env
 
     const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName') as string
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
     )) as { body: KBDevboxTypeV2 }
     const template = await devboxDB.template.findUnique({
       where: {
-        uid: devboxBody.spec.templateID,
+        uid: devboxBody.spec.templateID
       },
       select: {
         templateRepository: {
@@ -46,12 +45,12 @@ export async function GET(req: NextRequest) {
             uid: true,
             iconId: true,
             name: true,
-            kind: true,
+            kind: true
           }
         },
         uid: true,
         image: true,
-        name: true,
+        name: true
       }
     })
     if (!template) {
@@ -63,14 +62,9 @@ export async function GET(req: NextRequest) {
     const label = `${devboxKey}=${devboxName}`
     // get ingresses and service
     const [ingressesResponse, serviceResponse] = await Promise.all([
-      k8sNetworkingApp.listNamespacedIngress(
-        namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        label
-      ).catch(() => null),
+      k8sNetworkingApp
+        .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
+        .catch(() => null),
       k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
     ])
     const ingresses = ingressesResponse?.body.items || []
@@ -89,8 +83,9 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    const portInfos: PortInfos = service?.spec?.ports?.map((svcport) => {
-      const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port)
+    const portInfos: PortInfos =
+      service?.spec?.ports?.map((svcport) => {
+        const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port)
         return {
           portName: svcport.name!,
           port: svcport.port,
@@ -100,12 +95,8 @@ export async function GET(req: NextRequest) {
           publicDomain: ingressInfo?.publicDomain,
           customDomain: ingressInfo?.customDomain
         }
-    }) || []
-    const resp = [
-      devboxBody,
-      portInfos,
-      template
-    ] as const
+      }) || []
+    const resp = [devboxBody, portInfos, template] as const
     return jsonRes({ data: resp })
   } catch (err: any) {
     return jsonRes({

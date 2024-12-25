@@ -10,7 +10,7 @@ export const GET = async function GET(req: NextRequest) {
         id: 'labring'
       }
     })
-    if(!organization) throw Error('organization not found')
+    if (!organization) throw Error('organization not found')
     const templateRepositoryList = await devboxDB.templateRepository.findMany({
       where: {
         isPublic: true,
@@ -23,7 +23,12 @@ export const GET = async function GET(req: NextRequest) {
         name: true,
         uid: true,
         description: true,
-      },
+        templateRepositoryTags: {
+          select: {
+            tag: true
+          }
+        }
+      }
     })
     return jsonRes({
       data: {

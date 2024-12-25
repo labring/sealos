@@ -57,6 +57,7 @@ export interface DevboxEditTypeV2 {
   image: string
   cpu: number
   memory: number
+  gpu?: GpuType
   networks: PortInfos
 }
 export interface DevboxStatusMapType {
@@ -116,7 +117,7 @@ export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
     sshDomain: string
     sshPort: number
     sshPrivateKey: string
-  },
+  }
   sshPort?: number
   lastTerminatedReason?: string
 }
@@ -150,9 +151,9 @@ export interface DevboxListItemTypeV2 {
   // templateRepository: object
   template: {
     templateRepository: {
-      iconId: string | null;
-    };
-    uid: string;
+      iconId: string | null
+    }
+    uid: string
   }
   status: DevboxStatusMapType
   createTime: string
@@ -214,7 +215,6 @@ export interface PodDetailType extends V1Pod {
 }
 
 export interface json2DevboxV2Data extends DevboxEditTypeV2 {
-  templateConfig: string,
-  image: string,
+  templateConfig: string
+  image: string
 }
-
