@@ -65,7 +65,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context) (*model.ErrorWithStatusCode, b
 		}
 		return err, true
 	}
-	return nil, false
+	return err, false
 }
 
 func getChannelWithFallback(model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
