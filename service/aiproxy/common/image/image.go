@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	// import webp decoder
+	"github.com/labring/sealos/service/aiproxy/common"
 	_ "golang.org/x/image/webp"
 )
 
@@ -56,6 +57,10 @@ func GetImageSizeFromURL(url string) (width int, height int, err error) {
 	return img.Width, img.Height, nil
 }
 
+const (
+	MaxImageSize = 1024 * 1024 * 5 // 5MB
+)
+
 func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	// Check if the URL is a data URL
 	matches := dataURLPattern.FindStringSubmatch(url)
@@ -82,8 +87,17 @@ func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	}
 	var buf []byte
 	if resp.ContentLength <= 0 {
-		buf, err = io.ReadAll(resp.Body)
+		buf, err = io.ReadAll(common.LimitReader(resp.Body, MaxImageSize))
+		if err != nil {
+			if errors.Is(err, common.ErrLimitedReaderExceeded) {
+				return "", "", fmt.Errorf("image too large, max: %d", MaxImageSize)
+			}
+			return "", "", fmt.Errorf("image read failed: %w", err)
+		}
 	} else {
+		if resp.ContentLength > MaxImageSize {
+			return "", "", fmt.Errorf("image too large: %d, max: %d", resp.ContentLength, MaxImageSize)
+		}
 		buf = make([]byte, resp.ContentLength)
 		_, err = io.ReadFull(resp.Body, buf)
 	}
