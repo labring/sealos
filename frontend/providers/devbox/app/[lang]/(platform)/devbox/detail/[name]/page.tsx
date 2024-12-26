@@ -1,17 +1,17 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Box, Flex } from '@chakra-ui/react'
+import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 
-import Header from './components/Header'
-import Version from './components/Version'
-import MainBody from './components/MainBody'
-import BasicInfo from './components/BasicInfo'
 import { useLoading } from '@/hooks/useLoading'
+import BasicInfo from './components/BasicInfo'
+import Header from './components/Header'
+import MainBody from './components/MainBody'
+import Version from './components/Version'
 
-import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import { useEnvStore } from '@/stores/env'
 import { useGlobalStore } from '@/stores/global'
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
@@ -27,8 +27,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const [initialized, setInitialized] = useState(false)
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth])
 
-  const { refetch } = useQuery(
-    ['initDevboxDetail'],
+  const { refetch, data } = useQuery(
+    ['initDevboxDetail',],
     () => setDevboxDetail(devboxName, env.sealosDomain),
     {
       onSettled() {
@@ -36,7 +36,6 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       }
     }
   )
-
   useQuery(
     ['devbox-detail-pod'],
     () => {
@@ -44,6 +43,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       return intervalLoadPods(devboxName, true)
     },
     {
+      enabled: !devboxDetail?.isPause,
       refetchOnMount: true,
       refetchInterval: 3000
     }
@@ -57,14 +57,13 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     },
     {
       refetchOnMount: true,
-      refetchInterval: 2 * 60 * 1000
+      refetchInterval: 2 * 60 * 1000,
     }
   )
-
   return (
-    <Flex p={5} h={'100vh'} px={'32px'} flexDirection={'column'}>
-      <Loading loading={!initialized} />
-      {devboxDetail !== null && initialized && (
+      <Flex p={5} h={'100vh'} px={'32px'} flexDirection={'column'}>
+        <Loading loading={!initialized} />
+        {devboxDetail && initialized && (
         <>
           <Box mb={6}>
             <Header
@@ -88,11 +87,11 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
               {...(isLargeScreen
                 ? {}
                 : {
-                    position: 'absolute',
-                    left: 0,
-                    boxShadow: '7px 4px 12px rgba(165, 172, 185, 0.25)',
-                    transform: `translateX(${showSlider ? '0' : '-500'}px)`
-                  })}>
+                  position: 'absolute',
+                  left: 0,
+                  boxShadow: '7px 4px 12px rgba(165, 172, 185, 0.25)',
+                  transform: `translateX(${showSlider ? '0' : '-500'}px)`
+                })}>
               <BasicInfo />
             </Box>
             <Flex
@@ -128,8 +127,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
             />
           )}
         </>
-      )}
-    </Flex>
+        )}
+      </Flex>
   )
 }
 

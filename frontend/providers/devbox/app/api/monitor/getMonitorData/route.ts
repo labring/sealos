@@ -4,7 +4,7 @@ import { authSession } from '@/services/backend/auth'
 import { getK8s } from '@/services/backend/kubernetes'
 import { jsonRes } from '@/services/backend/response'
 import { monitorFetch } from '@/services/monitorFetch'
-import { MonitorServiceResult, MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
+import { MonitorDataResult, MonitorQueryKey, MonitorServiceResult } from '@/types/monitor'
 
 const AdapterChartData: Record<
   keyof MonitorQueryKey,

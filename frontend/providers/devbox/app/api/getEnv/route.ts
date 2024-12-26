@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 
-import type { Env } from '@/types/static'
-import { defaultEnv } from '@/stores/env'
-import { jsonRes } from '@/services/backend/response'
-import { getK8s } from '@/services/backend/kubernetes'
 import { authSession } from '@/services/backend/auth'
+import { getK8s } from '@/services/backend/kubernetes'
+import { jsonRes } from '@/services/backend/response'
+import { defaultEnv } from '@/stores/env'
+import type { Env } from '@/types/static'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
 
     return jsonRes<Env>({
       data: {
+        privacyUrl: process.env.PRIVACY_URL || defaultEnv.privacyUrl,
         sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
         registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
